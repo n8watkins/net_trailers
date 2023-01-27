@@ -42,20 +42,25 @@ Props) {
         setRandomMovie(trending[Math.floor(Math.random() * trending.length)])
     }, [trending])
 
+    const movieImgUrl = randomMovie?.backdrop_path || randomMovie?.poster_path
     return (
         <>
             {/* background image */}
             <div className=" absolute top-0 left-0 h-[50vw] w-[100vw] -z-10 font-sans ">
-                <Image
-                    src={`${BASE_URL}${
-                        randomMovie?.backdrop_path || randomMovie?.poster_path
-                    }`}
-                    alt="movie_backdrop"
-                    fill
-                    quality={100}
-                    priority
-                    style={{ objectFit: 'cover' }}
-                ></Image>
+                {movieImgUrl && (
+                    <Image
+                        src={`${BASE_URL}/${
+                            randomMovie?.backdrop_path ||
+                            randomMovie?.poster_path
+                        }`}
+                        alt="movie_backdrop"
+                        fill
+                        quality={100}
+                        priority
+                        style={{ objectFit: 'cover' }}
+                        sizes="(max-width: 768px) 100vw, 50vw"
+                    ></Image>
+                )}
                 <div className=" absolute h-[14vw] w-screen bg-gradient-to-b from-transparent to-[#141414] bottom-0 "></div>
             </div>
 
