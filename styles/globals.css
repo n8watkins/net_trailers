@@ -1,3 +1,32 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer body {
+    body {
+        /**/
+        @apply bg-[#141414] text-white !scrollbar-thin scrollbar-thumb-rounded-lg  hover:!scrollbar-thumb-red-400;
+    }
+    header {
+        @apply fixed top-0 z-30 flex  w-full justify-between items-center px-4 py-4 transition-all duration-[1s] lg:px-10 lg:py-6 bg-gradient-to-b from-[rgba(0,0,0,.7)] to-transparent;
+    }
+}
+
+@layer components {
+    .headerLink {
+        @apply text-[#e5e5e5] cursor-pointer text-sm font-semibold transition duration-[.4s] hover:text-[#b3b3b3];
+    }
+    .bannerButton {
+        @apply flex gap-2 px-6 py-1 justify-center items-center rounded-md text-sm md:text-base lg:py-2 lg:text-2xl md:font-semibold;
+    }
+    .chevron {
+        @apply absolute opacity-0 h-12 w-12 top-16 hover:scale-125;
+    }
+}
+
+::-webkit-scrollbar-thumb {
+    background-image: radial-gradient(circle, rgb(236, 50, 50), rgb(31, 0, 0));
+    border-color: rgb(177, 2, 2);
+    border-style: solid;
+    border-width: 0.01px;
+}
