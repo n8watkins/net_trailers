@@ -19,9 +19,24 @@
     .bannerButton {
         @apply flex gap-2 px-6 py-1 justify-center items-center rounded-md text-sm md:text-base lg:py-2 lg:text-2xl md:font-semibold;
     }
-    .chevron {
-        @apply absolute opacity-0 h-12 w-12 top-16 hover:scale-125;
+    .modalButtons {
+        @apply flex gap-2 px-6 py-0 justify-center items-center rounded-sm text-sm md:text-base lg:text-2xl md:font-semibold;
     }
+    .chevron {
+        @apply opacity-0 relative h-16 w-16 hover:scale-125;
+    }
+    .inputClass {
+        @apply bg-[#313131] focus:bg-[#454545] text-gray-100 block rounded-md px-2.5 pb-2.5 pt-5 w-full text-base;
+    }
+    .labelDefault {
+        @apply absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-2.5;
+    }
+    .labelFocus {
+        @apply peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4;
+    }
+    /* .backGround {
+        @apply bg-gradient-to-b from-transparent to-black;
+    } */
 }
 
 ::-webkit-scrollbar-thumb {
@@ -29,4 +44,20 @@
     border-color: rgb(177, 2, 2);
     border-style: solid;
     border-width: 0.01px;
+}
+
+.backGround {
+    background: linear-gradient(
+        to bottom,
+        #141414 0,
+        #141414a4 16%,
+        rgba(20, 20, 20, 0.253) 32%,
+        rgba(20, 20, 20, 0) 50%,
+        rgba(20, 20, 20, 0.253) 68%,
+        #141414a4 84%,
+        #141414 100%
+    );
+}
+.MuiTooltip-tooltipPlacementTop {
+    margin-bottom: 30px;
 }

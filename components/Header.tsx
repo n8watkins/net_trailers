@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { MagnifyingGlassIcon, BellIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
+import useAuth from '../hooks/useAuth'
 function Header() {
     const [isScrolled, setIsScrolled] = useState(false)
+    const { logOut } = useAuth()
     useEffect(() => {
         const handleScroll = () => {
             if (window.scrollY > 0) {
@@ -41,13 +43,13 @@ function Header() {
             <div className="flex items-center space-x-4 text-sm font-light  ">
                 <MagnifyingGlassIcon className="  h-6 w-6 cursor-pointer" />
                 <BellIcon className="hidden h-6 w-6 sm:inline cursor-pointer" />
-                <Link href="/account">
-                    <img
-                        src="https://occ-0-3997-3996.1.nflxso.net/dnm/api/v6/K6hjPJd6cR6FpVELC5Pd6ovHRSk/AAAABX5_zNxCZOEGlSGykILrWVH75fVZe_-5H9HlAXtJoNs6AK8FTjyMG-llwgLJXGA8RUwxotwOOHMh3ovdrXFpq9-J4CBmFKA.png?r=1d4"
-                        alt=""
-                        className="rounded h-8 w-8 cursor-pointer"
-                    />
-                </Link>
+
+                <img
+                    onClick={logOut}
+                    src="https://occ-0-3997-3996.1.nflxso.net/dnm/api/v6/K6hjPJd6cR6FpVELC5Pd6ovHRSk/AAAABX5_zNxCZOEGlSGykILrWVH75fVZe_-5H9HlAXtJoNs6AK8FTjyMG-llwgLJXGA8RUwxotwOOHMh3ovdrXFpq9-J4CBmFKA.png?r=1d4"
+                    alt=""
+                    className="rounded h-8 w-8 cursor-pointer"
+                />
             </div>
         </header>
     )

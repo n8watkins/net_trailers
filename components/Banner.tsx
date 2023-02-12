@@ -1,43 +1,24 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Movie, TV } from '../typings'
+import { Movie } from '../typings'
 import Image from 'next/image'
 import { BASE_URL } from '../constants/movie'
 import { PlayIcon } from '@heroicons/react/24/solid'
 import { InformationCircleIcon } from '@heroicons/react/24/outline'
+import { modalState, movieState } from '../atoms/modalAtom'
+import { useRecoilState } from 'recoil'
 
 interface Props {
     trending: Movie[]
-    // topRatedMovies: Movie[]
-    // actionMovies: Movie[]
-    // comedyMovies: Movie[]
-    // horrorMovies: Movie[]
-    // romanceMovies: Movie[]
-    // documentaries: Movie[]
-    // topRatedTV: TV[]
-    // actionTV: TV[]
-    // comedyTV: TV[]
-    // horrorTV: TV[]
 }
 
 //pass props to Banner component
-function Banner({
-    trending,
-}: // topRatedMovies,
-// actionMovies,
-// comedyMovies,
-// horrorMovies,
-// romanceMovies,
-// documentaries,
-// topRatedTV,
-// actionTV,
-// comedyTV,
-// horrorTV,
-Props) {
-    //state for random movie
+function Banner({ trending }: Props) {
+    const [showModal, setShowModal] = useRecoilState(modalState)
+    const [currentMovie, setCurrentMovie] = useRecoilState(movieState)
+
     const [randomMovie, setRandomMovie] = useState<Movie | null>(null)
 
-    //randomly select a movie from trending
     useEffect(() => {
         setRandomMovie(trending[Math.floor(Math.random() * trending.length)])
     }, [trending])
@@ -86,7 +67,13 @@ Props) {
                         {/* </Link> */}
                         {/*more info button */}
                         {/* <Link href={`/movie/${randomMovie?.id}`}> */}
-                        <button className=" text-shadow-3xl bannerButton flex bg-[rgba(109,109,110,0.7)] text-[white] hover:bg-[rgba(109,109,110,0.6)] ">
+                        <button
+                            className=" text-shadow-3xl bannerButton fex bg-[rgba(109,109,110,0.7)] text-[white] hover:bg-[rgba(109,109,110,0.6)] "
+                            onClick={() => {
+                                setShowModal(true)
+                                setCurrentMovie(randomMovie)
+                            }}
+                        >
                             <InformationCircleIcon className=" h-8 w-8" />
                             More Info
                         </button>

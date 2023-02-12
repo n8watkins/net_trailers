@@ -1,9 +1,14 @@
 import Head from 'next/head'
 import Header from '../components/Header'
 import requests from '../utils/requests'
-import { Movie, TV } from '../typings'
+import { Movie } from '../typings'
 import Banner from '../components/Banner'
 import Row from '../components/Row'
+import useAuth from '../hooks/useAuth'
+import Modal from '../components/Modal'
+import { useState } from 'react'
+import { useRecoilState, useRecoilValue } from 'recoil'
+import { modalState } from '../atoms/modalAtom'
 
 interface Props {
     trending: Movie[]
@@ -13,12 +18,11 @@ interface Props {
     horrorMovies: Movie[]
     romanceMovies: Movie[]
     documentaries: Movie[]
-    topRatedTV: TV[]
-    actionTV: TV[]
-    comedyTV: TV[]
-    horrorTV: TV[]
+    // topRatedTV: TV[]
+    // actionTV: TV[]
+    // comedyTV: TV[]
+    // horrorTV: TV[]
 }
-
 const Home = ({
     trending,
     topRatedMovies,
@@ -27,14 +31,19 @@ const Home = ({
     horrorMovies,
     romanceMovies,
     documentaries,
-    topRatedTV,
-    actionTV,
-    comedyTV,
-    horrorTV,
-}: Props) => {
+}: // topRatedTV,
+// actionTV,
+// comedyTV,
+// horrorTV,
+Props) => {
+    const { loading, error, user } = useAuth()
+    const showModal = useRecoilValue(modalState)
     return (
-        //
-        <div className="relative h-screen overflow-x-clip   ">
+        <div
+            className={`relative h-screen overflow-x-clip ${
+                showModal && `overflow-y-hidden`
+            } `}
+        >
             <Head>
                 <title>Netflix</title>
                 <link rel="icon" href="/netflix-icon.png" />
@@ -55,6 +64,7 @@ const Home = ({
                     <Row title="Top Rated Movies" tv={horrorTV}></Row> 
                     */}
                 </section>
+                {showModal && <Modal />}
             </main>
         </div>
     )
@@ -65,7 +75,8 @@ export default Home
 export const getServerSideProps = async () => {
     const [
         trending,
-        topRatedMovies,
+        topRatedMovies1,
+        topRatedMovies2,
         actionMovies,
         comedyMovies,
         horrorMovies,
@@ -77,7 +88,8 @@ export const getServerSideProps = async () => {
         horrorTV,
     ] = await Promise.all([
         fetch(requests.fetchTrending).then((res) => res.json()),
-        fetch(requests.fetchTopRatedMovies).then((res) => res.json()),
+        fetch(requests.fetchTopRatedMovies1).then((res) => res.json()),
+        fetch(requests.fetchTopRatedMovies2).then((res) => res.json()),
         fetch(requests.fetchActionMovies).then((res) => res.json()),
         fetch(requests.fetchComedyMovies).then((res) => res.json()),
         fetch(requests.fetchHorrorMovies).then((res) => res.json()),
@@ -88,19 +100,27 @@ export const getServerSideProps = async () => {
         fetch(requests.fetchComedyTV).then((res) => res.json()),
         fetch(requests.fetchHorrorTV).then((res) => res.json()),
     ])
+    //randomize array function
+    const randomizeArray = (arr: Movie[]) => {
+        return arr.sort(() => Math.random() - 0.5)
+    }
+
     return {
         props: {
-            trending: trending.results,
-            topRatedMovies: topRatedMovies.results,
-            actionMovies: actionMovies.results,
-            comedyMovies: comedyMovies.results,
-            horrorMovies: horrorMovies.results,
-            romanceMovies: romanceMovies.results,
-            documentaries: documentaries.results,
-            topRatedTV: topRatedTV.results,
-            actionTV: actionTV.results,
-            comedyTV: comedyTV.results,
-            horrorTV: horrorTV.results,
+            trending: randomizeArray(trending.results),
+            topRatedMovies: randomizeArray([
+                ...topRatedMovies1.results,
+                ...topRatedMovies2.results,
+            ]),
+            actionMovies: randomizeArray(actionMovies.results),
+            comedyMovies: randomizeArray(comedyMovies.results),
+            horrorMovies: randomizeArray(horrorMovies.results),
+            romanceMovies: randomizeArray(romanceMovies.results),
+            documentaries: randomizeArray(documentaries.results),
+            topRatedTV: randomizeArray(topRatedTV.results),
+            actionTV: randomizeArray(actionTV.results),
+            comedyTV: randomizeArray(comedyTV.results),
+            horrorTV: randomizeArray(horrorTV.results),
         },
     }
 }

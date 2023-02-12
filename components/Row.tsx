@@ -40,30 +40,41 @@ function Row({ title, movies }: Props) {
         }
     }
     return (
-        <div className="pb-[3rem]">
-            <h2 className=" text-[#e5e5e5] transition duration-200 hover:text-white lg:text-3xl lg:font-semibold  px-16  w-max ">
+        <div className="pb-[2rem]">
+            <h2 className=" text-[#e5e5e5] transition duration-200 hover:text-white lg:text-3xl lg:font-semibold  px-16 py-5 w-max ">
                 {title}
             </h2>
-            <div className="relative w-screen flex group  ">
-                <ChevronLeftIcon
-                    className={`  chevron left-5 z-10   ${
-                        isMoved && `group-hover:opacity-100 cursor-pointer`
+            <div className={`relative w-screen flex group items-center `}>
+                <div
+                    className={`absolute flex z-30 h-[100%] py-2 items-center bg-[#141414]/60 ${
+                        isMoved && ``
                     }`}
-                    onClick={() => handleClick('left')}
-                ></ChevronLeftIcon>
+                >
+                    <ChevronLeftIcon
+                        className={`  chevron left-2  ${
+                            isMoved && `group-hover:opacity-100 cursor-pointer`
+                        }`}
+                        onClick={() => handleClick('left')}
+                    ></ChevronLeftIcon>
+                </div>
                 <div
                     ref={rowRef}
-                    className=" right-0 h-45 px-16 py-2 flex space-x-2 scrollbar-hide overflow-x-scroll"
+                    className="relative  px-60 h- py-2 flex  pl-14 space-x-2 scrollbar-hide overflow-x-scroll"
                 >
                     {movies.map((m) => {
                         return <Thumbnail key={m.id} movie={m} />
                     })}
                 </div>
-
-                <ChevronRightIcon
-                    className="absolute chevron  right-5  group-hover:opacity-100  "
-                    onClick={() => handleClick('right')}
-                ></ChevronRightIcon>
+                <div
+                    className={`absolute flex z-30 h-[100%] py-2  right-0 items-center bg-[#141414]/60 ${
+                        isMoved && ``
+                    }`}
+                >
+                    <ChevronRightIcon
+                        className=" chevron  right-2 group-hover:opacity-100  "
+                        onClick={() => handleClick('right')}
+                    ></ChevronRightIcon>
+                </div>
             </div>
         </div>
     )
