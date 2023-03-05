@@ -40,7 +40,7 @@ const reset = () => {
         <div>
             <Head>
                 <title>Netflix</title>
-                <link rel="icon" href="/netflix-icon.png" />
+                <link rel="icon" href="/netflix.png" />
             </Head>
             <Image
                 src="https://assets.nflxext.com/ffe/siteui/acquisition/login/login-the-crown_2-1500x1000.jpg"

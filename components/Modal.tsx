@@ -1,23 +1,32 @@
-import React, { useEffect, useState } from 'react'
+import React, {
+    useEffect,
+    useState,
+    useRef,
+    MouseEventHandler,
+    MouseEvent,
+} from 'react'
 import MuiModal from '@mui/material/Modal'
 import { useRecoilState, useRecoilValue } from 'recoil'
 import { modalState, movieState } from '../atoms/modalAtom'
 import {
-    FaceFrownIcon,
-    FaceSmileIcon,
-    HandThumbDownIcon,
-    HeartIcon,
+    HandThumbDownIcon as HandThumbDownIconFilled,
     PlayIcon,
+    PauseIcon,
     PlusIcon,
     SpeakerWaveIcon,
     SpeakerXMarkIcon,
     XMarkIcon,
+    HeartIcon as HeartIconFilled,
+    ArrowsPointingOutIcon,
+    ArrowsPointingInIcon,
+    CheckIcon,
 } from '@heroicons/react/24/solid'
-import { HandThumbUpIcon } from '@heroicons/react/24/outline'
+
 import ReactPlayer from 'react-player'
 import Image from 'next/image'
-import { Tooltip } from '@mui/material'
 import { Element, Genre } from '../typings'
+import ToolTipMod from '../components/ToolTipMod'
+import LikeOptions from './LikeOptions'
 
 function Modal() {
     const [showModal, setShowModal] = useRecoilState(modalState)
@@ -26,12 +35,57 @@ function Modal() {
     const [genres, setGenres] = useState<Genre[]>([])
     const [muted, setMuted] = useState(true)
     const [playing, setPlaying] = useState(true)
-    const [trailerEnded, setTrailerEnded] = useState(false)
+    const [trailerEnded, setTrailerEnded] = useState(true)
+    const [fullScreen, setFullScreen] = useState(false)
+    const [player, setPlayer] = useState<ReactPlayer | null>(null)
+    const divRef = useRef<HTMLDivElement>(null)
+    const [secondsPlayed, setSecondsPlayed] = useState(0)
+    const [onMyList, setOnMyList] = useState(false)
+
+    let timeout: ReturnType<typeof setTimeout> | null = null
+    let timeout2: ReturnType<typeof setTimeout> | null = null
+
+    let clickCount = 0
+
+    function isFullScreen() {
+        return document.fullscreenElement
+    }
+
+    function handleSingleOrDoubleClick(event: MouseEvent) {
+        if (player) {
+            // console.log('currentTime', player?.getCurrentTime())
+            setSecondsPlayed(player?.getCurrentTime())
+        }
+        togglePlaying()
+    }
+
+    function handleFullscreenChange() {
+        if (!isFullScreen()) {
+            console.log('exited full-screen mode')
+            setFullScreen(false)
+        }
+        if (isFullScreen()) {
+            console.log('full-screen mode')
+            setMuted(false)
+            setFullScreen(true)
+        }
+    }
+
+    const makeFullScreen = () => {
+        player?.getInternalPlayer().h.requestFullscreen()
+    }
+
+    const handleMuteToggle = () => {
+        setMuted(!muted)
+    }
+
+    const togglePlaying = () => {
+        setPlaying(!playing)
+    }
 
     const handleClose = () => {
         setShowModal(!showModal)
     }
-    const handleVolume = () => {}
 
     useEffect(() => {
         if (!currentMovie) return
@@ -58,12 +112,34 @@ function Modal() {
         fetchMovie()
     }, [currentMovie])
 
+    useEffect(() => {
+        document.addEventListener('fullscreenchange', handleFullscreenChange)
+        return () => {
+            document.removeEventListener(
+                'fullscreenchange',
+                handleFullscreenChange
+            )
+        }
+    }, [])
+
+    const anchorRef = React.useRef<HTMLDivElement>(null)
+    const [anchorEl, setAnchorEl] = React.useState<HTMLDivElement | null>(null)
+    React.useEffect(() => {
+        setTimeout(() => setAnchorEl(anchorRef?.current), 2000)
+    }, [anchorRef])
     return (
         <MuiModal open={showModal} onClose={handleClose}>
             <>
                 <div className="absolute flex justify-center w-screen h-screen">
                     <div className=" relative  min-w-[850px] z-10 rounded-md h-screen top-[2em] bg-[#141414]">
-                        <div className="absolute h-[450px] w-[850px]  bg-more-info ">
+                        <div className={`absolute h-[450px] w-[850px]`}>
+                            <div
+                                //should only be clickable if not full screen
+                                className="absolute top-0 right-0 h-[500px] w-[850px]  bg-transparent cursor-pointer bg-moreInfo z-10 "
+                                onClick={(e) => {
+                                    handleSingleOrDoubleClick(e)
+                                }}
+                            ></div>
                             <button
                                 className=" z-30 absolute cursor-pointer rounded-full bg-black/80  py-1 px-1 right-5 top-5"
                                 onClick={handleClose}
@@ -71,52 +147,67 @@ function Modal() {
                                 <XMarkIcon className="h-6 w-6 rounded-full "></XMarkIcon>
                             </button>
 
-                            <button
-                                className=" z-30 absolute cursor-pointer  right-5 bottom-5"
-                                onClick={handleVolume}
-                            >
-                                {muted ? (
-                                    <SpeakerXMarkIcon
-                                        onClick={() => setMuted(!muted)}
-                                        className="h-6 w-6 rounded-full "
-                                    ></SpeakerXMarkIcon>
-                                ) : (
-                                    <SpeakerWaveIcon
-                                        onClick={() => setMuted(!muted)}
-                                        className="h-6 w-6 rounded-full "
-                                    ></SpeakerWaveIcon>
-                                )}
-                            </button>
-                            <div className=" absolute z-20 top-0  bg-more-info h-screen w-full "></div>
-
-                            {trailer && !trailerEnded ? (
-                                <div className="   relative pt-[56.25%]">
-                                    <ReactPlayer
-                                        config={{
-                                            youtube: {
-                                                playerVars: {
-                                                    cc_load_policy: 1,
-                                                    autoplay: 0,
-                                                    controls: 0,
-                                                    iv_load_policy: 1,
-                                                    modestbranding: 1,
+                            {(trailer && !trailerEnded) ||
+                            playing ||
+                            fullScreen ? (
+                                <>
+                                    <div
+                                        className=" relative bg-black pt-[56.25%]"
+                                        ref={divRef}
+                                        onClick={() => console.log('testttttt')}
+                                    >
+                                        <ReactPlayer
+                                            config={{
+                                                youtube: {
+                                                    playerVars: {
+                                                        cc_load_policy: 1,
+                                                        autoplay: 0,
+                                                        controls: 0,
+                                                        iv_load_policy: 3,
+                                                        modestbranding: 1,
+                                                    },
+                                                    embedOptions: {},
                                                 },
-                                                embedOptions: {},
-                                            },
-                                        }}
-                                        url={`https://www.youtube.com/watch?v=${trailer}`}
-                                        width="100%"
-                                        height="100%"
-                                        className=" absolute top-0 left-0 rounded-md"
-                                        playing={playing}
-                                        volume={0.5}
-                                        muted={muted}
-                                        onEnded={() => {
-                                            setTrailerEnded(true)
-                                            setPlaying(false)
-                                        }}
-                                    />
-                                </div>
+                                            }}
+                                            url={`https://www.youtube.com/watch?v=${trailer}`}
+                                            width="99%"
+                                            height="100%"
+                                            className="z-5 absolute top-0 left-1     rounded-md"
+                                            playing={playing}
+                                            volume={0.5}
+                                            muted={muted}
+                                            onEnded={() => {
+                                                setTrailerEnded(true)
+                                                setPlaying(false)
+                                                setFullScreen(false)
+                                                setSecondsPlayed(0)
+                                            }}
+                                            onPause={() => {
+                                                setPlaying(false)
+                                                setTrailerEnded(true)
+                                            }}
+                                            onPlay={() => {
+                                                setPlaying(true)
+                                                setTrailerEnded(false)
+                                            }}
+                                            onReady={() => {
+                                                // Check to see if the user has already played the video
+                                                setTimeout(() => {
+                                                    player!.seekTo(
+                                                        secondsPlayed,
+                                                        'seconds'
+                                                    )
+                                                }, 50)
+                                                // if (fullScreen) {
+                                                //     player!
+                                                //         .getInternalPlayer()
+                                                //         .h.requestFullscreen()
+                                                // }
+                                            }}
+                                            ref={(ref) => setPlayer(ref)}
+                                        />
+                                    </div>
+                                </>
                             ) : (
                                 <div className="flex justify-center items-center h-full w-full">
                                     <Image
@@ -130,202 +221,94 @@ function Modal() {
                                     ></Image>
                                 </div>
                             )}
-                            {!playing && (
-                                <h3 className="absolute z-20 pl-[1em] font-semibold  text-shadow-3xl  text-white text-7xl top-40 w-[600px] ">
-                                    {currentMovie?.title || currentMovie?.name}
-                                </h3>
-                            )}
-                            <div className="absolute flex bottom-20 left-20  items-center  gap-2 ">
-                                <div className="flex gap-2 z-30">
-                                    <button className=" modalButtons  bg-[white] text-black hover:bg-[white]/[.6] ">
-                                        <PlayIcon className=" md:h-10 md:w-10 lg:h-10 lg:w-10 " />
-                                        <div>Play</div>
-                                    </button>
-                                    <Tooltip
-                                        title="Add to My List"
-                                        placement="top"
-                                        arrow
-                                        enterDelay={100}
-                                        leaveDelay={100}
-                                        componentsProps={{
-                                            popper: {
-                                                modifiers: [
-                                                    {
-                                                        name: 'offset',
-                                                        options: {
-                                                            offset: [
-                                                                0, 15, 0, 0,
-                                                            ],
-                                                        },
-                                                    },
-                                                ],
-                                            },
 
-                                            arrow: {
-                                                sx: {
-                                                    color: '#4A4A4A',
-                                                    '&::before': {
-                                                        backgroundColor:
-                                                            'white',
-                                                    },
-                                                },
-                                            },
-                                            tooltip: {
-                                                sx: {
-                                                    color: '#141414',
-                                                    fontSize: '1.3rem',
-                                                    fontWeight: '600',
-                                                    backgroundColor: 'white',
-                                                    border: '1px solid white',
-                                                    boxShadow:
-                                                        '5px 5px 20px black',
-                                                },
-                                            },
-                                        }}
-                                    >
-                                        <PlusIcon className="  border-solid border-white/30 py-0.5 border-2 hover:bg-[black]/50 hover:border-white rounded-full bg-black/20  md:h-10 md:w-10 lg:h-10 lg:w-10 " />
-                                    </Tooltip>
-                                </div>
-                                <div className="relative flex left-5 group items-center justify-center ">
-                                    <HandThumbUpIcon className=" absolute peer border-solid py-1 border-2  border-white/30 hover:bg-black/50 rounded-full bg-black/20  md:h-10 md:w-10 lg:h-10 lg:w-10 " />
-                                    <div className="absolute flex group  h-14 items-center  rounded-3xl   w-44 justify-center z-20 duration-200  group-hover:z-40 hover:bg-[#141414] transition-all  hover:drop-shadow-4xl    ">
-                                        <Tooltip
-                                            title="Not for me"
-                                            placement="top"
-                                            arrow
-                                            enterDelay={200}
-                                            leaveDelay={0}
-                                            componentsProps={{
-                                                popper: {
-                                                    modifiers: [
-                                                        {
-                                                            name: 'offset',
-                                                            options: {
-                                                                offset: [
-                                                                    0, 15, 0, 0,
-                                                                ],
-                                                            },
-                                                        },
-                                                    ],
-                                                },
+                            <div className="absolute flex flex-col  top-80 left-20  z-30 items-center  gap-2 ">
+                                <div>
+                                    <div className=" absolutue flex gap-2 cursor-pointer w-80 right-0">
+                                        {trailer && (
+                                            <button
+                                                className=" modalButtons  bg-[white] lg:w-44 text-black hover:bg-[white]/[.6] "
+                                                onClick={togglePlaying}
+                                            >
+                                                {playing || !trailer ? (
+                                                    <>
+                                                        <PauseIcon className=" IconDimensions " />
+                                                        <div>Pause</div>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <PlayIcon className=" IconDimensions " />
+                                                        <div>Play</div>
+                                                    </>
+                                                )}
+                                            </button>
+                                        )}
 
-                                                arrow: {
-                                                    sx: {
-                                                        color: '#4A4A4A',
-                                                        '&::before': {
-                                                            backgroundColor:
-                                                                'white',
-                                                        },
-                                                    },
-                                                },
-                                                tooltip: {
-                                                    sx: {
-                                                        color: '#141414',
-                                                        fontSize: '1.3rem',
-                                                        fontWeight: '600',
-                                                        backgroundColor:
-                                                            'white',
-                                                        border: '1px solid white',
-                                                        boxShadow:
-                                                            '5px 5px 20px black',
-                                                    },
-                                                },
-                                            }}
-                                        >
-                                            <HandThumbDownIcon className=" relative items-center hover:bg-gray-700  border-solid  transition-all  duration-300 group-hover:-translate-x-8  text-transparent  group-hover:text-blue-500   py-1  rounded-full  group-hover:z-40 md:h-10 md:w-10 lg:h-10 lg:w-10 " />
-                                        </Tooltip>
-
-                                        <Tooltip
-                                            title="I like this"
-                                            placement="top"
-                                            arrow
-                                            enterDelay={200}
-                                            leaveDelay={0}
-                                            componentsProps={{
-                                                popper: {
-                                                    modifiers: [
-                                                        {
-                                                            name: 'offset',
-                                                            options: {
-                                                                offset: [
-                                                                    0, 15, 0, 0,
-                                                                ],
-                                                            },
-                                                        },
-                                                    ],
-                                                },
-
-                                                arrow: {
-                                                    sx: {
-                                                        color: '#4A4A4A',
-                                                        '&::before': {
-                                                            backgroundColor:
-                                                                'white',
-                                                        },
-                                                    },
-                                                },
-                                                tooltip: {
-                                                    sx: {
-                                                        color: '#141414',
-                                                        fontSize: '1.3rem',
-                                                        fontWeight: '600',
-                                                        backgroundColor:
-                                                            'white',
-                                                        border: '1px solid white',
-                                                        boxShadow:
-                                                            '5px 5px 20px black',
-                                                    },
-                                                },
-                                            }}
-                                        >
-                                            <HandThumbUpIcon className=" absolute  py-1   items-center hidden group-hover:inline border-white/30 hover:bg-gray-700 rounded-full bg-black/20 -full md:h-10 md:w-10 lg:h-10 lg:w-10 " />
-                                        </Tooltip>
-                                        <Tooltip
-                                            title="Love this!"
-                                            placement="top"
-                                            arrow
-                                            enterDelay={200}
-                                            leaveDelay={0}
-                                            componentsProps={{
-                                                popper: {
-                                                    modifiers: [
-                                                        {
-                                                            name: 'offset',
-                                                            options: {
-                                                                offset: [
-                                                                    0, 15, 0, 0,
-                                                                ],
-                                                            },
-                                                        },
-                                                    ],
-                                                },
-
-                                                arrow: {
-                                                    sx: {
-                                                        color: '#4A4A4A',
-                                                        '&::before': {
-                                                            backgroundColor:
-                                                                'white',
-                                                        },
-                                                    },
-                                                },
-                                                tooltip: {
-                                                    sx: {
-                                                        color: '#141414',
-                                                        fontSize: '1.3rem',
-                                                        fontWeight: '600',
-                                                        backgroundColor:
-                                                            'white',
-                                                        border: '1px solid white',
-                                                        boxShadow:
-                                                            '5px 5px 20px black',
-                                                    },
-                                                },
-                                            }}
-                                        >
-                                            <HeartIcon className="    transition-all items-center justify-self-center z-10 duration-300   hover:bg-gray-700 group-hover:translate-x-8 text-transparent  group-hover:text-red-500   py-1   rounded-full  -full md:h-10 md:w-10 lg:h-10 lg:w-10 " />
-                                        </Tooltip>
+                                        {onMyList ? (
+                                            <ToolTipMod
+                                                title="Remove from My List "
+                                                anchorEl={anchorEl}
+                                            >
+                                                <CheckIcon
+                                                    className=" IconDimensions ratingIcon relative border-solid border-white/30 z-10 border-2 hover:bg-[black]/50 hover:border-white  bg-black/20  text-white"
+                                                    onClick={() =>
+                                                        setOnMyList(!onMyList)
+                                                    }
+                                                    ref={anchorRef}
+                                                />
+                                            </ToolTipMod>
+                                        ) : (
+                                            <ToolTipMod title="Add to My List">
+                                                <PlusIcon
+                                                    className="IconDimensions ratingIcon relative border-solid border-white/30 z-10 border-2 hover:bg-[black]/50 hover:border-white  bg-black/20  text-white"
+                                                    onClick={() =>
+                                                        setOnMyList(!onMyList)
+                                                    }
+                                                />
+                                            </ToolTipMod>
+                                        )}
+                                        <LikeOptions />
+                                        {playing && trailer && (
+                                            <>
+                                                <div className="absolute -right-20  top-0 z-60">
+                                                    {muted ? (
+                                                        <SpeakerXMarkIcon
+                                                            onClick={
+                                                                handleMuteToggle
+                                                            }
+                                                            className="h-10 w-10 rounded-full  border-solid border-white/30  border-2 hover:bg-[black]/50 hover:border-white  bg-black/20  text-white py-1"
+                                                        ></SpeakerXMarkIcon>
+                                                    ) : (
+                                                        <SpeakerWaveIcon
+                                                            onClick={
+                                                                handleMuteToggle
+                                                            }
+                                                            className="h-10 w-10 rounded-full  border-solid border-white/30  border-2 hover:bg-[black]/50 hover:border-white  bg-black/20  text-white py-1"
+                                                        ></SpeakerWaveIcon>
+                                                    )}
+                                                </div>
+                                                <div className="absolute -right-32  top-0 z-60">
+                                                    <ArrowsPointingOutIcon
+                                                        onClick={() =>
+                                                            makeFullScreen()
+                                                        }
+                                                        className="h-10 w-10 rounded-full  border-solid border-white/30  border-2 hover:bg-[black]/50 hover:border-white  bg-black/20  text-white py-1"
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
+                                    <div
+                                        className="absolute   bg-transparent w-80 h-11 top-0 right-0 cursor-pointer"
+                                        onClick={handleSingleOrDoubleClick}
+                                    ></div>
+                                    <h3
+                                        className=" z-20 font-semibold cursor-pointer text-shadow-3xl  text-white text-7xl  w-[600px] "
+                                        onClick={handleSingleOrDoubleClick}
+                                    >
+                                        {currentMovie?.title ||
+                                            currentMovie?.name}
+                                    </h3>
                                 </div>
                             </div>
                         </div>

@@ -11,7 +11,7 @@ function signUp() {
         <div className="absolute w-screen h-[140vh]">
             <Head>
                 <title>Netflix</title>
-                <link rel="icon" href="/netflix-icon.png" />
+                <link rel="icon" href="/netflix.png" />
             </Head>
             <div className="bg-white h-20"></div>
 

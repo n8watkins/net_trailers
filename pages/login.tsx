@@ -60,7 +60,7 @@ function login() {
         <div className="absolute w-screen 2xl:h-[48.8vw] h-screen bg-gradient-to-br  from-black/70 to-black/20 ">
             <Head>
                 <title>Netflix</title>
-                <link rel="icon" href="/netflix-icon.png" />
+                <link rel="icon" href="/netflix.png" />
             </Head>
             <Image
                 src="https://rb.gy/p2hphi"

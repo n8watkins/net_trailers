@@ -1,4 +1,3 @@
-import Head from 'next/head'
 import Header from '../components/Header'
 import requests from '../utils/requests'
 import { Movie } from '../typings'
@@ -9,7 +8,7 @@ import Modal from '../components/Modal'
 import { useState } from 'react'
 import { useRecoilState, useRecoilValue } from 'recoil'
 import { modalState } from '../atoms/modalAtom'
-
+import Head from 'next/head'
 interface Props {
     trending: Movie[]
     topRatedMovies: Movie[]
@@ -31,11 +30,7 @@ const Home = ({
     horrorMovies,
     romanceMovies,
     documentaries,
-}: // topRatedTV,
-// actionTV,
-// comedyTV,
-// horrorTV,
-Props) => {
+}: Props) => {
     const { loading, error, user } = useAuth()
     const showModal = useRecoilValue(modalState)
     return (
@@ -46,12 +41,13 @@ Props) => {
         >
             <Head>
                 <title>Netflix</title>
-                <link rel="icon" href="/netflix-icon.png" />
+                <link rel="icon" href="/netflix.png" />
             </Head>
             <Header />
             <main id="content" className="absolute top-0 h-screen w-screen  ">
                 <Banner trending={trending} />
                 <section className="absolute top-[50em] pb-52  ">
+                    <Row title="Trending" movies={trending}></Row>
                     <Row title="Top Rated Movies" movies={topRatedMovies}></Row>
                     <Row title="Action Movies" movies={actionMovies}></Row>
                     <Row title="Comedy Movies" movies={comedyMovies}></Row>

@@ -34,6 +34,18 @@
     .labelFocus {
         @apply peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4;
     }
+    .ratingIcon {
+        @apply cursor-pointer hover:bg-gray-800 text-white absolute items-center  transition-all duration-300 py-1  rounded-full;
+    }
+    .IconDimensions {
+        @apply h-8 w-8 md:h-10 md:w-10 lg:h-11 lg:w-11;
+    }
+    .translateRight {
+        @apply translate-x-8 md:translate-x-9 lg:translate-x-14;
+    }
+    .translateLeft {
+        @apply -translate-x-8 md:-translate-x-9 lg:-translate-x-14;
+    }
     /* .backGround {
         @apply bg-gradient-to-b from-transparent to-black;
     } */
