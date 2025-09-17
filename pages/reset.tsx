@@ -8,7 +8,7 @@ import useAuth, { AuthProvider, AuthContext } from '../hooks/useAuth'
 interface Inputs {
     email: string
 }
-const reset = () => {
+const Reset = () => {
     const {
         resetPass,
         passResetSuccess,
@@ -118,4 +118,4 @@ const reset = () => {
         </div>
     )
 }
-export default reset
+export default Reset

@@ -8,6 +8,9 @@ import React, {
 import MuiModal from '@mui/material/Modal'
 import { useRecoilState, useRecoilValue } from 'recoil'
 import { modalState, movieState } from '../atoms/modalAtom'
+import { errorsState, loadingState } from '../atoms/errorAtom'
+import { createErrorHandler } from '../utils/errorHandler'
+import { getTitle, getYear, getContentType, Content, isMovie } from '../typings'
 import {
     HandThumbDownIcon as HandThumbDownIconFilled,
     PlayIcon,
@@ -31,6 +34,9 @@ import LikeOptions from './LikeOptions'
 function Modal() {
     const [showModal, setShowModal] = useRecoilState(modalState)
     const [currentMovie, setCurrentMovie] = useRecoilState(movieState)
+    const [errors, setErrors] = useRecoilState(errorsState)
+    const [isLoading, setIsLoading] = useRecoilState(loadingState)
+    const errorHandler = createErrorHandler(setErrors)
     const [trailer, setTrailer] = useState('')
     const [genres, setGenres] = useState<Genre[]>([])
     const [muted, setMuted] = useState(true)
@@ -89,21 +95,38 @@ function Modal() {
         if (!currentMovie) return
 
         async function fetchMovie() {
-            const data = await fetch(
-                `https://api.themoviedb.org/3/${
-                    currentMovie?.media_type === 'tv' ? 'tv' : 'movie'
-                }/${currentMovie?.id}?api_key=${
-                    process.env.NEXT_PUBLIC_API_KEY
-                }&language=en-US&append_to_response=videos`
-            ).then((response) => response.json())
-            if (data?.videos) {
-                const index = data.videos.results.findIndex(
-                    (element: Element) => element.type === 'Trailer'
+            try {
+                setIsLoading(true)
+                const response = await fetch(
+                    `https://api.themoviedb.org/3/${
+                        currentMovie?.media_type === 'tv' ? 'tv' : 'movie'
+                    }/${currentMovie?.id}?api_key=${
+                        process.env.NEXT_PUBLIC_API_KEY
+                    }&language=en-US&append_to_response=videos`
                 )
-                setTrailer(data.videos?.results[index]?.key)
-            }
-            if (data?.genres) {
-                setGenres(data.genres)
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+                }
+
+                const data = await response.json()
+
+                if (data?.videos) {
+                    const index = data.videos.results.findIndex(
+                        (element: Element) => element.type === 'Trailer'
+                    )
+                    setTrailer(data.videos?.results[index]?.key)
+                }
+                if (data?.genres) {
+                    setGenres(data.genres)
+                }
+            } catch (error: any) {
+                console.error('Failed to fetch movie details:', error)
+                errorHandler.handleApiError(error, 'load movie details')
+                setTrailer('')
+                setGenres([])
+            } finally {
+                setIsLoading(false)
             }
         }
 
@@ -302,8 +325,7 @@ function Modal() {
                                         className=" z-20 font-semibold cursor-pointer text-shadow-3xl  text-white text-7xl  w-[600px] "
                                         onClick={handleSingleOrDoubleClick}
                                     >
-                                        {currentMovie?.title ||
-                                            currentMovie?.name}
+                                        {currentMovie ? getTitle(currentMovie as Content) : ''}
                                     </h3>
                                 </div>
                             </div>

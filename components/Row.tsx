@@ -1,13 +1,13 @@
 import React, { useRef, useState } from 'react'
-import { Movie } from '../typings'
+import { Content } from '../typings'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 import Thumbnail from './Thumbnail'
 
 interface Props {
     title: string
-    movies: Movie[]
+    content: Content[]
 }
-function Row({ title, movies }: Props) {
+function Row({ title, content }: Props) {
     const rowRef = useRef<HTMLDivElement>(null)
     const [isMoved, setIsMoved] = useState(false)
 
@@ -60,8 +60,8 @@ function Row({ title, movies }: Props) {
                     ref={rowRef}
                     className="relative  px-60 h- py-2 flex  pl-14 space-x-2 scrollbar-hide overflow-x-scroll"
                 >
-                    {movies.map((m) => {
-                        return <Thumbnail key={m.id} movie={m} />
+                    {content.map((item) => {
+                        return <Thumbnail key={item.id} content={item} />
                     })}
                 </div>
                 <div

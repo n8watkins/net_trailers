@@ -11,7 +11,7 @@ interface Inputs {
     password: string
 }
 
-function login() {
+function Login() {
     const router = useRouter()
 
     const [login, setLogin] = React.useState(false)
@@ -167,4 +167,4 @@ function login() {
     )
 }
 
-export default login
+export default Login

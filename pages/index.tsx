@@ -1,6 +1,6 @@
 import Header from '../components/Header'
 import requests from '../utils/requests'
-import { Movie } from '../typings'
+import { Content } from '../typings'
 import Banner from '../components/Banner'
 import Row from '../components/Row'
 import useAuth from '../hooks/useAuth'
@@ -10,17 +10,13 @@ import { useRecoilState, useRecoilValue } from 'recoil'
 import { modalState } from '../atoms/modalAtom'
 import Head from 'next/head'
 interface Props {
-    trending: Movie[]
-    topRatedMovies: Movie[]
-    actionMovies: Movie[]
-    comedyMovies: Movie[]
-    horrorMovies: Movie[]
-    romanceMovies: Movie[]
-    documentaries: Movie[]
-    // topRatedTV: TV[]
-    // actionTV: TV[]
-    // comedyTV: TV[]
-    // horrorTV: TV[]
+    trending: Content[]
+    topRatedMovies: Content[]
+    actionMovies: Content[]
+    comedyMovies: Content[]
+    horrorMovies: Content[]
+    romanceMovies: Content[]
+    documentaries: Content[]
 }
 const Home = ({
     trending,
@@ -47,18 +43,13 @@ const Home = ({
             <main id="content" className="relative min-h-screen">
                 <Banner trending={trending} />
                 <section className="relative -mt-20 z-10 pb-52 space-y-8">
-                    <Row title="Trending" movies={trending}></Row>
-                    <Row title="Top Rated Movies" movies={topRatedMovies}></Row>
-                    <Row title="Action Movies" movies={actionMovies}></Row>
-                    <Row title="Comedy Movies" movies={comedyMovies}></Row>
-                    <Row title="Horror Movies" movies={horrorMovies}></Row>
-                    <Row title="Romance Movies" movies={romanceMovies}></Row>
-                    <Row title="Documentaries" movies={documentaries}></Row>
-                    {/* <Row title="Top Rated Movies" tv={topRatedTV}></Row>
-                    <Row title="Top Rated Movies" tv={actionTV}></Row>
-                    <Row title="Top Rated Movies" tv={comedyTV}></Row>
-                    <Row title="Top Rated Movies" tv={horrorTV}></Row> 
-                    */}
+                    <Row title="Trending" content={trending}></Row>
+                    <Row title="Top Rated Movies" content={topRatedMovies}></Row>
+                    <Row title="Action Movies" content={actionMovies}></Row>
+                    <Row title="Comedy Movies" content={comedyMovies}></Row>
+                    <Row title="Horror Movies" content={horrorMovies}></Row>
+                    <Row title="Romance Movies" content={romanceMovies}></Row>
+                    <Row title="Documentaries" content={documentaries}></Row>
                 </section>
                 {showModal && <Modal />}
             </main>
@@ -93,7 +84,7 @@ export const getServerSideProps = async () => {
         ])
 
         // Proper Fisher-Yates shuffle algorithm (unbiased randomization)
-        const randomizeArray = (arr: Movie[]) => {
+        const randomizeArray = (arr: Content[]) => {
             const shuffled = [...arr] // Create copy to avoid mutating original
             for (let i = shuffled.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));

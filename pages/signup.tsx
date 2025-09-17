@@ -2,7 +2,7 @@ import Head from 'next/head'
 import Image from 'next/image'
 import React, { useEffect } from 'react'
 
-function signUp() {
+function SignUp() {
     //state for email and password
 
     const [email, setEmail] = React.useState('')
@@ -129,4 +129,4 @@ function signUp() {
     )
 }
 
-export default signUp
+export default SignUp

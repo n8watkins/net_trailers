@@ -19,6 +19,9 @@ import {
 
 import { auth } from '../firebase'
 import { useRouter } from 'next/router'
+import { useRecoilState } from 'recoil'
+import { errorsState, loadingState } from '../atoms/errorAtom'
+import { createErrorHandler } from '../utils/errorHandler'
 
 interface AuthProviderProps {
     children: React.ReactNode
@@ -59,6 +62,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const [error, setError] = useState<string | null>(null)
     const router = useRouter()
     const [attemptPassReset, setAttemptPassReset] = useState(false)
+    const [errors, setErrors] = useRecoilState(errorsState)
+    const [globalLoading, setGlobalLoading] = useRecoilState(loadingState)
+    const errorHandler = createErrorHandler(setErrors)
 
     // console.log('auth.js-attemptPassReset', attemptPassReset)
     useEffect(() => {
@@ -83,43 +89,48 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     const signUp = async (email: string, password: string) => {
         setLoading(true)
+        setGlobalLoading(true)
         await createUserWithEmailAndPassword(auth, email, password)
             .then((userCredential) => {
                 const user = userCredential.user
+                errorHandler.addSuccess('Account created successfully! Welcome to NetTrailer.')
                 router.push('/')
                 setLoading(false)
             })
             .catch((error) => {
-                const errorCode = error.code
-                const errorMessage = error.message
-                alert(errorMessage)
+                errorHandler.handleAuthError(error)
+                setError(error.message)
             })
             .finally(() => {
                 setLoading(false)
+                setGlobalLoading(false)
             })
     }
 
     const signIn = async (email: string, password: string) => {
         setLoading(true)
+        setGlobalLoading(true)
         await signInWithEmailAndPassword(auth, email, password)
             .then((userCredential) => {
                 const user = userCredential.user
+                errorHandler.addSuccess('Successfully signed in! Welcome back.')
                 router.push('/')
                 setLoading(false)
             })
             .catch((error) => {
-                const errorCode = error.code
-                const errorMessage = error.message
-                alert(errorMessage)
+                errorHandler.handleAuthError(error)
+                setError(error.message)
                 setLoading(false)
             })
             .finally(() => {
                 setLoading(false)
+                setGlobalLoading(false)
             })
     }
 
     const signInWithGoogle = async () => {
         setLoading(true)
+        setGlobalLoading(true)
         const provider = new GoogleAuthProvider()
         await signInWithPopup(auth, provider)
             .then((result) => {
@@ -127,33 +138,43 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                     GoogleAuthProvider.credentialFromResult(result)
                 const token = credential!.accessToken
                 const user = result.user
+                errorHandler.addSuccess('Successfully signed in with Google!')
+                router.push('/')
             })
             .catch((error) => {
-                const errorCode = error.code
-                const errorMessage = error.message
-                const email = error.email
-                const credential = GoogleAuthProvider.credentialFromError(error)
+                errorHandler.handleAuthError(error)
+                setError(error.message)
+            })
+            .finally(() => {
+                setLoading(false)
+                setGlobalLoading(false)
             })
     }
     const logOut = async () => {
         setLoading(true)
+        setGlobalLoading(true)
         signOut(auth)
-            .then(() => {})
+            .then(() => {
+                errorHandler.addSuccess('Successfully signed out. See you next time!')
+            })
             .catch((error) => {
-                alert(error.message)
+                errorHandler.handleAuthError(error)
                 setError(error.message)
                 setLoading(false)
             })
             .finally(() => {
                 setLoading(false)
+                setGlobalLoading(false)
             })
     }
     const resetPass = async (email: string) => {
         await sendPasswordResetEmail(auth, email)
             .then(() => {
                 setPassResetSuccess(true)
+                errorHandler.addSuccess('Password reset email sent! Check your inbox.')
             })
             .catch((error) => {
+                errorHandler.handleAuthError(error)
                 setError(error.message)
                 setPassResetSuccess(false)
             })
