@@ -1,8 +1,24 @@
-# 🔐 External Tasks - Security & API Configuration
+# 📋 Project Task Consolidation
 
-## 🚨 URGENT SECURITY TASKS (Do Before Public Deployment)
+## 🚨 CRITICAL GLARING ISSUES (External Dependencies)
+> **Status**: Remaining from original 16 glaring issues - require external account access
 
-### 1. Regenerate Firebase Keys
+### Issue #1: Exposed API Keys (TMDB)
+**Original Priority**: CRITICAL
+**Status**: Requires external action
+**Steps to complete:**
+1. Go to [TMDB Website](https://www.themoviedb.org/)
+2. Create account or login
+3. Go to Settings → API
+4. Request an API key (free)
+5. Copy the API key to `.env.local`:
+   ```
+   TMDB_API_KEY=your_actual_tmdb_api_key_here
+   ```
+
+### Issue #6: Insecure Firebase Configuration
+**Original Priority**: CRITICAL
+**Status**: Requires external action
 **Priority**: HIGH - Previous keys were exposed in source code
 **Timeline**: Before any public deployment
 

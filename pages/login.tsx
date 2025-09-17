@@ -4,7 +4,8 @@ import React, { useEffect } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import useAuth from '../hooks/useAuth'
 import { useRouter } from 'next/router'
-import reset from './reset'
+import useUserData from '../hooks/useUserData'
+import { useState } from 'react'
 
 interface Inputs {
     email: string
@@ -13,6 +14,7 @@ interface Inputs {
 
 function Login() {
     const router = useRouter()
+    const { startGuestSession } = useUserData()
 
     const [login, setLogin] = React.useState(false)
 
@@ -54,6 +56,11 @@ function Login() {
     const handlePasswordReset = () => {
         router.push('/reset')
         setAttemptPassReset(true)
+    }
+
+    const handleGuestLogin = () => {
+        startGuestSession()
+        router.push('/')
     }
 
     return (
@@ -131,6 +138,61 @@ function Login() {
                     >
                         Sign In
                     </button>
+
+                    {/* Demo Context & Guest Login */}
+                    <div className="flex flex-col space-y-3 py-4 border-t border-gray-600">
+                        <div className="text-center text-sm text-gray-400">
+                            <p className="mb-2">🎬 <strong>Portfolio Demo</strong></p>
+                            <p className="text-xs">Try creating an account or explore as a guest!</p>
+                        </div>
+
+                        <button
+                            type="button"
+                            className="bg-gray-700 hover:bg-gray-600 text-white rounded-md py-2.5 text-sm font-semibold transition-colors"
+                            onClick={handleGuestLogin}
+                        >
+                            Continue as Guest
+                        </button>
+
+                        <div className="text-center text-xs text-gray-500">
+                            <p>Guest mode: Rate movies, add to watchlist</p>
+                            <p>(Data saved locally, can migrate to account later)</p>
+                        </div>
+                    </div>
+
+                    {/* Social Authentication */}
+                    <div className="flex flex-col space-y-2">
+                        <div className="text-center text-sm text-gray-400 mb-2">Or sign in with</div>
+
+                        <button
+                            type="button"
+                            className="bg-white hover:bg-gray-100 text-black rounded-md py-2.5 text-sm font-semibold transition-colors flex items-center justify-center space-x-2"
+                            onClick={signInWithGoogle}
+                        >
+                            <span>🔍</span>
+                            <span>Sign in with Google</span>
+                        </button>
+
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-md py-2.5 text-sm font-semibold transition-colors flex items-center justify-center space-x-2"
+                                onClick={() => console.log('Discord auth coming soon!')}
+                            >
+                                <span>💬</span>
+                                <span>Discord</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                className="bg-black hover:bg-gray-900 text-white rounded-md py-2.5 text-sm font-semibold transition-colors flex items-center justify-center space-x-2 border border-gray-600"
+                                onClick={() => console.log('X auth coming soon!')}
+                            >
+                                <span>🐦</span>
+                                <span>X (Twitter)</span>
+                            </button>
+                        </div>
+                    </div>
                     <div className=" flex justify-between text-[#b3b3b3]">
                         <div className="flex space-x-1 ">
                             <input

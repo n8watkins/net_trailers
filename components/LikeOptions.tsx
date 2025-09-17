@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import ToolTipMod from './ToolTipMod'
+import { useRecoilValue, useRecoilState } from 'recoil'
+import { movieState } from '../atoms/modalAtom'
+import { showDemoMessageState } from '../atoms/userDataAtom'
+import useUserData from '../hooks/useUserData'
 import {
     HandThumbUpIcon as HandThumbUpIconOutline,
     HeartIcon as HeartIconOutline,
@@ -13,23 +17,45 @@ import {
 } from '@heroicons/react/24/solid'
 
 function LikeOptions() {
-    const [userRating, setUserRating] = useState({
-        disliked: false,
-        liked: false,
-        loved: false,
-    })
-    const [rated, setRated] = useState(false)
+    const currentMovie = useRecoilValue(movieState)
+    const { getRating, setRating, removeRating, ratings } = useUserData()
+    const [showDemoMessage, setShowDemoMessage] = useRecoilState(showDemoMessageState)
 
     const [showOptions, setShowOptions] = useState(false)
+
+    // Get current rating from user data
+    const currentRating = currentMovie ? getRating(currentMovie.id) : null
+
+    const userRating = {
+        disliked: currentRating?.rating === 'disliked',
+        liked: currentRating?.rating === 'liked',
+        loved: currentRating?.rating === 'loved',
+    }
+
+    const rated = currentRating !== null
     const handleMouseEnter = () => {
         setShowOptions(true)
     }
     const handleMouseLeave = () => {
         setShowOptions(false)
     }
-    console.log(userRating)
+    // Handle rating changes
+    const handleRatingChange = (rating: 'liked' | 'disliked' | 'loved') => {
+        if (!currentMovie) return
 
-    useEffect(() => {}, [userRating])
+        // Show demo message for first-time users
+        if (showDemoMessage && ratings.length === 0) {
+            setShowDemoMessage(true)
+        }
+
+        if (currentRating?.rating === rating) {
+            // Remove rating if clicking the same rating
+            removeRating(currentMovie.id)
+        } else {
+            // Set new rating
+            setRating(currentMovie.id, rating)
+        }
+    }
     
     return (
         <div>
@@ -46,14 +72,7 @@ function LikeOptions() {
                                     : 'hover:bg-gray-800 '
                             }`}
                         onMouseEnter={handleMouseEnter}
-                        onClick={() => {
-                            setUserRating({
-                                disliked: false,
-                                liked: false,
-                                loved: false,
-                            })
-                            setRated(false)
-                        }}
+                        onClick={() => handleRatingChange('liked')}
                     />
                 ) : (
                     <ToolTipMod title="I like this">
@@ -61,14 +80,7 @@ function LikeOptions() {
                             className={`ratingIcon IconDimensions z-30  border-solid border-2 border-white/30
                             ${showOptions ? 'border-transparent' : ''}`}
                             onMouseEnter={handleMouseEnter}
-                            onClick={() => {
-                                setUserRating({
-                                    disliked: false,
-                                    liked: true,
-                                    loved: false,
-                                })
-                                setRated(true)
-                            }}
+                            onClick={() => handleRatingChange('liked')}
                         />
                     </ToolTipMod>
                 )}
@@ -95,14 +107,7 @@ function LikeOptions() {
                                         ? 'hover:bg-transparent '
                                         : 'hover:bg-gray-800 '
                                 }`}
-                                onClick={() => {
-                                    setUserRating({
-                                        disliked: false,
-                                        liked: false,
-                                        loved: false,
-                                    })
-                                    setRated(false)
-                                }}
+                                onClick={() => handleRatingChange('disliked')}
                             />
                         </div>
                     ) : (
@@ -113,14 +118,7 @@ function LikeOptions() {
                                         ? 'translateLeft '
                                         : 'text-transparent '
                                 }`}
-                                onClick={() => {
-                                    setUserRating({
-                                        disliked: true,
-                                        liked: false,
-                                        loved: false,
-                                    })
-                                    setRated(true)
-                                }}
+                                onClick={() => handleRatingChange('disliked')}
                             />
                         </ToolTipMod>
                     )}
@@ -139,14 +137,7 @@ function LikeOptions() {
                                         ? 'hover:bg-transparent '
                                         : 'hover:bg-gray-800 '
                                 }`}
-                                onClick={() => {
-                                    setUserRating({
-                                        disliked: false,
-                                        liked: false,
-                                        loved: false,
-                                    })
-                                    setRated(false)
-                                }}
+                                onClick={() => handleRatingChange('loved')}
                             />
                         </div>
                     ) : (
@@ -157,14 +148,7 @@ function LikeOptions() {
                                         ? 'translateRight '
                                         : 'text-transparent '
                                 }`}
-                                onClick={() => {
-                                    setUserRating({
-                                        disliked: false,
-                                        liked: false,
-                                        loved: true,
-                                    })
-                                    setRated(true)
-                                }}
+                                onClick={() => handleRatingChange('loved')}
                             />
                         </ToolTipMod>
                     )}
