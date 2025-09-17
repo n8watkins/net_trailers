@@ -34,7 +34,6 @@ const reset = () => {
     const handleEmailSubmit = async (email: string) => {
         resetPass(email)
     }
-    console.log('auth.js-attemptPassReset', attemptPassReset)
 
     return (
         <div>

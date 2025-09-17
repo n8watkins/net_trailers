@@ -44,9 +44,9 @@ const Home = ({
                 <link rel="icon" href="/netflix.png" />
             </Head>
             <Header />
-            <main id="content" className="absolute top-0 h-screen w-screen  ">
+            <main id="content" className="relative min-h-screen">
                 <Banner trending={trending} />
-                <section className="absolute top-[50em] pb-52  ">
+                <section className="relative -mt-20 z-10 pb-52 space-y-8">
                     <Row title="Trending" movies={trending}></Row>
                     <Row title="Top Rated Movies" movies={topRatedMovies}></Row>
                     <Row title="Action Movies" movies={actionMovies}></Row>
@@ -69,54 +69,67 @@ const Home = ({
 export default Home
 
 export const getServerSideProps = async () => {
-    const [
-        trending,
-        topRatedMovies1,
-        topRatedMovies2,
-        actionMovies,
-        comedyMovies,
-        horrorMovies,
-        romanceMovies,
-        documentaries,
-        topRatedTV,
-        actionTV,
-        comedyTV,
-        horrorTV,
-    ] = await Promise.all([
-        fetch(requests.fetchTrending).then((res) => res.json()),
-        fetch(requests.fetchTopRatedMovies1).then((res) => res.json()),
-        fetch(requests.fetchTopRatedMovies2).then((res) => res.json()),
-        fetch(requests.fetchActionMovies).then((res) => res.json()),
-        fetch(requests.fetchComedyMovies).then((res) => res.json()),
-        fetch(requests.fetchHorrorMovies).then((res) => res.json()),
-        fetch(requests.fetchRomanceMovies).then((res) => res.json()),
-        fetch(requests.fetchDocumentaries).then((res) => res.json()),
-        fetch(requests.fetchTopRatedTV).then((res) => res.json()),
-        fetch(requests.fetchActionTV).then((res) => res.json()),
-        fetch(requests.fetchComedyTV).then((res) => res.json()),
-        fetch(requests.fetchHorrorTV).then((res) => res.json()),
-    ])
-    //randomize array function
-    const randomizeArray = (arr: Movie[]) => {
-        return arr.sort(() => Math.random() - 0.5)
-    }
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
-    return {
-        props: {
-            trending: randomizeArray(trending.results),
-            topRatedMovies: randomizeArray([
-                ...topRatedMovies1.results,
-                ...topRatedMovies2.results,
-            ]),
-            actionMovies: randomizeArray(actionMovies.results),
-            comedyMovies: randomizeArray(comedyMovies.results),
-            horrorMovies: randomizeArray(horrorMovies.results),
-            romanceMovies: randomizeArray(romanceMovies.results),
-            documentaries: randomizeArray(documentaries.results),
-            topRatedTV: randomizeArray(topRatedTV.results),
-            actionTV: randomizeArray(actionTV.results),
-            comedyTV: randomizeArray(comedyTV.results),
-            horrorTV: randomizeArray(horrorTV.results),
-        },
+    try {
+        const [
+            trending,
+            topRatedMovies1,
+            topRatedMovies2,
+            actionMovies,
+            comedyMovies,
+            horrorMovies,
+            romanceMovies,
+            documentaries,
+        ] = await Promise.all([
+            fetch(`${baseUrl}${requests.fetchTrending}`).then((res) => res.json()),
+            fetch(`${baseUrl}${requests.fetchTopRatedMovies1}`).then((res) => res.json()),
+            fetch(`${baseUrl}${requests.fetchTopRatedMovies2}`).then((res) => res.json()),
+            fetch(`${baseUrl}${requests.fetchActionMovies}`).then((res) => res.json()),
+            fetch(`${baseUrl}${requests.fetchComedyMovies}`).then((res) => res.json()),
+            fetch(`${baseUrl}${requests.fetchHorrorMovies}`).then((res) => res.json()),
+            fetch(`${baseUrl}${requests.fetchRomanceMovies}`).then((res) => res.json()),
+            fetch(`${baseUrl}${requests.fetchDocumentaries}`).then((res) => res.json()),
+        ])
+
+        // Proper Fisher-Yates shuffle algorithm (unbiased randomization)
+        const randomizeArray = (arr: Movie[]) => {
+            const shuffled = [...arr] // Create copy to avoid mutating original
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+            }
+            return shuffled
+        }
+
+        return {
+            props: {
+                trending: randomizeArray(trending.results || []),
+                topRatedMovies: randomizeArray([
+                    ...(topRatedMovies1.results || []),
+                    ...(topRatedMovies2.results || []),
+                ]),
+                actionMovies: randomizeArray(actionMovies.results || []),
+                comedyMovies: randomizeArray(comedyMovies.results || []),
+                horrorMovies: randomizeArray(horrorMovies.results || []),
+                romanceMovies: randomizeArray(romanceMovies.results || []),
+                documentaries: randomizeArray(documentaries.results || []),
+            },
+        }
+    } catch (error) {
+        console.error('Failed to fetch movie data:', error)
+
+        // Return empty data on error
+        return {
+            props: {
+                trending: [],
+                topRatedMovies: [],
+                actionMovies: [],
+                comedyMovies: [],
+                horrorMovies: [],
+                romanceMovies: [],
+                documentaries: [],
+            },
+        }
     }
 }

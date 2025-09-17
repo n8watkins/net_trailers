@@ -1,0 +1,33 @@
+import type { NextApiRequest, NextApiResponse } from 'next'
+
+const API_KEY = process.env.TMDB_API_KEY
+const BASE_URL = 'https://api.themoviedb.org/3'
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+    if (req.method !== 'GET') {
+        return res.status(405).json({ message: 'Method not allowed' })
+    }
+
+    if (!API_KEY) {
+        return res.status(500).json({ message: 'TMDB API key not configured' })
+    }
+
+    try {
+        const response = await fetch(
+            `${BASE_URL}/trending/all/week?api_key=${API_KEY}&language=en-US&page=1`
+        )
+
+        if (!response.ok) {
+            throw new Error(`TMDB API error: ${response.status}`)
+        }
+
+        const data = await response.json()
+
+        // Cache for 1 hour
+        res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400')
+        res.status(200).json(data)
+    } catch (error) {
+        console.error('TMDB API error:', error)
+        res.status(500).json({ message: 'Failed to fetch trending movies' })
+    }
+}

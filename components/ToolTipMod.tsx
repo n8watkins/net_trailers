@@ -1,7 +1,13 @@
 import React from 'react'
 import { Tooltip, TooltipProps } from '@mui/material'
 
-function ToolTipMod({ children, title, anchorEl }: TooltipProps) {
+interface ToolTipModProps {
+    children: React.ReactElement
+    title: string
+    anchorEl?: HTMLElement | null
+}
+
+function ToolTipMod({ children, title }: ToolTipModProps) {
     return (
         <Tooltip
             title={title}
@@ -9,7 +15,6 @@ function ToolTipMod({ children, title, anchorEl }: TooltipProps) {
             arrow
             enterDelay={200}
             leaveDelay={0}
-            anchorEl={anchorEl}
             componentsProps={{
                 popper: {
                     modifiers: [

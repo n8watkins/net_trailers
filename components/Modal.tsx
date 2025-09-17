@@ -61,11 +61,9 @@ function Modal() {
 
     function handleFullscreenChange() {
         if (!isFullScreen()) {
-            console.log('exited full-screen mode')
             setFullScreen(false)
         }
         if (isFullScreen()) {
-            console.log('full-screen mode')
             setMuted(false)
             setFullScreen(true)
         }
@@ -154,7 +152,7 @@ function Modal() {
                                     <div
                                         className=" relative bg-black pt-[56.25%]"
                                         ref={divRef}
-                                        onClick={() => console.log('testttttt')}
+                                        onClick={() => {/* TODO: Implement share functionality */}}
                                     >
                                         <ReactPlayer
                                             config={{
@@ -247,14 +245,12 @@ function Modal() {
                                         {onMyList ? (
                                             <ToolTipMod
                                                 title="Remove from My List "
-                                                anchorEl={anchorEl}
                                             >
                                                 <CheckIcon
                                                     className=" IconDimensions ratingIcon relative border-solid border-white/30 z-10 border-2 hover:bg-[black]/50 hover:border-white  bg-black/20  text-white"
                                                     onClick={() =>
                                                         setOnMyList(!onMyList)
                                                     }
-                                                    ref={anchorRef}
                                                 />
                                             </ToolTipMod>
                                         ) : (
