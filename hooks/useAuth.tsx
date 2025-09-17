@@ -13,6 +13,8 @@ import {
     User,
     signInWithEmailAndPassword,
     GoogleAuthProvider,
+    TwitterAuthProvider,
+    OAuthProvider,
     signInWithPopup,
     sendPasswordResetEmail,
 } from 'firebase/auth'
@@ -33,6 +35,8 @@ interface iAuth {
     signUp: (email: string, password: string) => Promise<void>
     signIn: (email: string, password: string) => Promise<void>
     signInWithGoogle: () => Promise<void>
+    signInWithDiscord: () => Promise<void>
+    signInWithTwitter: () => Promise<void>
     logOut: () => Promise<void>
     error: string | null
     resetPass: (email: string) => Promise<void>
@@ -47,6 +51,8 @@ export const AuthContext = createContext<iAuth>({
     signUp: async () => {},
     signIn: async () => {},
     signInWithGoogle: async () => {},
+    signInWithDiscord: async () => {},
+    signInWithTwitter: async () => {},
     logOut: async () => {},
     error: null,
     resetPass: async () => {},
@@ -150,6 +156,71 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 setGlobalLoading(false)
             })
     }
+
+    const signInWithDiscord = async () => {
+        setLoading(true)
+        setGlobalLoading(true)
+
+        // Discord uses OAuth provider with custom configuration
+        const provider = new OAuthProvider('oidc.discord')
+        provider.addScope('identify')
+        provider.addScope('email')
+
+        await signInWithPopup(auth, provider)
+            .then((result) => {
+                const user = result.user
+                errorHandler.addSuccess('Successfully signed in with Discord!')
+                router.push('/')
+            })
+            .catch((error) => {
+                console.error('Discord auth error:', error)
+                if (error.code === 'auth/popup-closed-by-user') {
+                    errorHandler.addError('auth', 'Sign-in was cancelled')
+                } else if (error.code === 'auth/operation-not-allowed') {
+                    errorHandler.addError('auth', 'Discord sign-in is not enabled. Please contact support.')
+                } else {
+                    errorHandler.handleAuthError(error)
+                }
+                setError(error.message)
+            })
+            .finally(() => {
+                setLoading(false)
+                setGlobalLoading(false)
+            })
+    }
+
+    const signInWithTwitter = async () => {
+        setLoading(true)
+        setGlobalLoading(true)
+
+        const provider = new TwitterAuthProvider()
+
+        await signInWithPopup(auth, provider)
+            .then((result) => {
+                const credential = TwitterAuthProvider.credentialFromResult(result)
+                const token = credential?.accessToken
+                const secret = credential?.secret
+                const user = result.user
+                errorHandler.addSuccess('Successfully signed in with X (Twitter)!')
+                router.push('/')
+            })
+            .catch((error) => {
+                console.error('Twitter auth error:', error)
+                if (error.code === 'auth/popup-closed-by-user') {
+                    errorHandler.addError('auth', 'Sign-in was cancelled')
+                } else if (error.code === 'auth/operation-not-allowed') {
+                    errorHandler.addError('auth', 'X (Twitter) sign-in is not enabled. Please contact support.')
+                } else {
+                    errorHandler.handleAuthError(error)
+                }
+                setError(error.message)
+            })
+            .finally(() => {
+                setLoading(false)
+                setGlobalLoading(false)
+            })
+    }
+
     const logOut = async () => {
         setLoading(true)
         setGlobalLoading(true)
@@ -188,6 +259,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             signUp,
             signIn,
             signInWithGoogle,
+            signInWithDiscord,
+            signInWithTwitter,
             logOut,
             error,
             resetPass,

@@ -3,26 +3,32 @@ import { showDemoMessageState } from '../atoms/userDataAtom'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { useState, useEffect } from 'react'
 import useUserData from '../hooks/useUserData'
+import { useRouter } from 'next/router'
 
 export default function DemoMessage() {
     const [showDemoMessage, setShowDemoMessage] = useRecoilState(showDemoMessageState)
     const { isGuest, isAuthenticated } = useUserData()
     const [visible, setVisible] = useState(false)
+    const router = useRouter()
 
     useEffect(() => {
-        // Show message for 3 seconds after first interaction
-        if (showDemoMessage && (isGuest || isAuthenticated)) {
+        // Only show on homepage after login, not on login/signup pages
+        const isOnAuthPage = router.pathname === '/login' || router.pathname === '/signup' || router.pathname === '/reset'
+
+        if (showDemoMessage && (isGuest || isAuthenticated) && !isOnAuthPage) {
             setVisible(true)
             const timer = setTimeout(() => {
                 setVisible(false)
                 setTimeout(() => setShowDemoMessage(false), 300) // Allow fade out
-            }, 3000)
+            }, 4000)
 
             return () => clearTimeout(timer)
         }
-    }, [showDemoMessage, isGuest, isAuthenticated, setShowDemoMessage])
+    }, [showDemoMessage, isGuest, isAuthenticated, setShowDemoMessage, router.pathname])
 
-    if (!showDemoMessage || (!isGuest && !isAuthenticated)) return null
+    const isOnAuthPage = router.pathname === '/login' || router.pathname === '/signup' || router.pathname === '/reset'
+
+    if (!showDemoMessage || (!isGuest && !isAuthenticated) || isOnAuthPage) return null
 
     return (
         <div className={`fixed top-20 right-4 z-50 max-w-sm transition-all duration-300 ${
