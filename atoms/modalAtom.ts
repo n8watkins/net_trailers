@@ -3,12 +3,12 @@ import { atom } from 'recoil'
 import { Content } from '../typings'
 
 export const modalState = atom({
-    key: 'modalState',
+    key: 'modalState_v1',
     default: false,
 })
 
 // Renamed to contentState but keeping movieState key for backward compatibility
 export const movieState = atom<Content | DocumentData | null>({
-    key: 'movieState',
+    key: 'movieState_v1',
     default: null,
 })

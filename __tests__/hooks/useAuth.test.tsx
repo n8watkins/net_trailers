@@ -99,7 +99,7 @@ describe('useAuth Hook', () => {
     })
 
     it('should handle sign in errors', async () => {
-      const authError = new Error('Invalid credentials')
+      const authError = new Error('Invalid credentials') as Error & { code: string }
       authError.code = 'auth/invalid-credential'
       mockSignInWithEmailAndPassword.mockRejectedValueOnce(authError)
 
@@ -139,7 +139,7 @@ describe('useAuth Hook', () => {
     })
 
     it('should handle sign up errors', async () => {
-      const authError = new Error('Email already in use')
+      const authError = new Error('Email already in use') as Error & { code: string }
       authError.code = 'auth/email-already-in-use'
       mockCreateUserWithEmailAndPassword.mockRejectedValueOnce(authError)
 
@@ -261,7 +261,7 @@ describe('useAuth Hook', () => {
     })
 
     it('should handle password reset errors', async () => {
-      const resetError = new Error('User not found')
+      const resetError = new Error('User not found') as Error & { code: string }
       resetError.code = 'auth/user-not-found'
       mockSendPasswordResetEmail.mockRejectedValueOnce(resetError)
 

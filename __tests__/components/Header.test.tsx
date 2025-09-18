@@ -118,7 +118,7 @@ describe('Header Component', () => {
     expect(headerElement).toBeInTheDocument()
 
     // Check for icons by their CSS classes (Heroicons typically have h-6 w-6 classes)
-    const icons = headerElement.querySelectorAll('.h-6.w-6')
+    const icons = headerElement!.querySelectorAll('.h-6.w-6')
     expect(icons.length).toBeGreaterThanOrEqual(2) // Search and bell icons
   })
 
@@ -277,11 +277,11 @@ describe('Header Component', () => {
     const headerElement = document.querySelector('header')
 
     // Should have responsive spacing classes
-    const elementsWithMdClasses = headerElement.querySelectorAll('[class*="md:"]')
+    const elementsWithMdClasses = headerElement!.querySelectorAll('[class*="md:"]')
     expect(elementsWithMdClasses.length).toBeGreaterThan(0)
 
     // Navigation should be hidden on mobile
-    const hiddenNavElements = headerElement.querySelectorAll('.hidden')
+    const hiddenNavElements = headerElement!.querySelectorAll('.hidden')
     expect(hiddenNavElements.length).toBeGreaterThan(0)
   })
 })

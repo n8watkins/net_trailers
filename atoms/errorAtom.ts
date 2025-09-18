@@ -10,16 +10,16 @@ export interface AppError {
 }
 
 export const errorsState = atom<AppError[]>({
-    key: 'errorsState',
+    key: 'errorsState_v1',
     default: [],
 })
 
 export const loadingState = atom<boolean>({
-    key: 'loadingState',
+    key: 'loadingState_v1',
     default: false,
 })
 
 export const globalErrorState = atom<string | null>({
-    key: 'globalErrorState',
+    key: 'globalErrorState_v1',
     default: null,
 })

@@ -60,7 +60,6 @@ function Modal() {
 
     function handleSingleOrDoubleClick(event: MouseEvent) {
         if (player) {
-            // console.log('currentTime', player?.getCurrentTime())
             setSecondsPlayed(player?.getCurrentTime())
         }
         togglePlaying()
