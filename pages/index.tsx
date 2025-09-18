@@ -87,7 +87,7 @@ const Home = ({
         }
 
         checkApiHealth()
-    }, [])
+    }, [setContentLoadedSuccessfully])
 
     // Show loading screen during initial page load
     if (isPageLoading) {

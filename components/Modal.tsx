@@ -2,6 +2,7 @@ import React, {
     useEffect,
     useState,
     useRef,
+    useCallback,
     MouseEventHandler,
     MouseEvent,
 } from 'react'
@@ -65,7 +66,7 @@ function Modal() {
         togglePlaying()
     }
 
-    function handleFullscreenChange() {
+    const handleFullscreenChange = useCallback(() => {
         if (!isFullScreen()) {
             setFullScreen(false)
         }
@@ -73,7 +74,7 @@ function Modal() {
             setMuted(false)
             setFullScreen(true)
         }
-    }
+    }, [])
 
     const makeFullScreen = () => {
         player?.getInternalPlayer().h.requestFullscreen()
@@ -131,7 +132,7 @@ function Modal() {
         }
 
         fetchMovie()
-    }, [currentMovie])
+    }, [currentMovie, errorHandler, setIsLoading])
 
     useEffect(() => {
         document.addEventListener('fullscreenchange', handleFullscreenChange)
@@ -141,7 +142,7 @@ function Modal() {
                 handleFullscreenChange
             )
         }
-    }, [])
+    }, [handleFullscreenChange])
 
     const anchorRef = React.useRef<HTMLDivElement>(null)
     const [anchorEl, setAnchorEl] = React.useState<HTMLDivElement | null>(null)

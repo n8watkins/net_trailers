@@ -24,11 +24,14 @@ function SignUp() {
             <div className="relative min-h-screen flex flex-col">
                 {/* Header */}
                 <header className="relative z-20 flex items-center justify-between p-4 md:p-8">
-                    <img
+                    <Image
                         src="https://rb.gy/ulxxee"
                         alt="NetTrailer Logo"
+                        width={120}
+                        height={32}
                         className="h-8 md:h-12 cursor-pointer"
                         onClick={() => router.push('/')}
+                        priority
                     />
                     <Link href="/login" className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md font-medium transition-colors">
                         Sign In
