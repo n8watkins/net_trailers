@@ -3,6 +3,14 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { RecoilRoot } from 'recoil'
 import Header from '../../components/Header'
 
+// Mock Next.js Image component
+jest.mock('next/image', () => ({
+  __esModule: true,
+  default: ({ src, alt, priority, ...props }: any) => (
+    <img src={src} alt={alt} data-priority={priority} {...props} />
+  ),
+}))
+
 // Mock the useAuth hook
 const mockLogOut = jest.fn()
 jest.mock('../../hooks/useAuth', () => ({
