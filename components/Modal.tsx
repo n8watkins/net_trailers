@@ -98,12 +98,9 @@ function Modal() {
         async function fetchMovie() {
             try {
                 setIsLoading(true)
+                const mediaType = currentMovie?.media_type === 'tv' ? 'tv' : 'movie'
                 const response = await fetch(
-                    `https://api.themoviedb.org/3/${
-                        currentMovie?.media_type === 'tv' ? 'tv' : 'movie'
-                    }/${currentMovie?.id}?api_key=${
-                        process.env.NEXT_PUBLIC_API_KEY
-                    }&language=en-US&append_to_response=videos`
+                    `/api/movies/details/${currentMovie?.id}?media_type=${mediaType}`
                 )
 
                 if (!response.ok) {
