@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { NextPage } from 'next'
 import Head from 'next/head'
 import Header from '../components/Header'
+import Modal from '../components/Modal'
 import useUserData from '../hooks/useUserData'
 import { HeartIcon, HandThumbUpIcon, HandThumbDownIcon, EyeIcon } from '@heroicons/react/24/solid'
 import { Content } from '../typings'
@@ -210,6 +211,8 @@ const Favorites: NextPage = () => {
                     )}
                 </div>
             </main>
+
+            <Modal />
         </div>
     )
 }
