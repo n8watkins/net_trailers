@@ -4,8 +4,10 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import Image from 'next/image'
 import useAuth from '../hooks/useAuth'
+import SearchBar from './SearchBar'
 function Header() {
     const [isScrolled, setIsScrolled] = useState(false)
+    const [showSearch, setShowSearch] = useState(false)
     const { logOut } = useAuth()
     const router = useRouter()
     useEffect(() => {
@@ -51,10 +53,46 @@ function Header() {
                     >
                         My Favorites
                     </li>
+                    <li
+                        className={`headerLink cursor-pointer ${router.pathname === '/search' ? 'text-white hover:text-white font-semibold' : ''}`}
+                        onClick={() => router.push('/search')}
+                    >
+                        Search
+                    </li>
                 </ul>
             </div>
-            <div className="flex items-center space-x-4 text-sm font-light  ">
-                <MagnifyingGlassIcon className="  h-6 w-6 cursor-pointer" />
+
+            {/* Search Bar - Desktop */}
+            <div className="hidden md:flex flex-1 max-w-xs ml-6">
+                <SearchBar
+                    placeholder="Search..."
+                    className="w-full"
+                    onFocus={() => {
+                        if (router.pathname !== '/search') {
+                            router.push('/search')
+                        }
+                    }}
+                />
+            </div>
+
+            <div className="flex items-center space-x-4 text-sm font-light">
+                {/* Mobile Search Toggle */}
+                <MagnifyingGlassIcon
+                    className="h-6 w-6 cursor-pointer md:hidden"
+                    onClick={() => {
+                        setShowSearch(!showSearch)
+                        if (!showSearch && router.pathname !== '/search') {
+                            router.push('/search')
+                        }
+                    }}
+                />
+
+                {/* Desktop Search Link */}
+                <MagnifyingGlassIcon
+                    className="hidden md:inline h-6 w-6 cursor-pointer"
+                    onClick={() => router.push('/search')}
+                />
+
                 <BellIcon className="hidden h-6 w-6 sm:inline cursor-pointer" />
 
                 <Image
@@ -66,6 +104,17 @@ function Header() {
                     className="rounded h-8 w-8 cursor-pointer"
                 />
             </div>
+
+            {/* Mobile Search Bar */}
+            {showSearch && (
+                <div className="md:hidden absolute top-full left-0 right-0 z-50 bg-black/95 backdrop-blur-sm border-t border-gray-600/50 p-4">
+                    <SearchBar
+                        placeholder="Search movies and TV shows..."
+                        className="w-full"
+                        onBlur={() => setShowSearch(false)}
+                    />
+                </div>
+            )}
         </header>
     )
 }
