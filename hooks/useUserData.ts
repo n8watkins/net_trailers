@@ -11,34 +11,81 @@ export default function useUserData() {
 
     // Initialize user session on mount
     useEffect(() => {
-        if (user) {
-            // Authenticated user - load from Firebase (TODO: implement)
-            setUserSession(prev => ({
-                ...prev,
-                isGuest: false,
-                userId: user.uid,
-                guestId: undefined,
-            }))
-        } else if (!userSession.isGuest && !userSession.userId) {
-            // Not authenticated and no guest session - create guest session
-            const guestId = UserDataService.getGuestId()
-            const guestData = UserDataService.loadGuestData()
+        const initializeUserSession = async () => {
+            if (user && userSession.isGuest) {
+                // User just authenticated - migrate guest data and load from Firebase
+                try {
+                    await UserDataService.migrateGuestToAuth(userSession.preferences, user.uid)
+                    const userData = await UserDataService.loadUserData(user.uid)
 
-            setUserSession({
-                isGuest: true,
-                guestId,
-                userId: undefined,
-                preferences: guestData,
-            })
+                    setUserSession({
+                        isGuest: false,
+                        userId: user.uid,
+                        guestId: undefined,
+                        preferences: userData,
+                    })
+                } catch (error) {
+                    console.error('Failed to migrate guest data:', error)
+                    // Fallback to just switching to authenticated mode without migration
+                    const userData = await UserDataService.loadUserData(user.uid)
+                    setUserSession({
+                        isGuest: false,
+                        userId: user.uid,
+                        guestId: undefined,
+                        preferences: userData,
+                    })
+                }
+            } else if (user && !userSession.isGuest && userSession.userId !== user.uid) {
+                // Different authenticated user - load their data
+                try {
+                    const userData = await UserDataService.loadUserData(user.uid)
+                    setUserSession({
+                        isGuest: false,
+                        userId: user.uid,
+                        guestId: undefined,
+                        preferences: userData,
+                    })
+                } catch (error) {
+                    console.error('Failed to load user data:', error)
+                }
+            } else if (!user && !userSession.isGuest && !userSession.userId) {
+                // Not authenticated and no guest session - create guest session
+                const guestId = UserDataService.getGuestId()
+                const guestData = UserDataService.loadGuestData()
+
+                setUserSession({
+                    isGuest: true,
+                    guestId,
+                    userId: undefined,
+                    preferences: guestData,
+                })
+            }
         }
-    }, [user, userSession.isGuest, userSession.userId, setUserSession])
 
-    // Save guest data whenever preferences change
+        initializeUserSession()
+    }, [user, setUserSession])
+
+    // Save data whenever preferences change
     useEffect(() => {
-        if (userSession.isGuest && userSession.preferences) {
-            UserDataService.saveGuestData(userSession.preferences)
+        const saveUserData = async () => {
+            if (userSession.isGuest && userSession.preferences) {
+                // Save guest data to localStorage
+                UserDataService.saveGuestData(userSession.preferences)
+            } else if (!userSession.isGuest && userSession.userId && userSession.preferences) {
+                // Save authenticated user data to Firebase
+                try {
+                    await UserDataService.saveUserData(userSession.userId, userSession.preferences)
+                } catch (error) {
+                    console.error('Failed to save user data to Firebase:', error)
+                }
+            }
         }
-    }, [userSession.isGuest, userSession.preferences])
+
+        // Only save if preferences exist (avoid initial empty saves)
+        if (userSession.preferences && (userSession.preferences.ratings.length > 0 || userSession.preferences.watchlist.length > 0)) {
+            saveUserData()
+        }
+    }, [userSession.isGuest, userSession.userId, userSession.preferences])
 
     // Add or update rating for content
     const setRating = (contentId: number, rating: 'liked' | 'disliked' | 'loved') => {

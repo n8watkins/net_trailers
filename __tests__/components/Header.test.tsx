@@ -72,7 +72,7 @@ describe('Header Component', () => {
     expect(screen.getByText('TV Shows')).toBeInTheDocument()
     expect(screen.getByText('Movies')).toBeInTheDocument()
     expect(screen.getByText('New & Popular')).toBeInTheDocument()
-    expect(screen.getByText('My List')).toBeInTheDocument()
+    expect(screen.getByText('My Favorites')).toBeInTheDocument()
   })
 
   it('should render Netflix logo image', () => {

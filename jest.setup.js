@@ -37,6 +37,15 @@ jest.mock('./firebase', () => ({
   db: {},
 }))
 
+// Mock Firebase Firestore functions
+jest.mock('firebase/firestore', () => ({
+  doc: jest.fn(),
+  setDoc: jest.fn(),
+  getDoc: jest.fn(() => Promise.resolve({ exists: () => false })),
+  updateDoc: jest.fn(),
+  deleteDoc: jest.fn(),
+}))
+
 // Mock environment variables
 process.env.NEXT_PUBLIC_FIREBASE_API_KEY = 'test-api-key'
 process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN = 'test.firebaseapp.com'

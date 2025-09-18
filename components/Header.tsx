@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { MagnifyingGlassIcon, BellIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
+import { useRouter } from 'next/router'
 import Image from 'next/image'
 import useAuth from '../hooks/useAuth'
 function Header() {
     const [isScrolled, setIsScrolled] = useState(false)
     const { logOut } = useAuth()
+    const router = useRouter()
     useEffect(() => {
         const handleScroll = () => {
             if (window.scrollY > 0) {
@@ -34,13 +36,21 @@ function Header() {
                     priority
                 />
                 <ul className=" hidden space-x-4 md:flex  ">
-                    <li className="headerLink cursor-default text-white hover:text-white">
+                    <li
+                        className={`headerLink cursor-pointer ${router.pathname === '/' ? 'text-white hover:text-white cursor-default' : ''}`}
+                        onClick={() => router.push('/')}
+                    >
                         Home
                     </li>
                     <li className="headerLink">TV Shows</li>
                     <li className="headerLink">Movies</li>
                     <li className="headerLink">New & Popular</li>
-                    <li className="headerLink">My List</li>
+                    <li
+                        className={`headerLink cursor-pointer ${router.pathname === '/favorites' ? 'text-white hover:text-white font-semibold' : ''}`}
+                        onClick={() => router.push('/favorites')}
+                    >
+                        My Favorites
+                    </li>
                 </ul>
             </div>
             <div className="flex items-center space-x-4 text-sm font-light  ">
