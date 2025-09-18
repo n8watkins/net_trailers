@@ -322,7 +322,8 @@ function Modal() {
                                         onClick={handleSingleOrDoubleClick}
                                     ></div>
                                     <h3
-                                        className=" z-20 font-semibold cursor-pointer text-shadow-3xl  text-white text-7xl  w-[600px] "
+                                        className=" z-20 font-semibold cursor-pointer text-white text-7xl  w-[600px] "
+                                        style={{ textShadow: '0 0 3px rgba(0, 0, 0, .8), 0 0 5px rgba(0, 0, 0, .9)' }}
                                         onClick={handleSingleOrDoubleClick}
                                     >
                                         {currentMovie ? getTitle(currentMovie as Content) : ''}

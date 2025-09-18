@@ -52,7 +52,7 @@ function SignUp() {
                             Unlimited movies, trailers, and more
                         </h1>
                         <p className="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-                            Discover trending movies, watch trailers, and manage your watchlist with NetTrailer's secure platform.
+                            Discover trending movies, watch trailers, and manage your watchlist with NetTrailer&apos;s secure platform.
                         </p>
 
                         {/* Email Signup Form */}
