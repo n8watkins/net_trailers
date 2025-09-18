@@ -5,9 +5,12 @@ import Banner from '../components/Banner'
 import Row from '../components/Row'
 import useAuth from '../hooks/useAuth'
 import Modal from '../components/Modal'
-import { useState } from 'react'
-import { useRecoilState, useRecoilValue } from 'recoil'
+import NetflixLoader from '../components/NetflixLoader'
+import NetflixError from '../components/NetflixError'
+import { useState, useEffect } from 'react'
+import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil'
 import { modalState } from '../atoms/modalAtom'
+import { contentLoadedSuccessfullyState } from '../atoms/userDataAtom'
 import Head from 'next/head'
 interface Props {
     trending: Content[]
@@ -17,6 +20,7 @@ interface Props {
     horrorMovies: Content[]
     romanceMovies: Content[]
     documentaries: Content[]
+    hasDataError?: boolean
 }
 const Home = ({
     trending,
@@ -26,9 +30,74 @@ const Home = ({
     horrorMovies,
     romanceMovies,
     documentaries,
+    hasDataError = false,
 }: Props) => {
     const { loading, error, user } = useAuth()
     const showModal = useRecoilValue(modalState)
+    const [isPageLoading, setIsPageLoading] = useState(true)
+    const setContentLoadedSuccessfully = useSetRecoilState(contentLoadedSuccessfullyState)
+
+    // Check if we have any content at all
+    const hasAnyContent = trending.length > 0 ||
+                         topRatedMovies.length > 0 ||
+                         actionMovies.length > 0 ||
+                         comedyMovies.length > 0 ||
+                         horrorMovies.length > 0 ||
+                         romanceMovies.length > 0 ||
+                         documentaries.length > 0
+
+    useEffect(() => {
+        // Realistic loading with API health check
+        const checkApiHealth = async () => {
+            try {
+                // Quick health check on trending endpoint (3 second timeout)
+                const controller = new AbortController()
+                const timeoutId = setTimeout(() => controller.abort(), 3000)
+
+                const response = await fetch('/api/movies/trending', {
+                    signal: controller.signal
+                })
+
+                clearTimeout(timeoutId)
+
+                if (!response.ok) {
+                    throw new Error(`API responded with ${response.status}`)
+                }
+
+                // Success - show content after brief loading
+                setTimeout(() => {
+                    setIsPageLoading(false)
+                    setContentLoadedSuccessfully(true)
+                    // Prefetch login page in background for instant access
+                    if (typeof window !== 'undefined') {
+                        import('next/router').then(({ default: Router }) => {
+                            Router.prefetch('/login')
+                        })
+                    }
+                }, 1500)
+
+            } catch (error) {
+                console.log('API health check failed:', error)
+                // Fail fast - show error after 2 seconds max
+                setTimeout(() => {
+                    setIsPageLoading(false)
+                    setContentLoadedSuccessfully(false)
+                }, 2000)
+            }
+        }
+
+        checkApiHealth()
+    }, [])
+
+    // Show loading screen during initial page load
+    if (isPageLoading) {
+        return <NetflixLoader message="Loading NetTrailer..." />
+    }
+
+    // Show error screen if no content is available
+    if (!hasAnyContent || hasDataError) {
+        return <NetflixError />
+    }
     return (
         <div
             className={`relative h-screen overflow-x-clip ${
@@ -36,13 +105,17 @@ const Home = ({
             } `}
         >
             <Head>
-                <title>Netflix</title>
-                <link rel="icon" href="/netflix.png" />
+                <title>NetTrailer - Movie Discovery Platform</title>
+                <meta name="description" content="Browse trending movies, watch trailers, and manage your watchlist with NetTrailer's secure streaming platform" />
+                <meta name="viewport" content="width=device-width, initial-scale=1" />
+                <link rel="icon" href="/favicon.ico" />
             </Head>
             <Header />
             <main id="content" className="relative min-h-screen">
-                <Banner trending={trending} />
-                <section className="relative -mt-20 z-10 pb-52 space-y-8">
+                <div className="relative h-[95vh] w-full">
+                    <Banner trending={trending} />
+                </div>
+                <section className="relative -mt-48 z-10 pb-52 space-y-8">
                     <Row title="Trending" content={trending}></Row>
                     <Row title="Top Rated Movies" content={topRatedMovies}></Row>
                     <Row title="Action Movies" content={actionMovies}></Row>
@@ -110,7 +183,7 @@ export const getServerSideProps = async () => {
     } catch (error) {
         console.error('Failed to fetch movie data:', error)
 
-        // Return empty data on error
+        // Return empty data with error flag
         return {
             props: {
                 trending: [],
@@ -120,6 +193,7 @@ export const getServerSideProps = async () => {
                 horrorMovies: [],
                 romanceMovies: [],
                 documentaries: [],
+                hasDataError: true,
             },
         }
     }

@@ -27,7 +27,7 @@ function Banner({ trending }: Props) {
     return (
         <>
             {/* background image */}
-            <div className=" absolute top-0 left-0 h-[50vw] w-[100vw] -z-10 font-sans ">
+            <div className="absolute inset-0 -z-10 font-sans">
                 {contentImgUrl && (
                     <Image
                         src={`${BASE_URL}/${
@@ -42,13 +42,13 @@ function Banner({ trending }: Props) {
                         sizes="(max-width: 768px) 100vw, 50vw"
                     ></Image>
                 )}
-                <div className=" absolute h-[14vw] w-screen bg-gradient-to-b from-transparent to-[#141414] bottom-0 "></div>
+                <div className="absolute h-32 w-full bg-gradient-to-b from-transparent to-[#141414] bottom-0"></div>
             </div>
 
-            {/* movie info backgorund gradient */}
-            <div className="absolute h-[2000px] w-[60vw] flex flex-col px-10 space-y-2  md:px-14   bg-gradient-to-l from-transparent to-[#141414]/80 ">
-                <div className="absolute top-[25em] md:space-y-6">
-                    <h1 className="  max-w-[30vw] pt-5 text-2xl font-bold md:text-4xl lg:text-5xl ">
+            {/* movie info background gradient */}
+            <div className="absolute inset-0 flex flex-col justify-center px-10 md:px-16 lg:px-20 bg-gradient-to-r from-[#141414]/90 to-transparent">
+                <div className="max-w-xl lg:max-w-2xl space-y-4 md:space-y-6">
+                    <h1 className="text-3xl font-bold md:text-5xl lg:text-6xl xl:text-7xl leading-tight">
                         {featuredContent ? getTitle(featuredContent) : 'Loading...'}
                     </h1>
                     <div className="flex items-center space-x-2 mb-2">
@@ -59,29 +59,29 @@ function Banner({ trending }: Props) {
                             {featuredContent ? getYear(featuredContent) : ''}
                         </span>
                     </div>
-                    <p className=" bottom-0  max-w-xs text-xs md:max-w-lg md:text-md lg:max-w-2xl lg:text-xl  ">
+                    <p className="text-sm md:text-lg lg:text-xl leading-relaxed text-gray-200 max-w-lg lg:max-w-xl">
                         {truncateString(featuredContent?.overview)}
                     </p>
 
                     {/* Buttons*/}
-                    <div className="flex gap-3  ">
+                    <div className="flex gap-4 pt-4">
                         {/* <Link href={`/movie/${randomMovie?.id}`}> */}
-                        <button className="bannerButton  bg-[white] text-black hover:bg-[white]/[.6]">
-                            <PlayIcon className=" md:h-10 md::w-10 lg:h-10 lg:w-10 " />
-                            <div>Play</div>
+                        <button className="bannerButton bg-white text-black hover:bg-white/80 transition-all duration-200 font-bold">
+                            <PlayIcon className="h-6 w-6 md:h-7 md:w-7 lg:h-8 lg:w-8" />
+                            <span>Play</span>
                         </button>
                         {/* </Link> */}
                         {/*more info button */}
                         {/* <Link href={`/movie/${randomMovie?.id}`}> */}
                         <button
-                            className=" text-shadow-3xl bannerButton fex bg-[rgba(109,109,110,0.7)] text-[white] hover:bg-[rgba(109,109,110,0.6)] "
+                            className="bannerButton bg-gray-600/70 text-white hover:bg-gray-600/50 transition-all duration-200 font-semibold backdrop-blur-sm"
                             onClick={() => {
                                 setShowModal(true)
                                 setCurrentContent(featuredContent)
                             }}
                         >
-                            <InformationCircleIcon className=" h-8 w-8" />
-                            More Info
+                            <InformationCircleIcon className="h-6 w-6 md:h-7 md:w-7 lg:h-8 lg:w-8" />
+                            <span>More Info</span>
                         </button>
                         {/* </Link> */}
                     </div>

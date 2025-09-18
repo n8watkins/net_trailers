@@ -11,6 +11,11 @@ function Row({ title, content }: Props) {
     const rowRef = useRef<HTMLDivElement>(null)
     const [isMoved, setIsMoved] = useState(false)
 
+    // Don't render if no content
+    if (!content || content.length === 0) {
+        return null
+    }
+
     const handleClick = (direction: string) => {
         setIsMoved(true)
         if (rowRef.current) {

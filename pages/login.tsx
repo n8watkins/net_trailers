@@ -6,7 +6,13 @@ import useAuth from '../hooks/useAuth'
 import { useRouter } from 'next/router'
 import useUserData from '../hooks/useUserData'
 import { useState } from 'react'
-import PortfolioBanner from '../components/PortfolioBanner'
+import dynamic from 'next/dynamic'
+
+// Lazy load heavy components for faster initial load
+const PortfolioBanner = dynamic(() => import('../components/PortfolioBanner'), {
+    ssr: false, // Don't server-side render this component
+    loading: () => null, // No loading component for faster perceived performance
+})
 
 interface Inputs {
     email: string
@@ -69,8 +75,10 @@ function Login() {
     return (
         <div className="absolute w-screen 2xl:h-[48.8vw] h-screen bg-gradient-to-br  from-black/70 to-black/20 ">
             <Head>
-                <title>Netflix</title>
-                <link rel="icon" href="/netflix.png" />
+                <title>NetTrailer - Movie Discovery Platform</title>
+                <meta name="description" content="Browse trending movies, watch trailers, and manage your watchlist with NetTrailer's secure streaming platform" />
+                <meta name="viewport" content="width=device-width, initial-scale=1" />
+                <link rel="icon" href="/favicon.ico" />
             </Head>
             <Image
                 src="https://rb.gy/p2hphi"
@@ -86,31 +94,50 @@ function Login() {
                 width={200}
                 height={200}
             />
+
+            {/* NetTrailer Banner - Outside the form */}
+            <div className="flex justify-center mt-8 sm:mt-16 mb-6">
+                <PortfolioBanner />
+            </div>
+
             <form
                 onSubmit={handleSubmit(onSubmit)}
-                className="flex flex-col bg-black/70 mt-16 rounded-md max-w-md mx-auto px-4 py-8 max-h-[90vh] overflow-y-auto"
+                className="flex flex-col bg-black/90 rounded-md max-w-lg mx-4 sm:mx-auto px-2 sm:px-4 py-6 sm:py-8 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto"
             >
-                <div className="flex flex-col px-10 space-y-4">
-                    <PortfolioBanner />
+                <div className="flex flex-col px-4 sm:px-8 lg:px-10 space-y-4">
 
-                    <h1 className="text-3xl font-semibold">Sign In</h1>
+                    <div className="flex items-center">
+                        <h1 className="text-2xl sm:text-3xl font-semibold flex-shrink-0 w-24 sm:w-32">
+                            {login ? 'Sign In' : 'Sign Up'}
+                        </h1>
+                        <div className="flex-1 flex justify-center">
+                            <span className="text-gray-400 text-sm lg:text-base">or</span>
+                        </div>
+                        <button
+                            type="button"
+                            className="bg-gray-700 hover:bg-gray-600 text-white rounded-md py-3 px-8 text-base font-medium transition-colors flex-shrink-0"
+                            onClick={handleGuestLogin}
+                        >
+                            Continue as Guest
+                        </button>
+                    </div>
 
                     <div className="relative">
                         <input
                             type="email"
                             id="email"
-                            className="   inputClass peer"
+                            className="w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent peer"
                             placeholder=" "
                             {...register('email', { required: true })}
                         />
                         <label
                             htmlFor="email"
-                            className={`labelDefault labelFocus  duration-300 transform -translate-y-4 scale-75 top-4  origin-[0] left-2.5  peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4`}
+                            className="absolute text-gray-400 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-4 peer-focus:text-red-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4"
                         >
                             Email or phone number
                         </label>
                         {errors.email && (
-                            <p className="p-1 text-[13px]  font-sans font-base text-orange-500">
+                            <p className="p-1 text-[13px] font-sans font-base text-orange-500">
                                 Please enter a valid email
                             </p>
                         )}
@@ -119,18 +146,18 @@ function Login() {
                         <input
                             type="password"
                             id="password"
-                            className="   inputClass peer"
+                            className="w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent peer"
                             placeholder=" "
                             {...register('password', { required: true })}
                         />
                         <label
                             htmlFor="password"
-                            className={`labelDefault labelFocus  duration-300 transform -translate-y-4 scale-75 top-4  origin-[0] left-2.5  peer-focus:text-blue-600 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4`}
+                            className="absolute text-gray-400 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] left-4 peer-focus:text-red-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4"
                         >
                             Password
                         </label>
-                        {errors.email && (
-                            <p className="p-1 text-[13px]  font-sans font-base text-orange-500">
+                        {errors.password && (
+                            <p className="p-1 text-[13px] font-sans font-base text-orange-500">
                                 Please enter a valid password
                             </p>
                         )}
@@ -138,15 +165,49 @@ function Login() {
 
                     <button
                         type="submit"
-                        className="bg-red-600 text-white rounded-md py-2.5 text-sm font-semibold bac  "
-                        onClick={() => setLogin(true)}
+                        className="w-full bg-red-600 hover:bg-red-700 text-white rounded-md py-2.5 text-sm font-semibold transition-colors"
                     >
-                        Sign In
+                        {login ? 'Sign In' : 'Sign Up'}
                     </button>
+
+                    {/* Form options above social sign-in */}
+                    <div className="flex justify-between text-[#b3b3b3] text-sm lg:text-base">
+                        <div className="flex space-x-2 items-center">
+                            <input
+                                type="checkbox"
+                                id="rememberMe"
+                                className="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:outline-none"
+                                checked={isChecked}
+                                onChange={() => handleChecked()}
+                            />
+                            <label className="cursor-pointer" onClick={() => handleChecked()}>
+                                Remember me
+                            </label>
+                        </div>
+                        <span
+                            className="cursor-pointer hover:underline"
+                            onClick={() => handlePasswordReset()}
+                        >
+                            Forgot email or password?
+                        </span>
+                    </div>
+
+                    <div className="text-left text-sm lg:text-base">
+                        <span className="text-gray-400">
+                            {login ? 'New to NetTrailer?' : 'Already have an account?'} {' '}
+                        </span>
+                        <button
+                            className="text-white hover:underline cursor-pointer"
+                            onClick={() => setLogin(!login)}
+                            type="button"
+                        >
+                            {login ? 'Sign up now.' : 'Sign in here.'}
+                        </button>
+                    </div>
 
                     {/* Social Authentication */}
                     <div className="flex flex-col space-y-3 py-3 border-t border-gray-600/50">
-                        <div className="text-center text-sm text-gray-400 mb-2">Or quick sign in with</div>
+                        <div className="text-center text-sm lg:text-base text-gray-400 mb-2">or</div>
 
                         <div className="grid grid-cols-3 gap-3">
                             <button
@@ -187,55 +248,6 @@ function Login() {
                                 </svg>
                             </button>
                         </div>
-                    </div>
-
-                    {/* Guest Mode Option */}
-                    <div className="flex flex-col space-y-3 py-3 border-t border-gray-600/50">
-                        <div className="text-center text-sm text-gray-400">
-                            Don&apos;t want to create an account?
-                        </div>
-
-                        <button
-                            type="button"
-                            className="bg-gray-700 hover:bg-gray-600 text-white rounded-md py-2.5 text-sm font-medium transition-colors"
-                            onClick={handleGuestLogin}
-                        >
-                            🚀 Continue as Guest
-                        </button>
-
-                        <div className="text-center text-xs text-gray-500">
-                            <p>Explore all features • Data saved locally</p>
-                        </div>
-                    </div>
-                    <div className=" flex justify-between text-[#b3b3b3]">
-                        <div className="flex space-x-1 ">
-                            <input
-                                type="checkbox"
-                                id="rememberMe"
-                                checked={isChecked}
-                                onChange={() => handleChecked()}
-                            />
-                            <label className="">
-                                <span onClick={() => handleChecked()}>
-                                    Remember me
-                                </span>
-                            </label>
-                        </div>
-                        <span
-                            className="cursor-pointer hover:underline "
-                            onClick={() => handlePasswordReset()}
-                        >
-                            Need help?
-                        </span>
-                    </div>
-                    <div className="flex space-x-1">
-                        <span>New to Netflix? {` `}</span>
-                        <button
-                            className="text-white hover:underline  cursor-pointer"
-                            onClick={() => setLogin(false)}
-                        >
-                            Sign up now.
-                        </button>
                     </div>
                 </div>
             </form>

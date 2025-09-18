@@ -49,3 +49,9 @@ export const showDemoMessageState = atom<boolean>({
     key: 'showDemoMessageState',
     default: true,
 })
+
+// Content loading success state
+export const contentLoadedSuccessfullyState = atom<boolean>({
+    key: 'contentLoadedSuccessfullyState',
+    default: false,
+})

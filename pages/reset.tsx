@@ -38,8 +38,9 @@ const Reset = () => {
     return (
         <div>
             <Head>
-                <title>Netflix</title>
-                <link rel="icon" href="/netflix.png" />
+                <title>NetTrailer - Reset Password</title>
+                <meta name="description" content="Reset your NetTrailer account password" />
+                <link rel="icon" href="/favicon.ico" />
             </Head>
             <Image
                 src="https://assets.nflxext.com/ffe/siteui/acquisition/login/login-the-crown_2-1500x1000.jpg"

@@ -88,7 +88,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             } else if (!user) {
                 setUser(null)
                 setLoading(false)
-                router.push('/login')
+
+                // Check if user is in guest mode before redirecting to login
+                const isGuestMode = localStorage.getItem('nettrailer_guest_id')
+                const isOnHomePage = router.pathname === '/'
+
+                // Only redirect to login if not in guest mode and not on home page
+                if (!isGuestMode && !isOnHomePage) {
+                    router.push('/login')
+                }
             }
         })
     }, [])
