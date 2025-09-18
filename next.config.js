@@ -15,6 +15,14 @@ module.exports = {
                 protocol: 'https',
                 hostname: 'assets.nflxext.com',
             },
+            {
+                protocol: 'https',
+                hostname: 'occ-0-3997-3996.1.nflxso.net',
+            },
+            {
+                protocol: 'https',
+                hostname: '*.nflxso.net',
+            },
         ],
     },
     // Optimize for faster builds and caching
