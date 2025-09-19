@@ -27,6 +27,7 @@ export function useSearch() {
     const debouncedQuery = useDebounce(search.query, 300)
     const abortControllerRef = useRef<AbortController>()
     const lastSearchQueryRef = useRef<string>('')
+    const lastFiltersRef = useRef<SearchFilters>(search.filters)
 
     // Search function
     const performSearch = useCallback(async (query: string, filters?: SearchFilters, page = 1) => {
@@ -111,18 +112,18 @@ export function useSearch() {
         }
     }, [setSearch, setSearchHistory])
 
-    // Effect to trigger search when debounced query changes
+    // Effect to trigger search when debounced query or filters change
     useEffect(() => {
         const trimmedQuery = debouncedQuery.trim()
+        const filtersChanged = JSON.stringify(search.filters) !== JSON.stringify(lastFiltersRef.current)
+        const queryChanged = trimmedQuery !== lastSearchQueryRef.current
 
-        // Prevent duplicate searches for the same query
-        if (trimmedQuery === lastSearchQueryRef.current) {
-            return
-        }
-
+        // Update refs
         lastSearchQueryRef.current = trimmedQuery
+        lastFiltersRef.current = search.filters
 
-        if (trimmedQuery.length >= 2) {
+        // Only search if query is valid and something actually changed
+        if (trimmedQuery.length >= 2 && (queryChanged || filtersChanged)) {
             performSearch(trimmedQuery, search.filters)
         } else if (trimmedQuery.length === 0 && search.hasSearched) {
             // Only clear results when query is completely empty
@@ -134,7 +135,7 @@ export function useSearch() {
                 isLoading: false
             }))
         }
-    }, [debouncedQuery, search.filters, performSearch, setSearch])
+    }, [debouncedQuery, search.filters]) // Safe to include search.filters now with proper change detection
 
     // Update search query
     const updateQuery = useCallback((query: string) => {
@@ -148,12 +149,8 @@ export function useSearch() {
             filters: { ...prev.filters, ...filters },
             currentPage: 1 // Reset to first page when filters change
         }))
-
-        // Trigger search if we have a query
-        if (search.query.trim().length >= 2) {
-            performSearch(search.query, { ...search.filters, ...filters })
-        }
-    }, [setSearch, search.query, search.filters, performSearch])
+        // The main useEffect will handle triggering the search when filters change
+    }, [setSearch])
 
     // Load more results (pagination)
     const loadMore = useCallback(() => {
