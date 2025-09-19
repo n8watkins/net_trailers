@@ -12,9 +12,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(500).json({ message: 'TMDB API key not configured' })
     }
 
+    const { page = '1' } = req.query
+
     try {
         const response = await fetch(
-            `${BASE_URL}/trending/all/week?api_key=${API_KEY}&language=en-US&page=1`
+            `${BASE_URL}/tv/top_rated?api_key=${API_KEY}&language=en-US&page=${page}`
         )
 
         if (!response.ok) {
@@ -23,12 +25,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const data = await response.json()
 
-        // Keep original mixed data with existing media_type from TMDB
-        // Cache for 1 hour
-        res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400')
-        res.status(200).json(data)
+        // Add media_type to each item for consistency
+        const enrichedResults = data.results.map((item: any) => ({
+            ...item,
+            media_type: 'tv'
+        }))
+
+        // Cache for 30 minutes
+        res.setHeader('Cache-Control', 'public, s-maxage=1800, stale-while-revalidate=3600')
+        res.status(200).json({
+            ...data,
+            results: enrichedResults
+        })
     } catch (error) {
         console.error('TMDB API error:', error)
-        res.status(500).json({ message: 'Failed to fetch trending movies' })
+        res.status(500).json({ message: 'Failed to fetch top-rated TV shows' })
     }
 }

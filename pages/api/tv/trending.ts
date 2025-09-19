@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     try {
         const response = await fetch(
-            `${BASE_URL}/trending/all/week?api_key=${API_KEY}&language=en-US&page=1`
+            `${BASE_URL}/trending/tv/week?api_key=${API_KEY}&language=en-US&page=1`
         )
 
         if (!response.ok) {
@@ -23,12 +23,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const data = await response.json()
 
-        // Keep original mixed data with existing media_type from TMDB
+        // Add media_type to each item for consistency
+        const enrichedResults = data.results.map((item: any) => ({
+            ...item,
+            media_type: 'tv'
+        }))
+
         // Cache for 1 hour
         res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400')
-        res.status(200).json(data)
+        res.status(200).json({
+            ...data,
+            results: enrichedResults
+        })
     } catch (error) {
         console.error('TMDB API error:', error)
-        res.status(500).json({ message: 'Failed to fetch trending movies' })
+        res.status(500).json({ message: 'Failed to fetch trending TV shows' })
     }
 }

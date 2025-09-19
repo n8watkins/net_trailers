@@ -137,17 +137,6 @@ export function getYear(content: Content): string {
     // Get the appropriate date field
     const date = isMovie(content) ? content.release_date : content.first_air_date
 
-    // Debug what we actually have
-    console.log('Date extraction debug:', {
-        id: content.id,
-        title: getTitle(content),
-        isMovie: isMovie(content),
-        media_type: content.media_type,
-        release_date: content.release_date,
-        first_air_date: content.first_air_date,
-        selectedDate: date,
-        fullContent: Object.keys(content)
-    })
 
     // Extract year from valid date string
     if (date && typeof date === 'string' && date.length >= 4) {
@@ -165,7 +154,6 @@ export function getYear(content: Content): string {
         const year = alternativeDate.slice(0, 4)
         const yearNum = parseInt(year)
         if (!isNaN(yearNum) && yearNum > 1800 && yearNum < 2100) {
-            console.log('Used alternative date field for:', content.id)
             return year
         }
     }
@@ -174,23 +162,7 @@ export function getYear(content: Content): string {
 }
 
 export function getContentType(content: Content): string {
-    const contentType = isMovie(content) ? 'Movie' : 'TV Show'
-
-    // Debug media_type detection
-    console.log('Content type detection:', {
-        id: content.id,
-        title: getTitle(content),
-        media_type: content.media_type,
-        hasTitle: !!content.title,
-        hasName: !!content.name,
-        hasReleaseDate: !!content.release_date,
-        hasFirstAirDate: !!content.first_air_date,
-        isMovieResult: isMovie(content),
-        isTVShowResult: isTVShow(content),
-        detectedType: contentType
-    })
-
-    return contentType
+    return isMovie(content) ? 'Movie' : 'TV Show'
 }
 
 // Utility functions for new metadata

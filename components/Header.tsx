@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react'
-import { MagnifyingGlassIcon, HeartIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
+import { MagnifyingGlassIcon, HeartIcon, Bars3Icon, XMarkIcon, TvIcon, FilmIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import Image from 'next/image'
 import SearchBar from './SearchBar'
-import SettingsMenu from './SettingsMenu'
+import useAuth from '../hooks/useAuth'
 import GenresDropdown from './GenresDropdown'
+import AuthModal from './AuthModal'
+import AvatarDropdown from './AvatarDropdown'
 function Header() {
     const [isScrolled, setIsScrolled] = useState(false)
     const [showSearch, setShowSearch] = useState(false)
     const [showMobileMenu, setShowMobileMenu] = useState(false)
     const [isSearchExpanded, setIsSearchExpanded] = useState(false)
+    const [showAuthModal, setShowAuthModal] = useState(false)
     const router = useRouter()
+    const { user } = useAuth()
     useEffect(() => {
         const handleScroll = () => {
             if (window.scrollY > 0) {
@@ -57,16 +61,18 @@ function Header() {
                 <div className="hidden md:flex items-center space-x-6 flex-1">
                     <ul className="flex space-x-4">
                         <li
-                            className={`headerLink cursor-pointer ${router.pathname === '/tv' ? 'text-white hover:text-white font-semibold' : ''}`}
+                            className={`headerLink cursor-pointer flex items-center space-x-1 ${router.pathname === '/tv' ? 'text-white hover:text-white font-semibold' : ''}`}
                             onClick={() => router.push('/?filter=tv')}
                         >
-                            TV Shows
+                            <TvIcon className="h-4 w-4" />
+                            <span>TV Shows</span>
                         </li>
                         <li
-                            className={`headerLink cursor-pointer ${router.pathname === '/movies' ? 'text-white hover:text-white font-semibold' : ''}`}
+                            className={`headerLink cursor-pointer flex items-center space-x-1 ${router.pathname === '/movies' ? 'text-white hover:text-white font-semibold' : ''}`}
                             onClick={() => router.push('/?filter=movies')}
                         >
-                            Movies
+                            <FilmIcon className="h-4 w-4" />
+                            <span>Movies</span>
                         </li>
                         <li>
                             <GenresDropdown />
@@ -117,8 +123,8 @@ function Header() {
                     onClick={() => setShowSearch(!showSearch)}
                 />
 
-                {/* Settings Menu */}
-                <SettingsMenu />
+                {/* Avatar Dropdown */}
+                <AvatarDropdown onOpenAuthModal={() => setShowAuthModal(true)} />
             </div>
 
             {/* Mobile Search Bar */}
@@ -139,24 +145,26 @@ function Header() {
                         <ul className="space-y-4">
                             <li>
                                 <button
-                                    className={`w-full text-left headerLink text-lg ${router.pathname === '/tv' ? 'text-white font-semibold' : ''}`}
+                                    className={`w-full text-left headerLink flex items-center space-x-2 text-lg ${router.pathname === '/tv' ? 'text-white font-semibold' : ''}`}
                                     onClick={() => {
                                         router.push('/?filter=tv')
                                         setShowMobileMenu(false)
                                     }}
                                 >
-                                    TV Shows
+                                    <TvIcon className="h-5 w-5" />
+                                    <span>TV Shows</span>
                                 </button>
                             </li>
                             <li>
                                 <button
-                                    className={`w-full text-left headerLink text-lg ${router.pathname === '/movies' ? 'text-white font-semibold' : ''}`}
+                                    className={`w-full text-left headerLink flex items-center space-x-2 text-lg ${router.pathname === '/movies' ? 'text-white font-semibold' : ''}`}
                                     onClick={() => {
                                         router.push('/?filter=movies')
                                         setShowMobileMenu(false)
                                     }}
                                 >
-                                    Movies
+                                    <FilmIcon className="h-5 w-5" />
+                                    <span>Movies</span>
                                 </button>
                             </li>
                             <li>
@@ -175,6 +183,12 @@ function Header() {
                     </nav>
                 </div>
             )}
+
+            {/* Auth Modal */}
+            <AuthModal
+                isOpen={showAuthModal}
+                onClose={() => setShowAuthModal(false)}
+            />
         </header>
     )
 }

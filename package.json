@@ -1,7 +1,8 @@
 {
     "private": true,
     "scripts": {
-        "dev": "next dev",
+        "dev": "node scripts/dev-safe.js",
+        "dev:next": "next dev",
         "build": "next build",
         "start": "next start",
         "lint": "next lint",

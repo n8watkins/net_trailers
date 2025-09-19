@@ -25,9 +25,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const data = await response.json()
 
+        // Add media_type to each item for consistency
+        const enrichedResults = data.results.map((item: any) => ({
+            ...item,
+            media_type: 'movie'
+        }))
+
         // Cache for 15 minutes
         res.setHeader('Cache-Control', 'public, s-maxage=900, stale-while-revalidate=1800')
-        res.status(200).json(data)
+        res.status(200).json({
+            ...data,
+            results: enrichedResults
+        })
     } catch (error) {
         console.error('TMDB API error:', error)
         res.status(500).json({ message: 'Failed to fetch top rated movies' })

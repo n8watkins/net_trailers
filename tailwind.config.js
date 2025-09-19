@@ -56,6 +56,9 @@ module.exports = {
                     },
                 },
             },
+            scale: {
+                '102': '1.02',
+            },
 
             textShadow: {
                 '3xl': '0 0 3px rgba(0, 0, 0, .8), 0 0 5px rgba(0, 0, 0, .9)',

@@ -26,7 +26,12 @@ function Banner({ trending }: Props) {
     // Select 5 random items for carousel and preload images
     useEffect(() => {
         if (trending.length > 0) {
-            const shuffled = [...trending].sort(() => 0.5 - Math.random())
+            // Fisher-Yates shuffle algorithm for unbiased randomization
+            const shuffled = [...trending]
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1))
+                ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+            }
             const selected = shuffled.slice(0, Math.min(5, trending.length))
             setCarouselContent(selected)
 
@@ -98,7 +103,8 @@ function Banner({ trending }: Props) {
                         />
                     </div>
                 )}
-                <div className="absolute h-32 w-full bg-gradient-to-b from-transparent to-[#141414] bottom-0"></div>
+                {/* Bottom gradient for pagination visibility */}
+                <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#141414]/90 via-[#141414]/30 to-transparent pointer-events-none"></div>
             </div>
 
             {/* movie info background gradient */}
@@ -148,20 +154,39 @@ function Banner({ trending }: Props) {
                     </div>
                 </div>
 
-                {/* Carousel dots - positioned much higher, especially on mobile */}
+                {/* Image-based pagination - positioned in bottom right */}
                 {carouselContent.length > 1 && (
-                    <div className="absolute bottom-48 sm:bottom-52 md:bottom-56 lg:bottom-60 xl:bottom-64 left-1/2 transform -translate-x-1/2 flex space-x-3 z-30">
-                        {carouselContent.map((_, index) => (
+                    <div className="absolute bottom-4 sm:bottom-6 md:bottom-8 lg:bottom-16 xl:bottom-20 right-4 sm:right-6 md:right-8 lg:right-12 flex space-x-4 z-30">
+                        {carouselContent.map((content, index) => (
                             <button
                                 key={index}
                                 onClick={() => goToSlide(index)}
-                                className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full transition-all duration-300 border-2 ${
+                                className={`relative transition-all duration-300 rounded-md overflow-hidden ${
                                     index === currentIndex
-                                        ? 'bg-white border-white scale-125 shadow-lg'
-                                        : 'bg-transparent border-gray-400 hover:border-gray-300 hover:bg-gray-300'
+                                        ? 'w-16 h-24 sm:w-20 sm:h-30 md:w-24 md:h-36 border-2 border-red-500 shadow-[0_0_12px_rgba(220,38,38,0.4)]'
+                                        : 'w-12 h-18 sm:w-14 sm:h-21 md:w-16 md:h-24 hover:scale-105 shadow-[0_0_8px_rgba(0,0,0,0.3)]'
                                 }`}
-                                aria-label={`Go to slide ${index + 1}`}
-                            />
+                                style={{
+                                    opacity: isTransitioning && index === currentIndex ? 0.7 : 1,
+                                    transform: index === currentIndex ? 'scale(1.1) translateY(-12px)' : 'scale(1)',
+                                    transformOrigin: 'center center'
+                                }}
+                                aria-label={`Go to slide ${index + 1}: ${getTitle(content)}`}
+                            >
+                                {/* Movie poster image */}
+                                <Image
+                                    src={`${BASE_URL}/${content.poster_path || content.backdrop_path}`}
+                                    alt={`${getTitle(content)} poster`}
+                                    fill
+                                    className="object-cover"
+                                    sizes="(max-width: 640px) 48px, (max-width: 768px) 56px, 64px"
+                                />
+
+                                {/* Overlay for non-selected items */}
+                                {index !== currentIndex && (
+                                    <div className="absolute inset-0 bg-black/60 hover:bg-black/40 transition-all duration-300"></div>
+                                )}
+                            </button>
                         ))}
                     </div>
                 )}
@@ -171,12 +196,12 @@ function Banner({ trending }: Props) {
 }
 //helper function to truncate string to 300 characters
 const truncateString = (str: string | undefined) => {
-    let maxSringLength = 210
+    let maxStringLength = 210
     if (str === undefined) return ''
-    if (str.length <= maxSringLength) {
+    if (str.length <= maxStringLength) {
         return str
     } else {
-        let truncated = str.substring(0, maxSringLength)
+        let truncated = str.substring(0, maxStringLength)
         let lastPeriod = truncated.lastIndexOf('.')
         if (lastPeriod === -1) {
             return truncated + '...'

@@ -61,7 +61,7 @@ const Reset = () => {
             />
             <div className="relative flex w-screen">
                 <button
-                    className="absolute  text-red-600 font-bold  text-lg  right-20 top-10 cursor-pointer hover:underline  font-lex"
+                    className="absolute text-red-600 font-bold text-lg right-4 md:right-20 top-4 md:top-10 cursor-pointer hover:underline font-lex"
                     onClick={() => router.push('/login')}
                 >
                     Sign In

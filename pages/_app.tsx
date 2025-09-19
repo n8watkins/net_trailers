@@ -6,15 +6,20 @@ import ErrorToast from '../components/ErrorToast'
 import DemoMessage from '../components/DemoMessage'
 import ErrorBoundary from '../components/ErrorBoundary'
 import Analytics from '../components/Analytics'
+import ToastManager from '../components/ToastManager'
+import Layout from '../components/Layout'
 
 function MyApp({ Component, pageProps }: AppProps) {
     return (
         <RecoilRoot>
             <AuthProvider>
                 <ErrorBoundary>
-                    <Component {...pageProps} />
+                    <Layout>
+                        <Component {...pageProps} />
+                    </Layout>
                     <ErrorToast />
                     <DemoMessage />
+                    <ToastManager />
                     <Analytics />
                 </ErrorBoundary>
             </AuthProvider>

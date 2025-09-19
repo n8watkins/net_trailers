@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
 import Header from '../../../components/Header'
 import Modal from '../../../components/Modal'
-import Row from '../../../components/Row'
+import Thumbnail from '../../../components/Thumbnail'
 import { Content } from '../../../typings'
 import { movieCache } from '../../../utils/apiCache'
 
@@ -18,6 +18,10 @@ const GenrePage: NextPage<GenrePageProps> = () => {
     const [error, setError] = useState<string | null>(null)
     const [page, setPage] = useState(1)
     const [hasMore, setHasMore] = useState(true)
+    const [loadingMore, setLoadingMore] = useState(false)
+    const [maxPages] = useState(10)
+    const observerRef = useRef<IntersectionObserver | null>(null)
+    const loadMoreRef = useRef<HTMLDivElement | null>(null)
 
     const genreId = Array.isArray(id) ? id[0] : id
     const mediaType = Array.isArray(type) ? type[0] : type
@@ -61,7 +65,7 @@ const GenrePage: NextPage<GenrePageProps> = () => {
                     setContent(prev => [...prev, ...enrichedResults])
                 }
 
-                setHasMore(data.page < data.total_pages)
+                setHasMore(data.page < data.total_pages && data.page < maxPages)
 
             } catch (err) {
                 console.error('Error fetching genre content:', err)
@@ -72,13 +76,51 @@ const GenrePage: NextPage<GenrePageProps> = () => {
         }
 
         fetchGenreContent()
-    }, [genreId, mediaType, page])
+    }, [genreId, mediaType, page, maxPages])
 
-    const loadMore = () => {
-        if (hasMore && !loading) {
+    const loadMore = useCallback(() => {
+        if (hasMore && !loading && !loadingMore) {
+            setLoadingMore(true)
             setPage(prev => prev + 1)
         }
-    }
+    }, [hasMore, loading, loadingMore])
+
+    useEffect(() => {
+        if (loadingMore && !loading) {
+            setLoadingMore(false)
+        }
+    }, [loading, loadingMore])
+
+    useEffect(() => {
+        const currentObserver = observerRef.current
+        const currentLoadMoreRef = loadMoreRef.current
+
+        if (currentLoadMoreRef && hasMore) {
+            const observer = new IntersectionObserver(
+                (entries) => {
+                    if (entries[0].isIntersecting) {
+                        loadMore()
+                    }
+                },
+                { threshold: 0.1 }
+            )
+
+            observer.observe(currentLoadMoreRef)
+            observerRef.current = observer
+
+            return () => {
+                if (currentObserver) {
+                    currentObserver.disconnect()
+                }
+            }
+        }
+
+        return () => {
+            if (currentObserver) {
+                currentObserver.disconnect()
+            }
+        }
+    }, [hasMore, loadMore])
 
     if (loading && page === 1) {
         return (
@@ -157,20 +199,39 @@ const GenrePage: NextPage<GenrePageProps> = () => {
                     {/* Content Section */}
                     {content.length > 0 ? (
                         <div className="space-y-8">
-                            <Row
-                                title={`Popular ${genreName} ${mediaType === 'movie' ? 'Movies' : 'TV Shows'}`}
-                                content={content}
-                            />
+                            {/* Grid Layout */}
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6 md:gap-8">
+                                {content.map((item) => (
+                                    <div key={item.id} className="flex-shrink-0">
+                                        <Thumbnail content={item} hideTitles={false} />
+                                    </div>
+                                ))}
+                            </div>
 
-                            {hasMore && (
+                            {/* Loading indicator */}
+                            {(loading || loadingMore) && (
                                 <div className="flex justify-center pt-8">
-                                    <button
-                                        onClick={loadMore}
-                                        disabled={loading}
-                                        className="bg-gray-800 hover:bg-gray-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {loading ? 'Loading...' : 'Load More'}
-                                    </button>
+                                    <div className="text-center">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mb-2"></div>
+                                        <p className="text-gray-400 text-sm">Loading more...</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Infinite scroll trigger */}
+                            {hasMore && !loading && (
+                                <div ref={loadMoreRef} className="h-20 flex items-center justify-center">
+                                    <div className="text-gray-500 text-sm">Scroll for more content...</div>
+                                </div>
+                            )}
+
+                            {/* End of content indicator */}
+                            {!hasMore && content.length > 0 && (
+                                <div className="flex justify-center pt-8">
+                                    <div className="text-center">
+                                        <p className="text-gray-400 text-sm">You&apos;ve reached the end of {genreName} content</p>
+                                        <p className="text-gray-500 text-xs mt-1">Limited to {maxPages} pages for performance</p>
+                                    </div>
                                 </div>
                             )}
                         </div>

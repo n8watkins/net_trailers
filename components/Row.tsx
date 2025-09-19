@@ -6,8 +6,9 @@ import Thumbnail from './Thumbnail'
 interface Props {
     title: string
     content: Content[]
+    hideTitles?: boolean
 }
-function Row({ title, content }: Props) {
+function Row({ title, content, hideTitles = false }: Props) {
     const rowRef = useRef<HTMLDivElement>(null)
     const [isMoved, setIsMoved] = useState(false)
 
@@ -46,7 +47,7 @@ function Row({ title, content }: Props) {
     return (
         <div className="pb-8 sm:pb-10 md:pb-12">
             {/* Section Title */}
-            <h2 className="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold px-4 sm:px-6 md:px-8 lg:px-16 py-3 sm:py-4 lg:py-5 transition duration-200 hover:text-gray-300">
+            <h2 className="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold px-4 sm:px-6 md:px-8 lg:px-16 py-1 sm:py-2 lg:py-2 transition duration-200 hover:text-gray-300">
                 {title}
             </h2>
 
@@ -59,7 +60,7 @@ function Row({ title, content }: Props) {
                     } transition-opacity cursor-pointer pointer-events-auto`}
                     onClick={() => handleClick('left')}
                     onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'linear-gradient(to right, rgba(20,20,20,0.9), transparent)'
+                        e.currentTarget.style.background = 'transparent'
                     }}
                     onMouseLeave={(e) => {
                         e.currentTarget.style.background = 'transparent'
@@ -78,7 +79,7 @@ function Row({ title, content }: Props) {
                 >
                     {content.map((item) => (
                         <div key={item.id} className="flex-shrink-0">
-                            <Thumbnail content={item} />
+                            <Thumbnail content={item} hideTitles={hideTitles} />
                         </div>
                     ))}
                 </div>
@@ -88,7 +89,7 @@ function Row({ title, content }: Props) {
                     className="hidden md:flex absolute right-0 top-0 z-30 h-full items-center pr-2 row-container:hover:opacity-100 opacity-0 transition-opacity cursor-pointer pointer-events-auto"
                     onClick={() => handleClick('right')}
                     onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'linear-gradient(to left, rgba(20,20,20,0.9), transparent)'
+                        e.currentTarget.style.background = 'transparent'
                     }}
                     onMouseLeave={(e) => {
                         e.currentTarget.style.background = 'transparent'

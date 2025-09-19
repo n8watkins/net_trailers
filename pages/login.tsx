@@ -31,8 +31,6 @@ function Login() {
         logOut,
         signIn,
         signInWithGoogle,
-        signInWithDiscord,
-        signInWithTwitter,
         signUp,
         user,
         resetPass,
@@ -200,7 +198,7 @@ function Login() {
                         </span>
                         <button
                             className="text-white hover:underline cursor-pointer"
-                            onClick={() => setLogin(!login)}
+                            onClick={() => login ? router.push('/signup') : setLogin(!login)}
                             type="button"
                         >
                             {login ? 'Sign up now.' : 'Sign in here.'}

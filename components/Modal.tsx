@@ -39,6 +39,7 @@ import {
     CheckIcon,
     CodeBracketIcon,
     LinkIcon,
+    ArrowTopRightOnSquareIcon,
 } from '@heroicons/react/24/solid'
 
 import ReactPlayer from 'react-player'
@@ -286,7 +287,7 @@ function Modal() {
 
                             {/* Controls Overlay */}
                             <div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6 z-30">
-                                <div className="flex flex-wrap gap-2 sm:gap-4 items-center">{trailer && (
+                                <div className="flex flex-wrap gap-4 sm:gap-8 items-center">{trailer && (
                                             <button
                                                 className="flex items-center gap-1 sm:gap-2 px-3 py-1.5 sm:px-6 sm:py-2 bg-white text-black hover:bg-white/80 rounded text-sm sm:text-base font-semibold"
                                                 onClick={togglePlaying}
@@ -333,7 +334,7 @@ function Modal() {
                                     {trailer && (
                                         <ToolTipMod title="Watch on YouTube">
                                             <button className="p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white">
-                                                <LinkIcon
+                                                <ArrowTopRightOnSquareIcon
                                                     className="h-4 w-4 sm:h-6 sm:w-6"
                                                     onClick={() => window.open(`https://www.youtube.com/watch?v=${trailer}`, '_blank')}
                                                 />
@@ -422,12 +423,6 @@ function Modal() {
                                         <span className="text-xs sm:text-sm md:text-base">{getContentType(enhancedMovieData)}</span>
                                             </div>
 
-                                            {/* Tagline */}
-                                            {enhancedMovieData.tagline && (
-                                                <p className="text-yellow-400 italic text-lg mb-3">
-                                                    "{enhancedMovieData.tagline}"
-                                                </p>
-                                            )}
 
                                             {/* Overview */}
                                             <p className="text-gray-200 text-base leading-relaxed mb-4 line-clamp-3">

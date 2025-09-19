@@ -191,7 +191,6 @@ export class UserDataService {
                 localStorage.removeItem(GUEST_ID_KEY)
             }
 
-            console.log('Guest data successfully migrated for user:', userId)
         } catch (error) {
             console.error('Failed to migrate guest data:', error)
             throw error
