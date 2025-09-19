@@ -75,9 +75,9 @@ function Thumbnail({ content }: Props) {
                             setCurrentContent(content || null)
                         }}
                         className="bg-black text-red-500 font-bold
-                                 px-3 py-1.5 md:px-4 md:py-2
+                                 px-4 py-2 md:px-6 md:py-2.5
                                  text-xs md:text-sm
-                                 rounded-md hover:bg-gray-900 hover:text-red-400
+                                 rounded-full hover:bg-gray-900 hover:text-red-400
                                  transition-all duration-200
                                  flex-1 flex items-center justify-center gap-1
                                  shadow-lg hover:shadow-xl
