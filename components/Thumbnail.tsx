@@ -41,6 +41,21 @@ function Thumbnail({ content }: Props) {
                 />
             )}
 
+            {/* Movie Title Overlay */}
+            {content && (
+                <div className="absolute bottom-0 left-0 right-0 p-2 md:p-3 lg:p-4
+                              bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+                    <h3 className="text-white font-bold leading-tight
+                                 text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl
+                                 movie-title-shadow line-clamp-2 mb-1">
+                        {getTitle(content)}
+                    </h3>
+                    <p className="text-gray-300 text-xs sm:text-sm md:text-base opacity-80">
+                        {getYear(content)} • {getContentType(content)}
+                    </p>
+                </div>
+            )}
+
         </div>
     )
 }
