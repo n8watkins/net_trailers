@@ -47,7 +47,8 @@ export function useSearch() {
         }
 
         // Create new abort controller
-        abortControllerRef.current = new AbortController()
+        const currentController = new AbortController()
+        abortControllerRef.current = currentController
 
         setSearch(prev => ({
             ...prev,
@@ -114,8 +115,8 @@ export function useSearch() {
     useEffect(() => {
         const trimmedQuery = debouncedQuery.trim()
 
-        // Prevent duplicate searches for the same query, but allow if we currently have no results
-        if (trimmedQuery === lastSearchQueryRef.current && search.results.length > 0) {
+        // Prevent duplicate searches for the same query
+        if (trimmedQuery === lastSearchQueryRef.current) {
             return
         }
 
@@ -133,7 +134,7 @@ export function useSearch() {
                 isLoading: false
             }))
         }
-    }, [debouncedQuery, search.results.length])
+    }, [debouncedQuery, search.filters, performSearch, setSearch])
 
     // Update search query
     const updateQuery = useCallback((query: string) => {
@@ -147,7 +148,12 @@ export function useSearch() {
             filters: { ...prev.filters, ...filters },
             currentPage: 1 // Reset to first page when filters change
         }))
-    }, [setSearch])
+
+        // Trigger search if we have a query
+        if (search.query.trim().length >= 2) {
+            performSearch(search.query, { ...search.filters, ...filters })
+        }
+    }, [setSearch, search.query, search.filters, performSearch])
 
     // Load more results (pagination)
     const loadMore = useCallback(() => {

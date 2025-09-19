@@ -26,7 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             'vote_average.gte': ratingFrom,
             'vote_average.lte': ratingTo,
             sort_by
-        } = req.query as SearchParams
+        } = req.query as Partial<SearchParams> & { query: string }
 
         if (!query || typeof query !== 'string') {
             return res.status(400).json({ message: 'Query parameter is required' })
@@ -136,7 +136,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         console.error('Search API error:', error)
         return res.status(500).json({
             message: 'Internal server error',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            error: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
         })
     }
 }

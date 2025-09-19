@@ -31,7 +31,12 @@ export default function SearchResults({ className = "" }: SearchResultsProps) {
                     <div className="text-red-400 text-lg font-medium mb-2">Search Error</div>
                     <div className="text-gray-400">{error}</div>
                     <button
-                        onClick={() => window.location.reload()}
+                        onClick={() => {
+                            // Retry the search instead of reloading the page
+                            if (query.trim()) {
+                                window.location.reload()
+                            }
+                        }}
                         className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                     >
                         Try Again
