@@ -56,20 +56,6 @@
         -webkit-box-orient: vertical;
         -webkit-line-clamp: 2;
     }
-
-    .movie-title-shadow {
-        text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-        transition: all 0.3s ease-out;
-    }
-
-    .movie-title-shadow:hover {
-        text-shadow:
-            0 2px 4px rgba(0,0,0,0.8),
-            0 0 20px rgba(239, 68, 68, 1),
-            0 0 30px rgba(239, 68, 68, 0.8),
-            0 0 40px rgba(239, 68, 68, 0.6);
-        color: #ffffff;
-    }
 }
 
 ::-webkit-scrollbar-thumb {
