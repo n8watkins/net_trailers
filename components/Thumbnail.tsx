@@ -27,8 +27,9 @@ function Thumbnail({ content }: Props) {
             {posterImage && (
                 <div className="relative w-full h-full
                               transition-all duration-300 ease-out
-                              group-hover:shadow-lg group-hover:shadow-red-500/60
-                              rounded-md overflow-hidden">
+                              rounded-md overflow-hidden
+                              group-hover:shadow-[0_0_30px_rgba(220,38,38,1),0_0_60px_rgba(220,38,38,0.8),0_0_90px_rgba(220,38,38,0.6)]
+                              group-hover:ring-4 group-hover:ring-red-500">
                     <Image
                         src={`https://image.tmdb.org/t/p/w500${posterImage}`}
                         alt={content ? `${getTitle(content)} ${getContentType(content)}` : 'Content poster'}
@@ -39,11 +40,11 @@ function Thumbnail({ content }: Props) {
                         priority={false}
                     />
 
-                    {/* Red glow border effect */}
+                    {/* Additional red glow overlay */}
                     <div className="absolute inset-0 rounded-md
                                   transition-all duration-300 ease-out
-                                  group-hover:shadow-[0_0_20px_rgba(239,68,68,0.8),inset_0_0_20px_rgba(239,68,68,0.2)]
-                                  group-hover:ring-2 group-hover:ring-red-500/50"></div>
+                                  group-hover:shadow-[inset_0_0_30px_rgba(220,38,38,0.4)]
+                                  group-hover:ring-2 group-hover:ring-red-600/80"></div>
                 </div>
             )}
 
@@ -74,12 +75,14 @@ function Thumbnail({ content }: Props) {
                             setShowModal(true)
                             setCurrentContent(content || null)
                         }}
-                        className="bg-white text-black font-semibold
+                        className="bg-red-600 text-white font-bold
                                  px-3 py-1.5 md:px-4 md:py-2
                                  text-xs md:text-sm
-                                 rounded-md hover:bg-gray-200
-                                 transition-colors duration-200
-                                 flex-1 flex items-center justify-center gap-1"
+                                 rounded-md hover:bg-red-700
+                                 transition-all duration-200
+                                 flex-1 flex items-center justify-center gap-1
+                                 shadow-lg hover:shadow-xl
+                                 border border-red-500 hover:border-red-400"
                     >
                         ▶ Watch Now
                     </button>
