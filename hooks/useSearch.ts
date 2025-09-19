@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRecoilState } from 'recoil'
 import { searchState, searchHistoryState, SearchFilters } from '../atoms/searchAtom'
 import { Content, Movie, TVShow, isMovie, isTVShow } from '../typings'
+import { searchCache, cachedFetch } from '../utils/apiCache'
 
 // Custom debounce hook
 function useDebounce<T>(value: T, delay: number): T {
@@ -25,6 +26,7 @@ export function useSearch() {
     const [searchHistory, setSearchHistory] = useRecoilState(searchHistoryState)
     const debouncedQuery = useDebounce(search.query, 300)
     const abortControllerRef = useRef<AbortController>()
+    const lastSearchQueryRef = useRef<string>('')
 
     // Search function
     const performSearch = useCallback(async (query: string, filters?: SearchFilters, page = 1) => {
@@ -56,42 +58,35 @@ export function useSearch() {
         }))
 
         try {
-            // Build search URL with filters
-            const searchParams = new URLSearchParams({
+            // Build search parameters
+            const searchParams: Record<string, any> = {
                 query: query.trim(),
                 page: page.toString()
-            })
+            }
 
             // Add filters if provided
             if (filters) {
                 if (filters.genre.length > 0) {
-                    searchParams.append('with_genres', filters.genre.join(','))
+                    searchParams.with_genres = filters.genre.join(',')
                 }
                 if (filters.yearRange[0] !== 1990 || filters.yearRange[1] !== new Date().getFullYear()) {
-                    searchParams.append('primary_release_date.gte', `${filters.yearRange[0]}-01-01`)
-                    searchParams.append('primary_release_date.lte', `${filters.yearRange[1]}-12-31`)
+                    searchParams['primary_release_date.gte'] = `${filters.yearRange[0]}-01-01`
+                    searchParams['primary_release_date.lte'] = `${filters.yearRange[1]}-12-31`
                 }
                 if (filters.ratingRange[0] !== 0 || filters.ratingRange[1] !== 10) {
-                    searchParams.append('vote_average.gte', filters.ratingRange[0].toString())
-                    searchParams.append('vote_average.lte', filters.ratingRange[1].toString())
+                    searchParams['vote_average.gte'] = filters.ratingRange[0].toString()
+                    searchParams['vote_average.lte'] = filters.ratingRange[1].toString()
                 }
-                searchParams.append('sort_by', `${filters.sortBy}.${filters.sortOrder}`)
+                searchParams.sort_by = `${filters.sortBy}.${filters.sortOrder}`
             }
 
-            const response = await fetch(`/api/search?${searchParams.toString()}`, {
-                signal: abortControllerRef.current.signal
-            })
-
-            if (!response.ok) {
-                throw new Error('Search failed')
-            }
-
-            const data = await response.json()
+            // Use cached fetch for search requests
+            const data = await cachedFetch<any>('/api/search', searchCache, searchParams)
 
             setSearch(prev => ({
                 ...prev,
-                results: page === 1 ? data.results : [...prev.results, ...data.results],
-                totalResults: data.total_results,
+                results: page === 1 ? (data.results || []) : [...prev.results, ...(data.results || [])],
+                totalResults: data.total_results || 0,
                 isLoading: false,
                 error: null
             }))
@@ -117,11 +112,19 @@ export function useSearch() {
 
     // Effect to trigger search when debounced query changes
     useEffect(() => {
-        if (debouncedQuery !== search.query) return // Avoid triggering on initial load
+        const trimmedQuery = debouncedQuery.trim()
 
-        if (debouncedQuery.trim()) {
-            performSearch(debouncedQuery, search.filters)
-        } else {
+        // Prevent duplicate searches for the same query, but allow if we currently have no results
+        if (trimmedQuery === lastSearchQueryRef.current && search.results.length > 0) {
+            return
+        }
+
+        lastSearchQueryRef.current = trimmedQuery
+
+        if (trimmedQuery.length >= 2) {
+            performSearch(trimmedQuery, search.filters)
+        } else if (trimmedQuery.length === 0 && search.hasSearched) {
+            // Only clear results when query is completely empty
             setSearch(prev => ({
                 ...prev,
                 results: [],
@@ -130,7 +133,7 @@ export function useSearch() {
                 isLoading: false
             }))
         }
-    }, [debouncedQuery, search.filters, performSearch])
+    }, [debouncedQuery, search.results.length])
 
     // Update search query
     const updateQuery = useCallback((query: string) => {

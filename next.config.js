@@ -1,5 +1,7 @@
+const { withSentryConfig } = require('@sentry/nextjs')
+
 /** @type {import('next').NextConfig} */
-module.exports = {
+const nextConfig = {
     reactStrictMode: true,
     images: {
         remotePatterns: [
@@ -28,12 +30,24 @@ module.exports = {
         deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
         imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     },
-    // Optimize for faster builds and caching
+    // Optimize for faster builds and caching - disabled heroicons optimization due to runtime errors
     experimental: {
-        optimizePackageImports: ['@heroicons/react'],
+        // optimizePackageImports: ['@heroicons/react'],
     },
     // Aggressive caching for auth pages
     generateBuildId: async () => {
         return 'net-trailers-v1'
     },
 }
+
+const sentryWebpackPluginOptions = {
+    org: process.env.SENTRY_ORG,
+    project: process.env.SENTRY_PROJECT,
+    silent: true,
+    widenClientFileUpload: true,
+    hideSourceMaps: true,
+    disableLogger: true,
+    automaticVercelMonitors: true,
+}
+
+module.exports = withSentryConfig(nextConfig, sentryWebpackPluginOptions)

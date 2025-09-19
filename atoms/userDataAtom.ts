@@ -5,6 +5,7 @@ export interface UserRating {
     contentId: number
     rating: 'liked' | 'disliked' | 'loved'
     timestamp: number
+    content?: Content // Store the full content object for display
 }
 
 export interface UserPreferences {

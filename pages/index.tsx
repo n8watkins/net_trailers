@@ -11,6 +11,8 @@ import { useState, useEffect } from 'react'
 import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil'
 import { modalState } from '../atoms/modalAtom'
 import { contentLoadedSuccessfullyState } from '../atoms/userDataAtom'
+import { mainPageDataState, hasVisitedMainPageState, cacheStatusState } from '../atoms/cacheAtom'
+import { mainPageCache, cachedFetch } from '../utils/apiCache'
 import Head from 'next/head'
 interface Props {
     trending: Content[]
@@ -36,6 +38,9 @@ const Home = ({
     const showModal = useRecoilValue(modalState)
     const [isPageLoading, setIsPageLoading] = useState(true)
     const setContentLoadedSuccessfully = useSetRecoilState(contentLoadedSuccessfullyState)
+    const [mainPageData, setMainPageData] = useRecoilState(mainPageDataState)
+    const [hasVisitedMainPage, setHasVisitedMainPage] = useRecoilState(hasVisitedMainPageState)
+    const [cacheStatus, setCacheStatus] = useRecoilState(cacheStatusState)
 
     // Check if we have any content at all
     const hasAnyContent = trending.length > 0 ||
@@ -47,6 +52,26 @@ const Home = ({
                          documentaries.length > 0
 
     useEffect(() => {
+        // Store main page data in cache for future navigations
+        const currentData = {
+            trending,
+            topRatedMovies,
+            actionMovies,
+            comedyMovies,
+            horrorMovies,
+            romanceMovies,
+            documentaries,
+            lastFetched: Date.now()
+        }
+
+        setMainPageData(currentData)
+        setHasVisitedMainPage(true)
+        setCacheStatus(prev => ({
+            ...prev,
+            mainPageCached: true,
+            lastCacheUpdate: Date.now()
+        }))
+
         // Realistic loading with API health check
         const checkApiHealth = async () => {
             try {
@@ -74,7 +99,7 @@ const Home = ({
                             Router.prefetch('/login')
                         })
                     }
-                }, 1500)
+                }, hasVisitedMainPage ? 500 : 1500) // Faster loading if returning to cached page
 
             } catch (error) {
                 console.log('API health check failed:', error)
@@ -87,7 +112,7 @@ const Home = ({
         }
 
         checkApiHealth()
-    }, [setContentLoadedSuccessfully])
+    }, [trending, topRatedMovies, actionMovies, comedyMovies, horrorMovies, romanceMovies, documentaries, hasVisitedMainPage, setContentLoadedSuccessfully, setMainPageData, setHasVisitedMainPage, setCacheStatus])
 
     // Show loading screen during initial page load
     if (isPageLoading) {
@@ -136,6 +161,14 @@ export const getServerSideProps = async () => {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
     try {
+        // Check cache first for all requests
+        const cacheKey = 'main-page-content'
+        const cached = mainPageCache.get(cacheKey)
+
+        if (cached) {
+            return { props: cached }
+        }
+
         const [
             trending,
             topRatedMovies1,
@@ -166,20 +199,23 @@ export const getServerSideProps = async () => {
             return shuffled
         }
 
-        return {
-            props: {
-                trending: randomizeArray(trending.results || []),
-                topRatedMovies: randomizeArray([
-                    ...(topRatedMovies1.results || []),
-                    ...(topRatedMovies2.results || []),
-                ]),
-                actionMovies: randomizeArray(actionMovies.results || []),
-                comedyMovies: randomizeArray(comedyMovies.results || []),
-                horrorMovies: randomizeArray(horrorMovies.results || []),
-                romanceMovies: randomizeArray(romanceMovies.results || []),
-                documentaries: randomizeArray(documentaries.results || []),
-            },
+        const props = {
+            trending: randomizeArray(trending.results || []),
+            topRatedMovies: randomizeArray([
+                ...(topRatedMovies1.results || []),
+                ...(topRatedMovies2.results || []),
+            ]),
+            actionMovies: randomizeArray(actionMovies.results || []),
+            comedyMovies: randomizeArray(comedyMovies.results || []),
+            horrorMovies: randomizeArray(horrorMovies.results || []),
+            romanceMovies: randomizeArray(romanceMovies.results || []),
+            documentaries: randomizeArray(documentaries.results || []),
         }
+
+        // Cache the processed props for future requests
+        mainPageCache.set(cacheKey, props)
+
+        return { props }
     } catch (error) {
         console.error('Failed to fetch movie data:', error)
 

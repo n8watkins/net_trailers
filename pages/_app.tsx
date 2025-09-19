@@ -5,6 +5,7 @@ import { RecoilRoot } from 'recoil'
 import ErrorToast from '../components/ErrorToast'
 import DemoMessage from '../components/DemoMessage'
 import ErrorBoundary from '../components/ErrorBoundary'
+import Analytics from '../components/Analytics'
 
 function MyApp({ Component, pageProps }: AppProps) {
     return (
@@ -14,6 +15,7 @@ function MyApp({ Component, pageProps }: AppProps) {
                     <Component {...pageProps} />
                     <ErrorToast />
                     <DemoMessage />
+                    <Analytics />
                 </ErrorBoundary>
             </AuthProvider>
         </RecoilRoot>

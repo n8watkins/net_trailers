@@ -61,7 +61,8 @@ export class UserDataService {
     static addRating(
         preferences: UserPreferences,
         contentId: number,
-        rating: 'liked' | 'disliked' | 'loved'
+        rating: 'liked' | 'disliked' | 'loved',
+        content?: Content
     ): UserPreferences {
         const existingRatingIndex = preferences.ratings.findIndex(r => r.contentId === contentId)
 
@@ -69,6 +70,7 @@ export class UserDataService {
             contentId,
             rating,
             timestamp: Date.now(),
+            content, // Store the content object if provided
         }
 
         let updatedRatings: UserRating[]

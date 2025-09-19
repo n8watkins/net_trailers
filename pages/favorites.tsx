@@ -1,19 +1,23 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { NextPage } from 'next'
 import Head from 'next/head'
 import Header from '../components/Header'
 import Modal from '../components/Modal'
 import useUserData from '../hooks/useUserData'
-import { HeartIcon, HandThumbUpIcon, HandThumbDownIcon, EyeIcon } from '@heroicons/react/24/solid'
+import { HeartIcon, HandThumbUpIcon, HandThumbDownIcon, EyeIcon, MagnifyingGlassIcon } from '@heroicons/react/24/solid'
 import { Content } from '../typings'
 import { getTitle, getYear } from '../typings'
 import Image from 'next/image'
 import { useSetRecoilState } from 'recoil'
 import { modalState, movieState } from '../atoms/modalAtom'
+import { movieCache } from '../utils/apiCache'
 
 const Favorites: NextPage = () => {
     const { ratings, watchlist, isGuest } = useUserData()
     const [selectedFilter, setSelectedFilter] = useState<'all' | 'loved' | 'liked' | 'disliked' | 'watchlist'>('all')
+    const [fetchedContent, setFetchedContent] = useState<Record<number, Content>>({})
+    const [loadingContent, setLoadingContent] = useState<Record<number, boolean>>({})
+    const [searchQuery, setSearchQuery] = useState('')
     const setShowModal = useSetRecoilState(modalState)
     const setCurrentMovie = useSetRecoilState(movieState)
 
@@ -36,7 +40,117 @@ const Favorites: NextPage = () => {
         }
     }
 
-    const filteredContent = getFilteredContent()
+    const baseFilteredContent = getFilteredContent()
+
+    // Apply search filter
+    const filteredContent = searchQuery.trim()
+        ? baseFilteredContent.filter(item => {
+            const content = 'content' in item && item.content
+                ? item.content
+                : fetchedContent[item.contentId]
+
+            if (!content) return false
+
+            const title = getTitle(content).toLowerCase()
+            const query = searchQuery.toLowerCase()
+            return title.includes(query)
+        })
+        : baseFilteredContent
+
+    // Function to fetch content details by ID
+    const fetchContentById = async (contentId: number): Promise<Content | null> => {
+        // Check cache first
+        const cacheKey = `/api/content/${contentId}`
+        const cached = movieCache.get<Content>(cacheKey)
+        if (cached) {
+            return cached
+        }
+
+        try {
+            const response = await fetch(`/api/content/${contentId}`)
+            if (!response.ok) {
+                console.error(`Failed to fetch content ${contentId}:`, response.statusText)
+                return null
+            }
+
+            const content = await response.json()
+
+            // Cache the result
+            movieCache.set(cacheKey, content)
+
+            return content
+        } catch (error) {
+            console.error(`Error fetching content ${contentId}:`, error)
+            return null
+        }
+    }
+
+    // Effect to fetch missing content data
+    useEffect(() => {
+        const fetchMissingContent = async () => {
+            const missingContentIds: number[] = []
+
+            // Find ratings without content data
+            ratings.forEach(rating => {
+                if (!rating.content && !fetchedContent[rating.contentId] && !loadingContent[rating.contentId]) {
+                    missingContentIds.push(rating.contentId)
+                }
+            })
+
+            if (missingContentIds.length === 0) return
+
+            // Set loading state for these IDs
+            setLoadingContent(prev => {
+                const newLoading = { ...prev }
+                missingContentIds.forEach(id => {
+                    newLoading[id] = true
+                })
+                return newLoading
+            })
+
+            // Fetch content data for missing IDs
+            const fetchPromises = missingContentIds.map(async (contentId) => {
+                const content = await fetchContentById(contentId)
+                return { contentId, content }
+            })
+
+            try {
+                const results = await Promise.all(fetchPromises)
+
+                // Update state with fetched content
+                setFetchedContent(prev => {
+                    const newFetched = { ...prev }
+                    results.forEach(({ contentId, content }) => {
+                        if (content) {
+                            newFetched[contentId] = content
+                        }
+                    })
+                    return newFetched
+                })
+
+                // Clear loading state
+                setLoadingContent(prev => {
+                    const newLoading = { ...prev }
+                    missingContentIds.forEach(id => {
+                        delete newLoading[id]
+                    })
+                    return newLoading
+                })
+            } catch (error) {
+                console.error('Error fetching missing content:', error)
+                // Clear loading state on error
+                setLoadingContent(prev => {
+                    const newLoading = { ...prev }
+                    missingContentIds.forEach(id => {
+                        delete newLoading[id]
+                    })
+                    return newLoading
+                })
+            }
+        }
+
+        fetchMissingContent()
+    }, [ratings, fetchedContent, loadingContent])
 
     const handleContentClick = (content: Content) => {
         setCurrentMovie(content)
@@ -127,6 +241,22 @@ const Favorites: NextPage = () => {
                                 </button>
                             ))}
                         </div>
+
+                        {/* Search Bar */}
+                        <div className="max-w-md">
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+                                </div>
+                                <input
+                                    type="text"
+                                    placeholder="Search your favorites..."
+                                    className="w-full pl-10 pr-4 py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all duration-200"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     {/* Content Grid */}
@@ -143,21 +273,31 @@ const Favorites: NextPage = () => {
                     ) : (
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                             {filteredContent.map((item) => {
-                                // For watchlist items, we have the full content object
-                                // For ratings, we need to display a placeholder since we only have contentId
-                                const isWatchlistItem = 'content' in item && item.content
+                                // Check if we have content data (from watchlist, ratings, or fetched data)
+                                const content = 'content' in item && item.content
+                                    ? item.content
+                                    : fetchedContent[item.contentId]
+                                const hasContentData = !!content
+                                const isLoading = loadingContent[item.contentId]
 
                                 return (
                                     <div
                                         key={`${item.contentId}-${item.rating}`}
                                         className="relative group cursor-pointer transition-transform duration-200 hover:scale-105"
-                                        onClick={() => isWatchlistItem && handleContentClick(item.content!)}
+                                        onClick={() => hasContentData && handleContentClick(content)}
                                     >
                                         <div className="relative aspect-[2/3] overflow-hidden rounded-md bg-gray-800">
-                                            {isWatchlistItem ? (
+                                            {isLoading ? (
+                                                <div className="flex items-center justify-center h-full">
+                                                    <div className="text-center">
+                                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mb-2"></div>
+                                                        <p className="text-xs text-gray-300">Loading...</p>
+                                                    </div>
+                                                </div>
+                                            ) : hasContentData && content.poster_path ? (
                                                 <Image
-                                                    src={`https://image.tmdb.org/t/p/w500${item.content!.poster_path}`}
-                                                    alt={getTitle(item.content!)}
+                                                    src={`https://image.tmdb.org/t/p/w500${content.poster_path}`}
+                                                    alt={getTitle(content)}
                                                     fill
                                                     className="object-cover transition-transform duration-200 group-hover:scale-110"
                                                 />
@@ -168,7 +308,7 @@ const Favorites: NextPage = () => {
                                                             {getFilterIcon(item.rating)}
                                                         </div>
                                                         <p className="text-xs text-gray-300">
-                                                            Content ID: {item.contentId}
+                                                            {hasContentData && content ? 'No Poster' : `Content ID: ${item.contentId}`}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -182,13 +322,18 @@ const Favorites: NextPage = () => {
 
                                         {/* Content info */}
                                         <div className="mt-2">
-                                            {isWatchlistItem ? (
+                                            {isLoading ? (
+                                                <>
+                                                    <div className="h-4 bg-gray-700 rounded animate-pulse mb-1"></div>
+                                                    <div className="h-3 bg-gray-700 rounded animate-pulse w-2/3"></div>
+                                                </>
+                                            ) : hasContentData ? (
                                                 <>
                                                     <h3 className="text-sm font-medium text-white truncate">
-                                                        {getTitle(item.content!)}
+                                                        {getTitle(content)}
                                                     </h3>
                                                     <p className="text-xs text-gray-400">
-                                                        {getYear(item.content!)}
+                                                        {getYear(content)}
                                                     </p>
                                                 </>
                                             ) : (

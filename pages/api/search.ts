@@ -122,13 +122,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
             const data = await response.json()
 
-            // Filter out person results and add media_type to results that don't have it
+            // Filter out person results (keep only movies and TV shows)
             const filteredResults = data.results
                 .filter((item: any) => item.media_type === 'movie' || item.media_type === 'tv')
-                .map((item: any) => ({
-                    ...item,
-                    media_type: item.media_type || (item.title ? 'movie' : 'tv')
-                }))
 
             return res.status(200).json({
                 ...data,

@@ -86,7 +86,7 @@ export default function SearchResults({ className = "" }: SearchResultsProps) {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                 {results.map((item: Content, index) => (
                     <div key={`${item.id}-${index}`} className="relative group">
-                        <Thumbnail movie={item} />
+                        <Thumbnail content={item} />
 
                         {/* Media Type Badge */}
                         <div className="absolute top-2 left-2 z-10">

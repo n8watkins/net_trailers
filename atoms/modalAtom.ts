@@ -12,3 +12,9 @@ export const movieState = atom<Content | DocumentData | null>({
     key: 'movieState_v1',
     default: null,
 })
+
+// Track whether to start video with sound enabled
+export const autoPlayWithSoundState = atom({
+    key: 'autoPlayWithSoundState_v1',
+    default: false,
+})

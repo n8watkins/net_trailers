@@ -88,10 +88,10 @@ export default function useUserData() {
     }, [userSession.isGuest, userSession.userId, userSession.preferences])
 
     // Add or update rating for content
-    const setRating = (contentId: number, rating: 'liked' | 'disliked' | 'loved') => {
+    const setRating = (contentId: number, rating: 'liked' | 'disliked' | 'loved', content?: Content) => {
         setUserSession(prev => ({
             ...prev,
-            preferences: UserDataService.addRating(prev.preferences, contentId, rating),
+            preferences: UserDataService.addRating(prev.preferences, contentId, rating, content),
         }))
     }
 

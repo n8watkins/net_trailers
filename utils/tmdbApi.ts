@@ -66,7 +66,9 @@ export class TMDBApiClient {
 
     // Specific API methods
     public async getMovieDetails(id: string | number, mediaType: 'movie' | 'tv' = 'movie') {
-        return this.fetch(`/${mediaType}/${id}`, { append_to_response: 'videos' })
+        return this.fetch(`/${mediaType}/${id}`, {
+            append_to_response: 'videos,credits,external_ids,release_dates,content_ratings'
+        })
     }
 
     public async getTrending(timeWindow: 'day' | 'week' = 'week', page: number = 1) {

@@ -44,40 +44,45 @@ function Row({ title, content }: Props) {
         }
     }
     return (
-        <div className="pb-[2rem]">
-            <h2 className=" text-[#e5e5e5] transition duration-200 hover:text-white lg:text-3xl lg:font-semibold  px-16 py-5 w-max ">
+        <div className="pb-6 sm:pb-8">
+            {/* Section Title */}
+            <h2 className="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold px-4 sm:px-6 md:px-8 lg:px-16 py-3 sm:py-4 lg:py-5 transition duration-200 hover:text-gray-300">
                 {title}
             </h2>
-            <div className={`relative w-screen flex group items-center `}>
+
+            {/* Content Row */}
+            <div className="relative group">
+                {/* Left Arrow - Hidden on mobile, visible on larger screens */}
                 <div
-                    className={`absolute flex z-30 h-[100%] py-2 items-center bg-[#141414]/60 ${
-                        isMoved && ``
-                    }`}
+                    className={`hidden md:flex absolute left-0 top-0 z-30 h-full items-center bg-gradient-to-r from-[#141414]/80 to-transparent pl-2 ${
+                        isMoved ? 'group-hover:opacity-100' : 'opacity-0'
+                    } transition-opacity cursor-pointer`}
+                    onClick={() => handleClick('left')}
                 >
-                    <ChevronLeftIcon
-                        className={`  chevron left-2  ${
-                            isMoved && `group-hover:opacity-100 cursor-pointer`
-                        }`}
-                        onClick={() => handleClick('left')}
-                    ></ChevronLeftIcon>
+                    <ChevronLeftIcon className="h-8 w-8 text-white hover:scale-110 transition-transform" />
                 </div>
+
+                {/* Scrollable Container */}
                 <div
                     ref={rowRef}
-                    className="relative  px-60 h- py-2 flex  pl-14 space-x-2 scrollbar-hide overflow-x-scroll"
+                    className="flex gap-2 sm:gap-3 md:gap-4 overflow-x-auto scrollbar-hide scroll-smooth
+                              px-4 sm:px-6 md:px-8 lg:px-16
+                              py-2 sm:py-3 md:py-4"
+                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                 >
-                    {content.map((item) => {
-                        return <Thumbnail key={item.id} content={item} />
-                    })}
+                    {content.map((item) => (
+                        <div key={item.id} className="flex-shrink-0">
+                            <Thumbnail content={item} />
+                        </div>
+                    ))}
                 </div>
+
+                {/* Right Arrow - Hidden on mobile, visible on larger screens */}
                 <div
-                    className={`absolute flex z-30 h-[100%] py-2  right-0 items-center bg-[#141414]/60 ${
-                        isMoved && ``
-                    }`}
+                    className="hidden md:flex absolute right-0 top-0 z-30 h-full items-center bg-gradient-to-l from-[#141414]/80 to-transparent pr-2 group-hover:opacity-100 opacity-0 transition-opacity cursor-pointer"
+                    onClick={() => handleClick('right')}
                 >
-                    <ChevronRightIcon
-                        className=" chevron  right-2 group-hover:opacity-100  "
-                        onClick={() => handleClick('right')}
-                    ></ChevronRightIcon>
+                    <ChevronRightIcon className="h-8 w-8 text-white hover:scale-110 transition-transform" />
                 </div>
             </div>
         </div>

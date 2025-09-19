@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { MagnifyingGlassIcon, XMarkIcon, ClockIcon } from '@heroicons/react/24/outline'
+import { useRouter } from 'next/router'
 import { useSearch } from '../hooks/useSearch'
 
 interface SearchBarProps {
@@ -17,6 +18,7 @@ export default function SearchBar({
     onFocus,
     onBlur
 }: SearchBarProps) {
+    const router = useRouter()
     const {
         query,
         suggestions,
@@ -69,12 +71,15 @@ export default function SearchBar({
 
     const handleSuggestionClick = (suggestion: string) => {
         updateQuery(suggestion)
-        performSearch(suggestion)
         setShowSuggestions(false)
         inputRef.current?.blur()
+        // Navigate to search page with query
+        router.push(`/search?q=${encodeURIComponent(suggestion)}`)
     }
 
-    const handleClearSearch = () => {
+    const handleClearSearch = (e?: React.MouseEvent) => {
+        e?.preventDefault()
+        e?.stopPropagation()
         clearSearch()
         setShowSuggestions(false)
         inputRef.current?.focus()
@@ -84,16 +89,21 @@ export default function SearchBar({
         if (e.key === 'Enter') {
             e.preventDefault()
             if (query.trim()) {
-                performSearch(query.trim())
                 setShowSuggestions(false)
                 inputRef.current?.blur()
+                // Navigate to search page with query
+                router.push(`/search?q=${encodeURIComponent(query.trim())}`)
             }
+            return
         }
 
         if (e.key === 'Escape') {
             setShowSuggestions(false)
             inputRef.current?.blur()
+            return
         }
+
+        // Allow all other keys (including Backspace) to work normally
     }
 
     // Combine suggestions and search history
