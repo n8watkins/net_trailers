@@ -7,6 +7,7 @@ import useAuth from '../hooks/useAuth'
 import Modal from '../components/Modal'
 import NetflixLoader from '../components/NetflixLoader'
 import NetflixError from '../components/NetflixError'
+import Footer from '../components/Footer'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil'
@@ -201,6 +202,7 @@ const Home = ({
                         />
                     )}
                 </section>
+                <Footer />
                 {showModal && <Modal />}
             </main>
         </div>

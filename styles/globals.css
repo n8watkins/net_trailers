@@ -5,7 +5,7 @@
 @layer body {
     body {
         /**/
-        @apply bg-[#141414] text-white !scrollbar-thin scrollbar-thumb-rounded-lg  hover:!scrollbar-thumb-red-400;
+        @apply bg-[#0a0a0a] text-white !scrollbar-thin scrollbar-thumb-rounded-lg  hover:!scrollbar-thumb-red-400;
     }
     header {
         @apply fixed top-0 z-30 flex  w-full justify-between items-center px-4 py-4 transition-all duration-[1s] lg:px-10 lg:py-6 bg-gradient-to-b from-[rgba(0,0,0,.7)] to-transparent;
@@ -68,13 +68,13 @@
 .backGround {
     background: linear-gradient(
         to bottom,
-        #141414 0,
-        #141414a4 16%,
-        rgba(20, 20, 20, 0.253) 32%,
-        rgba(20, 20, 20, 0) 50%,
-        rgba(20, 20, 20, 0.253) 68%,
-        #141414a4 84%,
-        #141414 100%
+        #0a0a0a 0,
+        #0a0a0aa4 16%,
+        rgba(10, 10, 10, 0.253) 32%,
+        rgba(10, 10, 10, 0) 50%,
+        rgba(10, 10, 10, 0.253) 68%,
+        #0a0a0aa4 84%,
+        #0a0a0a 100%
     );
 }
 .MuiTooltip-tooltipPlacementTop {
