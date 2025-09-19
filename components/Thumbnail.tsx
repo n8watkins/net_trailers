@@ -4,8 +4,7 @@ import Image from 'next/image'
 import { useRecoilState } from 'recoil'
 import { PlayIcon } from '@heroicons/react/24/solid'
 import { modalState, movieState, autoPlayWithSoundState } from '../atoms/modalAtom'
-import useUserData from '../hooks/useUserData'
-import { useToast } from '../hooks/useToast'
+import WatchLaterButton from './WatchLaterButton'
 
 interface Props {
     content?: Content
@@ -16,8 +15,6 @@ function Thumbnail({ content, hideTitles = false }: Props) {
     const [showModal, setShowModal] = useRecoilState(modalState)
     const [currentContent, setCurrentContent] = useRecoilState(movieState)
     const [autoPlayWithSound, setAutoPlayWithSound] = useRecoilState(autoPlayWithSoundState)
-    const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useUserData()
-    const { showSuccess, showError } = useToast()
 
     const handleImageClick = () => {
         if (content) {
@@ -26,21 +23,6 @@ function Thumbnail({ content, hideTitles = false }: Props) {
             setCurrentContent(content)
         }
     }
-
-    const handleWatchlistToggle = (e: React.MouseEvent) => {
-        e.stopPropagation()
-        if (content) {
-            if (isInWatchlist(content.id)) {
-                removeFromWatchlist(content.id)
-                showSuccess('Removed from Watchlist', `${getTitle(content)} has been removed from your watchlist`)
-            } else {
-                addToWatchlist(content)
-                showSuccess('Added to Watchlist', `${getTitle(content)} has been added to your watchlist`)
-            }
-        }
-    }
-
-    const isInList = content ? isInWatchlist(content.id) : false
 
     return (
         <div
@@ -117,38 +99,7 @@ function Thumbnail({ content, hideTitles = false }: Props) {
                         <PlayIcon className="w-4 h-4 group-hover/watch:scale-105 transition-transform duration-200" />
                         <span>Watch</span>
                     </button>
-                    <button
-                        onClick={handleWatchlistToggle}
-                        className={`${
-                            isInList
-                                ? 'bg-red-600/90 border-red-500 hover:bg-red-700'
-                                : 'bg-gray-800/90 border-gray-600 hover:bg-gray-700'
-                        } text-white
-                                 px-3 py-1.5 md:px-4 md:py-2
-                                 text-xs md:text-sm
-                                 rounded-md hover:scale-105
-                                 transition-all duration-200
-                                 flex items-center justify-center gap-1
-                                 shadow-lg hover:shadow-xl
-                                 border hover:border-gray-500
-                                 group/watchlist`}
-                        title={isInList ? "Remove from Watchlist" : "Add to Watchlist"}
-                    >
-                        <svg
-                            className={`w-4 h-4 group-hover/watchlist:scale-110 transition-transform duration-200 ${
-                                isInList ? 'fill-current' : 'fill-none'
-                            }`}
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                            />
-                        </svg>
-                    </button>
+                    <WatchLaterButton content={content} variant="thumbnail" />
                 </div>
             )}
 

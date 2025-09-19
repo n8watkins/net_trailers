@@ -5,7 +5,8 @@ import { RecoilRoot } from 'recoil'
 import ErrorToast from '../components/ErrorToast'
 import DemoMessage from '../components/DemoMessage'
 import ErrorBoundary from '../components/ErrorBoundary'
-import Analytics from '../components/Analytics'
+import GoogleAnalytics from '../components/Analytics'
+import { Analytics } from '@vercel/analytics/next'
 import ToastManager from '../components/ToastManager'
 import Layout from '../components/Layout'
 
@@ -20,6 +21,7 @@ function MyApp({ Component, pageProps }: AppProps) {
                     <ErrorToast />
                     <DemoMessage />
                     <ToastManager />
+                    <GoogleAnalytics />
                     <Analytics />
                 </ErrorBoundary>
             </AuthProvider>

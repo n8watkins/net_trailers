@@ -160,9 +160,39 @@ const cacheConfig = {
 
 ### Phase 3: Polish & Performance (2-3 hours)
 - Main page caching (#4)
-- Footer visibility control (#1)
-- Watch later icon consistency (#6)
-- Movie title display logic (#7)
+- ✅ Footer visibility control (#1) - COMPLETED (Intersection Observer implemented)
+- ✅ Watch later icon consistency (#6) - COMPLETED (WatchLaterButton component created)
+- ✅ Movie title display logic (#7) - COMPLETED (Already correctly implemented)
 
 **Total Estimated Time**: 8-12 hours
 **Highest ROI**: API caching (#13), Search fix (#2), Modal improvements (#6)
+
+---
+
+## Recently Completed (September 2025)
+
+### ✅ Footer Visibility Control (#1)
+- **Status**: COMPLETED
+- **Implementation**: Added Intersection Observer API to Layout component
+- **Details**: Footer now only appears when user scrolls to bottom of page
+- **Files Modified**: `components/Layout.tsx`
+- **Features**: Smooth transition animation, proper cleanup of observers
+
+### ✅ Watch Later Icon Consistency (#6)
+- **Status**: COMPLETED
+- **Implementation**: Created standardized `WatchLaterButton` component
+- **Details**: Unified watch later functionality across Thumbnail and Modal components
+- **Files Modified**:
+  - `components/WatchLaterButton.tsx` (new)
+  - `components/Thumbnail.tsx` (refactored)
+  - `components/Modal.tsx` (refactored)
+- **Features**: Two variants (thumbnail/modal), consistent styling, proper error handling
+
+### ✅ Movie Title Display Logic (#7)
+- **Status**: COMPLETED (Already correctly implemented)
+- **Current State**:
+  - Trending section: `hideTitles={true}` - titles hidden ✅
+  - All other rows: `hideTitles={false}` (default) - titles shown ✅
+  - Search results: titles shown ✅
+  - Genre pages: titles shown ✅
+- **Files**: No changes needed - logic already matches requirements

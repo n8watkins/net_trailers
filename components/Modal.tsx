@@ -47,6 +47,7 @@ import Image from 'next/image'
 import { Element, Genre } from '../typings'
 import ToolTipMod from '../components/ToolTipMod'
 import LikeOptions from './LikeOptions'
+import WatchLaterButton from './WatchLaterButton'
 
 function Modal() {
     const [showModal, setShowModal] = useRecoilState(modalState)
@@ -65,7 +66,6 @@ function Modal() {
     const [player, setPlayer] = useState<ReactPlayer | null>(null)
     const divRef = useRef<HTMLDivElement>(null)
     const [secondsPlayed, setSecondsPlayed] = useState(0)
-    const [onMyList, setOnMyList] = useState(false)
     const [loadedMovieId, setLoadedMovieId] = useState<number | null>(null)
     const [showJsonDebug, setShowJsonDebug] = useState(false)
 
@@ -307,25 +307,7 @@ function Modal() {
                                         )}
 
                                     {/* My List Button */}
-                                    {onMyList ? (
-                                        <ToolTipMod title="Remove from My List">
-                                            <button className="p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white">
-                                                <CheckIcon
-                                                    className="h-4 w-4 sm:h-6 sm:w-6"
-                                                    onClick={() => setOnMyList(!onMyList)}
-                                                />
-                                            </button>
-                                        </ToolTipMod>
-                                    ) : (
-                                        <ToolTipMod title="Add to My List">
-                                            <button className="p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white">
-                                                <PlusIcon
-                                                    className="h-4 w-4 sm:h-6 sm:w-6"
-                                                    onClick={() => setOnMyList(!onMyList)}
-                                                />
-                                            </button>
-                                        </ToolTipMod>
-                                    )}
+                                    {currentMovie && <WatchLaterButton content={currentMovie} variant="modal" />}
 
                                     {/* Like Options */}
                                     <LikeOptions />
