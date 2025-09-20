@@ -67,7 +67,7 @@ export interface CacheStatus {
 }
 
 export const cacheStatusState = atom<CacheStatus>({
-    key: 'cacheStatusState_v1',
+    key: 'cacheStatusState_v2',
     default: {
         mainPageCached: false,
         lastCacheUpdate: 0,

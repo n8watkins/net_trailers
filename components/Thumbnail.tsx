@@ -27,11 +27,11 @@ function Thumbnail({ content, hideTitles = false }: Props) {
     return (
         <div
             className="relative cursor-pointer transition-all duration-300 ease-out group
-                       w-[140px] h-[200px]
-                       sm:w-[160px] sm:h-[240px]
-                       md:w-[180px] md:h-[270px]
-                       lg:w-[200px] lg:h-[300px]
-                       xl:w-[240px] xl:h-[360px]
+                       w-[160px] h-[240px]
+                       sm:w-[180px] sm:h-[270px]
+                       md:w-[200px] md:h-[300px]
+                       lg:w-[220px] lg:h-[330px]
+                       xl:w-[260px] xl:h-[390px]
                        hover:scale-110 hover:z-50"
             onClick={handleImageClick}
         >

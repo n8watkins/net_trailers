@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRecoilState } from 'recoil'
-import { searchState, searchHistoryState, SearchFilters } from '../atoms/searchAtom'
-import { Content, Movie, TVShow, isMovie, isTVShow } from '../typings'
-import { searchCache, cachedFetch } from '../utils/apiCache'
+import { searchState, searchHistoryState } from '../atoms/searchAtom'
 
 // Custom debounce hook
 function useDebounce<T>(value: T, delay: number): T {
@@ -26,12 +24,15 @@ export function useSearch() {
     const [searchHistory, setSearchHistory] = useRecoilState(searchHistoryState)
     const debouncedQuery = useDebounce(search.query, 300)
     const abortControllerRef = useRef<AbortController>()
-    const lastSearchQueryRef = useRef<string>('')
-    const lastFiltersRef = useRef<SearchFilters>(search.filters)
+    const lastQueryRef = useRef<string>('')
 
     // Search function
-    const performSearch = useCallback(async (query: string, filters?: SearchFilters, page = 1) => {
-        if (!query.trim()) {
+    const performSearch = useCallback(async (query: string, page = 1) => {
+        const trimmedQuery = query.trim()
+        console.log('🚀 performSearch called:', { query, trimmedQuery, page })
+
+        if (!trimmedQuery) {
+            console.log('❌ Empty query, clearing results')
             setSearch(prev => ({
                 ...prev,
                 results: [],
@@ -44,6 +45,7 @@ export function useSearch() {
 
         // Cancel previous request
         if (abortControllerRef.current) {
+            console.log('🛑 Aborting previous request')
             abortControllerRef.current.abort()
         }
 
@@ -51,6 +53,7 @@ export function useSearch() {
         const currentController = new AbortController()
         abortControllerRef.current = currentController
 
+        console.log('⏳ Setting loading state')
         setSearch(prev => ({
             ...prev,
             isLoading: true,
@@ -60,73 +63,81 @@ export function useSearch() {
         }))
 
         try {
-            // Build search parameters
-            const searchParams: Record<string, any> = {
-                query: query.trim(),
-                page: page.toString()
+            const url = `/api/search?query=${encodeURIComponent(trimmedQuery)}&page=${page}`
+            console.log('📡 Fetching:', url)
+
+            const response = await fetch(url, {
+                signal: currentController.signal
+            })
+
+            console.log('📥 Response status:', response.status, response.statusText)
+
+            if (!response.ok) {
+                throw new Error(`Search failed: ${response.statusText}`)
             }
 
-            // Add filters if provided
-            if (filters) {
-                if (filters.genre.length > 0) {
-                    searchParams.with_genres = filters.genre.join(',')
-                }
-                if (filters.yearRange[0] !== 1990 || filters.yearRange[1] !== new Date().getFullYear()) {
-                    searchParams['primary_release_date.gte'] = `${filters.yearRange[0]}-01-01`
-                    searchParams['primary_release_date.lte'] = `${filters.yearRange[1]}-12-31`
-                }
-                if (filters.ratingRange[0] !== 0 || filters.ratingRange[1] !== 10) {
-                    searchParams['vote_average.gte'] = filters.ratingRange[0].toString()
-                    searchParams['vote_average.lte'] = filters.ratingRange[1].toString()
-                }
-                searchParams.sort_by = `${filters.sortBy}.${filters.sortOrder}`
-            }
+            const data = await response.json()
+            console.log('📊 Search data received:', {
+                resultsCount: data.results?.length || 0,
+                totalResults: data.total_results,
+                page: data.page
+            })
 
-            // Use cached fetch for search requests
-            const data = await cachedFetch<any>('/api/search', searchCache, searchParams)
+            setSearch(prev => {
+                const newResults = page === 1 ? (data.results || []) : [...prev.results, ...(data.results || [])]
+                console.log('📋 Setting results:', {
+                    newResultsCount: newResults.length,
+                    isFirstPage: page === 1,
+                    previousResultsCount: prev.results.length
+                })
 
-            setSearch(prev => ({
-                ...prev,
-                results: page === 1 ? (data.results || []) : [...prev.results, ...(data.results || [])],
-                totalResults: data.total_results || 0,
-                isLoading: false,
-                error: null
-            }))
+                return {
+                    ...prev,
+                    results: newResults,
+                    totalResults: data.total_results || 0,
+                    isLoading: false,
+                    error: null
+                }
+            })
 
             // Add to search history if it's a new search (page 1)
-            if (page === 1 && query.trim()) {
+            if (page === 1) {
                 setSearchHistory(prev => {
-                    const newHistory = [query.trim(), ...prev.filter(h => h !== query.trim())].slice(0, 10)
+                    const newHistory = [trimmedQuery, ...prev.filter(h => h !== trimmedQuery)].slice(0, 10)
+                    console.log('📚 Updated search history:', newHistory)
                     return newHistory
                 })
             }
 
         } catch (error: any) {
             if (error.name !== 'AbortError') {
+                console.error('❌ Search error:', error)
                 setSearch(prev => ({
                     ...prev,
                     isLoading: false,
                     error: error.message || 'Search failed'
                 }))
+            } else {
+                console.log('🛑 Request was aborted')
             }
         }
     }, [setSearch, setSearchHistory])
 
-    // Effect to trigger search when debounced query or filters change
+    // Effect to trigger search when debounced query changes
     useEffect(() => {
         const trimmedQuery = debouncedQuery.trim()
-        const filtersChanged = JSON.stringify(search.filters) !== JSON.stringify(lastFiltersRef.current)
-        const queryChanged = trimmedQuery !== lastSearchQueryRef.current
 
-        // Update refs
-        lastSearchQueryRef.current = trimmedQuery
-        lastFiltersRef.current = search.filters
+        // Only trigger if query actually changed
+        if (trimmedQuery === lastQueryRef.current) {
+            return
+        }
 
-        // Only search if query is valid and something actually changed
-        if (trimmedQuery.length >= 2 && (queryChanged || filtersChanged)) {
-            performSearch(trimmedQuery, search.filters)
+        lastQueryRef.current = trimmedQuery
+
+        if (trimmedQuery.length >= 2) {
+            // Call performSearch directly without dependency issues
+            performSearchInternal(trimmedQuery)
         } else if (trimmedQuery.length === 0 && search.hasSearched) {
-            // Only clear results when query is completely empty
             setSearch(prev => ({
                 ...prev,
                 results: [],
@@ -135,29 +146,94 @@ export function useSearch() {
                 isLoading: false
             }))
         }
-    }, [debouncedQuery, search.filters]) // Safe to include search.filters now with proper change detection
+
+        async function performSearchInternal(query: string, page = 1) {
+            const trimmedQuery = query.trim()
+
+            if (!trimmedQuery) {
+                setSearch(prev => ({
+                    ...prev,
+                    results: [],
+                    isLoading: false,
+                    hasSearched: false,
+                    error: null
+                }))
+                return
+            }
+
+            // Cancel previous request
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort()
+            }
+
+            // Create new abort controller
+            const currentController = new AbortController()
+            abortControllerRef.current = currentController
+
+            setSearch(prev => ({
+                ...prev,
+                isLoading: true,
+                error: null,
+                hasSearched: true,
+                currentPage: page
+            }))
+
+            try {
+                const url = `/api/search?query=${encodeURIComponent(trimmedQuery)}&page=${page}`
+
+                const response = await fetch(url, {
+                    signal: currentController.signal
+                })
+
+                if (!response.ok) {
+                    throw new Error(`Search failed: ${response.statusText}`)
+                }
+
+                const data = await response.json()
+
+                setSearch(prev => {
+                    const newResults = page === 1 ? (data.results || []) : [...prev.results, ...(data.results || [])]
+
+                    return {
+                        ...prev,
+                        results: newResults,
+                        totalResults: data.total_results || 0,
+                        isLoading: false,
+                        error: null
+                    }
+                })
+
+                // Add to search history if it's a new search (page 1)
+                if (page === 1) {
+                    setSearchHistory(prev => {
+                        const newHistory = [trimmedQuery, ...prev.filter(h => h !== trimmedQuery)].slice(0, 10)
+                        return newHistory
+                    })
+                }
+
+            } catch (error: any) {
+                if (error.name !== 'AbortError') {
+                    setSearch(prev => ({
+                        ...prev,
+                        isLoading: false,
+                        error: error.message || 'Search failed'
+                    }))
+                }
+            }
+        }
+    }, [debouncedQuery])
 
     // Update search query
     const updateQuery = useCallback((query: string) => {
         setSearch(prev => ({ ...prev, query }))
     }, [setSearch])
 
-    // Update filters
-    const updateFilters = useCallback((filters: Partial<SearchFilters>) => {
-        setSearch(prev => ({
-            ...prev,
-            filters: { ...prev.filters, ...filters },
-            currentPage: 1 // Reset to first page when filters change
-        }))
-        // The main useEffect will handle triggering the search when filters change
-    }, [setSearch])
-
     // Load more results (pagination)
     const loadMore = useCallback(() => {
         if (!search.isLoading && search.hasSearched && search.query.trim()) {
-            performSearch(search.query, search.filters, search.currentPage + 1)
+            performSearch(search.query, search.currentPage + 1)
         }
-    }, [search.isLoading, search.hasSearched, search.query, search.filters, search.currentPage, performSearch])
+    }, [search.isLoading, search.hasSearched, search.query, search.currentPage, performSearch])
 
     // Clear search
     const clearSearch = useCallback(() => {
@@ -187,7 +263,6 @@ export function useSearch() {
         query: search.query,
         results: search.results,
         suggestions: getSuggestions(search.query),
-        filters: search.filters,
         isLoading: search.isLoading,
         error: search.error,
         hasSearched: search.hasSearched,
@@ -197,7 +272,6 @@ export function useSearch() {
 
         // Actions
         updateQuery,
-        updateFilters,
         performSearch,
         loadMore,
         clearSearch,

@@ -20,7 +20,7 @@ class ApiCache {
     }
 
     private generateKey(url: string, params?: Record<string, any>): string {
-        const paramStr = params ? JSON.stringify(params) : ''
+        const paramStr = params ? JSON.stringify(params, Object.keys(params).sort()) : ''
         return `${url}:${paramStr}`
     }
 

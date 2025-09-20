@@ -1,19 +1,9 @@
 import { atom } from 'recoil'
-import { Movie, TVShow, Content } from '../typings'
-
-export interface SearchFilters {
-    genre: string[]
-    yearRange: [number, number]
-    ratingRange: [number, number]
-    sortBy: 'popularity' | 'rating' | 'release_date' | 'title'
-    sortOrder: 'asc' | 'desc'
-}
+import { Content } from '../typings'
 
 export interface SearchState {
     query: string
     results: Content[]
-    suggestions: string[]
-    filters: SearchFilters
     isLoading: boolean
     error: string | null
     hasSearched: boolean
@@ -21,21 +11,11 @@ export interface SearchState {
     currentPage: number
 }
 
-const defaultFilters: SearchFilters = {
-    genre: [],
-    yearRange: [1990, new Date().getFullYear()],
-    ratingRange: [0, 10],
-    sortBy: 'popularity',
-    sortOrder: 'desc'
-}
-
 export const searchState = atom<SearchState>({
-    key: 'searchState_v2',
+    key: 'searchState_v3',
     default: {
         query: '',
         results: [],
-        suggestions: [],
-        filters: defaultFilters,
         isLoading: false,
         error: null,
         hasSearched: false,

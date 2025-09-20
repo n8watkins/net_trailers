@@ -31,6 +31,7 @@ export default function SearchBar({
 
     const [isFocused, setIsFocused] = useState(false)
     const [showSuggestions, setShowSuggestions] = useState(false)
+    const [selectedIndex, setSelectedIndex] = useState(-1)
     const inputRef = useRef<HTMLInputElement>(null)
     const suggestionsRef = useRef<HTMLDivElement>(null)
 
@@ -54,6 +55,7 @@ export default function SearchBar({
         const value = e.target.value
         updateQuery(value)
         setShowSuggestions(value.length > 0)
+        setSelectedIndex(-1) // Reset selection when typing
     }
 
     const handleInputFocus = () => {
@@ -73,8 +75,10 @@ export default function SearchBar({
         updateQuery(suggestion)
         setShowSuggestions(false)
         inputRef.current?.blur()
-        // Navigate to search page with query
-        router.push(`/search?q=${encodeURIComponent(suggestion)}`)
+        // Navigate to search page to see results
+        if (router.pathname !== '/search') {
+            router.push(`/search?q=${encodeURIComponent(suggestion)}`)
+        }
     }
 
     const handleClearSearch = (e?: React.MouseEvent) => {
@@ -88,18 +92,45 @@ export default function SearchBar({
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
             e.preventDefault()
-            if (query.trim()) {
+            if (selectedIndex >= 0 && allSuggestions[selectedIndex]) {
+                // Select the highlighted suggestion
+                const suggestion = allSuggestions[selectedIndex]
+                handleSuggestionClick(suggestion)
+            } else if (query.trim()) {
                 setShowSuggestions(false)
                 inputRef.current?.blur()
-                // Navigate to search page with query
-                router.push(`/search?q=${encodeURIComponent(query.trim())}`)
+                // Navigate to search page to see results
+                if (router.pathname !== '/search') {
+                    router.push(`/search?q=${encodeURIComponent(query.trim())}`)
+                }
             }
             return
         }
 
         if (e.key === 'Escape') {
             setShowSuggestions(false)
+            setSelectedIndex(-1)
             inputRef.current?.blur()
+            return
+        }
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault()
+            if (showSuggestions && allSuggestions.length > 0) {
+                setSelectedIndex(prev =>
+                    prev < allSuggestions.length - 1 ? prev + 1 : 0
+                )
+            }
+            return
+        }
+
+        if (e.key === 'ArrowUp') {
+            e.preventDefault()
+            if (showSuggestions && allSuggestions.length > 0) {
+                setSelectedIndex(prev =>
+                    prev > 0 ? prev - 1 : allSuggestions.length - 1
+                )
+            }
             return
         }
 
@@ -182,7 +213,11 @@ export default function SearchBar({
                         <button
                             key={`${suggestion}-${index}`}
                             onClick={() => handleSuggestionClick(suggestion)}
-                            className="w-full px-4 py-3 text-left text-white hover:bg-gray-700 transition-colors flex items-center space-x-3 group"
+                            className={`w-full px-4 py-3 text-left text-white transition-colors flex items-center space-x-3 group ${
+                                selectedIndex === index
+                                    ? 'bg-gray-700'
+                                    : 'hover:bg-gray-700'
+                            }`}
                         >
                             {query.length === 0 ? (
                                 <ClockIcon className="h-4 w-4 text-gray-400 group-hover:text-gray-300" />

@@ -17,7 +17,8 @@ export default function SearchResults({ className = "" }: SearchResultsProps) {
         totalResults,
         hasMore,
         loadMore,
-        query
+        query,
+        performSearch
     } = useSearch()
 
     if (!hasSearched && !isLoading) {
@@ -32,14 +33,14 @@ export default function SearchResults({ className = "" }: SearchResultsProps) {
                     <div className="text-gray-400">{error}</div>
                     <button
                         onClick={() => {
-                            // Retry the search instead of reloading the page
                             if (query.trim()) {
-                                window.location.reload()
+                                performSearch(query)
                             }
                         }}
                         className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                        disabled={isLoading}
                     >
-                        Try Again
+                        {isLoading ? 'Retrying...' : 'Try Again'}
                     </button>
                 </div>
             </div>
@@ -56,7 +57,7 @@ export default function SearchResults({ className = "" }: SearchResultsProps) {
                     </div>
                     {query && (
                         <div className="mt-4 text-sm text-gray-400">
-                            Searched for: <span className="text-white font-medium">"{query}"</span>
+                            Searched for: <span className="text-white font-medium">&quot;{query}&quot;</span>
                         </div>
                     )}
                 </div>
@@ -73,7 +74,7 @@ export default function SearchResults({ className = "" }: SearchResultsProps) {
                         Search Results
                         {query && (
                             <span className="text-gray-400 font-normal">
-                                {' '}for "{query}"
+                                {' '}for &quot;{query}&quot;
                             </span>
                         )}
                     </h2>
@@ -88,15 +89,24 @@ export default function SearchResults({ className = "" }: SearchResultsProps) {
             )}
 
             {/* Results Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-x-2 gap-y-12">
                 {results.map((item: Content, index) => (
                     <div key={`${item.id}-${index}`} className="relative group">
-                        <Thumbnail content={item} />
+                        <Thumbnail content={item} hideTitles={true} />
 
-                        {/* Media Type Badge */}
-                        <div className="absolute top-2 left-2 z-10">
+                        {/* Score Badge - Top Left of Image */}
+                        {item.vote_average > 0 && (
+                            <div className="absolute top-2 left-2 z-20">
+                                <span className="bg-black/80 text-white text-xs font-bold px-2 py-1 rounded-full backdrop-blur-sm">
+                                    ⭐ {item.vote_average.toFixed(1)}
+                                </span>
+                            </div>
+                        )}
+
+                        {/* Media Type Badge - Top Right of Image */}
+                        <div className="absolute top-2 right-2 z-20">
                             <span className={`
-                                px-2 py-1 text-xs font-medium rounded
+                                px-3 py-1 text-xs font-medium rounded-full
                                 ${isMovie(item)
                                     ? 'bg-blue-600 text-white'
                                     : 'bg-green-600 text-white'
@@ -104,24 +114,6 @@ export default function SearchResults({ className = "" }: SearchResultsProps) {
                             `}>
                                 {isMovie(item) ? 'Movie' : 'TV'}
                             </span>
-                        </div>
-
-                        {/* Title Overlay */}
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                            <h3 className="text-white text-sm font-medium line-clamp-2">
-                                {getTitle(item)}
-                            </h3>
-                            <div className="text-gray-300 text-xs mt-1">
-                                {isMovie(item)
-                                    ? item.release_date?.split('-')[0]
-                                    : item.first_air_date?.split('-')[0]
-                                }
-                                {item.vote_average > 0 && (
-                                    <span className="ml-2">
-                                        ⭐ {item.vote_average.toFixed(1)}
-                                    </span>
-                                )}
-                            </div>
                         </div>
                     </div>
                 ))}

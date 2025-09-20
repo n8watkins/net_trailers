@@ -4,6 +4,7 @@ import Head from 'next/head'
 import Header from '../components/Header'
 import SearchBar from '../components/SearchBar'
 import SearchResults from '../components/SearchResults'
+import Modal from '../components/Modal'
 import { useSearch } from '../hooks/useSearch'
 
 export default function SearchPage() {
@@ -105,6 +106,9 @@ export default function SearchPage() {
                     </section>
                 </div>
             </main>
+
+            {/* Modal for detailed movie/TV show view */}
+            <Modal />
         </div>
     )
 }
