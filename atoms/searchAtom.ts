@@ -30,7 +30,7 @@ const defaultFilters: SearchFilters = {
 }
 
 export const searchState = atom<SearchState>({
-    key: 'searchState',
+    key: 'searchState_v2',
     default: {
         query: '',
         results: [],
@@ -46,7 +46,7 @@ export const searchState = atom<SearchState>({
 
 // Search history atom
 export const searchHistoryState = atom<string[]>({
-    key: 'searchHistoryState',
+    key: 'searchHistoryState_v2',
     default: [],
     effects: [
         ({ setSelf, onSet }) => {
@@ -74,6 +74,6 @@ export const searchHistoryState = atom<string[]>({
 
 // Recent searches atom (different from history - shows quick suggestions)
 export const recentSearchesState = atom<string[]>({
-    key: 'recentSearchesState',
+    key: 'recentSearchesState_v2',
     default: []
 })

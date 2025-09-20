@@ -35,24 +35,24 @@ const defaultUserSession: UserSession = {
 
 // Main user session state
 export const userSessionState = atom<UserSession>({
-    key: 'userSessionState_v1',
+    key: 'userSessionState_v2',
     default: defaultUserSession,
 })
 
 // Auth mode state
 export const authModeState = atom<'login' | 'register' | 'guest'>({
-    key: 'authModeState_v1',
+    key: 'authModeState_v2',
     default: 'login',
 })
 
 // Demo messaging state
 export const showDemoMessageState = atom<boolean>({
-    key: 'showDemoMessageState_v1',
+    key: 'showDemoMessageState_v2',
     default: true,
 })
 
 // Content loading success state
 export const contentLoadedSuccessfullyState = atom<boolean>({
-    key: 'contentLoadedSuccessfullyState_v1',
+    key: 'contentLoadedSuccessfullyState_v2',
     default: false,
 })
