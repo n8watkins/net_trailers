@@ -58,11 +58,33 @@
     }
 }
 
+/* Netflix-themed scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(30, 30, 30, 0.8);
+    border-radius: 10px;
+}
+
 ::-webkit-scrollbar-thumb {
     background-image: radial-gradient(circle, rgb(236, 50, 50), rgb(31, 0, 0));
     border-color: rgb(177, 2, 2);
     border-style: solid;
     border-width: 0.01px;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-image: radial-gradient(circle, rgb(255, 70, 70), rgb(50, 0, 0));
+    border-color: rgb(200, 20, 20);
+}
+
+::-webkit-scrollbar-corner {
+    background: rgba(30, 30, 30, 0.8);
 }
 
 .backGround {

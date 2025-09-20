@@ -68,11 +68,11 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({ className = '', onOpenA
                 {/* Avatar Button - Not Logged In */}
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full bg-gray-600 hover:bg-gray-500 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+                    className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-600 hover:bg-gray-500 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-900"
                     aria-label="User menu"
                     aria-expanded={isOpen}
                 >
-                    <UserIcon className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                    <UserIcon className="w-7 h-7 md:w-8 md:h-8 text-white" />
                 </button>
 
                 {/* Dropdown Menu - Not Logged In */}
@@ -136,7 +136,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({ className = '', onOpenA
             {/* Avatar Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full bg-red-600 hover:bg-red-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+                className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-red-600 hover:bg-red-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-900"
                 aria-label="Profile menu"
                 aria-expanded={isOpen}
             >
@@ -144,10 +144,10 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({ className = '', onOpenA
                     <img
                         src={user.photoURL}
                         alt="Profile"
-                        className="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover"
+                        className="w-12 h-12 md:w-14 md:h-14 rounded-full object-cover"
                     />
                 ) : (
-                    <span className="text-white text-sm md:text-base font-bold">
+                    <span className="text-white text-base md:text-lg font-bold">
                         {getInitials(user.email || 'U')}
                     </span>
                 )}

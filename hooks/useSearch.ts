@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRecoilState } from 'recoil'
 import { searchState, searchHistoryState } from '../atoms/searchAtom'
+import { getTitle } from '../typings'
 
 // Custom debounce hook
 function useDebounce<T>(value: T, delay: number): T {
@@ -248,15 +249,16 @@ export function useSearch() {
         }))
     }, [setSearch])
 
-    // Get search suggestions based on current query
+    // Get search suggestions based on current search results
     const getSuggestions = useCallback((query: string) => {
-        if (!query.trim()) return []
+        if (!query.trim() || !search.results.length) return []
 
         const queryLower = query.toLowerCase()
-        return searchHistory
-            .filter(item => item.toLowerCase().includes(queryLower) && item !== query)
+        return search.results
+            .map(result => getTitle(result))
+            .filter(title => title && title.toLowerCase().includes(queryLower) && title.toLowerCase() !== query.toLowerCase())
             .slice(0, 5)
-    }, [searchHistory])
+    }, [search.results])
 
     return {
         // State

@@ -1,7 +1,8 @@
 import React from 'react'
 import { useSearch } from '../hooks/useSearch'
-import Thumbnail from './Thumbnail'
-import { Content, isMovie, getTitle } from '../typings'
+import { Content, isMovie, getTitle, getYear, getContentType } from '../typings'
+import { useRecoilState } from 'recoil'
+import { modalState, movieState, autoPlayWithSoundState } from '../atoms/modalAtom'
 
 interface SearchResultsProps {
     className?: string
@@ -21,7 +22,17 @@ export default function SearchResults({ className = "" }: SearchResultsProps) {
         performSearch
     } = useSearch()
 
-    if (!hasSearched && !isLoading) {
+    const [showModal, setShowModal] = useRecoilState(modalState)
+    const [currentContent, setCurrentContent] = useRecoilState(movieState)
+    const [autoPlayWithSound, setAutoPlayWithSound] = useRecoilState(autoPlayWithSoundState)
+
+    const handleContentClick = (content: Content) => {
+        setAutoPlayWithSound(false) // More info mode - starts muted
+        setShowModal(true)
+        setCurrentContent(content)
+    }
+
+    if (!hasSearched && !isLoading && results.length === 0) {
         return null
     }
 
@@ -88,32 +99,75 @@ export default function SearchResults({ className = "" }: SearchResultsProps) {
                 </div>
             )}
 
-            {/* Results Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-x-2 gap-y-12">
+            {/* Results List - Horizontal Row Layout */}
+            <div className="space-y-4">
                 {results.map((item: Content, index) => (
-                    <div key={`${item.id}-${index}`} className="relative group">
-                        <Thumbnail content={item} hideTitles={true} />
+                    <div
+                        key={`${item.id}-${index}`}
+                        className="flex items-center bg-gray-800/50 hover:bg-gray-700/50 rounded-lg p-4 transition-all duration-200 cursor-pointer group"
+                        onClick={() => handleContentClick(item)}
+                    >
+                        {/* Movie Poster */}
+                        <div className="flex-shrink-0 w-16 h-24 sm:w-20 sm:h-30 md:w-24 md:h-36 relative rounded-lg overflow-hidden bg-gray-700">
+                            {item.poster_path ? (
+                                <img
+                                    src={`https://image.tmdb.org/t/p/w200${item.poster_path}`}
+                                    alt={getTitle(item)}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                                />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                    <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                                    </svg>
+                                </div>
+                            )}
+                        </div>
 
-                        {/* Score Badge - Top Left of Image */}
-                        {item.vote_average > 0 && (
-                            <div className="absolute top-2 left-2 z-20">
-                                <span className="bg-black/80 text-white text-xs font-bold px-2 py-1 rounded-full backdrop-blur-sm">
-                                    ⭐ {item.vote_average.toFixed(1)}
+                        {/* Content Details */}
+                        <div className="flex-1 ml-4 min-w-0">
+                            {/* Title and Year */}
+                            <div className="flex items-start justify-between mb-2">
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="text-white font-semibold text-lg truncate group-hover:text-red-400 transition-colors">
+                                        {getTitle(item)}
+                                    </h3>
+                                    <p className="text-gray-400 text-sm">
+                                        {getYear(item)}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Rating, Media Type, and Overview */}
+                            <div className="flex items-center gap-4 mb-2">
+                                {/* Rating */}
+                                {item.vote_average > 0 && (
+                                    <div className="flex items-center gap-1">
+                                        <span className="text-yellow-400">⭐</span>
+                                        <span className="text-white text-sm font-medium">
+                                            {item.vote_average.toFixed(1)}
+                                        </span>
+                                    </div>
+                                )}
+
+                                {/* Media Type Badge */}
+                                <span className={`
+                                    px-2 py-1 text-xs font-medium rounded-full
+                                    ${isMovie(item)
+                                        ? 'bg-blue-600 text-white'
+                                        : 'bg-green-600 text-white'
+                                    }
+                                `}>
+                                    {getContentType(item)}
                                 </span>
                             </div>
-                        )}
 
-                        {/* Media Type Badge - Top Right of Image */}
-                        <div className="absolute top-2 right-2 z-20">
-                            <span className={`
-                                px-3 py-1 text-xs font-medium rounded-full
-                                ${isMovie(item)
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-green-600 text-white'
-                                }
-                            `}>
-                                {isMovie(item) ? 'Movie' : 'TV'}
-                            </span>
+                            {/* Overview */}
+                            {item.overview && (
+                                <p className="text-gray-300 text-sm line-clamp-2 md:line-clamp-1">
+                                    {item.overview}
+                                </p>
+                            )}
                         </div>
                     </div>
                 ))}

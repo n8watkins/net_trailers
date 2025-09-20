@@ -154,9 +154,9 @@ function Banner({ trending }: Props) {
                     </div>
                 </div>
 
-                {/* Image-based pagination - positioned in bottom right */}
+                {/* Image-based pagination - hidden on mobile/tablet, higher on desktop */}
                 {carouselContent.length > 1 && (
-                    <div className="absolute bottom-4 sm:bottom-6 md:bottom-8 lg:bottom-16 xl:bottom-20 right-4 sm:right-6 md:right-8 lg:right-12 flex space-x-4 z-30">
+                    <div className="hidden lg:flex absolute bottom-24 xl:bottom-32 right-4 sm:right-6 md:right-8 lg:right-12 space-x-4 z-20">
                         {carouselContent.map((content, index) => (
                             <button
                                 key={index}
