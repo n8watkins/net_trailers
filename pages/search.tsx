@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/router'
 import Head from 'next/head'
 import Header from '../components/Header'
-import SearchBar from '../components/SearchBar'
 import SearchResults from '../components/SearchResults'
+import SearchFilters from '../components/SearchFilters'
 import Modal from '../components/Modal'
 import { useSearch } from '../hooks/useSearch'
 
@@ -27,6 +27,12 @@ export default function SearchPage() {
     // Update URL when query changes (debounced to prevent interference with typing)
     useEffect(() => {
         if (!isInitialLoad && query) {
+            // Check if the URL would actually change
+            const currentQuery = router.query.q
+            if (currentQuery === query) {
+                return // Don't update if the URL query is already the same
+            }
+
             // Clear any existing timeout
             if (urlUpdateTimeoutRef.current) {
                 clearTimeout(urlUpdateTimeoutRef.current)
@@ -37,7 +43,7 @@ export default function SearchPage() {
                 router.replace(
                     {
                         pathname: '/search',
-                        query: { q: query }
+                        query: { q: query },
                     },
                     undefined,
                     { shallow: true }
@@ -55,9 +61,7 @@ export default function SearchPage() {
     return (
         <div className="relative h-screen bg-gradient-to-b from-gray-900/10 to-[#010511] lg:h-[140vh]">
             <Head>
-                <title>
-                    {query ? `Search: ${query} - NetTrailer` : 'Search - NetTrailer'}
-                </title>
+                <title>{query ? `Search: ${query} - NetTrailer` : 'Search - NetTrailer'}</title>
                 <meta
                     name="description"
                     content={
@@ -70,39 +74,16 @@ export default function SearchPage() {
 
             <Header />
 
-            <main className="relative pl-4 pb-24 lg:space-y-24 lg:pl-16">
-                <div className="pt-24 lg:pt-32">
-                    {/* Search Section */}
+            <main className="relative pl-16 pb-32 lg:space-y-32 lg:pl-32 xl:pl-40">
+                <div className="pt-32 lg:pt-40">
+                    {/* Search Filters */}
                     <section className="mb-8">
-                        <div className="max-w-4xl">
-                            <h1 className="text-3xl lg:text-4xl font-bold text-white mb-4">
-                                Search Movies & TV Shows
-                            </h1>
-                            <p className="text-gray-300 text-lg mb-6">
-                                Discover your next favorite movie or TV series from our extensive catalog
-                            </p>
-                            <SearchBar
-                                placeholder="Search for movies, TV shows, actors..."
-                                className="max-w-2xl"
-                            />
-                            <div className="mt-4 flex flex-wrap gap-2 text-sm text-gray-400">
-                                <span className="flex items-center gap-1">
-                                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                                    Movies
-                                </span>
-                                <span className="flex items-center gap-1">
-                                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                                    TV Shows
-                                </span>
-                                <span className="text-gray-500">•</span>
-                                <span>Search by title, actor, or genre</span>
-                            </div>
-                        </div>
+                        <SearchFilters className="pr-16 lg:pr-32 xl:pr-40 mx-auto max-w-7xl" />
                     </section>
 
                     {/* Search Results */}
                     <section>
-                        <SearchResults className="pr-4 lg:pr-16" />
+                        <SearchResults className="pr-16 lg:pr-32 xl:pr-40 mx-auto max-w-7xl" />
                     </section>
                 </div>
             </main>

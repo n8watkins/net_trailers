@@ -1,27 +1,43 @@
 import { atom } from 'recoil'
 import { Content } from '../typings'
 
+export interface SearchFilters {
+    contentType: 'all' | 'movie' | 'tv'
+    rating: 'all' | '7.0+' | '8.0+' | '9.0+'
+    year: 'all' | '2020s' | '2010s' | '2000s' | '1990s'
+    duration: 'all' | 'short' | 'medium' | 'long'
+}
+
 export interface SearchState {
     query: string
     results: Content[]
+    filteredResults: Content[]
     isLoading: boolean
     error: string | null
     hasSearched: boolean
     totalResults: number
     currentPage: number
+    filters: SearchFilters
 }
 
 export const searchState = atom<SearchState>({
-    key: 'searchState_v3',
+    key: 'searchState_v4',
     default: {
         query: '',
         results: [],
+        filteredResults: [],
         isLoading: false,
         error: null,
         hasSearched: false,
         totalResults: 0,
-        currentPage: 1
-    }
+        currentPage: 1,
+        filters: {
+            contentType: 'all',
+            rating: 'all',
+            year: 'all',
+            duration: 'all',
+        },
+    },
 })
 
 // Search history atom
@@ -48,12 +64,12 @@ export const searchHistoryState = atom<string[]>({
                     localStorage.setItem('nettrailer-search-history', JSON.stringify(newValue))
                 }
             })
-        }
-    ]
+        },
+    ],
 })
 
 // Recent searches atom (different from history - shows quick suggestions)
 export const recentSearchesState = atom<string[]>({
     key: 'recentSearchesState_v2',
-    default: []
+    default: [],
 })

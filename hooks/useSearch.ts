@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useRouter } from 'next/router'
 import { useRecoilState } from 'recoil'
-import { searchState, searchHistoryState } from '../atoms/searchAtom'
-import { getTitle } from '../typings'
+import { searchState, searchHistoryState, SearchFilters } from '../atoms/searchAtom'
+import { getTitle, Content, isMovie, getYear } from '../typings'
 
 // Custom debounce hook
 function useDebounce<T>(value: T, delay: number): T {
@@ -20,109 +21,193 @@ function useDebounce<T>(value: T, delay: number): T {
     return debouncedValue
 }
 
+// Filter content based on search filters
+function applyFilters(results: Content[], filters: SearchFilters): Content[] {
+    return results.filter((item) => {
+        // Content Type Filter
+        if (filters.contentType !== 'all') {
+            if (filters.contentType === 'movie' && item.media_type !== 'movie') return false
+            if (filters.contentType === 'tv' && item.media_type !== 'tv') return false
+        }
+
+        // Rating Filter
+        if (filters.rating !== 'all') {
+            const rating = item.vote_average || 0
+            switch (filters.rating) {
+                case '7.0+':
+                    if (rating < 7.0) return false
+                    break
+                case '8.0+':
+                    if (rating < 8.0) return false
+                    break
+                case '9.0+':
+                    if (rating < 9.0) return false
+                    break
+            }
+        }
+
+        // Year Filter
+        if (filters.year !== 'all') {
+            const year = getYear(item)
+            if (year) {
+                const yearNum = parseInt(year)
+                switch (filters.year) {
+                    case '2020s':
+                        if (yearNum < 2020 || yearNum > 2029) return false
+                        break
+                    case '2010s':
+                        if (yearNum < 2010 || yearNum > 2019) return false
+                        break
+                    case '2000s':
+                        if (yearNum < 2000 || yearNum > 2009) return false
+                        break
+                    case '1990s':
+                        if (yearNum < 1990 || yearNum > 1999) return false
+                        break
+                }
+            }
+        }
+
+        // Duration Filter (movies only)
+        if (filters.duration !== 'all' && isMovie(item)) {
+            const runtime = item.runtime || 0
+            switch (filters.duration) {
+                case 'short':
+                    if (runtime >= 90 || runtime === 0) return false
+                    break
+                case 'medium':
+                    if (runtime < 90 || runtime > 150) return false
+                    break
+                case 'long':
+                    if (runtime <= 150) return false
+                    break
+            }
+        }
+
+        return true
+    })
+}
+
 export function useSearch() {
+    const router = useRouter()
     const [search, setSearch] = useRecoilState(searchState)
     const [searchHistory, setSearchHistory] = useRecoilState(searchHistoryState)
     const debouncedQuery = useDebounce(search.query, 300)
     const abortControllerRef = useRef<AbortController>()
     const lastQueryRef = useRef<string>('')
 
-    // Search function
-    const performSearch = useCallback(async (query: string, page = 1) => {
-        const trimmedQuery = query.trim()
-        console.log('🚀 performSearch called:', { query, trimmedQuery, page })
-
-        if (!trimmedQuery) {
-            console.log('❌ Empty query, clearing results')
-            setSearch(prev => ({
-                ...prev,
-                results: [],
-                isLoading: false,
-                hasSearched: false,
-                error: null
-            }))
-            return
-        }
-
-        // Cancel previous request
-        if (abortControllerRef.current) {
-            console.log('🛑 Aborting previous request')
-            abortControllerRef.current.abort()
-        }
-
-        // Create new abort controller
-        const currentController = new AbortController()
-        abortControllerRef.current = currentController
-
-        console.log('⏳ Setting loading state')
-        setSearch(prev => ({
+    // Clear search results but preserve query
+    const clearResults = useCallback(() => {
+        setSearch((prev) => ({
             ...prev,
-            isLoading: true,
+            results: [],
+            filteredResults: [],
+            hasSearched: false,
             error: null,
-            hasSearched: true,
-            currentPage: page
+            isLoading: false,
+            currentPage: 1,
         }))
+    }, [setSearch])
 
-        try {
-            const url = `/api/search?query=${encodeURIComponent(trimmedQuery)}&page=${page}`
-            console.log('📡 Fetching:', url)
+    // Search function
+    const performSearch = useCallback(
+        async (query: string, page = 1) => {
+            const trimmedQuery = query.trim()
+            console.log('🚀 performSearch called:', { query, trimmedQuery, page })
 
-            const response = await fetch(url, {
-                signal: currentController.signal
-            })
-
-            console.log('📥 Response status:', response.status, response.statusText)
-
-            if (!response.ok) {
-                throw new Error(`Search failed: ${response.statusText}`)
+            if (!trimmedQuery) {
+                console.log('❌ Empty query, clearing results')
+                clearResults()
+                return
             }
 
-            const data = await response.json()
-            console.log('📊 Search data received:', {
-                resultsCount: data.results?.length || 0,
-                totalResults: data.total_results,
-                page: data.page
-            })
+            // Cancel previous request
+            if (abortControllerRef.current) {
+                console.log('🛑 Aborting previous request')
+                abortControllerRef.current.abort()
+            }
 
-            setSearch(prev => {
-                const newResults = page === 1 ? (data.results || []) : [...prev.results, ...(data.results || [])]
-                console.log('📋 Setting results:', {
-                    newResultsCount: newResults.length,
-                    isFirstPage: page === 1,
-                    previousResultsCount: prev.results.length
+            // Create new abort controller
+            const currentController = new AbortController()
+            abortControllerRef.current = currentController
+
+            console.log('⏳ Setting loading state')
+            setSearch((prev) => ({
+                ...prev,
+                isLoading: true,
+                error: null,
+                hasSearched: true,
+                currentPage: page,
+            }))
+
+            try {
+                const url = `/api/search?query=${encodeURIComponent(trimmedQuery)}&page=${page}`
+                console.log('📡 Fetching:', url)
+
+                const response = await fetch(url, {
+                    signal: currentController.signal,
                 })
 
-                return {
-                    ...prev,
-                    results: newResults,
-                    totalResults: data.total_results || 0,
-                    isLoading: false,
-                    error: null
+                console.log('📥 Response status:', response.status, response.statusText)
+
+                if (!response.ok) {
+                    throw new Error(`Search failed: ${response.statusText}`)
                 }
-            })
 
-            // Add to search history if it's a new search (page 1)
-            if (page === 1) {
-                setSearchHistory(prev => {
-                    const newHistory = [trimmedQuery, ...prev.filter(h => h !== trimmedQuery)].slice(0, 10)
-                    console.log('📚 Updated search history:', newHistory)
-                    return newHistory
+                const data = await response.json()
+                console.log('📊 Search data received:', {
+                    resultsCount: data.results?.length || 0,
+                    totalResults: data.total_results,
+                    page: data.page,
                 })
-            }
 
-        } catch (error: any) {
-            if (error.name !== 'AbortError') {
-                console.error('❌ Search error:', error)
-                setSearch(prev => ({
-                    ...prev,
-                    isLoading: false,
-                    error: error.message || 'Search failed'
-                }))
-            } else {
-                console.log('🛑 Request was aborted')
+                setSearch((prev) => {
+                    const newResults =
+                        page === 1 ? data.results || [] : [...prev.results, ...(data.results || [])]
+                    const filtered = applyFilters(newResults, prev.filters)
+                    console.log('📋 Setting results:', {
+                        newResultsCount: newResults.length,
+                        filteredResultsCount: filtered.length,
+                        isFirstPage: page === 1,
+                        previousResultsCount: prev.results.length,
+                    })
+
+                    return {
+                        ...prev,
+                        results: newResults,
+                        filteredResults: filtered,
+                        totalResults: data.total_results || 0,
+                        isLoading: false,
+                        error: null,
+                    }
+                })
+
+                // Add to search history if it's a new search (page 1)
+                if (page === 1) {
+                    setSearchHistory((prev) => {
+                        const newHistory = [
+                            trimmedQuery,
+                            ...prev.filter((h) => h !== trimmedQuery),
+                        ].slice(0, 10)
+                        console.log('📚 Updated search history:', newHistory)
+                        return newHistory
+                    })
+                }
+            } catch (error: any) {
+                if (error.name !== 'AbortError') {
+                    console.error('❌ Search error:', error)
+                    setSearch((prev) => ({
+                        ...prev,
+                        isLoading: false,
+                        error: error.message || 'Search failed',
+                    }))
+                } else {
+                    console.log('🛑 Request was aborted')
+                }
             }
-        }
-    }, [setSearch, setSearchHistory])
+        },
+        [setSearch, setSearchHistory, clearResults]
+    )
 
     // Effect to trigger search when debounced query changes
     useEffect(() => {
@@ -139,26 +224,14 @@ export function useSearch() {
             // Call performSearch directly without dependency issues
             performSearchInternal(trimmedQuery)
         } else if (trimmedQuery.length === 0 && search.hasSearched) {
-            setSearch(prev => ({
-                ...prev,
-                results: [],
-                hasSearched: false,
-                error: null,
-                isLoading: false
-            }))
+            clearResults()
         }
 
         async function performSearchInternal(query: string, page = 1) {
             const trimmedQuery = query.trim()
 
             if (!trimmedQuery) {
-                setSearch(prev => ({
-                    ...prev,
-                    results: [],
-                    isLoading: false,
-                    hasSearched: false,
-                    error: null
-                }))
+                clearResults()
                 return
             }
 
@@ -171,19 +244,19 @@ export function useSearch() {
             const currentController = new AbortController()
             abortControllerRef.current = currentController
 
-            setSearch(prev => ({
+            setSearch((prev) => ({
                 ...prev,
                 isLoading: true,
                 error: null,
                 hasSearched: true,
-                currentPage: page
+                currentPage: page,
             }))
 
             try {
                 const url = `/api/search?query=${encodeURIComponent(trimmedQuery)}&page=${page}`
 
                 const response = await fetch(url, {
-                    signal: currentController.signal
+                    signal: currentController.signal,
                 })
 
                 if (!response.ok) {
@@ -192,42 +265,69 @@ export function useSearch() {
 
                 const data = await response.json()
 
-                setSearch(prev => {
-                    const newResults = page === 1 ? (data.results || []) : [...prev.results, ...(data.results || [])]
+                setSearch((prev) => {
+                    const newResults =
+                        page === 1 ? data.results || [] : [...prev.results, ...(data.results || [])]
+                    const filtered = applyFilters(newResults, prev.filters)
 
                     return {
                         ...prev,
                         results: newResults,
+                        filteredResults: filtered,
                         totalResults: data.total_results || 0,
                         isLoading: false,
-                        error: null
+                        error: null,
                     }
                 })
 
                 // Add to search history if it's a new search (page 1)
                 if (page === 1) {
-                    setSearchHistory(prev => {
-                        const newHistory = [trimmedQuery, ...prev.filter(h => h !== trimmedQuery)].slice(0, 10)
+                    setSearchHistory((prev) => {
+                        const newHistory = [
+                            trimmedQuery,
+                            ...prev.filter((h) => h !== trimmedQuery),
+                        ].slice(0, 10)
                         return newHistory
                     })
                 }
-
             } catch (error: any) {
                 if (error.name !== 'AbortError') {
-                    setSearch(prev => ({
+                    setSearch((prev) => ({
                         ...prev,
                         isLoading: false,
-                        error: error.message || 'Search failed'
+                        error: error.message || 'Search failed',
                     }))
                 }
             }
         }
-    }, [debouncedQuery])
+    }, [debouncedQuery, clearResults])
+
+    // Compute filtered results using useMemo to prevent infinite loops
+    const filteredResults = useMemo(() => {
+        if (search.results.length === 0) return []
+        return applyFilters(search.results, search.filters)
+    }, [search.results, search.filters])
+
+    // Update filteredResults in state when computed value changes
+    useEffect(() => {
+        setSearch((prev) => {
+            if (prev.filteredResults !== filteredResults) {
+                return {
+                    ...prev,
+                    filteredResults,
+                }
+            }
+            return prev
+        })
+    }, [filteredResults, setSearch])
 
     // Update search query
-    const updateQuery = useCallback((query: string) => {
-        setSearch(prev => ({ ...prev, query }))
-    }, [setSearch])
+    const updateQuery = useCallback(
+        (query: string) => {
+            setSearch((prev) => ({ ...prev, query }))
+        },
+        [setSearch]
+    )
 
     // Load more results (pagination)
     const loadMore = useCallback(() => {
@@ -238,48 +338,76 @@ export function useSearch() {
 
     // Clear search
     const clearSearch = useCallback(() => {
-        setSearch(prev => ({
+        setSearch((prev) => ({
             ...prev,
             query: '',
             results: [],
+            filteredResults: [],
             hasSearched: false,
             error: null,
             isLoading: false,
-            currentPage: 1
+            currentPage: 1,
         }))
     }, [setSearch])
 
-    // Get search suggestions based on current search results
-    const getSuggestions = useCallback((query: string) => {
-        if (!query.trim() || !search.results.length) return []
+    // Clear search when navigating away from search page
+    useEffect(() => {
+        const handleRouteChange = (url: string) => {
+            // Clear search if navigating to any page other than search
+            if (!url.startsWith('/search')) {
+                clearSearch()
+            }
+        }
 
-        const queryLower = query.toLowerCase()
-        return search.results
-            .map(result => getTitle(result))
-            .filter(title => title && title.toLowerCase().includes(queryLower) && title.toLowerCase() !== query.toLowerCase())
-            .slice(0, 5)
-    }, [search.results])
+        router.events.on('routeChangeStart', handleRouteChange)
+        return () => {
+            router.events.off('routeChangeStart', handleRouteChange)
+        }
+    }, [router.events, clearSearch])
+
+    // Get search suggestions based on current search results
+    const getSuggestions = useCallback(
+        (query: string) => {
+            if (!query.trim() || !filteredResults.length) return []
+
+            const queryLower = query.toLowerCase()
+            return filteredResults
+                .map((result) => getTitle(result))
+                .filter(
+                    (title) =>
+                        title &&
+                        title.toLowerCase().includes(queryLower) &&
+                        title.toLowerCase() !== query.toLowerCase()
+                )
+                .slice(0, 5)
+        },
+        [filteredResults]
+    )
 
     return {
         // State
         query: search.query,
-        results: search.results,
+        results: filteredResults,
+        allResults: search.results,
         suggestions: getSuggestions(search.query),
         isLoading: search.isLoading,
         error: search.error,
         hasSearched: search.hasSearched,
         totalResults: search.totalResults,
+        filteredTotalResults: filteredResults.length,
         currentPage: search.currentPage,
         searchHistory,
+        filters: search.filters,
 
         // Actions
         updateQuery,
         performSearch,
         loadMore,
         clearSearch,
+        clearResults,
 
         // Computed
         hasMore: search.results.length < search.totalResults,
-        isEmpty: search.hasSearched && search.results.length === 0 && !search.isLoading
+        isEmpty: search.hasSearched && filteredResults.length === 0 && !search.isLoading,
     }
 }
