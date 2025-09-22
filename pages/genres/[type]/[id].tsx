@@ -81,16 +81,21 @@ const GenrePage: NextPage<GenrePageProps> = () => {
             let currentPage = page
             let totalPages = 1
             let contentAdded = 0
-            const targetBatches = 3 // Process 3 batches initially
+            const targetContentCount = 30 // Target at least 30 movies with trailers
+            const maxPagesToCheck = 20 // Safety limit to prevent infinite loops
 
-            console.log(`🎬 Starting progressive streaming for ${mediaType} genre ${genreId}`)
+            console.log(
+                `🎬 Starting progressive streaming for ${mediaType} genre ${genreId} (target: ${targetContentCount} items with trailers)`
+            )
 
-            for (
-                let batchIndex = 0;
-                batchIndex < targetBatches && currentPage <= totalPages;
-                batchIndex++
+            let batchIndex = 0
+            while (
+                contentAdded < targetContentCount &&
+                currentPage <= totalPages &&
+                currentPage <= maxPagesToCheck
             ) {
-                setStreamingProgress((prev) => ({ ...prev, currentBatch: batchIndex + 1 }))
+                batchIndex++
+                setStreamingProgress((prev) => ({ ...prev, currentBatch: batchIndex }))
 
                 const filterParams = new URLSearchParams()
                 filterParams.append('page', currentPage.toString())
@@ -116,7 +121,9 @@ const GenrePage: NextPage<GenrePageProps> = () => {
                     }
                 }
 
-                console.log(`📡 Streaming batch ${batchIndex + 1}, page ${currentPage}...`)
+                console.log(
+                    `📡 Streaming batch ${batchIndex}, page ${currentPage}... (target: ${targetContentCount}, found: ${contentAdded})`
+                )
                 const response = await fetch(
                     `/api/genres/${mediaType}/${genreId}?${filterParams.toString()}`
                 )
@@ -217,8 +224,15 @@ const GenrePage: NextPage<GenrePageProps> = () => {
             setHasMore(currentPage <= totalPages && currentPage <= maxPages)
             setPage(currentPage)
 
+            const targetReached = contentAdded >= targetContentCount
+            const reasonStopped = targetReached
+                ? 'target reached'
+                : currentPage > totalPages
+                  ? 'no more pages'
+                  : 'safety limit reached'
+
             console.log(
-                `🎬 Streaming batch complete: ${contentAdded} items with trailers displayed`
+                `🎬 Streaming complete: ${contentAdded}/${targetContentCount} items with trailers found (${reasonStopped})`
             )
 
             // Check if no content found and we're using problematic filters
@@ -522,7 +536,7 @@ const GenrePage: NextPage<GenrePageProps> = () => {
                                         <div
                                             className="bg-red-600 h-2 rounded-full transition-all duration-300"
                                             style={{
-                                                width: `${Math.min((streamingProgress.withTrailers / 18) * 100, 100)}%`,
+                                                width: `${Math.min((streamingProgress.withTrailers / 30) * 100, 100)}%`,
                                             }}
                                         ></div>
                                     </div>
