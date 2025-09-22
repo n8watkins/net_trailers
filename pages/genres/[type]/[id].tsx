@@ -222,7 +222,7 @@ const GenrePage: NextPage<GenrePageProps> = () => {
             }
 
             setHasMore(currentPage <= totalPages && currentPage <= maxPages)
-            setPage(currentPage)
+            // Note: Don't call setPage here as it triggers infinite loops
 
             const targetReached = contentAdded >= targetContentCount
             const reasonStopped = targetReached
@@ -251,7 +251,7 @@ const GenrePage: NextPage<GenrePageProps> = () => {
             setLoading(false)
             setIsStreaming(false)
         }
-    }, [genreId, mediaType, page, maxPages, filters])
+    }, [genreId, mediaType, maxPages, filters])
 
     useEffect(() => {
         streamGenreContent()
