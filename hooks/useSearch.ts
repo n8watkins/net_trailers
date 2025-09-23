@@ -104,7 +104,7 @@ export function useSearch() {
     const router = useRouter()
     const [search, setSearch] = useRecoilState(searchState)
     const [searchHistory, setSearchHistory] = useRecoilState(searchHistoryState)
-    const debouncedQuery = useDebounce(search.query, 300)
+    const debouncedQuery = useDebounce(search.query, 200)
     const abortControllerRef = useRef<AbortController>()
     const lastQueryRef = useRef<string>('')
 
@@ -346,24 +346,29 @@ export function useSearch() {
         updateFilteredResults()
     }, [search.results, search.filters, setSearch])
 
-    // Auto-load all results when filters are applied
+    // Auto-load all results when filters are applied (only on search page)
     useEffect(() => {
         // Only auto-load if:
-        // 1. Filters are active
-        // 2. We have search results
-        // 3. We don't have all results yet
-        // 4. We're not already loading all results
+        // 1. We're on the search page (not quick search)
+        // 2. Filters are active
+        // 3. We have search results
+        // 4. We don't have all results yet
+        // 5. We're not already loading all results
+        const isOnSearchPage = router.pathname === '/search'
+
         if (
+            isOnSearchPage &&
             hasActiveFilters(search.filters) &&
             search.hasSearched &&
             search.results.length > 0 &&
             !search.hasAllResults &&
             !search.isLoadingAll
         ) {
-            console.log('🎯 Filter applied, auto-loading all results...')
+            console.log('🎯 Filter applied on search page, auto-loading all results...')
             loadAllResults()
         }
     }, [
+        router.pathname,
         search.filters,
         search.hasSearched,
         search.results.length,
