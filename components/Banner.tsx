@@ -41,7 +41,7 @@ function Banner({ trending }: Props) {
                 if (imgUrl) {
                     const img = new window.Image()
                     img.onload = () => {
-                        setImagesLoaded(prev => new Set(prev).add(index))
+                        setImagesLoaded((prev) => new Set(prev).add(index))
                     }
                     img.src = `${BASE_URL}/${imgUrl}`
                 }
@@ -64,14 +64,17 @@ function Banner({ trending }: Props) {
         return () => clearInterval(interval)
     }, [carouselContent.length])
 
-    const goToSlide = useCallback((index: number) => {
-        if (index === currentIndex) return
-        setIsTransitioning(true)
-        setTimeout(() => {
-            setCurrentIndex(index)
-            setTimeout(() => setIsTransitioning(false), 300) // Longer delay for fade in
-        }, 300) // Fade out duration
-    }, [currentIndex])
+    const goToSlide = useCallback(
+        (index: number) => {
+            if (index === currentIndex) return
+            setIsTransitioning(true)
+            setTimeout(() => {
+                setCurrentIndex(index)
+                setTimeout(() => setIsTransitioning(false), 300) // Longer delay for fade in
+            }, 300) // Fade out duration
+        },
+        [currentIndex]
+    )
 
     const featuredContent = carouselContent[currentIndex] || null
     const isCurrentImageLoaded = imagesLoaded.has(currentIndex)
@@ -85,19 +88,22 @@ function Banner({ trending }: Props) {
                     <div className="relative w-full h-full">
                         <Image
                             src={`${BASE_URL}/${
-                                featuredContent?.backdrop_path ||
-                                featuredContent?.poster_path
+                                featuredContent?.backdrop_path || featuredContent?.poster_path
                             }`}
-                            alt={featuredContent ? `${getTitle(featuredContent)} backdrop` : 'Content backdrop'}
+                            alt={
+                                featuredContent
+                                    ? `${getTitle(featuredContent)} backdrop`
+                                    : 'Content backdrop'
+                            }
                             fill
                             quality={100}
                             priority
                             sizes="100vw"
                             style={{
                                 objectFit: 'cover',
-                                objectPosition: 'center center'
+                                objectPosition: 'center center',
                             }}
-                            className={`transition-opacity duration-300 ${
+                            className={`select-none transition-opacity duration-300 ${
                                 isTransitioning ? 'opacity-0' : 'opacity-100'
                             }`}
                         />
@@ -109,9 +115,13 @@ function Banner({ trending }: Props) {
 
             {/* movie info background gradient */}
             <div className="absolute inset-0 flex flex-col justify-center px-4 sm:px-6 md:px-10 lg:px-16 xl:px-20 bg-gradient-to-r from-[#141414]/90 to-transparent">
-                <div className={`max-w-xl lg:max-w-2xl space-y-3 sm:space-y-4 md:space-y-6 transition-all duration-300 ease-in-out ${
-                    isTransitioning ? 'opacity-0 transform translate-y-4' : 'opacity-100 transform translate-y-0'
-                }`}>
+                <div
+                    className={`max-w-xl lg:max-w-2xl space-y-3 sm:space-y-4 md:space-y-6 transition-all duration-300 ease-in-out ${
+                        isTransitioning
+                            ? 'opacity-0 transform translate-y-4'
+                            : 'opacity-100 transform translate-y-0'
+                    }`}
+                >
                     <h1 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight">
                         {featuredContent ? getTitle(featuredContent) : 'Loading...'}
                     </h1>
@@ -149,7 +159,9 @@ function Banner({ trending }: Props) {
                             }}
                         >
                             <InformationCircleIcon className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 lg:h-7 lg:w-7" />
-                            <span className="text-xs sm:text-sm md:text-base lg:text-lg">More Info</span>
+                            <span className="text-xs sm:text-sm md:text-base lg:text-lg">
+                                More Info
+                            </span>
                         </button>
                     </div>
                 </div>
@@ -168,8 +180,11 @@ function Banner({ trending }: Props) {
                                 }`}
                                 style={{
                                     opacity: isTransitioning && index === currentIndex ? 0.7 : 1,
-                                    transform: index === currentIndex ? 'scale(1.1) translateY(-12px)' : 'scale(1)',
-                                    transformOrigin: 'center center'
+                                    transform:
+                                        index === currentIndex
+                                            ? 'scale(1.1) translateY(-12px)'
+                                            : 'scale(1)',
+                                    transformOrigin: 'center center',
                                 }}
                                 aria-label={`Go to slide ${index + 1}: ${getTitle(content)}`}
                             >
@@ -178,7 +193,7 @@ function Banner({ trending }: Props) {
                                     src={`${BASE_URL}/${content.poster_path || content.backdrop_path}`}
                                     alt={`${getTitle(content)} poster`}
                                     fill
-                                    className="object-cover"
+                                    className="object-cover select-none"
                                     sizes="(max-width: 640px) 48px, (max-width: 768px) 56px, 64px"
                                 />
 

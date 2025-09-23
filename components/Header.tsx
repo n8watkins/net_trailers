@@ -71,7 +71,7 @@ function Header({ onOpenAboutModal }: HeaderProps = {}) {
                     width={140}
                     height={70}
                     alt="NetTrailers Logo"
-                    className="cursor-pointer object-contain"
+                    className="cursor-pointer object-contain select-none"
                     priority
                     onClick={() => router.push('/')}
                 />
