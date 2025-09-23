@@ -42,8 +42,17 @@ import {
     ArrowTopRightOnSquareIcon,
 } from '@heroicons/react/24/solid'
 
-import ReactPlayer from 'react-player'
+import dynamic from 'next/dynamic'
 import Image from 'next/image'
+
+const ReactPlayer = dynamic(() => import('react-player'), {
+    ssr: false,
+    loading: () => (
+        <div className="absolute inset-0 bg-black flex items-center justify-center">
+            <div className="text-white">Loading player...</div>
+        </div>
+    ),
+})
 import { Element, Genre } from '../typings'
 import ToolTipMod from '../components/ToolTipMod'
 import LikeOptions from './LikeOptions'

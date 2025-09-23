@@ -47,16 +47,15 @@ export default function Custom500() {
                         Server Error
                     </h2>
                     <p className="text-gray-300 text-lg mb-6 max-w-lg mx-auto">
-                        Our servers encountered an unexpected error. This is usually temporary and should resolve itself shortly.
+                        Our servers encountered an unexpected error. This is usually temporary and
+                        should resolve itself shortly.
                     </p>
                 </div>
 
                 {/* Action buttons */}
                 <div className="space-y-6">
                     <div className="bg-gray-900/50 backdrop-blur-sm rounded-lg p-6 border border-gray-700">
-                        <p className="text-gray-300 mb-4">
-                            What would you like to do?
-                        </p>
+                        <p className="text-gray-300 mb-4">What would you like to do?</p>
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -87,7 +86,8 @@ export default function Custom500() {
                 <div className="mt-8 bg-gray-900/30 rounded-lg p-4 border border-gray-700">
                     <h3 className="text-white font-medium mb-2">Server Status</h3>
                     <p className="text-gray-400 text-sm">
-                        If this problem persists, our team has been automatically notified and is working on a fix.
+                        If this problem persists, our team has been automatically notified and is
+                        working on a fix.
                     </p>
                 </div>
 
@@ -95,7 +95,8 @@ export default function Custom500() {
                 <div className="mt-12 text-gray-500 text-sm">
                     <p>🎭 Meanwhile, somewhere in the NetTrailer universe...</p>
                     <p className="mt-2 italic">
-                        "Even the best streaming services need a coffee break sometimes."
+                        &ldquo;Even the best streaming services need a coffee break
+                        sometimes.&rdquo;
                     </p>
                 </div>
             </div>
@@ -110,8 +111,13 @@ export default function Custom500() {
             {/* CSS for custom animations */}
             <style jsx>{`
                 @keyframes float {
-                    0%, 100% { transform: translateY(0px); }
-                    50% { transform: translateY(-20px); }
+                    0%,
+                    100% {
+                        transform: translateY(0px);
+                    }
+                    50% {
+                        transform: translateY(-20px);
+                    }
                 }
 
                 .animate-float {
