@@ -21,92 +21,62 @@ function useDebounce<T>(value: T, delay: number): T {
     return debouncedValue
 }
 
-// Filter content based on search filters - trailers are checked for ALL content
+// Filter content based on search filters
 async function applyFilters(results: Content[], filters: SearchFilters): Promise<Content[]> {
-    console.log('🎬 Filtering for content with trailers (client-side)...')
+    console.log('🎬 Applying search filters...')
 
-    // Check trailer availability for each result - ALL content must have trailers now
-    const resultsWithTrailerInfo = await Promise.allSettled(
-        results.map(async (item) => {
-            try {
-                const mediaType = item.media_type === 'tv' ? 'tv' : 'movie'
-                const response = await fetch(`/api/movies/details/${item.id}?media_type=${mediaType}`)
+    // Apply filters to all results
+    const filteredResults = results.filter((item) => {
+        // Content Type Filter
+        if (filters.contentType !== 'all') {
+            if (filters.contentType === 'movie' && item.media_type !== 'movie') return false
+            if (filters.contentType === 'tv' && item.media_type !== 'tv') return false
+        }
 
-                if (!response.ok) {
-                    console.warn(`Failed to fetch details for ${mediaType} ${item.id}`)
-                    return { ...item, hasTrailer: false }
-                }
-
-                const data = await response.json()
-                const hasTrailer = data?.videos?.results?.some((video: any) => video.type === 'Trailer') || false
-
-                return { ...item, hasTrailer }
-            } catch (error) {
-                console.warn(`Error checking trailer for ${item.media_type} ${item.id}:`, error)
-                return { ...item, hasTrailer: false }
+        // Rating Filter
+        if (filters.rating !== 'all') {
+            const rating = item.vote_average || 0
+            switch (filters.rating) {
+                case '7.0+':
+                    if (rating < 7.0) return false
+                    break
+                case '8.0+':
+                    if (rating < 8.0) return false
+                    break
+                case '9.0+':
+                    if (rating < 9.0) return false
+                    break
             }
-        })
+        }
+
+        // Year Filter
+        if (filters.year !== 'all') {
+            const year = getYear(item)
+            if (year) {
+                const yearNum = parseInt(year)
+                switch (filters.year) {
+                    case '2020s':
+                        if (yearNum < 2020 || yearNum > 2029) return false
+                        break
+                    case '2010s':
+                        if (yearNum < 2010 || yearNum > 2019) return false
+                        break
+                    case '2000s':
+                        if (yearNum < 2000 || yearNum > 2009) return false
+                        break
+                    case '1990s':
+                        if (yearNum < 1990 || yearNum > 1999) return false
+                        break
+                }
+            }
+        }
+
+        return true
+    })
+
+    console.log(
+        `🎬 Filtering complete: ${filteredResults.length}/${results.length} items match filters`
     )
-
-    // Filter successful results and apply all filters including mandatory trailer availability
-    const filteredResults = resultsWithTrailerInfo
-        .filter((result): result is PromiseFulfilledResult<Content & { hasTrailer: boolean }> =>
-            result.status === 'fulfilled'
-        )
-        .map(result => result.value)
-        .filter((item) => {
-            // Must have trailer - this is now mandatory for all content
-            if (!item.hasTrailer) return false
-
-            // Content Type Filter
-            if (filters.contentType !== 'all') {
-                if (filters.contentType === 'movie' && item.media_type !== 'movie') return false
-                if (filters.contentType === 'tv' && item.media_type !== 'tv') return false
-            }
-
-            // Rating Filter
-            if (filters.rating !== 'all') {
-                const rating = item.vote_average || 0
-                switch (filters.rating) {
-                    case '7.0+':
-                        if (rating < 7.0) return false
-                        break
-                    case '8.0+':
-                        if (rating < 8.0) return false
-                        break
-                    case '9.0+':
-                        if (rating < 9.0) return false
-                        break
-                }
-            }
-
-            // Year Filter
-            if (filters.year !== 'all') {
-                const year = getYear(item)
-                if (year) {
-                    const yearNum = parseInt(year)
-                    switch (filters.year) {
-                        case '2020s':
-                            if (yearNum < 2020 || yearNum > 2029) return false
-                            break
-                        case '2010s':
-                            if (yearNum < 2010 || yearNum > 2019) return false
-                            break
-                        case '2000s':
-                            if (yearNum < 2000 || yearNum > 2009) return false
-                            break
-                        case '1990s':
-                            if (yearNum < 1990 || yearNum > 1999) return false
-                            break
-                    }
-                }
-            }
-
-
-            return true
-        })
-
-    console.log(`🎬 Trailer filtering complete: ${filteredResults.length}/${results.length} items have trailers`)
 
     // Apply sorting if specified
     if (filters.sortBy !== 'popularity.desc') {
@@ -163,12 +133,17 @@ export function useSearch() {
 
     // Load all remaining results
     const loadAllResults = useCallback(async () => {
-        if (search.hasAllResults || search.isLoadingAll || !search.hasSearched || !search.query.trim()) {
+        if (
+            search.hasAllResults ||
+            search.isLoadingAll ||
+            !search.hasSearched ||
+            !search.query.trim()
+        ) {
             return
         }
 
         console.log('🔄 Auto-loading all results for filtering...')
-        setSearch(prev => ({ ...prev, isLoadingAll: true }))
+        setSearch((prev) => ({ ...prev, isLoadingAll: true }))
 
         try {
             const allResults = [...search.results]
@@ -187,26 +162,37 @@ export function useSearch() {
                 allResults.push(...data.results)
                 currentPage++
 
-                console.log(`📥 Loaded page ${currentPage - 1}, total results: ${allResults.length}/${search.totalResults}`)
+                console.log(
+                    `📥 Loaded page ${currentPage - 1}, total results: ${allResults.length}/${search.totalResults}`
+                )
             }
 
             const filtered = await applyFilters(allResults, search.filters)
 
-            setSearch(prev => ({
+            setSearch((prev) => ({
                 ...prev,
                 results: allResults,
                 filteredResults: filtered,
                 hasAllResults: true,
                 isLoadingAll: false,
-                currentPage: currentPage - 1
+                currentPage: currentPage - 1,
             }))
 
             console.log('✅ All results loaded and cached')
         } catch (error) {
             console.error('❌ Error loading all results:', error)
-            setSearch(prev => ({ ...prev, isLoadingAll: false }))
+            setSearch((prev) => ({ ...prev, isLoadingAll: false }))
         }
-    }, [search.hasAllResults, search.isLoadingAll, search.hasSearched, search.query, search.results, search.currentPage, search.totalResults, setSearch])
+    }, [
+        search.hasAllResults,
+        search.isLoadingAll,
+        search.hasSearched,
+        search.query,
+        search.results,
+        search.currentPage,
+        search.totalResults,
+        setSearch,
+    ])
 
     // Search function
     const performSearch = useCallback(
@@ -263,7 +249,8 @@ export function useSearch() {
                 })
 
                 setSearch((prev) => {
-                    const newResults = page === 1 ? data.results || [] : [...prev.results, ...(data.results || [])]
+                    const newResults =
+                        page === 1 ? data.results || [] : [...prev.results, ...(data.results || [])]
 
                     console.log('📋 Setting results:', {
                         newResultsCount: newResults.length,
@@ -307,7 +294,7 @@ export function useSearch() {
                 }
             }
         },
-[setSearch, setSearchHistory, clearResults]
+        [setSearch, setSearchHistory, clearResults]
     )
 
     // Effect to trigger search when debounced query changes
@@ -345,7 +332,7 @@ export function useSearch() {
                     console.log('🔄 Filter results updated:', {
                         previousCount: prev.filteredResults.length,
                         newCount: filtered.length,
-                        filters: search.filters
+                        filters: search.filters,
                     })
                     return {
                         ...prev,
@@ -366,15 +353,25 @@ export function useSearch() {
         // 2. We have search results
         // 3. We don't have all results yet
         // 4. We're not already loading all results
-        if (hasActiveFilters(search.filters) &&
+        if (
+            hasActiveFilters(search.filters) &&
             search.hasSearched &&
             search.results.length > 0 &&
             !search.hasAllResults &&
-            !search.isLoadingAll) {
+            !search.isLoadingAll
+        ) {
             console.log('🎯 Filter applied, auto-loading all results...')
             loadAllResults()
         }
-    }, [search.filters, search.hasSearched, search.results.length, search.hasAllResults, search.isLoadingAll, hasActiveFilters, loadAllResults])
+    }, [
+        search.filters,
+        search.hasSearched,
+        search.results.length,
+        search.hasAllResults,
+        search.isLoadingAll,
+        hasActiveFilters,
+        loadAllResults,
+    ])
 
     // Update search query
     const updateQuery = useCallback(
@@ -467,6 +464,10 @@ export function useSearch() {
 
         // Computed
         hasMore: !hasActiveFilters(search.filters) && search.results.length < search.totalResults,
-        isEmpty: search.hasSearched && search.filteredResults.length === 0 && !search.isLoading && !search.isLoadingAll,
+        isEmpty:
+            search.hasSearched &&
+            search.filteredResults.length === 0 &&
+            !search.isLoading &&
+            !search.isLoadingAll,
     }
 }
