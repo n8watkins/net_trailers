@@ -1,6 +1,18 @@
 import { atom } from 'recoil'
 import { Content } from '../typings'
 
+// Generate unique atom keys to prevent duplication warnings in development
+// Use a stable session ID that persists across hot reloads within the same session
+const SESSION_ID =
+    process.env.NODE_ENV === 'development' ? Math.random().toString(36).substring(2, 8) : ''
+
+const generateAtomKey = (baseKey: string): string => {
+    if (process.env.NODE_ENV === 'development' && SESSION_ID) {
+        return `${baseKey}_${SESSION_ID}`
+    }
+    return baseKey
+}
+
 export interface MainPageData {
     trending: Content[]
     topRatedMovies: Content[]
@@ -14,7 +26,7 @@ export interface MainPageData {
 
 // Cache for main page data to avoid refetching when navigating back
 export const mainPageDataState = atom<MainPageData | null>({
-    key: 'mainPageDataState_v1',
+    key: generateAtomKey('mainPageDataState_v1'),
     default: null,
     effects: [
         ({ setSelf, onSet }) => {
@@ -42,20 +54,23 @@ export const mainPageDataState = atom<MainPageData | null>({
             onSet((newValue) => {
                 if (typeof window !== 'undefined') {
                     if (newValue) {
-                        sessionStorage.setItem('nettrailer-main-page-data', JSON.stringify(newValue))
+                        sessionStorage.setItem(
+                            'nettrailer-main-page-data',
+                            JSON.stringify(newValue)
+                        )
                     } else {
                         sessionStorage.removeItem('nettrailer-main-page-data')
                     }
                 }
             })
-        }
-    ]
+        },
+    ],
 })
 
 // Track if user has visited main page in this session
 export const hasVisitedMainPageState = atom<boolean>({
-    key: 'hasVisitedMainPageState_v1',
-    default: false
+    key: generateAtomKey('hasVisitedMainPageState_v1'),
+    default: false,
 })
 
 // Cache status tracking
@@ -67,11 +82,11 @@ export interface CacheStatus {
 }
 
 export const cacheStatusState = atom<CacheStatus>({
-    key: 'cacheStatusState_v3',
+    key: generateAtomKey('cacheStatusState_v3'),
     default: {
         mainPageCached: false,
         lastCacheUpdate: 0,
         cacheHits: 0,
-        cacheMisses: 0
-    }
+        cacheMisses: 0,
+    },
 })
