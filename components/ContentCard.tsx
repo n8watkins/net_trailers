@@ -104,39 +104,6 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                     </div>
                 )}
 
-                {/* Star Rating - Top Left */}
-                {content && content.vote_average > 0 && imageLoaded && (
-                    <div
-                        className="absolute top-2 left-2 bg-black/80 backdrop-blur-sm rounded-full px-2 py-1 md:px-3 md:py-1.5 z-20
-                              opacity-100 transition-all duration-300"
-                    >
-                        <div className="flex items-center gap-1">
-                            <span className="text-yellow-400 text-sm">⭐</span>
-                            <span className="text-white text-xs font-medium">
-                                {content.vote_average.toFixed(1)}
-                            </span>
-                        </div>
-                    </div>
-                )}
-
-                {/* Media Type Pill - Top Right */}
-                {content && imageLoaded && (
-                    <div
-                        className="absolute top-3 right-3 z-20
-                              opacity-100 transition-all duration-300"
-                    >
-                        <span
-                            className={`px-1.5 py-0.5 md:px-3 md:py-1 text-xs md:text-base rounded-full backdrop-blur-sm ${
-                                isMovie(content)
-                                    ? 'bg-gradient-to-br from-white to-gray-100 text-black font-bold border border-black'
-                                    : 'bg-gradient-to-br from-black to-gray-900 text-white font-medium border border-white'
-                            }`}
-                        >
-                            {getContentType(content)}
-                        </span>
-                    </div>
-                )}
-
                 {/* Hover Action Buttons */}
                 {content && imageLoaded && (
                     <div
@@ -170,6 +137,39 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                     </div>
                 )}
             </div>
+
+            {/* Star Rating - Top Left (Outside scaling container) */}
+            {content && content.vote_average > 0 && imageLoaded && (
+                <div
+                    className="absolute top-2 left-2 bg-black/80 backdrop-blur-sm rounded-full px-2 py-1 md:px-3 md:py-1.5 z-20
+                          opacity-100 transition-all duration-300 ease-out group-hover:-translate-x-3 group-hover:-translate-y-4"
+                >
+                    <div className="flex items-center gap-1">
+                        <span className="text-yellow-400 text-sm">⭐</span>
+                        <span className="text-white text-xs font-medium">
+                            {content.vote_average.toFixed(1)}
+                        </span>
+                    </div>
+                </div>
+            )}
+
+            {/* Media Type Pill - Top Right (Outside scaling container) */}
+            {content && imageLoaded && (
+                <div
+                    className="absolute top-3 right-3 z-20
+                          opacity-100 transition-all duration-300 ease-out group-hover:translate-x-3 group-hover:-translate-y-4"
+                >
+                    <span
+                        className={`px-1.5 py-0.5 md:px-3 md:py-1 text-xs md:text-base rounded-full backdrop-blur-sm ${
+                            isMovie(content)
+                                ? 'bg-gradient-to-br from-white to-gray-100 text-black font-bold border border-black'
+                                : 'bg-gradient-to-br from-black to-gray-900 text-white font-medium border border-white'
+                        }`}
+                    >
+                        {getContentType(content)}
+                    </span>
+                </div>
+            )}
 
             {/* Movie Title and Year - Below Content Image */}
             {content && imageLoaded && (
