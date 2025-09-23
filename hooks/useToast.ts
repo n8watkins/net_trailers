@@ -9,13 +9,13 @@ export const useToast = () => {
         const id = Date.now().toString()
         const newToast: ToastMessage = {
             ...toast,
-            id
+            id,
         }
         setToasts([newToast])
     }
 
     const removeToast = (id: string) => {
-        setToasts(prev => prev.filter(toast => toast.id !== id))
+        setToasts((prev) => prev.filter((toast) => toast.id !== id))
     }
 
     const showSuccess = (title: string, message?: string) => {
@@ -26,11 +26,21 @@ export const useToast = () => {
         addToast({ type: 'error', title, message })
     }
 
+    const showWatchlistAdd = (title: string, message?: string) => {
+        addToast({ type: 'watchlist-add', title, message })
+    }
+
+    const showWatchlistRemove = (title: string, message?: string) => {
+        addToast({ type: 'watchlist-remove', title, message })
+    }
+
     return {
         toasts,
         addToast,
         removeToast,
         showSuccess,
-        showError
+        showError,
+        showWatchlistAdd,
+        showWatchlistRemove,
     }
 }

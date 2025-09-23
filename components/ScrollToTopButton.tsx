@@ -25,7 +25,7 @@ const ScrollToTopButton = () => {
     const scrollToTop = () => {
         window.scrollTo({
             top: 0,
-            behavior: 'smooth'
+            behavior: 'smooth',
         })
     }
 
@@ -38,7 +38,7 @@ const ScrollToTopButton = () => {
             onClick={scrollToTop}
             className="
                 fixed bottom-6 right-6 z-[60]
-                bg-black bg-opacity-80 hover:bg-opacity-100
+                bg-red-600
                 text-white
                 w-12 h-12
                 rounded-full
@@ -46,24 +46,11 @@ const ScrollToTopButton = () => {
                 transition-all duration-300 ease-in-out
                 hover:scale-110
                 shadow-xl
-                border border-gray-600
-                backdrop-blur-sm
                 group
             "
             aria-label="Scroll to top"
         >
-            <ChevronUpIcon className="h-6 w-6 group-hover:animate-bounce" />
-
-            {/* Netflix-style glow effect */}
-            <div className="
-                absolute inset-0
-                rounded-full
-                bg-red-600
-                opacity-0
-                group-hover:opacity-20
-                transition-opacity duration-300
-                animate-pulse
-            " />
+            <ChevronUpIcon className="h-6 w-6" />
         </button>
     )
 }

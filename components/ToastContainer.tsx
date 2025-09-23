@@ -10,16 +10,13 @@ const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onRemoveToast }
     if (toasts.length === 0) return null
 
     return (
-        <div className="fixed top-4 right-4 z-50 space-y-4">
+        <div className="fixed top-4 right-4 z-[9999] space-y-4 pointer-events-none">
             {toasts.map((toast) => (
                 <div
                     key={toast.id}
-                    className="transform transition-all duration-300 ease-in-out"
+                    className="transform transition-all duration-300 ease-in-out pointer-events-auto"
                 >
-                    <Toast
-                        toast={toast}
-                        onClose={onRemoveToast}
-                    />
+                    <Toast toast={toast} onClose={onRemoveToast} />
                 </div>
             ))}
         </div>

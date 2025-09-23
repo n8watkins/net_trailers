@@ -13,7 +13,7 @@ interface WatchLaterButtonProps {
 
 function WatchLaterButton({ content, variant = 'modal', className = '' }: WatchLaterButtonProps) {
     const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useUserData()
-    const { showSuccess, showError } = useToast()
+    const { showSuccess, showError, showWatchlistAdd, showWatchlistRemove } = useToast()
     const [isHovered, setIsHovered] = useState(false)
 
     const isInList = isInWatchlist(content.id)
@@ -23,10 +23,10 @@ function WatchLaterButton({ content, variant = 'modal', className = '' }: WatchL
         try {
             if (isInList) {
                 removeFromWatchlist(content.id)
-                showSuccess(`Removed ${getTitle(content)} from your watchlist`)
+                showWatchlistRemove(`Removed ${getTitle(content)} from watchlist`)
             } else {
                 addToWatchlist(content)
-                showSuccess(`Added ${getTitle(content)} to your watchlist`)
+                showWatchlistAdd(`Added ${getTitle(content)} to watchlist`)
             }
         } catch (error) {
             showError('Error', 'Failed to update watchlist. Please try again.')
@@ -50,7 +50,7 @@ function WatchLaterButton({ content, variant = 'modal', className = '' }: WatchL
                          shadow-lg hover:shadow-xl
                          border hover:border-gray-500
                          group/watchlist ${className}`}
-                title={isInList ? "Remove from Watchlist" : "Add to Watchlist"}
+                title={isInList ? 'Remove from Watchlist' : 'Add to Watchlist'}
             >
                 <svg
                     className={`w-4 h-4 group-hover/watchlist:scale-110 transition-transform duration-200 ${
@@ -72,7 +72,9 @@ function WatchLaterButton({ content, variant = 'modal', className = '' }: WatchL
 
     // Modal variant
     return (
-        <ToolTipMod title={isInList ? (isHovered ? "Remove from My List" : "In My List") : "Add to My List"}>
+        <ToolTipMod
+            title={isInList ? (isHovered ? 'Remove from My List' : 'In My List') : 'Add to My List'}
+        >
             <button
                 className={`p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-all duration-200 ${className}`}
                 onClick={handleWatchlistToggle}

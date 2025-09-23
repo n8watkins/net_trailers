@@ -20,7 +20,7 @@ const GenrePage: NextPage<GenrePageProps> = () => {
     const [page, setPage] = useState(1)
     const [hasMore, setHasMore] = useState(true)
     const [loadingMore, setLoadingMore] = useState(false)
-    const [maxPages] = useState(10)
+    const [maxPages, setMaxPages] = useState(10)
     const observerRef = useRef<IntersectionObserver | null>(null)
     const loadMoreRef = useRef<HTMLDivElement | null>(null)
 
@@ -39,118 +39,101 @@ const GenrePage: NextPage<GenrePageProps> = () => {
     const genreName = Array.isArray(name) ? name[0] : name
     const pageTitle = Array.isArray(title) ? title[0] : title
 
-    const getColumnsPerRow = () => {
-        if (typeof window === 'undefined') return 6
-        const width = window.innerWidth
-        if (width >= 1280) return 6 // xl
-        if (width >= 1024) return 5 // lg
-        if (width >= 768) return 4 // md
-        if (width >= 640) return 3 // sm
-        return 2 // default
-    }
-
-    const [columnsPerRow, setColumnsPerRow] = useState(6)
-
-    useEffect(() => {
-        const updateColumns = () => setColumnsPerRow(getColumnsPerRow())
-        updateColumns()
-        window.addEventListener('resize', updateColumns)
-        return () => window.removeEventListener('resize', updateColumns)
-    }, [])
-
     const contentToRender = useMemo(() => {
-        const totalCompleteRows = Math.floor(content.length / columnsPerRow)
-        return content.slice(0, totalCompleteRows * columnsPerRow)
-    }, [content, columnsPerRow])
+        return content
+    }, [content])
 
     // Load genre content with traditional infinite scroll
-    const loadGenreContent = useCallback(async (pageToLoad = 1) => {
-        if (!genreId || !mediaType) return
+    const loadGenreContent = useCallback(
+        async (pageToLoad = 1) => {
+            if (!genreId || !mediaType) return
 
-        const isFirstPage = pageToLoad === 1
-        if (isFirstPage) {
-            setLoading(true)
-        } else {
-            setLoadingMore(true)
-        }
-        setError(null)
-
-        try {
-            const filterParams = new URLSearchParams()
-            filterParams.append('page', pageToLoad.toString())
-            filterParams.append('sort_by', filters.sort_by)
-
-            // Convert rating filter to API format
-            if (filters.rating !== 'all') {
-                const ratingValue = filters.rating.replace('+', '')
-                filterParams.append('vote_average_gte', ratingValue)
+            const isFirstPage = pageToLoad === 1
+            if (isFirstPage) {
+                setLoading(true)
+            } else {
+                setLoadingMore(true)
             }
+            setError(null)
 
-            // Convert year filter to API format
-            if (filters.year !== 'all') {
-                if (filters.year.endsWith('s')) {
-                    const decade = parseInt(filters.year)
-                    const yearParam =
-                        mediaType === 'movie' ? 'primary_release_year' : 'first_air_date_year'
-                    filterParams.append(yearParam, decade.toString())
-                } else {
-                    const yearParam =
-                        mediaType === 'movie' ? 'primary_release_year' : 'first_air_date_year'
-                    filterParams.append(yearParam, filters.year)
+            try {
+                const filterParams = new URLSearchParams()
+                filterParams.append('page', pageToLoad.toString())
+                filterParams.append('sort_by', filters.sort_by)
+
+                // Convert rating filter to API format
+                if (filters.rating !== 'all') {
+                    const ratingValue = filters.rating.replace('+', '')
+                    filterParams.append('vote_average_gte', ratingValue)
                 }
-            }
 
-            console.log(`📡 Loading page ${pageToLoad} for ${mediaType} genre ${genreId}`)
-            const response = await fetch(
-                `/api/genres/${mediaType}/${genreId}?${filterParams.toString()}`
-            )
-
-            if (!response.ok) {
-                throw new Error(`Failed to fetch ${mediaType} content for genre ${genreId}`)
-            }
-
-            const data = await response.json()
-
-            // Add media_type to each item
-            const enrichedResults = data.results.map((item: Content) => ({
-                ...item,
-                media_type: mediaType,
-            }))
-
-            console.log(`🎬 Adding ${enrichedResults.length} items from page ${pageToLoad}`)
-
-            setContent((prev) => {
-                if (isFirstPage) {
-                    return enrichedResults
-                } else {
-                    const existingIds = new Set(prev.map((item) => item.id))
-                    const newItems = enrichedResults.filter((item) => !existingIds.has(item.id))
-                    return [...prev, ...newItems]
+                // Convert year filter to API format
+                if (filters.year !== 'all') {
+                    if (filters.year.endsWith('s')) {
+                        const decade = parseInt(filters.year)
+                        const yearParam =
+                            mediaType === 'movie' ? 'primary_release_year' : 'first_air_date_year'
+                        filterParams.append(yearParam, decade.toString())
+                    } else {
+                        const yearParam =
+                            mediaType === 'movie' ? 'primary_release_year' : 'first_air_date_year'
+                        filterParams.append(yearParam, filters.year)
+                    }
                 }
-            })
 
-            setHasMore(pageToLoad < data.total_pages && pageToLoad < maxPages)
-
-            console.log(`✅ Page ${pageToLoad} loaded: ${enrichedResults.length} items`)
-
-            // Check if no content found and we're using problematic filters
-            if (
-                isFirstPage &&
-                enrichedResults.length === 0 &&
-                (filters.sort_by === 'popularity.asc' || filters.sort_by === 'vote_average.asc')
-            ) {
-                setError(
-                    `No content found for "${filters.sort_by === 'popularity.asc' ? 'Least Popular' : 'Lowest Rated'}" sorting. Try "Most Popular" or other filters instead.`
+                console.log(`📡 Loading page ${pageToLoad} for ${mediaType} genre ${genreId}`)
+                const response = await fetch(
+                    `/api/genres/${mediaType}/${genreId}?${filterParams.toString()}`
                 )
+
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch ${mediaType} content for genre ${genreId}`)
+                }
+
+                const data = await response.json()
+
+                // Add media_type to each item
+                const enrichedResults = data.results.map((item: Content) => ({
+                    ...item,
+                    media_type: mediaType,
+                }))
+
+                console.log(`🎬 Adding ${enrichedResults.length} items from page ${pageToLoad}`)
+
+                setContent((prev) => {
+                    if (isFirstPage) {
+                        return enrichedResults
+                    } else {
+                        const existingIds = new Set(prev.map((item) => item.id))
+                        const newItems = enrichedResults.filter((item) => !existingIds.has(item.id))
+                        return [...prev, ...newItems]
+                    }
+                })
+
+                setHasMore(pageToLoad < data.total_pages && pageToLoad < maxPages)
+
+                console.log(`✅ Page ${pageToLoad} loaded: ${enrichedResults.length} items`)
+
+                // Check if no content found and we're using problematic filters
+                if (
+                    isFirstPage &&
+                    enrichedResults.length === 0 &&
+                    (filters.sort_by === 'popularity.asc' || filters.sort_by === 'vote_average.asc')
+                ) {
+                    setError(
+                        `No content found for "${filters.sort_by === 'popularity.asc' ? 'Least Popular' : 'Lowest Rated'}" sorting. Try "Most Popular" or other filters instead.`
+                    )
+                }
+            } catch (err) {
+                console.error('Error loading genre content:', err)
+                setError(err instanceof Error ? err.message : 'Failed to load content')
+            } finally {
+                setLoading(false)
+                setLoadingMore(false)
             }
-        } catch (err) {
-            console.error('Error loading genre content:', err)
-            setError(err instanceof Error ? err.message : 'Failed to load content')
-        } finally {
-            setLoading(false)
-            setLoadingMore(false)
-        }
-    }, [genreId, mediaType, maxPages, filters])
+        },
+        [genreId, mediaType, maxPages, filters]
+    )
 
     useEffect(() => {
         loadGenreContent(1)
@@ -170,7 +153,7 @@ const GenrePage: NextPage<GenrePageProps> = () => {
 
             // Counter animation - faster to reach 100% before loading completes
             const counterInterval = setInterval(() => {
-                setLoadingCounter(prev => {
+                setLoadingCounter((prev) => {
                     if (prev >= 100) {
                         clearInterval(counterInterval)
                         return 100
@@ -190,7 +173,7 @@ const GenrePage: NextPage<GenrePageProps> = () => {
                 '🎨 Creating magic...',
                 '🚀 Almost there...',
                 '🎉 Ready to binge...',
-                '✨ Movies await!'
+                '✨ Movies await!',
             ]
 
             let messageIndex = 0
@@ -294,8 +277,14 @@ const GenrePage: NextPage<GenrePageProps> = () => {
                         <div className="text-center max-w-md px-6">
                             <div className="flex space-x-3 justify-center mb-6">
                                 <div className="w-6 h-6 bg-red-600 rounded-full animate-bounce"></div>
-                                <div className="w-6 h-6 bg-red-600 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                                <div className="w-6 h-6 bg-red-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                                <div
+                                    className="w-6 h-6 bg-red-600 rounded-full animate-bounce"
+                                    style={{ animationDelay: '0.1s' }}
+                                ></div>
+                                <div
+                                    className="w-6 h-6 bg-red-600 rounded-full animate-bounce"
+                                    style={{ animationDelay: '0.2s' }}
+                                ></div>
                             </div>
                             <div className="text-2xl font-bold text-white mb-6 font-mono">
                                 {loadingCounter}%
@@ -343,9 +332,10 @@ const GenrePage: NextPage<GenrePageProps> = () => {
         <div className="relative min-h-screen bg-gradient-to-b">
             <Head>
                 <title>
-                    {pageTitle || (genreName
-                        ? `${genreName} ${mediaType === 'movie' ? 'Movies' : 'TV Shows'}`
-                        : 'Genre')}{' '}
+                    {pageTitle ||
+                        (genreName
+                            ? `${genreName} ${mediaType === 'movie' ? 'Movies' : 'TV Shows'}`
+                            : 'Genre')}{' '}
                     - NetTrailer
                 </title>
                 <meta
@@ -361,7 +351,8 @@ const GenrePage: NextPage<GenrePageProps> = () => {
                     {/* Header Section */}
                     <div className="space-y-6">
                         <h1 className="text-3xl font-bold text-white md:text-4xl lg:text-5xl">
-                            {pageTitle || `${genreName} ${mediaType === 'movie' ? 'Movies' : 'TV Shows'}`}
+                            {pageTitle ||
+                                `${genreName} ${mediaType === 'movie' ? 'Movies' : 'TV Shows'}`}
                         </h1>
                         <p className="text-gray-300 text-lg">
                             Discover the best {genreName?.toLowerCase()}{' '}
@@ -369,19 +360,19 @@ const GenrePage: NextPage<GenrePageProps> = () => {
                         </p>
                     </div>
 
-
                     {/* Content Section */}
                     {content.length > 0 ? (
                         <div className="space-y-8">
-
-                            {/* Grid Layout */}
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6 md:gap-8">
+                            {/* Flex Layout */}
+                            <div className="flex flex-wrap gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 md:gap-x-8 md:gap-y-12">
                                 {contentToRender.map((item) => (
-                                    <div key={item.id} className="flex-shrink-0">
+                                    <div
+                                        key={item.id}
+                                        className="flex-shrink-0 mb-12 sm:mb-16 md:mb-20"
+                                    >
                                         <Thumbnail content={item} hideTitles={false} />
                                     </div>
                                 ))}
-
                             </div>
 
                             {/* Loading indicator for pagination */}
@@ -409,41 +400,18 @@ const GenrePage: NextPage<GenrePageProps> = () => {
                                 <div ref={loadMoreRef} className="h-32" />
                             )}
 
-                            {/* End of content indicator */}
+                            {/* Load More Button */}
                             {!hasMore && content.length > 0 && (
                                 <div className="flex justify-center pt-8">
-                                    <div className="text-center max-w-md mx-auto">
-                                        <p className="text-gray-400 text-sm mb-4">
-                                            If you&apos;d like to see more options, please use our
-                                            filters above and/or do a specific movie search.
-                                        </p>
-                                        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                                            <button
-                                                onClick={() =>
-                                                    window.scrollTo({ top: 0, behavior: 'smooth' })
-                                                }
-                                                className="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded transition-colors duration-200"
-                                            >
-                                                Back to Top
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    window.scrollTo({ top: 0, behavior: 'smooth' })
-                                                    setTimeout(() => {
-                                                        const searchInput = document.querySelector(
-                                                            'input[type="search"]'
-                                                        ) as HTMLInputElement
-                                                        if (searchInput) {
-                                                            searchInput.focus()
-                                                        }
-                                                    }, 500)
-                                                }}
-                                                className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded transition-colors duration-200"
-                                            >
-                                                Search Movies
-                                            </button>
-                                        </div>
-                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            setMaxPages((prev) => prev + 10)
+                                            setHasMore(true)
+                                        }}
+                                        className="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200 text-lg"
+                                    >
+                                        Load More Results
+                                    </button>
                                 </div>
                             )}
                         </div>
