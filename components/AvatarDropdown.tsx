@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import Image from 'next/image'
 import {
     UserIcon,
     UserCircleIcon,
@@ -197,9 +198,11 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                 aria-expanded={isOpen}
             >
                 {user.photoURL ? (
-                    <img
+                    <Image
                         src={user.photoURL}
                         alt="Profile"
+                        width={56}
+                        height={56}
                         className="w-12 h-12 md:w-14 md:h-14 rounded-full object-cover"
                     />
                 ) : (
@@ -217,9 +220,11 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                         <div className="flex items-center space-x-3">
                             <div className="flex-shrink-0">
                                 {user.photoURL ? (
-                                    <img
+                                    <Image
                                         src={user.photoURL}
                                         alt="Profile"
+                                        width={40}
+                                        height={40}
                                         className="w-10 h-10 rounded-md object-cover"
                                     />
                                 ) : (

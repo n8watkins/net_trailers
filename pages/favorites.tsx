@@ -14,7 +14,7 @@ import {
 } from '@heroicons/react/24/solid'
 import { Content, isMovie, isTVShow } from '../typings'
 import { getTitle, getYear } from '../typings'
-import Thumbnail from '../components/Thumbnail'
+import ContentCard from '../components/ContentCard'
 import { useSetRecoilState } from 'recoil'
 import { modalState, movieState } from '../atoms/modalAtom'
 import { movieCache } from '../utils/apiCache'
@@ -370,7 +370,7 @@ const Favorites: NextPage = () => {
                                                             </div>
                                                         ) : hasContentData ? (
                                                             <>
-                                                                <Thumbnail
+                                                                <ContentCard
                                                                     content={content}
                                                                     size="small"
                                                                     className=""

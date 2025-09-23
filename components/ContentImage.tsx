@@ -49,7 +49,7 @@ function ContentImage({
         }
     }
 
-    // Render thumbnail variant (original Thumbnail component functionality)
+    // Render thumbnail variant (original ContentCard component functionality)
     if (variant === 'thumbnail') {
         return (
             <div

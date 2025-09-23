@@ -5,7 +5,7 @@ import { useRouter } from 'next/router'
 import Head from 'next/head'
 import Header from '../../../components/Header'
 import Modal from '../../../components/Modal'
-import Thumbnail from '../../../components/Thumbnail'
+import ContentCard from '../../../components/ContentCard'
 import { Content } from '../../../typings'
 import { movieCache } from '../../../utils/apiCache'
 
@@ -365,7 +365,7 @@ const GenrePage: NextPage<GenrePageProps> = () => {
                                         key={item.id}
                                         className="flex-shrink-0 mb-12 sm:mb-16 md:mb-20"
                                     >
-                                        <Thumbnail content={item} />
+                                        <ContentCard content={item} />
                                     </div>
                                 ))}
                             </div>

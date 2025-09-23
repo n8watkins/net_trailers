@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import Image from 'next/image'
 import { useSearch } from '../hooks/useSearch'
@@ -59,48 +59,53 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
     }
 
     // Keyboard navigation handler
-    const handleKeyDown = (e: KeyboardEvent) => {
-        // Don't handle keyboard events if modal is open or not on search page
-        if (!isOnSearchPage || results.length === 0 || showModal) return
+    const handleKeyDown = useCallback(
+        (e: KeyboardEvent) => {
+            // Don't handle keyboard events if modal is open or not on search page
+            if (!isOnSearchPage || results.length === 0 || showModal) return
 
-        // Don't interfere with dropdown/select interactions
-        const target = e.target as HTMLElement
-        if (
-            target &&
-            (target.tagName === 'SELECT' || target.tagName === 'OPTION' || target.closest('select'))
-        ) {
-            return
-        }
-
-        if (e.key === 'ArrowDown') {
-            e.preventDefault()
-            setSelectedIndex((prev) => {
-                const newIndex = prev < results.length - 1 ? prev + 1 : prev
-                if (newIndex !== prev) {
-                    scrollToSelected(newIndex)
-                }
-                return newIndex
-            })
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault()
-            setSelectedIndex((prev) => {
-                const newIndex = prev > 0 ? prev - 1 : prev
-                if (newIndex !== prev) {
-                    scrollToSelected(newIndex)
-                }
-                return newIndex
-            })
-        } else if (e.key === 'Enter' && selectedIndex >= 0) {
-            e.preventDefault()
-            const selectedContent = results[selectedIndex]
-            if (selectedContent) {
-                handleContentClick(selectedContent)
+            // Don't interfere with dropdown/select interactions
+            const target = e.target as HTMLElement
+            if (
+                target &&
+                (target.tagName === 'SELECT' ||
+                    target.tagName === 'OPTION' ||
+                    target.closest('select'))
+            ) {
+                return
             }
-        } else if (e.key === 'Escape') {
-            e.preventDefault()
-            setSelectedIndex(-1)
-        }
-    }
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault()
+                setSelectedIndex((prev) => {
+                    const newIndex = prev < results.length - 1 ? prev + 1 : prev
+                    if (newIndex !== prev) {
+                        scrollToSelected(newIndex)
+                    }
+                    return newIndex
+                })
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault()
+                setSelectedIndex((prev) => {
+                    const newIndex = prev > 0 ? prev - 1 : prev
+                    if (newIndex !== prev) {
+                        scrollToSelected(newIndex)
+                    }
+                    return newIndex
+                })
+            } else if (e.key === 'Enter' && selectedIndex >= 0) {
+                e.preventDefault()
+                const selectedContent = results[selectedIndex]
+                if (selectedContent) {
+                    handleContentClick(selectedContent)
+                }
+            } else if (e.key === 'Escape') {
+                e.preventDefault()
+                setSelectedIndex(-1)
+            }
+        },
+        [isOnSearchPage, results, selectedIndex, showModal, handleContentClick]
+    )
 
     // Set up keyboard event listeners
     useEffect(() => {
@@ -108,7 +113,7 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
             document.addEventListener('keydown', handleKeyDown)
             return () => document.removeEventListener('keydown', handleKeyDown)
         }
-    }, [isOnSearchPage, results, selectedIndex, showModal, handleKeyDown])
+    }, [isOnSearchPage, handleKeyDown])
 
     // Reset selection when results change
     useEffect(() => {
@@ -223,7 +228,7 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
                         }`}
                         onClick={() => handleContentClick(item)}
                     >
-                        {/* Movie Poster - Using standard Thumbnail but in horizontal layout */}
+                        {/* Movie Poster - Using standard ContentCard but in horizontal layout */}
                         <div className="flex-shrink-0 w-16 h-24 sm:w-20 sm:h-30 md:w-24 md:h-36 relative rounded-lg overflow-hidden bg-gray-700">
                             {item.poster_path ? (
                                 <Image

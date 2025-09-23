@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react'
 import { Content } from '../typings'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
-import Thumbnail from './Thumbnail'
+import ContentCard from './ContentCard'
 
 interface Props {
     title: string
@@ -46,7 +46,7 @@ function Row({ title, content }: Props) {
             </h2>
 
             {/* Content Row */}
-            <div className="relative row-container">
+            <div className="relative row-container h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem]">
                 {/* Left Arrow - Hidden on mobile, visible on larger screens */}
                 <div
                     className={`hidden md:flex absolute left-0 top-0 z-30 h-full items-center pl-2 ${
@@ -66,15 +66,14 @@ function Row({ title, content }: Props) {
                 {/* Scrollable Container */}
                 <div
                     ref={rowRef}
-                    className="flex gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-8 overflow-x-auto scrollbar-hide scroll-smooth
+                    className="flex gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-8 overflow-x-scroll overflow-y-hidden scrollbar-hide scroll-smooth
                               px-4 sm:px-6 md:px-8 lg:px-16
-                              py-4 sm:py-6 md:py-8 lg:py-10
-                              pb-16 sm:pb-20 md:pb-24 lg:pb-28"
+                              py-8"
                     style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                 >
                     {content.map((item) => (
                         <div key={item.id} className="flex-shrink-0">
-                            <Thumbnail content={item} />
+                            <ContentCard content={item} />
                         </div>
                     ))}
                 </div>

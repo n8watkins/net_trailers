@@ -186,14 +186,14 @@ function Modal() {
         }
 
         fetchMovie()
-    }, [currentMovie?.id, loadedMovieId, errorHandler, setIsLoading])
+    }, [currentMovie, loadedMovieId, errorHandler, setIsLoading])
 
     useEffect(() => {
         document.addEventListener('fullscreenchange', handleFullscreenChange)
         return () => {
             document.removeEventListener('fullscreenchange', handleFullscreenChange)
         }
-    }, [handleFullscreenChange])
+    }, [])
 
     // Handle Escape key for both main modal and JSON debug modal
     useEffect(() => {

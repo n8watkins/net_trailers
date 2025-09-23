@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react'
 import { Content } from '../typings'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
-import Thumbnail from './Thumbnail'
+import ContentCard from './ContentCard'
 
 interface Props {
     title: string
@@ -206,7 +206,7 @@ function StreamingRow({ title, content, hideTitles = false, batchSize = 6 }: Pro
                                 </div>
                             ) : (
                                 // Actual thumbnail once verified to have trailer
-                                <Thumbnail content={item} />
+                                <ContentCard content={item} />
                             )}
                         </div>
                     ))}

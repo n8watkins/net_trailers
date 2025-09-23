@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react'
+import Image from 'next/image'
 import { XMarkIcon, HeartIcon, StarIcon, PlayIcon } from '@heroicons/react/24/outline'
 
 interface AboutModalProps {
@@ -50,9 +51,11 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                 <div className="space-y-6 text-gray-300">
                     <div>
                         <div className="flex items-center gap-4 mb-6">
-                            <img
+                            <Image
                                 src="/images/portrait-medium.jpg"
                                 alt="Nathan's Portrait"
+                                width={64}
+                                height={64}
                                 className="w-16 h-16 rounded-full object-cover border-2 border-white"
                             />
                             <h3 className="text-white text-lg font-semibold">Hi all, 👋</h3>
@@ -116,7 +119,13 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                 aria-label="Nathan's GitHub"
                                 className="w-10 h-10 rounded-full hover:bg-gray-700 transition-colors duration-200 flex items-center justify-center"
                             >
-                                <img src="/icons/github.svg" alt="GitHub" className="w-6 h-6" />
+                                <Image
+                                    src="/icons/github.svg"
+                                    alt="GitHub"
+                                    width={24}
+                                    height={24}
+                                    className="w-6 h-6"
+                                />
                             </a>
                             <a
                                 href="https://www.linkedin.com/in/n8watkins/"
@@ -125,7 +134,13 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                 aria-label="Nathan's LinkedIn"
                                 className="w-10 h-10 rounded-full hover:bg-gray-700 transition-colors duration-200 flex items-center justify-center"
                             >
-                                <img src="/icons/linkedin.svg" alt="LinkedIn" className="w-6 h-6" />
+                                <Image
+                                    src="/icons/linkedin.svg"
+                                    alt="LinkedIn"
+                                    width={24}
+                                    height={24}
+                                    className="w-6 h-6"
+                                />
                             </a>
                             <a
                                 href="https://x.com/n8watkins"
@@ -146,9 +161,11 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex items-center space-x-3">
                                 <div className="w-8 h-8 bg-transparent rounded-lg flex items-center justify-center">
-                                    <img
+                                    <Image
                                         src="/icons/typescript.svg"
                                         alt="TypeScript"
+                                        width={24}
+                                        height={24}
                                         className="w-6 h-6"
                                     />
                                 </div>
@@ -159,9 +176,11 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                             </div>
                             <div className="flex items-center space-x-3">
                                 <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center border border-white">
-                                    <img
+                                    <Image
                                         src="/icons/nextjs.svg"
                                         alt="Next.js"
+                                        width={20}
+                                        height={20}
                                         className="w-5 h-5"
                                     />
                                 </div>
@@ -172,9 +191,11 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                             </div>
                             <div className="flex items-center space-x-3">
                                 <div className="w-8 h-8 bg-slate-800 rounded-lg flex items-center justify-center">
-                                    <img
+                                    <Image
                                         src="/icons/tailwind.svg"
                                         alt="Tailwind CSS"
+                                        width={24}
+                                        height={16}
                                         className="w-6 h-4"
                                     />
                                 </div>
@@ -185,9 +206,11 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                             </div>
                             <div className="flex items-center space-x-3">
                                 <div className="w-8 h-8 bg-transparent rounded-lg flex items-center justify-center">
-                                    <img
+                                    <Image
                                         src="/icons/firebase.png"
                                         alt="Firebase"
+                                        width={24}
+                                        height={24}
                                         className="w-6 h-6"
                                     />
                                 </div>

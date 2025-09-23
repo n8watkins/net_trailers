@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import Image from 'next/image'
 import {
     MagnifyingGlassIcon,
     XMarkIcon,
@@ -443,10 +444,11 @@ export default function SearchBar({
                                             {/* Movie Poster */}
                                             <div className="flex-shrink-0 w-12 h-18 relative rounded overflow-hidden bg-gray-600">
                                                 {item.poster_path ? (
-                                                    <img
+                                                    <Image
                                                         src={`https://image.tmdb.org/t/p/w200${item.poster_path}`}
                                                         alt={getTitle(item)}
-                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                                                        fill
+                                                        className="object-cover group-hover:scale-105 transition-transform duration-200"
                                                     />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center text-gray-400">
