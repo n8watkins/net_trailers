@@ -42,17 +42,8 @@ import {
     ArrowTopRightOnSquareIcon,
 } from '@heroicons/react/24/solid'
 
-import dynamic from 'next/dynamic'
+import ReactPlayer from 'react-player'
 import Image from 'next/image'
-
-const ReactPlayer = dynamic(() => import('react-player'), {
-    ssr: false,
-    loading: () => (
-        <div className="absolute inset-0 bg-black flex items-center justify-center">
-            <div className="text-white">Loading player...</div>
-        </div>
-    ),
-})
 import { Element, Genre } from '../typings'
 import ToolTipMod from '../components/ToolTipMod'
 import LikeOptions from './LikeOptions'
@@ -73,8 +64,23 @@ function Modal() {
     const [trailerEnded, setTrailerEnded] = useState(true)
     const [fullScreen, setFullScreen] = useState(false)
     const [player, setPlayer] = useState<ReactPlayer | null>(null)
-    const divRef = useRef<HTMLDivElement>(null)
     const [secondsPlayed, setSecondsPlayed] = useState(0)
+    const divRef = useRef<HTMLDivElement>(null)
+
+    const handlePlayerRef = useCallback((ref: ReactPlayer | null) => {
+        setPlayer(ref)
+    }, [])
+
+    const handlePlayerReady = useCallback(
+        (player: ReactPlayer) => {
+            setTimeout(() => {
+                if (player && typeof player.seekTo === 'function' && secondsPlayed > 0) {
+                    player.seekTo(secondsPlayed, 'seconds')
+                }
+            }, 50)
+        },
+        [secondsPlayed]
+    )
     const [loadedMovieId, setLoadedMovieId] = useState<number | null>(null)
     const [showJsonDebug, setShowJsonDebug] = useState(false)
 
@@ -88,8 +94,8 @@ function Modal() {
     }
 
     function handleSingleOrDoubleClick(event: MouseEvent) {
-        if (player) {
-            setSecondsPlayed(player?.getCurrentTime())
+        if (player && typeof player.getCurrentTime === 'function') {
+            setSecondsPlayed(player.getCurrentTime())
         }
         togglePlaying()
     }
@@ -105,7 +111,16 @@ function Modal() {
     }, [])
 
     const makeFullScreen = () => {
-        player?.getInternalPlayer().h.requestFullscreen()
+        if (player && typeof player.getInternalPlayer === 'function') {
+            const internalPlayer = player.getInternalPlayer()
+            if (
+                internalPlayer &&
+                internalPlayer.h &&
+                typeof internalPlayer.h.requestFullscreen === 'function'
+            ) {
+                internalPlayer.h.requestFullscreen()
+            }
+        }
     }
 
     const handleMuteToggle = () => {
@@ -292,12 +307,8 @@ function Modal() {
                                         setPlaying(true)
                                         setTrailerEnded(false)
                                     }}
-                                    onReady={() => {
-                                        setTimeout(() => {
-                                            player!.seekTo(secondsPlayed, 'seconds')
-                                        }, 50)
-                                    }}
-                                    ref={(ref) => setPlayer(ref)}
+                                    onReady={handlePlayerReady}
+                                    ref={handlePlayerRef}
                                 />
                             ) : (
                                 <Image
