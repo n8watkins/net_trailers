@@ -6,9 +6,8 @@ import Thumbnail from './Thumbnail'
 interface Props {
     title: string
     content: Content[]
-    hideTitles?: boolean
 }
-function Row({ title, content, hideTitles = false }: Props) {
+function Row({ title, content }: Props) {
     const rowRef = useRef<HTMLDivElement>(null)
     const [isMoved, setIsMoved] = useState(false)
 
@@ -27,16 +26,11 @@ function Row({ title, content, hideTitles = false }: Props) {
                 rowRef.current.children[1].getBoundingClientRect().left -
                 rowRef.current.children[0].getBoundingClientRect().right
 
-            const thumbnailsOnPage = Math.floor(
-                window.innerWidth / thumbnailLength
-            )
+            const thumbnailsOnPage = Math.floor(window.innerWidth / thumbnailLength)
 
-            const scrollDistance =
-                thumbnailLength * 6 + thumbnailspacing * thumbnailsOnPage - 1
+            const scrollDistance = thumbnailLength * 6 + thumbnailspacing * thumbnailsOnPage - 1
             const scrollTo =
-                direction === 'left'
-                    ? scrollLeft - scrollDistance
-                    : scrollLeft + scrollDistance
+                direction === 'left' ? scrollLeft - scrollDistance : scrollLeft + scrollDistance
 
             rowRef.current?.scrollTo({
                 left: scrollTo,
@@ -74,12 +68,13 @@ function Row({ title, content, hideTitles = false }: Props) {
                     ref={rowRef}
                     className="flex gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-8 overflow-x-auto scrollbar-hide scroll-smooth
                               px-4 sm:px-6 md:px-8 lg:px-16
-                              py-4 sm:py-6 md:py-8 lg:py-10"
+                              py-4 sm:py-6 md:py-8 lg:py-10
+                              pb-16 sm:pb-20 md:pb-24 lg:pb-28"
                     style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                 >
                     {content.map((item) => (
                         <div key={item.id} className="flex-shrink-0">
-                            <Thumbnail content={item} hideTitles={hideTitles} />
+                            <Thumbnail content={item} />
                         </div>
                     ))}
                 </div>

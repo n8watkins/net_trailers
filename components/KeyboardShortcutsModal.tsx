@@ -31,13 +31,16 @@ const shortcuts: KeyboardShortcut[] = [
     { keys: ['?'], description: 'Show this keyboard shortcuts menu', category: 'General' },
 ]
 
-const shortcutsByCategory = shortcuts.reduce((acc, shortcut) => {
-    if (!acc[shortcut.category]) {
-        acc[shortcut.category] = []
-    }
-    acc[shortcut.category].push(shortcut)
-    return acc
-}, {} as Record<string, KeyboardShortcut[]>)
+const shortcutsByCategory = shortcuts.reduce(
+    (acc, shortcut) => {
+        if (!acc[shortcut.category]) {
+            acc[shortcut.category] = []
+        }
+        acc[shortcut.category].push(shortcut)
+        return acc
+    },
+    {} as Record<string, KeyboardShortcut[]>
+)
 
 interface KeyboardShortcutsModalProps {
     isOpen: boolean
@@ -59,7 +62,7 @@ const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ isOpen,
     }
 
     return (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="fixed inset-0 z-[9999] overflow-y-auto">
             <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
                 {/* Background overlay */}
                 <div
@@ -85,32 +88,40 @@ const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ isOpen,
 
                     {/* Content */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {Object.entries(shortcutsByCategory).map(([category, categoryShortcuts]) => (
-                            <div key={category} className="space-y-4">
-                                <h3 className="text-lg font-medium text-red-400 border-b border-gray-600 pb-2">
-                                    {category}
-                                </h3>
-                                <div className="space-y-3">
-                                    {categoryShortcuts.map((shortcut, index) => (
-                                        <div key={index} className="flex items-center justify-between">
-                                            <span className="text-gray-300 text-sm flex-1 pr-4">
-                                                {shortcut.description}
-                                            </span>
-                                            <div className="flex items-center space-x-1 flex-shrink-0">
-                                                {renderKeys(shortcut.keys)}
+                        {Object.entries(shortcutsByCategory).map(
+                            ([category, categoryShortcuts]) => (
+                                <div key={category} className="space-y-4">
+                                    <h3 className="text-lg font-medium text-red-400 border-b border-gray-600 pb-2">
+                                        {category}
+                                    </h3>
+                                    <div className="space-y-3">
+                                        {categoryShortcuts.map((shortcut, index) => (
+                                            <div
+                                                key={index}
+                                                className="flex items-center justify-between"
+                                            >
+                                                <span className="text-gray-300 text-sm flex-1 pr-4">
+                                                    {shortcut.description}
+                                                </span>
+                                                <div className="flex items-center space-x-1 flex-shrink-0">
+                                                    {renderKeys(shortcut.keys)}
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            )
+                        )}
                     </div>
 
                     {/* Footer */}
                     <div className="mt-8 pt-6 border-t border-gray-600">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
                             <p className="text-gray-400 text-sm">
-                                Press <kbd className="px-1 py-0.5 text-xs font-semibold text-gray-800 bg-gray-200 border border-gray-300 rounded">?</kbd>{' '}
+                                Press{' '}
+                                <kbd className="px-1 py-0.5 text-xs font-semibold text-gray-800 bg-gray-200 border border-gray-300 rounded">
+                                    ?
+                                </kbd>{' '}
                                 to open this menu anytime
                             </p>
                             <button

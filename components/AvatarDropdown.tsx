@@ -1,20 +1,38 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { UserIcon, UserCircleIcon, ArrowRightOnRectangleIcon, CogIcon, InformationCircleIcon, CommandLineIcon } from '@heroicons/react/24/outline'
+import {
+    UserIcon,
+    UserCircleIcon,
+    ArrowRightOnRectangleIcon,
+    CogIcon,
+    InformationCircleIcon,
+    CommandLineIcon,
+    AcademicCapIcon,
+    ArrowDownTrayIcon,
+} from '@heroicons/react/24/outline'
 import useAuth from '../hooks/useAuth'
 import { useRouter } from 'next/router'
-import KeyboardShortcutsModal from './KeyboardShortcutsModal'
+import useUserData from '../hooks/useUserData'
+import { exportUserDataToCSV } from '../utils/csvExport'
 
 interface AvatarDropdownProps {
     className?: string
     onOpenAuthModal?: () => void
     onOpenAboutModal?: () => void
+    onOpenTutorial?: () => void
+    onOpenKeyboardShortcuts?: () => void
 }
 
-const AvatarDropdown: React.FC<AvatarDropdownProps> = ({ className = '', onOpenAuthModal, onOpenAboutModal }) => {
+const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
+    className = '',
+    onOpenAuthModal,
+    onOpenAboutModal,
+    onOpenTutorial,
+    onOpenKeyboardShortcuts,
+}) => {
     const [isOpen, setIsOpen] = useState(false)
-    const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
     const { user, logOut } = useAuth()
+    const { userSession, ratings, watchlist } = useUserData()
     const router = useRouter()
 
     useEffect(() => {
@@ -45,9 +63,13 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({ className = '', onOpenA
     }
 
     const handleAboutClick = () => {
-        console.log('About clicked - closing dropdown and opening shared modal')
         setIsOpen(false)
         onOpenAboutModal?.()
+    }
+
+    const handleExportCSV = () => {
+        setIsOpen(false)
+        exportUserDataToCSV(userSession.preferences)
     }
 
     const getInitials = (email: string) => {
@@ -70,7 +92,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({ className = '', onOpenA
                 {/* Avatar Button - Not Logged In */}
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-600 hover:bg-gray-500 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+                    className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-600 hover:bg-gray-500 transition-colors duration-200 focus:outline-none"
                     aria-label="User menu"
                     aria-expanded={isOpen}
                 >
@@ -79,7 +101,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({ className = '', onOpenA
 
                 {/* Dropdown Menu - Not Logged In */}
                 {isOpen && (
-                    <div className="absolute right-0 mt-2 w-64 sm:w-72 bg-black/95 backdrop-blur-sm border border-red-500/40 rounded-xl shadow-2xl shadow-red-500/20 z-[110] py-1">
+                    <div className="absolute right-0 mt-2 w-64 sm:w-72 bg-black/95 backdrop-blur-sm border border-red-500/40 rounded-xl shadow-2xl shadow-red-500/20 z-[110] py-1 animate-fade-in-down">
                         {/* Guest Account Status */}
                         <div className="px-5 py-4 border-b border-gray-700/50">
                             <div className="flex items-center space-x-3">
@@ -120,6 +142,27 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({ className = '', onOpenA
                             <div className="h-px bg-gray-700/50 mx-5 my-2"></div>
 
                             <button
+                                onClick={() => {
+                                    setIsOpen(false)
+                                    onOpenTutorial?.()
+                                }}
+                                className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                            >
+                                <AcademicCapIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                Tutorial
+                            </button>
+
+                            {(ratings.length > 0 || watchlist.length > 0) && (
+                                <button
+                                    onClick={handleExportCSV}
+                                    className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                                >
+                                    <ArrowDownTrayIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                    Export Data
+                                </button>
+                            )}
+
+                            <button
                                 onClick={handleAboutClick}
                                 className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                             >
@@ -130,7 +173,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({ className = '', onOpenA
                             <button
                                 onClick={() => {
                                     setIsOpen(false)
-                                    setShowKeyboardShortcuts(true)
+                                    onOpenKeyboardShortcuts?.()
                                 }}
                                 className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                             >
@@ -149,7 +192,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({ className = '', onOpenA
             {/* Avatar Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-red-600 hover:bg-red-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+                className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-red-600 hover:bg-red-700 transition-colors duration-200 focus:outline-none"
                 aria-label="Profile menu"
                 aria-expanded={isOpen}
             >
@@ -168,7 +211,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({ className = '', onOpenA
 
             {/* Dropdown Menu */}
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-64 sm:w-72 bg-black/95 backdrop-blur-sm border border-red-500/40 rounded-xl shadow-2xl shadow-red-500/20 z-[110] py-1">
+                <div className="absolute right-0 mt-2 w-64 sm:w-72 bg-black/95 backdrop-blur-sm border border-red-500/40 rounded-xl shadow-2xl shadow-red-500/20 z-[110] py-1 animate-fade-in-down">
                     {/* User Info Header */}
                     <div className="px-5 py-4 border-b border-gray-700/50">
                         <div className="flex items-center space-x-3">
@@ -191,9 +234,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({ className = '', onOpenA
                                 <p className="text-white font-medium text-sm truncate">
                                     {getUserName()}
                                 </p>
-                                <p className="text-gray-400 text-xs truncate">
-                                    {user.email}
-                                </p>
+                                <p className="text-gray-400 text-xs truncate">{user.email}</p>
                             </div>
                         </div>
                     </div>
@@ -219,6 +260,27 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({ className = '', onOpenA
                         <div className="h-px bg-gray-700/50 mx-5 my-2"></div>
 
                         <button
+                            onClick={() => {
+                                setIsOpen(false)
+                                onOpenTutorial?.()
+                            }}
+                            className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                        >
+                            <AcademicCapIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                            Tutorial
+                        </button>
+
+                        {(ratings.length > 0 || watchlist.length > 0) && (
+                            <button
+                                onClick={handleExportCSV}
+                                className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                            >
+                                <ArrowDownTrayIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                Export Data
+                            </button>
+                        )}
+
+                        <button
                             onClick={handleAboutClick}
                             className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                         >
@@ -229,7 +291,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({ className = '', onOpenA
                         <button
                             onClick={() => {
                                 setIsOpen(false)
-                                setShowKeyboardShortcuts(true)
+                                onOpenKeyboardShortcuts?.()
                             }}
                             className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                         >
@@ -249,12 +311,6 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({ className = '', onOpenA
                     </div>
                 </div>
             )}
-
-            {/* Keyboard Shortcuts Modal */}
-            {showKeyboardShortcuts && (
-                <KeyboardShortcutsModal onClose={() => setShowKeyboardShortcuts(false)} />
-            )}
-
         </div>
     )
 }

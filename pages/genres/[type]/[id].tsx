@@ -81,7 +81,6 @@ const GenrePage: NextPage<GenrePageProps> = () => {
                     }
                 }
 
-                console.log(`📡 Loading page ${pageToLoad} for ${mediaType} genre ${genreId}`)
                 const response = await fetch(
                     `/api/genres/${mediaType}/${genreId}?${filterParams.toString()}`
                 )
@@ -98,8 +97,6 @@ const GenrePage: NextPage<GenrePageProps> = () => {
                     media_type: mediaType,
                 }))
 
-                console.log(`🎬 Adding ${enrichedResults.length} items from page ${pageToLoad}`)
-
                 setContent((prev) => {
                     if (isFirstPage) {
                         return enrichedResults
@@ -111,8 +108,6 @@ const GenrePage: NextPage<GenrePageProps> = () => {
                 })
 
                 setHasMore(pageToLoad < data.total_pages && pageToLoad < maxPages)
-
-                console.log(`✅ Page ${pageToLoad} loaded: ${enrichedResults.length} items`)
 
                 // Check if no content found and we're using problematic filters
                 if (
@@ -370,7 +365,7 @@ const GenrePage: NextPage<GenrePageProps> = () => {
                                         key={item.id}
                                         className="flex-shrink-0 mb-12 sm:mb-16 md:mb-20"
                                     >
-                                        <Thumbnail content={item} hideTitles={false} />
+                                        <Thumbnail content={item} />
                                     </div>
                                 ))}
                             </div>

@@ -176,21 +176,31 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
                         {totalResults > 0 && (
                             <>
                                 {/* Check if any filters are active */}
-                                {Object.values(filters).some(value => value !== 'all') ? (
+                                {Object.values(filters).some((value) => value !== 'all') ? (
                                     /* Filters are active - show filtered count */
                                     hasAllResults ? (
                                         /* We have all results cached */
-                                        <>Showing {filteredTotalResults} results matching your filters out of {totalResults} total</>
+                                        <>
+                                            Showing {filteredTotalResults} results matching your
+                                            filters out of {totalResults} total
+                                        </>
                                     ) : (
                                         /* Still loading all results */
                                         <>
                                             Showing {filteredTotalResults} filtered results
-                                            {isLoadingAll && <span className="text-yellow-400"> (loading more...)</span>}
+                                            {isLoadingAll && (
+                                                <span className="text-yellow-400">
+                                                    {' '}
+                                                    (loading more...)
+                                                </span>
+                                            )}
                                         </>
                                     )
                                 ) : (
                                     /* No filters active - show regular pagination count */
-                                    <>Showing {results.length} of {totalResults} results</>
+                                    <>
+                                        Showing {results.length} of {totalResults} results
+                                    </>
                                 )}
                             </>
                         )}
@@ -199,7 +209,7 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
             )}
 
             {/* Results List - Horizontal Row Layout */}
-            <div className="space-y-4 animate-fade-in" ref={containerRef}>
+            <div className="space-y-2 animate-fade-in" ref={containerRef}>
                 {results.map((item: Content, index) => (
                     <div
                         key={`${item.id}-${index}`}
@@ -213,7 +223,7 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
                         }`}
                         onClick={() => handleContentClick(item)}
                     >
-                        {/* Movie Poster */}
+                        {/* Movie Poster - Using standard Thumbnail but in horizontal layout */}
                         <div className="flex-shrink-0 w-16 h-24 sm:w-20 sm:h-30 md:w-24 md:h-36 relative rounded-lg overflow-hidden bg-gray-700">
                             {item.poster_path ? (
                                 <Image
@@ -296,7 +306,9 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
                     <div className="flex items-center gap-2">
                         <div className="animate-spin h-8 w-8 border-2 border-red-500 border-t-transparent rounded-full"></div>
                         {isLoadingAll && (
-                            <span className="text-gray-400 text-sm">Loading all results for filtering...</span>
+                            <span className="text-gray-400 text-sm">
+                                Loading all results for filtering...
+                            </span>
                         )}
                     </div>
                 </div>

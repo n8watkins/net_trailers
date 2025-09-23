@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react'
-import { MagnifyingGlassIcon, HeartIcon, Bars3Icon, XMarkIcon, TvIcon, FilmIcon } from '@heroicons/react/24/outline'
+import {
+    MagnifyingGlassIcon,
+    HeartIcon,
+    Bars3Icon,
+    XMarkIcon,
+    TvIcon,
+    FilmIcon,
+} from '@heroicons/react/24/outline'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import Image from 'next/image'
@@ -8,6 +15,8 @@ import useAuth from '../hooks/useAuth'
 import AuthModal from './AuthModal'
 import AvatarDropdown from './AvatarDropdown'
 import GenresDropdown from './GenresDropdown'
+import TutorialModal from './TutorialModal'
+import KeyboardShortcutsModal from './KeyboardShortcutsModal'
 
 interface HeaderProps {
     onOpenAboutModal?: () => void
@@ -19,6 +28,8 @@ function Header({ onOpenAboutModal }: HeaderProps = {}) {
     const [showMobileMenu, setShowMobileMenu] = useState(false)
     const [isSearchExpanded, setIsSearchExpanded] = useState(false)
     const [showAuthModal, setShowAuthModal] = useState(false)
+    const [showTutorial, setShowTutorial] = useState(false)
+    const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
     const router = useRouter()
     const { user } = useAuth()
     useEffect(() => {
@@ -51,12 +62,14 @@ function Header({ onOpenAboutModal }: HeaderProps = {}) {
     }, [isSearchExpanded])
 
     return (
-        <header className={`fixed top-0 left-0 right-0 z-[200] transition-all duration-300 ${isScrolled ? 'bg-[#141414]/95 backdrop-blur-sm' : 'bg-gradient-to-b from-black/50 to-transparent'}`}>
+        <header
+            className={`fixed top-0 left-0 right-0 z-[200] transition-all duration-300 ${isScrolled ? 'bg-[#141414]/95 backdrop-blur-sm' : 'bg-gradient-to-b from-black/50 to-transparent'}`}
+        >
             <div className="flex w-full items-center space-x-2 md:space-x-6 px-4 py-4">
                 <Image
                     src="/nettrailers-logo.png"
-                    width={200}
-                    height={100}
+                    width={140}
+                    height={70}
                     alt="NetTrailers Logo"
                     className="cursor-pointer object-contain"
                     priority
@@ -118,10 +131,7 @@ function Header({ onOpenAboutModal }: HeaderProps = {}) {
                     />
 
                     {/* Mobile Menu Toggle */}
-                    <button
-                        className="h-6 w-6"
-                        onClick={() => setShowMobileMenu(!showMobileMenu)}
-                    >
+                    <button className="h-6 w-6" onClick={() => setShowMobileMenu(!showMobileMenu)}>
                         {showMobileMenu ? (
                             <XMarkIcon className="h-6 w-6 text-white" />
                         ) : (
@@ -131,15 +141,22 @@ function Header({ onOpenAboutModal }: HeaderProps = {}) {
                 </div>
 
                 {/* Avatar Dropdown */}
-                <AvatarDropdown onOpenAuthModal={() => setShowAuthModal(true)} onOpenAboutModal={onOpenAboutModal} />
+                <AvatarDropdown
+                    onOpenAuthModal={() => setShowAuthModal(true)}
+                    onOpenAboutModal={onOpenAboutModal}
+                    onOpenTutorial={() => setShowTutorial(true)}
+                    onOpenKeyboardShortcuts={() => setShowKeyboardShortcuts(true)}
+                />
             </div>
 
             {/* Mobile Search Bar with Slide Animation */}
-            <div className={`lg:hidden absolute top-full left-0 right-0 z-[110] bg-black/95 backdrop-blur-sm border-t border-gray-600/50 transition-all duration-300 ease-in-out ${
-                showSearch
-                    ? 'transform translate-y-0 opacity-100 visible'
-                    : 'transform -translate-y-full opacity-0 invisible'
-            }`}>
+            <div
+                className={`lg:hidden absolute top-full left-0 right-0 z-[110] bg-black/95 backdrop-blur-sm border-t border-gray-600/50 transition-all duration-300 ease-in-out ${
+                    showSearch
+                        ? 'transform translate-y-0 opacity-100 visible'
+                        : 'transform -translate-y-full opacity-0 invisible'
+                }`}
+            >
                 <div className="p-4">
                     <SearchBar
                         placeholder="Search movies and TV shows..."
@@ -168,15 +185,27 @@ function Header({ onOpenAboutModal }: HeaderProps = {}) {
                                     <li>
                                         <button
                                             className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors ${
-                                                router.pathname === '/' ? 'text-white font-semibold bg-red-600/20' : 'hover:bg-gray-800/50'
+                                                router.pathname === '/'
+                                                    ? 'text-white font-semibold bg-red-600/20'
+                                                    : 'hover:bg-gray-800/50'
                                             }`}
                                             onClick={() => {
                                                 router.push('/')
                                                 setShowMobileMenu(false)
                                             }}
                                         >
-                                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                            <svg
+                                                className="h-5 w-5"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                                                />
                                             </svg>
                                             <span>Home</span>
                                         </button>
@@ -184,7 +213,9 @@ function Header({ onOpenAboutModal }: HeaderProps = {}) {
                                     <li>
                                         <button
                                             className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors ${
-                                                router.pathname === '/tv' ? 'text-white font-semibold bg-red-600/20' : 'hover:bg-gray-800/50'
+                                                router.pathname === '/tv'
+                                                    ? 'text-white font-semibold bg-red-600/20'
+                                                    : 'hover:bg-gray-800/50'
                                             }`}
                                             onClick={() => {
                                                 router.push('/?filter=tv')
@@ -198,7 +229,9 @@ function Header({ onOpenAboutModal }: HeaderProps = {}) {
                                     <li>
                                         <button
                                             className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors ${
-                                                router.pathname === '/movies' ? 'text-white font-semibold bg-red-600/20' : 'hover:bg-gray-800/50'
+                                                router.pathname === '/movies'
+                                                    ? 'text-white font-semibold bg-red-600/20'
+                                                    : 'hover:bg-gray-800/50'
                                             }`}
                                             onClick={() => {
                                                 router.push('/?filter=movies')
@@ -212,7 +245,9 @@ function Header({ onOpenAboutModal }: HeaderProps = {}) {
                                     <li>
                                         <button
                                             className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors ${
-                                                router.pathname === '/favorites' ? 'text-white font-semibold bg-red-600/20' : 'hover:bg-gray-800/50'
+                                                router.pathname === '/favorites'
+                                                    ? 'text-white font-semibold bg-red-600/20'
+                                                    : 'hover:bg-gray-800/50'
                                             }`}
                                             onClick={() => {
                                                 router.push('/favorites')
@@ -226,7 +261,9 @@ function Header({ onOpenAboutModal }: HeaderProps = {}) {
                                     <li>
                                         <button
                                             className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors ${
-                                                router.pathname === '/search' ? 'text-white font-semibold bg-red-600/20' : 'hover:bg-gray-800/50'
+                                                router.pathname === '/search'
+                                                    ? 'text-white font-semibold bg-red-600/20'
+                                                    : 'hover:bg-gray-800/50'
                                             }`}
                                             onClick={() => {
                                                 router.push('/search')
@@ -245,9 +282,15 @@ function Header({ onOpenAboutModal }: HeaderProps = {}) {
             )}
 
             {/* Auth Modal */}
-            <AuthModal
-                isOpen={showAuthModal}
-                onClose={() => setShowAuthModal(false)}
+            <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+
+            {/* Tutorial Modal */}
+            <TutorialModal isOpen={showTutorial} onClose={() => setShowTutorial(false)} />
+
+            {/* Keyboard Shortcuts Modal */}
+            <KeyboardShortcutsModal
+                isOpen={showKeyboardShortcuts}
+                onClose={() => setShowKeyboardShortcuts(false)}
             />
         </header>
     )

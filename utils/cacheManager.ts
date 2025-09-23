@@ -35,16 +35,15 @@ export class CacheManager {
         return {
             search: searchCache.getStats(),
             movie: movieCache.getStats(),
-            mainPage: mainPageCache.getStats()
+            mainPage: mainPageCache.getStats(),
         }
     }
 
     // Cache preloading strategies
     static async preloadMainPageData(): Promise<void> {
         try {
-            const baseUrl = typeof window !== 'undefined'
-                ? window.location.origin
-                : 'http://localhost:3000'
+            const baseUrl =
+                typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
 
             // Check if main page data is already cached
             const cached = mainPageCache.get('main-page-content')
@@ -58,21 +57,19 @@ export class CacheManager {
                 const data = await response.json()
                 mainPageCache.set('main-page-content', data)
             }
-        } catch (error) {
-            console.log('Cache preload failed:', error)
-        }
+        } catch (error) {}
     }
 
     // Smart cache warming for search
     static warmSearchCache(popularQueries: string[]): void {
-        popularQueries.forEach(query => {
+        popularQueries.forEach((query) => {
             // Only warm cache if not already present
             const cached = searchCache.get('/api/search', { query, page: '1' })
             if (!cached) {
                 // Trigger background search to warm cache
                 fetch(`/api/search?query=${encodeURIComponent(query)}&page=1`)
-                    .then(response => response.json())
-                    .then(data => {
+                    .then((response) => response.json())
+                    .then((data) => {
                         searchCache.set('/api/search', data, { query, page: '1' })
                     })
                     .catch(() => {}) // Silent fail for cache warming
@@ -118,5 +115,5 @@ export class CacheManager {
 // Export for global access
 if (typeof window !== 'undefined') {
     // Make cache manager available globally for debugging
-    (window as any).cacheManager = CacheManager
+    ;(window as any).cacheManager = CacheManager
 }

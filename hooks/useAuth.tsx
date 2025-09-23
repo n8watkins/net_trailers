@@ -1,10 +1,4 @@
-import React, {
-    useState,
-    useContext,
-    createContext,
-    useEffect,
-    useMemo,
-} from 'react'
+import React, { useState, useContext, createContext, useEffect, useMemo } from 'react'
 
 import {
     createUserWithEmailAndPassword,
@@ -66,12 +60,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const [globalLoading, setGlobalLoading] = useRecoilState(loadingState)
     const errorHandler = createErrorHandler(setErrors)
 
-    // console.log('auth.js-attemptPassReset', attemptPassReset)
     useEffect(() => {
         // else if (attemptPassReset) {
         //     router.push('/reset') }
         onAuthStateChanged(auth, (user) => {
-            // console.log('onAuthStateChanged')
             setUser(user)
             setLoading(false)
             if (user) {
@@ -142,8 +134,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         const provider = new GoogleAuthProvider()
         await signInWithPopup(auth, provider)
             .then((result) => {
-                const credential =
-                    GoogleAuthProvider.credentialFromResult(result)
+                const credential = GoogleAuthProvider.credentialFromResult(result)
                 const token = credential!.accessToken
                 const user = result.user
                 errorHandler.addSuccess('Successfully signed in with Google!')
@@ -158,7 +149,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 setGlobalLoading(false)
             })
     }
-
 
     const logOut = async () => {
         setLoading(true)
@@ -208,11 +198,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         [user, loading, error, passResetSuccess, attemptPassReset]
     )
 
-    return (
-        <AuthContext.Provider value={memoedValue}>
-            {children}
-        </AuthContext.Provider>
-    )
+    return <AuthContext.Provider value={memoedValue}>{children}</AuthContext.Provider>
 }
 
 export default function useAuth() {

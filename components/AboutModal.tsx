@@ -23,7 +23,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
 
     return (
         <div
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
             onClick={onClose}
         >
             <div
@@ -40,9 +40,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
 
                 {/* Header */}
                 <div className="text-center mb-6">
-                    <h2 className="text-white text-2xl font-bold mb-2">
-                        Welcome to NetTrailers
-                    </h2>
+                    <h2 className="text-white text-2xl font-bold mb-2">Welcome to NetTrailers</h2>
                     <p className="text-red-500 text-sm font-medium">
                         Your Movie & TV Show Discovery Platform
                     </p>
@@ -62,13 +60,18 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
 
                         <div className="space-y-4">
                             <p className="text-sm leading-relaxed">
-                                I&apos;m Nathan, and NetTrailers is a Portfolio project designed to showcase modern web dev practices with a real-world application. It highlights my skills in full-stack development, API integration, and user experience design. I hope you enjoy NetTrailers and if you&apos;d like to explore further:
+                                I&apos;m Nathan, and NetTrailers is a Portfolio project designed to
+                                showcase modern web dev practices with a real-world application. It
+                                highlights my skills in full-stack development, API integration, and
+                                user experience design. I hope you enjoy NetTrailers and if
+                                you&apos;d like to explore further:
                             </p>
 
                             <ul className="text-sm space-y-2 ml-4">
                                 <li className="flex items-start">
                                     <span className="text-red-500 mr-2">•</span>
-                                    <span>Share feedback or report issues on{' '}
+                                    <span>
+                                        Share feedback or report issues on{' '}
                                         <a
                                             href="https://github.com/n8watkins/net_trailer/issues"
                                             target="_blank"
@@ -82,7 +85,8 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                 </li>
                                 <li className="flex items-start">
                                     <span className="text-red-500 mr-2">•</span>
-                                    <span>Check out my{' '}
+                                    <span>
+                                        Check out my{' '}
                                         <a
                                             href="https://n8sportfolio.vercel.app/"
                                             target="_blank"
@@ -90,13 +94,16 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                             className="text-red-400 hover:text-red-300 underline underline-offset-2"
                                         >
                                             Portfolio page
-                                        </a>
-                                        {' '}for more projects.
+                                        </a>{' '}
+                                        for more projects.
                                     </span>
                                 </li>
                                 <li className="flex items-start">
                                     <span className="text-red-500 mr-2">•</span>
-                                    <span>Feel free to connect with me on my socials if you&apos;d like to connect.</span>
+                                    <span>
+                                        Feel free to connect with me on my socials if you&apos;d
+                                        like to connect.
+                                    </span>
                                 </li>
                             </ul>
                         </div>
@@ -128,7 +135,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                 className="w-10 h-10 rounded-full hover:bg-gray-700 transition-colors duration-200 flex items-center justify-center"
                             >
                                 <svg className="w-6 h-6 fill-white" viewBox="0 0 24 24">
-                                    <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"/>
+                                    <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" />
                                 </svg>
                             </a>
                         </div>
@@ -139,7 +146,11 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex items-center space-x-3">
                                 <div className="w-8 h-8 bg-transparent rounded-lg flex items-center justify-center">
-                                    <img src="/icons/typescript.svg" alt="TypeScript" className="w-6 h-6" />
+                                    <img
+                                        src="/icons/typescript.svg"
+                                        alt="TypeScript"
+                                        className="w-6 h-6"
+                                    />
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-white">TypeScript</p>
@@ -148,7 +159,11 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                             </div>
                             <div className="flex items-center space-x-3">
                                 <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center border border-white">
-                                    <img src="/icons/nextjs.svg" alt="Next.js" className="w-5 h-5" />
+                                    <img
+                                        src="/icons/nextjs.svg"
+                                        alt="Next.js"
+                                        className="w-5 h-5"
+                                    />
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-white">Next.js</p>
@@ -157,7 +172,11 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                             </div>
                             <div className="flex items-center space-x-3">
                                 <div className="w-8 h-8 bg-slate-800 rounded-lg flex items-center justify-center">
-                                    <img src="/icons/tailwind.svg" alt="Tailwind CSS" className="w-6 h-4" />
+                                    <img
+                                        src="/icons/tailwind.svg"
+                                        alt="Tailwind CSS"
+                                        className="w-6 h-4"
+                                    />
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-white">Tailwind CSS</p>
@@ -166,7 +185,11 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                             </div>
                             <div className="flex items-center space-x-3">
                                 <div className="w-8 h-8 bg-transparent rounded-lg flex items-center justify-center">
-                                    <img src="/icons/firebase.png" alt="Firebase" className="w-6 h-6" />
+                                    <img
+                                        src="/icons/firebase.png"
+                                        alt="Firebase"
+                                        className="w-6 h-6"
+                                    />
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-white">Firebase</p>
@@ -200,29 +223,43 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                             <div className="flex items-start space-x-3">
                                 <PlayIcon className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
                                 <div>
-                                    <p className="text-sm font-medium text-white">Real-time Search & Infinite Scroll</p>
-                                    <p className="text-xs text-gray-400">Advanced search with optimized performance</p>
+                                    <p className="text-sm font-medium text-white">
+                                        Real-time Search & Infinite Scroll
+                                    </p>
+                                    <p className="text-xs text-gray-400">
+                                        Advanced search with optimized performance
+                                    </p>
                                 </div>
                             </div>
                             <div className="flex items-start space-x-3">
                                 <HeartIcon className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
                                 <div>
-                                    <p className="text-sm font-medium text-white">User Authentication & Favorites</p>
-                                    <p className="text-xs text-gray-400">Firebase-powered user management system</p>
+                                    <p className="text-sm font-medium text-white">
+                                        User Authentication & Favorites
+                                    </p>
+                                    <p className="text-xs text-gray-400">
+                                        Firebase-powered user management system
+                                    </p>
                                 </div>
                             </div>
                             <div className="flex items-start space-x-3">
                                 <StarIcon className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
                                 <div>
-                                    <p className="text-sm font-medium text-white">Responsive Design & Accessibility</p>
-                                    <p className="text-xs text-gray-400">Mobile-first approach with modern UX</p>
+                                    <p className="text-sm font-medium text-white">
+                                        Responsive Design & Accessibility
+                                    </p>
+                                    <p className="text-xs text-gray-400">
+                                        Mobile-first approach with modern UX
+                                    </p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <div>
-                        <h3 className="text-white text-lg font-semibold mb-3">Development Highlights</h3>
+                        <h3 className="text-white text-lg font-semibold mb-3">
+                            Development Highlights
+                        </h3>
                         <ul className="text-sm space-y-1">
                             <li className="flex items-start space-x-2">
                                 <span className="text-red-500">•</span>
@@ -238,7 +275,9 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                             </li>
                             <li className="flex items-start space-x-2">
                                 <span className="text-red-500">•</span>
-                                <span>Real-time search with debouncing and race condition handling</span>
+                                <span>
+                                    Real-time search with debouncing and race condition handling
+                                </span>
                             </li>
                         </ul>
                     </div>

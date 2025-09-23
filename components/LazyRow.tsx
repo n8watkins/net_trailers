@@ -10,7 +10,7 @@ interface Props {
     batchSize?: number
 }
 
-interface ContentWithVideo extends Content {
+type ContentWithVideo = Content & {
     hasVideo?: boolean
     videoKey?: string
     isChecking?: boolean
@@ -32,51 +32,55 @@ function StreamingRow({ title, content, hideTitles = false, batchSize = 6 }: Pro
         const batch = content.slice(currentIndex, endIndex)
 
         // Add items to display immediately with checking state
-        const itemsWithChecking = batch.map(item => ({
+        const itemsWithChecking = batch.map((item) => ({
             ...item,
             isChecking: true,
-            hasVideo: false
+            hasVideo: false,
         }))
 
-        setStreamingContent(prev => [...prev, ...itemsWithChecking])
+        setStreamingContent((prev) => [...prev, ...itemsWithChecking])
 
         // Check each item for videos in parallel, but update UI progressively
         const checkPromises = batch.map(async (item, index) => {
             try {
                 const mediaType = item.media_type === 'tv' ? 'tv' : 'movie'
-                const response = await fetch(`/api/movies/details/${item.id}?media_type=${mediaType}`)
+                const response = await fetch(
+                    `/api/movies/details/${item.id}?media_type=${mediaType}`
+                )
 
                 if (!response.ok) {
                     // Remove item from display if no valid response
-                    setStreamingContent(prev => prev.filter(c => c.id !== item.id))
+                    setStreamingContent((prev) => prev.filter((c) => c.id !== item.id))
                     return null
                 }
 
                 const data = await response.json()
-                const hasTrailer = data?.videos?.results?.some((video: any) =>
-                    video.type === 'Trailer' && video.site === 'YouTube'
+                const hasTrailer = data?.videos?.results?.some(
+                    (video: any) => video.type === 'Trailer' && video.site === 'YouTube'
                 )
-                const trailerKey = data?.videos?.results?.find((video: any) =>
-                    video.type === 'Trailer' && video.site === 'YouTube'
+                const trailerKey = data?.videos?.results?.find(
+                    (video: any) => video.type === 'Trailer' && video.site === 'YouTube'
                 )?.key
 
                 if (hasTrailer) {
                     // Update the existing item with video info
-                    setStreamingContent(prev => prev.map(c =>
-                        c.id === item.id
-                            ? { ...c, hasVideo: true, videoKey: trailerKey, isChecking: false }
-                            : c
-                    ))
+                    setStreamingContent((prev) =>
+                        prev.map((c) =>
+                            c.id === item.id
+                                ? { ...c, hasVideo: true, videoKey: trailerKey, isChecking: false }
+                                : c
+                        )
+                    )
                     return { ...item, hasVideo: true, videoKey: trailerKey }
                 } else {
                     // Remove item if no trailer found
-                    setStreamingContent(prev => prev.filter(c => c.id !== item.id))
+                    setStreamingContent((prev) => prev.filter((c) => c.id !== item.id))
                     return null
                 }
             } catch (error) {
                 console.error(`Failed to check videos for ${item.id}:`, error)
                 // Remove item on error
-                setStreamingContent(prev => prev.filter(c => c.id !== item.id))
+                setStreamingContent((prev) => prev.filter((c) => c.id !== item.id))
                 return null
             }
         })
@@ -138,9 +142,8 @@ function StreamingRow({ title, content, hideTitles = false, batchSize = 6 }: Pro
             const thumbnailsOnPage = Math.floor(window.innerWidth / thumbnailLength)
             const scrollDistance = thumbnailLength * 6
 
-            const scrollTo = direction === 'left'
-                ? scrollLeft - scrollDistance
-                : scrollLeft + scrollDistance
+            const scrollTo =
+                direction === 'left' ? scrollLeft - scrollDistance : scrollLeft + scrollDistance
 
             rowRef.current?.scrollTo({
                 left: scrollTo,
@@ -154,9 +157,11 @@ function StreamingRow({ title, content, hideTitles = false, batchSize = 6 }: Pro
             {/* Section Title */}
             <h2 className="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold px-4 sm:px-6 md:px-8 lg:px-16 transition duration-200 hover:text-gray-300">
                 {title}
-                {isProcessing && <span className="text-sm opacity-60 ml-2">(Checking for trailers...)</span>}
+                {isProcessing && (
+                    <span className="text-sm opacity-60 ml-2">(Checking for trailers...)</span>
+                )}
                 <span className="text-xs text-gray-400 ml-2">
-                    {streamingContent.filter(c => c.hasVideo).length} with trailers
+                    {streamingContent.filter((c) => c.hasVideo).length} with trailers
                 </span>
             </h2>
 
@@ -185,29 +190,35 @@ function StreamingRow({ title, content, hideTitles = false, batchSize = 6 }: Pro
                         <div key={item.id} className="flex-shrink-0">
                             {item.isChecking ? (
                                 // Placeholder while checking for trailer
-                                <div className="relative cursor-pointer transition-all duration-300 ease-out
+                                <div
+                                    className="relative cursor-pointer transition-all duration-300 ease-out
                                                w-[160px] h-[240px] sm:w-[180px] sm:h-[270px]
                                                md:w-[200px] md:h-[300px] lg:w-[220px] lg:h-[330px]
                                                xl:w-[260px] xl:h-[390px]
-                                               bg-gray-800 rounded-md flex items-center justify-center">
+                                               bg-gray-800 rounded-md flex items-center justify-center"
+                                >
                                     <div className="text-center">
                                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-600 mx-auto mb-2"></div>
-                                        <div className="text-xs text-gray-400">Checking trailer...</div>
+                                        <div className="text-xs text-gray-400">
+                                            Checking trailer...
+                                        </div>
                                     </div>
                                 </div>
                             ) : (
                                 // Actual thumbnail once verified to have trailer
-                                <Thumbnail content={item} hideTitles={hideTitles} />
+                                <Thumbnail content={item} />
                             )}
                         </div>
                     ))}
 
                     {/* Processing indicator */}
                     {isProcessing && currentIndex < content.length && (
-                        <div className="flex-shrink-0 flex items-center justify-center
+                        <div
+                            className="flex-shrink-0 flex items-center justify-center
                                        w-[160px] h-[240px] sm:w-[180px] sm:h-[270px]
                                        md:w-[200px] md:h-[300px] lg:w-[220px] lg:h-[330px]
-                                       xl:w-[260px] xl:h-[390px]">
+                                       xl:w-[260px] xl:h-[390px]"
+                        >
                             <div className="text-center">
                                 <div className="animate-pulse rounded-full h-8 w-8 bg-red-600 mx-auto mb-2"></div>
                                 <div className="text-xs text-gray-400">Loading batch...</div>
@@ -217,11 +228,13 @@ function StreamingRow({ title, content, hideTitles = false, batchSize = 6 }: Pro
 
                     {/* End indicator */}
                     {currentIndex >= content.length && !isProcessing && (
-                        <div className="flex-shrink-0 flex items-center justify-center
+                        <div
+                            className="flex-shrink-0 flex items-center justify-center
                                        w-[160px] h-[240px] sm:w-[180px] sm:h-[270px]
                                        md:w-[200px] md:h-[300px] lg:w-[220px] lg:h-[330px]
                                        xl:w-[260px] xl:h-[390px]
-                                       text-gray-400 text-sm">
+                                       text-gray-400 text-sm"
+                        >
                             <div className="text-center">
                                 <div className="mb-2">🎬</div>
                                 <div>All processed</div>

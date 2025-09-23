@@ -4,17 +4,27 @@ import Head from 'next/head'
 import Header from '../components/Header'
 import Modal from '../components/Modal'
 import useUserData from '../hooks/useUserData'
-import { HeartIcon, HandThumbUpIcon, HandThumbDownIcon, EyeIcon, MagnifyingGlassIcon } from '@heroicons/react/24/solid'
-import { Content } from '../typings'
+import {
+    HeartIcon,
+    HandThumbUpIcon,
+    HandThumbDownIcon,
+    EyeIcon,
+    MagnifyingGlassIcon,
+    ArrowDownTrayIcon,
+} from '@heroicons/react/24/solid'
+import { Content, isMovie, isTVShow } from '../typings'
 import { getTitle, getYear } from '../typings'
-import Image from 'next/image'
+import Thumbnail from '../components/Thumbnail'
 import { useSetRecoilState } from 'recoil'
 import { modalState, movieState } from '../atoms/modalAtom'
 import { movieCache } from '../utils/apiCache'
+import { exportUserDataToCSV } from '../utils/csvExport'
 
 const Favorites: NextPage = () => {
-    const { ratings, watchlist, isGuest } = useUserData()
-    const [selectedFilter, setSelectedFilter] = useState<'all' | 'loved' | 'liked' | 'disliked' | 'watchlist'>('all')
+    const { ratings, watchlist, isGuest, userSession } = useUserData()
+    const [selectedFilter, setSelectedFilter] = useState<
+        'all' | 'loved' | 'liked' | 'disliked' | 'watchlist'
+    >('all')
     const [fetchedContent, setFetchedContent] = useState<Record<number, Content>>({})
     const [loadingContent, setLoadingContent] = useState<Record<number, boolean>>({})
     const [searchQuery, setSearchQuery] = useState('')
@@ -25,17 +35,27 @@ const Favorites: NextPage = () => {
     const getFilteredContent = () => {
         switch (selectedFilter) {
             case 'loved':
-                return ratings.filter(r => r.rating === 'loved')
+                return ratings.filter((r) => r.rating === 'loved')
             case 'liked':
-                return ratings.filter(r => r.rating === 'liked')
+                return ratings.filter((r) => r.rating === 'liked')
             case 'disliked':
-                return ratings.filter(r => r.rating === 'disliked')
+                return ratings.filter((r) => r.rating === 'disliked')
             case 'watchlist':
-                return watchlist.map(item => ({ contentId: item.id, rating: 'watchlist' as const, timestamp: 0, content: item }))
+                return watchlist.map((item) => ({
+                    contentId: item.id,
+                    rating: 'watchlist' as const,
+                    timestamp: 0,
+                    content: item,
+                }))
             case 'all':
             default:
-                const allRated = ratings.map(r => ({ ...r, content: null }))
-                const watchlistItems = watchlist.map(item => ({ contentId: item.id, rating: 'watchlist' as const, timestamp: 0, content: item }))
+                const allRated = ratings.map((r) => ({ ...r, content: null }))
+                const watchlistItems = watchlist.map((item) => ({
+                    contentId: item.id,
+                    rating: 'watchlist' as const,
+                    timestamp: 0,
+                    content: item,
+                }))
                 return [...allRated, ...watchlistItems]
         }
     }
@@ -44,17 +64,16 @@ const Favorites: NextPage = () => {
 
     // Apply search filter
     const filteredContent = searchQuery.trim()
-        ? baseFilteredContent.filter(item => {
-            const content = 'content' in item && item.content
-                ? item.content
-                : fetchedContent[item.contentId]
+        ? baseFilteredContent.filter((item: any) => {
+              const content =
+                  'content' in item && item.content ? item.content : fetchedContent[item.contentId]
 
-            if (!content) return false
+              if (!content) return false
 
-            const title = getTitle(content).toLowerCase()
-            const query = searchQuery.toLowerCase()
-            return title.includes(query)
-        })
+              const title = getTitle(content).toLowerCase()
+              const query = searchQuery.toLowerCase()
+              return title.includes(query)
+          })
         : baseFilteredContent
 
     // Function to fetch content details by ID
@@ -91,8 +110,12 @@ const Favorites: NextPage = () => {
             const missingContentIds: number[] = []
 
             // Find ratings without content data
-            ratings.forEach(rating => {
-                if (!rating.content && !fetchedContent[rating.contentId] && !loadingContent[rating.contentId]) {
+            ratings.forEach((rating) => {
+                if (
+                    !rating.content &&
+                    !fetchedContent[rating.contentId] &&
+                    !loadingContent[rating.contentId]
+                ) {
                     missingContentIds.push(rating.contentId)
                 }
             })
@@ -100,9 +123,9 @@ const Favorites: NextPage = () => {
             if (missingContentIds.length === 0) return
 
             // Set loading state for these IDs
-            setLoadingContent(prev => {
+            setLoadingContent((prev) => {
                 const newLoading = { ...prev }
-                missingContentIds.forEach(id => {
+                missingContentIds.forEach((id) => {
                     newLoading[id] = true
                 })
                 return newLoading
@@ -118,7 +141,7 @@ const Favorites: NextPage = () => {
                 const results = await Promise.all(fetchPromises)
 
                 // Update state with fetched content
-                setFetchedContent(prev => {
+                setFetchedContent((prev) => {
                     const newFetched = { ...prev }
                     results.forEach(({ contentId, content }) => {
                         if (content) {
@@ -129,9 +152,9 @@ const Favorites: NextPage = () => {
                 })
 
                 // Clear loading state
-                setLoadingContent(prev => {
+                setLoadingContent((prev) => {
                     const newLoading = { ...prev }
-                    missingContentIds.forEach(id => {
+                    missingContentIds.forEach((id) => {
                         delete newLoading[id]
                     })
                     return newLoading
@@ -139,9 +162,9 @@ const Favorites: NextPage = () => {
             } catch (error) {
                 console.error('Error fetching missing content:', error)
                 // Clear loading state on error
-                setLoadingContent(prev => {
+                setLoadingContent((prev) => {
                     const newLoading = { ...prev }
-                    missingContentIds.forEach(id => {
+                    missingContentIds.forEach((id) => {
                         delete newLoading[id]
                     })
                     return newLoading
@@ -155,6 +178,10 @@ const Favorites: NextPage = () => {
     const handleContentClick = (content: Content) => {
         setCurrentMovie(content)
         setShowModal(true)
+    }
+
+    const handleExportCSV = () => {
+        exportUserDataToCSV(userSession.preferences)
     }
 
     const getFilterIcon = (filter: string) => {
@@ -175,11 +202,11 @@ const Favorites: NextPage = () => {
     const getFilterCount = (filter: string) => {
         switch (filter) {
             case 'loved':
-                return ratings.filter(r => r.rating === 'loved').length
+                return ratings.filter((r) => r.rating === 'loved').length
             case 'liked':
-                return ratings.filter(r => r.rating === 'liked').length
+                return ratings.filter((r) => r.rating === 'liked').length
             case 'disliked':
-                return ratings.filter(r => r.rating === 'disliked').length
+                return ratings.filter((r) => r.rating === 'disliked').length
             case 'watchlist':
                 return watchlist.length
             case 'all':
@@ -209,8 +236,8 @@ const Favorites: NextPage = () => {
                         {isGuest && (
                             <div className="bg-gray-800/50 p-4 rounded-lg max-w-2xl">
                                 <p className="text-sm text-gray-300">
-                                    📱 You&apos;re browsing as a guest. Your preferences are saved locally.
-                                    Sign up to sync across devices!
+                                    📱 You&apos;re browsing as a guest. Your preferences are saved
+                                    locally. Sign up to sync across devices!
                                 </p>
                             </div>
                         )}
@@ -223,7 +250,7 @@ const Favorites: NextPage = () => {
                                 { key: 'liked', label: 'Liked' },
                                 { key: 'disliked', label: 'Not For Me' },
                                 { key: 'watchlist', label: 'My List' },
-                            ].map(filter => (
+                            ].map((filter) => (
                                 <button
                                     key={filter.key}
                                     onClick={() => setSelectedFilter(filter.key as any)}
@@ -242,6 +269,19 @@ const Favorites: NextPage = () => {
                             ))}
                         </div>
 
+                        {/* Export Button */}
+                        {(ratings.length > 0 || watchlist.length > 0) && (
+                            <div className="flex justify-start">
+                                <button
+                                    onClick={handleExportCSV}
+                                    className="flex items-center space-x-2 px-4 py-2 bg-gray-800/50 hover:bg-white/10 text-white border border-gray-600 hover:border-gray-400 rounded-lg text-sm font-medium transition-all duration-200"
+                                >
+                                    <ArrowDownTrayIcon className="w-4 h-4" />
+                                    <span>Export to CSV</span>
+                                </button>
+                            </div>
+                        )}
+
                         {/* Search Bar */}
                         <div className="max-w-md">
                             <div className="relative">
@@ -259,100 +299,124 @@ const Favorites: NextPage = () => {
                         </div>
                     </div>
 
-                    {/* Content Grid */}
+                    {/* Content Sections */}
                     {filteredContent.length === 0 ? (
                         <div className="text-center py-16">
                             <div className="text-6xl mb-4">🍿</div>
                             <h2 className="text-2xl font-semibold text-white mb-2">
-                                No {selectedFilter === 'all' ? 'favorites' : selectedFilter} content yet
+                                No {selectedFilter === 'all' ? 'favorites' : selectedFilter} content
+                                yet
                             </h2>
                             <p className="text-gray-400">
                                 Start rating movies and TV shows to see them here!
                             </p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                            {filteredContent.map((item) => {
-                                // Check if we have content data (from watchlist, ratings, or fetched data)
-                                const content = 'content' in item && item.content
-                                    ? item.content
-                                    : fetchedContent[item.contentId]
-                                const hasContentData = !!content
-                                const isLoading = loadingContent[item.contentId]
+                        <div className="space-y-12">
+                            {(() => {
+                                // Helper function to get content data
+                                const getContentData = (item: any) => {
+                                    return 'content' in item && item.content
+                                        ? item.content
+                                        : fetchedContent[item.contentId]
+                                }
 
-                                return (
-                                    <div
-                                        key={`${item.contentId}-${item.rating}`}
-                                        className="relative group cursor-pointer transition-transform duration-200 hover:scale-105"
-                                        onClick={() => hasContentData && handleContentClick(content)}
-                                    >
-                                        <div className="relative aspect-[2/3] overflow-hidden rounded-md bg-gray-800">
-                                            {isLoading ? (
-                                                <div className="flex items-center justify-center h-full">
-                                                    <div className="text-center">
-                                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mb-2"></div>
-                                                        <p className="text-xs text-gray-300">Loading...</p>
+                                // Separate content by media type
+                                const moviesContent = filteredContent.filter((item: any) => {
+                                    const content = getContentData(item)
+                                    return content && isMovie(content)
+                                })
+
+                                const tvShowsContent = filteredContent.filter((item: any) => {
+                                    const content = getContentData(item)
+                                    return content && isTVShow(content)
+                                })
+
+                                const unknownContent = filteredContent.filter((item: any) => {
+                                    const content = getContentData(item)
+                                    const isCurrentlyLoading = loadingContent[item.contentId]
+                                    // Include items that are loading OR have content but aren't movies/TV shows
+                                    return (
+                                        isCurrentlyLoading ||
+                                        !content ||
+                                        (content && !isMovie(content) && !isTVShow(content))
+                                    )
+                                })
+
+                                const renderContentGrid = (items: any[], title: string) => (
+                                    <div>
+                                        <h3 className="text-2xl font-bold text-white mb-6">
+                                            {title}
+                                        </h3>
+                                        <div className="flex flex-wrap gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 md:gap-x-8 md:gap-y-12">
+                                            {items.map((item: any) => {
+                                                const content = getContentData(item)
+                                                const hasContentData = !!content
+                                                const isLoading = loadingContent[item.contentId]
+
+                                                return (
+                                                    <div
+                                                        key={`${item.contentId}-${item.rating}`}
+                                                        className="relative mb-12 sm:mb-16 md:mb-20"
+                                                    >
+                                                        {isLoading ? (
+                                                            <div className="relative aspect-[2/3] overflow-hidden rounded-md bg-gray-800 flex items-center justify-center">
+                                                                <div className="text-center">
+                                                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mb-2"></div>
+                                                                    <p className="text-xs text-gray-300">
+                                                                        Loading...
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        ) : hasContentData ? (
+                                                            <>
+                                                                <Thumbnail
+                                                                    content={content}
+                                                                    size="small"
+                                                                    className=""
+                                                                />
+                                                                {/* Rating badge overlay */}
+                                                                <div className="absolute top-2 right-2 bg-black/70 rounded-full p-1 z-10">
+                                                                    {getFilterIcon(item.rating)}
+                                                                </div>
+                                                            </>
+                                                        ) : (
+                                                            <div className="relative aspect-[2/3] overflow-hidden rounded-md bg-gray-800 flex items-center justify-center cursor-pointer">
+                                                                <div className="text-center">
+                                                                    <div className="text-4xl mb-2">
+                                                                        {getFilterIcon(item.rating)}
+                                                                    </div>
+                                                                    <p className="text-xs text-gray-300">
+                                                                        Content ID: {item.contentId}
+                                                                    </p>
+                                                                </div>
+                                                                {/* Rating badge */}
+                                                                <div className="absolute top-2 right-2 bg-black/70 rounded-full p-1">
+                                                                    {getFilterIcon(item.rating)}
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                </div>
-                                            ) : hasContentData && content.poster_path ? (
-                                                <Image
-                                                    src={`https://image.tmdb.org/t/p/w500${content.poster_path}`}
-                                                    alt={getTitle(content)}
-                                                    fill
-                                                    sizes="(max-width: 640px) 140px, (max-width: 768px) 160px, (max-width: 1024px) 180px, 240px"
-                                                    className="object-cover transition-transform duration-200 group-hover:scale-110"
-                                                />
-                                            ) : (
-                                                <div className="flex items-center justify-center h-full">
-                                                    <div className="text-center">
-                                                        <div className="text-4xl mb-2">
-                                                            {getFilterIcon(item.rating)}
-                                                        </div>
-                                                        <p className="text-xs text-gray-300">
-                                                            {hasContentData && content ? 'No Poster' : `Content ID: ${item.contentId}`}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Rating badge */}
-                                            <div className="absolute top-2 right-2 bg-black/70 rounded-full p-1">
-                                                {getFilterIcon(item.rating)}
-                                            </div>
-                                        </div>
-
-                                        {/* Content info */}
-                                        <div className="mt-2">
-                                            {isLoading ? (
-                                                <>
-                                                    <div className="h-4 bg-gray-700 rounded animate-pulse mb-1"></div>
-                                                    <div className="h-3 bg-gray-700 rounded animate-pulse w-2/3"></div>
-                                                </>
-                                            ) : hasContentData ? (
-                                                <>
-                                                    <h3 className="text-sm font-medium text-white truncate">
-                                                        {getTitle(content)}
-                                                    </h3>
-                                                    <p className="text-xs text-gray-400">
-                                                        {getYear(content)}
-                                                    </p>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <h3 className="text-sm font-medium text-white">
-                                                        {item.rating === 'loved' ? 'Loved Content' :
-                                                         item.rating === 'liked' ? 'Liked Content' :
-                                                         'Disliked Content'}
-                                                    </h3>
-                                                    <p className="text-xs text-gray-400">
-                                                        ID: {item.contentId}
-                                                    </p>
-                                                </>
-                                            )}
+                                                )
+                                            })}
                                         </div>
                                     </div>
                                 )
-                            })}
+
+                                return (
+                                    <>
+                                        {moviesContent.length > 0 &&
+                                            renderContentGrid(moviesContent, 'Movies')}
+                                        {tvShowsContent.length > 0 &&
+                                            renderContentGrid(tvShowsContent, 'TV Shows')}
+                                        {unknownContent.length > 0 &&
+                                            renderContentGrid(
+                                                unknownContent,
+                                                'Loading & Other Content'
+                                            )}
+                                    </>
+                                )
+                            })()}
                         </div>
                     )}
                 </div>

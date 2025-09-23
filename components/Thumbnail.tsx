@@ -154,7 +154,7 @@ function Thumbnail({ content, className = '', size = 'medium' }: Props) {
                               group-hover:mt-3 group-hover:scale-105 text-left"
                 >
                     <h3 className="text-white font-bold leading-tight mb-1 text-base bg-black/60 px-2 py-1 rounded text-left">
-                        {content?.title || content?.name || 'No Title'}
+                        {content ? getTitle(content) : 'No Title'}
                     </h3>
                     <p className="text-gray-400 font-medium leading-tight text-sm text-left px-2">
                         {getYear(content)}

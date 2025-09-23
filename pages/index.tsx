@@ -47,13 +47,14 @@ const Home = ({
     const [cacheStatus, setCacheStatus] = useRecoilState(cacheStatusState)
 
     // Check if we have any content at all
-    const hasAnyContent = trending.length > 0 ||
-                         topRatedMovies.length > 0 ||
-                         actionMovies.length > 0 ||
-                         comedyMovies.length > 0 ||
-                         horrorMovies.length > 0 ||
-                         romanceMovies.length > 0 ||
-                         documentaries.length > 0
+    const hasAnyContent =
+        trending.length > 0 ||
+        topRatedMovies.length > 0 ||
+        actionMovies.length > 0 ||
+        comedyMovies.length > 0 ||
+        horrorMovies.length > 0 ||
+        romanceMovies.length > 0 ||
+        documentaries.length > 0
 
     useEffect(() => {
         // Store main page data in cache for future navigations
@@ -65,15 +66,15 @@ const Home = ({
             horrorMovies,
             romanceMovies,
             documentaries,
-            lastFetched: Date.now()
+            lastFetched: Date.now(),
         }
 
         setMainPageData(currentData)
         setHasVisitedMainPage(true)
-        setCacheStatus(prev => ({
+        setCacheStatus((prev) => ({
             ...prev,
             mainPageCached: true,
-            lastCacheUpdate: Date.now()
+            lastCacheUpdate: Date.now(),
         }))
 
         // Set content loaded successfully and prefetch login page
@@ -83,7 +84,20 @@ const Home = ({
                 Router.prefetch('/login')
             })
         }
-    }, [trending, topRatedMovies, actionMovies, comedyMovies, horrorMovies, romanceMovies, documentaries, hasVisitedMainPage, setContentLoadedSuccessfully, setMainPageData, setHasVisitedMainPage, setCacheStatus])
+    }, [
+        trending,
+        topRatedMovies,
+        actionMovies,
+        comedyMovies,
+        horrorMovies,
+        romanceMovies,
+        documentaries,
+        hasVisitedMainPage,
+        setContentLoadedSuccessfully,
+        setMainPageData,
+        setHasVisitedMainPage,
+        setCacheStatus,
+    ])
 
     // Show error screen if no content is available
     if (!hasAnyContent || hasDataError) {
@@ -98,16 +112,16 @@ const Home = ({
     }
 
     const getPageDescription = () => {
-        if (filter === 'tv') return 'Discover trending TV shows, watch trailers, and manage your watchlist with NetTrailer'
-        if (filter === 'movies') return 'Discover trending movies, watch trailers, and manage your watchlist with NetTrailer'
-        return 'Browse trending movies and TV shows, watch trailers, and manage your watchlist with NetTrailer\'s secure streaming platform'
+        if (filter === 'tv')
+            return 'Discover trending TV shows, watch trailers, and manage your watchlist with NetTrailer'
+        if (filter === 'movies')
+            return 'Discover trending movies, watch trailers, and manage your watchlist with NetTrailer'
+        return "Browse trending movies and TV shows, watch trailers, and manage your watchlist with NetTrailer's secure streaming platform"
     }
 
     return (
         <div
-            className={`relative min-h-screen overflow-x-clip ${
-                showModal && `overflow-y-hidden`
-            } `}
+            className={`relative min-h-screen overflow-x-clip ${showModal && `overflow-y-hidden`} `}
         >
             <Head>
                 <title>{getPageTitle()}</title>
@@ -124,45 +138,86 @@ const Home = ({
                     {trending.length > 0 && (
                         <div className="pt-8 sm:pt-12 md:pt-16">
                             <Row
-                                title={filter === 'tv' ? 'Trending TV Shows' : filter === 'movies' ? 'Trending Movies' : 'Trending'}
+                                title={
+                                    filter === 'tv'
+                                        ? 'Trending TV Shows'
+                                        : filter === 'movies'
+                                          ? 'Trending Movies'
+                                          : 'Trending'
+                                }
                                 content={trending}
-                                hideTitles={true}
                             />
                         </div>
                     )}
                     {topRatedMovies.length > 0 && (
                         <Row
-                            title={filter === 'tv' ? 'Top Rated TV Shows' : filter === 'movies' ? 'Top Rated Movies' : 'Top Rated Movies'}
+                            title={
+                                filter === 'tv'
+                                    ? 'Top Rated TV Shows'
+                                    : filter === 'movies'
+                                      ? 'Top Rated Movies'
+                                      : 'Top Rated Movies'
+                            }
                             content={topRatedMovies}
                         />
                     )}
                     {actionMovies.length > 0 && (
                         <Row
-                            title={filter === 'tv' ? 'Action & Adventure TV Shows' : filter === 'movies' ? 'Action Movies' : 'Action Movies'}
+                            title={
+                                filter === 'tv'
+                                    ? 'Action & Adventure TV Shows'
+                                    : filter === 'movies'
+                                      ? 'Action Movies'
+                                      : 'Action Movies'
+                            }
                             content={actionMovies}
                         />
                     )}
                     {comedyMovies.length > 0 && (
                         <Row
-                            title={filter === 'tv' ? 'Comedy TV Shows' : filter === 'movies' ? 'Comedy Movies' : 'Comedy Movies'}
+                            title={
+                                filter === 'tv'
+                                    ? 'Comedy TV Shows'
+                                    : filter === 'movies'
+                                      ? 'Comedy Movies'
+                                      : 'Comedy Movies'
+                            }
                             content={comedyMovies}
                         />
                     )}
                     {horrorMovies.length > 0 && (
                         <Row
-                            title={filter === 'tv' ? 'Crime TV Shows' : filter === 'movies' ? 'Horror Movies' : 'Horror Movies'}
+                            title={
+                                filter === 'tv'
+                                    ? 'Crime TV Shows'
+                                    : filter === 'movies'
+                                      ? 'Horror Movies'
+                                      : 'Horror Movies'
+                            }
                             content={horrorMovies}
                         />
                     )}
                     {romanceMovies.length > 0 && (
                         <Row
-                            title={filter === 'tv' ? 'Drama TV Shows' : filter === 'movies' ? 'Romance Movies' : 'Romance Movies'}
+                            title={
+                                filter === 'tv'
+                                    ? 'Drama TV Shows'
+                                    : filter === 'movies'
+                                      ? 'Romance Movies'
+                                      : 'Romance Movies'
+                            }
                             content={romanceMovies}
                         />
                     )}
                     {documentaries.length > 0 && (
                         <Row
-                            title={filter === 'tv' ? 'Documentary TV Shows' : filter === 'movies' ? 'Documentaries' : 'Documentaries'}
+                            title={
+                                filter === 'tv'
+                                    ? 'Documentary TV Shows'
+                                    : filter === 'movies'
+                                      ? 'Documentaries'
+                                      : 'Documentaries'
+                            }
                             content={documentaries}
                         />
                     )}
@@ -182,7 +237,18 @@ export const getServerSideProps = async (context: any) => {
 
     if (!API_KEY) {
         console.error('TMDB API key not configured')
-        return { props: { trending: [], topRatedMovies1: [], topRatedMovies2: [], actionMovies: [], comedyMovies: [], horrorMovies: [], romanceMovies: [], documentaries: [] } }
+        return {
+            props: {
+                trending: [],
+                topRatedMovies1: [],
+                topRatedMovies2: [],
+                actionMovies: [],
+                comedyMovies: [],
+                horrorMovies: [],
+                romanceMovies: [],
+                documentaries: [],
+            },
+        }
     }
 
     try {
@@ -199,38 +265,86 @@ export const getServerSideProps = async (context: any) => {
         if (filter === 'tv') {
             // Fetch TV-specific content directly from TMDB
             fetchPromises = [
-                fetch(`${TMDB_BASE_URL}/trending/tv/week?api_key=${API_KEY}&language=en-US&page=1`).then((res) => res.json()),
-                fetch(`${TMDB_BASE_URL}/tv/top_rated?api_key=${API_KEY}&language=en-US&page=1`).then((res) => res.json()),
-                fetch(`${TMDB_BASE_URL}/tv/top_rated?api_key=${API_KEY}&language=en-US&page=2`).then((res) => res.json()),
-                fetch(`${TMDB_BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&with_genres=10759&page=1`).then((res) => res.json()), // Action & Adventure
-                fetch(`${TMDB_BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&with_genres=35&page=1`).then((res) => res.json()), // Comedy
-                fetch(`${TMDB_BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&with_genres=80&page=1`).then((res) => res.json()), // Crime
-                fetch(`${TMDB_BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&with_genres=18&page=1`).then((res) => res.json()), // Drama
-                fetch(`${TMDB_BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&with_genres=99&page=1`).then((res) => res.json()), // Documentary
+                fetch(
+                    `${TMDB_BASE_URL}/trending/tv/week?api_key=${API_KEY}&language=en-US&page=1`
+                ).then((res) => res.json()),
+                fetch(
+                    `${TMDB_BASE_URL}/tv/top_rated?api_key=${API_KEY}&language=en-US&page=1`
+                ).then((res) => res.json()),
+                fetch(
+                    `${TMDB_BASE_URL}/tv/top_rated?api_key=${API_KEY}&language=en-US&page=2`
+                ).then((res) => res.json()),
+                fetch(
+                    `${TMDB_BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&with_genres=10759&page=1`
+                ).then((res) => res.json()), // Action & Adventure
+                fetch(
+                    `${TMDB_BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&with_genres=35&page=1`
+                ).then((res) => res.json()), // Comedy
+                fetch(
+                    `${TMDB_BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&with_genres=80&page=1`
+                ).then((res) => res.json()), // Crime
+                fetch(
+                    `${TMDB_BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&with_genres=18&page=1`
+                ).then((res) => res.json()), // Drama
+                fetch(
+                    `${TMDB_BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&with_genres=99&page=1`
+                ).then((res) => res.json()), // Documentary
             ]
         } else if (filter === 'movies') {
             // Fetch movie-specific content directly from TMDB
             fetchPromises = [
-                fetch(`${TMDB_BASE_URL}/trending/movie/week?api_key=${API_KEY}&language=en-US&page=1`).then((res) => res.json()),
-                fetch(`${TMDB_BASE_URL}/movie/top_rated?api_key=${API_KEY}&language=en-US&page=1`).then((res) => res.json()),
-                fetch(`${TMDB_BASE_URL}/movie/top_rated?api_key=${API_KEY}&language=en-US&page=2`).then((res) => res.json()),
-                fetch(`${TMDB_BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&with_genres=28&page=1`).then((res) => res.json()), // Action
-                fetch(`${TMDB_BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&with_genres=35&page=1`).then((res) => res.json()), // Comedy
-                fetch(`${TMDB_BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&with_genres=27&page=1`).then((res) => res.json()), // Horror
-                fetch(`${TMDB_BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&with_genres=10749&page=1`).then((res) => res.json()), // Romance
-                fetch(`${TMDB_BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&with_genres=99&page=1`).then((res) => res.json()), // Documentary
+                fetch(
+                    `${TMDB_BASE_URL}/trending/movie/week?api_key=${API_KEY}&language=en-US&page=1`
+                ).then((res) => res.json()),
+                fetch(
+                    `${TMDB_BASE_URL}/movie/top_rated?api_key=${API_KEY}&language=en-US&page=1`
+                ).then((res) => res.json()),
+                fetch(
+                    `${TMDB_BASE_URL}/movie/top_rated?api_key=${API_KEY}&language=en-US&page=2`
+                ).then((res) => res.json()),
+                fetch(
+                    `${TMDB_BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&with_genres=28&page=1`
+                ).then((res) => res.json()), // Action
+                fetch(
+                    `${TMDB_BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&with_genres=35&page=1`
+                ).then((res) => res.json()), // Comedy
+                fetch(
+                    `${TMDB_BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&with_genres=27&page=1`
+                ).then((res) => res.json()), // Horror
+                fetch(
+                    `${TMDB_BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&with_genres=10749&page=1`
+                ).then((res) => res.json()), // Romance
+                fetch(
+                    `${TMDB_BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&with_genres=99&page=1`
+                ).then((res) => res.json()), // Documentary
             ]
         } else {
             // Default mixed content (original behavior) directly from TMDB
             fetchPromises = [
-                fetch(`${TMDB_BASE_URL}/trending/all/week?api_key=${API_KEY}&language=en-US&page=1`).then((res) => res.json()),
-                fetch(`${TMDB_BASE_URL}/movie/top_rated?api_key=${API_KEY}&language=en-US&page=1`).then((res) => res.json()),
-                fetch(`${TMDB_BASE_URL}/movie/top_rated?api_key=${API_KEY}&language=en-US&page=2`).then((res) => res.json()),
-                fetch(`${TMDB_BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&with_genres=28&page=1`).then((res) => res.json()), // Action Movies
-                fetch(`${TMDB_BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&with_genres=35&page=1`).then((res) => res.json()), // Comedy Movies
-                fetch(`${TMDB_BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&with_genres=27&page=1`).then((res) => res.json()), // Horror Movies
-                fetch(`${TMDB_BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&with_genres=10749&page=1`).then((res) => res.json()), // Romance Movies
-                fetch(`${TMDB_BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&with_genres=99&page=1`).then((res) => res.json()), // Documentary Movies
+                fetch(
+                    `${TMDB_BASE_URL}/trending/all/week?api_key=${API_KEY}&language=en-US&page=1`
+                ).then((res) => res.json()),
+                fetch(
+                    `${TMDB_BASE_URL}/movie/top_rated?api_key=${API_KEY}&language=en-US&page=1`
+                ).then((res) => res.json()),
+                fetch(
+                    `${TMDB_BASE_URL}/movie/top_rated?api_key=${API_KEY}&language=en-US&page=2`
+                ).then((res) => res.json()),
+                fetch(
+                    `${TMDB_BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&with_genres=28&page=1`
+                ).then((res) => res.json()), // Action Movies
+                fetch(
+                    `${TMDB_BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&with_genres=35&page=1`
+                ).then((res) => res.json()), // Comedy Movies
+                fetch(
+                    `${TMDB_BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&with_genres=27&page=1`
+                ).then((res) => res.json()), // Horror Movies
+                fetch(
+                    `${TMDB_BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&with_genres=10749&page=1`
+                ).then((res) => res.json()), // Romance Movies
+                fetch(
+                    `${TMDB_BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&with_genres=99&page=1`
+                ).then((res) => res.json()), // Documentary Movies
             ]
         }
 
@@ -249,8 +363,8 @@ export const getServerSideProps = async (context: any) => {
         const randomizeArray = (arr: Content[]) => {
             const shuffled = [...arr] // Create copy to avoid mutating original
             for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+                const j = Math.floor(Math.random() * (i + 1))
+                ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
             }
             return shuffled
         }

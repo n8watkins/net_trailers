@@ -1,5 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { MagnifyingGlassIcon, XMarkIcon, ArrowRightIcon, FunnelIcon } from '@heroicons/react/24/outline'
+import {
+    MagnifyingGlassIcon,
+    XMarkIcon,
+    ArrowRightIcon,
+    FunnelIcon,
+} from '@heroicons/react/24/outline'
 import { useRouter } from 'next/router'
 import { useRecoilState } from 'recoil'
 import { useSearch } from '../hooks/useSearch'
@@ -16,28 +21,28 @@ interface SearchBarProps {
 }
 
 export default function SearchBar({
-    placeholder = "Search movies and TV shows...",
-    className = "",
+    placeholder = 'Search movies and TV shows...',
+    className = '',
     onFocus,
-    onBlur
+    onBlur,
 }: SearchBarProps) {
     // Popular titles for typewriter effect
     const popularTitles = [
-        "Stranger Things",
-        "The Witcher",
-        "Wednesday",
-        "Breaking Bad",
-        "Squid Game",
-        "The Crown",
-        "Ozark",
-        "House of Cards",
-        "Narcos",
-        "Black Mirror",
-        "Money Heist",
-        "Dark",
+        'Stranger Things',
+        'The Witcher',
+        'Wednesday',
+        'Breaking Bad',
+        'Squid Game',
+        'The Crown',
+        'Ozark',
+        'House of Cards',
+        'Narcos',
+        'Black Mirror',
+        'Money Heist',
+        'Dark',
         "The Queen's Gambit",
-        "Bridgerton",
-        "Cobra Kai"
+        'Bridgerton',
+        'Cobra Kai',
     ]
 
     const typewriterText = useTypewriter({
@@ -46,7 +51,7 @@ export default function SearchBar({
         deleteSpeed: 40,
         delayBetweenWords: 2000,
         loop: true,
-        maxLength: 20 // Limit for cleaner display on larger devices
+        maxLength: 20, // Limit for cleaner display on larger devices
     })
     const router = useRouter()
     const isOnSearchPage = router.pathname === '/search'
@@ -60,7 +65,7 @@ export default function SearchBar({
         totalResults,
         updateQuery,
         clearSearch,
-        performSearch
+        performSearch,
     } = useSearch()
 
     const [showModal, setShowModal] = useRecoilState(modalState)
@@ -85,13 +90,13 @@ export default function SearchBar({
             seeAllButtonRef.current.scrollIntoView({
                 behavior: 'smooth',
                 block: 'nearest',
-                inline: 'nearest'
+                inline: 'nearest',
             })
         } else if (resultRefs.current[index]) {
             resultRefs.current[index]?.scrollIntoView({
                 behavior: 'smooth',
                 block: 'nearest',
-                inline: 'nearest'
+                inline: 'nearest',
             })
         }
     }
@@ -275,20 +280,25 @@ export default function SearchBar({
     const hasMoreResults = results.length > 4
 
     return (
-        <div className={`relative transition-all duration-300 ease-in-out w-full mx-auto ${className}`}>
+        <div
+            className={`relative transition-all duration-300 ease-in-out w-full mx-auto ${className}`}
+        >
             {/* Unified Mobile/Desktop Search Container */}
-            <div className={`relative transition-all duration-300 ease-in-out ${
-                // Mobile: starts at icon width (48px), expands to full width when active
-                // Desktop: always visible with responsive width
-                isMobileExpanded || 'md:block'
-                    ? 'md:max-w-4xl md:w-full max-w-full w-full opacity-100'
-                    : 'md:max-w-xl md:w-full w-12 opacity-100'
-            } ${isFocused && 'md:max-w-4xl'}`}>
-
+            <div
+                className={`relative transition-all duration-300 ease-in-out ${
+                    // Mobile: starts at icon width (48px), expands to full width when active
+                    // Desktop: always visible with responsive width
+                    isMobileExpanded || 'md:block'
+                        ? 'md:max-w-4xl md:w-full max-w-full w-full opacity-100'
+                        : 'md:max-w-xl md:w-full w-12 opacity-100'
+                } ${isFocused && 'md:max-w-4xl'}`}
+            >
                 {/* Mobile Search Icon (overlays on collapsed state) */}
-                <div className={`md:hidden absolute inset-0 transition-opacity duration-300 ease-in-out ${
-                    isMobileExpanded ? 'opacity-0 pointer-events-none' : 'opacity-100'
-                }`}>
+                <div
+                    className={`md:hidden absolute inset-0 transition-opacity duration-300 ease-in-out ${
+                        isMobileExpanded ? 'opacity-0 pointer-events-none' : 'opacity-100'
+                    }`}
+                >
                     <button
                         onClick={handleMobileSearchClick}
                         className="w-12 h-12 flex items-center justify-center bg-[#0a0a0a] border border-gray-600/50 rounded-lg hover:border-red-500/50 transition-colors"
@@ -297,9 +307,13 @@ export default function SearchBar({
                     </button>
                 </div>
                 {/* Search Input Container (visible when expanded on mobile, always on desktop) */}
-                <div className={`transition-opacity duration-300 ease-in-out ${
-                    isMobileExpanded ? 'opacity-100 md:opacity-100' : 'opacity-0 md:opacity-100 pointer-events-none md:pointer-events-auto'
-                }`}>
+                <div
+                    className={`transition-opacity duration-300 ease-in-out ${
+                        isMobileExpanded
+                            ? 'opacity-100 md:opacity-100'
+                            : 'opacity-0 md:opacity-100 pointer-events-none md:pointer-events-auto'
+                    }`}
+                >
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         {isLoading ? (
                             <div className="animate-spin h-5 w-5 text-gray-400">
@@ -390,10 +404,7 @@ export default function SearchBar({
             </div>
 
             {/* Search Filters Dropdown */}
-            <SearchFiltersDropdown
-                isOpen={showFilters}
-                onClose={() => setShowFilters(false)}
-            />
+            <SearchFiltersDropdown isOpen={showFilters} onClose={() => setShowFilters(false)} />
 
             {/* Search Results Dropdown */}
             {showSuggestions && quickResults.length > 0 && !isOnSearchPage && !showFilters && (
@@ -405,7 +416,8 @@ export default function SearchBar({
                     {totalResults > 0 && (
                         <div className="px-4 py-2 border-b border-gray-600/50 bg-gray-800/30">
                             <div className="text-xs text-gray-400">
-                                Found {totalResults.toLocaleString()} result{totalResults !== 1 ? &apos;s&apos; : &apos;&apos;} for &quot;{query}&quot;
+                                Found {totalResults.toLocaleString()} result
+                                {totalResults !== 1 ? 's' : ''} for &ldquo;{query}&rdquo;
                             </div>
                         </div>
                     )}
@@ -438,8 +450,16 @@ export default function SearchBar({
                                                     />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                                                        <svg
+                                                            className="w-6 h-6"
+                                                            fill="currentColor"
+                                                            viewBox="0 0 20 20"
+                                                        >
+                                                            <path
+                                                                fillRule="evenodd"
+                                                                d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                                                                clipRule="evenodd"
+                                                            />
                                                         </svg>
                                                     </div>
                                                 )}
@@ -464,7 +484,9 @@ export default function SearchBar({
                                                     {/* Rating */}
                                                     {item.vote_average > 0 && (
                                                         <div className="flex items-center gap-1">
-                                                            <span className="text-yellow-400 text-xs">⭐</span>
+                                                            <span className="text-yellow-400 text-xs">
+                                                                ⭐
+                                                            </span>
                                                             <span className="text-white text-xs font-medium">
                                                                 {item.vote_average.toFixed(1)}
                                                             </span>
@@ -472,13 +494,16 @@ export default function SearchBar({
                                                     )}
 
                                                     {/* Media Type Badge */}
-                                                    <span className={`
+                                                    <span
+                                                        className={`
                                                         px-1.5 py-0.5 text-xs font-medium rounded
-                                                        ${isMovie(item)
-                                                            ? 'bg-blue-600 text-white'
-                                                            : 'bg-green-600 text-white'
+                                                        ${
+                                                            isMovie(item)
+                                                                ? 'bg-blue-600 text-white'
+                                                                : 'bg-green-600 text-white'
                                                         }
-                                                    `}>
+                                                    `}
+                                                    >
                                                         {isMovie(item) ? 'Movie' : 'TV'}
                                                     </span>
                                                 </div>
@@ -505,7 +530,6 @@ export default function SearchBar({
                             </div>
                         </>
                     )}
-
                 </div>
             )}
         </div>

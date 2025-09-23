@@ -14,7 +14,6 @@ export default function SearchFilters({ className = '', isOpen, onClose }: Searc
 
     const updateFilter = useCallback(
         (key: keyof SearchFiltersType, value: any) => {
-            console.log(`🎛️ Filter changed: ${key} = ${value}`)
             setSearch((prev) => ({
                 ...prev,
                 filters: {
@@ -27,7 +26,6 @@ export default function SearchFilters({ className = '', isOpen, onClose }: Searc
     )
 
     const clearAllFilters = () => {
-        console.log('🎛️ Clearing all filters')
         setSearch((prev) => ({
             ...prev,
             filters: {
@@ -122,7 +120,6 @@ export default function SearchFilters({ className = '', isOpen, onClose }: Searc
         { value: 'vote_average.desc', label: 'Most Voted' },
     ]
 
-
     return (
         <div className={`${className}`}>
             <div className="flex flex-col space-y-4 lg:flex-row lg:space-y-0 lg:space-x-6 lg:items-end">
@@ -148,14 +145,12 @@ export default function SearchFilters({ className = '', isOpen, onClose }: Searc
                         options={yearOptions}
                     />
 
-
                     <FilterDropdown
                         label="Sort By"
                         value={search.filters.sortBy}
                         onChange={(value) => updateFilter('sortBy', value)}
                         options={sortOptions}
                     />
-
                 </div>
 
                 {hasActiveFilters && (

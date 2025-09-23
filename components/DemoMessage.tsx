@@ -13,28 +13,37 @@ export default function DemoMessage() {
     const router = useRouter()
 
     useEffect(() => {
-        // Only show on homepage after login, not on login/signup pages
-        const isOnAuthPage = router.pathname === '/login' || router.pathname === '/signup' || router.pathname === '/reset'
+        // Auto-loading disabled - DemoMessage now only shows via Tutorial in dropdown
+        // Component kept for potential future manual triggers
+        return
+    }, [
+        showDemoMessage,
+        isGuest,
+        isAuthenticated,
+        setShowDemoMessage,
+        router.pathname,
+        contentLoadedSuccessfully,
+    ])
 
-        if (showDemoMessage && (isGuest || isAuthenticated) && !isOnAuthPage && contentLoadedSuccessfully) {
-            setVisible(true)
-            const timer = setTimeout(() => {
-                setVisible(false)
-                setTimeout(() => setShowDemoMessage(false), 300) // Allow fade out
-            }, 15000)
+    const isOnAuthPage =
+        router.pathname === '/login' ||
+        router.pathname === '/signup' ||
+        router.pathname === '/reset'
 
-            return () => clearTimeout(timer)
-        }
-    }, [showDemoMessage, isGuest, isAuthenticated, setShowDemoMessage, router.pathname, contentLoadedSuccessfully])
-
-    const isOnAuthPage = router.pathname === '/login' || router.pathname === '/signup' || router.pathname === '/reset'
-
-    if (!showDemoMessage || (!isGuest && !isAuthenticated) || isOnAuthPage || !contentLoadedSuccessfully) return null
+    if (
+        !showDemoMessage ||
+        (!isGuest && !isAuthenticated) ||
+        isOnAuthPage ||
+        !contentLoadedSuccessfully
+    )
+        return null
 
     return (
-        <div className={`fixed top-16 right-4 z-50 max-w-lg transition-all duration-500 ${
-            visible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'
-        }`}>
+        <div
+            className={`fixed top-16 right-4 z-50 max-w-lg transition-all duration-500 ${
+                visible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'
+            }`}
+        >
             <div className="bg-gradient-to-br from-[#1a1a1a] via-[#222] to-[#181818] text-white p-8 rounded-2xl shadow-2xl border-2 border-[#e50914]/40 backdrop-blur-md relative">
                 {/* Close button in top right corner */}
                 <button
@@ -58,7 +67,9 @@ export default function DemoMessage() {
 
                         {isGuest ? (
                             <div className="text-base space-y-3">
-                                <p className="text-[#ff6b6b] font-bold text-lg">🚀 Guest Mode Active</p>
+                                <p className="text-[#ff6b6b] font-bold text-lg">
+                                    🚀 Guest Mode Active
+                                </p>
                                 <div className="space-y-2 text-gray-100">
                                     <p className="text-base">• Rate movies with 👍 👎 ❤️</p>
                                     <p className="text-base">• Build your personal watchlist</p>
@@ -66,13 +77,19 @@ export default function DemoMessage() {
                                     <p className="text-base">• Data saved locally</p>
                                 </div>
                                 <div className="mt-4 p-3 bg-[#333]/50 rounded-lg border border-[#f5c518]/30">
-                                    <p className="text-[#f5c518] text-sm font-semibold">💡 Create account to sync across devices!</p>
+                                    <p className="text-[#f5c518] text-sm font-semibold">
+                                        💡 Create account to sync across devices!
+                                    </p>
                                 </div>
                             </div>
                         ) : (
                             <div className="text-base space-y-3">
-                                <p className="text-[#ff6b6b] font-bold text-lg">🎯 Welcome to Net Trailers!</p>
-                                <p className="text-gray-100 text-sm font-medium">Portfolio project showcasing:</p>
+                                <p className="text-[#ff6b6b] font-bold text-lg">
+                                    🎯 Welcome to Net Trailers!
+                                </p>
+                                <p className="text-gray-100 text-sm font-medium">
+                                    Portfolio project showcasing:
+                                </p>
                                 <div className="space-y-2 text-gray-100">
                                     <p className="text-base">• Next.js + TypeScript + Firebase</p>
                                     <p className="text-base">• Movie ratings & watchlist system</p>

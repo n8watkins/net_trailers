@@ -23,8 +23,6 @@ function useDebounce<T>(value: T, delay: number): T {
 
 // Filter content based on search filters
 async function applyFilters(results: Content[], filters: SearchFilters): Promise<Content[]> {
-    console.log('🎬 Applying search filters...')
-
     // Apply filters to all results
     const filteredResults = results.filter((item) => {
         // Content Type Filter
@@ -73,10 +71,6 @@ async function applyFilters(results: Content[], filters: SearchFilters): Promise
 
         return true
     })
-
-    console.log(
-        `🎬 Filtering complete: ${filteredResults.length}/${results.length} items match filters`
-    )
 
     // Apply sorting if specified
     if (filters.sortBy !== 'popularity.desc') {
@@ -142,7 +136,6 @@ export function useSearch() {
             return
         }
 
-        console.log('🔄 Auto-loading all results for filtering...')
         setSearch((prev) => ({ ...prev, isLoadingAll: true }))
 
         try {
@@ -161,10 +154,6 @@ export function useSearch() {
 
                 allResults.push(...data.results)
                 currentPage++
-
-                console.log(
-                    `📥 Loaded page ${currentPage - 1}, total results: ${allResults.length}/${search.totalResults}`
-                )
             }
 
             const filtered = await applyFilters(allResults, search.filters)
@@ -177,10 +166,7 @@ export function useSearch() {
                 isLoadingAll: false,
                 currentPage: currentPage - 1,
             }))
-
-            console.log('✅ All results loaded and cached')
         } catch (error) {
-            console.error('❌ Error loading all results:', error)
             setSearch((prev) => ({ ...prev, isLoadingAll: false }))
         }
     }, [
@@ -198,17 +184,14 @@ export function useSearch() {
     const performSearch = useCallback(
         async (query: string, page = 1) => {
             const trimmedQuery = query.trim()
-            console.log('🚀 performSearch called:', { query, trimmedQuery, page })
 
             if (!trimmedQuery) {
-                console.log('❌ Empty query, clearing results')
                 clearResults()
                 return
             }
 
             // Cancel previous request
             if (abortControllerRef.current) {
-                console.log('🛑 Aborting previous request')
                 abortControllerRef.current.abort()
             }
 
@@ -216,7 +199,6 @@ export function useSearch() {
             const currentController = new AbortController()
             abortControllerRef.current = currentController
 
-            console.log('⏳ Setting loading state')
             setSearch((prev) => ({
                 ...prev,
                 isLoading: true,
@@ -229,35 +211,20 @@ export function useSearch() {
 
             try {
                 const url = `/api/search?query=${encodeURIComponent(trimmedQuery)}&page=${page}`
-                console.log('📡 Fetching:', url)
 
                 const response = await fetch(url, {
                     signal: currentController.signal,
                 })
-
-                console.log('📥 Response status:', response.status, response.statusText)
 
                 if (!response.ok) {
                     throw new Error(`Search failed: ${response.statusText}`)
                 }
 
                 const data = await response.json()
-                console.log('📊 Search data received:', {
-                    resultsCount: data.results?.length || 0,
-                    totalResults: data.total_results,
-                    page: data.page,
-                })
 
                 setSearch((prev) => {
                     const newResults =
                         page === 1 ? data.results || [] : [...prev.results, ...(data.results || [])]
-
-                    console.log('📋 Setting results:', {
-                        newResultsCount: newResults.length,
-                        filteredResultsCount: newResults.length, // Will be updated by filter effect
-                        isFirstPage: page === 1,
-                        previousResultsCount: prev.results.length,
-                    })
 
                     return {
                         ...prev,
@@ -277,20 +244,17 @@ export function useSearch() {
                             trimmedQuery,
                             ...prev.filter((h) => h !== trimmedQuery),
                         ].slice(0, 10)
-                        console.log('📚 Updated search history:', newHistory)
                         return newHistory
                     })
                 }
             } catch (error: any) {
                 if (error.name !== 'AbortError') {
-                    console.error('❌ Search error:', error)
                     setSearch((prev) => ({
                         ...prev,
                         isLoading: false,
                         error: error.message || 'Search failed',
                     }))
                 } else {
-                    console.log('🛑 Request was aborted')
                 }
             }
         },
@@ -329,11 +293,6 @@ export function useSearch() {
             setSearch((prev) => {
                 // Only update if results have actually changed
                 if (JSON.stringify(prev.filteredResults) !== JSON.stringify(filtered)) {
-                    console.log('🔄 Filter results updated:', {
-                        previousCount: prev.filteredResults.length,
-                        newCount: filtered.length,
-                        filters: search.filters,
-                    })
                     return {
                         ...prev,
                         filteredResults: filtered,
@@ -364,7 +323,6 @@ export function useSearch() {
             !search.hasAllResults &&
             !search.isLoadingAll
         ) {
-            console.log('🎯 Filter applied on search page, auto-loading all results...')
             loadAllResults()
         }
     }, [
