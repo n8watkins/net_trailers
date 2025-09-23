@@ -31,7 +31,7 @@ export default function ErrorToast() {
     }
 
     const getErrorStyles = (type: AppError['type'], message: string) => {
-        const baseStyles = "pointer-events-auto max-w-md rounded-lg p-4 shadow-lg transition-all duration-300 transform translate-x-0 opacity-100"
+        const baseStyles = "pointer-events-auto max-w-2xl rounded-lg p-4 shadow-lg transition-all duration-300 transform translate-x-0 opacity-100"
 
         // Success styling for positive auth messages
         if (type === 'auth' && (message.includes('sent') || message.includes('success') || message.includes('Success'))) {

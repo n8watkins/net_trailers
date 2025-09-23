@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { ExclamationTriangleIcon, ArrowPathIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { ExclamationTriangleIcon, ArrowPathIcon, HomeIcon } from '@heroicons/react/24/outline'
 import { useRouter } from 'next/router'
 
 interface Props {
@@ -11,9 +11,9 @@ interface Props {
 const NetflixError: React.FC<Props> = ({ onRetry, showDemoMode = false, onDemoMode }) => {
     const router = useRouter()
 
-    // Prefetch login page for instant loading
+    // Prefetch home page for instant loading
     useEffect(() => {
-        router.prefetch('/login')
+        router.prefetch('/')
     }, [router])
 
     const handleRetry = () => {
@@ -25,8 +25,8 @@ const NetflixError: React.FC<Props> = ({ onRetry, showDemoMode = false, onDemoMo
         }
     }
 
-    const handleBackToLogin = () => {
-        router.push('/login')
+    const handleGoHome = () => {
+        router.push('/')
     }
 
     return (
@@ -64,13 +64,13 @@ const NetflixError: React.FC<Props> = ({ onRetry, showDemoMode = false, onDemoMo
                         <span>Refresh</span>
                     </button>
 
-                    {/* Back to Login button */}
+                    {/* Go to Home button */}
                     <button
-                        onClick={handleBackToLogin}
+                        onClick={handleGoHome}
                         className="w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 px-8 rounded transition-colors duration-200 flex items-center justify-center space-x-2"
                     >
-                        <ArrowLeftIcon className="w-5 h-5" />
-                        <span>Back to Login</span>
+                        <HomeIcon className="w-5 h-5" />
+                        <span>Go to Home</span>
                     </button>
 
                     {/* Demo mode button (optional) */}

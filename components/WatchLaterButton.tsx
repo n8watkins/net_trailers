@@ -1,5 +1,5 @@
-import React from 'react'
-import { CheckIcon, PlusIcon } from '@heroicons/react/24/solid'
+import React, { useState } from 'react'
+import { CheckIcon, PlusIcon, MinusIcon } from '@heroicons/react/24/solid'
 import { Content, getTitle } from '../typings'
 import useUserData from '../hooks/useUserData'
 import { useToast } from '../hooks/useToast'
@@ -14,6 +14,7 @@ interface WatchLaterButtonProps {
 function WatchLaterButton({ content, variant = 'modal', className = '' }: WatchLaterButtonProps) {
     const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useUserData()
     const { showSuccess, showError } = useToast()
+    const [isHovered, setIsHovered] = useState(false)
 
     const isInList = isInWatchlist(content.id)
 
@@ -22,10 +23,10 @@ function WatchLaterButton({ content, variant = 'modal', className = '' }: WatchL
         try {
             if (isInList) {
                 removeFromWatchlist(content.id)
-                showSuccess('Removed from Watchlist', `${getTitle(content)} has been removed from your watchlist`)
+                showSuccess(`Removed ${getTitle(content)} from your watchlist`)
             } else {
                 addToWatchlist(content)
-                showSuccess('Added to Watchlist', `${getTitle(content)} has been added to your watchlist`)
+                showSuccess(`Added ${getTitle(content)} to your watchlist`)
             }
         } catch (error) {
             showError('Error', 'Failed to update watchlist. Please try again.')
@@ -71,13 +72,19 @@ function WatchLaterButton({ content, variant = 'modal', className = '' }: WatchL
 
     // Modal variant
     return (
-        <ToolTipMod title={isInList ? "Remove from My List" : "Add to My List"}>
+        <ToolTipMod title={isInList ? (isHovered ? "Remove from My List" : "In My List") : "Add to My List"}>
             <button
                 className={`p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-all duration-200 ${className}`}
                 onClick={handleWatchlistToggle}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
             >
                 {isInList ? (
-                    <CheckIcon className="h-4 w-4 sm:h-6 sm:w-6" />
+                    isHovered ? (
+                        <MinusIcon className="h-4 w-4 sm:h-6 sm:w-6" />
+                    ) : (
+                        <CheckIcon className="h-4 w-4 sm:h-6 sm:w-6" />
+                    )
                 ) : (
                     <PlusIcon className="h-4 w-4 sm:h-6 sm:w-6" />
                 )}

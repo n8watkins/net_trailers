@@ -4,8 +4,8 @@ import { Content } from '../typings'
 export interface SearchFilters {
     contentType: 'all' | 'movie' | 'tv'
     rating: 'all' | '7.0+' | '8.0+' | '9.0+'
-    year: 'all' | '2020s' | '2010s' | '2000s' | '1990s'
-    duration: 'all' | 'short' | 'medium' | 'long'
+    year: 'all' | string
+    sortBy: 'popularity.desc' | 'vote_average.desc' | 'release_date.desc' | 'release_date.asc' | 'revenue.desc' | 'vote_count.desc'
 }
 
 export interface SearchState {
@@ -18,6 +18,8 @@ export interface SearchState {
     totalResults: number
     currentPage: number
     filters: SearchFilters
+    hasAllResults: boolean
+    isLoadingAll: boolean
 }
 
 export const searchState = atom<SearchState>({
@@ -35,8 +37,10 @@ export const searchState = atom<SearchState>({
             contentType: 'all',
             rating: 'all',
             year: 'all',
-            duration: 'all',
+            sortBy: 'popularity.desc',
         },
+        hasAllResults: false,
+        isLoadingAll: false,
     },
 })
 

@@ -56,15 +56,36 @@ Sentry.init({
       // Display a dark colored theme
       colorScheme: 'dark',
       // Set a custom label for the feedback button
-      buttonLabel: 'Report Bug',
+      buttonLabel: '',
+      triggerLabel: '',
+      triggerAriaLabel: 'Report a bug to our team',
       // Set a custom label for the submit button
-      submitButtonLabel: 'Send Report',
+      submitButtonLabel: 'Send Bug Report',
+      formTitle: 'Bug Report',
       // Set a custom message placeholder
       messagePlaceholder: 'Describe the issue you encountered...',
       // Set a custom name placeholder
       namePlaceholder: 'Your name (optional)',
       // Set a custom email placeholder
       emailPlaceholder: 'Your email (optional)',
+      // Custom styles to match Netflix red theme
+      themeLight: {
+        submitButtonBackground: '#dc2626',
+        submitButtonBackgroundHover: '#b91c1c',
+        submitButtonForeground: '#ffffff',
+      },
+      themeDark: {
+        background: '#1e293b',
+        backgroundHover: '#334155',
+        foreground: '#f8fafc',
+        border: '#475569',
+        submitButtonBackground: '#dc2626',
+        submitButtonBackgroundHover: '#b91c1c',
+        submitButtonForeground: '#ffffff',
+        cancelButtonBackground: '#475569',
+        cancelButtonBackgroundHover: '#64748b',
+        cancelButtonForeground: '#f8fafc',
+      },
     }),
   ],
 })

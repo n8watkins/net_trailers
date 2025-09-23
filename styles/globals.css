@@ -5,7 +5,7 @@
 @layer body {
     body {
         /**/
-        @apply bg-[#0a0a0a] text-white !scrollbar-thin scrollbar-thumb-rounded-lg  hover:!scrollbar-thumb-red-400;
+        @apply bg-[#0a0a0a] text-white;
     }
     header {
         @apply fixed top-0 z-30 flex  w-full justify-between items-center px-4 py-4 transition-all duration-[1s] lg:px-10 lg:py-6 bg-gradient-to-b from-[rgba(0,0,0,.7)] to-transparent;
@@ -56,35 +56,61 @@
         -webkit-box-orient: vertical;
         -webkit-line-clamp: 2;
     }
+
+    @keyframes fade-in {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-fade-in {
+        animation: fade-in 0.5s ease-out forwards;
+    }
+
+    @keyframes dropdown-enter {
+        from {
+            opacity: 0;
+            transform: translateY(-8px) scale(0.98);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .animate-dropdown-enter {
+        animation: dropdown-enter 0.2s ease-out forwards;
+    }
 }
 
-/* Netflix-themed scrollbar styling */
+/* Red-themed scrollbar styling */
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-    background: rgba(30, 30, 30, 0.8);
-    border-radius: 10px;
+    background: rgb(31, 41, 55); /* gray-800 */
+    border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb {
-    background-image: radial-gradient(circle, rgb(236, 50, 50), rgb(31, 0, 0));
-    border-color: rgb(177, 2, 2);
-    border-style: solid;
-    border-width: 0.01px;
-    border-radius: 10px;
+    background: rgb(220, 38, 38); /* red-600 */
+    border-radius: 9999px;
     transition: all 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background-image: radial-gradient(circle, rgb(255, 70, 70), rgb(50, 0, 0));
-    border-color: rgb(200, 20, 20);
+    background: rgb(239, 68, 68); /* red-500 */
 }
 
 ::-webkit-scrollbar-corner {
-    background: rgba(30, 30, 30, 0.8);
+    background: rgb(31, 41, 55); /* gray-800 */
 }
 
 .backGround {
@@ -101,4 +127,36 @@
 }
 .MuiTooltip-tooltipPlacementTop {
     margin-bottom: 30px;
+}
+
+/* Move Sentry feedback button to bottom-left using CSS custom properties */
+#sentry-feedback {
+    --inset: auto auto 0 0;
+    --page-margin: 24px;
+}
+
+/* Style Sentry button as white with bug emoji */
+#sentry-feedback button {
+    background-color: white !important;
+    color: black !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+#sentry-feedback button:hover {
+    background-color: #f9fafb !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Show only bug emoji on small screens */
+#sentry-feedback button::after {
+    content: '🐛';
+    font-size: 16px;
+}
+
+/* Show "🐛 Report a bug" text on larger screens (xl breakpoint = 1280px+) */
+@media (min-width: 1280px) {
+    #sentry-feedback button::after {
+        content: '🐛 Report a bug';
+    }
 }

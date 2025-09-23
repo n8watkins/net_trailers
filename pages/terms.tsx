@@ -1,10 +1,10 @@
 import Head from 'next/head'
+import Link from 'next/link'
 import Header from '../components/Header'
-import Footer from '../components/Footer'
 
 function Terms() {
     return (
-        <div className="relative h-screen bg-gradient-to-b from-gray-900/10 to-[#0a0a0a]">
+        <div className="relative min-h-screen bg-gradient-to-b from-gray-900/10 to-[#0a0a0a]">
             <Head>
                 <title>Terms of Service - NetTrailer</title>
                 <meta name="description" content="NetTrailer terms of service - Terms and conditions for using our movie and TV discovery platform" />
@@ -30,7 +30,7 @@ function Terms() {
                             <section>
                                 <h2 className="text-2xl font-semibold text-white mb-4">1. Acceptance of Terms</h2>
                                 <p className="mb-4">
-                                    By accessing and using NetTrailer ("the Service"), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.
+                                    By accessing and using NetTrailer (&quot;the Service&quot;), you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.
                                 </p>
                             </section>
 
@@ -86,7 +86,7 @@ function Terms() {
                                 <h2 className="text-2xl font-semibold text-white mb-4">5. Content and Intellectual Property</h2>
                                 <h3 className="text-xl font-semibold text-white mb-3">5.1 Third-Party Content</h3>
                                 <p className="mb-4">
-                                    Movie and TV show data, images, and metadata are provided by The Movie Database (TMDB). This content is subject to TMDB's terms of use and remains the property of their respective owners.
+                                    Movie and TV show data, images, and metadata are provided by The Movie Database (TMDB). This content is subject to TMDB&apos;s terms of use and remains the property of their respective owners.
                                 </p>
 
                                 <h3 className="text-xl font-semibold text-white mb-3">5.2 User Content</h3>
@@ -103,7 +103,7 @@ function Terms() {
                             <section>
                                 <h2 className="text-2xl font-semibold text-white mb-4">6. Privacy</h2>
                                 <p className="mb-4">
-                                    Your privacy is important to us. Please review our <a href="/privacy" className="text-red-400 hover:text-red-300 underline">Privacy Policy</a>, which also governs your use of the service, to understand our practices.
+                                    Your privacy is important to us. Please review our <Link href="/privacy" className="text-red-400 hover:text-red-300 underline">Privacy Policy</Link>, which also governs your use of the service, to understand our practices.
                                 </p>
                             </section>
 
@@ -111,7 +111,7 @@ function Terms() {
                                 <h2 className="text-2xl font-semibold text-white mb-4">7. Disclaimers and Limitations</h2>
                                 <h3 className="text-xl font-semibold text-white mb-3">7.1 Service Availability</h3>
                                 <ul className="list-disc pl-6 mb-4 space-y-2">
-                                    <li>We provide the service "as is" without warranties of any kind</li>
+                                    <li>We provide the service &quot;as is&quot; without warranties of any kind</li>
                                     <li>We do not guarantee uninterrupted or error-free service</li>
                                     <li>We may temporarily suspend the service for maintenance</li>
                                 </ul>
@@ -171,7 +171,7 @@ function Terms() {
                             <section>
                                 <h2 className="text-2xl font-semibold text-white mb-4">11. Changes to Terms</h2>
                                 <p className="mb-4">
-                                    We reserve the right to modify these terms at any time. We will notify users of significant changes by posting the new terms on this page and updating the "Last updated" date. Continued use of the service constitutes acceptance of the modified terms.
+                                    We reserve the right to modify these terms at any time. We will notify users of significant changes by posting the new terms on this page and updating the &quot;Last updated&quot; date. Continued use of the service constitutes acceptance of the modified terms.
                                 </p>
                             </section>
 
@@ -215,7 +215,6 @@ function Terms() {
                 </div>
             </main>
 
-            <Footer />
         </div>
     )
 }

@@ -1,16 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { MagnifyingGlassIcon, XMarkIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
+import { MagnifyingGlassIcon, XMarkIcon, ArrowRightIcon, FunnelIcon } from '@heroicons/react/24/outline'
 import { useRouter } from 'next/router'
 import { useRecoilState } from 'recoil'
 import { useSearch } from '../hooks/useSearch'
 import { useTypewriter } from '../hooks/useTypewriter'
 import { modalState, movieState, autoPlayWithSoundState } from '../atoms/modalAtom'
 import { Content, getTitle, getYear, getContentType, isMovie } from '../typings'
+import SearchFiltersDropdown from './SearchFiltersDropdown'
 
 interface SearchBarProps {
     placeholder?: string
     className?: string
-    showFilters?: boolean
     onFocus?: () => void
     onBlur?: () => void
 }
@@ -18,7 +18,6 @@ interface SearchBarProps {
 export default function SearchBar({
     placeholder = "Search movies and TV shows...",
     className = "",
-    showFilters = false,
     onFocus,
     onBlur
 }: SearchBarProps) {
@@ -50,6 +49,7 @@ export default function SearchBar({
         maxLength: 20 // Limit for cleaner display on larger devices
     })
     const router = useRouter()
+    const isOnSearchPage = router.pathname === '/search'
     const {
         query,
         suggestions,
@@ -57,6 +57,7 @@ export default function SearchBar({
         results,
         isLoading,
         hasSearched,
+        totalResults,
         updateQuery,
         clearSearch,
         performSearch
@@ -69,9 +70,31 @@ export default function SearchBar({
     const [isFocused, setIsFocused] = useState(false)
     const [showSuggestions, setShowSuggestions] = useState(false)
     const [selectedIndex, setSelectedIndex] = useState(-1)
+    const [selectedResultIndex, setSelectedResultIndex] = useState(-1)
+    const [isSeeAllButtonSelected, setIsSeeAllButtonSelected] = useState(false)
     const [isMobileExpanded, setIsMobileExpanded] = useState(false)
+    const [showFilters, setShowFilters] = useState(false)
     const inputRef = useRef<HTMLInputElement>(null)
     const suggestionsRef = useRef<HTMLDivElement>(null)
+    const resultRefs = useRef<(HTMLDivElement | null)[]>([])
+    const seeAllButtonRef = useRef<HTMLButtonElement>(null)
+
+    // Scroll selected element into view
+    const scrollToSelected = (index: number, isSeeAllButton = false) => {
+        if (isSeeAllButton && seeAllButtonRef.current) {
+            seeAllButtonRef.current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest',
+                inline: 'nearest'
+            })
+        } else if (resultRefs.current[index]) {
+            resultRefs.current[index]?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest',
+                inline: 'nearest'
+            })
+        }
+    }
 
     // Close suggestions when clicking outside
     useEffect(() => {
@@ -82,6 +105,8 @@ export default function SearchBar({
                 !inputRef.current?.contains(event.target as Node)
             ) {
                 setShowSuggestions(false)
+                setSelectedResultIndex(-1) // Reset selection when clicking outside
+                setIsSeeAllButtonSelected(false) // Reset button selection when clicking outside
             }
         }
 
@@ -94,12 +119,16 @@ export default function SearchBar({
         updateQuery(value)
         setShowSuggestions(value.length > 0)
         setSelectedIndex(-1) // Reset selection when typing
+        setSelectedResultIndex(-1) // Reset result selection when typing
+        setIsSeeAllButtonSelected(false) // Reset button selection when typing
     }
 
     const handleInputFocus = () => {
         setIsFocused(true)
         setIsMobileExpanded(true)
         setShowSuggestions(query.length > 0 || (hasSearched && results.length > 0))
+        setSelectedResultIndex(-1) // Reset selection on focus
+        setIsSeeAllButtonSelected(false) // Reset button selection on focus
         onFocus?.()
     }
 
@@ -153,7 +182,14 @@ export default function SearchBar({
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
             e.preventDefault()
-            if (selectedIndex >= 0 && allSuggestions[selectedIndex]) {
+            // Check if "See all results" button is selected
+            if (isSeeAllButtonSelected) {
+                handleSeeAllResults()
+            } else if (selectedResultIndex >= 0 && quickResults[selectedResultIndex]) {
+                // Open detailed view for selected result
+                const selectedResult = quickResults[selectedResultIndex]
+                handleQuickResultClick(selectedResult)
+            } else if (selectedIndex >= 0 && allSuggestions[selectedIndex]) {
                 // Select the highlighted suggestion
                 const suggestion = allSuggestions[selectedIndex]
                 handleSuggestionClick(suggestion)
@@ -167,26 +203,63 @@ export default function SearchBar({
         if (e.key === 'Escape') {
             setShowSuggestions(false)
             setSelectedIndex(-1)
+            setSelectedResultIndex(-1)
+            setIsSeeAllButtonSelected(false)
             inputRef.current?.blur()
             return
         }
 
         if (e.key === 'ArrowDown') {
             e.preventDefault()
-            if (showSuggestions && allSuggestions.length > 0) {
-                setSelectedIndex(prev =>
-                    prev < allSuggestions.length - 1 ? prev + 1 : 0
-                )
+            if (showSuggestions && quickResults.length > 0) {
+                // If currently on "See all results" button, stay there (don't cycle)
+                if (isSeeAllButtonSelected) {
+                    return
+                }
+                // If no selection or on a result, move to next result
+                if (selectedResultIndex < quickResults.length - 1) {
+                    const newIndex = selectedResultIndex + 1
+                    setSelectedResultIndex(newIndex)
+                    setIsSeeAllButtonSelected(false)
+                    setSelectedIndex(-1)
+                    scrollToSelected(newIndex)
+                } else if (hasMoreResults || quickResults.length > 0) {
+                    // Move to "See all results" button
+                    setSelectedResultIndex(-1)
+                    setIsSeeAllButtonSelected(true)
+                    setSelectedIndex(-1)
+                    scrollToSelected(-1, true)
+                }
+            } else if (showSuggestions && allSuggestions.length > 0) {
+                if (selectedIndex < allSuggestions.length - 1) {
+                    setSelectedIndex(selectedIndex + 1)
+                }
             }
             return
         }
 
         if (e.key === 'ArrowUp') {
             e.preventDefault()
-            if (showSuggestions && allSuggestions.length > 0) {
-                setSelectedIndex(prev =>
-                    prev > 0 ? prev - 1 : allSuggestions.length - 1
-                )
+            if (showSuggestions && quickResults.length > 0) {
+                // If currently on "See all results" button, move to last result
+                if (isSeeAllButtonSelected) {
+                    const newIndex = quickResults.length - 1
+                    setSelectedResultIndex(newIndex)
+                    setIsSeeAllButtonSelected(false)
+                    scrollToSelected(newIndex)
+                } else if (selectedResultIndex > 0) {
+                    // Move to previous result
+                    const newIndex = selectedResultIndex - 1
+                    setSelectedResultIndex(newIndex)
+                    scrollToSelected(newIndex)
+                } else if (selectedResultIndex === 0) {
+                    // At first result, don't cycle (stay at first)
+                    return
+                }
+            } else if (showSuggestions && allSuggestions.length > 0) {
+                if (selectedIndex > 0) {
+                    setSelectedIndex(selectedIndex - 1)
+                }
             }
             return
         }
@@ -270,16 +343,31 @@ export default function SearchBar({
                         `}
                     />
 
-                    {/* Clear Button */}
-                    {query && (
+                    {/* Filter Button and Clear Button */}
+                    <div className="absolute inset-y-0 right-0 flex items-center">
+                        {/* Filter Button */}
                         <button
-                            onClick={handleClearSearch}
-                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white transition-colors"
+                            onClick={() => setShowFilters(!showFilters)}
+                            className={`px-3 py-2 text-gray-400 hover:text-white transition-colors ${
+                                showFilters ? 'text-red-400' : ''
+                            }`}
                             type="button"
+                            title="Search Filters"
                         >
-                            <XMarkIcon className="h-5 w-5" />
+                            <FunnelIcon className="h-5 w-5" />
                         </button>
-                    )}
+
+                        {/* Clear Button */}
+                        {query && (
+                            <button
+                                onClick={handleClearSearch}
+                                className="pr-3 py-2 text-gray-400 hover:text-white transition-colors"
+                                type="button"
+                            >
+                                <XMarkIcon className="h-5 w-5" />
+                            </button>
+                        )}
+                    </div>
 
                     {/* Mobile Close Button */}
                     <div className="md:hidden">
@@ -289,8 +377,9 @@ export default function SearchBar({
                                     setIsMobileExpanded(false)
                                     setIsFocused(false)
                                     setShowSuggestions(false)
+                                    setShowFilters(false)
                                 }}
-                                className="absolute inset-y-0 right-10 pr-3 flex items-center text-gray-400 hover:text-white transition-colors"
+                                className="absolute inset-y-0 right-20 pr-3 flex items-center text-gray-400 hover:text-white transition-colors"
                                 type="button"
                             >
                                 <XMarkIcon className="h-5 w-5" />
@@ -300,24 +389,43 @@ export default function SearchBar({
                 </div>
             </div>
 
-            {/* Hybrid Search Dropdown */}
-            {showSuggestions && (allSuggestions.length > 0 || quickResults.length > 0) && (
+            {/* Search Filters Dropdown */}
+            <SearchFiltersDropdown
+                isOpen={showFilters}
+                onClose={() => setShowFilters(false)}
+            />
+
+            {/* Search Results Dropdown */}
+            {showSuggestions && quickResults.length > 0 && !isOnSearchPage && !showFilters && (
                 <div
                     ref={suggestionsRef}
-                    className="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-600/50 rounded-lg shadow-lg max-h-96 overflow-y-auto scrollbar-thin scrollbar-track-gray-800 scrollbar-thumb-red-600 hover:scrollbar-thumb-red-500 scrollbar-thumb-rounded-full scrollbar-track-rounded-full"
+                    className="absolute z-[110] w-full mt-1 bg-[#0a0a0a] border border-gray-600/50 rounded-lg shadow-lg max-h-96 overflow-y-auto scrollbar-thin scrollbar-track-gray-800 scrollbar-thumb-red-600 hover:scrollbar-thumb-red-500 scrollbar-thumb-rounded-full scrollbar-track-rounded-full animate-dropdown-enter"
                 >
+                    {/* Results Count Header */}
+                    {totalResults > 0 && (
+                        <div className="px-4 py-2 border-b border-gray-600/50 bg-gray-800/30">
+                            <div className="text-xs text-gray-400">
+                                Found {totalResults.toLocaleString()} result{totalResults !== 1 ? &apos;s&apos; : &apos;&apos;} for &quot;{query}&quot;
+                            </div>
+                        </div>
+                    )}
+
                     {/* Quick Results Section */}
                     {quickResults.length > 0 && (
                         <>
-                            <div className="px-4 py-2 text-xs text-gray-400 uppercase tracking-wide border-b border-gray-600/50">
-                                Quick Results
-                            </div>
                             <div className="p-2">
                                 <div className="space-y-2">
                                     {quickResults.map((item: Content, index) => (
                                         <div
                                             key={`${item.id}-${index}`}
-                                            className="flex items-center bg-gray-700/30 hover:bg-gray-600/30 rounded-lg p-3 transition-all duration-200 cursor-pointer group"
+                                            ref={(el) => {
+                                                resultRefs.current[index] = el
+                                            }}
+                                            className={`flex items-center rounded-lg p-3 cursor-pointer group border transition-all duration-300 ease-in-out ${
+                                                selectedResultIndex === index
+                                                    ? 'bg-red-600/30 border-red-500/50 shadow-lg shadow-red-500/20'
+                                                    : 'bg-gray-700/30 border-transparent hover:bg-gray-600/30 hover:border-gray-500/30'
+                                            }`}
                                             onClick={() => handleQuickResultClick(item)}
                                         >
                                             {/* Movie Poster */}
@@ -382,10 +490,15 @@ export default function SearchBar({
                                 {/* See All Results Button */}
                                 {(hasMoreResults || quickResults.length > 0) && (
                                     <button
+                                        ref={seeAllButtonRef}
                                         onClick={handleSeeAllResults}
-                                        className="w-full mt-3 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+                                        className={`w-full mt-3 px-4 py-2 text-white text-sm font-medium rounded-lg transition-all duration-300 ease-in-out flex items-center justify-center gap-2 border ${
+                                            isSeeAllButtonSelected
+                                                ? 'bg-red-700 border-red-400 border-2 shadow-lg shadow-red-500/30 outline outline-2 outline-red-300 outline-offset-1'
+                                                : 'bg-red-600 hover:bg-red-700 border-transparent'
+                                        }`}
                                     >
-                                        <span>See all {results.length} results</span>
+                                        <span>See all {totalResults.toLocaleString()} results</span>
                                         <ArrowRightIcon className="h-4 w-4" />
                                     </button>
                                 )}
@@ -393,40 +506,6 @@ export default function SearchBar({
                         </>
                     )}
 
-                    {/* Suggestions Section */}
-                    {allSuggestions.length > 0 && (
-                        <>
-                            {quickResults.length > 0 && <div className="border-t border-gray-600/50" />}
-
-                            {allSuggestions.map((suggestion, index) => (
-                                <button
-                                    key={`${suggestion}-${index}`}
-                                    onClick={() => handleSuggestionClick(suggestion)}
-                                    className={`w-full px-4 py-3 text-left text-white transition-colors flex items-center space-x-3 group ${
-                                        selectedIndex === index
-                                            ? 'bg-gray-700'
-                                            : 'hover:bg-gray-700'
-                                    }`}
-                                >
-                                    <MagnifyingGlassIcon className="h-4 w-4 text-gray-400 group-hover:text-gray-300" />
-                                    <span className="flex-1 truncate">
-                                        {/* Highlight matching parts */}
-                                        <>
-                                            {suggestion.split(new RegExp(`(${query})`, 'gi')).map((part, i) =>
-                                                part.toLowerCase() === query.toLowerCase() ? (
-                                                    <span key={i} className="text-red-400 font-medium">
-                                                        {part}
-                                                    </span>
-                                                ) : (
-                                                    <span key={i}>{part}</span>
-                                                )
-                                            )}
-                                        </>
-                                    </span>
-                                </button>
-                            ))}
-                        </>
-                    )}
                 </div>
             )}
         </div>

@@ -39,7 +39,7 @@ The app handles both movies and TV shows through a unified type system:
 - **Comprehensive error handling** via `utils/errorHandler.ts` with user-friendly messages
 
 ### Authentication System
-- **Firebase Auth** with multiple providers (Google, Discord, Twitter/X, Email/Password)
+- **Firebase Auth** with multiple providers (Google, Email/Password)
 - **Guest mode** for demo access without authentication
 - **State persistence** via Recoil atoms with Firebase integration
 

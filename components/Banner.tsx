@@ -92,11 +92,11 @@ function Banner({ trending }: Props) {
                             fill
                             quality={100}
                             priority
+                            sizes="100vw"
                             style={{
                                 objectFit: 'cover',
                                 objectPosition: 'center center'
                             }}
-                            sizes="100vw"
                             className={`transition-opacity duration-300 ${
                                 isTransitioning ? 'opacity-0' : 'opacity-100'
                             }`}

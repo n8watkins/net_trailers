@@ -28,6 +28,8 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
         query,
         performSearch,
         filters,
+        hasAllResults,
+        isLoadingAll,
     } = useSearch()
 
     const [showModal, setShowModal] = useRecoilState(modalState)
@@ -173,15 +175,22 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
                     <div className="text-gray-400 text-sm">
                         {totalResults > 0 && (
                             <>
-                                {filteredTotalResults !== allResults.length ? (
-                                    <>
-                                        Showing {filteredTotalResults} of {totalResults} results
-                                        (filtered from {allResults.length})
-                                    </>
+                                {/* Check if any filters are active */}
+                                {Object.values(filters).some(value => value !== 'all') ? (
+                                    /* Filters are active - show filtered count */
+                                    hasAllResults ? (
+                                        /* We have all results cached */
+                                        <>Showing {filteredTotalResults} results matching your filters out of {totalResults} total</>
+                                    ) : (
+                                        /* Still loading all results */
+                                        <>
+                                            Showing {filteredTotalResults} filtered results
+                                            {isLoadingAll && <span className="text-yellow-400"> (loading more...)</span>}
+                                        </>
+                                    )
                                 ) : (
-                                    <>
-                                        Showing {results.length} of {totalResults} results
-                                    </>
+                                    /* No filters active - show regular pagination count */
+                                    <>Showing {results.length} of {totalResults} results</>
                                 )}
                             </>
                         )}
@@ -282,14 +291,19 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
             </div>
 
             {/* Loading More */}
-            {isLoading && results.length > 0 && (
+            {(isLoading || isLoadingAll) && results.length > 0 && (
                 <div className="flex justify-center py-8">
-                    <div className="animate-spin h-8 w-8 border-2 border-red-500 border-t-transparent rounded-full"></div>
+                    <div className="flex items-center gap-2">
+                        <div className="animate-spin h-8 w-8 border-2 border-red-500 border-t-transparent rounded-full"></div>
+                        {isLoadingAll && (
+                            <span className="text-gray-400 text-sm">Loading all results for filtering...</span>
+                        )}
+                    </div>
                 </div>
             )}
 
             {/* Load More Button */}
-            {hasMore && !isLoading && (
+            {hasMore && !isLoading && !isLoadingAll && (
                 <div className="flex justify-center mt-8">
                     <button
                         onClick={loadMore}

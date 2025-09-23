@@ -1,16 +1,11 @@
 import { useRouter } from 'next/router'
 import Head from 'next/head'
-import Link from 'next/link'
 
 export default function Custom404() {
     const router = useRouter()
 
     const handleGoHome = () => {
         router.push('/')
-    }
-
-    const handleRefresh = () => {
-        window.location.reload()
     }
 
     return (
@@ -47,7 +42,7 @@ export default function Custom404() {
                     </h2>
                     <p className="text-gray-300 text-lg mb-6 max-w-lg mx-auto">
                         Looks like this page took a detour to another dimension.
-                        Don't worry, we'll get you back to the good stuff.
+                        Don&apos;t worry, we&apos;ll get you back to the good stuff.
                     </p>
                 </div>
 
@@ -59,43 +54,23 @@ export default function Custom404() {
                         </p>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <div className="flex justify-center">
                         <button
                             onClick={handleGoHome}
                             className="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
                         >
                             🏠 Go to Home
                         </button>
-
-                        <button
-                            onClick={handleRefresh}
-                            className="bg-gray-800 hover:bg-gray-700 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg border border-gray-600"
-                        >
-                            🔄 Refresh Page
-                        </button>
-
-                        <Link
-                            href="/search"
-                            className="bg-gray-800 hover:bg-gray-700 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg border border-gray-600 text-center"
-                        >
-                            🔍 Search Content
-                        </Link>
                     </div>
                 </div>
 
                 {/* Fun message */}
                 <div className="mt-12 text-gray-500 text-sm">
                     <p>🎭 Meanwhile, somewhere in the NetTrailer universe...</p>
-                    <p className="mt-2 italic">"The page you're looking for is probably binge-watching something else."</p>
+                    <p className="mt-2 italic">&quot;The page you&apos;re looking for is probably binge-watching something else.&quot;</p>
                 </div>
             </div>
 
-            {/* Floating elements animation */}
-            <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-red-500 rounded-full animate-ping opacity-75"></div>
-                <div className="absolute top-3/4 right-1/4 w-1 h-1 bg-white rounded-full animate-pulse"></div>
-                <div className="absolute top-1/2 right-1/3 w-1.5 h-1.5 bg-red-400 rounded-full animate-bounce"></div>
-            </div>
 
             {/* CSS for custom animations */}
             <style jsx>{`

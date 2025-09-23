@@ -59,7 +59,7 @@ export default function SearchPage() {
     }, [query, router, isInitialLoad])
 
     return (
-        <div className="relative h-screen bg-gradient-to-b from-gray-900/10 to-[#010511] lg:h-[140vh]">
+        <div className="relative min-h-screen bg-gradient-to-b from-gray-900/10 to-[#010511]">
             <Head>
                 <title>{query ? `Search: ${query} - NetTrailer` : 'Search - NetTrailer'}</title>
                 <meta

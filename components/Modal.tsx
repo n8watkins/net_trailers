@@ -108,7 +108,7 @@ function Modal() {
     }
 
     const handleClose = () => {
-        setShowModal(!showModal)
+        setShowModal(false)
         // Reset loaded movie ID when closing modal to allow fresh data next time
         setLoadedMovieId(null)
         setTrailer('')
@@ -174,6 +174,27 @@ function Modal() {
         }
     }, [handleFullscreenChange])
 
+    // Handle Escape key for both main modal and JSON debug modal
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                e.preventDefault()
+                if (showJsonDebug) {
+                    // Close JSON debug modal first if it's open
+                    setShowJsonDebug(false)
+                } else if (showModal) {
+                    // Close main modal if JSON debug is not open
+                    handleClose()
+                }
+            }
+        }
+
+        if (showModal || showJsonDebug) {
+            document.addEventListener('keydown', handleKeyDown)
+            return () => document.removeEventListener('keydown', handleKeyDown)
+        }
+    }, [showModal, showJsonDebug])
+
     // Handle auto-play with sound when Play button is clicked
     useEffect(() => {
         if (autoPlayWithSound && trailer && showModal) {
@@ -194,6 +215,8 @@ function Modal() {
         <MuiModal
             open={showModal}
             onClose={handleClose}
+            disableAutoFocus
+            disableEnforceFocus
             sx={{
                 '& .MuiBackdrop-root': {
                     backgroundColor: 'rgba(0, 0, 0, 0.9)',
@@ -279,6 +302,7 @@ function Modal() {
                                     priority
                                     style={{ objectFit: 'cover' }}
                                     className="rounded-md"
+                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
                                 />
                             )}
 

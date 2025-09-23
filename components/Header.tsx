@@ -5,10 +5,15 @@ import { useRouter } from 'next/router'
 import Image from 'next/image'
 import SearchBar from './SearchBar'
 import useAuth from '../hooks/useAuth'
-import GenresDropdown from './GenresDropdown'
 import AuthModal from './AuthModal'
 import AvatarDropdown from './AvatarDropdown'
-function Header() {
+import GenresDropdown from './GenresDropdown'
+
+interface HeaderProps {
+    onOpenAboutModal?: () => void
+}
+
+function Header({ onOpenAboutModal }: HeaderProps = {}) {
     const [isScrolled, setIsScrolled] = useState(false)
     const [showSearch, setShowSearch] = useState(false)
     const [showMobileMenu, setShowMobileMenu] = useState(false)
@@ -46,20 +51,19 @@ function Header() {
     }, [isSearchExpanded])
 
     return (
-        <header className={`${isScrolled && 'bg-[#141414]'}`}>
-            <div className="flex w-full items-center space-x-2 md:space-x-6">
+        <header className={`fixed top-0 left-0 right-0 z-[200] transition-all duration-300 ${isScrolled ? 'bg-[#141414]/95 backdrop-blur-sm' : 'bg-gradient-to-b from-black/50 to-transparent'}`}>
+            <div className="flex w-full items-center space-x-2 md:space-x-6 px-4 py-4">
                 <Image
-                    src="https://rb.gy/ulxxee"
-                    width={100}
+                    src="/nettrailers-logo.png"
+                    width={200}
                     height={100}
-                    alt="Netflix Logo"
+                    alt="NetTrailers Logo"
                     className="cursor-pointer object-contain"
                     priority
-                    unoptimized
                     onClick={() => router.push('/')}
                 />
-                <div className="hidden md:flex items-center space-x-6 flex-1">
-                    <ul className="flex space-x-4">
+                <div className="hidden lg:flex items-center space-x-6 flex-1">
+                    <ul className="flex space-x-4 items-center">
                         <li
                             className={`headerLink cursor-pointer flex items-center space-x-1 ${router.pathname === '/tv' ? 'text-white hover:text-white font-semibold' : ''}`}
                             onClick={() => router.push('/?filter=tv')}
@@ -82,7 +86,7 @@ function Header() {
                             onClick={() => router.push('/favorites')}
                         >
                             <HeartIcon className="h-4 w-4" />
-                            <span>My Favorites</span>
+                            <span>My Lists</span>
                         </li>
                     </ul>
 
@@ -106,7 +110,7 @@ function Header() {
 
             <div className="flex items-center space-x-4 text-sm font-light">
                 {/* Mobile Layout: Search + Hamburger + Avatar */}
-                <div className="md:hidden flex items-center space-x-3">
+                <div className="lg:hidden flex items-center space-x-3">
                     {/* Mobile Search Icon */}
                     <MagnifyingGlassIcon
                         className="h-6 w-6 cursor-pointer text-white"
@@ -127,11 +131,11 @@ function Header() {
                 </div>
 
                 {/* Avatar Dropdown */}
-                <AvatarDropdown onOpenAuthModal={() => setShowAuthModal(true)} />
+                <AvatarDropdown onOpenAuthModal={() => setShowAuthModal(true)} onOpenAboutModal={onOpenAboutModal} />
             </div>
 
             {/* Mobile Search Bar with Slide Animation */}
-            <div className={`md:hidden absolute top-full left-0 right-0 z-50 bg-black/95 backdrop-blur-sm border-t border-gray-600/50 transition-all duration-300 ease-in-out ${
+            <div className={`lg:hidden absolute top-full left-0 right-0 z-[110] bg-black/95 backdrop-blur-sm border-t border-gray-600/50 transition-all duration-300 ease-in-out ${
                 showSearch
                     ? 'transform translate-y-0 opacity-100 visible'
                     : 'transform -translate-y-full opacity-0 invisible'
@@ -150,7 +154,7 @@ function Header() {
                 <>
                     {/* Modal Backdrop */}
                     <div
-                        className="md:hidden fixed inset-0 z-40 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+                        className="lg:hidden fixed inset-0 z-[105] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
                         onClick={() => setShowMobileMenu(false)}
                     >
                         {/* Modal Content */}
@@ -216,7 +220,7 @@ function Header() {
                                             }}
                                         >
                                             <HeartIcon className="h-5 w-5" />
-                                            <span>My Favorites</span>
+                                            <span>My Lists</span>
                                         </button>
                                     </li>
                                     <li>

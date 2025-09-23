@@ -32,7 +32,7 @@ function Thumbnail({ content, hideTitles = false }: Props) {
                        md:w-[200px] md:h-[300px]
                        lg:w-[220px] lg:h-[330px]
                        xl:w-[260px] xl:h-[390px]
-                       hover:scale-110 hover:z-50"
+                       hover:scale-110 hover:z-40"
             onClick={handleImageClick}
         >
             {/* Movie Poster with Red Glow */}
@@ -62,7 +62,6 @@ function Thumbnail({ content, hideTitles = false }: Props) {
             {/* Movie Title Overlay */}
             {content && !hideTitles && (
                 <div className="absolute bottom-0 left-0 right-0 p-2 md:p-3 lg:p-4
-                              bg-gradient-to-t from-black/80 via-black/40 to-transparent
                               opacity-100 group-hover:opacity-0 transition-opacity duration-300">
                     <h3 className="text-white font-bold leading-tight
                                  text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { CheckCircleIcon, XCircleIcon, XMarkIcon } from '@heroicons/react/24/outline'
 
 export interface ToastMessage {
@@ -14,21 +14,36 @@ interface ToastProps {
     duration?: number
 }
 
-const Toast: React.FC<ToastProps> = ({ toast, onClose, duration = 4000 }) => {
+const Toast: React.FC<ToastProps> = ({ toast, onClose, duration = 3000 }) => {
+    const [isVisible, setIsVisible] = useState(false)
+    const [isExiting, setIsExiting] = useState(false)
+
     useEffect(() => {
+        setIsVisible(true)
+
         const timer = setTimeout(() => {
-            onClose(toast.id)
+            setIsExiting(true)
+            setTimeout(() => {
+                onClose(toast.id)
+            }, 300)
         }, duration)
 
         return () => clearTimeout(timer)
     }, [toast.id, onClose, duration])
 
     const handleClose = () => {
-        onClose(toast.id)
+        setIsExiting(true)
+        setTimeout(() => {
+            onClose(toast.id)
+        }, 300)
     }
 
     return (
-        <div className="bg-[#181818] border border-gray-600/50 rounded-lg shadow-xl p-4 max-w-sm w-full">
+        <div className={`bg-[#181818] border border-gray-600/50 rounded-lg shadow-xl p-4 min-w-80 max-w-2xl w-auto transition-all duration-300 ease-in-out ${
+            !isVisible ? 'opacity-0 transform -translate-x-full' :
+            isExiting ? 'opacity-0 transform translate-x-full' :
+            'opacity-100 transform translate-x-0'
+        }`}>
             <div className="flex items-start">
                 <div className="flex-shrink-0">
                     {toast.type === 'success' ? (
@@ -37,15 +52,10 @@ const Toast: React.FC<ToastProps> = ({ toast, onClose, duration = 4000 }) => {
                         <XCircleIcon className="h-6 w-6 text-red-400" />
                     )}
                 </div>
-                <div className="ml-3 w-0 flex-1">
+                <div className="ml-3 flex-1">
                     <p className="text-sm font-medium text-white">
                         {toast.title}
                     </p>
-                    {toast.message && (
-                        <p className="mt-1 text-sm text-gray-300">
-                            {toast.message}
-                        </p>
-                    )}
                 </div>
                 <div className="ml-4 flex-shrink-0 flex">
                     <button

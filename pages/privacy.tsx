@@ -1,10 +1,9 @@
 import Head from 'next/head'
 import Header from '../components/Header'
-import Footer from '../components/Footer'
 
 function Privacy() {
     return (
-        <div className="relative h-screen bg-gradient-to-b from-gray-900/10 to-[#0a0a0a]">
+        <div className="relative min-h-screen bg-gradient-to-b from-gray-900/10 to-[#0a0a0a]">
             <Head>
                 <title>Privacy Policy - NetTrailer</title>
                 <meta name="description" content="NetTrailer privacy policy - Learn how we collect, use, and protect your personal information" />
@@ -30,7 +29,7 @@ function Privacy() {
                             <section>
                                 <h2 className="text-2xl font-semibold text-white mb-4">1. Introduction</h2>
                                 <p className="mb-4">
-                                    NetTrailer ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our movie and TV show discovery platform.
+                                    NetTrailer (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our movie and TV show discovery platform.
                                 </p>
                             </section>
 
@@ -99,7 +98,7 @@ function Privacy() {
                                 <h2 className="text-2xl font-semibold text-white mb-4">5. Data Storage and Security</h2>
                                 <ul className="list-disc pl-6 space-y-2">
                                     <li>Your data is stored securely using industry-standard encryption</li>
-                                    <li>We use Firebase's secure infrastructure for data storage</li>
+                                    <li>We use Firebase&apos;s secure infrastructure for data storage</li>
                                     <li>Access to personal information is restricted to authorized personnel only</li>
                                     <li>We regularly monitor for security vulnerabilities and threats</li>
                                 </ul>
@@ -140,7 +139,7 @@ function Privacy() {
                             <section>
                                 <h2 className="text-2xl font-semibold text-white mb-4">10. Changes to This Privacy Policy</h2>
                                 <p className="mb-4">
-                                    We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last updated" date. Changes are effective when posted on this page.
+                                    We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the &quot;Last updated&quot; date. Changes are effective when posted on this page.
                                 </p>
                             </section>
 
@@ -180,7 +179,6 @@ function Privacy() {
                 </div>
             </main>
 
-            <Footer />
         </div>
     )
 }

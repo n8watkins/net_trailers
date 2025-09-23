@@ -89,6 +89,5 @@ module.exports = {
         require('tailwind-scrollbar')({ nocompatible: true }),
         require('tailwindcss-autofill'),
         require('tailwindcss-shadow-fill'),
-        require('@tailwindcss/line-clamp'),
     ],
 }

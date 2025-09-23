@@ -190,7 +190,7 @@ const Favorites: NextPage = () => {
     }
 
     return (
-        <div className="relative h-screen bg-gradient-to-b lg:h-[140vh]">
+        <div className="relative min-h-screen bg-gradient-to-b">
             <Head>
                 <title>My Favorites - NetTrailer</title>
                 <meta name="description" content="View your liked, loved, and watchlist content" />
@@ -209,7 +209,7 @@ const Favorites: NextPage = () => {
                         {isGuest && (
                             <div className="bg-gray-800/50 p-4 rounded-lg max-w-2xl">
                                 <p className="text-sm text-gray-300">
-                                    📱 You're browsing as a guest. Your preferences are saved locally.
+                                    📱 You&apos;re browsing as a guest. Your preferences are saved locally.
                                     Sign up to sync across devices!
                                 </p>
                             </div>
@@ -299,6 +299,7 @@ const Favorites: NextPage = () => {
                                                     src={`https://image.tmdb.org/t/p/w500${content.poster_path}`}
                                                     alt={getTitle(content)}
                                                     fill
+                                                    sizes="(max-width: 640px) 140px, (max-width: 768px) 160px, (max-width: 1024px) 180px, 240px"
                                                     className="object-cover transition-transform duration-200 group-hover:scale-110"
                                                 />
                                             ) : (

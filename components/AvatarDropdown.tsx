@@ -1,17 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { UserIcon, UserCircleIcon, ArrowRightOnRectangleIcon, CogIcon, InformationCircleIcon } from '@heroicons/react/24/outline'
+import { UserIcon, UserCircleIcon, ArrowRightOnRectangleIcon, CogIcon, InformationCircleIcon, CommandLineIcon } from '@heroicons/react/24/outline'
 import useAuth from '../hooks/useAuth'
 import { useRouter } from 'next/router'
-import AboutModal from './AboutModal'
+import KeyboardShortcutsModal from './KeyboardShortcutsModal'
 
 interface AvatarDropdownProps {
     className?: string
     onOpenAuthModal?: () => void
+    onOpenAboutModal?: () => void
 }
 
-const AvatarDropdown: React.FC<AvatarDropdownProps> = ({ className = '', onOpenAuthModal }) => {
+const AvatarDropdown: React.FC<AvatarDropdownProps> = ({ className = '', onOpenAuthModal, onOpenAboutModal }) => {
     const [isOpen, setIsOpen] = useState(false)
-    const [showAboutModal, setShowAboutModal] = useState(false)
+    const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
     const { user, logOut } = useAuth()
     const router = useRouter()
@@ -44,8 +45,9 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({ className = '', onOpenA
     }
 
     const handleAboutClick = () => {
+        console.log('About clicked - closing dropdown and opening shared modal')
         setIsOpen(false)
-        setShowAboutModal(true)
+        onOpenAboutModal?.()
     }
 
     const getInitials = (email: string) => {
@@ -77,11 +79,11 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({ className = '', onOpenA
 
                 {/* Dropdown Menu - Not Logged In */}
                 {isOpen && (
-                    <div className="absolute right-0 mt-2 w-64 sm:w-72 bg-[#181818] border border-gray-600/50 rounded-lg shadow-xl z-50 py-2">
+                    <div className="absolute right-0 mt-2 w-64 sm:w-72 bg-black/95 backdrop-blur-sm border border-red-500/40 rounded-xl shadow-2xl shadow-red-500/20 z-[110] py-1">
                         {/* Guest Account Status */}
-                        <div className="px-4 py-3 border-b border-gray-600/50">
-                            <div className="flex items-center space-x-2 mb-2">
-                                <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
+                        <div className="px-5 py-4 border-b border-gray-700/50">
+                            <div className="flex items-center space-x-3">
+                                <div className="w-8 h-8 bg-gray-600 rounded-md flex items-center justify-center">
                                     <UserIcon className="w-4 h-4 text-white" />
                                 </div>
                                 <div>
@@ -92,15 +94,15 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({ className = '', onOpenA
                         </div>
 
                         {/* Menu Items */}
-                        <div className="py-1">
+                        <div className="py-2">
                             <button
                                 onClick={() => {
                                     setIsOpen(false)
                                     onOpenAuthModal?.()
                                 }}
-                                className="flex items-center w-full px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors"
+                                className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                             >
-                                <UserCircleIcon className="w-4 h-4 mr-3" />
+                                <UserCircleIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
                                 Sign In
                             </button>
 
@@ -109,20 +111,31 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({ className = '', onOpenA
                                     setIsOpen(false)
                                     onOpenAuthModal?.()
                                 }}
-                                className="flex items-center w-full px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors"
+                                className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                             >
-                                <UserCircleIcon className="w-4 h-4 mr-3" />
+                                <UserCircleIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
                                 Register
                             </button>
 
-                            <hr className="my-1 border-gray-600/50" />
+                            <div className="h-px bg-gray-700/50 mx-5 my-2"></div>
 
                             <button
                                 onClick={handleAboutClick}
-                                className="flex items-center w-full px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors"
+                                className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                             >
-                                <InformationCircleIcon className="w-4 h-4 mr-3" />
-                                About NetTrailer
+                                <InformationCircleIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                About NetTrailers
+                            </button>
+
+                            <button
+                                onClick={() => {
+                                    setIsOpen(false)
+                                    setShowKeyboardShortcuts(true)
+                                }}
+                                className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                            >
+                                <CommandLineIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                Keyboard Shortcuts
                             </button>
                         </div>
                     </div>
@@ -155,19 +168,19 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({ className = '', onOpenA
 
             {/* Dropdown Menu */}
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-64 sm:w-72 bg-[#181818] border border-gray-600/50 rounded-lg shadow-xl z-50 py-2">
+                <div className="absolute right-0 mt-2 w-64 sm:w-72 bg-black/95 backdrop-blur-sm border border-red-500/40 rounded-xl shadow-2xl shadow-red-500/20 z-[110] py-1">
                     {/* User Info Header */}
-                    <div className="px-4 py-3 border-b border-gray-600/50">
+                    <div className="px-5 py-4 border-b border-gray-700/50">
                         <div className="flex items-center space-x-3">
                             <div className="flex-shrink-0">
                                 {user.photoURL ? (
                                     <img
                                         src={user.photoURL}
                                         alt="Profile"
-                                        className="w-10 h-10 rounded-full object-cover"
+                                        className="w-10 h-10 rounded-md object-cover"
                                     />
                                 ) : (
-                                    <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center">
+                                    <div className="w-10 h-10 bg-red-600 rounded-md flex items-center justify-center">
                                         <span className="text-white font-bold">
                                             {getInitials(user.email || 'U')}
                                         </span>
@@ -183,55 +196,65 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({ className = '', onOpenA
                                 </p>
                             </div>
                         </div>
-
                     </div>
 
                     {/* Menu Items */}
-                    <div className="py-1">
+                    <div className="py-2">
                         <button
                             onClick={handleProfileClick}
-                            className="flex items-center w-full px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors"
+                            className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                         >
-                            <UserCircleIcon className="w-4 h-4 mr-3" />
+                            <UserCircleIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
                             Profile
                         </button>
 
                         <button
                             onClick={handleSettingsClick}
-                            className="flex items-center w-full px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors"
+                            className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                         >
-                            <CogIcon className="w-4 h-4 mr-3" />
+                            <CogIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
                             Settings
                         </button>
 
-                        <hr className="my-1 border-gray-600/50" />
+                        <div className="h-px bg-gray-700/50 mx-5 my-2"></div>
 
                         <button
                             onClick={handleAboutClick}
-                            className="flex items-center w-full px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors"
+                            className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                         >
-                            <InformationCircleIcon className="w-4 h-4 mr-3" />
-                            About NetTrailer
+                            <InformationCircleIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                            About NetTrailers
                         </button>
 
-                        <hr className="my-1 border-gray-600/50" />
+                        <button
+                            onClick={() => {
+                                setIsOpen(false)
+                                setShowKeyboardShortcuts(true)
+                            }}
+                            className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                        >
+                            <CommandLineIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                            Keyboard Shortcuts
+                        </button>
+
+                        <div className="h-px bg-gray-700/50 mx-5 my-2"></div>
 
                         <button
                             onClick={handleLogout}
-                            className="flex items-center w-full px-4 py-2 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-white transition-colors"
+                            className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                         >
-                            <ArrowRightOnRectangleIcon className="w-4 h-4 mr-3" />
+                            <ArrowRightOnRectangleIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
                             Sign Out
                         </button>
                     </div>
                 </div>
             )}
 
-            {/* About Modal */}
-            <AboutModal
-                isOpen={showAboutModal}
-                onClose={() => setShowAboutModal(false)}
-            />
+            {/* Keyboard Shortcuts Modal */}
+            {showKeyboardShortcuts && (
+                <KeyboardShortcutsModal onClose={() => setShowKeyboardShortcuts(false)} />
+            )}
+
         </div>
     )
 }

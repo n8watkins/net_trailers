@@ -7,7 +7,6 @@ import useAuth from '../hooks/useAuth'
 import Modal from '../components/Modal'
 import NetflixLoader from '../components/NetflixLoader'
 import NetflixError from '../components/NetflixError'
-import Footer from '../components/Footer'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil'
@@ -25,6 +24,7 @@ interface Props {
     romanceMovies: Content[]
     documentaries: Content[]
     hasDataError?: boolean
+    onOpenAboutModal?: () => void
 }
 const Home = ({
     trending,
@@ -35,12 +35,12 @@ const Home = ({
     romanceMovies,
     documentaries,
     hasDataError = false,
+    onOpenAboutModal,
 }: Props) => {
     const { loading, error, user } = useAuth()
     const router = useRouter()
     const showModal = useRecoilValue(modalState)
     const { filter } = router.query
-    const [isPageLoading, setIsPageLoading] = useState(true)
     const setContentLoadedSuccessfully = useSetRecoilState(contentLoadedSuccessfullyState)
     const [mainPageData, setMainPageData] = useRecoilState(mainPageDataState)
     const [hasVisitedMainPage, setHasVisitedMainPage] = useRecoilState(hasVisitedMainPageState)
@@ -76,51 +76,14 @@ const Home = ({
             lastCacheUpdate: Date.now()
         }))
 
-        // Realistic loading with API health check
-        const checkApiHealth = async () => {
-            try {
-                // Quick health check on trending endpoint (3 second timeout)
-                const controller = new AbortController()
-                const timeoutId = setTimeout(() => controller.abort(), 3000)
-
-                const response = await fetch('/api/movies/trending', {
-                    signal: controller.signal
-                })
-
-                clearTimeout(timeoutId)
-
-                if (!response.ok) {
-                    throw new Error(`API responded with ${response.status}`)
-                }
-
-                // Success - show content after brief loading
-                setTimeout(() => {
-                    setIsPageLoading(false)
-                    setContentLoadedSuccessfully(true)
-                    // Prefetch login page in background for instant access
-                    if (typeof window !== 'undefined') {
-                        import('next/router').then(({ default: Router }) => {
-                            Router.prefetch('/login')
-                        })
-                    }
-                }, hasVisitedMainPage ? 500 : 1500) // Faster loading if returning to cached page
-
-            } catch (error) {
-                // Fail fast - show error after 2 seconds max
-                setTimeout(() => {
-                    setIsPageLoading(false)
-                    setContentLoadedSuccessfully(false)
-                }, 2000)
-            }
+        // Set content loaded successfully and prefetch login page
+        setContentLoadedSuccessfully(true)
+        if (typeof window !== 'undefined') {
+            import('next/router').then(({ default: Router }) => {
+                Router.prefetch('/login')
+            })
         }
-
-        checkApiHealth()
     }, [trending, topRatedMovies, actionMovies, comedyMovies, horrorMovies, romanceMovies, documentaries, hasVisitedMainPage, setContentLoadedSuccessfully, setMainPageData, setHasVisitedMainPage, setCacheStatus])
-
-    // Show loading screen during initial page load
-    if (isPageLoading) {
-        return <NetflixLoader message="Loading NetTrailer..." />
-    }
 
     // Show error screen if no content is available
     if (!hasAnyContent || hasDataError) {
@@ -142,7 +105,7 @@ const Home = ({
 
     return (
         <div
-            className={`relative h-screen overflow-x-clip ${
+            className={`relative min-h-screen overflow-x-clip ${
                 showModal && `overflow-y-hidden`
             } `}
         >
@@ -152,18 +115,20 @@ const Home = ({
                 <meta name="viewport" content="width=device-width, initial-scale=1" />
                 <link rel="icon" href="/favicon.ico" />
             </Head>
-            <Header />
-            <main id="content" className="relative min-h-screen">
-                <div className="relative h-[95vh] w-full">
+            <Header onOpenAboutModal={onOpenAboutModal} />
+            <main id="content" className="relative">
+                <div className="relative h-screen w-full">
                     <Banner trending={trending} />
                 </div>
                 <section className="relative -mt-48 z-10 pb-52 space-y-8">
                     {trending.length > 0 && (
-                        <Row
-                            title={filter === 'tv' ? 'Trending TV Shows' : filter === 'movies' ? 'Trending Movies' : 'Trending'}
-                            content={trending}
-                            hideTitles={true}
-                        />
+                        <div className="pt-8 sm:pt-12 md:pt-16">
+                            <Row
+                                title={filter === 'tv' ? 'Trending TV Shows' : filter === 'movies' ? 'Trending Movies' : 'Trending'}
+                                content={trending}
+                                hideTitles={true}
+                            />
+                        </div>
                     )}
                     {topRatedMovies.length > 0 && (
                         <Row
@@ -202,7 +167,6 @@ const Home = ({
                         />
                     )}
                 </section>
-                <Footer />
                 {showModal && <Modal />}
             </main>
         </div>

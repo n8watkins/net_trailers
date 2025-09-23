@@ -1,6 +1,5 @@
 import { NextPageContext } from 'next'
 import Head from 'next/head'
-import Link from 'next/link'
 import { useRouter } from 'next/router'
 
 interface ErrorProps {
@@ -120,13 +119,6 @@ function Error({ statusCode, hasGetInitialPropsRun, err }: ErrorProps) {
                         >
                             🔄 Refresh Page
                         </button>
-
-                        <Link
-                            href="/search"
-                            className="bg-gray-800 hover:bg-gray-700 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg border border-gray-600 text-center"
-                        >
-                            🔍 Search Content
-                        </Link>
                     </div>
                 </div>
 

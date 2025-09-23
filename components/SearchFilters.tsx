@@ -5,13 +5,16 @@ import { ChevronDownIcon, XMarkIcon } from '@heroicons/react/24/outline'
 
 interface SearchFiltersProps {
     className?: string
+    isOpen?: boolean
+    onClose?: () => void
 }
 
-export default function SearchFilters({ className = '' }: SearchFiltersProps) {
+export default function SearchFilters({ className = '', isOpen, onClose }: SearchFiltersProps) {
     const [search, setSearch] = useRecoilState(searchState)
 
     const updateFilter = useCallback(
-        (key: keyof SearchFiltersType, value: string) => {
+        (key: keyof SearchFiltersType, value: any) => {
+            console.log(`🎛️ Filter changed: ${key} = ${value}`)
             setSearch((prev) => ({
                 ...prev,
                 filters: {
@@ -24,25 +27,33 @@ export default function SearchFilters({ className = '' }: SearchFiltersProps) {
     )
 
     const clearAllFilters = () => {
+        console.log('🎛️ Clearing all filters')
         setSearch((prev) => ({
             ...prev,
             filters: {
                 contentType: 'all',
                 rating: 'all',
                 year: 'all',
-                duration: 'all',
+                sortBy: 'popularity.desc',
             },
         }))
     }
 
     const removeFilter = useCallback(
         (filterKey: keyof SearchFiltersType) => {
-            updateFilter(filterKey, 'all')
+            if (filterKey === 'sortBy') {
+                updateFilter(filterKey, 'popularity.desc')
+            } else {
+                updateFilter(filterKey, 'all')
+            }
         },
         [updateFilter]
     )
 
-    const hasActiveFilters = Object.values(search.filters).some((value) => value !== 'all')
+    const hasActiveFilters = Object.entries(search.filters).some(([key, value]) => {
+        if (key === 'sortBy') return value !== 'popularity.desc'
+        return value !== 'all'
+    })
 
     const FilterDropdown = React.memo(function FilterDropdown({
         label,
@@ -105,12 +116,12 @@ export default function SearchFilters({ className = '' }: SearchFiltersProps) {
         { value: '1990s', label: '1990s' },
     ]
 
-    const durationOptions = [
-        { value: 'all', label: 'All Durations' },
-        { value: 'short', label: 'Short (<90min)' },
-        { value: 'medium', label: 'Medium (90-150min)' },
-        { value: 'long', label: 'Long (150min+)' },
+    const sortOptions = [
+        { value: 'popularity.desc', label: 'Most Popular' },
+        { value: 'revenue.desc', label: 'Highest Revenue' },
+        { value: 'vote_average.desc', label: 'Most Voted' },
     ]
+
 
     return (
         <div className={`${className}`}>
@@ -137,12 +148,14 @@ export default function SearchFilters({ className = '' }: SearchFiltersProps) {
                         options={yearOptions}
                     />
 
+
                     <FilterDropdown
-                        label="Duration"
-                        value={search.filters.duration}
-                        onChange={(value) => updateFilter('duration', value)}
-                        options={durationOptions}
+                        label="Sort By"
+                        value={search.filters.sortBy}
+                        onChange={(value) => updateFilter('sortBy', value)}
+                        options={sortOptions}
                     />
+
                 </div>
 
                 {hasActiveFilters && (
@@ -203,17 +216,16 @@ export default function SearchFilters({ className = '' }: SearchFiltersProps) {
                             <XMarkIcon className="ml-1 w-3 h-3 group-hover:text-gray-200" />
                         </button>
                     )}
-                    {search.filters.duration !== 'all' && (
+                    {search.filters.sortBy !== 'popularity.desc' && (
                         <button
-                            onClick={() => removeFilter('duration')}
-                            className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-600 hover:bg-purple-700 text-white transition-colors cursor-pointer group"
-                            title="Click to remove Duration filter"
+                            onClick={() => removeFilter('sortBy')}
+                            className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-600 hover:bg-orange-700 text-white transition-colors cursor-pointer group"
+                            title="Click to remove Sort filter"
                         >
                             <span>
                                 {
-                                    durationOptions.find(
-                                        (opt) => opt.value === search.filters.duration
-                                    )?.label
+                                    sortOptions.find((opt) => opt.value === search.filters.sortBy)
+                                        ?.label
                                 }
                             </span>
                             <XMarkIcon className="ml-1 w-3 h-3 group-hover:text-gray-200" />

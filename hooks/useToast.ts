@@ -11,7 +11,7 @@ export const useToast = () => {
             ...toast,
             id
         }
-        setToasts(prev => [...prev, newToast])
+        setToasts([newToast])
     }
 
     const removeToast = (id: string) => {

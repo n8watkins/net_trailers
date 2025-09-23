@@ -45,9 +45,9 @@ function Row({ title, content, hideTitles = false }: Props) {
         }
     }
     return (
-        <div className="pb-8 sm:pb-10 md:pb-12">
+        <div className="pb-4 sm:pb-6 md:pb-8">
             {/* Section Title */}
-            <h2 className="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold px-4 sm:px-6 md:px-8 lg:px-16 py-1 sm:py-2 lg:py-2 transition duration-200 hover:text-gray-300">
+            <h2 className="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold px-4 sm:px-6 md:px-8 lg:px-16 transition duration-200 hover:text-gray-300">
                 {title}
             </h2>
 
@@ -74,7 +74,7 @@ function Row({ title, content, hideTitles = false }: Props) {
                     ref={rowRef}
                     className="flex gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-8 overflow-x-auto scrollbar-hide scroll-smooth
                               px-4 sm:px-6 md:px-8 lg:px-16
-                              py-6 sm:py-8 md:py-10 lg:py-12"
+                              py-4 sm:py-6 md:py-8 lg:py-10"
                     style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                 >
                     {content.map((item) => (

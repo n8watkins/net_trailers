@@ -1,0 +1,130 @@
+import React from 'react'
+import { XMarkIcon, CommandLineIcon } from '@heroicons/react/24/outline'
+
+interface KeyboardShortcut {
+    keys: string[]
+    description: string
+    category: string
+}
+
+const shortcuts: KeyboardShortcut[] = [
+    // Navigation
+    { keys: ['/', 'S'], description: 'Focus search bar', category: 'Navigation' },
+    { keys: ['H'], description: 'Go to home page', category: 'Navigation' },
+    { keys: ['L'], description: 'Go to my list/favorites', category: 'Navigation' },
+    { keys: ['Escape'], description: 'Close modal or clear search', category: 'Navigation' },
+
+    // Search & Browse
+    { keys: ['↑', '↓'], description: 'Navigate search results', category: 'Search & Browse' },
+    { keys: ['Enter'], description: 'Open selected result', category: 'Search & Browse' },
+    { keys: ['Ctrl', 'K'], description: 'Quick search (global)', category: 'Search & Browse' },
+
+    // Content Actions
+    { keys: ['Space'], description: 'Play/pause video in modal', category: 'Content Actions' },
+    { keys: ['M'], description: 'Toggle mute in video player', category: 'Content Actions' },
+    { keys: ['F'], description: 'Toggle fullscreen', category: 'Content Actions' },
+    { keys: ['1'], description: 'Like content (when selected)', category: 'Content Actions' },
+    { keys: ['2'], description: 'Dislike content (when selected)', category: 'Content Actions' },
+    { keys: ['3'], description: 'Add to favorites (when selected)', category: 'Content Actions' },
+
+    // General
+    { keys: ['?'], description: 'Show this keyboard shortcuts menu', category: 'General' },
+]
+
+const shortcutsByCategory = shortcuts.reduce((acc, shortcut) => {
+    if (!acc[shortcut.category]) {
+        acc[shortcut.category] = []
+    }
+    acc[shortcut.category].push(shortcut)
+    return acc
+}, {} as Record<string, KeyboardShortcut[]>)
+
+interface KeyboardShortcutsModalProps {
+    isOpen: boolean
+    onClose: () => void
+}
+
+const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ isOpen, onClose }) => {
+    if (!isOpen) return null
+
+    const renderKeys = (keys: string[]) => {
+        return keys.map((key, index) => (
+            <React.Fragment key={key}>
+                {index > 0 && <span className="text-gray-400 mx-1">+</span>}
+                <kbd className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-200 border border-gray-300 rounded-md shadow-sm">
+                    {key}
+                </kbd>
+            </React.Fragment>
+        ))
+    }
+
+    return (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                {/* Background overlay */}
+                <div
+                    className="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-75"
+                    onClick={onClose}
+                />
+
+                {/* Modal panel */}
+                <div className="inline-block w-full max-w-4xl px-6 pt-5 pb-4 overflow-hidden text-left align-bottom transition-all transform bg-[#181818] border border-gray-600/50 rounded-lg shadow-xl sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full sm:p-6">
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center space-x-3">
+                            <CommandLineIcon className="w-6 h-6 text-red-500" />
+                            <h2 className="text-xl font-semibold text-white">Keyboard Shortcuts</h2>
+                        </div>
+                        <button
+                            onClick={onClose}
+                            className="p-1 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-gray-700"
+                        >
+                            <XMarkIcon className="w-6 h-6" />
+                        </button>
+                    </div>
+
+                    {/* Content */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {Object.entries(shortcutsByCategory).map(([category, categoryShortcuts]) => (
+                            <div key={category} className="space-y-4">
+                                <h3 className="text-lg font-medium text-red-400 border-b border-gray-600 pb-2">
+                                    {category}
+                                </h3>
+                                <div className="space-y-3">
+                                    {categoryShortcuts.map((shortcut, index) => (
+                                        <div key={index} className="flex items-center justify-between">
+                                            <span className="text-gray-300 text-sm flex-1 pr-4">
+                                                {shortcut.description}
+                                            </span>
+                                            <div className="flex items-center space-x-1 flex-shrink-0">
+                                                {renderKeys(shortcut.keys)}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Footer */}
+                    <div className="mt-8 pt-6 border-t border-gray-600">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+                            <p className="text-gray-400 text-sm">
+                                Press <kbd className="px-1 py-0.5 text-xs font-semibold text-gray-800 bg-gray-200 border border-gray-300 rounded">?</kbd>{' '}
+                                to open this menu anytime
+                            </p>
+                            <button
+                                onClick={onClose}
+                                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+                            >
+                                Got it!
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+export default KeyboardShortcutsModal
