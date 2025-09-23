@@ -369,17 +369,40 @@ export const getServerSideProps = async (context: any) => {
             return shuffled
         }
 
+        // Helper function to add media_type to content items
+        const addMediaType = (items: any[], mediaType: 'movie' | 'tv') =>
+            items.map((item) => ({ ...item, media_type: mediaType }))
+
+        // Determine the media type for this page
+        const pageMediaType = filter === 'tv' ? 'tv' : filter === 'movies' ? 'movie' : null
+
         const props = {
-            trending: randomizeArray(trending.results || []),
-            topRatedMovies: randomizeArray([
-                ...(topRatedMovies1.results || []),
-                ...(topRatedMovies2.results || []),
-            ]),
-            actionMovies: randomizeArray(actionMovies.results || []),
-            comedyMovies: randomizeArray(comedyMovies.results || []),
-            horrorMovies: randomizeArray(horrorMovies.results || []),
-            romanceMovies: randomizeArray(romanceMovies.results || []),
-            documentaries: randomizeArray(documentaries.results || []),
+            trending: randomizeArray(
+                pageMediaType
+                    ? addMediaType(trending.results || [], pageMediaType)
+                    : trending.results || []
+            ),
+            topRatedMovies: randomizeArray(
+                addMediaType(
+                    [...(topRatedMovies1.results || []), ...(topRatedMovies2.results || [])],
+                    pageMediaType || 'movie'
+                )
+            ),
+            actionMovies: randomizeArray(
+                addMediaType(actionMovies.results || [], pageMediaType || 'movie')
+            ),
+            comedyMovies: randomizeArray(
+                addMediaType(comedyMovies.results || [], pageMediaType || 'movie')
+            ),
+            horrorMovies: randomizeArray(
+                addMediaType(horrorMovies.results || [], pageMediaType || 'movie')
+            ),
+            romanceMovies: randomizeArray(
+                addMediaType(romanceMovies.results || [], pageMediaType || 'movie')
+            ),
+            documentaries: randomizeArray(
+                addMediaType(documentaries.results || [], pageMediaType || 'movie')
+            ),
         }
 
         // Cache the processed props for future requests with appropriate cache key

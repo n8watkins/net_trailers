@@ -56,11 +56,13 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
         <div
             className={`relative cursor-pointer transition-all duration-300 ease-out group
                        ${getCardSizeClasses()}
-                       hover:scale-110 hover:z-40 ${className}`}
+                       hover:z-40 ${className}`}
             onClick={handleImageClick}
         >
             {/* Image Container with Fixed Dimensions */}
-            <div className={`relative ${getImageSizeClasses()}`}>
+            <div
+                className={`relative ${getImageSizeClasses()} group-hover:scale-110 transition-transform duration-300 ease-out`}
+            >
                 {/* Loading Skeleton */}
                 {!imageLoaded && posterImage && (
                     <div className="w-full h-full bg-gray-800 rounded-md animate-pulse flex items-center justify-center">
@@ -105,8 +107,8 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                 {/* Star Rating - Top Left */}
                 {content && content.vote_average > 0 && imageLoaded && (
                     <div
-                        className="absolute top-2 left-2 bg-black/80 backdrop-blur-sm rounded-md px-2 py-1 z-20
-                              opacity-100 group-hover:opacity-0 transition-opacity duration-300"
+                        className="absolute top-2 left-2 bg-black/80 backdrop-blur-sm rounded-full px-2 py-1 md:px-3 md:py-1.5 z-20
+                              opacity-100 transition-all duration-300"
                     >
                         <div className="flex items-center gap-1">
                             <span className="text-yellow-400 text-sm">⭐</span>
@@ -120,10 +122,16 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                 {/* Media Type Pill - Top Right */}
                 {content && imageLoaded && (
                     <div
-                        className="absolute top-2 right-2 z-20
-                              opacity-100 group-hover:opacity-0 transition-opacity duration-300"
+                        className="absolute top-3 right-3 z-20
+                              opacity-100 transition-all duration-300"
                     >
-                        <span className="px-2 py-1 text-xs font-medium rounded-full backdrop-blur-sm bg-red-600/90 text-white">
+                        <span
+                            className={`px-1.5 py-0.5 md:px-3 md:py-1 text-xs md:text-base rounded-full backdrop-blur-sm ${
+                                isMovie(content)
+                                    ? 'bg-gradient-to-br from-white to-gray-100 text-black font-bold border border-black'
+                                    : 'bg-gradient-to-br from-black to-gray-900 text-white font-medium border border-white'
+                            }`}
+                        >
                             {getContentType(content)}
                         </span>
                     </div>
@@ -167,12 +175,12 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
             {content && imageLoaded && (
                 <div
                     className="mt-2 transition-all duration-300 ease-out
-                              group-hover:mt-3 group-hover:scale-105 text-left"
+                              group-hover:mt-6 text-left relative z-30 bg-transparent p-2"
                 >
-                    <h3 className="text-white font-bold leading-tight mb-1 text-base px-2 py-1 text-left">
+                    <h3 className="text-white font-bold leading-tight mb-1 text-base text-left">
                         {content ? getTitle(content) : 'No Title'}
                     </h3>
-                    <p className="text-gray-400 font-medium leading-tight text-sm text-left px-2">
+                    <p className="text-gray-400 font-medium leading-tight text-sm text-left">
                         {getYear(content)}
                     </p>
                 </div>

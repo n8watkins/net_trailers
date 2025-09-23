@@ -104,7 +104,32 @@ export default function SearchBar({
 
     // Close suggestions when clicking outside
     useEffect(() => {
+        let mouseDownPos = { x: 0, y: 0 }
+        let isDragging = false
+
+        function handleMouseDown(event: MouseEvent) {
+            mouseDownPos = { x: event.clientX, y: event.clientY }
+            isDragging = false
+        }
+
+        function handleMouseMove(event: MouseEvent) {
+            const distance = Math.sqrt(
+                Math.pow(event.clientX - mouseDownPos.x, 2) +
+                    Math.pow(event.clientY - mouseDownPos.y, 2)
+            )
+            if (distance > 5) {
+                // 5px threshold for drag detection
+                isDragging = true
+            }
+        }
+
         function handleClickOutside(event: MouseEvent) {
+            // Don't close if this was a drag operation
+            if (isDragging) {
+                isDragging = false
+                return
+            }
+
             if (
                 suggestionsRef.current &&
                 !suggestionsRef.current.contains(event.target as Node) &&
@@ -116,8 +141,14 @@ export default function SearchBar({
             }
         }
 
-        document.addEventListener('mousedown', handleClickOutside)
-        return () => document.removeEventListener('mousedown', handleClickOutside)
+        document.addEventListener('mousedown', handleMouseDown)
+        document.addEventListener('mousemove', handleMouseMove)
+        document.addEventListener('click', handleClickOutside)
+        return () => {
+            document.removeEventListener('mousedown', handleMouseDown)
+            document.removeEventListener('mousemove', handleMouseMove)
+            document.removeEventListener('click', handleClickOutside)
+        }
     }, [])
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -353,7 +384,7 @@ export default function SearchBar({
                             focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent
                             transition-all duration-300 ease-in-out
                             placeholder:text-ellipsis placeholder:overflow-hidden placeholder:whitespace-nowrap
-                            text-base sm:text-lg
+                            text-base sm:text-lg select-none
                             ${isFocused ? 'bg-[#0a0a0a] shadow-xl shadow-red-500/30 border-red-500/50' : 'bg-[#0a0a0a]'}
                         `}
                     />
@@ -411,6 +442,9 @@ export default function SearchBar({
             {showSuggestions && quickResults.length > 0 && !isOnSearchPage && !showFilters && (
                 <div
                     ref={suggestionsRef}
+                    onMouseDown={(e) => {
+                        e.preventDefault() // Prevents input from losing focus
+                    }}
                     className="absolute z-[110] w-full mt-1 bg-[#0a0a0a] border border-gray-600/50 rounded-lg shadow-lg max-h-96 overflow-y-auto scrollbar-thin scrollbar-track-gray-800 scrollbar-thumb-red-600 hover:scrollbar-thumb-red-500 scrollbar-thumb-rounded-full scrollbar-track-rounded-full animate-dropdown-enter"
                 >
                     {/* Results Count Header */}
@@ -442,13 +476,14 @@ export default function SearchBar({
                                             onClick={() => handleQuickResultClick(item)}
                                         >
                                             {/* Movie Poster */}
-                                            <div className="flex-shrink-0 w-12 h-18 relative rounded overflow-hidden bg-gray-600">
+                                            <div className="flex-shrink-0 w-12 h-[72px] relative rounded overflow-hidden bg-gray-600">
                                                 {item.poster_path ? (
                                                     <Image
                                                         src={`https://image.tmdb.org/t/p/w200${item.poster_path}`}
                                                         alt={getTitle(item)}
                                                         fill
-                                                        className="object-cover group-hover:scale-105 transition-transform duration-200"
+                                                        sizes="48px"
+                                                        className="object-cover group-hover:scale-105 transition-transform duration-200 select-none"
                                                     />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center text-gray-400">

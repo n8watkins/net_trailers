@@ -418,7 +418,12 @@ function Modal() {
                                 }}
                                 onClick={handleSingleOrDoubleClick}
                             >
-                                {currentMovie ? getTitle(currentMovie as Content) : ''}
+                                {currentMovie
+                                    ? getTitle(currentMovie as Content) ||
+                                      (currentMovie as any).title ||
+                                      (currentMovie as any).name ||
+                                      'No Title Available'
+                                    : ''}
                             </h3>
 
                             {/* JSON Debug Button */}

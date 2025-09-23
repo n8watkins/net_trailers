@@ -25,7 +25,7 @@ const movieGenres: Genre[] = [
     { id: 878, name: 'Science Fiction' },
     { id: 53, name: 'Thriller' },
     { id: 10752, name: 'War' },
-    { id: 37, name: 'Western' }
+    { id: 37, name: 'Western' },
 ]
 
 const tvGenres: Genre[] = [
@@ -44,7 +44,7 @@ const tvGenres: Genre[] = [
     { id: 10766, name: 'Soap' },
     { id: 10767, name: 'Talk' },
     { id: 10768, name: 'War & Politics' },
-    { id: 37, name: 'Western' }
+    { id: 37, name: 'Western' },
 ]
 
 function GenresDropdown() {
@@ -74,7 +74,7 @@ function GenresDropdown() {
     return (
         <div className="relative" ref={dropdownRef}>
             <button
-                className="headerLink cursor-pointer flex items-center space-x-1 hover:text-white transition-colors"
+                className="headerLink cursor-pointer flex items-center space-x-1 hover:text-white transition-colors select-none"
                 onClick={() => setIsOpen(!isOpen)}
             >
                 <span>Genres</span>
@@ -88,7 +88,7 @@ function GenresDropdown() {
                     {/* Type Selector */}
                     <div className="flex border-b border-gray-700">
                         <button
-                            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 select-none ${
                                 selectedType === 'movie'
                                     ? 'bg-red-600 text-white'
                                     : 'text-gray-300 hover:text-white hover:bg-gray-800'
@@ -99,7 +99,7 @@ function GenresDropdown() {
                             Movies
                         </button>
                         <button
-                            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 select-none ${
                                 selectedType === 'tv'
                                     ? 'bg-red-600 text-white'
                                     : 'text-gray-300 hover:text-white hover:bg-gray-800'
@@ -117,7 +117,7 @@ function GenresDropdown() {
                             {currentGenres.map((genre) => (
                                 <button
                                     key={genre.id}
-                                    className="text-left px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded-md transition-colors"
+                                    className="text-left px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded-md transition-colors select-none"
                                     onClick={() => handleGenreClick(genre.id, genre.name)}
                                 >
                                     {genre.name}

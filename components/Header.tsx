@@ -78,14 +78,14 @@ function Header({ onOpenAboutModal }: HeaderProps = {}) {
                 <div className="hidden lg:flex items-center space-x-6 flex-1">
                     <ul className="flex space-x-4 items-center">
                         <li
-                            className={`headerLink cursor-pointer flex items-center space-x-1 ${router.pathname === '/tv' ? 'text-white hover:text-white font-semibold' : ''}`}
+                            className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${router.pathname === '/tv' ? 'text-white hover:text-white font-semibold' : ''}`}
                             onClick={() => router.push('/?filter=tv')}
                         >
                             <TvIcon className="h-4 w-4" />
                             <span>TV Shows</span>
                         </li>
                         <li
-                            className={`headerLink cursor-pointer flex items-center space-x-1 ${router.pathname === '/movies' ? 'text-white hover:text-white font-semibold' : ''}`}
+                            className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${router.pathname === '/movies' ? 'text-white hover:text-white font-semibold' : ''}`}
                             onClick={() => router.push('/?filter=movies')}
                         >
                             <FilmIcon className="h-4 w-4" />
@@ -95,7 +95,7 @@ function Header({ onOpenAboutModal }: HeaderProps = {}) {
                             <GenresDropdown />
                         </li>
                         <li
-                            className={`headerLink cursor-pointer flex items-center space-x-1 ${router.pathname === '/favorites' ? 'text-white hover:text-white font-semibold' : ''}`}
+                            className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${router.pathname === '/favorites' ? 'text-white hover:text-white font-semibold' : ''}`}
                             onClick={() => router.push('/favorites')}
                         >
                             <HeartIcon className="h-4 w-4" />
@@ -184,7 +184,7 @@ function Header({ onOpenAboutModal }: HeaderProps = {}) {
                                 <ul className="space-y-4">
                                     <li>
                                         <button
-                                            className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors ${
+                                            className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
                                                 router.pathname === '/'
                                                     ? 'text-white font-semibold bg-red-600/20'
                                                     : 'hover:bg-gray-800/50'
@@ -212,7 +212,7 @@ function Header({ onOpenAboutModal }: HeaderProps = {}) {
                                     </li>
                                     <li>
                                         <button
-                                            className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors ${
+                                            className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
                                                 router.pathname === '/tv'
                                                     ? 'text-white font-semibold bg-red-600/20'
                                                     : 'hover:bg-gray-800/50'
@@ -228,7 +228,7 @@ function Header({ onOpenAboutModal }: HeaderProps = {}) {
                                     </li>
                                     <li>
                                         <button
-                                            className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors ${
+                                            className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
                                                 router.pathname === '/movies'
                                                     ? 'text-white font-semibold bg-red-600/20'
                                                     : 'hover:bg-gray-800/50'
@@ -244,7 +244,7 @@ function Header({ onOpenAboutModal }: HeaderProps = {}) {
                                     </li>
                                     <li>
                                         <button
-                                            className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors ${
+                                            className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
                                                 router.pathname === '/favorites'
                                                     ? 'text-white font-semibold bg-red-600/20'
                                                     : 'hover:bg-gray-800/50'
@@ -260,7 +260,7 @@ function Header({ onOpenAboutModal }: HeaderProps = {}) {
                                     </li>
                                     <li>
                                         <button
-                                            className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors ${
+                                            className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
                                                 router.pathname === '/search'
                                                     ? 'text-white font-semibold bg-red-600/20'
                                                     : 'hover:bg-gray-800/50'
