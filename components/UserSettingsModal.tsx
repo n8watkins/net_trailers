@@ -7,8 +7,10 @@ import {
     ShareIcon,
     UserCircleIcon,
     CogIcon,
+    TrashIcon,
 } from '@heroicons/react/24/outline'
 import useAuth from '../hooks/useAuth'
+import AccountManagement from './AccountManagement'
 
 interface UserSettingsModalProps {
     isOpen: boolean
@@ -17,7 +19,7 @@ interface UserSettingsModalProps {
 
 const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, onClose }) => {
     const [activeSection, setActiveSection] = useState<
-        'main' | 'email' | 'password' | 'upload' | 'share'
+        'main' | 'email' | 'password' | 'upload' | 'share' | 'account'
     >('main')
     const { user } = useAuth()
 
@@ -57,7 +59,9 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, onClose }
                                     ? 'Reset Password'
                                     : activeSection === 'upload'
                                       ? 'Upload Watchlists'
-                                      : 'Share Watchlists'}
+                                      : activeSection === 'share'
+                                        ? 'Share Watchlists'
+                                        : 'Account Management'}
                         </h2>
                     </div>
                     <button
@@ -133,6 +137,19 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, onClose }
                                         <p className="text-white font-medium">Share Watchlists</p>
                                         <p className="text-gray-400 text-sm">
                                             Share your watchlists with others
+                                        </p>
+                                    </div>
+                                </button>
+
+                                <button
+                                    onClick={() => handleSectionChange('account')}
+                                    className="w-full flex items-center p-4 text-left hover:bg-gray-800/50 rounded-lg transition-colors duration-200 group"
+                                >
+                                    <TrashIcon className="w-5 h-5 text-gray-400 group-hover:text-red-500 mr-4" />
+                                    <div>
+                                        <p className="text-white font-medium">Account Management</p>
+                                        <p className="text-gray-400 text-sm">
+                                            Export data, clear data, or delete account
                                         </p>
                                     </div>
                                 </button>
@@ -307,6 +324,20 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, onClose }
                                     className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors duration-200"
                                 >
                                     Back
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeSection === 'account' && (
+                        <div>
+                            <AccountManagement />
+                            <div className="mt-6">
+                                <button
+                                    onClick={handleBackToMain}
+                                    className="w-full px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors duration-200"
+                                >
+                                    Back to Settings
                                 </button>
                             </div>
                         </div>

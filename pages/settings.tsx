@@ -12,6 +12,7 @@ import {
     ChevronRightIcon,
 } from '@heroicons/react/24/outline'
 import useAuth from '../hooks/useAuth'
+import useUserData from '../hooks/useUserData'
 import AccountManagement from '../components/AccountManagement'
 import Header from '../components/Header'
 
@@ -26,11 +27,13 @@ interface SidebarItem {
 }
 
 const Settings: React.FC = () => {
-    const [activeSection, setActiveSection] = useState<SettingsSection>('profile')
+    const [activeSection, setActiveSection] = useState<SettingsSection>('account') // Start with account management since it works for both
     const { user } = useAuth()
+    const userData = useUserData()
     const router = useRouter()
 
-    const sidebarItems: SidebarItem[] = [
+    // Define all possible sidebar items
+    const allSidebarItems: SidebarItem[] = [
         {
             id: 'profile',
             title: 'Profile',
@@ -75,12 +78,25 @@ const Settings: React.FC = () => {
         },
     ]
 
+    // Filter sidebar items based on authentication status
+    const sidebarItems = allSidebarItems.filter((item) => {
+        if (userData.isGuest) {
+            // For guest users, only show account management and import/export features
+            return ['account', 'upload', 'share'].includes(item.id)
+        }
+        // For authenticated users, show all items
+        return true
+    })
+
     const getUserName = () => {
         if (user?.displayName) {
             return user.displayName.split(' ')[0]
         }
         if (user?.email) {
             return user.email.split('@')[0]
+        }
+        if (userData.isGuest) {
+            return 'Guest User'
         }
         return 'User'
     }
@@ -113,7 +129,8 @@ const Settings: React.FC = () => {
         }
     }
 
-    if (!user) {
+    // Show loading state while session is initializing
+    if (userData.sessionType === 'initializing') {
         return (
             <div className="relative min-h-screen overflow-x-clip">
                 <Head>
@@ -124,18 +141,11 @@ const Settings: React.FC = () => {
                 <main id="content" className="relative">
                     <div className="flex items-center justify-center min-h-screen pt-20">
                         <div className="text-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-4"></div>
                             <h1 className="text-2xl font-semibold text-white mb-4">
-                                Sign In Required
+                                Initializing Settings...
                             </h1>
-                            <p className="text-[#b3b3b3] mb-6">
-                                You need to be signed in to access settings.
-                            </p>
-                            <button
-                                onClick={() => router.push('/')}
-                                className="bannerButton bg-white text-black hover:bg-white/80"
-                            >
-                                Go Home
-                            </button>
+                            <p className="text-[#b3b3b3] mb-6">Setting up your session</p>
                         </div>
                     </div>
                 </main>
@@ -221,83 +231,139 @@ const Settings: React.FC = () => {
                                                     Profile Information
                                                 </h2>
                                                 <p className="text-[#b3b3b3]">
-                                                    Manage your profile and account information.
+                                                    {userData.isGuest
+                                                        ? 'Manage your guest session information.'
+                                                        : 'Manage your profile and account information.'}
                                                 </p>
                                             </div>
 
-                                            <div className="space-y-6">
-                                                {/* Profile Picture */}
-                                                <div className="flex items-center space-x-6">
-                                                    {user.photoURL ? (
-                                                        <Image
-                                                            src={user.photoURL}
-                                                            alt="Profile"
-                                                            width={96}
-                                                            height={96}
-                                                            className="rounded-full object-cover border-4 border-[#313131]"
-                                                        />
-                                                    ) : (
-                                                        <div className="w-24 h-24 bg-red-600 rounded-full flex items-center justify-center border-4 border-[#313131]">
-                                                            <span className="text-white font-bold text-2xl">
-                                                                {getUserName()
-                                                                    .charAt(0)
-                                                                    .toUpperCase()}
-                                                            </span>
+                                            {userData.isGuest ? (
+                                                // Guest user profile
+                                                <div className="space-y-6">
+                                                    <div className="bg-[#0a0a0a] rounded-lg border border-[#313131] p-6">
+                                                        <div className="flex items-center space-x-4 mb-4">
+                                                            <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center">
+                                                                <span className="text-white font-bold text-xl">
+                                                                    G
+                                                                </span>
+                                                            </div>
+                                                            <div>
+                                                                <h3 className="text-xl font-semibold text-white">
+                                                                    Guest User
+                                                                </h3>
+                                                                <p className="text-[#b3b3b3]">
+                                                                    Anonymous session
+                                                                </p>
+                                                            </div>
                                                         </div>
-                                                    )}
-                                                    <div>
-                                                        <h3 className="text-xl font-semibold text-white">
-                                                            {getUserName()}
-                                                        </h3>
-                                                        <p className="text-[#b3b3b3]">
-                                                            {user.email}
-                                                        </p>
-                                                        <p className="text-[#777] text-sm mt-1">
-                                                            Member since{' '}
-                                                            {new Date(
-                                                                user.metadata?.creationTime ||
-                                                                    Date.now()
-                                                            ).toLocaleDateString()}
-                                                        </p>
+                                                        <div className="space-y-4">
+                                                            <div>
+                                                                <p className="text-[#e5e5e5] font-medium">
+                                                                    Session Status
+                                                                </p>
+                                                                <p className="text-[#b3b3b3]">
+                                                                    Browsing as guest - data is
+                                                                    saved locally
+                                                                </p>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-[#e5e5e5] font-medium">
+                                                                    Session ID
+                                                                </p>
+                                                                <p className="text-[#777] font-mono text-sm">
+                                                                    {userData.activeSessionId ||
+                                                                        'Loading...'}
+                                                                </p>
+                                                            </div>
+                                                            <div className="pt-4 border-t border-[#313131]">
+                                                                <p className="text-[#b3b3b3] text-sm mb-4">
+                                                                    To access more features and sync
+                                                                    your data across devices, create
+                                                                    an account.
+                                                                </p>
+                                                                <button className="bannerButton bg-red-600 text-white hover:bg-red-700">
+                                                                    Create Account
+                                                                </button>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
+                                            ) : (
+                                                // Authenticated user profile
+                                                <div className="space-y-6">
+                                                    {/* Profile Picture */}
+                                                    <div className="flex items-center space-x-6">
+                                                        {user?.photoURL ? (
+                                                            <Image
+                                                                src={user.photoURL}
+                                                                alt="Profile"
+                                                                width={96}
+                                                                height={96}
+                                                                className="rounded-full object-cover border-4 border-[#313131]"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-24 h-24 bg-red-600 rounded-full flex items-center justify-center border-4 border-[#313131]">
+                                                                <span className="text-white font-bold text-2xl">
+                                                                    {getUserName()
+                                                                        .charAt(0)
+                                                                        .toUpperCase()}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                        <div>
+                                                            <h3 className="text-xl font-semibold text-white">
+                                                                {getUserName()}
+                                                            </h3>
+                                                            <p className="text-[#b3b3b3]">
+                                                                {user.email}
+                                                            </p>
+                                                            <p className="text-[#777] text-sm mt-1">
+                                                                Member since{' '}
+                                                                {new Date(
+                                                                    user.metadata?.creationTime ||
+                                                                        Date.now()
+                                                                ).toLocaleDateString()}
+                                                            </p>
+                                                        </div>
+                                                    </div>
 
-                                                {/* Display Name */}
-                                                <div>
-                                                    <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
-                                                        Display Name
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        value={user.displayName || ''}
-                                                        placeholder="Enter your display name"
-                                                        className="inputClass w-full max-w-md"
-                                                    />
-                                                </div>
+                                                    {/* Display Name */}
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
+                                                            Display Name
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            value={user.displayName || ''}
+                                                            placeholder="Enter your display name"
+                                                            className="inputClass w-full max-w-md"
+                                                        />
+                                                    </div>
 
-                                                {/* Email (read-only) */}
-                                                <div>
-                                                    <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
-                                                        Email Address
-                                                    </label>
-                                                    <input
-                                                        type="email"
-                                                        value={user.email || ''}
-                                                        disabled
-                                                        className="inputClass w-full max-w-md opacity-50 cursor-not-allowed"
-                                                    />
-                                                    <p className="text-[#777] text-sm mt-1">
-                                                        To change your email, use the Email Settings
-                                                        section
-                                                    </p>
-                                                </div>
+                                                    {/* Email (read-only) */}
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
+                                                            Email Address
+                                                        </label>
+                                                        <input
+                                                            type="email"
+                                                            value={user.email || ''}
+                                                            disabled
+                                                            className="inputClass w-full max-w-md opacity-50 cursor-not-allowed"
+                                                        />
+                                                        <p className="text-[#777] text-sm mt-1">
+                                                            To change your email, use the Email
+                                                            Settings section
+                                                        </p>
+                                                    </div>
 
-                                                <div className="pt-4">
-                                                    <button className="bannerButton bg-red-600 text-white hover:bg-red-700">
-                                                        Save Changes
-                                                    </button>
+                                                    <div className="pt-4">
+                                                        <button className="bannerButton bg-red-600 text-white hover:bg-red-700">
+                                                            Save Changes
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                            </div>
+                                            )}
                                         </div>
                                     )}
 
