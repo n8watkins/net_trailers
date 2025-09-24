@@ -26,7 +26,6 @@ interface AvatarDropdownProps {
     onOpenAboutModal?: () => void
     onOpenTutorial?: () => void
     onOpenKeyboardShortcuts?: () => void
-    onOpenSettingsModal?: () => void
 }
 
 const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
@@ -36,7 +35,6 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
     onOpenAboutModal,
     onOpenTutorial,
     onOpenKeyboardShortcuts,
-    onOpenSettingsModal,
 }) => {
     const [isOpen, setIsOpen] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
@@ -68,7 +66,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
 
     const handleSettingsClick = () => {
         setIsOpen(false)
-        onOpenSettingsModal?.()
+        router.push('/settings')
     }
 
     const handleAboutClick = () => {
