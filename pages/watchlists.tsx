@@ -40,47 +40,32 @@ const Watchlists: NextPage = () => {
     )
     const allLists = [...filteredDefaultLists, ...customLists] as UserList[]
 
+    // Set default to Watchlist when lists are loaded
+    useEffect(() => {
+        if (selectedListId === 'all' && allLists.length > 0) {
+            const watchlistDefault = allLists.find((list) => list.name === 'Watchlist')
+            if (watchlistDefault) {
+                setSelectedListId(watchlistDefault.id)
+            } else {
+                setSelectedListId(allLists[0].id)
+            }
+        }
+    }, [allLists, selectedListId])
+
     // Filter content based on selected list
     const getFilteredContent = () => {
-        if (selectedListId === 'all') {
-            // Show all content from all lists
-            const allContent: Array<{
-                contentId: number
-                rating: string
-                timestamp: number
-                content: Content
-                listId: string
-                listName: string
-            }> = []
+        // Show content from selected list
+        const selectedList = allLists.find((list) => list.id === selectedListId)
+        if (!selectedList) return []
 
-            allLists.forEach((list) => {
-                list.items.forEach((item) => {
-                    allContent.push({
-                        contentId: item.id,
-                        rating: list.name.toLowerCase(),
-                        timestamp: Date.now(),
-                        content: item,
-                        listId: list.id,
-                        listName: list.name,
-                    })
-                })
-            })
-
-            return allContent
-        } else {
-            // Show content from selected list
-            const selectedList = allLists.find((list) => list.id === selectedListId)
-            if (!selectedList) return []
-
-            return selectedList.items.map((item) => ({
-                contentId: item.id,
-                rating: selectedList.name.toLowerCase(),
-                timestamp: Date.now(),
-                content: item,
-                listId: selectedList.id,
-                listName: selectedList.name,
-            }))
-        }
+        return selectedList.items.map((item) => ({
+            contentId: item.id,
+            rating: selectedList.name.toLowerCase(),
+            timestamp: Date.now(),
+            content: item,
+            listId: selectedList.id,
+            listName: selectedList.name,
+        }))
     }
 
     const baseFilteredContent = getFilteredContent()
@@ -128,11 +113,7 @@ const Watchlists: NextPage = () => {
         return <EyeIcon className={iconClass} />
     }
 
-    const getListCount = (listId: string | 'all') => {
-        if (listId === 'all') {
-            return allLists.reduce((total, list) => total + list.items.length, 0)
-        }
-
+    const getListCount = (listId: string) => {
         const list = allLists.find((l) => l.id === listId)
         return list ? list.items.length : 0
     }
@@ -210,54 +191,37 @@ const Watchlists: NextPage = () => {
 
                         {/* List Filter Buttons */}
                         <div className="flex flex-wrap gap-3">
-                            {/* All Lists Button */}
-                            <button
-                                onClick={() => setSelectedListId('all')}
-                                className={`flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                                    selectedListId === 'all'
-                                        ? 'bg-white text-black'
-                                        : 'bg-gray-800/50 text-white hover:bg-gray-700/50'
-                                }`}
-                            >
-                                <MagnifyingGlassIcon
-                                    className={`w-5 h-5 ${selectedListId === 'all' ? 'text-black' : 'text-white'}`}
-                                />
-                                <span>All</span>
-                                <span
-                                    className={`text-xs px-2 py-1 rounded-full ml-2 ${
-                                        selectedListId === 'all'
-                                            ? 'bg-gray-800 text-white'
-                                            : 'bg-gray-600 text-white'
-                                    }`}
-                                >
-                                    {getListCount('all')}
-                                </span>
-                            </button>
-
-                            {/* List Buttons */}
-                            {allLists.map((list) => (
-                                <button
-                                    key={list.id}
-                                    onClick={() => setSelectedListId(list.id)}
-                                    className={`flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                                        selectedListId === list.id
-                                            ? 'bg-white text-black'
-                                            : 'bg-gray-800/50 text-white hover:bg-gray-700/50'
-                                    }`}
-                                >
-                                    {getListIcon(list, selectedListId === list.id)}
-                                    <span>{list.name}</span>
-                                    <span
-                                        className={`text-xs px-2 py-1 rounded-full ml-2 ${
+                            {/* List Buttons - Watchlist will be first */}
+                            {allLists
+                                .sort((a, b) => {
+                                    // Put Watchlist first, then other lists
+                                    if (a.name === 'Watchlist') return -1
+                                    if (b.name === 'Watchlist') return 1
+                                    return 0
+                                })
+                                .map((list) => (
+                                    <button
+                                        key={list.id}
+                                        onClick={() => setSelectedListId(list.id)}
+                                        className={`flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                                             selectedListId === list.id
-                                                ? 'bg-gray-800 text-white'
-                                                : 'bg-gray-600 text-white'
+                                                ? 'bg-white text-black'
+                                                : 'bg-gray-800/50 text-white hover:bg-gray-700/50'
                                         }`}
                                     >
-                                        {getListCount(list.id)}
-                                    </span>
-                                </button>
-                            ))}
+                                        {getListIcon(list, selectedListId === list.id)}
+                                        <span>{list.name}</span>
+                                        <span
+                                            className={`text-xs px-2 py-1 rounded-full ml-2 ${
+                                                selectedListId === list.id
+                                                    ? 'bg-gray-800 text-white'
+                                                    : 'bg-gray-600 text-white'
+                                            }`}
+                                        >
+                                            {getListCount(list.id)}
+                                        </span>
+                                    </button>
+                                ))}
 
                             {/* Create New List Button */}
                             <button
@@ -296,9 +260,9 @@ const Watchlists: NextPage = () => {
                         <div className="text-center py-16">
                             <div className="text-6xl mb-4">🍿</div>
                             <h2 className="text-2xl font-semibold text-white mb-2">
-                                {selectedListId === 'all'
-                                    ? 'No content in your watchlists yet'
-                                    : `No content in ${allLists.find((l) => l.id === selectedListId)?.name || 'this list'} yet`}
+                                No content in{' '}
+                                {allLists.find((l) => l.id === selectedListId)?.name || 'this list'}{' '}
+                                yet
                             </h2>
                             <p className="text-gray-400">
                                 Start adding movies and TV shows to your watchlists and create
@@ -324,11 +288,7 @@ const Watchlists: NextPage = () => {
                                     return item.content && isTVShow(item.content)
                                 })
 
-                                const renderContentGrid = (
-                                    items: any[],
-                                    title: string,
-                                    showBadge: boolean = true
-                                ) => (
+                                const renderContentGrid = (items: any[], title: string) => (
                                     <div>
                                         <h3 className="text-2xl font-bold text-white mb-6">
                                             {title}
@@ -343,14 +303,6 @@ const Watchlists: NextPage = () => {
                                                         content={item.content}
                                                         className=""
                                                     />
-                                                    {/* List badge overlay - hide for single-list categories */}
-                                                    {showBadge && selectedListId === 'all' && (
-                                                        <div className="absolute top-2 right-2 bg-black/70 rounded-full p-1 z-10">
-                                                            <span className="text-xs text-white px-2 py-1 rounded">
-                                                                {item.listName}
-                                                            </span>
-                                                        </div>
-                                                    )}
                                                 </div>
                                             ))}
                                         </div>
