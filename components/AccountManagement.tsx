@@ -36,7 +36,16 @@ export default function AccountManagement() {
                 setIsLoading(true)
                 let summary: DataSummary
 
-                if ('getAccountDataSummary' in userData) {
+                if (userData.sessionType === 'initializing') {
+                    // During initialization, create empty summary
+                    summary = {
+                        watchlistCount: 0,
+                        ratingsCount: 0,
+                        listsCount: 0,
+                        totalItems: 0,
+                        isEmpty: true,
+                    }
+                } else if ('getAccountDataSummary' in userData) {
                     if (userData.isAuthenticated) {
                         // Authenticated user
                         summary = await userData.getAccountDataSummary()
@@ -44,19 +53,34 @@ export default function AccountManagement() {
                         // Guest user
                         summary = userData.getAccountDataSummary()
                     }
-                    setDataSummary(summary)
+                } else {
+                    // Fallback empty summary
+                    summary = {
+                        watchlistCount: 0,
+                        ratingsCount: 0,
+                        listsCount: 0,
+                        totalItems: 0,
+                        isEmpty: true,
+                    }
                 }
+                setDataSummary(summary)
             } catch (error) {
                 console.error('Failed to load data summary:', error)
                 errorHandler.handleError(error, 'Failed to load account data')
+                // Set empty summary on error
+                setDataSummary({
+                    watchlistCount: 0,
+                    ratingsCount: 0,
+                    listsCount: 0,
+                    totalItems: 0,
+                    isEmpty: true,
+                })
             } finally {
                 setIsLoading(false)
             }
         }
 
-        if (userData.sessionType !== 'initializing') {
-            loadDataSummary()
-        }
+        loadDataSummary()
     }, [userData.sessionType, userData.activeSessionId, errorHandler, userData])
 
     // Handle clear account data
@@ -153,10 +177,17 @@ export default function AccountManagement() {
         }
     }
 
-    if (userData.isInitializing || isLoading) {
+    if (isLoading) {
         return (
             <div className="p-6 bg-[#141414] rounded-lg">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto"></div>
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-4"></div>
+                    <p className="text-gray-400">
+                        {userData.sessionType === 'initializing'
+                            ? 'Initializing session...'
+                            : 'Loading account data...'}
+                    </p>
+                </div>
             </div>
         )
     }
@@ -170,18 +201,25 @@ export default function AccountManagement() {
                 <div className="flex items-center justify-between">
                     <div>
                         <h3 className="text-lg font-medium text-white">
-                            {userData.isAuthenticated
-                                ? '🔐 Authenticated Account'
-                                : '🎭 Guest Session'}
+                            {userData.sessionType === 'initializing'
+                                ? '🔄 Initializing...'
+                                : userData.isAuthenticated
+                                  ? '🔐 Authenticated Account'
+                                  : '🎭 Guest Session'}
                         </h3>
                         <p className="text-gray-400 text-sm">
-                            {userData.isAuthenticated
-                                ? 'Your data is synced to the cloud'
-                                : 'Your data is stored locally on this device'}
+                            {userData.sessionType === 'initializing'
+                                ? 'Setting up your session'
+                                : userData.isAuthenticated
+                                  ? 'Your data is synced to the cloud'
+                                  : 'Your data is stored locally on this device'}
                         </p>
                     </div>
                     <span className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded">
-                        ID: {userData.activeSessionId.substring(0, 8)}...
+                        ID:{' '}
+                        {userData.activeSessionId
+                            ? `${userData.activeSessionId.substring(0, 8)}...`
+                            : 'N/A'}
                     </span>
                 </div>
             </div>
@@ -221,11 +259,11 @@ export default function AccountManagement() {
                 {/* Export Data */}
                 <button
                     onClick={handleExportData}
-                    disabled={isLoading}
+                    disabled={isLoading || userData.sessionType === 'initializing'}
                     className="w-full flex items-center justify-center gap-2 p-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg transition-colors"
                 >
                     <DocumentArrowDownIcon className="w-5 h-5" />
-                    Export My Data
+                    {userData.sessionType === 'initializing' ? 'Initializing...' : 'Export My Data'}
                 </button>
 
                 {/* Clear Account Data */}
@@ -233,7 +271,7 @@ export default function AccountManagement() {
                     <>
                         <button
                             onClick={handleClearData}
-                            disabled={isLoading}
+                            disabled={isLoading || userData.sessionType === 'initializing'}
                             className="w-full flex items-center justify-center gap-2 p-3 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 text-white rounded-lg transition-colors"
                         >
                             <TrashIcon className="w-5 h-5" />
@@ -279,7 +317,7 @@ export default function AccountManagement() {
                     <>
                         <button
                             onClick={handleDeleteAccount}
-                            disabled={isLoading}
+                            disabled={isLoading || userData.sessionType === 'initializing'}
                             className="w-full flex items-center justify-center gap-2 p-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white rounded-lg transition-colors"
                         >
                             <TrashIcon className="w-5 h-5" />
