@@ -1,264 +1,137 @@
-import { useEffect } from 'react'
-import { useRecoilState } from 'recoil'
-import { userSessionState } from '../atoms/userDataAtom'
-import { UserDataService } from '../services/userDataService'
-import { UserListsService } from '../services/userListsService'
-import { Content } from '../typings'
-import { UserList, CreateListRequest, UpdateListRequest } from '../types/userLists'
-import useAuth from './useAuth'
+import { useRecoilValue } from 'recoil'
+import { sessionTypeState, activeSessionIdState } from '../atoms/sessionManagerAtom'
+import { useSessionManager } from './useSessionManager'
+import { useGuestData } from './useGuestData'
+import { useAuthData } from './useAuthData'
 
+/**
+ * Main hook for user data management with complete session isolation
+ *
+ * Routes to appropriate session (guest or authenticated) based on current session type.
+ * No automatic data migration - sessions are completely isolated.
+ */
 export default function useUserData() {
-    const [userSession, setUserSession] = useRecoilState(userSessionState)
-    const { user } = useAuth()
+    const sessionType = useRecoilValue(sessionTypeState)
+    const activeSessionId = useRecoilValue(activeSessionIdState)
+    const sessionManager = useSessionManager()
 
-    // Initialize user session on mount
-    useEffect(() => {
-        const initializeUserSession = async () => {
-            if (user && userSession.isGuest) {
-                // User just authenticated - migrate guest data and load from Firebase
-                try {
-                    await UserDataService.migrateGuestToAuth(userSession.preferences, user.uid)
-                    const userData = await UserDataService.loadUserData(user.uid)
+    console.log('🔐 useUserData - Session type:', sessionType)
+    console.log('🔐 useUserData - Active session ID:', activeSessionId)
 
-                    setUserSession({
-                        isGuest: false,
-                        userId: user.uid,
-                        guestId: undefined,
-                        preferences: userData,
-                    })
-                } catch (error) {
-                    console.error('Failed to migrate guest data:', error)
-                    // Fallback to just switching to authenticated mode without migration
-                    const userData = await UserDataService.loadUserData(user.uid)
-                    setUserSession({
-                        isGuest: false,
-                        userId: user.uid,
-                        guestId: undefined,
-                        preferences: userData,
-                    })
-                }
-            } else if (user && !userSession.isGuest && userSession.userId !== user.uid) {
-                // Different authenticated user - load their data
-                try {
-                    const userData = await UserDataService.loadUserData(user.uid)
-                    setUserSession({
-                        isGuest: false,
-                        userId: user.uid,
-                        guestId: undefined,
-                        preferences: userData,
-                    })
-                } catch (error) {
-                    console.error('Failed to load user data:', error)
-                }
-            } else if (!user && !userSession.isGuest && !userSession.userId) {
-                // Not authenticated and no guest session - create guest session
-                const guestId = UserDataService.getGuestId()
-                const guestData = UserDataService.loadGuestData()
+    // Route to appropriate data hook based on session type
+    const guestData = useGuestData()
+    const authData = useAuthData(activeSessionId)
 
-                setUserSession({
-                    isGuest: true,
-                    guestId,
-                    userId: undefined,
-                    preferences: guestData,
-                })
-            } else if (!user && userSession.isGuest) {
-                // User logged out but still showing as guest - this is correct, do nothing
-            } else if (user && userSession.isGuest) {
-                // User is authenticated but session still shows as guest - force update
-                console.log('Forcing session update for authenticated user')
-                const userData = await UserDataService.loadUserData(user.uid)
-                setUserSession({
-                    isGuest: false,
-                    userId: user.uid,
-                    guestId: undefined,
-                    preferences: userData,
-                })
-            }
+    console.log('🔐 useUserData - Guest data:', guestData)
+    console.log('🔐 useUserData - Auth data:', authData)
+
+    // Return the appropriate session data
+    if (sessionType === 'guest') {
+        console.log('🔐 Returning guest data')
+        const result = {
+            ...guestData,
+
+            // Session manager functions
+            sessionType,
+            activeSessionId,
+            sessionManager,
         }
+        console.log('🔐 Guest result:', result)
+        return result
+    } else if (sessionType === 'authenticated') {
+        console.log('🔐 Returning authenticated data')
+        const result = {
+            ...authData,
 
-        initializeUserSession()
-    }, [user, setUserSession, userSession.isGuest, userSession.userId])
+            // Session manager functions
+            sessionType,
+            activeSessionId,
+            sessionManager,
 
-    // Save data whenever preferences change
-    useEffect(() => {
-        const saveUserData = async () => {
-            if (userSession.isGuest && userSession.preferences) {
-                // Save guest data to localStorage
-                UserDataService.saveGuestData(userSession.preferences)
-            } else if (!userSession.isGuest && userSession.userId && userSession.preferences) {
-                // Save authenticated user data to Firebase
-                try {
-                    await UserDataService.saveUserData(userSession.userId, userSession.preferences)
-                } catch (error) {
-                    console.error('Failed to save user data to Firebase:', error)
-                }
-            }
-        }
+            // Session state flags
+            isGuest: false,
+            isAuthenticated: true,
+            isInitializing: false,
 
-        // Only save if preferences exist (avoid initial empty saves)
-        if (
-            userSession.preferences &&
-            (userSession.preferences.ratings.length > 0 ||
-                userSession.preferences.watchlist.length > 0)
-        ) {
-            saveUserData()
-        }
-    }, [userSession.isGuest, userSession.userId, userSession.preferences])
-
-    // Add or update rating for content
-    const setRating = (contentId: number, rating: 'liked' | 'disliked', content?: Content) => {
-        setUserSession((prev) => ({
-            ...prev,
-            preferences: UserDataService.addRating(prev.preferences, contentId, rating, content),
-        }))
-    }
-
-    // Remove rating for content
-    const removeRating = (contentId: number) => {
-        setUserSession((prev) => ({
-            ...prev,
-            preferences: UserDataService.removeRating(prev.preferences, contentId),
-        }))
-    }
-
-    // Add content to watchlist
-    const addToWatchlist = (content: Content) => {
-        setUserSession((prev) => ({
-            ...prev,
-            preferences: UserDataService.addToWatchlist(prev.preferences, content),
-        }))
-    }
-
-    // Remove content from watchlist
-    const removeFromWatchlist = (contentId: number) => {
-        setUserSession((prev) => ({
-            ...prev,
-            preferences: UserDataService.removeFromWatchlist(prev.preferences, contentId),
-        }))
-    }
-
-    // Get rating for specific content
-    const getRating = (contentId: number) => {
-        return UserDataService.getRating(userSession.preferences, contentId)
-    }
-
-    // Check if content is in watchlist
-    const isInWatchlist = (contentId: number) => {
-        return UserDataService.isInWatchlist(userSession.preferences, contentId)
-    }
-
-    // Start guest session
-    const startGuestSession = () => {
-        const guestId = UserDataService.getGuestId()
-        const guestData = UserDataService.loadGuestData()
-
-        setUserSession({
-            isGuest: true,
-            guestId,
-            userId: undefined,
-            preferences: guestData,
-        })
-    }
-
-    // Migrate guest data when user authenticates
-    const migrateGuestData = async () => {
-        if (userSession.isGuest && user && userSession.preferences) {
-            await UserDataService.migrateGuestToAuth(userSession.preferences, user.uid)
-
-            // Update session to authenticated user
-            setUserSession((prev) => ({
+            // Legacy compatibility - user session structure
+            userSession: {
                 isGuest: false,
                 guestId: undefined,
-                userId: user.uid,
-                preferences: prev.preferences, // Keep the data
-            }))
+                userId: authData.authSession.userId,
+                preferences: authData.authSession.preferences,
+            },
         }
-    }
+        console.log('🔐 Auth result:', result)
+        return result
+    } else {
+        // Initializing state - return minimal interface
+        return {
+            // Session info
+            sessionType: 'initializing' as const,
+            activeSessionId: '',
+            sessionManager,
 
-    // User Lists Management
-    const createList = (request: CreateListRequest) => {
-        setUserSession((prev) => ({
-            ...prev,
-            preferences: UserListsService.createList(prev.preferences, request),
-        }))
-    }
+            // Session state flags
+            isGuest: false,
+            isAuthenticated: false,
+            isInitializing: true,
 
-    const updateList = (request: UpdateListRequest) => {
-        setUserSession((prev) => ({
-            ...prev,
-            preferences: UserListsService.updateList(prev.preferences, request),
-        }))
-    }
+            // Empty data during initialization
+            watchlist: [],
+            ratings: [],
+            userLists: { lists: [], defaultListIds: { watchlist: '', liked: '', disliked: '' } },
 
-    const deleteList = (listId: string) => {
-        setUserSession((prev) => ({
-            ...prev,
-            preferences: UserListsService.deleteList(prev.preferences, listId),
-        }))
-    }
+            // Placeholder functions (will throw errors if called during initialization)
+            setRating: () => {
+                throw new Error('Cannot modify data while session is initializing')
+            },
+            removeRating: () => {
+                throw new Error('Cannot modify data while session is initializing')
+            },
+            addToWatchlist: () => {
+                throw new Error('Cannot modify data while session is initializing')
+            },
+            removeFromWatchlist: () => {
+                throw new Error('Cannot modify data while session is initializing')
+            },
+            getRating: () => null,
+            isInWatchlist: () => false,
+            createList: () => {
+                throw new Error('Cannot modify data while session is initializing')
+            },
+            updateList: () => {
+                throw new Error('Cannot modify data while session is initializing')
+            },
+            deleteList: () => {
+                throw new Error('Cannot modify data while session is initializing')
+            },
+            addToList: () => {
+                throw new Error('Cannot modify data while session is initializing')
+            },
+            removeFromList: () => {
+                throw new Error('Cannot modify data while session is initializing')
+            },
+            getList: () => null,
+            isContentInList: () => false,
+            getListsContaining: () => [],
+            getDefaultLists: () => ({ watchlist: null, liked: null, disliked: null }),
+            getCustomLists: () => [],
 
-    const addToList = (listId: string, content: Content) => {
-        setUserSession((prev) => ({
-            ...prev,
-            preferences: UserListsService.addToList(prev.preferences, { listId, content }),
-        }))
-    }
-
-    const removeFromList = (listId: string, contentId: number) => {
-        setUserSession((prev) => ({
-            ...prev,
-            preferences: UserListsService.removeFromList(prev.preferences, { listId, contentId }),
-        }))
-    }
-
-    const getList = (listId: string): UserList | null => {
-        return UserListsService.getList(userSession.preferences, listId)
-    }
-
-    const isContentInList = (listId: string, contentId: number): boolean => {
-        return UserListsService.isContentInList(userSession.preferences, listId, contentId)
-    }
-
-    const getListsContaining = (contentId: number): UserList[] => {
-        return UserListsService.getListsContaining(userSession.preferences, contentId)
-    }
-
-    const getDefaultLists = () => {
-        return UserListsService.getDefaultLists(userSession.preferences)
-    }
-
-    const getCustomLists = (): UserList[] => {
-        return UserListsService.getCustomLists(userSession.preferences)
-    }
-
-    return {
-        userSession,
-        isGuest: !user, // Simple: if no user, we're in guest mode
-        isAuthenticated: !!user, // Simple: if user exists, we're authenticated
-        watchlist: userSession.preferences.watchlist,
-        ratings: userSession.preferences.ratings,
-        userLists: userSession.preferences.userLists,
-
-        // Legacy actions (for backward compatibility)
-        setRating,
-        removeRating,
-        addToWatchlist,
-        removeFromWatchlist,
-        getRating,
-        isInWatchlist,
-        startGuestSession,
-        migrateGuestData,
-
-        // New list management actions
-        createList,
-        updateList,
-        deleteList,
-        addToList,
-        removeFromList,
-        getList,
-        isContentInList,
-        getListsContaining,
-        getDefaultLists,
-        getCustomLists,
+            // Legacy compatibility
+            userSession: {
+                isGuest: false,
+                guestId: undefined,
+                userId: undefined,
+                preferences: {
+                    watchlist: [],
+                    ratings: [],
+                    userLists: {
+                        lists: [],
+                        defaultListIds: { watchlist: '', liked: '', disliked: '' },
+                    },
+                    lastActive: Date.now(),
+                },
+            },
+        }
     }
 }

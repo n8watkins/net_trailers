@@ -9,6 +9,10 @@ import {
     CommandLineIcon,
     AcademicCapIcon,
     ArrowDownTrayIcon,
+    EnvelopeIcon,
+    KeyIcon,
+    ArrowUpTrayIcon,
+    ShareIcon,
 } from '@heroicons/react/24/outline'
 import useAuth from '../hooks/useAuth'
 import { useRouter } from 'next/router'
@@ -22,6 +26,7 @@ interface AvatarDropdownProps {
     onOpenAboutModal?: () => void
     onOpenTutorial?: () => void
     onOpenKeyboardShortcuts?: () => void
+    onOpenSettingsModal?: () => void
 }
 
 const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
@@ -31,6 +36,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
     onOpenAboutModal,
     onOpenTutorial,
     onOpenKeyboardShortcuts,
+    onOpenSettingsModal,
 }) => {
     const [isOpen, setIsOpen] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
@@ -62,7 +68,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
 
     const handleSettingsClick = () => {
         setIsOpen(false)
-        // TODO: Navigate to settings page when implemented
+        onOpenSettingsModal?.()
     }
 
     const handleAboutClick = () => {
@@ -81,7 +87,8 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
 
     const getUserName = () => {
         if (user?.displayName) {
-            return user.displayName
+            // Extract first name from display name
+            return user.displayName.split(' ')[0]
         }
         if (user?.email) {
             return user.email.split('@')[0]
@@ -220,23 +227,6 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                     {/* User Info Header */}
                     <div className="px-5 py-4 border-b border-gray-700/50">
                         <div className="flex items-center space-x-3">
-                            <div className="flex-shrink-0">
-                                {user.photoURL ? (
-                                    <Image
-                                        src={user.photoURL}
-                                        alt="Profile"
-                                        width={40}
-                                        height={40}
-                                        className="w-10 h-10 rounded-md object-cover"
-                                    />
-                                ) : (
-                                    <div className="w-10 h-10 bg-red-600 rounded-md flex items-center justify-center">
-                                        <span className="text-white font-bold">
-                                            {getInitials(user.email || 'U')}
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-white font-medium text-sm truncate">
                                     {getUserName()}

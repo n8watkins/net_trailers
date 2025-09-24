@@ -61,30 +61,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const errorHandler = createErrorHandler(setErrors)
 
     useEffect(() => {
-        // else if (attemptPassReset) {
-        //     router.push('/reset') }
-        onAuthStateChanged(auth, (user) => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
             setUser(user)
             setLoading(false)
+
+            // Session management is now handled by useSessionManager
+            // No automatic redirection or guest mode checking here
+            // Components can check session state and handle routing appropriately
+
             if (user) {
-                router.push('/')
-            } else if (router.pathname === '/reset') {
-                setUser(null)
-                setLoading(false)
-            } else if (!user) {
-                setUser(null)
-                setLoading(false)
-
-                // Check if user is in guest mode before redirecting to login
-                const isGuestMode = localStorage.getItem('nettrailer_guest_id')
-                const isOnHomePage = router.pathname === '/'
-
-                // Only redirect to login if not in guest mode and not on home page
-                if (!isGuestMode && !isOnHomePage) {
-                    router.push('/login')
-                }
+                // User authenticated - session manager will handle the transition
+                console.log('🔐 User authenticated:', user.uid)
+            } else {
+                // User signed out - session manager will handle cleanup
+                console.log('🎭 User signed out, switching to guest mode')
             }
         })
+
+        return unsubscribe
     }, [])
 
     const signUp = async (email: string, password: string) => {
@@ -195,7 +189,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             attemptPassReset,
             setAttemptPassReset,
         }),
-        [user, loading, error, passResetSuccess, attemptPassReset]
+        [
+            user,
+            loading,
+            error,
+            passResetSuccess,
+            attemptPassReset,
+            signUp,
+            signIn,
+            signInWithGoogle,
+            logOut,
+            resetPass,
+        ]
     )
 
     return <AuthContext.Provider value={memoedValue}>{children}</AuthContext.Provider>

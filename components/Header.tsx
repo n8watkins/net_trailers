@@ -19,6 +19,7 @@ import AuthModal from './AuthModal'
 import AvatarDropdown from './AvatarDropdown'
 import GenresDropdown from './GenresDropdown'
 import MyListsDropdown from './MyListsDropdown'
+import UserSettingsModal from './UserSettingsModal'
 
 interface HeaderProps {
     onOpenAboutModal?: () => void
@@ -33,6 +34,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
     const [isSearchExpanded, setIsSearchExpanded] = useState(false)
     const [showAuthModal, setShowAuthModal] = useState(false)
     const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin')
+    const [showSettingsModal, setShowSettingsModal] = useState(false)
     const router = useRouter()
     const { user } = useAuth()
     useEffect(() => {
@@ -156,6 +158,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                         onOpenAboutModal={onOpenAboutModal}
                         onOpenTutorial={onOpenTutorial}
                         onOpenKeyboardShortcuts={onOpenKeyboardShortcuts}
+                        onOpenSettingsModal={() => setShowSettingsModal(true)}
                     />
                 </div>
 
@@ -329,6 +332,12 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                 isOpen={showAuthModal}
                 onClose={() => setShowAuthModal(false)}
                 initialMode={authModalMode}
+            />
+
+            {/* User Settings Modal */}
+            <UserSettingsModal
+                isOpen={showSettingsModal}
+                onClose={() => setShowSettingsModal(false)}
             />
         </>
     )
