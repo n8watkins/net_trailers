@@ -25,6 +25,8 @@ interface Props {
     documentaries: Content[]
     hasDataError?: boolean
     onOpenAboutModal?: () => void
+    onOpenTutorial?: () => void
+    onOpenKeyboardShortcuts?: () => void
 }
 const Home = ({
     trending,
@@ -36,6 +38,8 @@ const Home = ({
     documentaries,
     hasDataError = false,
     onOpenAboutModal,
+    onOpenTutorial,
+    onOpenKeyboardShortcuts,
 }: Props) => {
     const { loading, error, user } = useAuth()
     const router = useRouter()
@@ -129,7 +133,11 @@ const Home = ({
                 <meta name="viewport" content="width=device-width, initial-scale=1" />
                 <link rel="icon" href="/favicon.ico" />
             </Head>
-            <Header onOpenAboutModal={onOpenAboutModal} />
+            <Header
+                onOpenAboutModal={onOpenAboutModal}
+                onOpenTutorial={onOpenTutorial}
+                onOpenKeyboardShortcuts={onOpenKeyboardShortcuts}
+            />
             <main id="content" className="relative">
                 <div className="relative h-screen w-full">
                     <Banner trending={trending} />

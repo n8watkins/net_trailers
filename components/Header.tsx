@@ -15,21 +15,19 @@ import useAuth from '../hooks/useAuth'
 import AuthModal from './AuthModal'
 import AvatarDropdown from './AvatarDropdown'
 import GenresDropdown from './GenresDropdown'
-import TutorialModal from './TutorialModal'
-import KeyboardShortcutsModal from './KeyboardShortcutsModal'
 
 interface HeaderProps {
     onOpenAboutModal?: () => void
+    onOpenTutorial?: () => void
+    onOpenKeyboardShortcuts?: () => void
 }
 
-function Header({ onOpenAboutModal }: HeaderProps = {}) {
+function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: HeaderProps = {}) {
     const [isScrolled, setIsScrolled] = useState(false)
     const [showSearch, setShowSearch] = useState(false)
     const [showMobileMenu, setShowMobileMenu] = useState(false)
     const [isSearchExpanded, setIsSearchExpanded] = useState(false)
     const [showAuthModal, setShowAuthModal] = useState(false)
-    const [showTutorial, setShowTutorial] = useState(false)
-    const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
     const router = useRouter()
     const { user } = useAuth()
     useEffect(() => {
@@ -144,8 +142,8 @@ function Header({ onOpenAboutModal }: HeaderProps = {}) {
                 <AvatarDropdown
                     onOpenAuthModal={() => setShowAuthModal(true)}
                     onOpenAboutModal={onOpenAboutModal}
-                    onOpenTutorial={() => setShowTutorial(true)}
-                    onOpenKeyboardShortcuts={() => setShowKeyboardShortcuts(true)}
+                    onOpenTutorial={onOpenTutorial}
+                    onOpenKeyboardShortcuts={onOpenKeyboardShortcuts}
                 />
             </div>
 
@@ -283,15 +281,6 @@ function Header({ onOpenAboutModal }: HeaderProps = {}) {
 
             {/* Auth Modal */}
             <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
-
-            {/* Tutorial Modal */}
-            <TutorialModal isOpen={showTutorial} onClose={() => setShowTutorial(false)} />
-
-            {/* Keyboard Shortcuts Modal */}
-            <KeyboardShortcutsModal
-                isOpen={showKeyboardShortcuts}
-                onClose={() => setShowKeyboardShortcuts(false)}
-            />
         </header>
     )
 }

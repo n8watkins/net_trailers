@@ -123,14 +123,14 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                             className="bg-black text-white font-bold
                                  px-4 py-1.5 md:px-6 md:py-2
                                  text-xs md:text-sm
-                                 rounded-full hover:bg-red-700 hover:text-white hover:scale-[1.01]
+                                 rounded-full hover:bg-red-700 hover:text-white hover:scale-105
                                  transition-all duration-200
                                  flex-1 flex items-center justify-center gap-1.5
                                  shadow-lg hover:shadow-xl hover:shadow-red-600/20
                                  border-2 border-red-500 hover:border-red-600
                                  group/watch"
                         >
-                            <PlayIcon className="w-4 h-4 group-hover/watch:scale-105 transition-transform duration-200" />
+                            <PlayIcon className="w-4 h-4" />
                             <span>Watch</span>
                         </button>
                         <WatchLaterButton content={content} variant="thumbnail" />
