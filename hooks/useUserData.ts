@@ -2,7 +2,9 @@ import { useEffect } from 'react'
 import { useRecoilState } from 'recoil'
 import { userSessionState } from '../atoms/userDataAtom'
 import { UserDataService } from '../services/userDataService'
+import { UserListsService } from '../services/userListsService'
 import { Content } from '../typings'
+import { UserList, CreateListRequest, UpdateListRequest } from '../types/userLists'
 import useAuth from './useAuth'
 
 export default function useUserData() {
@@ -59,11 +61,23 @@ export default function useUserData() {
                     userId: undefined,
                     preferences: guestData,
                 })
+            } else if (!user && userSession.isGuest) {
+                // User logged out but still showing as guest - this is correct, do nothing
+            } else if (user && userSession.isGuest) {
+                // User is authenticated but session still shows as guest - force update
+                console.log('Forcing session update for authenticated user')
+                const userData = await UserDataService.loadUserData(user.uid)
+                setUserSession({
+                    isGuest: false,
+                    userId: user.uid,
+                    guestId: undefined,
+                    preferences: userData,
+                })
             }
         }
 
         initializeUserSession()
-    }, [user, setUserSession])
+    }, [user, setUserSession, userSession.isGuest, userSession.userId])
 
     // Save data whenever preferences change
     useEffect(() => {
@@ -82,14 +96,18 @@ export default function useUserData() {
         }
 
         // Only save if preferences exist (avoid initial empty saves)
-        if (userSession.preferences && (userSession.preferences.ratings.length > 0 || userSession.preferences.watchlist.length > 0)) {
+        if (
+            userSession.preferences &&
+            (userSession.preferences.ratings.length > 0 ||
+                userSession.preferences.watchlist.length > 0)
+        ) {
             saveUserData()
         }
     }, [userSession.isGuest, userSession.userId, userSession.preferences])
 
     // Add or update rating for content
-    const setRating = (contentId: number, rating: 'liked' | 'disliked' | 'loved', content?: Content) => {
-        setUserSession(prev => ({
+    const setRating = (contentId: number, rating: 'liked' | 'disliked', content?: Content) => {
+        setUserSession((prev) => ({
             ...prev,
             preferences: UserDataService.addRating(prev.preferences, contentId, rating, content),
         }))
@@ -97,7 +115,7 @@ export default function useUserData() {
 
     // Remove rating for content
     const removeRating = (contentId: number) => {
-        setUserSession(prev => ({
+        setUserSession((prev) => ({
             ...prev,
             preferences: UserDataService.removeRating(prev.preferences, contentId),
         }))
@@ -105,7 +123,7 @@ export default function useUserData() {
 
     // Add content to watchlist
     const addToWatchlist = (content: Content) => {
-        setUserSession(prev => ({
+        setUserSession((prev) => ({
             ...prev,
             preferences: UserDataService.addToWatchlist(prev.preferences, content),
         }))
@@ -113,7 +131,7 @@ export default function useUserData() {
 
     // Remove content from watchlist
     const removeFromWatchlist = (contentId: number) => {
-        setUserSession(prev => ({
+        setUserSession((prev) => ({
             ...prev,
             preferences: UserDataService.removeFromWatchlist(prev.preferences, contentId),
         }))
@@ -148,7 +166,7 @@ export default function useUserData() {
             await UserDataService.migrateGuestToAuth(userSession.preferences, user.uid)
 
             // Update session to authenticated user
-            setUserSession(prev => ({
+            setUserSession((prev) => ({
                 isGuest: false,
                 guestId: undefined,
                 userId: user.uid,
@@ -157,14 +175,71 @@ export default function useUserData() {
         }
     }
 
+    // User Lists Management
+    const createList = (request: CreateListRequest) => {
+        setUserSession((prev) => ({
+            ...prev,
+            preferences: UserListsService.createList(prev.preferences, request),
+        }))
+    }
+
+    const updateList = (request: UpdateListRequest) => {
+        setUserSession((prev) => ({
+            ...prev,
+            preferences: UserListsService.updateList(prev.preferences, request),
+        }))
+    }
+
+    const deleteList = (listId: string) => {
+        setUserSession((prev) => ({
+            ...prev,
+            preferences: UserListsService.deleteList(prev.preferences, listId),
+        }))
+    }
+
+    const addToList = (listId: string, content: Content) => {
+        setUserSession((prev) => ({
+            ...prev,
+            preferences: UserListsService.addToList(prev.preferences, { listId, content }),
+        }))
+    }
+
+    const removeFromList = (listId: string, contentId: number) => {
+        setUserSession((prev) => ({
+            ...prev,
+            preferences: UserListsService.removeFromList(prev.preferences, { listId, contentId }),
+        }))
+    }
+
+    const getList = (listId: string): UserList | null => {
+        return UserListsService.getList(userSession.preferences, listId)
+    }
+
+    const isContentInList = (listId: string, contentId: number): boolean => {
+        return UserListsService.isContentInList(userSession.preferences, listId, contentId)
+    }
+
+    const getListsContaining = (contentId: number): UserList[] => {
+        return UserListsService.getListsContaining(userSession.preferences, contentId)
+    }
+
+    const getDefaultLists = () => {
+        return UserListsService.getDefaultLists(userSession.preferences)
+    }
+
+    const getCustomLists = (): UserList[] => {
+        return UserListsService.getCustomLists(userSession.preferences)
+    }
+
     return {
         userSession,
-        isGuest: userSession.isGuest,
-        isAuthenticated: !!user && !userSession.isGuest,
+        isGuest: !user, // Simple: if no user, we're in guest mode
+        isAuthenticated: !!user, // Simple: if user exists, we're authenticated
         watchlist: userSession.preferences.watchlist,
         ratings: userSession.preferences.ratings,
+        userLists: userSession.preferences.userLists,
 
-        // Actions
+        // Legacy actions (for backward compatibility)
         setRating,
         removeRating,
         addToWatchlist,
@@ -173,5 +248,17 @@ export default function useUserData() {
         isInWatchlist,
         startGuestSession,
         migrateGuestData,
+
+        // New list management actions
+        createList,
+        updateList,
+        deleteList,
+        addToList,
+        removeFromList,
+        getList,
+        isContentInList,
+        getListsContaining,
+        getDefaultLists,
+        getCustomLists,
     }
 }

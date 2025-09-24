@@ -5,11 +5,19 @@ import {
     XMarkIcon,
     MinusCircleIcon,
     PlusCircleIcon,
+    EyeIcon,
+    EyeSlashIcon,
 } from '@heroicons/react/24/outline'
 
 export interface ToastMessage {
     id: string
-    type: 'success' | 'error' | 'watchlist-add' | 'watchlist-remove'
+    type:
+        | 'success'
+        | 'error'
+        | 'watchlist-add'
+        | 'watchlist-remove'
+        | 'content-hidden'
+        | 'content-shown'
     title: string
     message?: string
 }
@@ -46,7 +54,7 @@ const Toast: React.FC<ToastProps> = ({ toast, onClose, duration = 3000 }) => {
 
     return (
         <div
-            className={`bg-[#181818] border border-gray-600/50 rounded-lg shadow-xl p-4 min-w-80 max-w-2xl w-auto transition-all duration-300 ease-in-out ${
+            className={`bg-[#181818] border border-gray-600/50 rounded-lg shadow-xl p-4 sm:p-6 min-w-80 sm:min-w-96 max-w-sm sm:max-w-md lg:max-w-lg w-auto transition-all duration-300 ease-in-out ${
                 !isVisible
                     ? 'opacity-0 transform -translate-x-full'
                     : isExiting
@@ -57,18 +65,25 @@ const Toast: React.FC<ToastProps> = ({ toast, onClose, duration = 3000 }) => {
             <div className="flex items-start">
                 <div className="flex-shrink-0">
                     {toast.type === 'success' && (
-                        <CheckCircleIcon className="h-6 w-6 text-green-400" />
+                        <CheckCircleIcon className="h-7 w-7 text-green-400" />
                     )}
-                    {toast.type === 'error' && <XCircleIcon className="h-6 w-6 text-red-400" />}
+                    {toast.type === 'error' && <XCircleIcon className="h-7 w-7 text-red-400" />}
                     {toast.type === 'watchlist-add' && (
-                        <PlusCircleIcon className="h-6 w-6 text-blue-400" />
+                        <PlusCircleIcon className="h-7 w-7 text-blue-400" />
                     )}
                     {toast.type === 'watchlist-remove' && (
-                        <MinusCircleIcon className="h-6 w-6 text-orange-400" />
+                        <MinusCircleIcon className="h-7 w-7 text-orange-400" />
+                    )}
+                    {toast.type === 'content-hidden' && (
+                        <EyeSlashIcon className="h-7 w-7 text-red-400" />
+                    )}
+                    {toast.type === 'content-shown' && (
+                        <EyeIcon className="h-7 w-7 text-green-400" />
                     )}
                 </div>
-                <div className="ml-3 flex-1">
-                    <p className="text-sm font-medium text-white">{toast.title}</p>
+                <div className="ml-4 flex-1">
+                    <p className="text-base font-medium text-white">{toast.title}</p>
+                    {toast.message && <p className="text-sm text-gray-300 mt-1">{toast.message}</p>}
                 </div>
                 <div className="ml-4 flex-shrink-0 flex">
                     <button

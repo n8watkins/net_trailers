@@ -9,6 +9,7 @@ import GoogleAnalytics from '../components/Analytics'
 import { Analytics } from '@vercel/analytics/next'
 import ToastManager from '../components/ToastManager'
 import Layout from '../components/Layout'
+import ListSelectionModal from '../components/ListSelectionModal'
 
 function MyApp({ Component, pageProps }: AppProps) {
     return (
@@ -21,6 +22,7 @@ function MyApp({ Component, pageProps }: AppProps) {
                     <ErrorToast />
                     <DemoMessage />
                     <ToastManager />
+                    <ListSelectionModal />
                     <GoogleAnalytics />
                     <Analytics />
                 </ErrorBoundary>

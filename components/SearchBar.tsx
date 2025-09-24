@@ -319,11 +319,11 @@ export default function SearchBar({
             <div
                 className={`relative transition-all duration-300 ease-in-out ${
                     // Mobile: starts at icon width (48px), expands to full width when active
-                    // Desktop: always visible with responsive width
+                    // Desktop: always at full width
                     isMobileExpanded || 'md:block'
                         ? 'md:max-w-4xl md:w-full max-w-full w-full opacity-100'
-                        : 'md:max-w-xl md:w-full w-12 opacity-100'
-                } ${isFocused && 'md:max-w-4xl'}`}
+                        : 'md:max-w-4xl md:w-full w-12 opacity-100'
+                }`}
             >
                 {/* Mobile Search Icon (overlays on collapsed state) */}
                 <div

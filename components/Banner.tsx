@@ -6,7 +6,9 @@ import { BASE_URL } from '../constants/movie'
 import { PlayIcon } from '@heroicons/react/24/solid'
 import { InformationCircleIcon } from '@heroicons/react/24/outline'
 import { modalState, movieState, autoPlayWithSoundState } from '../atoms/modalAtom'
-import { useRecoilState } from 'recoil'
+import { useRecoilState, useRecoilValue } from 'recoil'
+import { userSessionState } from '../atoms/userDataAtom'
+import { filterDislikedContent } from '../utils/contentFilter'
 
 interface Props {
     trending: Content[]
@@ -17,6 +19,7 @@ function Banner({ trending }: Props) {
     const [showModal, setShowModal] = useRecoilState(modalState)
     const [currentContent, setCurrentContent] = useRecoilState(movieState)
     const [autoPlayWithSound, setAutoPlayWithSound] = useRecoilState(autoPlayWithSoundState)
+    const userSession = useRecoilValue(userSessionState)
 
     const [currentIndex, setCurrentIndex] = useState(0)
     const [carouselContent, setCarouselContent] = useState<Content[]>([])
@@ -26,28 +29,39 @@ function Banner({ trending }: Props) {
     // Select 5 random items for carousel and preload images
     useEffect(() => {
         if (trending.length > 0) {
-            // Fisher-Yates shuffle algorithm for unbiased randomization
-            const shuffled = [...trending]
-            for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1))
-                ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-            }
-            const selected = shuffled.slice(0, Math.min(5, trending.length))
-            setCarouselContent(selected)
+            // Filter out disliked content first
+            const filteredTrending = filterDislikedContent(
+                trending,
+                userSession.preferences.ratings
+            )
 
-            // Preload all carousel images
-            selected.forEach((content, index) => {
-                const imgUrl = content.backdrop_path || content.poster_path
-                if (imgUrl) {
-                    const img = new window.Image()
-                    img.onload = () => {
-                        setImagesLoaded((prev) => new Set(prev).add(index))
-                    }
-                    img.src = `${BASE_URL}/${imgUrl}`
+            if (filteredTrending.length > 0) {
+                // Fisher-Yates shuffle algorithm for unbiased randomization
+                const shuffled = [...filteredTrending]
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1))
+                    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
                 }
-            })
+                const selected = shuffled.slice(0, Math.min(5, filteredTrending.length))
+                setCarouselContent(selected)
+
+                // Preload all carousel images
+                selected.forEach((content, index) => {
+                    const imgUrl = content.backdrop_path || content.poster_path
+                    if (imgUrl) {
+                        const img = new window.Image()
+                        img.onload = () => {
+                            setImagesLoaded((prev) => new Set(prev).add(index))
+                        }
+                        img.src = `${BASE_URL}/${imgUrl}`
+                    }
+                })
+            } else {
+                // No content available after filtering
+                setCarouselContent([])
+            }
         }
-    }, [trending])
+    }, [trending, userSession.preferences.ratings])
 
     // Auto-advance carousel every 8 seconds with smooth transition
     useEffect(() => {

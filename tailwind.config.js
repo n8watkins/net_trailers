@@ -12,6 +12,7 @@ module.exports = {
                 scaleUp: 'scaleUp .75s',
                 yee: 'yee .75s',
                 boo: 'boo .75s',
+                heartBeat: 'heartBeat 0.8s ease-in-out',
             },
             keyframes: {
                 // bounceOnce: {
@@ -55,9 +56,26 @@ module.exports = {
                         transform: 'scale(1)',
                     },
                 },
+                heartBeat: {
+                    '0%': {
+                        transform: 'scale(1)',
+                    },
+                    '14%': {
+                        transform: 'scale(1.3)',
+                    },
+                    '28%': {
+                        transform: 'scale(1)',
+                    },
+                    '42%': {
+                        transform: 'scale(1.3)',
+                    },
+                    '70%': {
+                        transform: 'scale(1)',
+                    },
+                },
             },
             scale: {
-                '102': '1.02',
+                102: '1.02',
             },
 
             textShadow: {

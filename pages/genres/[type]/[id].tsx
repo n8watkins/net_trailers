@@ -8,12 +8,16 @@ import Modal from '../../../components/Modal'
 import ContentCard from '../../../components/ContentCard'
 import { Content } from '../../../typings'
 import { movieCache } from '../../../utils/apiCache'
+import { useRecoilValue } from 'recoil'
+import { userSessionState } from '../../../atoms/userDataAtom'
+import { filterDislikedContent } from '../../../utils/contentFilter'
 
 interface GenrePageProps {}
 
 const GenrePage: NextPage<GenrePageProps> = () => {
     const router = useRouter()
     const { type, id, name, title } = router.query
+    const userSession = useRecoilValue(userSessionState)
     const [content, setContent] = useState<Content[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -40,8 +44,9 @@ const GenrePage: NextPage<GenrePageProps> = () => {
     const pageTitle = Array.isArray(title) ? title[0] : title
 
     const contentToRender = useMemo(() => {
-        return content
-    }, [content])
+        // Filter out disliked content
+        return filterDislikedContent(content, userSession.preferences.ratings)
+    }, [content, userSession.preferences.ratings])
 
     // Load genre content with traditional infinite scroll
     const loadGenreContent = useCallback(
@@ -345,7 +350,7 @@ const GenrePage: NextPage<GenrePageProps> = () => {
                 <div className="flex flex-col space-y-8 py-16 md:space-y-12 md:py-20 lg:py-24">
                     {/* Header Section */}
                     <div className="space-y-6">
-                        <h1 className="text-3xl font-bold text-white md:text-4xl lg:text-5xl">
+                        <h1 className="text-3xl font-bold text-white md:text-4xl lg:text-5xl pt-8 sm:pt-10 md:pt-12">
                             {pageTitle ||
                                 `${genreName} ${mediaType === 'movie' ? 'Movies' : 'TV Shows'}`}
                         </h1>
@@ -361,10 +366,7 @@ const GenrePage: NextPage<GenrePageProps> = () => {
                             {/* Flex Layout */}
                             <div className="flex flex-wrap gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 md:gap-x-8 md:gap-y-12">
                                 {contentToRender.map((item) => (
-                                    <div
-                                        key={item.id}
-                                        className="flex-shrink-0 mb-12 sm:mb-16 md:mb-20"
-                                    >
+                                    <div key={item.id} className="">
                                         <ContentCard content={item} />
                                     </div>
                                 ))}

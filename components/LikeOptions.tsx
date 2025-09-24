@@ -7,13 +7,11 @@ import useUserData from '../hooks/useUserData'
 import { Content } from '../typings'
 import {
     HandThumbUpIcon as HandThumbUpIconOutline,
-    HeartIcon as HeartIconOutline,
     HandThumbDownIcon as HandThumbDownIconOutline,
 } from '@heroicons/react/24/outline'
 
 import {
     HandThumbUpIcon as HandThumbUpIconFilled,
-    HeartIcon as HeartIconFilled,
     HandThumbDownIcon as HandThumbDownIconFilled,
 } from '@heroicons/react/24/solid'
 
@@ -30,7 +28,6 @@ function LikeOptions() {
     const userRating = {
         disliked: currentRating?.rating === 'disliked',
         liked: currentRating?.rating === 'liked',
-        loved: currentRating?.rating === 'loved',
     }
 
     const rated = currentRating !== null
@@ -41,7 +38,7 @@ function LikeOptions() {
         setShowOptions(false)
     }
     // Handle rating changes
-    const handleRatingChange = (rating: 'liked' | 'disliked' | 'loved') => {
+    const handleRatingChange = (rating: 'liked' | 'disliked') => {
         if (!currentMovie) return
 
         // Show demo message for first-time users
@@ -58,7 +55,7 @@ function LikeOptions() {
             setRating(contentObj.id, rating, contentObj)
         }
     }
-    
+
     return (
         <div>
             <div className="relative flex z-20 items-center justify-center ">
@@ -68,11 +65,7 @@ function LikeOptions() {
                     <HandThumbUpIconFilled
                         className={`ratingIcon IconDimensions z-10 border-solid border-2 animate-yee border-white/30
                             ${showOptions ? 'border-transparent' : ''}
-                            ${
-                                rated
-                                    ? 'hover:bg-transparent '
-                                    : 'hover:bg-gray-800 '
-                            }`}
+                            ${rated ? 'hover:bg-transparent ' : 'hover:bg-gray-800 '}`}
                         onMouseEnter={handleMouseEnter}
                         onClick={() => handleRatingChange('liked')}
                     />
@@ -80,25 +73,9 @@ function LikeOptions() {
                     <HandThumbDownIconFilled
                         className={`ratingIcon IconDimensions z-10 border-solid border-2 animate-boo border-white/30
                             ${showOptions ? 'border-transparent' : ''}
-                            ${
-                                rated
-                                    ? 'hover:bg-transparent '
-                                    : 'hover:bg-gray-800 '
-                            }`}
+                            ${rated ? 'hover:bg-transparent ' : 'hover:bg-gray-800 '}`}
                         onMouseEnter={handleMouseEnter}
                         onClick={() => handleRatingChange('disliked')}
-                    />
-                ) : userRating.loved ? (
-                    <HeartIconFilled
-                        className={`ratingIcon IconDimensions z-10 border-solid border-2 animate-scaleUp border-white/30 text-red-400
-                            ${showOptions ? 'border-transparent' : ''}
-                            ${
-                                rated
-                                    ? 'hover:bg-transparent '
-                                    : 'hover:bg-gray-800 '
-                            }`}
-                        onMouseEnter={handleMouseEnter}
-                        onClick={() => handleRatingChange('loved')}
                     />
                 ) : (
                     <ToolTipMod title="I like this">
@@ -124,39 +101,21 @@ function LikeOptions() {
                         <ToolTipMod title="Not for me">
                             <HandThumbDownIconOutline
                                 className={`ratingIcon  IconDimensions top-1 left-[4.5rem]  ${
-                                    showOptions
-                                        ? 'translateLeft '
-                                        : 'text-transparent '
+                                    showOptions ? 'translateLeft ' : 'text-transparent '
                                 }`}
                                 onClick={() => handleRatingChange('disliked')}
                             />
                         </ToolTipMod>
                     )}
 
-                    {/* Show thumbs up when not currently selected and not showing loved */}
-                    {!userRating.liked && !userRating.loved && (
+                    {/* Show thumbs up when not currently selected */}
+                    {!userRating.liked && (
                         <ToolTipMod title="I like this">
                             <HandThumbUpIconOutline
                                 className={`ratingIcon  IconDimensions top-1 left-[2.2rem]  ${
-                                    showOptions
-                                        ? 'translateLeft '
-                                        : 'text-transparent '
+                                    showOptions ? 'translateLeft ' : 'text-transparent '
                                 }`}
                                 onClick={() => handleRatingChange('liked')}
-                            />
-                        </ToolTipMod>
-                    )}
-
-                    {/* Show heart when not currently selected */}
-                    {!userRating.loved && (
-                        <ToolTipMod title="Love this!">
-                            <HeartIconOutline
-                                className={`ratingIcon  IconDimensions top-1 right-[4.5rem]   ${
-                                    showOptions
-                                        ? 'translateRight '
-                                        : 'text-transparent '
-                                }`}
-                                onClick={() => handleRatingChange('loved')}
                             />
                         </ToolTipMod>
                     )}

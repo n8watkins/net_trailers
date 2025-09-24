@@ -2,7 +2,8 @@
     "private": true,
     "scripts": {
         "dev": "node scripts/dev-safe.js",
-        "dev:next": "next dev",
+        "dev:next": "CHOKIDAR_USEPOLLING=1 WATCHPACK_POLLING=true next dev",
+        "dev:turbo": "CHOKIDAR_USEPOLLING=1 WATCHPACK_POLLING=true next dev --turbo",
         "build": "next build",
         "start": "next start",
         "lint": "next lint",

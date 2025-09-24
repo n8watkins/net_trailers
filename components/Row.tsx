@@ -2,6 +2,9 @@ import React, { useRef, useState } from 'react'
 import { Content } from '../typings'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 import ContentCard from './ContentCard'
+import { useRecoilValue } from 'recoil'
+import { userSessionState } from '../atoms/userDataAtom'
+import { filterDislikedContent } from '../utils/contentFilter'
 
 interface Props {
     title: string
@@ -10,9 +13,13 @@ interface Props {
 function Row({ title, content }: Props) {
     const rowRef = useRef<HTMLDivElement>(null)
     const [isMoved, setIsMoved] = useState(false)
+    const userSession = useRecoilValue(userSessionState)
 
-    // Don't render if no content
-    if (!content || content.length === 0) {
+    // Filter out disliked content
+    const filteredContent = filterDislikedContent(content, userSession.preferences.ratings)
+
+    // Don't render if no content after filtering
+    if (!filteredContent || filteredContent.length === 0) {
         return null
     }
 
@@ -41,7 +48,7 @@ function Row({ title, content }: Props) {
     return (
         <div className="pb-4 sm:pb-6 md:pb-8">
             {/* Section Title */}
-            <h2 className="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold px-4 sm:px-6 md:px-8 lg:px-16 transition duration-200 hover:text-gray-300">
+            <h2 className="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold px-4 sm:px-6 md:px-8 lg:px-16 pt-8 sm:pt-10 md:pt-12 transition duration-200 hover:text-gray-300">
                 {title}
             </h2>
 
@@ -71,7 +78,7 @@ function Row({ title, content }: Props) {
                               py-8"
                     style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                 >
-                    {content.map((item) => (
+                    {filteredContent.map((item) => (
                         <div key={item.id} className="flex-shrink-0">
                             <ContentCard content={item} />
                         </div>

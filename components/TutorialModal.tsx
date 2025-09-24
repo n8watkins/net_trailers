@@ -53,10 +53,13 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
                                         <span className="text-[#e50914] font-bold">•</span>
                                         <div>
                                             <p className="font-semibold">
-                                                Rate movies with 👍 👎 ❤️
+                                                Rate and hide content 👍 👎 ❤️ 👁‍🗨
                                             </p>
                                             <p className="text-sm text-gray-400">
-                                                Click the buttons below movie posters to rate
+                                                Click rating buttons below posters or use the hide
+                                                button (👁‍🗨) in detail view. Hidden content
+                                                won&apos;t appear in recommendations and can be
+                                                managed in My Lists!
                                             </p>
                                         </div>
                                     </div>
@@ -108,9 +111,12 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
                                     <div className="flex items-start space-x-3">
                                         <span className="text-[#e50914] font-bold">•</span>
                                         <div>
-                                            <p className="font-semibold">Rate & Review Movies</p>
+                                            <p className="font-semibold">Rate & Hide Content</p>
                                             <p className="text-sm text-gray-400">
-                                                Your ratings sync across all devices
+                                                Rate with 👍 👎 ❤️ or hide content using the 👁‍🗨
+                                                button in detail view. Hidden content is filtered
+                                                from recommendations and stored in your Hidden list
+                                                in My Lists!
                                             </p>
                                         </div>
                                     </div>

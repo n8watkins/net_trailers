@@ -1,9 +1,10 @@
 import { atom } from 'recoil'
 import { Content } from '../typings'
+import { UserList, UserListsState } from '../types/userLists'
 
 export interface UserRating {
     contentId: number
-    rating: 'liked' | 'disliked' | 'loved'
+    rating: 'liked' | 'disliked'
     timestamp: number
     content?: Content // Store the full content object for display
 }
@@ -11,6 +12,7 @@ export interface UserRating {
 export interface UserPreferences {
     watchlist: Content[]
     ratings: UserRating[]
+    userLists: UserListsState
     lastActive: number
 }
 
@@ -29,6 +31,14 @@ const defaultUserSession: UserSession = {
     preferences: {
         watchlist: [],
         ratings: [],
+        userLists: {
+            lists: [],
+            defaultListIds: {
+                watchlist: '',
+                liked: '',
+                disliked: '',
+            },
+        },
         lastActive: Date.now(),
     },
 }

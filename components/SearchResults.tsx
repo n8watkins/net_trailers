@@ -5,6 +5,8 @@ import { useSearch } from '../hooks/useSearch'
 import { Content, isMovie, getTitle, getYear, getContentType } from '../typings'
 import { useRecoilState, useRecoilValue } from 'recoil'
 import { modalState, movieState, autoPlayWithSoundState } from '../atoms/modalAtom'
+import { userSessionState } from '../atoms/userDataAtom'
+import { filterDislikedContent } from '../utils/contentFilter'
 
 interface SearchResultsProps {
     className?: string
@@ -35,17 +37,24 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
     const [showModal, setShowModal] = useRecoilState(modalState)
     const [currentContent, setCurrentContent] = useRecoilState(movieState)
     const [autoPlayWithSound, setAutoPlayWithSound] = useRecoilState(autoPlayWithSoundState)
+    const userSession = useRecoilValue(userSessionState)
+
+    // Filter out disliked content from search results
+    const filteredResults = filterDislikedContent(results, userSession.preferences.ratings)
 
     // Keyboard navigation state (only for search page)
     const [selectedIndex, setSelectedIndex] = useState(-1)
     const resultRefs = useRef<(HTMLDivElement | null)[]>([])
     const containerRef = useRef<HTMLDivElement>(null)
 
-    const handleContentClick = (content: Content) => {
-        setAutoPlayWithSound(false) // More info mode - starts muted
-        setShowModal(true)
-        setCurrentContent(content)
-    }
+    const handleContentClick = useCallback(
+        (content: Content) => {
+            setAutoPlayWithSound(false) // More info mode - starts muted
+            setShowModal(true)
+            setCurrentContent(content)
+        },
+        [setAutoPlayWithSound, setShowModal, setCurrentContent]
+    )
 
     // Scroll selected element into view
     const scrollToSelected = (index: number) => {
@@ -62,7 +71,7 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
     const handleKeyDown = useCallback(
         (e: KeyboardEvent) => {
             // Don't handle keyboard events if modal is open or not on search page
-            if (!isOnSearchPage || results.length === 0 || showModal) return
+            if (!isOnSearchPage || filteredResults.length === 0 || showModal) return
 
             // Don't interfere with dropdown/select interactions
             const target = e.target as HTMLElement
@@ -78,7 +87,7 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
             if (e.key === 'ArrowDown') {
                 e.preventDefault()
                 setSelectedIndex((prev) => {
-                    const newIndex = prev < results.length - 1 ? prev + 1 : prev
+                    const newIndex = prev < filteredResults.length - 1 ? prev + 1 : prev
                     if (newIndex !== prev) {
                         scrollToSelected(newIndex)
                     }
@@ -95,7 +104,7 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
                 })
             } else if (e.key === 'Enter' && selectedIndex >= 0) {
                 e.preventDefault()
-                const selectedContent = results[selectedIndex]
+                const selectedContent = filteredResults[selectedIndex]
                 if (selectedContent) {
                     handleContentClick(selectedContent)
                 }
@@ -104,7 +113,7 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
                 setSelectedIndex(-1)
             }
         },
-        [isOnSearchPage, results, selectedIndex, showModal, handleContentClick]
+        [isOnSearchPage, filteredResults, selectedIndex, showModal, handleContentClick]
     )
 
     // Set up keyboard event listeners
@@ -118,7 +127,7 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
     // Reset selection when results change
     useEffect(() => {
         setSelectedIndex(-1)
-    }, [results])
+    }, [filteredResults])
 
     if (!hasSearched && !isLoading && results.length === 0) {
         return null
@@ -146,17 +155,46 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
         )
     }
 
-    if (isEmpty) {
+    if (isEmpty || (hasSearched && filteredResults.length === 0 && results.length > 0)) {
         return (
             <div className={`${className} flex flex-col items-center justify-center py-12`}>
                 <div className="text-center">
-                    <div className="text-gray-400 text-lg mb-2">No results found</div>
-                    <div className="text-gray-500">Try adjusting your search terms or filters</div>
-                    {query && (
-                        <div className="mt-4 text-sm text-gray-400">
-                            Searched for:{' '}
-                            <span className="text-white font-medium">&quot;{query}&quot;</span>
-                        </div>
+                    {isEmpty ? (
+                        <>
+                            <div className="text-gray-400 text-lg mb-2">No results found</div>
+                            <div className="text-gray-500">
+                                Try adjusting your search terms or filters
+                            </div>
+                            {query && (
+                                <div className="mt-4 text-sm text-gray-400">
+                                    Searched for:{' '}
+                                    <span className="text-white font-medium">
+                                        &quot;{query}&quot;
+                                    </span>
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <>
+                            <div className="text-gray-400 text-lg mb-2">
+                                All results filtered out
+                            </div>
+                            <div className="text-gray-500">
+                                All search results were previously disliked and have been hidden
+                            </div>
+                            {query && (
+                                <div className="mt-4 text-sm text-gray-400">
+                                    Searched for:{' '}
+                                    <span className="text-white font-medium">
+                                        &quot;{query}&quot;
+                                    </span>
+                                    <br />
+                                    <span className="text-xs">
+                                        Found {results.length} results, but all were filtered out
+                                    </span>
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             </div>
@@ -166,7 +204,7 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
     return (
         <div className={className}>
             {/* Results Header */}
-            {hasSearched && !isLoading && results.length > 0 && (
+            {hasSearched && !isLoading && filteredResults.length > 0 && (
                 <div className="mb-6 animate-fade-in">
                     <h2 className="text-xl font-semibold text-white mb-2">
                         Search Results
@@ -215,7 +253,7 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
 
             {/* Results List - Horizontal Row Layout */}
             <div className="space-y-2 animate-fade-in" ref={containerRef}>
-                {results.map((item: Content, index) => (
+                {filteredResults.map((item: Content, index) => (
                     <div
                         key={`${item.id}-${index}`}
                         ref={(el) => {
@@ -306,7 +344,7 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
             </div>
 
             {/* Loading More */}
-            {(isLoading || isLoadingAll) && results.length > 0 && (
+            {(isLoading || isLoadingAll) && filteredResults.length > 0 && (
                 <div className="flex justify-center py-8">
                     <div className="flex items-center gap-2">
                         <div className="animate-spin h-8 w-8 border-2 border-red-500 border-t-transparent rounded-full"></div>
@@ -332,7 +370,7 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
             )}
 
             {/* Initial Loading */}
-            {isLoading && results.length === 0 && (
+            {isLoading && filteredResults.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-12">
                     <div className="animate-spin h-8 w-8 border-2 border-red-500 border-t-transparent rounded-full mb-4"></div>
                     <div className="text-gray-400">Searching...</div>

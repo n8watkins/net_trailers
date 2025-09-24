@@ -2,6 +2,7 @@ import { Content } from '../typings'
 import { UserRating, UserPreferences, UserSession } from '../atoms/userDataAtom'
 import { doc, setDoc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore'
 import { db } from '../firebase'
+import { UserListsService } from './userListsService'
 
 const GUEST_STORAGE_KEY = 'nettrailer_guest_data'
 const GUEST_ID_KEY = 'nettrailer_guest_id'
@@ -27,18 +28,44 @@ export class UserDataService {
     // Load user data for guest users
     static loadGuestData(): UserPreferences {
         if (typeof window === 'undefined') {
-            return { watchlist: [], ratings: [], lastActive: Date.now() }
+            const defaultPrefs = {
+                watchlist: [],
+                ratings: [],
+                userLists: UserListsService.initializeDefaultLists(),
+                lastActive: Date.now(),
+            }
+            return defaultPrefs
         }
 
         try {
             const data = localStorage.getItem(GUEST_STORAGE_KEY)
             if (!data) {
-                return { watchlist: [], ratings: [], lastActive: Date.now() }
+                const defaultPrefs = {
+                    watchlist: [],
+                    ratings: [],
+                    userLists: UserListsService.initializeDefaultLists(),
+                    lastActive: Date.now(),
+                }
+                return defaultPrefs
             }
-            return JSON.parse(data)
+
+            const parsedData = JSON.parse(data)
+
+            // Migrate old data structure if needed
+            if (!parsedData.userLists) {
+                return UserListsService.migrateOldPreferences(parsedData)
+            }
+
+            return parsedData
         } catch (error) {
             console.error('Failed to load guest data:', error)
-            return { watchlist: [], ratings: [], lastActive: Date.now() }
+            const defaultPrefs = {
+                watchlist: [],
+                ratings: [],
+                userLists: UserListsService.initializeDefaultLists(),
+                lastActive: Date.now(),
+            }
+            return defaultPrefs
         }
     }
 
@@ -61,10 +88,10 @@ export class UserDataService {
     static addRating(
         preferences: UserPreferences,
         contentId: number,
-        rating: 'liked' | 'disliked' | 'loved',
+        rating: 'liked' | 'disliked',
         content?: Content
     ): UserPreferences {
-        const existingRatingIndex = preferences.ratings.findIndex(r => r.contentId === contentId)
+        const existingRatingIndex = preferences.ratings.findIndex((r) => r.contentId === contentId)
 
         const newRating: UserRating = {
             contentId,
@@ -93,13 +120,13 @@ export class UserDataService {
     static removeRating(preferences: UserPreferences, contentId: number): UserPreferences {
         return {
             ...preferences,
-            ratings: preferences.ratings.filter(r => r.contentId !== contentId),
+            ratings: preferences.ratings.filter((r) => r.contentId !== contentId),
         }
     }
 
     // Add to watchlist
     static addToWatchlist(preferences: UserPreferences, content: Content): UserPreferences {
-        const isAlreadyInWatchlist = preferences.watchlist.some(item => item.id === content.id)
+        const isAlreadyInWatchlist = preferences.watchlist.some((item) => item.id === content.id)
         if (isAlreadyInWatchlist) return preferences
 
         return {
@@ -112,18 +139,18 @@ export class UserDataService {
     static removeFromWatchlist(preferences: UserPreferences, contentId: number): UserPreferences {
         return {
             ...preferences,
-            watchlist: preferences.watchlist.filter(item => item.id !== contentId),
+            watchlist: preferences.watchlist.filter((item) => item.id !== contentId),
         }
     }
 
     // Get rating for specific content
     static getRating(preferences: UserPreferences, contentId: number): UserRating | null {
-        return preferences.ratings.find(r => r.contentId === contentId) || null
+        return preferences.ratings.find((r) => r.contentId === contentId) || null
     }
 
     // Check if content is in watchlist
     static isInWatchlist(preferences: UserPreferences, contentId: number): boolean {
-        return preferences.watchlist.some(item => item.id === contentId)
+        return preferences.watchlist.some((item) => item.id === contentId)
     }
 
     // Load user data for authenticated users
@@ -133,25 +160,58 @@ export class UserDataService {
 
             if (userDoc.exists()) {
                 const data = userDoc.data()
-                return {
+                let preferences: UserPreferences = {
                     watchlist: data.watchlist || [],
                     ratings: data.ratings || [],
+                    userLists: data.userLists || UserListsService.initializeDefaultLists(),
                     lastActive: data.lastActive || Date.now(),
                 }
+
+                // Migrate old data structure if needed
+                if (!data.userLists) {
+                    preferences = UserListsService.migrateOldPreferences(preferences)
+                    // Save migrated data back to Firebase
+                    try {
+                        await this.saveUserData(userId, preferences)
+                    } catch (saveError) {
+                        console.warn('Failed to save migrated data (offline?):', saveError)
+                    }
+                }
+
+                return preferences
             } else {
                 // Create default user document
                 const defaultPreferences: UserPreferences = {
                     watchlist: [],
                     ratings: [],
+                    userLists: UserListsService.initializeDefaultLists(),
                     lastActive: Date.now(),
                 }
-                await this.saveUserData(userId, defaultPreferences)
+                // Try to save, but don't fail if offline
+                try {
+                    await this.saveUserData(userId, defaultPreferences)
+                } catch (saveError) {
+                    console.warn('Failed to create user document (offline?):', saveError)
+                }
                 return defaultPreferences
             }
         } catch (error) {
-            console.error('Failed to load user data:', error)
+            const errorMessage = error instanceof Error ? error.message : String(error)
+
+            // Check if error is due to offline status
+            if (errorMessage.includes('offline') || errorMessage.includes('network')) {
+                console.warn('Firebase is offline, using default preferences:', errorMessage)
+            } else {
+                console.error('Failed to load user data:', error)
+            }
+
             // Return default preferences if Firebase fails
-            return { watchlist: [], ratings: [], lastActive: Date.now() }
+            return {
+                watchlist: [],
+                ratings: [],
+                userLists: UserListsService.initializeDefaultLists(),
+                lastActive: Date.now(),
+            }
         }
     }
 
@@ -164,13 +224,25 @@ export class UserDataService {
             }
             await setDoc(doc(db, 'users', userId), dataToSave, { merge: true })
         } catch (error) {
-            console.error('Failed to save user data to Firebase:', error)
-            throw error
+            const errorMessage = error instanceof Error ? error.message : String(error)
+
+            // Check if error is due to offline status
+            if (errorMessage.includes('offline') || errorMessage.includes('network')) {
+                console.warn('Firebase is offline, data will sync when online:', errorMessage)
+                // Don't throw error for offline issues to prevent app crashes
+                return
+            } else {
+                console.error('Failed to save user data to Firebase:', error)
+                throw error
+            }
         }
     }
 
     // Migrate guest data to authenticated user
-    static async migrateGuestToAuth(guestPreferences: UserPreferences, userId: string): Promise<void> {
+    static async migrateGuestToAuth(
+        guestPreferences: UserPreferences,
+        userId: string
+    ): Promise<void> {
         try {
             // Load existing user data
             const existingData = await this.loadUserData(userId)
@@ -179,6 +251,7 @@ export class UserDataService {
             const mergedPreferences: UserPreferences = {
                 watchlist: this.mergeWatchlists(existingData.watchlist, guestPreferences.watchlist),
                 ratings: this.mergeRatings(existingData.ratings, guestPreferences.ratings),
+                userLists: guestPreferences.userLists || UserListsService.initializeDefaultLists(),
                 lastActive: Date.now(),
             }
 
@@ -190,7 +263,6 @@ export class UserDataService {
                 localStorage.removeItem(GUEST_STORAGE_KEY)
                 localStorage.removeItem(GUEST_ID_KEY)
             }
-
         } catch (error) {
             console.error('Failed to migrate guest data:', error)
             throw error
@@ -201,8 +273,8 @@ export class UserDataService {
     private static mergeWatchlists(existing: Content[], guest: Content[]): Content[] {
         const merged = [...existing]
 
-        guest.forEach(guestItem => {
-            const exists = existing.some(item => item.id === guestItem.id)
+        guest.forEach((guestItem) => {
+            const exists = existing.some((item) => item.id === guestItem.id)
             if (!exists) {
                 merged.push(guestItem)
             }
@@ -215,8 +287,8 @@ export class UserDataService {
     private static mergeRatings(existing: UserRating[], guest: UserRating[]): UserRating[] {
         const merged = [...existing]
 
-        guest.forEach(guestRating => {
-            const existingIndex = merged.findIndex(r => r.contentId === guestRating.contentId)
+        guest.forEach((guestRating) => {
+            const existingIndex = merged.findIndex((r) => r.contentId === guestRating.contentId)
 
             if (existingIndex >= 0) {
                 // Replace if guest rating is newer

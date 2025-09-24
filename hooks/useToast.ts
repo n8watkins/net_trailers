@@ -34,6 +34,14 @@ export const useToast = () => {
         addToast({ type: 'watchlist-remove', title, message })
     }
 
+    const showContentHidden = (title: string, message?: string) => {
+        addToast({ type: 'content-hidden', title, message })
+    }
+
+    const showContentShown = (title: string, message?: string) => {
+        addToast({ type: 'content-shown', title, message })
+    }
+
     return {
         toasts,
         addToast,
@@ -42,5 +50,7 @@ export const useToast = () => {
         showError,
         showWatchlistAdd,
         showWatchlistRemove,
+        showContentHidden,
+        showContentShown,
     }
 }
