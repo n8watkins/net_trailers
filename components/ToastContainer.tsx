@@ -7,10 +7,14 @@ interface ToastContainerProps {
 }
 
 const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onRemoveToast }) => {
-    if (toasts.length === 0) return null
+    console.log('🏠 ToastContainer render - toasts:', toasts)
+    if (toasts.length === 0) {
+        console.log('🏠 ToastContainer: No toasts to display')
+        return null
+    }
 
     return (
-        <div className="fixed top-4 right-4 sm:right-8 md:right-12 lg:right-16 xl:right-20 z-[9999] space-y-4 pointer-events-none max-w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-4rem)] md:max-w-md lg:max-w-lg">
+        <div className="fixed top-4 right-4 sm:right-8 md:right-10 lg:right-12 xl:right-16 z-[99999] space-y-4 pointer-events-none max-w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-4rem)] md:max-w-md lg:max-w-lg">
             {toasts.map((toast) => (
                 <div
                     key={toast.id}

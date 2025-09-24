@@ -47,15 +47,31 @@ function WatchLaterButton({ content, variant = 'modal', className = '' }: WatchL
 
     const handleQuickWatchlist = (e: React.MouseEvent) => {
         e.stopPropagation()
+        console.log('🚀 handleQuickWatchlist clicked for:', getTitle(content))
+        console.log('📋 isInWatchlist:', isInWatchlist)
+        console.log('📋 watchlist exists:', !!watchlist)
+        console.log('📋 watchlist details:', watchlist)
+        console.log('📋 defaultLists:', getDefaultLists())
+        console.log('🔐 User state check needed - checking if authenticated vs guest')
         try {
             if (isInWatchlist && watchlist) {
+                console.log('🗑️ Removing from watchlist...')
+                console.log('🗑️ About to call removeFromWatchlist with ID:', content.id)
                 removeFromWatchlist(content.id)
+                console.log('📢 Calling showWatchlistRemove')
                 showWatchlistRemove(`Removed ${getTitle(content)} from My List`)
             } else if (watchlist) {
+                console.log('➕ Adding to watchlist...')
+                console.log('➕ About to call addToWatchlist with content:', content)
                 addToWatchlist(content)
+                console.log('📢 Calling showWatchlistAdd')
                 showWatchlistAdd(`Added ${getTitle(content)} to My List`)
+            } else {
+                console.log('❌ No watchlist found! This might be the issue.')
+                console.log('❌ User might not be properly authenticated or guest mode not set up')
             }
         } catch (error) {
+            console.error('❌ Error in handleQuickWatchlist:', error)
             showError('Error', 'Failed to update list. Please try again.')
         }
     }

@@ -57,12 +57,22 @@ function ListDropdown({
     if (!isOpen) return null
 
     const handleWatchlistToggle = () => {
+        console.log('📋 ListDropdown handleWatchlistToggle called')
+        console.log('📋 Content:', getTitle(content))
+        console.log('📋 isInWatchlist:', isInWatchlist)
+        console.log('📋 watchlist exists:', !!watchlist)
         if (isInWatchlist && watchlist) {
+            console.log('📋 Removing from list via removeFromList...')
             removeFromList(watchlist.id, content.id)
+            console.log('📋 Calling showWatchlistRemove')
             showWatchlistRemove(`Removed ${getTitle(content)} from My List`)
         } else if (watchlist) {
+            console.log('📋 Adding to list via addToList...')
             addToList(watchlist.id, content)
+            console.log('📋 Calling showWatchlistAdd')
             showWatchlistAdd(`Added ${getTitle(content)} to My List`)
+        } else {
+            console.log('📋❌ No watchlist found in ListDropdown!')
         }
         onClose()
     }

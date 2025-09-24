@@ -209,18 +209,29 @@ function Modal() {
 
     // Inline dropdown helper functions
     const handleWatchlistToggle = () => {
-        if (!currentMovie) return
+        console.log('🎬 Modal handleWatchlistToggle called')
+        if (!currentMovie) {
+            console.log('🎬 No currentMovie, returning')
+            return
+        }
+        console.log('🎬 Current movie:', getTitle(currentMovie as Content))
         const defaultLists = getDefaultLists()
         const watchlist = defaultLists.watchlist
         const isInWatchlist = watchlist
             ? watchlist.items.some((item) => item.id === currentMovie.id)
             : false
 
+        console.log('🎬 isInWatchlist:', isInWatchlist, 'watchlist exists:', !!watchlist)
+
         if (isInWatchlist && watchlist) {
+            console.log('🎬 Removing from watchlist...')
             removeFromList(watchlist.id, currentMovie.id)
+            console.log('🎬 Calling showWatchlistRemove')
             showWatchlistRemove(`Removed ${getTitle(currentMovie as Content)} from My List`)
         } else if (watchlist) {
+            console.log('🎬 Adding to watchlist...')
             addToList(watchlist.id, currentMovie as Content)
+            console.log('🎬 Calling showWatchlistAdd')
             showWatchlistAdd(`Added ${getTitle(currentMovie as Content)} to My List`)
         }
     }
@@ -634,16 +645,58 @@ function Modal() {
                                                             }
 
                                                             const handleListToggle = () => {
+                                                                console.log(
+                                                                    '🎬 Modal handleListToggle called for list:',
+                                                                    list.name
+                                                                )
+                                                                console.log(
+                                                                    '🎬 isInList:',
+                                                                    isInList
+                                                                )
                                                                 if (isInList) {
+                                                                    console.log(
+                                                                        '🎬 Removing from list...'
+                                                                    )
                                                                     removeFromList(
                                                                         list.id,
                                                                         currentMovie.id
                                                                     )
+                                                                    // Show appropriate toast based on list type
+                                                                    if (
+                                                                        list.name === 'My List' ||
+                                                                        list.name === 'Watchlist'
+                                                                    ) {
+                                                                        showWatchlistRemove(
+                                                                            `Removed ${getTitle(currentMovie as Content)} from ${list.name}`
+                                                                        )
+                                                                    } else {
+                                                                        showSuccess(
+                                                                            'Removed from list',
+                                                                            `Removed ${getTitle(currentMovie as Content)} from "${list.name}"`
+                                                                        )
+                                                                    }
                                                                 } else {
+                                                                    console.log(
+                                                                        '🎬 Adding to list...'
+                                                                    )
                                                                     addToList(
                                                                         list.id,
                                                                         currentMovie as Content
                                                                     )
+                                                                    // Show appropriate toast based on list type
+                                                                    if (
+                                                                        list.name === 'My List' ||
+                                                                        list.name === 'Watchlist'
+                                                                    ) {
+                                                                        showWatchlistAdd(
+                                                                            `Added ${getTitle(currentMovie as Content)} to ${list.name}`
+                                                                        )
+                                                                    } else {
+                                                                        showSuccess(
+                                                                            'Added to list',
+                                                                            `Added ${getTitle(currentMovie as Content)} to "${list.name}"`
+                                                                        )
+                                                                    }
                                                                 }
                                                             }
 

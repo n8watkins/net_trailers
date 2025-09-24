@@ -29,6 +29,7 @@ interface ToastProps {
 }
 
 const Toast: React.FC<ToastProps> = ({ toast, onClose, duration = 3000 }) => {
+    console.log('🍞 Toast component rendering:', toast)
     const [isVisible, setIsVisible] = useState(false)
     const [isExiting, setIsExiting] = useState(false)
 
