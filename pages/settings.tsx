@@ -3,7 +3,6 @@ import Head from 'next/head'
 import Image from 'next/image'
 import { useRouter } from 'next/router'
 import {
-    XMarkIcon,
     EnvelopeIcon,
     KeyIcon,
     ArrowUpTrayIcon,
@@ -11,10 +10,10 @@ import {
     UserCircleIcon,
     TrashIcon,
     ChevronRightIcon,
-    CogIcon,
 } from '@heroicons/react/24/outline'
 import useAuth from '../hooks/useAuth'
 import AccountManagement from '../components/AccountManagement'
+import Header from '../components/Header'
 
 type SettingsSection = 'profile' | 'email' | 'password' | 'upload' | 'share' | 'account'
 
@@ -89,13 +88,13 @@ const Settings: React.FC = () => {
     const getPriorityColor = (priority: string) => {
         switch (priority) {
             case 'danger':
-                return 'border-l-red-500 bg-red-500/5'
+                return 'border-l-red-600'
             case 'high':
-                return 'border-l-orange-500 bg-orange-500/5'
+                return 'border-l-orange-500'
             case 'medium':
-                return 'border-l-blue-500 bg-blue-500/5'
+                return 'border-l-blue-500'
             default:
-                return 'border-l-gray-500 bg-gray-500/5'
+                return 'border-l-[#454545]'
         }
     }
 
@@ -110,449 +109,439 @@ const Settings: React.FC = () => {
             case 'medium':
                 return 'text-blue-500'
             default:
-                return 'text-gray-400'
+                return 'text-[#b3b3b3]'
         }
     }
 
     if (!user) {
         return (
-            <div className="min-h-screen bg-[#141414] flex items-center justify-center">
-                <div className="text-center">
-                    <h1 className="text-2xl font-semibold text-white mb-4">Sign In Required</h1>
-                    <p className="text-gray-400 mb-6">
-                        You need to be signed in to access settings.
-                    </p>
-                    <button
-                        onClick={() => router.push('/')}
-                        className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors duration-200"
-                    >
-                        Go Home
-                    </button>
-                </div>
+            <div className="relative min-h-screen overflow-x-clip">
+                <Head>
+                    <title>Settings - NetTrailer</title>
+                    <meta name="description" content="Manage your NetTrailer account settings" />
+                </Head>
+                <Header />
+                <main id="content" className="relative">
+                    <div className="flex items-center justify-center min-h-screen pt-20">
+                        <div className="text-center">
+                            <h1 className="text-2xl font-semibold text-white mb-4">
+                                Sign In Required
+                            </h1>
+                            <p className="text-[#b3b3b3] mb-6">
+                                You need to be signed in to access settings.
+                            </p>
+                            <button
+                                onClick={() => router.push('/')}
+                                className="bannerButton bg-white text-black hover:bg-white/80"
+                            >
+                                Go Home
+                            </button>
+                        </div>
+                    </div>
+                </main>
             </div>
         )
     }
 
     return (
-        <>
+        <div className="relative min-h-screen overflow-x-clip">
             <Head>
                 <title>Settings - NetTrailer</title>
                 <meta name="description" content="Manage your NetTrailer account settings" />
             </Head>
 
-            <div className="min-h-screen bg-[#141414]">
-                {/* Header */}
-                <div className="bg-[#1a1a1a] border-b border-gray-800">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="flex items-center justify-between h-16">
-                            <div className="flex items-center space-x-4">
-                                <button
-                                    onClick={() => router.back()}
-                                    className="text-gray-400 hover:text-white transition-colors duration-200"
-                                >
-                                    <XMarkIcon className="w-6 h-6" />
-                                </button>
-                                <div className="flex items-center space-x-3">
-                                    <CogIcon className="w-8 h-8 text-red-500" />
-                                    <div>
-                                        <h1 className="text-2xl font-bold text-white">Settings</h1>
-                                        <p className="text-gray-400 text-sm">
-                                            Manage your account preferences
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
+            <Header />
 
-                            {/* User info in header */}
-                            <div className="flex items-center space-x-3">
-                                <UserCircleIcon className="w-8 h-8 text-gray-400" />
-                                <div className="text-right">
-                                    <p className="text-white font-medium">{getUserName()}</p>
-                                    <p className="text-gray-400 text-sm">{user?.email}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    <div className="flex gap-8">
-                        {/* Sidebar */}
-                        <div className="w-80 flex-shrink-0">
-                            <div className="bg-[#1a1a1a] rounded-xl border border-gray-800">
-                                <div className="p-6 border-b border-gray-800">
-                                    <h2 className="text-lg font-semibold text-white">Settings</h2>
-                                    <p className="text-gray-400 text-sm mt-1">
-                                        Choose what you&apos;d like to manage
-                                    </p>
-                                </div>
-
-                                <nav className="p-4">
-                                    <ul className="space-y-2">
-                                        {sidebarItems.map((item) => {
-                                            const isActive = activeSection === item.id
-                                            const Icon = item.icon
-
-                                            return (
-                                                <li key={item.id}>
-                                                    <button
-                                                        onClick={() => setActiveSection(item.id)}
-                                                        className={`w-full flex items-center p-4 rounded-lg border-l-4 transition-all duration-200 text-left ${
-                                                            isActive
-                                                                ? 'bg-red-600/20 border-l-red-500 shadow-lg'
-                                                                : `hover:bg-gray-800/50 ${getPriorityColor(item.priority)}`
-                                                        }`}
-                                                    >
-                                                        <Icon
-                                                            className={`w-6 h-6 mr-4 ${getIconColor(item.priority, isActive)}`}
-                                                        />
-                                                        <div className="flex-1">
-                                                            <h3
-                                                                className={`font-medium ${isActive ? 'text-white' : 'text-gray-200'}`}
-                                                            >
-                                                                {item.title}
-                                                            </h3>
-                                                            <p className="text-gray-400 text-sm mt-1">
-                                                                {item.description}
-                                                            </p>
-                                                        </div>
-                                                        <ChevronRightIcon
-                                                            className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-500'}`}
-                                                        />
-                                                    </button>
-                                                </li>
-                                            )
-                                        })}
-                                    </ul>
-                                </nav>
-                            </div>
+            <main id="content" className="relative">
+                {/* Settings Page Content */}
+                <div className="pt-20 min-h-screen">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        {/* Page Title */}
+                        <div className="mb-8">
+                            <h1 className="text-4xl font-bold text-white mb-2">Settings</h1>
+                            <p className="text-[#b3b3b3]">
+                                Manage your account preferences and data
+                            </p>
                         </div>
 
-                        {/* Main Content */}
-                        <div className="flex-1">
-                            <div className="bg-[#1a1a1a] rounded-xl border border-gray-800">
-                                {activeSection === 'profile' && (
-                                    <div className="p-8">
-                                        <div className="mb-6">
-                                            <h2 className="text-2xl font-bold text-white mb-2">
-                                                Profile Information
-                                            </h2>
-                                            <p className="text-gray-400">
-                                                Manage your profile and account information.
-                                            </p>
-                                        </div>
+                        <div className="flex flex-col lg:flex-row gap-8">
+                            {/* Sidebar */}
+                            <div className="lg:w-80 flex-shrink-0">
+                                <div className="bg-[#141414] rounded-lg border border-[#313131]">
+                                    <nav className="p-6">
+                                        <ul className="space-y-2">
+                                            {sidebarItems.map((item) => {
+                                                const isActive = activeSection === item.id
+                                                const Icon = item.icon
 
-                                        <div className="space-y-6">
-                                            {/* Profile Picture */}
-                                            <div className="flex items-center space-x-6">
-                                                {user.photoURL ? (
-                                                    <Image
-                                                        src={user.photoURL}
-                                                        alt="Profile"
-                                                        width={96}
-                                                        height={96}
-                                                        className="rounded-full object-cover border-4 border-gray-700"
-                                                    />
-                                                ) : (
-                                                    <div className="w-24 h-24 bg-red-600 rounded-full flex items-center justify-center border-4 border-gray-700">
-                                                        <span className="text-white font-bold text-2xl">
-                                                            {getUserName().charAt(0).toUpperCase()}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                                <div>
-                                                    <h3 className="text-xl font-semibold text-white">
-                                                        {getUserName()}
-                                                    </h3>
-                                                    <p className="text-gray-400">{user.email}</p>
-                                                    <p className="text-gray-500 text-sm mt-1">
-                                                        Member since{' '}
-                                                        {new Date(
-                                                            user.metadata?.creationTime ||
-                                                                Date.now()
-                                                        ).toLocaleDateString()}
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            {/* Display Name */}
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                                    Display Name
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    value={user.displayName || ''}
-                                                    placeholder="Enter your display name"
-                                                    className="w-full max-w-md px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                                                />
-                                            </div>
-
-                                            {/* Email (read-only) */}
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                                    Email Address
-                                                </label>
-                                                <input
-                                                    type="email"
-                                                    value={user.email || ''}
-                                                    disabled
-                                                    className="w-full max-w-md px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-gray-400 cursor-not-allowed"
-                                                />
-                                                <p className="text-gray-500 text-sm mt-1">
-                                                    To change your email, use the Email Settings
-                                                    section
-                                                </p>
-                                            </div>
-
-                                            <div className="pt-4">
-                                                <button className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 font-medium">
-                                                    Save Changes
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {activeSection === 'email' && (
-                                    <div className="p-8">
-                                        <div className="mb-6">
-                                            <h2 className="text-2xl font-bold text-white mb-2">
-                                                Email Settings
-                                            </h2>
-                                            <p className="text-gray-400">
-                                                Update your email address for your account.
-                                            </p>
-                                        </div>
-
-                                        <div className="space-y-6 max-w-md">
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                                    Current Email
-                                                </label>
-                                                <input
-                                                    type="email"
-                                                    value={user?.email || ''}
-                                                    disabled
-                                                    className="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-gray-400 cursor-not-allowed"
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                                    New Email Address
-                                                </label>
-                                                <input
-                                                    type="email"
-                                                    placeholder="Enter new email address"
-                                                    className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                                    Confirm Password
-                                                </label>
-                                                <input
-                                                    type="password"
-                                                    placeholder="Enter your current password"
-                                                    className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                                                />
-                                            </div>
-
-                                            <div className="pt-4">
-                                                <button className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 font-medium">
-                                                    Update Email
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {activeSection === 'password' && (
-                                    <div className="p-8">
-                                        <div className="mb-6">
-                                            <h2 className="text-2xl font-bold text-white mb-2">
-                                                Password Settings
-                                            </h2>
-                                            <p className="text-gray-400">
-                                                Change your account password for better security.
-                                            </p>
-                                        </div>
-
-                                        <div className="space-y-6 max-w-md">
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                                    Current Password
-                                                </label>
-                                                <input
-                                                    type="password"
-                                                    placeholder="Enter current password"
-                                                    className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                                    New Password
-                                                </label>
-                                                <input
-                                                    type="password"
-                                                    placeholder="Enter new password"
-                                                    className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-300 mb-2">
-                                                    Confirm New Password
-                                                </label>
-                                                <input
-                                                    type="password"
-                                                    placeholder="Confirm new password"
-                                                    className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                                                />
-                                            </div>
-
-                                            <div className="pt-4">
-                                                <button className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 font-medium">
-                                                    Update Password
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {activeSection === 'upload' && (
-                                    <div className="p-8">
-                                        <div className="mb-6">
-                                            <h2 className="text-2xl font-bold text-white mb-2">
-                                                Import Data
-                                            </h2>
-                                            <p className="text-gray-400">
-                                                Import watchlists and data from other platforms.
-                                            </p>
-                                        </div>
-
-                                        <div className="max-w-2xl">
-                                            <div className="border-2 border-dashed border-gray-600 rounded-xl p-12 text-center hover:border-gray-500 transition-colors duration-200">
-                                                <ArrowUpTrayIcon className="w-16 h-16 text-gray-400 mx-auto mb-6" />
-                                                <h3 className="text-xl font-semibold text-white mb-2">
-                                                    Upload Watchlist File
-                                                </h3>
-                                                <p className="text-gray-400 mb-6">
-                                                    Support for CSV, JSON, and other formats from
-                                                    Netflix, Hulu, Amazon Prime, and more.
-                                                </p>
-                                                <input
-                                                    type="file"
-                                                    accept=".csv,.json,.txt"
-                                                    className="hidden"
-                                                    id="watchlist-upload"
-                                                />
-                                                <label
-                                                    htmlFor="watchlist-upload"
-                                                    className="inline-flex items-center px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 cursor-pointer font-medium"
-                                                >
-                                                    Choose Files
-                                                </label>
-                                            </div>
-
-                                            <div className="mt-8">
-                                                <h4 className="text-lg font-medium text-white mb-4">
-                                                    Supported Platforms
-                                                </h4>
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    {[
-                                                        'Netflix',
-                                                        'Amazon Prime',
-                                                        'Hulu',
-                                                        'Disney+',
-                                                        'HBO Max',
-                                                        'Custom CSV',
-                                                    ].map((platform) => (
-                                                        <div
-                                                            key={platform}
-                                                            className="flex items-center p-4 bg-gray-800/50 rounded-lg"
+                                                return (
+                                                    <li key={item.id}>
+                                                        <button
+                                                            onClick={() =>
+                                                                setActiveSection(item.id)
+                                                            }
+                                                            className={`w-full flex items-center p-4 rounded-lg border-l-4 transition-all duration-200 text-left ${
+                                                                isActive
+                                                                    ? 'bg-[#313131] border-l-red-600 shadow-lg'
+                                                                    : `hover:bg-[#1a1a1a] ${getPriorityColor(item.priority)} bg-[#0a0a0a]`
+                                                            }`}
                                                         >
-                                                            <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
-                                                            <span className="text-gray-300">
-                                                                {platform}
+                                                            <Icon
+                                                                className={`w-6 h-6 mr-4 ${getIconColor(item.priority, isActive)}`}
+                                                            />
+                                                            <div className="flex-1">
+                                                                <h3
+                                                                    className={`font-medium ${isActive ? 'text-white' : 'text-[#e5e5e5]'}`}
+                                                                >
+                                                                    {item.title}
+                                                                </h3>
+                                                                <p className="text-[#b3b3b3] text-sm mt-1">
+                                                                    {item.description}
+                                                                </p>
+                                                            </div>
+                                                            <ChevronRightIcon
+                                                                className={`w-5 h-5 ${isActive ? 'text-white' : 'text-[#b3b3b3]'}`}
+                                                            />
+                                                        </button>
+                                                    </li>
+                                                )
+                                            })}
+                                        </ul>
+                                    </nav>
+                                </div>
+                            </div>
+
+                            {/* Main Content */}
+                            <div className="flex-1">
+                                <div className="bg-[#141414] rounded-lg border border-[#313131]">
+                                    {activeSection === 'profile' && (
+                                        <div className="p-8">
+                                            <div className="mb-6">
+                                                <h2 className="text-2xl font-bold text-white mb-2">
+                                                    Profile Information
+                                                </h2>
+                                                <p className="text-[#b3b3b3]">
+                                                    Manage your profile and account information.
+                                                </p>
+                                            </div>
+
+                                            <div className="space-y-6">
+                                                {/* Profile Picture */}
+                                                <div className="flex items-center space-x-6">
+                                                    {user.photoURL ? (
+                                                        <Image
+                                                            src={user.photoURL}
+                                                            alt="Profile"
+                                                            width={96}
+                                                            height={96}
+                                                            className="rounded-full object-cover border-4 border-[#313131]"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-24 h-24 bg-red-600 rounded-full flex items-center justify-center border-4 border-[#313131]">
+                                                            <span className="text-white font-bold text-2xl">
+                                                                {getUserName()
+                                                                    .charAt(0)
+                                                                    .toUpperCase()}
                                                             </span>
                                                         </div>
-                                                    ))}
+                                                    )}
+                                                    <div>
+                                                        <h3 className="text-xl font-semibold text-white">
+                                                            {getUserName()}
+                                                        </h3>
+                                                        <p className="text-[#b3b3b3]">
+                                                            {user.email}
+                                                        </p>
+                                                        <p className="text-[#777] text-sm mt-1">
+                                                            Member since{' '}
+                                                            {new Date(
+                                                                user.metadata?.creationTime ||
+                                                                    Date.now()
+                                                            ).toLocaleDateString()}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Display Name */}
+                                                <div>
+                                                    <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
+                                                        Display Name
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={user.displayName || ''}
+                                                        placeholder="Enter your display name"
+                                                        className="inputClass w-full max-w-md"
+                                                    />
+                                                </div>
+
+                                                {/* Email (read-only) */}
+                                                <div>
+                                                    <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
+                                                        Email Address
+                                                    </label>
+                                                    <input
+                                                        type="email"
+                                                        value={user.email || ''}
+                                                        disabled
+                                                        className="inputClass w-full max-w-md opacity-50 cursor-not-allowed"
+                                                    />
+                                                    <p className="text-[#777] text-sm mt-1">
+                                                        To change your email, use the Email Settings
+                                                        section
+                                                    </p>
+                                                </div>
+
+                                                <div className="pt-4">
+                                                    <button className="bannerButton bg-red-600 text-white hover:bg-red-700">
+                                                        Save Changes
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
 
-                                {activeSection === 'share' && (
-                                    <div className="p-8">
-                                        <div className="mb-6">
-                                            <h2 className="text-2xl font-bold text-white mb-2">
-                                                Share & Export
-                                            </h2>
-                                            <p className="text-gray-400">
-                                                Share your watchlists with others or export your
-                                                data.
-                                            </p>
-                                        </div>
+                                    {activeSection === 'email' && (
+                                        <div className="p-8">
+                                            <div className="mb-6">
+                                                <h2 className="text-2xl font-bold text-white mb-2">
+                                                    Email Settings
+                                                </h2>
+                                                <p className="text-[#b3b3b3]">
+                                                    Update your email address for your account.
+                                                </p>
+                                            </div>
 
-                                        <div className="space-y-6">
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-                                                    <ShareIcon className="w-8 h-8 text-blue-500 mb-4" />
-                                                    <h3 className="text-lg font-semibold text-white mb-2">
-                                                        Share Watchlists
-                                                    </h3>
-                                                    <p className="text-gray-400 mb-4">
-                                                        Generate shareable links for your watchlists
-                                                        and custom lists.
-                                                    </p>
-                                                    <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200">
-                                                        Manage Sharing
-                                                    </button>
+                                            <div className="space-y-6 max-w-md">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
+                                                        Current Email
+                                                    </label>
+                                                    <input
+                                                        type="email"
+                                                        value={user?.email || ''}
+                                                        disabled
+                                                        className="inputClass w-full opacity-50 cursor-not-allowed"
+                                                    />
                                                 </div>
 
-                                                <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-                                                    <ArrowUpTrayIcon className="w-8 h-8 text-green-500 mb-4" />
-                                                    <h3 className="text-lg font-semibold text-white mb-2">
-                                                        Export Data
-                                                    </h3>
-                                                    <p className="text-gray-400 mb-4">
-                                                        Download your data in various formats (JSON,
-                                                        CSV, XML).
-                                                    </p>
-                                                    <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200">
-                                                        Export Data
+                                                <div>
+                                                    <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
+                                                        New Email Address
+                                                    </label>
+                                                    <input
+                                                        type="email"
+                                                        placeholder="Enter new email address"
+                                                        className="inputClass w-full"
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
+                                                        Confirm Password
+                                                    </label>
+                                                    <input
+                                                        type="password"
+                                                        placeholder="Enter your current password"
+                                                        className="inputClass w-full"
+                                                    />
+                                                </div>
+
+                                                <div className="pt-4">
+                                                    <button className="bannerButton bg-red-600 text-white hover:bg-red-700">
+                                                        Update Email
                                                     </button>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
 
-                                {activeSection === 'account' && (
-                                    <div className="p-8">
-                                        <div className="mb-6">
-                                            <h2 className="text-2xl font-bold text-white mb-2">
-                                                Account Management
-                                            </h2>
-                                            <p className="text-gray-400">
-                                                Manage your account data and deletion options.
-                                            </p>
+                                    {activeSection === 'password' && (
+                                        <div className="p-8">
+                                            <div className="mb-6">
+                                                <h2 className="text-2xl font-bold text-white mb-2">
+                                                    Password Settings
+                                                </h2>
+                                                <p className="text-[#b3b3b3]">
+                                                    Change your account password for better
+                                                    security.
+                                                </p>
+                                            </div>
+
+                                            <div className="space-y-6 max-w-md">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
+                                                        Current Password
+                                                    </label>
+                                                    <input
+                                                        type="password"
+                                                        placeholder="Enter current password"
+                                                        className="inputClass w-full"
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
+                                                        New Password
+                                                    </label>
+                                                    <input
+                                                        type="password"
+                                                        placeholder="Enter new password"
+                                                        className="inputClass w-full"
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
+                                                        Confirm New Password
+                                                    </label>
+                                                    <input
+                                                        type="password"
+                                                        placeholder="Confirm new password"
+                                                        className="inputClass w-full"
+                                                    />
+                                                </div>
+
+                                                <div className="pt-4">
+                                                    <button className="bannerButton bg-red-600 text-white hover:bg-red-700">
+                                                        Update Password
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
+                                    )}
 
-                                        <AccountManagement />
-                                    </div>
-                                )}
+                                    {activeSection === 'upload' && (
+                                        <div className="p-8">
+                                            <div className="mb-6">
+                                                <h2 className="text-2xl font-bold text-white mb-2">
+                                                    Import Data
+                                                </h2>
+                                                <p className="text-[#b3b3b3]">
+                                                    Import watchlists and data from other platforms.
+                                                </p>
+                                            </div>
+
+                                            <div className="max-w-2xl">
+                                                <div className="border-2 border-dashed border-[#313131] rounded-xl p-12 text-center hover:border-[#454545] transition-colors duration-200">
+                                                    <ArrowUpTrayIcon className="w-16 h-16 text-[#b3b3b3] mx-auto mb-6" />
+                                                    <h3 className="text-xl font-semibold text-white mb-2">
+                                                        Upload Watchlist File
+                                                    </h3>
+                                                    <p className="text-[#b3b3b3] mb-6">
+                                                        Support for CSV, JSON, and other formats
+                                                        from Netflix, Hulu, Amazon Prime, and more.
+                                                    </p>
+                                                    <input
+                                                        type="file"
+                                                        accept=".csv,.json,.txt"
+                                                        className="hidden"
+                                                        id="watchlist-upload"
+                                                    />
+                                                    <label
+                                                        htmlFor="watchlist-upload"
+                                                        className="bannerButton bg-red-600 text-white hover:bg-red-700 cursor-pointer"
+                                                    >
+                                                        Choose Files
+                                                    </label>
+                                                </div>
+
+                                                <div className="mt-8">
+                                                    <h4 className="text-lg font-medium text-white mb-4">
+                                                        Supported Platforms
+                                                    </h4>
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        {[
+                                                            'Netflix',
+                                                            'Amazon Prime',
+                                                            'Hulu',
+                                                            'Disney+',
+                                                            'HBO Max',
+                                                            'Custom CSV',
+                                                        ].map((platform) => (
+                                                            <div
+                                                                key={platform}
+                                                                className="flex items-center p-4 bg-[#0a0a0a] rounded-lg border border-[#313131]"
+                                                            >
+                                                                <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
+                                                                <span className="text-[#e5e5e5]">
+                                                                    {platform}
+                                                                </span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {activeSection === 'share' && (
+                                        <div className="p-8">
+                                            <div className="mb-6">
+                                                <h2 className="text-2xl font-bold text-white mb-2">
+                                                    Share & Export
+                                                </h2>
+                                                <p className="text-[#b3b3b3]">
+                                                    Share your watchlists with others or export your
+                                                    data.
+                                                </p>
+                                            </div>
+
+                                            <div className="space-y-6">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                    <div className="bg-[#0a0a0a] rounded-xl p-6 border border-[#313131]">
+                                                        <ShareIcon className="w-8 h-8 text-blue-500 mb-4" />
+                                                        <h3 className="text-lg font-semibold text-white mb-2">
+                                                            Share Watchlists
+                                                        </h3>
+                                                        <p className="text-[#b3b3b3] mb-4">
+                                                            Generate shareable links for your
+                                                            watchlists and custom lists.
+                                                        </p>
+                                                        <button className="bannerButton bg-blue-600 text-white hover:bg-blue-700">
+                                                            Manage Sharing
+                                                        </button>
+                                                    </div>
+
+                                                    <div className="bg-[#0a0a0a] rounded-xl p-6 border border-[#313131]">
+                                                        <ArrowUpTrayIcon className="w-8 h-8 text-green-500 mb-4" />
+                                                        <h3 className="text-lg font-semibold text-white mb-2">
+                                                            Export Data
+                                                        </h3>
+                                                        <p className="text-[#b3b3b3] mb-4">
+                                                            Download your data in various formats
+                                                            (JSON, CSV, XML).
+                                                        </p>
+                                                        <button className="bannerButton bg-green-600 text-white hover:bg-green-700">
+                                                            Export Data
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {activeSection === 'account' && (
+                                        <div className="p-8">
+                                            <div className="mb-6">
+                                                <h2 className="text-2xl font-bold text-white mb-2">
+                                                    Account Management
+                                                </h2>
+                                                <p className="text-[#b3b3b3]">
+                                                    Manage your account data and deletion options.
+                                                </p>
+                                            </div>
+
+                                            <AccountManagement />
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </>
+            </main>
+        </div>
     )
 }
 
