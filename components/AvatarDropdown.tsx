@@ -150,6 +150,14 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                             <div className="h-px bg-gray-700/50 mx-5 my-2"></div>
 
                             <button
+                                onClick={handleSettingsClick}
+                                className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                            >
+                                <CogIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                Settings
+                            </button>
+
+                            <button
                                 onClick={() => {
                                     setIsOpen(false)
                                     onOpenTutorial?.()

@@ -9,7 +9,7 @@ import React, {
 import MuiModal from '@mui/material/Modal'
 import { useRecoilState, useRecoilValue } from 'recoil'
 import { modalState, movieState, autoPlayWithSoundState } from '../atoms/modalAtom'
-import { errorsState, loadingState } from '../atoms/errorAtom'
+import { loadingState } from '../atoms/errorAtom'
 import { createErrorHandler } from '../utils/errorHandler'
 import {
     getTitle,
@@ -63,9 +63,7 @@ function Modal() {
     const [showModal, setShowModal] = useRecoilState(modalState)
     const [currentMovie, setCurrentMovie] = useRecoilState(movieState)
     const [autoPlayWithSound, setAutoPlayWithSound] = useRecoilState(autoPlayWithSoundState)
-    const [errors, setErrors] = useRecoilState(errorsState)
     const [isLoading, setIsLoading] = useRecoilState(loadingState)
-    const errorHandler = createErrorHandler(setErrors)
     const [trailer, setTrailer] = useState('')
     const [genres, setGenres] = useState<Genre[]>([])
     const [enhancedMovieData, setEnhancedMovieData] = useState<Content | null>(null)
@@ -119,7 +117,9 @@ function Modal() {
         showWatchlistRemove,
         showContentHidden,
         showContentShown,
+        showError,
     } = useToast()
+    const errorHandler = createErrorHandler(showError)
     const setListModal = useSetRecoilState(listModalState)
 
     let timeout: ReturnType<typeof setTimeout> | null = null

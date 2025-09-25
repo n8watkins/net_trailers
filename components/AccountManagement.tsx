@@ -6,8 +6,6 @@ import {
 } from '@heroicons/react/24/outline'
 import useUserData from '../hooks/useUserData'
 import { createErrorHandler } from '../utils/errorHandler'
-import { useRecoilState } from 'recoil'
-import { errorsState } from '../atoms/errorAtom'
 import { useToast } from '../hooks/useToast'
 
 interface DataSummary {
@@ -21,9 +19,8 @@ interface DataSummary {
 
 export default function AccountManagement() {
     const userData = useUserData()
-    const [errors, setErrors] = useRecoilState(errorsState)
-    const errorHandler = createErrorHandler(setErrors)
-    const { showSuccess } = useToast()
+    const { showSuccess, showError } = useToast()
+    const errorHandler = createErrorHandler(showError)
 
     const [dataSummary, setDataSummary] = useState<DataSummary | null>(null)
     const [isLoading, setIsLoading] = useState(false)
@@ -68,7 +65,7 @@ export default function AccountManagement() {
                 setDataSummary(summary)
             } catch (error) {
                 console.error('Failed to load data summary:', error)
-                errorHandler.handleError(error, 'Failed to load account data')
+                errorHandler.handleApiError(error, 'load account data')
                 // Set empty summary on error
                 setDataSummary({
                     watchlistCount: 0,
@@ -113,7 +110,7 @@ export default function AccountManagement() {
             setDataSummary(summary)
         } catch (error) {
             console.error('Failed to clear account data:', error)
-            errorHandler.handleError(error, 'Failed to clear account data')
+            errorHandler.handleApiError(error, 'clear account data')
         } finally {
             setIsLoading(false)
         }
@@ -146,7 +143,7 @@ export default function AccountManagement() {
             }
         } catch (error) {
             console.error('Failed to export account data:', error)
-            errorHandler.handleError(error, 'Failed to export account data')
+            errorHandler.handleApiError(error, 'export account data')
         } finally {
             setIsLoading(false)
         }
@@ -173,7 +170,7 @@ export default function AccountManagement() {
             // Note: User should be redirected or signed out after this
         } catch (error) {
             console.error('Failed to delete account:', error)
-            errorHandler.handleError(error, 'Failed to delete account')
+            errorHandler.handleApiError(error, 'delete account')
         } finally {
             setIsLoading(false)
         }

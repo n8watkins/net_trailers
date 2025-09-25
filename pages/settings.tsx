@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Head from 'next/head'
 import Image from 'next/image'
 import { useRouter } from 'next/router'
@@ -28,9 +28,35 @@ interface SidebarItem {
 
 const Settings: React.FC = () => {
     const [activeSection, setActiveSection] = useState<SettingsSection>('account') // Start with account management since it works for both
+    const [hasInitializationTimeout, setHasInitializationTimeout] = useState(false)
     const { user } = useAuth()
     const userData = useUserData()
     const router = useRouter()
+
+    // Add timeout fallback for stuck initialization
+    useEffect(() => {
+        if (userData.sessionType === 'initializing') {
+            const timer = setTimeout(() => {
+                console.log('🚨 Settings timeout triggered - switching to guest mode')
+                console.log('🚨 Current userData:', userData)
+                setHasInitializationTimeout(true)
+
+                // Also try to force initialize guest session if available
+                if (
+                    userData.sessionManager &&
+                    typeof userData.sessionManager.switchToGuest === 'function'
+                ) {
+                    console.log('🚨 Attempting to force switch to guest mode')
+                    userData.sessionManager.switchToGuest().catch(console.error)
+                }
+            }, 3000) // 3 second timeout (increased)
+
+            return () => clearTimeout(timer)
+        } else {
+            // Reset timeout flag if no longer initializing
+            setHasInitializationTimeout(false)
+        }
+    }, [userData.sessionType, userData.sessionManager])
 
     // Define all possible sidebar items
     const allSidebarItems: SidebarItem[] = [
@@ -79,8 +105,12 @@ const Settings: React.FC = () => {
     ]
 
     // Filter sidebar items based on authentication status
+    // Treat initializing state as guest mode for settings page
+    const isGuestMode =
+        userData.isGuest || hasInitializationTimeout || userData.sessionType === 'initializing'
+
     const sidebarItems = allSidebarItems.filter((item) => {
-        if (userData.isGuest) {
+        if (isGuestMode) {
             // For guest users, only show account management and import/export features
             return ['account', 'upload', 'share'].includes(item.id)
         }
@@ -95,7 +125,7 @@ const Settings: React.FC = () => {
         if (user?.email) {
             return user.email.split('@')[0]
         }
-        if (userData.isGuest) {
+        if (isGuestMode) {
             return 'Guest User'
         }
         return 'User'
@@ -129,8 +159,11 @@ const Settings: React.FC = () => {
         }
     }
 
-    // Show loading state while session is initializing
-    if (userData.sessionType === 'initializing') {
+    // For settings page, never show loading - always allow access
+    // This ensures settings are always accessible regardless of session state
+    const shouldShowLoading = false
+
+    if (shouldShowLoading) {
         return (
             <div className="relative min-h-screen overflow-x-clip">
                 <Head>
@@ -231,13 +264,13 @@ const Settings: React.FC = () => {
                                                     Profile Information
                                                 </h2>
                                                 <p className="text-[#b3b3b3]">
-                                                    {userData.isGuest
+                                                    {isGuestMode
                                                         ? 'Manage your guest session information.'
                                                         : 'Manage your profile and account information.'}
                                                 </p>
                                             </div>
 
-                                            {userData.isGuest ? (
+                                            {isGuestMode ? (
                                                 // Guest user profile
                                                 <div className="space-y-6">
                                                     <div className="bg-[#0a0a0a] rounded-lg border border-[#313131] p-6">
@@ -272,7 +305,9 @@ const Settings: React.FC = () => {
                                                                 </p>
                                                                 <p className="text-[#777] font-mono text-sm">
                                                                     {userData.activeSessionId ||
-                                                                        'Loading...'}
+                                                                        (isGuestMode
+                                                                            ? 'Guest Session'
+                                                                            : 'Loading...')}
                                                                 </p>
                                                             </div>
                                                             <div className="pt-4 border-t border-[#313131]">

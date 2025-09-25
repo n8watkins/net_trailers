@@ -9,17 +9,21 @@ import {
     EyeSlashIcon,
 } from '@heroicons/react/24/outline'
 
+/**
+ * Toast message interface for the unified notification system
+ * Supports 6 different toast types with consistent styling and behavior
+ */
 export interface ToastMessage {
     id: string
     type:
-        | 'success'
-        | 'error'
-        | 'watchlist-add'
-        | 'watchlist-remove'
-        | 'content-hidden'
-        | 'content-shown'
-    title: string
-    message?: string
+        | 'success' // Green checkmark - successful operations
+        | 'error' // Red X mark - error messages
+        | 'watchlist-add' // Blue plus - adding to watchlist
+        | 'watchlist-remove' // Orange minus - removing from watchlist
+        | 'content-hidden' // Red eye-slash - hiding content
+        | 'content-shown' // Green eye - showing content
+    title: string // Main message text
+    message?: string // Optional additional details
 }
 
 interface ToastProps {
@@ -28,7 +32,12 @@ interface ToastProps {
     duration?: number
 }
 
-const Toast: React.FC<ToastProps> = ({ toast, onClose, duration = 3000 }) => {
+/**
+ * Individual toast notification component
+ * Features slide-in/slide-out animations and auto-dismiss after 5 seconds
+ * Part of the unified toast system - handles all 6 toast types consistently
+ */
+const Toast: React.FC<ToastProps> = ({ toast, onClose, duration = 5000 }) => {
     console.log('🍞 Toast component rendering:', toast)
     const [isVisible, setIsVisible] = useState(false)
     const [isExiting, setIsExiting] = useState(false)

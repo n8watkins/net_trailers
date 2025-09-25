@@ -20,37 +20,62 @@ npm run test:ci      # Run tests in CI mode (no watch, with coverage)
 ## Architecture Overview
 
 ### State Management Architecture
+
 - **Recoil** is used for global state management with atoms organized by domain:
-  - `modalAtom.ts`: Modal state, current content, and auto-play preferences
-  - `searchAtom.ts`: Search query, results, and loading states
-  - `errorAtom.ts`: Global error handling and loading states
-  - `userDataAtom.ts`: User authentication and profile data
+    - `modalAtom.ts`: Modal state, current content, and auto-play preferences
+    - `searchAtom.ts`: Search query, results, and loading states
+    - `toastAtom.ts`: Unified toast notification system (replaced errorAtom.ts)
+    - `errorAtom.ts`: Global loading states only (error handling moved to toast system)
+    - `userDataAtom.ts`: User authentication and profile data
 
 ### Content Type System
+
 The app handles both movies and TV shows through a unified type system:
+
 - **Base interface**: `BaseContent` for shared properties
 - **Discriminated unions**: `Movie` and `TVShow` interfaces with `media_type` discriminator
 - **Type guards**: `isMovie()` and `isTVShow()` for runtime type checking
 - **Utility functions**: `getTitle()`, `getYear()`, `getContentType()` for consistent property access across content types
 
 ### API Architecture
+
 - **Internal API routes** (`/api/movies/*`, `/api/search`) proxy TMDB API calls
 - **TMDB integration** via `utils/tmdbApi.ts` with error handling and rate limiting
 - **Comprehensive error handling** via `utils/errorHandler.ts` with user-friendly messages
 
 ### Authentication System
+
 - **Firebase Auth** with multiple providers (Google, Email/Password)
 - **Guest mode** for demo access without authentication
 - **State persistence** via Recoil atoms with Firebase integration
 
+### Unified Toast Notification System
+
+- **Single toast system** replacing previous dual-system approach (ErrorToast.tsx removed)
+- **Six toast types** with consistent styling and positioning:
+    - `success` - Green checkmark for successful operations
+    - `error` - Red X mark for error messages (unified from old ErrorToast system)
+    - `watchlist-add` - Blue plus icon for adding to watchlist
+    - `watchlist-remove` - Orange minus icon for removing from watchlist
+    - `content-hidden` - Red eye-slash for hiding content
+    - `content-shown` - Green eye for showing content
+- **Components**:
+    - `Toast.tsx` - Individual toast with slide animations and auto-dismiss (5s)
+    - `ToastContainer.tsx` - Right-aligned positioning with responsive margins
+    - `ToastManager.tsx` - Recoil state bridge component
+- **Integration**: `ErrorHandler` class now uses `showError()` from `useToast()` hook
+- **State management**: `toastAtom.ts` with single toast display (replaces complex error state)
+
 ### Modal System
+
 - **Centralized modal state** with content selection and auto-play preferences
 - **Video player integration** using ReactPlayer with YouTube trailers
 - **Audio control logic**: Different behavior for "Play" vs "More Info" buttons
-  - Play button: `autoPlayWithSoundState(true)` - starts with sound
-  - More Info button: `autoPlayWithSoundState(false)` - starts muted
+    - Play button: `autoPlayWithSoundState(true)` - starts with sound
+    - More Info button: `autoPlayWithSoundState(false)` - starts muted
 
 ### Search Implementation
+
 - **Real-time search** with 300ms debounce and 2+ character minimum
 - **URL synchronization** with shallow routing to maintain search state
 - **Race condition prevention** with proper cleanup and state management
@@ -59,40 +84,50 @@ The app handles both movies and TV shows through a unified type system:
 ## Configuration Files
 
 ### Environment Variables (.env.local)
+
 Required environment variables are documented in the file with setup instructions for:
+
 - Firebase configuration (6 variables)
 - TMDB API key
 - Sentry DSN (for error monitoring)
 - Google Analytics measurement ID
 
 ### Next.js Configuration
+
 - **Image optimization** configured for TMDB and Netflix CDN domains
 - **Sentry integration** with webpack plugin for error monitoring
 - **Performance optimizations** with package import optimization for @heroicons/react
 
 ### Sentry Monitoring
+
 - **Server-side**: Configured via `instrumentation.ts` (Next.js 15 standard)
 - **Client-side**: Configured via `sentry.client.config.ts`
 - **Error filtering**: Ignores common browser errors and protects user privacy
 
 ## Key Development Patterns
 
-### Error Handling
-- Use `createErrorHandler()` from `utils/errorHandler.ts` for consistent error handling
-- Errors are managed via `errorsState` and `loadingState` atoms
-- API errors are automatically converted to user-friendly messages
+### Toast Notifications & Error Handling
+
+- Use `useToast()` hook for all user notifications: `showSuccess()`, `showError()`, `showWatchlistAdd()`, etc.
+- Use `createErrorHandler(showError)` from `utils/errorHandler.ts` for consistent error handling
+- All errors are now displayed as toast notifications instead of separate error state
+- API errors are automatically converted to user-friendly toast messages
+- Only `loadingState` remains in errorAtom.ts (error state moved to unified toast system)
 
 ### Content Rendering
+
 - Always use type-safe utility functions (`getTitle()`, `getYear()`, etc.) instead of direct property access
 - Check content type with `isMovie()` or `isTVShow()` before accessing type-specific properties
 - Use the discriminated union pattern for type safety
 
 ### State Updates
+
 - Modal state changes should update all related atoms atomically
 - Search state requires proper debouncing and URL synchronization
 - Loading states should be set before async operations and cleared after
 
 ### Testing
+
 - Jest configured with React Testing Library and jsdom environment
 - Tests should cover both movie and TV show content types
 - Mock TMDB API responses in tests using the established patterns

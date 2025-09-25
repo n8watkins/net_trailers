@@ -2,6 +2,16 @@ import { useRecoilState } from 'recoil'
 import { toastsState } from '../atoms/toastAtom'
 import { ToastMessage } from '../components/Toast'
 
+/**
+ * Unified toast notification hook
+ * Provides simple API for showing all types of toast notifications
+ * Replaces the old error toast system with consistent UX across all toast types
+ *
+ * Usage:
+ *   const { showSuccess, showError, showWatchlistAdd } = useToast()
+ *   showSuccess('Operation completed', 'Optional description')
+ *   showError('Something went wrong', 'Error details')
+ */
 export const useToast = () => {
     const [toasts, setToasts] = useRecoilState(toastsState)
 

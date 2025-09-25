@@ -19,6 +19,7 @@ import AuthModal from './AuthModal'
 import AvatarDropdown from './AvatarDropdown'
 import GenresDropdown from './GenresDropdown'
 import MyListsDropdown from './MyListsDropdown'
+import { useToast } from '../hooks/useToast'
 
 interface HeaderProps {
     onOpenAboutModal?: () => void
@@ -35,6 +36,14 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
     const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin')
     const router = useRouter()
     const { user } = useAuth()
+    const { showSuccess, showError, showWatchlistAdd, showWatchlistRemove } = useToast()
+
+    const triggerTestToasts = () => {
+        showSuccess(`Welcome ${user?.displayName || user?.email?.split('@')[0] || 'Nathan'}!`)
+        setTimeout(() => showWatchlistAdd('Test Movie', 'Added to Watchlist'), 1000)
+        setTimeout(() => showSuccess('Settings saved successfully!'), 2000)
+        setTimeout(() => showWatchlistRemove('Test Movie', 'Removed from Watchlist'), 3000)
+    }
     useEffect(() => {
         const handleScroll = () => {
             if (window.scrollY > 0) {
@@ -101,6 +110,17 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                             <li>
                                 <MyListsDropdown />
                             </li>
+                            {process.env.NODE_ENV === 'development' && (
+                                <li>
+                                    <button
+                                        onClick={triggerTestToasts}
+                                        className="headerLink cursor-pointer flex items-center space-x-1 select-none bg-blue-600/20 hover:bg-blue-600/30 px-3 py-1 rounded-md border border-blue-500/30"
+                                        title="Test Toast Messages"
+                                    >
+                                        <span>🧪 Test Toasts</span>
+                                    </button>
+                                </li>
+                            )}
                         </ul>
 
                         {/* Search Bar in Navigation */}

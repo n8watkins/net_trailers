@@ -16,7 +16,9 @@ import { AuthStorageService } from '../services/authStorageService'
 import useAuth from './useAuth'
 
 export function useSessionManager() {
+    console.log('🚗🚗🚗 useSessionManager called!')
     const { user } = useAuth()
+    console.log('🚗🚗🚗 useSessionManager user:', user?.uid, 'isLoading:', user === null)
 
     // Session manager state
     const [sessionType, setSessionType] = useRecoilState(sessionTypeState)
@@ -50,18 +52,67 @@ export function useSessionManager() {
 
     // Initialize session when auth state changes
     useEffect(() => {
+        console.log('🚗 useSessionManager useEffect triggered', {
+            user: user?.uid,
+            currentType: sessionType,
+            isTransitioning,
+            isInitialized: isSessionInitialized,
+        })
+
         const initializeSession = async () => {
-            if (!isTransitioning) {
+            console.log('🚗 About to check initialization conditions', {
+                isTransitioning,
+                isSessionInitialized,
+                shouldInitialize: !isTransitioning && !isSessionInitialized,
+            })
+
+            if (!isTransitioning && !isSessionInitialized) {
                 console.log('🔄 Initializing session...', {
                     user: user?.uid,
                     currentType: sessionType,
+                    isTransitioning,
+                    isInitialized: isSessionInitialized,
                 })
-                await SessionManagerService.initializeSession(user, state)
+                try {
+                    await SessionManagerService.initializeSession(user, state)
+                } catch (error) {
+                    console.error('🚨 Session initialization failed:', error)
+                }
+            } else {
+                console.log('🔄 Skipping session initialization', {
+                    isTransitioning,
+                    isSessionInitialized,
+                    reason: isTransitioning ? 'transitioning' : 'already initialized',
+                })
             }
         }
 
-        initializeSession()
-    }, [user?.uid]) // Only re-run when user ID changes
+        // Add a small delay to ensure auth state is settled
+        const timeoutId = setTimeout(initializeSession, 100)
+        return () => clearTimeout(timeoutId)
+    }, [user, isTransitioning, isSessionInitialized, sessionType])
+
+    // Fallback: Force guest session initialization if Firebase auth is stuck
+    useEffect(() => {
+        if (!isSessionInitialized && !isTransitioning && sessionType === 'initializing') {
+            console.log(
+                '🚨 Firebase auth appears stuck, forcing guest session initialization after 2s timeout'
+            )
+            const fallbackTimer = setTimeout(async () => {
+                if (!isSessionInitialized && !isTransitioning) {
+                    console.log('🚨 Forcing guest session initialization due to auth timeout')
+                    try {
+                        // Force initialize guest session regardless of auth state
+                        await SessionManagerService.initializeSession(null, state)
+                    } catch (error) {
+                        console.error('🚨 Fallback session initialization failed:', error)
+                    }
+                }
+            }, 2000) // 2 second timeout
+
+            return () => clearTimeout(fallbackTimer)
+        }
+    }, [isSessionInitialized, isTransitioning, sessionType, state])
 
     // Handle session type switching
     const switchToGuest = async () => {

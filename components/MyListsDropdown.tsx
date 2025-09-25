@@ -54,7 +54,7 @@ function MyListsDropdown() {
             </button>
 
             {isOpen && (
-                <div className="absolute top-full left-0 mt-2 w-48 bg-[#141414]/95 backdrop-blur-sm border border-gray-600/50 rounded-lg shadow-lg z-[250]">
+                <div className="absolute top-full left-0 mt-2 w-48 bg-[#141414]/95 backdrop-blur-sm border border-red-500/40 rounded-xl shadow-2xl shadow-red-500/20 z-[250]">
                     <div className="py-2">
                         <Link href="/watchlists" onClick={handleLinkClick}>
                             <div

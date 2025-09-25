@@ -14,7 +14,7 @@ import {
 import { auth } from '../firebase'
 import { useRouter } from 'next/router'
 import { useRecoilState } from 'recoil'
-import { errorsState, loadingState } from '../atoms/errorAtom'
+import { loadingState } from '../atoms/errorAtom'
 import { createErrorHandler } from '../utils/errorHandler'
 import { useToast } from './useToast'
 
@@ -57,10 +57,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const [error, setError] = useState<string | null>(null)
     const router = useRouter()
     const [attemptPassReset, setAttemptPassReset] = useState(false)
-    const [errors, setErrors] = useRecoilState(errorsState)
     const [globalLoading, setGlobalLoading] = useRecoilState(loadingState)
-    const errorHandler = createErrorHandler(setErrors)
-    const { showSuccess } = useToast()
+    const { showSuccess, showError } = useToast()
+    const errorHandler = createErrorHandler(showError)
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -89,7 +88,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         await createUserWithEmailAndPassword(auth, email, password)
             .then((userCredential) => {
                 const user = userCredential.user
-                showSuccess('Account created successfully! Welcome to NetTrailer.')
+                const displayName = user.displayName || user.email?.split('@')[0] || 'there'
+                showSuccess(`Welcome ${displayName}! Account created successfully.`)
                 router.push('/')
                 setLoading(false)
             })
@@ -109,7 +109,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         await signInWithEmailAndPassword(auth, email, password)
             .then((userCredential) => {
                 const user = userCredential.user
-                showSuccess('Successfully signed in! Welcome back.')
+                const displayName = user.displayName || user.email?.split('@')[0] || 'Nathan'
+                showSuccess(`Welcome back, ${displayName}!`)
                 router.push('/')
                 setLoading(false)
             })
@@ -133,7 +134,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 const credential = GoogleAuthProvider.credentialFromResult(result)
                 const token = credential!.accessToken
                 const user = result.user
-                showSuccess('Successfully signed in with Google!')
+                const displayName = user.displayName || user.email?.split('@')[0] || 'there'
+                showSuccess(`Welcome ${displayName}!`)
                 router.push('/')
             })
             .catch((error) => {

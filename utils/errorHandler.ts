@@ -1,38 +1,27 @@
-import { SetterOrUpdater } from 'recoil'
-import { AppError } from '../atoms/errorAtom'
-
+/**
+ * Unified error handler that converts all application errors into toast notifications
+ * Integrates with the main toast system instead of managing separate error state
+ * Handles authentication, API, network, and validation errors consistently
+ */
 export class ErrorHandler {
-    private setErrors: SetterOrUpdater<AppError[]>
+    private showError: (title: string, message?: string) => void
 
-    constructor(setErrors: SetterOrUpdater<AppError[]>) {
-        this.setErrors = setErrors
+    constructor(showError: (title: string, message?: string) => void) {
+        this.showError = showError
     }
 
-    addError(type: AppError['type'], message: string, details?: string): string {
-        const error: AppError = {
-            id: `${type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            type,
-            message,
-            details,
-            timestamp: Date.now(),
-        }
-
-        this.setErrors((prev) => [...prev, error])
-
-        // Auto-dismiss after 5 seconds for non-critical errors
-        if (type !== 'auth') {
-            setTimeout(() => this.dismissError(error.id), 5000)
-        }
-
-        return error.id
+    addError(type: string, message: string, details?: string): string {
+        const id = `${type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        this.showError(message, details)
+        return id
     }
 
     dismissError(errorId: string): void {
-        this.setErrors((prev) => prev.filter((error) => error.id !== errorId))
+        // No longer needed as main toast system handles dismissal
     }
 
     clearAllErrors(): void {
-        this.setErrors([])
+        // No longer needed as main toast system handles clearing
     }
 
     handleAuthError(error: any): string {
@@ -50,7 +39,8 @@ export class ErrorHandler {
 
         const message =
             errorMessages[error.code] || error.message || 'An authentication error occurred.'
-        return this.addError('auth', message, error.code)
+        this.showError(message, error.code)
+        return 'auth_error'
     }
 
     handleApiError(error: any, context: string): string {
@@ -68,20 +58,32 @@ export class ErrorHandler {
             message = 'No internet connection. Please check your network.'
         }
 
-        return this.addError('api', message, `${context} - ${error.status || 'Network Error'}`)
+        this.showError(message, `${context} - ${error.status || 'Network Error'}`)
+        return 'api_error'
     }
 
     handleNetworkError(context: string): string {
         const message = 'Network error. Please check your internet connection and try again.'
-        return this.addError('network', message, context)
+        this.showError(message, context)
+        return 'network_error'
     }
 
     handleValidationError(field: string, message: string): string {
-        return this.addError('validation', `${field}: ${message}`)
+        this.showError(`${field}: ${message}`)
+        return 'validation_error'
     }
 }
 
-// Utility function to create error handler
-export function createErrorHandler(setErrors: SetterOrUpdater<AppError[]>): ErrorHandler {
-    return new ErrorHandler(setErrors)
+/**
+ * Factory function to create error handler with toast integration
+ * Use this instead of constructing ErrorHandler directly
+ *
+ * Usage:
+ *   const { showError } = useToast()
+ *   const errorHandler = createErrorHandler(showError)
+ */
+export function createErrorHandler(
+    showError: (title: string, message?: string) => void
+): ErrorHandler {
+    return new ErrorHandler(showError)
 }

@@ -2,7 +2,6 @@ import type { AppProps } from 'next/app'
 import '../styles/globals.css'
 import { AuthProvider } from '../hooks/useAuth'
 import { RecoilRoot } from 'recoil'
-import ErrorToast from '../components/ErrorToast'
 import DemoMessage from '../components/DemoMessage'
 import ErrorBoundary from '../components/ErrorBoundary'
 import GoogleAnalytics from '../components/Analytics'
@@ -19,7 +18,6 @@ function MyApp({ Component, pageProps }: AppProps) {
                     <Layout>
                         <Component {...pageProps} />
                     </Layout>
-                    <ErrorToast />
                     <DemoMessage />
                     <ToastManager />
                     <ListSelectionModal />
