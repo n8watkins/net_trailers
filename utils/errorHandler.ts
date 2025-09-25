@@ -17,7 +17,7 @@ export class ErrorHandler {
             timestamp: Date.now(),
         }
 
-        this.setErrors(prev => [...prev, error])
+        this.setErrors((prev) => [...prev, error])
 
         // Auto-dismiss after 5 seconds for non-critical errors
         if (type !== 'auth') {
@@ -28,7 +28,7 @@ export class ErrorHandler {
     }
 
     dismissError(errorId: string): void {
-        this.setErrors(prev => prev.filter(error => error.id !== errorId))
+        this.setErrors((prev) => prev.filter((error) => error.id !== errorId))
     }
 
     clearAllErrors(): void {
@@ -48,7 +48,8 @@ export class ErrorHandler {
             'auth/cancelled-popup-request': 'Sign-in was cancelled.',
         }
 
-        const message = errorMessages[error.code] || error.message || 'An authentication error occurred.'
+        const message =
+            errorMessages[error.code] || error.message || 'An authentication error occurred.'
         return this.addError('auth', message, error.code)
     }
 
@@ -77,24 +78,6 @@ export class ErrorHandler {
 
     handleValidationError(field: string, message: string): string {
         return this.addError('validation', `${field}: ${message}`)
-    }
-
-    // Success message helper
-    addSuccess(message: string): string {
-        // We'll treat success as a special type of "auth" error with positive messaging
-        const successError: AppError = {
-            id: `success_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            type: 'auth',
-            message,
-            timestamp: Date.now(),
-        }
-
-        this.setErrors(prev => [...prev, successError])
-
-        // Auto-dismiss success messages after 3 seconds
-        setTimeout(() => this.dismissError(successError.id), 3000)
-
-        return successError.id
     }
 }
 

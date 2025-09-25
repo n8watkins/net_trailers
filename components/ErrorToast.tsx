@@ -1,21 +1,22 @@
 import { useRecoilState } from 'recoil'
 import { errorsState, AppError } from '../atoms/errorAtom'
-import { XMarkIcon, ExclamationTriangleIcon, InformationCircleIcon, CheckCircleIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline'
+import {
+    XMarkIcon,
+    ExclamationTriangleIcon,
+    InformationCircleIcon,
+    CheckCircleIcon,
+    ExclamationCircleIcon,
+} from '@heroicons/react/24/outline'
 import { useEffect } from 'react'
 
 export default function ErrorToast() {
     const [errors, setErrors] = useRecoilState(errorsState)
 
     const dismissError = (errorId: string) => {
-        setErrors(prev => prev.filter(error => error.id !== errorId))
+        setErrors((prev) => prev.filter((error) => error.id !== errorId))
     }
 
-    const getErrorIcon = (type: AppError['type'], message: string) => {
-        // Check if it's a success message (positive auth message)
-        if (type === 'auth' && (message.includes('sent') || message.includes('success') || message.includes('Success'))) {
-            return <CheckCircleIcon className="h-6 w-6 text-green-500" />
-        }
-
+    const getErrorIcon = (type: AppError['type']) => {
         switch (type) {
             case 'auth':
                 return <ExclamationTriangleIcon className="h-6 w-6 text-red-500" />
@@ -30,13 +31,9 @@ export default function ErrorToast() {
         }
     }
 
-    const getErrorStyles = (type: AppError['type'], message: string) => {
-        const baseStyles = "pointer-events-auto max-w-2xl rounded-lg p-4 shadow-lg transition-all duration-300 transform translate-x-0 opacity-100"
-
-        // Success styling for positive auth messages
-        if (type === 'auth' && (message.includes('sent') || message.includes('success') || message.includes('Success'))) {
-            return `${baseStyles} bg-green-50 border border-green-200 dark:bg-green-900 dark:border-green-700`
-        }
+    const getErrorStyles = (type: AppError['type']) => {
+        const baseStyles =
+            'pointer-events-auto max-w-2xl rounded-lg p-4 shadow-lg transition-all duration-300 transform translate-x-0 opacity-100'
 
         switch (type) {
             case 'auth':
@@ -52,12 +49,7 @@ export default function ErrorToast() {
         }
     }
 
-    const getTextColor = (type: AppError['type'], message: string) => {
-        // Success text color
-        if (type === 'auth' && (message.includes('sent') || message.includes('success') || message.includes('Success'))) {
-            return 'text-green-900 dark:text-green-100'
-        }
-
+    const getTextColor = (type: AppError['type']) => {
         switch (type) {
             case 'auth':
                 return 'text-red-900 dark:text-red-100'
@@ -77,28 +69,28 @@ export default function ErrorToast() {
             {errors.map((error, index) => (
                 <div
                     key={error.id}
-                    className={getErrorStyles(error.type, error.message)}
+                    className={getErrorStyles(error.type)}
                     style={{
-                        animation: 'slideInRight 0.3s ease-out, fadeOut 0.3s ease-in 4.7s forwards'
+                        animation: 'slideInRight 0.3s ease-out, fadeOut 0.3s ease-in 4.7s forwards',
                     }}
                 >
                     <div className="flex items-start">
-                        <div className="flex-shrink-0">
-                            {getErrorIcon(error.type, error.message)}
-                        </div>
+                        <div className="flex-shrink-0">{getErrorIcon(error.type)}</div>
                         <div className="ml-3 flex-1">
-                            <p className={`text-sm font-medium ${getTextColor(error.type, error.message)}`}>
+                            <p className={`text-sm font-medium ${getTextColor(error.type)}`}>
                                 {error.message}
                             </p>
                             {error.details && (
-                                <p className={`mt-1 text-xs opacity-70 ${getTextColor(error.type, error.message)}`}>
+                                <p
+                                    className={`mt-1 text-xs opacity-70 ${getTextColor(error.type)}`}
+                                >
                                     {error.details}
                                 </p>
                             )}
                         </div>
                         <button
                             onClick={() => dismissError(error.id)}
-                            className={`ml-4 flex-shrink-0 rounded-md bg-transparent p-1 hover:bg-black/10 dark:hover:bg-white/10 ${getTextColor(error.type, error.message)}`}
+                            className={`ml-4 flex-shrink-0 rounded-md bg-transparent p-1 hover:bg-black/10 dark:hover:bg-white/10 ${getTextColor(error.type)}`}
                         >
                             <XMarkIcon className="h-4 w-4" />
                         </button>

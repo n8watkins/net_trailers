@@ -16,6 +16,7 @@ import { useRouter } from 'next/router'
 import { useRecoilState } from 'recoil'
 import { errorsState, loadingState } from '../atoms/errorAtom'
 import { createErrorHandler } from '../utils/errorHandler'
+import { useToast } from './useToast'
 
 interface AuthProviderProps {
     children: React.ReactNode
@@ -59,6 +60,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const [errors, setErrors] = useRecoilState(errorsState)
     const [globalLoading, setGlobalLoading] = useRecoilState(loadingState)
     const errorHandler = createErrorHandler(setErrors)
+    const { showSuccess } = useToast()
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -87,7 +89,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         await createUserWithEmailAndPassword(auth, email, password)
             .then((userCredential) => {
                 const user = userCredential.user
-                errorHandler.addSuccess('Account created successfully! Welcome to NetTrailer.')
+                showSuccess('Account created successfully! Welcome to NetTrailer.')
                 router.push('/')
                 setLoading(false)
             })
@@ -107,7 +109,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         await signInWithEmailAndPassword(auth, email, password)
             .then((userCredential) => {
                 const user = userCredential.user
-                errorHandler.addSuccess('Successfully signed in! Welcome back.')
+                showSuccess('Successfully signed in! Welcome back.')
                 router.push('/')
                 setLoading(false)
             })
@@ -131,7 +133,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 const credential = GoogleAuthProvider.credentialFromResult(result)
                 const token = credential!.accessToken
                 const user = result.user
-                errorHandler.addSuccess('Successfully signed in with Google!')
+                showSuccess('Successfully signed in with Google!')
                 router.push('/')
             })
             .catch((error) => {
@@ -149,7 +151,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setGlobalLoading(true)
         signOut(auth)
             .then(() => {
-                errorHandler.addSuccess('Successfully signed out. See you next time!')
+                showSuccess('Successfully signed out. See you next time!')
             })
             .catch((error) => {
                 errorHandler.handleAuthError(error)
@@ -165,7 +167,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         await sendPasswordResetEmail(auth, email)
             .then(() => {
                 setPassResetSuccess(true)
-                errorHandler.addSuccess('Password reset email sent! Check your inbox.')
+                showSuccess('Password reset email sent! Check your inbox.')
             })
             .catch((error) => {
                 errorHandler.handleAuthError(error)

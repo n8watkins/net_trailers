@@ -8,6 +8,7 @@ import useUserData from '../hooks/useUserData'
 import { createErrorHandler } from '../utils/errorHandler'
 import { useRecoilState } from 'recoil'
 import { errorsState } from '../atoms/errorAtom'
+import { useToast } from '../hooks/useToast'
 
 interface DataSummary {
     watchlistCount: number
@@ -22,6 +23,7 @@ export default function AccountManagement() {
     const userData = useUserData()
     const [errors, setErrors] = useRecoilState(errorsState)
     const errorHandler = createErrorHandler(setErrors)
+    const { showSuccess } = useToast()
 
     const [dataSummary, setDataSummary] = useState<DataSummary | null>(null)
     const [isLoading, setIsLoading] = useState(false)
@@ -101,7 +103,7 @@ export default function AccountManagement() {
                 }
             }
 
-            errorHandler.addSuccess('Account data cleared successfully')
+            showSuccess('Account data cleared successfully')
             setShowClearConfirm(false)
 
             // Reload summary
@@ -140,7 +142,7 @@ export default function AccountManagement() {
                 document.body.removeChild(link)
                 URL.revokeObjectURL(url)
 
-                errorHandler.addSuccess('Account data exported successfully')
+                showSuccess('Account data exported successfully')
             }
         } catch (error) {
             console.error('Failed to export account data:', error)
@@ -167,7 +169,7 @@ export default function AccountManagement() {
         try {
             setIsLoading(true)
             await userData.deleteAccount()
-            errorHandler.addSuccess('Account deleted successfully')
+            showSuccess('Account deleted successfully')
             // Note: User should be redirected or signed out after this
         } catch (error) {
             console.error('Failed to delete account:', error)
