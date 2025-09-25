@@ -75,7 +75,7 @@ function Row({ title, content }: Props) {
                     ref={rowRef}
                     className="flex gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-8 overflow-x-scroll overflow-y-hidden scrollbar-hide scroll-smooth
                               px-4 sm:px-6 md:px-8 lg:px-16
-                              py-8"
+                              py-10"
                     style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                 >
                     {filteredContent.map((item) => (

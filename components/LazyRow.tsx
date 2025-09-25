@@ -182,7 +182,7 @@ function StreamingRow({ title, content, hideTitles = false, batchSize = 6 }: Pro
                     ref={rowRef}
                     className="flex gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-8 overflow-x-auto scrollbar-hide scroll-smooth
                               px-4 sm:px-6 md:px-8 lg:px-16
-                              py-4 sm:py-6 md:py-8 lg:py-10"
+                              py-10"
                     style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                 >
                     {/* Render streaming content */}
