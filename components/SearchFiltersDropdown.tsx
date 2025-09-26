@@ -2,56 +2,13 @@ import React, { useState, useRef, useEffect } from 'react'
 import { XMarkIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
 import { useRecoilState } from 'recoil'
 import { searchState, SearchFilters } from '../atoms/searchAtom'
-
-interface Genre {
-    id: number
-    name: string
-}
-
-const movieGenres: Genre[] = [
-    { id: 28, name: 'Action' },
-    { id: 12, name: 'Adventure' },
-    { id: 16, name: 'Animation' },
-    { id: 35, name: 'Comedy' },
-    { id: 80, name: 'Crime' },
-    { id: 99, name: 'Documentary' },
-    { id: 18, name: 'Drama' },
-    { id: 10751, name: 'Family' },
-    { id: 14, name: 'Fantasy' },
-    { id: 36, name: 'History' },
-    { id: 27, name: 'Horror' },
-    { id: 10402, name: 'Music' },
-    { id: 9648, name: 'Mystery' },
-    { id: 10749, name: 'Romance' },
-    { id: 878, name: 'Science Fiction' },
-    { id: 10770, name: 'TV Movie' },
-    { id: 53, name: 'Thriller' },
-    { id: 10752, name: 'War' },
-    { id: 37, name: 'Western' }
-]
-
-const tvGenres: Genre[] = [
-    { id: 10759, name: 'Action & Adventure' },
-    { id: 16, name: 'Animation' },
-    { id: 35, name: 'Comedy' },
-    { id: 80, name: 'Crime' },
-    { id: 99, name: 'Documentary' },
-    { id: 18, name: 'Drama' },
-    { id: 10751, name: 'Family' },
-    { id: 10762, name: 'Kids' },
-    { id: 9648, name: 'Mystery' },
-    { id: 10763, name: 'News' },
-    { id: 10764, name: 'Reality' },
-    { id: 10765, name: 'Sci-Fi & Fantasy' },
-    { id: 10766, name: 'Soap' },
-    { id: 10767, name: 'Talk' },
-    { id: 10768, name: 'War & Politics' },
-    { id: 37, name: 'Western' }
-]
+import { MOVIE_GENRES as movieGenres, TV_GENRES as tvGenres, Genre } from '../constants/genres'
 
 const allGenres: Genre[] = [
     ...movieGenres,
-    ...tvGenres.filter(tvGenre => !movieGenres.some(movieGenre => movieGenre.id === tvGenre.id))
+    ...tvGenres.filter(
+        (tvGenre) => !movieGenres.some((movieGenre) => movieGenre.id === tvGenre.id)
+    ),
 ].sort((a, b) => a.name.localeCompare(b.name))
 
 interface SearchFiltersDropdownProps {
@@ -82,12 +39,12 @@ export default function SearchFiltersDropdown({ isOpen, onClose }: SearchFilters
         }
     }, [isOpen, onClose])
 
-    const updateFilter = (key: keyof SearchFilters, value: any) => {
-        setLocalFilters(prev => ({ ...prev, [key]: value }))
+    const updateFilter = (key: keyof SearchFilters, value: string) => {
+        setLocalFilters((prev) => ({ ...prev, [key]: value }))
     }
 
     const applyFilters = () => {
-        setSearch(prev => ({
+        setSearch((prev) => ({
             ...prev,
             filters: localFilters,
             hasAllResults: false,
@@ -105,7 +62,7 @@ export default function SearchFiltersDropdown({ isOpen, onClose }: SearchFilters
         }
         setLocalFilters(defaultFilters)
         setMinRating(4)
-        setSearch(prev => ({
+        setSearch((prev) => ({
             ...prev,
             filters: defaultFilters,
             hasAllResults: false,
@@ -139,7 +96,9 @@ export default function SearchFiltersDropdown({ isOpen, onClose }: SearchFilters
                 <div className="p-6 space-y-6">
                     {/* Content Type */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-3">Content Type</label>
+                        <label className="block text-sm font-medium text-gray-300 mb-3">
+                            Content Type
+                        </label>
                         <div className="flex bg-[#0a0a0a] border border-gray-600/30 rounded-lg p-1">
                             {(['all', 'movie', 'tv'] as const).map((type) => (
                                 <button
@@ -160,7 +119,9 @@ export default function SearchFiltersDropdown({ isOpen, onClose }: SearchFilters
                     {/* Release Year and Sort By */}
                     <div className="grid grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-3">Release Year</label>
+                            <label className="block text-sm font-medium text-gray-300 mb-3">
+                                Release Year
+                            </label>
                             <div className="relative">
                                 <select
                                     value={localFilters.year}
@@ -232,7 +193,9 @@ export default function SearchFiltersDropdown({ isOpen, onClose }: SearchFilters
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-3">Sort By</label>
+                            <label className="block text-sm font-medium text-gray-300 mb-3">
+                                Sort By
+                            </label>
                             <div className="relative">
                                 <select
                                     value={localFilters.sortBy}
@@ -253,7 +216,9 @@ export default function SearchFiltersDropdown({ isOpen, onClose }: SearchFilters
 
                     {/* Minimum Rating */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-3">Minimum Rating</label>
+                        <label className="block text-sm font-medium text-gray-300 mb-3">
+                            Minimum Rating
+                        </label>
                         <div className="space-y-3">
                             <div className="flex items-center justify-between text-sm text-gray-400">
                                 <span>Any</span>
@@ -274,7 +239,7 @@ export default function SearchFiltersDropdown({ isOpen, onClose }: SearchFilters
                                     }}
                                     className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
                                     style={{
-                                        background: `linear-gradient(to right, #dc2626 0%, #dc2626 ${(minRating / 9) * 100}%, #374151 ${(minRating / 9) * 100}%, #374151 100%)`
+                                        background: `linear-gradient(to right, #dc2626 0%, #dc2626 ${(minRating / 9) * 100}%, #374151 ${(minRating / 9) * 100}%, #374151 100%)`,
                                     }}
                                 />
                             </div>

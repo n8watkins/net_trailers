@@ -3,6 +3,16 @@
  * Integrates with the main toast system instead of managing separate error state
  * Handles authentication, API, network, and validation errors consistently
  */
+
+export interface AuthError {
+    code: string
+    message?: string
+}
+
+export interface ApiError {
+    status?: number
+    message?: string
+}
 export class ErrorHandler {
     private showError: (title: string, message?: string) => void
 
@@ -24,7 +34,7 @@ export class ErrorHandler {
         // No longer needed as main toast system handles clearing
     }
 
-    handleAuthError(error: any): string {
+    handleAuthError(error: AuthError): string {
         const errorMessages: Record<string, string> = {
             'auth/user-not-found': 'No account found with this email address.',
             'auth/wrong-password': 'Invalid password. Please try again.',
@@ -43,7 +53,7 @@ export class ErrorHandler {
         return 'auth_error'
     }
 
-    handleApiError(error: any, context: string): string {
+    handleApiError(error: ApiError, context: string): string {
         let message = `Failed to ${context}. Please try again.`
 
         if (error.status === 429) {
