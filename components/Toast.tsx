@@ -38,7 +38,6 @@ interface ToastProps {
  * Part of the unified toast system - handles all 6 toast types consistently
  */
 const Toast: React.FC<ToastProps> = ({ toast, onClose, duration = 5000 }) => {
-    console.log('🍞 Toast component rendering:', toast)
     const [isVisible, setIsVisible] = useState(false)
     const [isExiting, setIsExiting] = useState(false)
 

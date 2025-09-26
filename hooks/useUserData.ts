@@ -15,19 +15,12 @@ export default function useUserData() {
     const activeSessionId = useRecoilValue(activeSessionIdState)
     const sessionManager = useSessionManager()
 
-    console.log('🔐 useUserData - Session type:', sessionType)
-    console.log('🔐 useUserData - Active session ID:', activeSessionId)
-
     // Route to appropriate data hook based on session type
     const guestData = useGuestData()
     const authData = useAuthData(activeSessionId)
 
-    console.log('🔐 useUserData - Guest data:', guestData)
-    console.log('🔐 useUserData - Auth data:', authData)
-
     // Return the appropriate session data
     if (sessionType === 'guest') {
-        console.log('🔐 Returning guest data')
         const result = {
             ...guestData,
 
@@ -36,10 +29,8 @@ export default function useUserData() {
             activeSessionId,
             sessionManager,
         }
-        console.log('🔐 Guest result:', result)
         return result
     } else if (sessionType === 'authenticated') {
-        console.log('🔐 Returning authenticated data')
         const result = {
             ...authData,
 
@@ -61,7 +52,6 @@ export default function useUserData() {
                 preferences: authData.authSession.preferences,
             },
         }
-        console.log('🔐 Auth result:', result)
         return result
     } else {
         // Initializing state - return minimal interface

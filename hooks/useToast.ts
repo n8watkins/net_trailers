@@ -16,18 +16,14 @@ export const useToast = () => {
     const [toasts, setToasts] = useRecoilState(toastsState)
 
     const addToast = (toast: Omit<ToastMessage, 'id'>) => {
-        console.log('🍞 addToast called with:', toast)
         const id = Date.now().toString()
         const newToast: ToastMessage = {
             ...toast,
             id,
         }
-        console.log('🍞 Creating toast:', newToast)
         setToasts((prev) => {
-            console.log('🍞 Previous toasts:', prev)
             // Only show one toast at a time - replace existing toasts
             const newToasts = [newToast]
-            console.log('🍞 New toasts array (single toast):', newToasts)
             return newToasts
         })
     }

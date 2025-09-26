@@ -72,7 +72,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
             if (user) {
                 // User authenticated - session manager will handle the transition
-                console.log('🔐 User authenticated:', user.uid)
             } else {
                 // User signed out - session manager will handle cleanup
                 console.log('🎭 User signed out, switching to guest mode')

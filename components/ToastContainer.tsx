@@ -12,9 +12,7 @@ interface ToastContainerProps {
  * Part of the unified toast system - replaced the old ErrorToast positioning
  */
 const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onRemoveToast }) => {
-    console.log('🏠 ToastContainer render - toasts:', toasts)
     if (toasts.length === 0) {
-        console.log('🏠 ToastContainer: No toasts to display')
         return null
     }
 

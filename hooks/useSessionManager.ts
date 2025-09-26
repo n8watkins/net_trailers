@@ -16,9 +16,7 @@ import { AuthStorageService } from '../services/authStorageService'
 import useAuth from './useAuth'
 
 export function useSessionManager() {
-    console.log('🚗🚗🚗 useSessionManager called!')
     const { user } = useAuth()
-    console.log('🚗🚗🚗 useSessionManager user:', user?.uid, 'isLoading:', user === null)
 
     // Session manager state
     const [sessionType, setSessionType] = useRecoilState(sessionTypeState)
@@ -52,20 +50,7 @@ export function useSessionManager() {
 
     // Initialize session when auth state changes
     useEffect(() => {
-        console.log('🚗 useSessionManager useEffect triggered', {
-            user: user?.uid,
-            currentType: sessionType,
-            isTransitioning,
-            isInitialized: isSessionInitialized,
-        })
-
         const initializeSession = async () => {
-            console.log('🚗 About to check initialization conditions', {
-                isTransitioning,
-                isSessionInitialized,
-                shouldInitialize: !isTransitioning && !isSessionInitialized,
-            })
-
             if (!isTransitioning && !isSessionInitialized) {
                 console.log('🔄 Initializing session...', {
                     user: user?.uid,
@@ -124,7 +109,6 @@ export function useSessionManager() {
 
     const switchToAuth = async () => {
         if (user && sessionType !== 'authenticated' && !isTransitioning) {
-            console.log('🔐 Switching to auth mode...')
             await SessionManagerService.switchToAuthMode(user, state)
         }
     }
@@ -169,8 +153,6 @@ export function useSessionManager() {
             setSessionType('authenticated')
             setActiveSessionId(user.uid)
             setIsSessionInitialized(true)
-
-            console.log('🔐 Auth session started:', user.uid)
         } catch (error) {
             console.error('Failed to start auth session:', error)
             // Fallback to guest session
