@@ -78,6 +78,8 @@ function ListSelectionModal() {
     }
 
     const handleToggleList = (list: UserList) => {
+        if (!targetContent) return
+
         const isInList = isContentInList(list.id, targetContent.id)
 
         if (isInList) {

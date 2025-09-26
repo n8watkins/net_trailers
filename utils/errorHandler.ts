@@ -58,7 +58,7 @@ export class ErrorHandler {
 
         if (error.status === 429) {
             message = 'Too many requests. Please wait a moment and try again.'
-        } else if (error.status >= 500) {
+        } else if (error.status && error.status >= 500) {
             message = 'Server error. Our team has been notified.'
         } else if (error.status === 404) {
             message = `${context} not found.`

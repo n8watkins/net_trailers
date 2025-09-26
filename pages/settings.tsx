@@ -350,12 +350,12 @@ const Settings: React.FC = () => {
                                                                 {getUserName()}
                                                             </h3>
                                                             <p className="text-[#b3b3b3]">
-                                                                {user.email}
+                                                                {user?.email || 'No email'}
                                                             </p>
                                                             <p className="text-[#777] text-sm mt-1">
                                                                 Member since{' '}
                                                                 {new Date(
-                                                                    user.metadata?.creationTime ||
+                                                                    user?.metadata?.creationTime ||
                                                                         Date.now()
                                                                 ).toLocaleDateString()}
                                                             </p>
@@ -369,7 +369,7 @@ const Settings: React.FC = () => {
                                                         </label>
                                                         <input
                                                             type="text"
-                                                            value={user.displayName || ''}
+                                                            value={user?.displayName || ''}
                                                             placeholder="Enter your display name"
                                                             className="inputClass w-full max-w-md"
                                                         />
@@ -382,7 +382,7 @@ const Settings: React.FC = () => {
                                                         </label>
                                                         <input
                                                             type="email"
-                                                            value={user.email || ''}
+                                                            value={user?.email || ''}
                                                             disabled
                                                             className="inputClass w-full max-w-md opacity-50 cursor-not-allowed"
                                                         />

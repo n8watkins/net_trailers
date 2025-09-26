@@ -88,9 +88,10 @@ describe('ErrorHandler', () => {
         it('should handle errors without code property', () => {
             const errorWithoutCode = {
                 message: 'Something went wrong',
+                code: undefined,
             }
 
-            errorHandler.handleAuthError(errorWithoutCode)
+            errorHandler.handleAuthError(errorWithoutCode as any)
 
             expect(mockShowError).toHaveBeenCalledWith('Something went wrong', undefined)
         })

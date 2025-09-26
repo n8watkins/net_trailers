@@ -407,7 +407,7 @@ function Modal() {
 
     // Handle click outside inline dropdown
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
+        const handleClickOutside = (event: Event) => {
             if (
                 inlineDropdownRef.current &&
                 !inlineDropdownRef.current.contains(event.target as Node)
@@ -449,11 +449,11 @@ function Modal() {
                 onClick={handleClose}
             >
                 <div
-                    className="relative w-full max-w-sm sm:max-w-2xl md:max-w-4xl lg:max-w-6xl z-10 rounded-md max-h-[95vh] bg-[#141414] overflow-y-auto"
+                    className="relative w-full max-w-sm sm:max-w-2xl md:max-w-4xl lg:max-w-6xl z-10 rounded-md max-h-[95vh] bg-[#141414] overflow-y-auto flex flex-col"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Video Container - Responsive */}
-                    <div className="relative w-full aspect-video bg-black">
+                    <div className="relative w-full aspect-video bg-black flex-shrink-0">
                         {/* Close Button */}
                         <button
                             className="absolute top-2 right-2 sm:top-4 sm:right-4 z-30 rounded-full bg-black/80 p-1 sm:p-2"
@@ -860,27 +860,27 @@ function Modal() {
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        {/* Content Section - Below Video */}
-                        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-                            {/* Content Metadata */}
-                            {enhancedMovieData && (
-                                <ContentMetadata
-                                    content={enhancedMovieData}
-                                    showDebugButton={true}
-                                    onDebugClick={(e) => {
-                                        if (e.ctrlKey || e.metaKey) {
-                                            const mediaType =
-                                                currentMovie?.media_type === 'tv' ? 'tv' : 'movie'
-                                            const url = `/api/movies/details/${currentMovie?.id}?media_type=${mediaType}`
-                                            window.open(url, '_blank')
-                                        } else {
-                                            setShowJsonDebug(true)
-                                        }
-                                    }}
-                                />
-                            )}
-                        </div>
+                    {/* Content Section - Below Video */}
+                    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 flex-1 overflow-y-auto">
+                        {/* Content Metadata */}
+                        {enhancedMovieData && (
+                            <ContentMetadata
+                                content={enhancedMovieData}
+                                showDebugButton={true}
+                                onDebugClick={(e) => {
+                                    if (e.ctrlKey || e.metaKey) {
+                                        const mediaType =
+                                            currentMovie?.media_type === 'tv' ? 'tv' : 'movie'
+                                        const url = `/api/movies/details/${currentMovie?.id}?media_type=${mediaType}`
+                                        window.open(url, '_blank')
+                                    } else {
+                                        setShowJsonDebug(true)
+                                    }
+                                }}
+                            />
+                        )}
                     </div>
                 </div>
 

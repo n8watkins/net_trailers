@@ -45,13 +45,10 @@ export default function AccountManagement() {
                         isEmpty: true,
                     }
                 } else if ('getAccountDataSummary' in userData) {
-                    if (userData.isAuthenticated) {
-                        // Authenticated user
-                        summary = await userData.getAccountDataSummary()
-                    } else {
-                        // Guest user
-                        summary = userData.getAccountDataSummary()
-                    }
+                    // Both authenticated and guest sessions return DataSummary
+                    // Authenticated returns Promise<DataSummary>, guest returns DataSummary
+                    const result = userData.getAccountDataSummary()
+                    summary = result instanceof Promise ? await result : result
                 } else {
                     // Fallback empty summary
                     summary = {
@@ -65,7 +62,7 @@ export default function AccountManagement() {
                 setDataSummary(summary)
             } catch (error) {
                 console.error('Failed to load data summary:', error)
-                errorHandler.handleApiError(error, 'load account data')
+                errorHandler.handleApiError(error as any, 'load account data')
                 // Set empty summary on error
                 setDataSummary({
                     watchlistCount: 0,
@@ -103,14 +100,24 @@ export default function AccountManagement() {
             showSuccess('Account data cleared successfully')
             setShowClearConfirm(false)
 
-            // Reload summary
-            const summary = userData.isAuthenticated
-                ? await userData.getAccountDataSummary()
-                : userData.getAccountDataSummary()
-            setDataSummary(summary)
+            // Reload summary with proper type checking
+            if ('getAccountDataSummary' in userData) {
+                const result = userData.getAccountDataSummary()
+                const summary = result instanceof Promise ? await result : result
+                setDataSummary(summary)
+            } else {
+                // Fallback empty summary for session types without this method
+                setDataSummary({
+                    watchlistCount: 0,
+                    ratingsCount: 0,
+                    listsCount: 0,
+                    totalItems: 0,
+                    isEmpty: true,
+                })
+            }
         } catch (error) {
             console.error('Failed to clear account data:', error)
-            errorHandler.handleApiError(error, 'clear account data')
+            errorHandler.handleApiError(error as any, 'clear account data')
         } finally {
             setIsLoading(false)
         }
@@ -143,7 +150,7 @@ export default function AccountManagement() {
             }
         } catch (error) {
             console.error('Failed to export account data:', error)
-            errorHandler.handleApiError(error, 'export account data')
+            errorHandler.handleApiError(error as any, 'export account data')
         } finally {
             setIsLoading(false)
         }
@@ -159,7 +166,7 @@ export default function AccountManagement() {
         }
 
         if (confirmText !== 'DELETE MY ACCOUNT') {
-            errorHandler.addError('Please type "DELETE MY ACCOUNT" to confirm')
+            errorHandler.addError('validation', 'Please type "DELETE MY ACCOUNT" to confirm')
             return
         }
 
@@ -170,7 +177,7 @@ export default function AccountManagement() {
             // Note: User should be redirected or signed out after this
         } catch (error) {
             console.error('Failed to delete account:', error)
-            errorHandler.handleApiError(error, 'delete account')
+            errorHandler.handleApiError(error as any, 'delete account')
         } finally {
             setIsLoading(false)
         }
@@ -316,7 +323,7 @@ export default function AccountManagement() {
                     <>
                         <button
                             onClick={handleDeleteAccount}
-                            disabled={isLoading || userData.sessionType === 'initializing'}
+                            disabled={isLoading}
                             className="w-full flex items-center justify-center gap-2 p-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white rounded-lg transition-colors"
                         >
                             <TrashIcon className="w-5 h-5" />

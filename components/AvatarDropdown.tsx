@@ -39,7 +39,9 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
     const [isOpen, setIsOpen] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
     const { user, logOut } = useAuth()
-    const { userSession, ratings, watchlist } = useUserData()
+    const userData = useUserData()
+    const { ratings, watchlist } = userData
+    const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
     const router = useRouter()
 
     useEffect(() => {
@@ -76,7 +78,9 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
 
     const handleExportCSV = () => {
         setIsOpen(false)
-        exportUserDataToCSV(userSession.preferences)
+        if (userSession?.preferences) {
+            exportUserDataToCSV(userSession.preferences)
+        }
     }
 
     const getInitials = (email: string) => {

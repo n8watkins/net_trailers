@@ -23,8 +23,9 @@ import { exportUserDataToCSV } from '../utils/csvExport'
 import { UserList } from '../types/userLists'
 
 const Watchlists: NextPage = () => {
-    const { ratings, watchlist, isGuest, userSession, userLists, getDefaultLists, getCustomLists } =
-        useUserData()
+    const userData = useUserData()
+    const { ratings, watchlist, isGuest, userLists, getDefaultLists, getCustomLists } = userData
+    const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
 
     const [selectedListId, setSelectedListId] = useState<string | 'all'>('all')
     const [searchQuery, setSearchQuery] = useState('')
@@ -86,7 +87,9 @@ const Watchlists: NextPage = () => {
     }
 
     const handleExportCSV = () => {
-        exportUserDataToCSV(userSession.preferences)
+        if (userSession?.preferences) {
+            exportUserDataToCSV(userSession.preferences)
+        }
     }
 
     const handleManageAllLists = () => {

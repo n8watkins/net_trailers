@@ -106,8 +106,10 @@ const GenrePage: NextPage<GenrePageProps> = () => {
                     if (isFirstPage) {
                         return enrichedResults
                     } else {
-                        const existingIds = new Set(prev.map((item) => item.id))
-                        const newItems = enrichedResults.filter((item) => !existingIds.has(item.id))
+                        const existingIds = new Set(prev.map((item: any) => item.id))
+                        const newItems = enrichedResults.filter(
+                            (item: any) => !existingIds.has(item.id)
+                        )
                         return [...prev, ...newItems]
                     }
                 })

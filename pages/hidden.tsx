@@ -13,7 +13,9 @@ import { modalState, movieState } from '../atoms/modalAtom'
 import { exportUserDataToCSV } from '../utils/csvExport'
 
 const Hidden: NextPage = () => {
-    const { userSession, getDefaultLists } = useUserData()
+    const userData = useUserData()
+    const { getDefaultLists } = userData
+    const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
 
     const [searchQuery, setSearchQuery] = useState('')
     const setShowModal = useSetRecoilState(modalState)
@@ -51,7 +53,9 @@ const Hidden: NextPage = () => {
     }
 
     const handleExportCSV = () => {
-        exportUserDataToCSV(userSession.preferences)
+        if (userSession?.preferences) {
+            exportUserDataToCSV(userSession.preferences)
+        }
     }
 
     // Separate content by media type

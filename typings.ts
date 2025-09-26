@@ -137,7 +137,6 @@ export function getYear(content: Content): string {
     // Get the appropriate date field
     const date = isMovie(content) ? content.release_date : content.first_air_date
 
-
     // Extract year from valid date string
     if (date && typeof date === 'string' && date.length >= 4) {
         const year = date.slice(0, 4)
@@ -148,16 +147,7 @@ export function getYear(content: Content): string {
         }
     }
 
-    // If primary date field is missing, try alternative
-    const alternativeDate = isMovie(content) ? content.first_air_date : content.release_date
-    if (alternativeDate && typeof alternativeDate === 'string' && alternativeDate.length >= 4) {
-        const year = alternativeDate.slice(0, 4)
-        const yearNum = parseInt(year)
-        if (!isNaN(yearNum) && yearNum > 1800 && yearNum < 2100) {
-            return year
-        }
-    }
-
+    // If primary date field is missing, return 'Unknown'
     return 'Unknown'
 }
 
@@ -168,7 +158,7 @@ export function getContentType(content: Content): string {
 // Utility functions for new metadata
 export function getDirector(content: Content): string | null {
     if (!content.credits?.crew) return null
-    const director = content.credits.crew.find(person => person.job === 'Director')
+    const director = content.credits.crew.find((person) => person.job === 'Director')
     return director?.name || null
 }
 
@@ -179,26 +169,26 @@ export function getMainCast(content: Content, limit: number = 5): CastMember[] {
 
 export function getGenreNames(content: Content): string[] {
     if (content.genres) {
-        return content.genres.map(genre => genre.name)
+        return content.genres.map((genre) => genre.name)
     }
     return []
 }
 
 export function getProductionCompanyNames(content: Content): string[] {
     if (!content.production_companies) return []
-    return content.production_companies.map(company => company.name)
+    return content.production_companies.map((company) => company.name)
 }
 
 export function getRating(content: Content): string | null {
     if (isMovie(content) && content.release_dates?.results) {
         // Look for US rating first
-        const usRating = content.release_dates.results.find(r => r.iso_3166_1 === 'US')
-        if (usRating?.release_dates.length > 0) {
+        const usRating = content.release_dates.results.find((r) => r.iso_3166_1 === 'US')
+        if (usRating?.release_dates && usRating.release_dates.length > 0) {
             return usRating.release_dates[0].certification || null
         }
     } else if (isTVShow(content) && content.content_ratings?.results) {
         // Look for US TV rating
-        const usRating = content.content_ratings.results.find(r => r.iso_3166_1 === 'US')
+        const usRating = content.content_ratings.results.find((r) => r.iso_3166_1 === 'US')
         return usRating?.rating || null
     }
     return null
@@ -223,16 +213,10 @@ export function getIMDbRating(content: Content): { url: string | null; id: strin
     const imdbId = content.external_ids?.imdb_id
     return {
         id: imdbId || null,
-        url: imdbId ? `https://www.imdb.com/title/${imdbId}` : null
+        url: imdbId ? `https://www.imdb.com/title/${imdbId}` : null,
     }
 }
 
 export interface Element {
-    type:
-        | 'Bloopers'
-        | 'Featurette'
-        | 'Behind the Scenes'
-        | 'Clip'
-        | 'Trailer'
-        | 'Teaser'
+    type: 'Bloopers' | 'Featurette' | 'Behind the Scenes' | 'Clip' | 'Trailer' | 'Teaser'
 }
