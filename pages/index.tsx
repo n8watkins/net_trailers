@@ -81,13 +81,8 @@ const Home = ({
             lastCacheUpdate: Date.now(),
         }))
 
-        // Set content loaded successfully and prefetch login page
+        // Set content loaded successfully
         setContentLoadedSuccessfully(true)
-        if (typeof window !== 'undefined') {
-            import('next/router').then(({ default: Router }) => {
-                Router.prefetch('/login')
-            })
-        }
     }, [
         trending,
         topRatedMovies,

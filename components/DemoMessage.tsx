@@ -25,10 +25,7 @@ export default function DemoMessage() {
         contentLoadedSuccessfully,
     ])
 
-    const isOnAuthPage =
-        router.pathname === '/login' ||
-        router.pathname === '/signup' ||
-        router.pathname === '/reset'
+    const isOnAuthPage = router.pathname === '/auth' || router.pathname === '/reset'
 
     if (
         !showDemoMessage ||
