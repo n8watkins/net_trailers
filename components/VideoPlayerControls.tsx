@@ -53,7 +53,10 @@ export default function VideoPlayerControls({
                             </button>
                         </ToolTipMod>
                     )}
+                </div>
 
+                {/* Right side buttons */}
+                <div className="flex gap-2 sm:gap-4 items-center">
                     {/* Volume/Mute Button */}
                     <ToolTipMod title={muted ? 'Unmute' : 'Mute'}>
                         <button
@@ -67,10 +70,6 @@ export default function VideoPlayerControls({
                             )}
                         </button>
                     </ToolTipMod>
-                </div>
-
-                {/* Right side buttons */}
-                <div className="flex gap-2 sm:gap-4 items-center">
                     {/* YouTube Link Button */}
                     <ToolTipMod title="Watch on YouTube">
                         <button

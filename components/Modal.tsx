@@ -50,6 +50,8 @@ import {
 import ReactPlayer from 'react-player'
 import VideoPlayerControls from './VideoPlayerControls'
 import ContentMetadata from './ContentMetadata'
+import ContentMetadataSkeleton from './ContentMetadataSkeleton'
+import KeyboardShortcuts from './KeyboardShortcuts'
 import Image from 'next/image'
 import { Element, Genre } from '../typings'
 import ToolTipMod from '../components/ToolTipMod'
@@ -375,6 +377,36 @@ function Modal() {
                         setRating(currentMovie.id, 'liked', currentMovie as Content)
                     }
                 }
+            } else if (e.key === 'h' || e.key === 'H') {
+                // Toggle hide/unhide when 'h' is pressed (only if modal is open)
+                if (currentMovie && showModal && !showJsonDebug) {
+                    e.preventDefault()
+
+                    const currentRating = getRating(currentMovie.id)
+                    const isHidden = currentRating?.rating === 'disliked'
+
+                    if (isHidden) {
+                        // Unhide (remove rating)
+                        removeRating(currentMovie.id)
+                        showContentShown(
+                            `${getTitle(currentMovie as Content)} Shown`,
+                            'Will appear in recommendations again'
+                        )
+                    } else {
+                        // Hide (set disliked rating)
+                        setRating(currentMovie.id, 'disliked', currentMovie as Content)
+                        showContentHidden(
+                            `${getTitle(currentMovie as Content)} Hidden`,
+                            'Hidden from recommendations'
+                        )
+                    }
+                }
+            } else if (e.key === 'r' || e.key === 'R') {
+                // Open YouTube when 'r' is pressed (only if modal is open and trailer exists)
+                if (trailer && showModal && !showJsonDebug) {
+                    e.preventDefault()
+                    window.open(`https://www.youtube.com/watch?v=${trailer}`, '_blank')
+                }
             }
         }
 
@@ -392,6 +424,8 @@ function Modal() {
         setRating,
         removeRating,
         currentMovie,
+        showContentShown,
+        showContentHidden,
     ])
 
     // Handle auto-play with sound when Play button is clicked
@@ -449,11 +483,11 @@ function Modal() {
                 onClick={handleClose}
             >
                 <div
-                    className="relative w-full max-w-sm sm:max-w-2xl md:max-w-4xl lg:max-w-6xl z-10 rounded-md max-h-[95vh] bg-[#141414] overflow-y-auto flex flex-col"
+                    className="relative w-full max-w-sm sm:max-w-2xl md:max-w-3xl lg:max-w-5xl z-10 rounded-md max-h-[92vh] bg-[#141414] overflow-y-auto flex flex-col"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Video Container - Responsive */}
-                    <div className="relative w-full aspect-video bg-black flex-shrink-0">
+                    <div className="relative w-full aspect-[16/10] bg-black flex-shrink-0">
                         {/* Close Button */}
                         <button
                             className="absolute top-2 right-2 sm:top-4 sm:right-4 z-30 rounded-full bg-black/80 p-1 sm:p-2"
@@ -865,7 +899,9 @@ function Modal() {
                     {/* Content Section - Below Video */}
                     <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 flex-1 overflow-y-auto">
                         {/* Content Metadata */}
-                        {enhancedMovieData && (
+                        {isLoading && !enhancedMovieData ? (
+                            <ContentMetadataSkeleton />
+                        ) : enhancedMovieData ? (
                             <ContentMetadata
                                 content={enhancedMovieData}
                                 showDebugButton={true}
@@ -880,9 +916,27 @@ function Modal() {
                                     }
                                 }}
                             />
-                        )}
+                        ) : null}
                     </div>
                 </div>
+
+                {/* Keyboard Shortcuts - Below Modal */}
+                {!showJsonDebug && (
+                    <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-full max-w-4xl">
+                        <KeyboardShortcuts
+                            shortcuts={[
+                                { key: 'ESC', description: 'Close' },
+                                { key: 'SPACE', description: 'Play/Pause' },
+                                { key: 'M', description: 'Mute/Unmute' },
+                                { key: 'F', description: 'Fullscreen', icon: '⛶' },
+                                { key: 'L', description: 'Like/Unlike', icon: '👍' },
+                                { key: 'H', description: 'Hide/Show' },
+                                { key: 'R', description: 'Watch on YouTube' },
+                            ]}
+                            className="opacity-80 hover:opacity-100 transition-opacity"
+                        />
+                    </div>
+                )}
 
                 {/* JSON Debug Modal */}
                 {showJsonDebug && (
