@@ -8,8 +8,7 @@ import {
     isTransitioningSessionState,
     currentSessionInfoSelector,
 } from '../atoms/sessionManagerAtom'
-import { guestSessionState, isGuestSessionActiveState } from '../atoms/guestSessionAtom'
-import { authSessionState, isAuthSessionActiveState } from '../atoms/authSessionAtom'
+import { userSessionState } from '../atoms/userDataAtom'
 import { SessionManagerService, SessionManagerState } from '../services/sessionManagerService'
 import { GuestStorageService } from '../services/guestStorageService'
 import { AuthStorageService } from '../services/authStorageService'
@@ -26,11 +25,8 @@ export function useSessionManager() {
     const [migrationAvailable, setMigrationAvailable] = useRecoilState(migrationAvailableState)
     const [isTransitioning, setIsTransitioning] = useRecoilState(isTransitioningSessionState)
 
-    // Session state atoms
-    const [guestSession, setGuestSession] = useRecoilState(guestSessionState)
-    const [authSession, setAuthSession] = useRecoilState(authSessionState)
-    const [isGuestActive, setIsGuestActive] = useRecoilState(isGuestSessionActiveState)
-    const [isAuthActive, setIsAuthActive] = useRecoilState(isAuthSessionActiveState)
+    // Unified session state
+    const [userSession, setUserSession] = useRecoilState(userSessionState)
 
     // Current session info
     const currentSession = useRecoilValue(currentSessionInfoSelector)
@@ -42,29 +38,37 @@ export function useSessionManager() {
         setIsSessionInitialized,
         setMigrationAvailable,
         setIsTransitioning,
-        setGuestSession,
-        setAuthSession,
-        setIsGuestActive,
-        setIsAuthActive,
+        setUserSession,
     }
 
     // Initialize session when auth state changes
     useEffect(() => {
+        console.log('📡 [useSessionManager] useEffect triggered - auth state changed', {
+            user: user?.uid,
+            isTransitioning,
+            isSessionInitialized,
+            timestamp: new Date().toISOString(),
+        })
+
         const initializeSession = async () => {
             if (!isTransitioning && !isSessionInitialized) {
-                console.log('🔄 Initializing session...', {
+                console.log('🔄 [useSessionManager] Initializing session...', {
                     user: user?.uid,
-                    currentType: sessionType,
                     isTransitioning,
                     isInitialized: isSessionInitialized,
                 })
+
                 try {
+                    console.log(
+                        '🔄 [useSessionManager] Calling SessionManagerService.initializeSession'
+                    )
                     await SessionManagerService.initializeSession(user, state)
+                    console.log('✅ [useSessionManager] Session initialization completed')
                 } catch (error) {
-                    console.error('🚨 Session initialization failed:', error)
+                    console.error('🚨 [useSessionManager] Session initialization failed:', error)
                 }
             } else {
-                console.log('🔄 Skipping session initialization', {
+                console.log('🔄 [useSessionManager] Skipping session initialization', {
                     isTransitioning,
                     isSessionInitialized,
                     reason: isTransitioning ? 'transitioning' : 'already initialized',
@@ -72,10 +76,9 @@ export function useSessionManager() {
             }
         }
 
-        // Add a small delay to ensure auth state is settled
-        const timeoutId = setTimeout(initializeSession, 100)
-        return () => clearTimeout(timeoutId)
-    }, [user, isTransitioning, isSessionInitialized, sessionType])
+        // Initialize session immediately when conditions are met
+        initializeSession()
+    }, [user, isTransitioning, isSessionInitialized])
 
     // Fallback: Force guest session initialization if Firebase auth is stuck
     useEffect(() => {
@@ -93,7 +96,7 @@ export function useSessionManager() {
                         console.error('🚨 Fallback session initialization failed:', error)
                     }
                 }
-            }, 2000) // 2 second timeout
+            }, 1000) // 1 second timeout - reduced for better UX
 
             return () => clearTimeout(fallbackTimer)
         }
@@ -118,20 +121,43 @@ export function useSessionManager() {
         const guestId = GuestStorageService.getGuestId()
         const preferences = GuestStorageService.loadGuestData(guestId)
 
-        setGuestSession({
+        setUserSession({
+            isGuest: true,
             guestId,
+            userId: undefined,
             preferences,
             isActive: true,
+            lastSyncedAt: Date.now(),
             createdAt: Date.now(),
         })
 
-        setIsGuestActive(true)
-        setIsAuthActive(false)
         setSessionType('guest')
         setActiveSessionId(guestId)
         setIsSessionInitialized(true)
 
         console.log('🎭 Guest session started:', guestId)
+    }
+
+    // Initialize a fresh guest session (for complete data isolation)
+    const startFreshGuestSession = async () => {
+        const guestId = GuestStorageService.createFreshGuestSession()
+        const preferences = GuestStorageService.loadGuestData(guestId)
+
+        setUserSession({
+            isGuest: true,
+            guestId,
+            userId: undefined,
+            preferences,
+            isActive: true,
+            lastSyncedAt: Date.now(),
+            createdAt: Date.now(),
+        })
+
+        setSessionType('guest')
+        setActiveSessionId(guestId)
+        setIsSessionInitialized(true)
+
+        console.log('🎭 Fresh guest session started:', guestId)
     }
 
     // Initialize auth session
@@ -141,15 +167,16 @@ export function useSessionManager() {
         try {
             const preferences = await AuthStorageService.loadUserData(user.uid)
 
-            setAuthSession({
+            setUserSession({
+                isGuest: false,
+                guestId: undefined,
                 userId: user.uid,
                 preferences,
                 isActive: true,
                 lastSyncedAt: Date.now(),
+                createdAt: Date.now(),
             })
 
-            setIsAuthActive(true)
-            setIsGuestActive(false)
             setSessionType('authenticated')
             setActiveSessionId(user.uid)
             setIsSessionInitialized(true)
@@ -188,14 +215,14 @@ export function useSessionManager() {
         SessionManagerService.logCurrentState(sessionType, activeSessionId, isSessionInitialized)
 
         console.log('📊 Session Details:', {
-            guest: {
-                id: guestSession.guestId,
-                active: isGuestActive,
-                hasData: GuestStorageService.hasGuestData(guestSession.guestId),
-            },
-            auth: {
-                id: authSession.userId,
-                active: isAuthActive,
+            session: {
+                isGuest: userSession.isGuest,
+                guestId: userSession.guestId,
+                userId: userSession.userId,
+                active: userSession.isActive,
+                hasGuestData: userSession.guestId
+                    ? GuestStorageService.hasGuestData(userSession.guestId)
+                    : false,
             },
             migration: {
                 available: migrationAvailable,
@@ -221,6 +248,7 @@ export function useSessionManager() {
         switchToGuest,
         switchToAuth,
         startGuestSession,
+        startFreshGuestSession,
         startAuthSession,
         clearAllSessions,
 

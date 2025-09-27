@@ -1,17 +1,6 @@
 import { SetterOrUpdater } from 'recoil'
 import { User } from 'firebase/auth'
-import {
-    GuestSession,
-    guestSessionState,
-    GuestPreferences,
-    isGuestSessionActiveState,
-} from '../atoms/guestSessionAtom'
-import {
-    AuthSession,
-    authSessionState,
-    AuthPreferences,
-    isAuthSessionActiveState,
-} from '../atoms/authSessionAtom'
+import { UserSession, UserPreferences } from '../atoms/userDataAtom'
 import {
     SessionType,
     sessionTypeState,
@@ -20,6 +9,7 @@ import {
     migrationAvailableState,
     isTransitioningSessionState,
 } from '../atoms/sessionManagerAtom'
+import { SessionStorageService } from './sessionStorageService'
 
 export interface SessionManagerState {
     setSessionType: SetterOrUpdater<SessionType>
@@ -27,10 +17,7 @@ export interface SessionManagerState {
     setIsSessionInitialized: SetterOrUpdater<boolean>
     setMigrationAvailable: SetterOrUpdater<boolean>
     setIsTransitioning: SetterOrUpdater<boolean>
-    setGuestSession: SetterOrUpdater<GuestSession>
-    setAuthSession: SetterOrUpdater<AuthSession>
-    setIsGuestActive: SetterOrUpdater<boolean>
-    setIsAuthActive: SetterOrUpdater<boolean>
+    setUserSession: SetterOrUpdater<UserSession>
 }
 
 export class SessionManagerService {
@@ -59,6 +46,44 @@ export class SessionManagerService {
         }
     }
 
+    // Initialize a fresh guest session (for complete data isolation)
+    private static async initializeFreshGuestSession(
+        state: SessionManagerState
+    ): Promise<SessionType> {
+        // Use dynamic import to avoid circular dependencies
+        const { GuestStorageService } = await import('./guestStorageService')
+
+        // CRITICAL: Clear any existing session data first for complete isolation
+        console.log('🧹 Clearing previous session data for fresh guest session')
+        this.clearSessionAtomState(state)
+
+        // Force create a completely fresh guest session with session-isolated storage
+        const guestId = GuestStorageService.createFreshGuestSession()
+
+        // Initialize session-isolated storage for this guest
+        SessionStorageService.initializeSession(guestId, 'guest')
+
+        const guestPreferences = GuestStorageService.loadGuestData(guestId)
+
+        const userSession: UserSession = {
+            isGuest: true,
+            guestId,
+            userId: undefined,
+            preferences: guestPreferences,
+            isActive: true,
+            lastSyncedAt: Date.now(),
+            createdAt: Date.now(),
+        }
+
+        // Update atoms atomically
+        state.setUserSession(userSession)
+        state.setSessionType('guest')
+        state.setActiveSessionId(guestId)
+
+        console.log(`🎭 Fresh guest session initialized with isolation: ${guestId}`)
+        return 'guest'
+    }
+
     // Initialize guest session
     private static async initializeGuestSession(state: SessionManagerState): Promise<SessionType> {
         // Check if we have an existing guest session
@@ -69,24 +94,28 @@ export class SessionManagerService {
             this.storeGuestId(guestId)
         }
 
+        // Initialize session-isolated storage for this guest
+        SessionStorageService.initializeSession(guestId, 'guest')
+
         // Load guest data
         const guestPreferences = await this.loadGuestPreferences(guestId)
 
-        const guestSession: GuestSession = {
+        const userSession: UserSession = {
+            isGuest: true,
             guestId,
+            userId: undefined,
             preferences: guestPreferences,
             isActive: true,
+            lastSyncedAt: Date.now(),
             createdAt: Date.now(),
         }
 
         // Update atoms
-        state.setGuestSession(guestSession)
-        state.setIsGuestActive(true)
-        state.setIsAuthActive(false)
+        state.setUserSession(userSession)
         state.setSessionType('guest')
         state.setActiveSessionId(guestId)
 
-        console.log(`🎭 Guest session initialized: ${guestId}`)
+        console.log(`🎭 Guest session initialized with isolation: ${guestId}`)
         return 'guest'
     }
 
@@ -95,6 +124,13 @@ export class SessionManagerService {
         user: User,
         state: SessionManagerState
     ): Promise<SessionType> {
+        // CRITICAL: Clear any existing session data first for complete isolation
+        console.log('🧹 Clearing previous session data for auth session')
+        this.clearSessionAtomState(state)
+
+        // Initialize session-isolated storage for this authenticated user
+        SessionStorageService.initializeSession(user.uid, 'auth')
+
         // Check if guest data exists for potential migration
         const existingGuestId = this.getStoredGuestId()
         const hasGuestData = existingGuestId && this.hasGuestData(existingGuestId)
@@ -103,42 +139,57 @@ export class SessionManagerService {
             state.setMigrationAvailable(true)
         }
 
-        // Load auth data
+        // Load auth data (from Firebase, not localStorage)
         const authPreferences = await this.loadAuthPreferences(user.uid)
 
-        const authSession: AuthSession = {
+        const userSession: UserSession = {
+            isGuest: false,
+            guestId: undefined,
             userId: user.uid,
             preferences: authPreferences,
             isActive: true,
             lastSyncedAt: Date.now(),
+            createdAt: Date.now(),
         }
 
-        // Update atoms
-        state.setAuthSession(authSession)
-        state.setIsAuthActive(true)
-        state.setIsGuestActive(false)
+        // Update atoms atomically
+        state.setUserSession(userSession)
         state.setSessionType('authenticated')
         state.setActiveSessionId(user.uid)
 
-        console.log(`🔐 Auth session initialized: ${user.uid}`)
+        console.log(`🔐 Auth session initialized with isolation: ${user.uid}`)
         return 'authenticated'
     }
 
     // Switch to guest mode (when user logs out)
     static async switchToGuestMode(state: SessionManagerState): Promise<void> {
+        console.log('🎭 [SessionManager] SWITCHING TO GUEST MODE - Starting logout session switch')
         state.setIsTransitioning(true)
 
         try {
-            // Clear auth session
-            state.setIsAuthActive(false)
+            // CRITICAL: Clear shared Recoil state FIRST before any other operations
+            console.log('🧹 [SessionManager] STEP 1: Force clearing shared Recoil state')
+            this.clearSessionAtomState(state)
+
+            // CRITICAL: Add delay to ensure Recoil state is cleared
+            await new Promise((resolve) => setTimeout(resolve, 50))
 
             // Clean up any auth-specific data
+            console.log('🧹 [SessionManager] STEP 2: Clearing auth session data')
             this.clearAuthSessionData()
 
-            // Initialize new guest session
-            await this.initializeGuestSession(state)
+            // CRITICAL: Clear Recoil state AGAIN to ensure isolation
+            console.log('🧹 [SessionManager] STEP 3: Double-clearing Recoil state for isolation')
+            this.clearSessionAtomState(state)
 
-            console.log('🎭 Switched to guest mode')
+            // Initialize new guest session (force fresh for isolation)
+            console.log('🎭 [SessionManager] STEP 4: Initializing fresh guest session')
+            await this.initializeFreshGuestSession(state)
+
+            // CRITICAL: Final verification that state is properly isolated
+            console.log(
+                '✅ [SessionManager] STEP 5: Guest mode switch completed - should have complete isolation'
+            )
         } finally {
             state.setIsTransitioning(false)
         }
@@ -157,9 +208,6 @@ export class SessionManagerService {
                 state.setMigrationAvailable(true)
             }
 
-            // Clear guest session (but keep data for potential migration)
-            state.setIsGuestActive(false)
-
             // Initialize auth session
             await this.initializeAuthSession(user, state)
 
@@ -172,8 +220,6 @@ export class SessionManagerService {
     // Clear all session data (for complete reset)
     static clearAllSessionData(state: SessionManagerState): void {
         // Clear atoms
-        state.setIsGuestActive(false)
-        state.setIsAuthActive(false)
         state.setSessionType('initializing')
         state.setActiveSessionId('')
         state.setIsSessionInitialized(false)
@@ -207,25 +253,25 @@ export class SessionManagerService {
         return data !== null && data !== 'undefined'
     }
 
-    private static async loadGuestPreferences(guestId: string): Promise<GuestPreferences> {
+    private static async loadGuestPreferences(guestId: string): Promise<UserPreferences> {
         try {
             // Use dynamic import to avoid circular dependencies during initialization
             const { GuestStorageService } = await import('./guestStorageService')
             return GuestStorageService.loadGuestData(guestId)
         } catch (error) {
             console.error('Failed to load guest preferences:', error)
-            return this.getDefaultGuestPreferences()
+            return this.getDefaultUserPreferences()
         }
     }
 
-    private static async loadAuthPreferences(userId: string): Promise<AuthPreferences> {
+    private static async loadAuthPreferences(userId: string): Promise<UserPreferences> {
         try {
             // Use dynamic import to avoid circular dependencies during initialization
             const { AuthStorageService } = await import('./authStorageService')
             return await AuthStorageService.loadUserData(userId)
         } catch (error) {
             console.error('Failed to load auth preferences:', error)
-            return this.getDefaultAuthPreferences()
+            return this.getDefaultUserPreferences()
         }
     }
 
@@ -248,36 +294,56 @@ export class SessionManagerService {
         console.log('Auth session data cleared')
     }
 
-    private static getDefaultGuestPreferences(): GuestPreferences {
+    private static getDefaultUserPreferences(): UserPreferences {
+        // CRITICAL: Import and use proper default list initialization
+        const { UserListsService } = require('../services/userListsService')
+
         return {
             watchlist: [],
             ratings: [],
-            userLists: {
-                lists: [],
-                defaultListIds: {
-                    watchlist: '',
-                    liked: '',
-                    disliked: '',
-                },
-            },
+            userLists: UserListsService.initializeDefaultLists(), // ← FIX: Proper default lists
             lastActive: Date.now(),
         }
     }
 
-    private static getDefaultAuthPreferences(): AuthPreferences {
-        return {
-            watchlist: [],
-            ratings: [],
-            userLists: {
-                lists: [],
-                defaultListIds: {
-                    watchlist: '',
-                    liked: '',
-                    disliked: '',
+    // Clear the shared userSession atom state for complete session isolation
+    private static clearSessionAtomState(state: SessionManagerState): void {
+        console.log('🧹 [SessionManager] FORCE CLEARING SESSION ATOM STATE for complete isolation')
+
+        const emptySession: UserSession = {
+            isGuest: false,
+            guestId: undefined,
+            userId: undefined,
+            preferences: this.getDefaultUserPreferences(),
+            isActive: false,
+            lastSyncedAt: Date.now(),
+            createdAt: Date.now(),
+        }
+
+        console.log('🧹 [SessionManager] SETTING EMPTY SESSION STATE:', {
+            emptySession: {
+                isGuest: emptySession.isGuest,
+                guestId: emptySession.guestId,
+                userId: emptySession.userId,
+                preferencesPreview: {
+                    watchlistCount: emptySession.preferences.watchlist.length,
+                    ratingsCount: emptySession.preferences.ratings.length,
+                    listsCount: emptySession.preferences.userLists.lists.length,
                 },
             },
-            lastActive: Date.now(),
-        }
+            timestamp: new Date().toISOString(),
+        })
+
+        // Clear the atom immediately with force
+        state.setUserSession(emptySession)
+
+        // CRITICAL: Add a small delay to ensure Recoil state is updated
+        setTimeout(() => {
+            console.log('🧹 [SessionManager] VERIFYING SESSION ATOM STATE IS CLEARED')
+            state.setUserSession({ ...emptySession }) // Force re-set with spread operator
+        }, 10)
+
+        console.log('✅ [SessionManager] Session atom state clearing completed')
     }
 
     // Debug helpers
