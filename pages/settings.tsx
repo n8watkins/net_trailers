@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import Head from 'next/head'
 import Image from 'next/image'
-import { useRouter } from 'next/router'
 import {
     EnvelopeIcon,
     KeyIcon,
@@ -12,11 +11,15 @@ import {
     ChevronRightIcon,
 } from '@heroicons/react/24/outline'
 import useAuth from '../hooks/useAuth'
-import useUserData from '../hooks/useUserData'
-import AccountManagement from '../components/AccountManagement'
 import Header from '../components/Header'
 
 type SettingsSection = 'profile' | 'email' | 'password' | 'upload' | 'share' | 'account'
+
+interface SettingsProps {
+    onOpenAboutModal?: () => void
+    onOpenTutorial?: () => void
+    onOpenKeyboardShortcuts?: () => void
+}
 
 interface SidebarItem {
     id: SettingsSection
@@ -26,37 +29,13 @@ interface SidebarItem {
     priority: 'low' | 'medium' | 'high' | 'danger'
 }
 
-const Settings: React.FC = () => {
-    const [activeSection, setActiveSection] = useState<SettingsSection>('account') // Start with account management since it works for both
-    const [hasInitializationTimeout, setHasInitializationTimeout] = useState(false)
+const Settings: React.FC<SettingsProps> = ({
+    onOpenAboutModal,
+    onOpenTutorial,
+    onOpenKeyboardShortcuts,
+}) => {
+    const [activeSection, setActiveSection] = useState<SettingsSection>('account')
     const { user } = useAuth()
-    const userData = useUserData()
-    const router = useRouter()
-
-    // Add timeout fallback for stuck initialization
-    useEffect(() => {
-        if (userData.sessionType === 'initializing') {
-            const timer = setTimeout(() => {
-                console.log('🚨 Settings timeout triggered - switching to guest mode')
-                console.log('🚨 Current userData:', userData)
-                setHasInitializationTimeout(true)
-
-                // Also try to force initialize guest session if available
-                if (
-                    userData.sessionManager &&
-                    typeof userData.sessionManager.switchToGuest === 'function'
-                ) {
-                    console.log('🚨 Attempting to force switch to guest mode')
-                    userData.sessionManager.switchToGuest().catch(console.error)
-                }
-            }, 3000) // 3 second timeout (increased)
-
-            return () => clearTimeout(timer)
-        } else {
-            // Reset timeout flag if no longer initializing
-            setHasInitializationTimeout(false)
-        }
-    }, [userData.sessionType, userData.sessionManager])
 
     // Define all possible sidebar items
     const allSidebarItems: SidebarItem[] = [
@@ -104,19 +83,11 @@ const Settings: React.FC = () => {
         },
     ]
 
-    // Filter sidebar items based on authentication status
-    // Treat initializing state as guest mode for settings page
-    const isGuestMode =
-        userData.isGuest || hasInitializationTimeout || userData.sessionType === 'initializing'
+    // Simple guest mode detection
+    const isGuestMode = !user
 
-    const sidebarItems = allSidebarItems.filter((item) => {
-        if (isGuestMode) {
-            // For guest users, only show account management and import/export features
-            return ['account', 'upload', 'share'].includes(item.id)
-        }
-        // For authenticated users, show all items
-        return true
-    })
+    // Show all sidebar items - no complex filtering
+    const sidebarItems = allSidebarItems
 
     const getUserName = () => {
         if (user?.displayName) {
@@ -159,33 +130,6 @@ const Settings: React.FC = () => {
         }
     }
 
-    // For settings page, never show loading - always allow access
-    // This ensures settings are always accessible regardless of session state
-    const shouldShowLoading = false
-
-    if (shouldShowLoading) {
-        return (
-            <div className="relative min-h-screen overflow-x-clip">
-                <Head>
-                    <title>Settings - NetTrailer</title>
-                    <meta name="description" content="Manage your NetTrailer account settings" />
-                </Head>
-                <Header />
-                <main id="content" className="relative">
-                    <div className="flex items-center justify-center min-h-screen pt-20">
-                        <div className="text-center">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-4"></div>
-                            <h1 className="text-2xl font-semibold text-white mb-4">
-                                Initializing Settings...
-                            </h1>
-                            <p className="text-[#b3b3b3] mb-6">Setting up your session</p>
-                        </div>
-                    </div>
-                </main>
-            </div>
-        )
-    }
-
     return (
         <div className="relative min-h-screen overflow-x-clip">
             <Head>
@@ -193,7 +137,11 @@ const Settings: React.FC = () => {
                 <meta name="description" content="Manage your NetTrailer account settings" />
             </Head>
 
-            <Header />
+            <Header
+                onOpenAboutModal={onOpenAboutModal}
+                onOpenTutorial={onOpenTutorial}
+                onOpenKeyboardShortcuts={onOpenKeyboardShortcuts}
+            />
 
             <main id="content" className="relative">
                 {/* Settings Page Content */}
@@ -304,10 +252,9 @@ const Settings: React.FC = () => {
                                                                     Session ID
                                                                 </p>
                                                                 <p className="text-[#777] font-mono text-sm">
-                                                                    {userData.activeSessionId ||
-                                                                        (isGuestMode
-                                                                            ? 'Guest Session'
-                                                                            : 'Loading...')}
+                                                                    {isGuestMode
+                                                                        ? 'Guest Session'
+                                                                        : 'User Session'}
                                                                 </p>
                                                             </div>
                                                             <div className="pt-4 border-t border-[#313131]">
@@ -633,7 +580,42 @@ const Settings: React.FC = () => {
                                                 </p>
                                             </div>
 
-                                            <AccountManagement />
+                                            <div className="space-y-6">
+                                                <div className="bg-[#0a0a0a] rounded-lg border border-[#313131] p-6">
+                                                    <h3 className="text-lg font-semibold text-white mb-4">
+                                                        Account Management
+                                                    </h3>
+                                                    <p className="text-[#b3b3b3] mb-4">
+                                                        Manage your account data and settings.
+                                                    </p>
+                                                    <div className="space-y-3">
+                                                        <button className="w-full text-left p-3 bg-[#141414] hover:bg-[#1a1a1a] rounded-lg border border-[#313131] transition-colors">
+                                                            <span className="text-[#e5e5e5]">
+                                                                Export Data
+                                                            </span>
+                                                            <p className="text-[#b3b3b3] text-sm">
+                                                                Download your watchlists and ratings
+                                                            </p>
+                                                        </button>
+                                                        <button className="w-full text-left p-3 bg-[#141414] hover:bg-[#1a1a1a] rounded-lg border border-[#313131] transition-colors">
+                                                            <span className="text-[#e5e5e5]">
+                                                                Clear Data
+                                                            </span>
+                                                            <p className="text-[#b3b3b3] text-sm">
+                                                                Remove all saved data
+                                                            </p>
+                                                        </button>
+                                                        <button className="w-full text-left p-3 bg-[#141414] hover:bg-red-900/20 rounded-lg border border-red-600/30 transition-colors">
+                                                            <span className="text-red-400">
+                                                                Delete Account
+                                                            </span>
+                                                            <p className="text-[#b3b3b3] text-sm">
+                                                                Permanently delete your account
+                                                            </p>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
