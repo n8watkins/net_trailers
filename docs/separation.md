@@ -319,6 +319,145 @@ private static validateSessionIsolation(sessionType: SessionType, sessionId: str
 
 ---
 
-**Updated**: 2025-09-27 16:15
-**Priority**: CRITICAL - Systematic Implementation Ready
-**Status**: ANALYSIS COMPLETE - Beginning systematic fixes
+## **INTENDED ISOLATION REQUIREMENTS** 📋
+
+### **Core Separation Principle**
+
+**ABSOLUTE ZERO DATA SHARING** between guest and authenticated sessions. Each session type must operate in complete isolation as if the other doesn't exist.
+
+### **Guest Session Isolation Requirements**
+
+**Data Storage:**
+
+- **Storage Keys**: `nettrailer_guest_{uniqueGuestId}_preferences`
+- **Session ID Format**: `guest_1727456789_abc123def` (timestamp + random)
+- **Storage Location**: localStorage with session-prefixed keys
+- **Persistence**: Survives page refresh via session ID restoration
+
+**User Experience:**
+
+- **Default Lists**: Own "Watchlist" with guest-specific ID
+- **Custom Lists**: Can create/edit lists invisible to auth users
+- **UI Messaging**: "You're browsing as a guest. Your preferences are saved locally. Sign up to sync across devices!"
+- **Data Scope**: Completely isolated from any authenticated data
+
+**State Management:**
+
+- **Recoil State**: Guest-specific data in `userSessionState`
+- **Session Type**: `sessionType === 'guest'`
+- **Active Session**: `activeSessionId = {guestId}`
+
+### **Authenticated Session Isolation Requirements**
+
+**Data Storage:**
+
+- **Storage Keys**: `nettrailer_auth_{firebaseUserId}_preferences`
+- **Session ID Format**: Firebase user UID (e.g., `firebase_xyz789`)
+- **Storage Location**: Firebase Firestore (cloud) + localStorage cache
+- **Persistence**: Synced across devices via Firebase
+
+**User Experience:**
+
+- **Default Lists**: Own "Watchlist" with auth-specific ID
+- **Custom Lists**: Can create/edit lists invisible to guest users
+- **UI Messaging**: "Welcome back, {firstName}!" (no guest messaging)
+- **Data Scope**: Completely isolated from any guest data
+
+**State Management:**
+
+- **Recoil State**: Auth-specific data in `userSessionState`
+- **Session Type**: `sessionType === 'authenticated'`
+- **Active Session**: `activeSessionId = {firebaseUserId}`
+
+### **Session Switching Requirements**
+
+**Guest → Auth (Login):**
+
+1. **Clear Recoil State**: Complete reset of `userSessionState`
+2. **Storage Switch**: Change from guest localStorage to Firebase
+3. **Session Update**: `sessionType = 'authenticated'`, `activeSessionId = firebaseUID`
+4. **UI Update**: Remove guest messaging, show auth user info
+5. **Data Load**: Load auth user's watchlists (zero guest data visible)
+
+**Auth → Guest (Logout):**
+
+1. **Clear Recoil State**: Complete reset of `userSessionState`
+2. **Storage Switch**: Change from Firebase to guest localStorage
+3. **Session Update**: `sessionType = 'guest'`, `activeSessionId = {newGuestId}`
+4. **UI Update**: Show guest messaging, hide auth user info
+5. **Data Load**: Load guest watchlists (zero auth data visible)
+
+### **Critical Atom Requirements**
+
+**Recoil Atom Keys Must Be Unique:**
+
+- ❌ **Current Issue**: Multiple atoms using same keys causing fatal duplicates
+- ✅ **Required**: Each atom must have globally unique keys
+- ✅ **Solution**: Version keys appropriately (`_v2`, `_v3`, etc.)
+
+**Atom State Isolation:**
+
+- **userSessionState**: Must be completely cleared on session switch
+- **Session Atoms**: Must reflect current session type accurately
+- **No Shared State**: Zero data bleeding between session types
+
+### **UI Conditional Rendering Requirements**
+
+**Guest Mode UI:**
+
+```
+✅ SHOW: "You're browsing as a guest. Your preferences are saved locally. Sign up to sync across devices!"
+✅ SHOW: Guest-specific watchlists only
+✅ SHOW: Sign In/Sign Up buttons
+❌ HIDE: User profile info, auth-specific features
+```
+
+**Authenticated Mode UI:**
+
+```
+✅ SHOW: "Welcome back, {userName}!"
+✅ SHOW: Auth-specific watchlists only
+✅ SHOW: User profile, settings, logout
+❌ HIDE: Guest messaging, sign in buttons
+```
+
+### **Data Validation Requirements**
+
+**Storage Key Verification:**
+
+- Guest data keys: `nettrailer_guest_*`
+- Auth data keys: `nettrailer_auth_*`
+- No cross-contamination in localStorage
+
+**Session State Verification:**
+
+- `sessionType` matches actual auth state
+- `activeSessionId` matches current user
+- `userSessionState` contains only current session data
+
+**UI State Verification:**
+
+- Guest messaging only appears for guest sessions
+- Auth user info only appears for authenticated sessions
+- Watchlists contain only current session's data
+
+---
+
+## Current Status - 2025-09-27 16:30
+
+🚨 **CRITICAL ISSUES IDENTIFIED**:
+
+1. **Fatal Duplicate Atom Keys**: `loadingState_v2`, `toastsState_v2`, `userSessionState_v2`, `authModeState_v2`, `showDemoMessageState_v2`, `listModalState_v1`, `searchState_v4`, `searchHistoryState_v2`, `recentSearchesState_v2`
+2. **Session Isolation Failure**: Guest message appearing when authenticated
+3. **Watchlist Data Sharing**: Guest and auth watchlists still connected
+4. **State Management Breakdown**: Recoil state not properly isolated
+
+**Priority**: EMERGENCY - Application failing in production due to atom errors
+
+**Next Steps**: Fix duplicate atom keys, implement proper session state isolation, verify complete data separation
+
+---
+
+**Updated**: 2025-09-27 16:30
+**Priority**: EMERGENCY - Fatal atom errors blocking production
+**Status**: REQUIREMENTS DOCUMENTED - Ready for emergency fixes
