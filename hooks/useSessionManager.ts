@@ -51,9 +51,24 @@ export function useSessionManager() {
         })
 
         const initializeSession = async () => {
-            if (!isTransitioning && !isSessionInitialized) {
-                console.log('🔄 [useSessionManager] Initializing session...', {
+            // Check if we need to switch session types based on auth state
+            const shouldBeAuthenticated = user !== null
+            const isCurrentlyAuthenticated = sessionType === 'authenticated'
+
+            // If auth state doesn't match session type, we need to reinitialize
+            const needsReinitialization =
+                (shouldBeAuthenticated && !isCurrentlyAuthenticated) ||
+                (!shouldBeAuthenticated &&
+                    isCurrentlyAuthenticated &&
+                    sessionType !== 'initializing')
+
+            if (!isTransitioning && (!isSessionInitialized || needsReinitialization)) {
+                console.log('🔄 [useSessionManager] Initializing/Switching session...', {
                     user: user?.uid,
+                    currentType: sessionType,
+                    shouldBeAuthenticated,
+                    isCurrentlyAuthenticated,
+                    needsReinitialization,
                     isTransitioning,
                     isInitialized: isSessionInitialized,
                 })
@@ -71,14 +86,16 @@ export function useSessionManager() {
                 console.log('🔄 [useSessionManager] Skipping session initialization', {
                     isTransitioning,
                     isSessionInitialized,
-                    reason: isTransitioning ? 'transitioning' : 'already initialized',
+                    sessionType,
+                    user: user?.uid,
+                    reason: isTransitioning ? 'transitioning' : 'session type matches auth state',
                 })
             }
         }
 
         // Initialize session immediately when conditions are met
         initializeSession()
-    }, [user, isTransitioning, isSessionInitialized])
+    }, [user, isTransitioning, isSessionInitialized, sessionType])
 
     // Fallback: Force guest session initialization if Firebase auth is stuck
     useEffect(() => {

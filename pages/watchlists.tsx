@@ -27,6 +27,18 @@ const Watchlists: NextPage = () => {
     const { ratings, watchlist, isGuest, userLists, getDefaultLists, getCustomLists } = userData
     const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
 
+    // Debug logging
+    useEffect(() => {
+        console.log('🔍 Watchlists Page Debug:', {
+            sessionType: userData.sessionType,
+            isGuest: userData.isGuest,
+            isAuthenticated: userData.isAuthenticated,
+            user: user?.email,
+            userId: user?.uid,
+            activeSessionId: userData.activeSessionId,
+        })
+    }, [userData, user])
+
     const [selectedListId, setSelectedListId] = useState<string | 'all'>('all')
     const [searchQuery, setSearchQuery] = useState('')
     const setShowModal = useSetRecoilState(modalState)
