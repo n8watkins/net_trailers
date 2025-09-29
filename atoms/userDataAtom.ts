@@ -21,6 +21,9 @@ export interface UserSession {
     guestId?: string
     userId?: string
     preferences: UserPreferences
+    isActive?: boolean
+    lastSyncedAt?: number
+    createdAt?: number
 }
 
 // Default user session

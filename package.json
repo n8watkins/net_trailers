@@ -32,7 +32,8 @@
         "recoil": "^0.7.6",
         "tailwind-scrollbar-hide": "^1.1.7",
         "tailwindcss-autofill": "^1.0.2",
-        "tailwindcss-shadow-fill": "^1.0.1"
+        "tailwindcss-shadow-fill": "^1.0.1",
+        "zustand": "^5.0.8"
     },
     "devDependencies": {
         "@next/bundle-analyzer": "^15.5.3",

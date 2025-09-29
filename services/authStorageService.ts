@@ -3,65 +3,37 @@ import { AuthPreferences, AuthRating } from '../atoms/authSessionAtom'
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { UserListsService } from './userListsService'
+import { firebaseTracker } from '../utils/firebaseCallTracker'
+
+// Simple in-memory cache for user data
+const userDataCache = new Map<string, { data: AuthPreferences; timestamp: number }>()
+const loadingPromises = new Map<string, Promise<AuthPreferences>>() // Cache ongoing loads
+const CACHE_TTL = 300000 // 5 minutes cache (increased from 30 seconds)
+
+// Helper function to remove undefined values from objects (Firestore doesn't accept undefined)
+function removeUndefinedValues(obj: any): any {
+    if (obj === null || obj === undefined) return null
+    if (Array.isArray(obj)) {
+        return obj.map(removeUndefinedValues).filter((v) => v !== undefined)
+    }
+    if (typeof obj === 'object' && obj.constructor === Object) {
+        const cleaned: any = {}
+        for (const [key, value] of Object.entries(obj)) {
+            if (value !== undefined) {
+                cleaned[key] = removeUndefinedValues(value)
+            }
+        }
+        return cleaned
+    }
+    return obj
+}
 
 export class AuthStorageService {
     // Load user data for authenticated users
     static async loadUserData(userId: string): Promise<AuthPreferences> {
-        try {
-            const userDoc = await getDoc(doc(db, 'users', userId))
-
-            if (userDoc.exists()) {
-                const data = userDoc.data()
-                let preferences: AuthPreferences = {
-                    watchlist: data.watchlist || [],
-                    ratings: data.ratings || [],
-                    userLists: data.userLists || UserListsService.initializeDefaultLists(),
-                    lastActive: data.lastActive || Date.now(),
-                }
-
-                // Migrate old data structure if needed
-                if (!data.userLists) {
-                    preferences = UserListsService.migrateOldPreferences(
-                        preferences as any
-                    ) as AuthPreferences
-                    // Save migrated data back to Firebase
-                    try {
-                        await this.saveUserData(userId, preferences)
-                    } catch (saveError) {
-                        console.warn('Failed to save migrated auth data (offline?):', saveError)
-                    }
-                }
-
-                return preferences
-            } else {
-                // Create default user document
-                const defaultPreferences: AuthPreferences = {
-                    watchlist: [],
-                    ratings: [],
-                    userLists: UserListsService.initializeDefaultLists(),
-                    lastActive: Date.now(),
-                }
-
-                // Try to save, but don't fail if offline
-                try {
-                    await this.saveUserData(userId, defaultPreferences)
-                } catch (saveError) {
-                    console.warn('Failed to create auth user document (offline?):', saveError)
-                }
-
-                return defaultPreferences
-            }
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error)
-
-            // Check if error is due to offline status
-            if (errorMessage.includes('offline') || errorMessage.includes('network')) {
-                console.warn('Firebase is offline, using default auth preferences:', errorMessage)
-            } else {
-                console.error('Failed to load auth user data:', error)
-            }
-
-            // Return default preferences if Firebase fails
+        // Validate that userId exists before attempting Firestore operations
+        if (!userId || userId === 'undefined' || userId === 'null') {
+            console.warn('Invalid userId provided to loadUserData:', userId)
             return {
                 watchlist: [],
                 ratings: [],
@@ -69,16 +41,212 @@ export class AuthStorageService {
                 lastActive: Date.now(),
             }
         }
+
+        // Check cache first
+        const cached = userDataCache.get(userId)
+        if (cached) {
+            const age = Date.now() - cached.timestamp
+            if (age < CACHE_TTL) {
+                console.log(
+                    '💾 [AuthStorageService] Using cached data for:',
+                    userId,
+                    `(${Math.round(age / 1000)}s old)`
+                )
+                firebaseTracker.track('loadUserData-cached', 'AuthStorageService', userId)
+                return cached.data
+            }
+        }
+
+        // Check if there's already a load in progress for this user
+        const existingLoadPromise = loadingPromises.get(userId)
+        if (existingLoadPromise) {
+            console.log('♻️ [AuthStorageService] Reusing existing load promise for:', userId)
+            firebaseTracker.track('loadUserData-reused', 'AuthStorageService', userId)
+            return existingLoadPromise
+        }
+
+        // Get stack trace to identify caller
+        const stack = new Error().stack
+        const caller = stack?.split('\n')[3]?.trim() || 'unknown'
+
+        console.log('📚 [AuthStorageService] Starting NEW load for:', userId, 'from:', caller)
+        firebaseTracker.track('loadUserData', 'AuthStorageService', userId, { caller })
+
+        // Create a new loading promise and store it
+        const loadPromise = (async () => {
+            try {
+                // Add timeout to prevent hanging
+                const timeoutPromise = new Promise(
+                    (_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 5000) // 5 second timeout
+                )
+
+                const docRef = doc(db, 'users', userId)
+                console.log('📍 [AuthStorageService] Reading from path:', `users/${userId}`)
+
+                const firestorePromise = getDoc(docRef)
+
+                const userDoc = (await Promise.race([firestorePromise, timeoutPromise])) as any
+
+                if (userDoc.exists()) {
+                    const data = userDoc.data()
+                    console.log('✅ [AuthStorageService] Loaded user data from Firestore:', {
+                        userId,
+                        documentPath: `users/${userId}`,
+                        hasWatchlist: !!data.watchlist,
+                        watchlistCount: data.watchlist?.length || 0,
+                        watchlistItems:
+                            data.watchlist?.map((w: any) => ({
+                                id: w.id,
+                                title: w.title || w.name,
+                            })) || [],
+                        hasRatings: !!data.ratings,
+                        ratingsCount: data.ratings?.length || 0,
+                        hasUserLists: !!data.userLists,
+                        listsCount: data.userLists?.lists?.length || 0,
+                        customLists:
+                            data.userLists?.lists?.map((l: any) => ({
+                                id: l.id,
+                                name: l.name,
+                                itemCount: l.items?.length || 0,
+                            })) || [],
+                    })
+                    let preferences: AuthPreferences = {
+                        watchlist: data.watchlist || [],
+                        ratings: data.ratings || [],
+                        userLists: data.userLists || UserListsService.initializeDefaultLists(),
+                        lastActive: data.lastActive || Date.now(),
+                    }
+
+                    // Migrate old data structure if needed
+                    if (!data.userLists) {
+                        preferences = UserListsService.migrateOldPreferences(
+                            preferences as any
+                        ) as AuthPreferences
+                        // Save migrated data back to Firebase
+                        try {
+                            firebaseTracker.track(
+                                'saveUserData-migration',
+                                'AuthStorageService',
+                                userId
+                            )
+                            await this.saveUserData(userId, preferences)
+                        } catch (saveError) {
+                            console.warn('Failed to save migrated auth data (offline?):', saveError)
+                        }
+                    }
+
+                    // Cache the loaded data
+                    userDataCache.set(userId, { data: preferences, timestamp: Date.now() })
+                    console.log('💾 [AuthStorageService] Cached user data for:', userId)
+
+                    // Clear loading promise after successful load
+                    loadingPromises.delete(userId)
+
+                    return preferences
+                } else {
+                    // Create default user document
+                    const defaultPreferences: AuthPreferences = {
+                        watchlist: [],
+                        ratings: [],
+                        userLists: UserListsService.initializeDefaultLists(),
+                        lastActive: Date.now(),
+                    }
+
+                    // Try to save, but don't fail if offline
+                    try {
+                        firebaseTracker.track(
+                            'saveUserData-createDefault',
+                            'AuthStorageService',
+                            userId
+                        )
+                        await this.saveUserData(userId, defaultPreferences)
+                    } catch (saveError) {
+                        console.warn('Failed to create auth user document (offline?):', saveError)
+                    }
+
+                    // Cache the default preferences
+                    userDataCache.set(userId, { data: defaultPreferences, timestamp: Date.now() })
+                    console.log('💾 [AuthStorageService] Cached default data for:', userId)
+
+                    // Clear loading promise
+                    loadingPromises.delete(userId)
+
+                    return defaultPreferences
+                }
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error)
+
+                console.error('🚨 [AuthStorageService] Failed to load user data:', {
+                    error: errorMessage,
+                    userId,
+                    isTimeout: errorMessage.includes('timeout'),
+                    isOffline: errorMessage.includes('offline') || errorMessage.includes('network'),
+                })
+
+                // Check if error is due to offline status or timeout
+                if (
+                    errorMessage.includes('offline') ||
+                    errorMessage.includes('network') ||
+                    errorMessage.includes('timeout')
+                ) {
+                    console.warn(
+                        '⚠️ Firebase is offline or timed out, using default auth preferences'
+                    )
+                }
+
+                // Clear loading promise on error
+                loadingPromises.delete(userId)
+
+                // Return default preferences if Firebase fails
+                return {
+                    watchlist: [],
+                    ratings: [],
+                    userLists: UserListsService.initializeDefaultLists(),
+                    lastActive: Date.now(),
+                }
+            }
+        })()
+
+        // Store the loading promise
+        loadingPromises.set(userId, loadPromise)
+
+        return loadPromise
     }
 
     // Save user data for authenticated users
     static async saveUserData(userId: string, preferences: AuthPreferences): Promise<void> {
         try {
-            const dataToSave = {
+            // Clean the data to remove undefined values
+            const dataToSave = removeUndefinedValues({
                 ...preferences,
                 lastActive: Date.now(),
+            })
+
+            console.log('🔥 [AuthStorageService] Saving to Firestore:', {
+                userId,
+                path: `users/${userId}`,
+                listsCount: preferences.userLists?.lists?.length || 0,
+                watchlistCount: preferences.watchlist?.length || 0,
+                dataSize: JSON.stringify(dataToSave).length,
+                hasUserLists: !!preferences.userLists,
+                cleanedData: dataToSave,
+            })
+
+            // Validate userId before saving
+            if (!userId || userId === 'undefined') {
+                throw new Error('Invalid userId for Firestore save')
             }
+
+            firebaseTracker.track('saveUserData', 'AuthStorageService', userId, {
+                watchlistCount: preferences.watchlist?.length || 0,
+                ratingsCount: preferences.ratings?.length || 0,
+            })
             await setDoc(doc(db, 'users', userId), dataToSave, { merge: true })
+            console.log('✅ [AuthStorageService] Successfully saved to Firestore for user:', userId)
+
+            // Invalidate cache after save
+            userDataCache.delete(userId)
+            console.log('🔄 [AuthStorageService] Cleared cache for user after save:', userId)
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error)
 

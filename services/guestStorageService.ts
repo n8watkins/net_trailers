@@ -28,6 +28,18 @@ export class GuestStorageService {
         return guestId
     }
 
+    // Create a fresh guest session (for complete data isolation)
+    static createFreshGuestSession(): string {
+        const guestId = this.generateGuestId()
+        localStorage.setItem(this.getGuestIdKey(), guestId)
+
+        // Initialize with empty data
+        const freshPreferences = this.getDefaultPreferences()
+        this.saveGuestData(guestId, freshPreferences)
+
+        return guestId
+    }
+
     // Load guest data
     static loadGuestData(guestId: string): GuestPreferences {
         if (typeof window === 'undefined') {

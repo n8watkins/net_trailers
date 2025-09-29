@@ -20,6 +20,7 @@ import AvatarDropdown from './AvatarDropdown'
 import GenresDropdown from './GenresDropdown'
 import MyListsDropdown from './MyListsDropdown'
 import { useToast } from '../hooks/useToast'
+import { useDebugSettings } from './DebugControls'
 
 interface HeaderProps {
     onOpenAboutModal?: () => void
@@ -37,12 +38,45 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
     const router = useRouter()
     const { user } = useAuth()
     const { showSuccess, showError, showWatchlistAdd, showWatchlistRemove } = useToast()
+    const debugSettings = useDebugSettings()
 
     const triggerTestToasts = () => {
-        showSuccess(`Welcome ${user?.displayName || user?.email?.split('@')[0] || 'Nathan'}!`)
-        setTimeout(() => showWatchlistAdd('Test Movie', 'Added to Watchlist'), 1000)
-        setTimeout(() => showSuccess('Settings saved successfully!'), 2000)
-        setTimeout(() => showWatchlistRemove('Test Movie', 'Removed from Watchlist'), 3000)
+        // Test all toast types with realistic messages
+        console.log('🧪 Testing all toast types...')
+
+        // Success toast
+        showSuccess(`Welcome back, ${user?.displayName || user?.email?.split('@')[0] || 'Guest'}!`)
+
+        // Watchlist add (1 second delay)
+        setTimeout(() => {
+            showWatchlistAdd('Inception', 'Added to Watchlist')
+            console.log('✅ Toast 1: Watchlist Add')
+        }, 1000)
+
+        // Error toast (2 seconds delay)
+        setTimeout(() => {
+            showError('Failed to load recommendations. Please try again.')
+            console.log('✅ Toast 2: Error')
+        }, 2000)
+
+        // Watchlist remove (3 seconds delay)
+        setTimeout(() => {
+            showWatchlistRemove('The Dark Knight', 'Removed from Watchlist')
+            console.log('✅ Toast 3: Watchlist Remove')
+        }, 3000)
+
+        // Another success (4 seconds delay)
+        setTimeout(() => {
+            showSuccess('Profile updated successfully!')
+            console.log('✅ Toast 4: Success')
+        }, 4000)
+
+        // Final error to test stacking (5 seconds delay)
+        setTimeout(() => {
+            showError('Network connection lost. Some features may be unavailable.')
+            console.log('✅ Toast 5: Network Error')
+            console.log('🎉 All toast tests complete!')
+        }, 5000)
     }
     useEffect(() => {
         const handleScroll = () => {
@@ -110,17 +144,21 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                             <li>
                                 <MyListsDropdown />
                             </li>
-                            {process.env.NODE_ENV === 'development' && (
-                                <li>
-                                    <button
-                                        onClick={triggerTestToasts}
-                                        className="headerLink cursor-pointer flex items-center space-x-1 select-none bg-blue-600/20 hover:bg-blue-600/30 px-3 py-1 rounded-md border border-blue-500/30"
-                                        title="Test Toast Messages"
-                                    >
-                                        <span>🧪 Test Toasts</span>
-                                    </button>
-                                </li>
-                            )}
+                            {process.env.NODE_ENV === 'development' &&
+                                debugSettings.showToastDebug && (
+                                    <li>
+                                        <button
+                                            onClick={triggerTestToasts}
+                                            className="headerLink cursor-pointer flex items-center space-x-1 select-none bg-green-600/20 hover:bg-green-600/30 px-3 py-1 rounded-md border border-green-500/30 transition-all"
+                                            title="Test all toast notification types (success, error, watchlist add/remove)"
+                                        >
+                                            <span className="text-green-400">🧪</span>
+                                            <span className="text-xs font-medium text-green-400">
+                                                Test Toasts
+                                            </span>
+                                        </button>
+                                    </li>
+                                )}
                         </ul>
 
                         {/* Search Bar in Navigation */}

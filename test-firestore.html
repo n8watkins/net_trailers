@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firestore Connection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+        .warning { color: #ff9800; }
+        .info { color: #2196F3; }
+        button {
+            background: #e50914;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #f40612;
+        }
+        pre {
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .status-item {
+            padding: 5px 0;
+            border-bottom: 1px solid #3a3a3a;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔥 Firestore Connection Test</h1>
+
+    <div class="test-section">
+        <h2>Prerequisites Check</h2>
+        <div id="prereq-status"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Quick Actions</h2>
+        <button onclick="testDirectWrite()">Test Direct Firestore Write</button>
+        <button onclick="testDirectRead()">Test Direct Firestore Read</button>
+        <button onclick="checkAdBlocker()">Check for Ad Blocker</button>
+        <button onclick="clearConsole()">Clear Results</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="results"></div>
+    </div>
+
+    <script type="module">
+        // Import Firebase
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+        import {
+            getFirestore,
+            doc,
+            setDoc,
+            getDoc,
+            serverTimestamp
+        } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js';
+        import {
+            getAuth,
+            signInAnonymously,
+            onAuthStateChanged
+        } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js';
+
+        // Your Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyAUnk_RlyFa7BzLuhiadzy32iyBDKCcYSE",
+            authDomain: "netflix-clone-15862.firebaseapp.com",
+            projectId: "netflix-clone-15862",
+            storageBucket: "netflix-clone-15862.appspot.com",
+            messagingSenderId: "1090225576232",
+            appId: "1:1090225576232:web:4db337ae40f1de7aa5181d"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Make functions global
+        window.db = db;
+        window.auth = auth;
+        window.doc = doc;
+        window.setDoc = setDoc;
+        window.getDoc = getDoc;
+        window.serverTimestamp = serverTimestamp;
+
+        // Check prerequisites
+        function checkPrerequisites() {
+            const status = document.getElementById('prereq-status');
+            let html = '';
+
+            // Check Firebase initialized
+            html += `<div class="status-item">
+                <span class="success">✅ Firebase Initialized</span>
+            </div>`;
+
+            // Check Firestore
+            if (window.db) {
+                html += `<div class="status-item">
+                    <span class="success">✅ Firestore Connected</span>
+                </div>`;
+            } else {
+                html += `<div class="status-item">
+                    <span class="error">❌ Firestore Not Connected</span>
+                </div>`;
+            }
+
+            // Check Auth
+            onAuthStateChanged(auth, (user) => {
+                const authStatus = document.createElement('div');
+                authStatus.className = 'status-item';
+                if (user) {
+                    authStatus.innerHTML = `<span class="success">✅ Authenticated as: ${user.uid}</span>`;
+                } else {
+                    authStatus.innerHTML = `<span class="warning">⚠️ Not authenticated (click "Sign In Anonymously" to test)</span>
+                        <button onclick="signInAnon()">Sign In Anonymously</button>`;
+                }
+                status.appendChild(authStatus);
+            });
+
+            status.innerHTML = html;
+        }
+
+        // Sign in anonymously for testing
+        window.signInAnon = async function() {
+            const results = document.getElementById('results');
+            try {
+                results.innerHTML += '<div class="info">🔄 Signing in anonymously...</div>';
+                const userCredential = await signInAnonymously(auth);
+                results.innerHTML += `<div class="success">✅ Signed in as: ${userCredential.user.uid}</div>`;
+                checkPrerequisites();
+            } catch (error) {
+                results.innerHTML += `<div class="error">❌ Auth Error: ${error.message}</div>`;
+            }
+        }
+
+        // Test direct write to Firestore
+        window.testDirectWrite = async function() {
+            const results = document.getElementById('results');
+            results.innerHTML += '<div class="info">🔄 Testing Firestore Write...</div>';
+
+            try {
+                const testDoc = doc(db, 'test', `test_${Date.now()}`);
+                await setDoc(testDoc, {
+                    test: true,
+                    timestamp: serverTimestamp(),
+                    message: 'Test write successful',
+                    createdAt: new Date().toISOString()
+                });
+
+                results.innerHTML += '<div class="success">✅ Write Successful! Data saved to Firestore.</div>';
+                results.innerHTML += `<div class="info">📍 Document path: test/test_${Date.now()}</div>`;
+            } catch (error) {
+                results.innerHTML += `<div class="error">❌ Write Error: ${error.message}</div>`;
+                if (error.code === 'permission-denied') {
+                    results.innerHTML += '<div class="warning">⚠️ Check Firestore Security Rules</div>';
+                }
+            }
+        }
+
+        // Test direct read from Firestore
+        window.testDirectRead = async function() {
+            const results = document.getElementById('results');
+            results.innerHTML += '<div class="info">🔄 Testing Firestore Read...</div>';
+
+            try {
+                // Try to read a test document
+                const testDoc = doc(db, 'test', 'test_read');
+                const docSnap = await getDoc(testDoc);
+
+                if (docSnap.exists()) {
+                    results.innerHTML += '<div class="success">✅ Read Successful!</div>';
+                    results.innerHTML += `<pre>${JSON.stringify(docSnap.data(), null, 2)}</pre>`;
+                } else {
+                    results.innerHTML += '<div class="warning">⚠️ Document doesn\'t exist (this is normal for first test)</div>';
+                    // Try to create it
+                    await setDoc(testDoc, {
+                        message: 'Test document created',
+                        timestamp: serverTimestamp()
+                    });
+                    results.innerHTML += '<div class="success">✅ Created test document for future reads</div>';
+                }
+            } catch (error) {
+                results.innerHTML += `<div class="error">❌ Read Error: ${error.message}</div>`;
+            }
+        }
+
+        // Check for ad blocker
+        window.checkAdBlocker = function() {
+            const results = document.getElementById('results');
+
+            // Test Google APIs
+            fetch('https://firestore.googleapis.com')
+                .then(() => {
+                    results.innerHTML += '<div class="success">✅ firestore.googleapis.com is accessible</div>';
+                })
+                .catch(() => {
+                    results.innerHTML += '<div class="error">❌ firestore.googleapis.com is BLOCKED (likely by ad blocker)</div>';
+                });
+
+            // Test Firebase
+            fetch('https://firebase.googleapis.com')
+                .then(() => {
+                    results.innerHTML += '<div class="success">✅ firebase.googleapis.com is accessible</div>';
+                })
+                .catch(() => {
+                    results.innerHTML += '<div class="error">❌ firebase.googleapis.com is BLOCKED (likely by ad blocker)</div>';
+                });
+        }
+
+        // Clear console
+        window.clearConsole = function() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        // Initialize on load
+        checkPrerequisites();
+    </script>
+</body>
+</html>

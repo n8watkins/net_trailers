@@ -1,5 +1,6 @@
+import React from 'react'
 import { useRecoilState } from 'recoil'
-import { authSessionState, AuthSession } from '../atoms/authSessionAtom'
+import { authSessionState, AuthSession, defaultAuthSession } from '../atoms/authSessionAtom'
 import { AuthStorageService } from '../services/authStorageService'
 import { UserListsService } from '../services/userListsService'
 import { Content } from '../typings'
@@ -7,6 +8,20 @@ import { UserList, CreateListRequest, UpdateListRequest } from '../types/userLis
 
 export function useAuthData(userId: string) {
     const [authSession, setAuthSession] = useRecoilState(authSessionState)
+
+    // Ensure session is for the correct user
+    React.useEffect(() => {
+        if (authSession.userId && authSession.userId !== userId) {
+            console.warn(
+                `⚠️ Auth session user mismatch! Session: ${authSession.userId}, Expected: ${userId}`
+            )
+            // Reset session to default for new user
+            setAuthSession({
+                ...defaultAuthSession,
+                userId: userId,
+            })
+        }
+    }, [userId, authSession.userId])
 
     // Save data whenever preferences change
     const saveAuthData = async (updatedSession: AuthSession) => {

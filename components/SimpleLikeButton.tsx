@@ -3,7 +3,7 @@ import ToolTipMod from './ToolTipMod'
 import { useRecoilValue, useRecoilState } from 'recoil'
 import { movieState } from '../atoms/modalAtom'
 import { showDemoMessageState } from '../atoms/userDataAtom'
-import useUserData from '../hooks/useUserData'
+import { useRatings } from '../hooks/useRatings'
 import { Content } from '../typings'
 import { HandThumbUpIcon as HandThumbUpIconOutline } from '@heroicons/react/24/outline'
 
@@ -11,7 +11,7 @@ import { HandThumbUpIcon as HandThumbUpIconFilled } from '@heroicons/react/24/so
 
 function SimpleLikeButton() {
     const currentMovie = useRecoilValue(movieState)
-    const { getRating, setRating, removeRating, ratings } = useUserData()
+    const { getRating, setRating, removeRating, ratings } = useRatings()
     const [showDemoMessage, setShowDemoMessage] = useRecoilState(showDemoMessageState)
     const [isAnimating, setIsAnimating] = useState(false)
 

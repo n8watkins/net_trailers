@@ -30,19 +30,69 @@ export class SessionManagerService {
         user: User | null,
         state: SessionManagerState
     ): Promise<SessionType> {
+        const initStartTime = Date.now()
+        console.log('🔄 [SERVICE-TIMING] SessionManagerService.initializeSession Starting...', {
+            user: user ? { uid: user.uid, email: user.email } : null,
+            userExists: !!user,
+            timestamp: new Date().toISOString(),
+        })
+
+        // Check if there's an existing auth session stored
+        const storedAuthId = this.getStoredAuthId()
+        console.log('🔍 [SERVICE-TIMING] Stored auth ID check:', {
+            hasStoredAuth: !!storedAuthId,
+            storedAuthId,
+            currentUser: user?.uid,
+            match: storedAuthId === user?.uid,
+        })
+
         state.setIsTransitioning(true)
 
         try {
             if (user) {
                 // User is authenticated - initialize auth session
-                return await this.initializeAuthSession(user, state)
+                console.log(
+                    '✅ [SessionManagerService] User authenticated, initializing auth session for:',
+                    user.email
+                )
+                // Store the auth session ID for persistence across refreshes
+                this.storeAuthId(user.uid)
+                const authStartTime = Date.now()
+                const sessionType = await this.initializeAuthSession(user, state)
+                const authTime = Date.now() - authStartTime
+                const totalTime = Date.now() - initStartTime
+                console.log(
+                    `✅ [SERVICE-TIMING] Auth session initialized in ${authTime}ms, total: ${totalTime}ms`
+                )
+                state.setIsTransitioning(false)
+                state.setIsSessionInitialized(true)
+                return sessionType
             } else {
-                // No user - initialize guest session
-                return await this.initializeGuestSession(state)
+                // No user - clear any stored auth session and initialize guest session
+                console.log(
+                    '🎭 [SessionManagerService] No authenticated user, initializing guest session'
+                )
+                this.clearStoredAuthId()
+                const sessionType = await this.initializeGuestSession(state)
+                state.setIsTransitioning(false)
+                state.setIsSessionInitialized(true)
+                return sessionType
             }
-        } finally {
+        } catch (error) {
+            console.error('🚨 [SessionManagerService] Session initialization failed:', error)
             state.setIsTransitioning(false)
-            state.setIsSessionInitialized(true)
+
+            // Fallback to guest session on error
+            try {
+                console.log('🎭 [SessionManagerService] Attempting fallback to guest session')
+                const sessionType = await this.initializeGuestSession(state)
+                state.setIsSessionInitialized(true)
+                return sessionType
+            } catch (fallbackError) {
+                console.error('🚨 [SessionManagerService] Fallback failed:', fallbackError)
+                state.setIsSessionInitialized(true)
+                return 'guest' // Return guest as last resort
+            }
         }
     }
 
@@ -124,12 +174,23 @@ export class SessionManagerService {
         user: User,
         state: SessionManagerState
     ): Promise<SessionType> {
+        const authInitStart = Date.now()
+        console.log('🔐 [AUTH-INIT-TIMING] Starting auth session initialization', {
+            userId: user.uid,
+            email: user.email,
+            timestamp: new Date().toISOString(),
+        })
+
         // CRITICAL: Clear any existing session data first for complete isolation
-        console.log('🧹 Clearing previous session data for auth session')
+        const clearStart = Date.now()
+        console.log('🧹 [AUTH-INIT-TIMING] Clearing previous session data for auth session')
         this.clearSessionAtomState(state)
+        console.log(`🧹 [AUTH-INIT-TIMING] Session cleared in ${Date.now() - clearStart}ms`)
 
         // Initialize session-isolated storage for this authenticated user
+        const storageStart = Date.now()
         SessionStorageService.initializeSession(user.uid, 'auth')
+        console.log(`💾 [AUTH-INIT-TIMING] Storage initialized in ${Date.now() - storageStart}ms`)
 
         // Check if guest data exists for potential migration
         const existingGuestId = this.getStoredGuestId()
@@ -139,8 +200,52 @@ export class SessionManagerService {
             state.setMigrationAvailable(true)
         }
 
-        // Load auth data (from Firebase, not localStorage)
-        const authPreferences = await this.loadAuthPreferences(user.uid)
+        // Load auth data - but don't wait forever
+        const loadStart = Date.now()
+
+        // Start with default preferences and load Firebase data async
+        let authPreferences = this.getDefaultUserPreferences()
+
+        // Load Firebase data in background with timeout
+        const currentUserId = user.uid
+        this.loadAuthPreferences(currentUserId)
+            .then((prefs) => {
+                authPreferences = prefs
+                console.log(
+                    `📚 [AUTH-INIT-TIMING] Auth preferences loaded async in ${Date.now() - loadStart}ms for user:`,
+                    currentUserId
+                )
+
+                // CRITICAL: Only update if this is still the current user
+                // Check stored auth ID to prevent race conditions
+                const storedAuthId = this.getStoredAuthId()
+                if (storedAuthId === currentUserId) {
+                    console.log(
+                        `✅ Updating session with loaded data for correct user: ${currentUserId}`
+                    )
+                    // Update the session with loaded data
+                    state.setUserSession({
+                        isGuest: false,
+                        guestId: undefined,
+                        userId: currentUserId,
+                        preferences: prefs,
+                        isActive: true,
+                        lastSyncedAt: Date.now(),
+                        createdAt: Date.now(),
+                    })
+                } else {
+                    console.warn(
+                        `⚠️ User changed (${storedAuthId} != ${currentUserId}), not updating session with stale data`
+                    )
+                }
+            })
+            .catch((error) => {
+                console.error('🚨 Failed to load auth preferences async:', error)
+            })
+
+        console.log(
+            `📚 [AUTH-INIT-TIMING] Using default preferences initially, Firebase loading in background`
+        )
 
         const userSession: UserSession = {
             isGuest: false,
@@ -153,11 +258,31 @@ export class SessionManagerService {
         }
 
         // Update atoms atomically
+        const atomStart = Date.now()
+        console.log('🔄 [AUTH-INIT-TIMING] Updating atoms with auth session data')
         state.setUserSession(userSession)
         state.setSessionType('authenticated')
         state.setActiveSessionId(user.uid)
+        console.log(`⚛️ [AUTH-INIT-TIMING] Atoms updated in ${Date.now() - atomStart}ms`)
 
-        console.log(`🔐 Auth session initialized with isolation: ${user.uid}`)
+        const totalAuthTime = Date.now() - authInitStart
+        console.log(`🔐 [AUTH-INIT-TIMING] Auth session initialized in ${totalAuthTime}ms`, {
+            sessionType: 'authenticated',
+            userId: user.uid,
+            isGuest: false,
+            preferences: {
+                watchlistCount: userSession.preferences.watchlist.length,
+                ratingsCount: userSession.preferences.ratings.length,
+                listsCount: userSession.preferences.userLists?.lists?.length || 0,
+            },
+            breakdown: {
+                clearSession: `${clearStart}ms`,
+                storage: `${storageStart}ms`,
+                loadPrefs: `${loadStart}ms`,
+                updateAtoms: `${atomStart}ms`,
+                total: `${totalAuthTime}ms`,
+            },
+        })
         return 'authenticated'
     }
 
@@ -167,16 +292,23 @@ export class SessionManagerService {
         state.setIsTransitioning(true)
 
         try {
+            // CRITICAL: Clear stored auth ID immediately to prevent stale updates
+            this.clearStoredAuthId()
+
             // CRITICAL: Clear shared Recoil state FIRST before any other operations
             console.log('🧹 [SessionManager] STEP 1: Force clearing shared Recoil state')
             this.clearSessionAtomState(state)
 
-            // CRITICAL: Add delay to ensure Recoil state is cleared
-            await new Promise((resolve) => setTimeout(resolve, 50))
+            // Ensure Recoil state is properly cleared before proceeding
+            // Using a microtask to ensure state updates are processed
+            await Promise.resolve()
 
             // Clean up any auth-specific data
             console.log('🧹 [SessionManager] STEP 2: Clearing auth session data')
             this.clearAuthSessionData()
+
+            // Clear stored auth ID to prevent persistence issues
+            this.clearStoredAuthId()
 
             // CRITICAL: Clear Recoil state AGAIN to ensure isolation
             console.log('🧹 [SessionManager] STEP 3: Double-clearing Recoil state for isolation')
@@ -241,6 +373,21 @@ export class SessionManagerService {
     private static storeGuestId(guestId: string): void {
         if (typeof window === 'undefined') return
         localStorage.setItem('nettrailer_guest_id', guestId)
+    }
+
+    private static getStoredAuthId(): string | null {
+        if (typeof window === 'undefined') return null
+        return localStorage.getItem('nettrailer_auth_id')
+    }
+
+    private static storeAuthId(authId: string): void {
+        if (typeof window === 'undefined') return
+        localStorage.setItem('nettrailer_auth_id', authId)
+    }
+
+    private static clearStoredAuthId(): void {
+        if (typeof window === 'undefined') return
+        localStorage.removeItem('nettrailer_auth_id')
     }
 
     private static getGuestStorageKey(guestId: string): string {
@@ -334,14 +481,8 @@ export class SessionManagerService {
             timestamp: new Date().toISOString(),
         })
 
-        // Clear the atom immediately with force
+        // Clear the atom immediately
         state.setUserSession(emptySession)
-
-        // CRITICAL: Add a small delay to ensure Recoil state is updated
-        setTimeout(() => {
-            console.log('🧹 [SessionManager] VERIFYING SESSION ATOM STATE IS CLEARED')
-            state.setUserSession({ ...emptySession }) // Force re-set with spread operator
-        }, 10)
 
         console.log('✅ [SessionManager] Session atom state clearing completed')
     }

@@ -19,14 +19,26 @@ npm run test:ci      # Run tests in CI mode (no watch, with coverage)
 
 ## Architecture Overview
 
-### State Management Architecture
+### State Management Architecture (HYBRID - IMPORTANT)
 
-- **Recoil** is used for global state management with atoms organized by domain:
-    - `modalAtom.ts`: Modal state, current content, and auto-play preferences
-    - `searchAtom.ts`: Search query, results, and loading states
-    - `toastAtom.ts`: Unified toast notification system (replaced errorAtom.ts)
-    - `errorAtom.ts`: Global loading states only (error handling moved to toast system)
-    - `userDataAtom.ts`: User authentication and profile data
+The app is **currently in transition** from Recoil to Zustand:
+
+- **Surface level**: Components use `useRecoilState` and `useRecoilValue` from 'recoil'
+- **Under the hood**: These imports are intercepted by `atoms/compat.ts` compatibility shim
+- **Actual state**: Stored in Zustand stores (`/stores/*.ts`)
+- **Migration status**: Partial - using compatibility layer to bridge old components with new stores
+
+**Active Zustand Stores**:
+
+- `stores/authStore.ts` - Authenticated user data with Firebase sync
+- `stores/guestStore.ts` - Guest user data with localStorage persistence
+- `stores/sessionStore.ts` - Session management and user switching
+- `stores/appStore.ts` - App-wide state (modals, search, toasts)
+
+**Legacy Recoil Atoms** (kept for compatibility):
+
+- `atoms/modalAtom.ts`, `searchAtom.ts`, `toastAtom.ts`, etc.
+- These are mostly unused, with `atoms/compat.ts` redirecting to Zustand
 
 ### Content Type System
 
@@ -43,11 +55,16 @@ The app handles both movies and TV shows through a unified type system:
 - **TMDB integration** via `utils/tmdbApi.ts` with error handling and rate limiting
 - **Comprehensive error handling** via `utils/errorHandler.ts` with user-friendly messages
 
-### Authentication System
+### Authentication & User Data System
 
 - **Firebase Auth** with multiple providers (Google, Email/Password)
 - **Guest mode** for demo access without authentication
-- **State persistence** via Recoil atoms with Firebase integration
+- **Data Storage**:
+    - Authenticated users: Firebase Firestore at `/users/{userId}` document
+    - Guest users: Browser localStorage at `nettrailer_guest_data_{guestId}`
+    - Session persistence: localStorage for auth state across refreshes
+- **User Isolation**: Each user has their own Firestore document, preventing data mixing
+- **Race Condition Prevention**: User ID validation before all state updates
 
 ### Unified Toast Notification System
 
@@ -106,6 +123,14 @@ Required environment variables are documented in the file with setup instruction
 
 ## Key Development Patterns
 
+### User Data Isolation (Critical)
+
+- The `authStore` tracks `userId` to prevent data mixing between users
+- When switching users, stores are cleared before loading new data
+- Auto-save in `useSessionData` validates user ID match before persisting
+- Firebase operations include 5-second timeout to prevent hanging
+- Auth data loads asynchronously in background while UI shows defaults
+
 ### Toast Notifications & Error Handling
 
 - Use `useToast()` hook for all user notifications: `showSuccess()`, `showError()`, `showWatchlistAdd()`, etc.
@@ -134,11 +159,13 @@ Required environment variables are documented in the file with setup instruction
 
 ## Important Notes
 
+- **Zustand package**: Must be installed (`npm install zustand`) for stores to work
 - The project has been migrated from pnpm to npm - always use npm commands
 - Development server may run on port 3004 if 3000 is occupied
 - TMDB API has rate limits (40 requests/second) - respect these in API calls
 - Always clear build cache (`rm -rf .next`) if experiencing build issues
 - Recoil atoms use versioned keys (e.g., `modalState_v1`) for cache busting when needed
+- When working on state: New features should use Zustand stores directly, not Recoil atoms
 
 ## Development Server Management
 

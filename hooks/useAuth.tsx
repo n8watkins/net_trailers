@@ -52,7 +52,8 @@ export const AuthContext = createContext<iAuth>({
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
     const [user, setUser] = useState<User | null>(null)
-    const [loading, setLoading] = useState(false)
+    const [loading, setLoading] = useState(true) // Start with loading true until auth state is known
+    const [authInitialized, setAuthInitialized] = useState(false)
     const [passResetSuccess, setPassResetSuccess] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const router = useRouter()
@@ -62,21 +63,60 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const errorHandler = createErrorHandler(showError)
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            setUser(user)
-            setLoading(false)
-
-            // Session management is now handled by useSessionManager
-            // No automatic redirection or guest mode checking here
-            // Components can check session state and handle routing appropriately
-
-            if (user) {
-                // User authenticated - session manager will handle the transition
-            } else {
-                // User signed out - session manager will handle cleanup
-                console.log('🎭 User signed out, switching to guest mode')
-            }
+        const startTime = Date.now()
+        console.log(
+            '🔥 [AUTH-TIMING] Firebase Auth Hook Initializing at:',
+            new Date().toISOString()
+        )
+        console.log('🔥 Firebase Auth Instance:', auth)
+        console.log('🔥 Firebase Config:', {
+            apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? 'Set' : 'Missing',
+            authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ? 'Set' : 'Missing',
+            projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ? 'Set' : 'Missing',
         })
+
+        const unsubscribe = onAuthStateChanged(
+            auth,
+            (user) => {
+                const callbackTime = Date.now() - startTime
+                console.log(
+                    '🔥🔥🔥 [AUTH-TIMING] Firebase onAuthStateChanged fired after',
+                    callbackTime,
+                    'ms'
+                )
+                console.log('🔥 User:', user)
+                console.log('🔥 User ID:', user?.uid)
+                console.log('🔥 User Email:', user?.email)
+                console.log('🔥 Auth Initialized Before:', authInitialized)
+                console.log('🔥 Loading State Before:', loading)
+
+                setUser(user)
+                setLoading(false)
+                setAuthInitialized(true)
+
+                console.log(
+                    '🔥 [AUTH-TIMING] Auth state set, user is:',
+                    user ? 'AUTHENTICATED' : 'NOT AUTHENTICATED'
+                )
+
+                // Session management is now handled by useSessionManager
+                // No automatic redirection or guest mode checking here
+                // Components can check session state and handle routing appropriately
+
+                if (user) {
+                    // User authenticated - session manager will handle the transition
+                    console.log('✅ User is authenticated:', user.email)
+                } else {
+                    // User signed out - session manager will handle cleanup
+                    console.log('🎭 User signed out or not authenticated')
+                }
+            },
+            (error) => {
+                console.error('🚨 Firebase Auth Error:', error)
+                setLoading(false)
+                setAuthInitialized(true)
+            }
+        )
 
         return unsubscribe
     }, [])

@@ -24,7 +24,7 @@ export interface AuthSession {
 }
 
 // Default auth session
-const defaultAuthSession: AuthSession = {
+export const defaultAuthSession: AuthSession = {
     userId: '',
     preferences: {
         watchlist: [],

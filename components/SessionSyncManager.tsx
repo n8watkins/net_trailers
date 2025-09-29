@@ -72,7 +72,7 @@ export function SessionSyncManager() {
 
         if (sessionType === 'authenticated' && user) {
             // Check if we need to sync with Firebase
-            if (authStore.userId !== user.uid && authStore.syncStatus === 'idle') {
+            if (authStore.userId !== user.uid && authStore.syncStatus === 'offline') {
                 console.log('📥 [SessionSyncManager] Syncing auth data for:', user.uid)
                 authStore.syncWithFirebase(user.uid)
             }

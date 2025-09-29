@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { NextPage } from 'next'
 import Head from 'next/head'
 import Header from '../components/Header'
 import Modal from '../components/Modal'
 import ListSelectionModal from '../components/ListSelectionModal'
 import useUserData from '../hooks/useUserData'
+import useAuth from '../hooks/useAuth'
 import {
     EyeIcon,
     EyeSlashIcon,
@@ -21,23 +22,55 @@ import { modalState, movieState } from '../atoms/modalAtom'
 import { listModalState } from '../atoms/listModalAtom'
 import { exportUserDataToCSV } from '../utils/csvExport'
 import { UserList } from '../types/userLists'
+import { verifyUserData } from '../utils/verifyUserData'
 
 const Watchlists: NextPage = () => {
     const userData = useUserData()
+    const { user } = useAuth()
     const { ratings, watchlist, isGuest, userLists, getDefaultLists, getCustomLists } = userData
     const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
 
-    // Debug logging
+    // Debug logging and verification - FIXED: Only run when user changes
     useEffect(() => {
-        console.log('🔍 Watchlists Page Debug:', {
-            sessionType: userData.sessionType,
-            isGuest: userData.isGuest,
-            isAuthenticated: userData.isAuthenticated,
-            user: user?.email,
-            userId: user?.uid,
-            activeSessionId: userData.activeSessionId,
+        // Only log when user actually changes, not on every userData update
+        if (process.env.NODE_ENV === 'development') {
+            console.log('🔍 Watchlists Page Debug:', {
+                sessionType: userData.sessionType,
+                isGuest: userData.isGuest,
+                isAuthenticated: userData.isAuthenticated,
+                user: user?.email,
+                userId: user?.uid,
+                activeSessionId: userData.activeSessionId,
+                firebaseUser: !!user,
+                firebaseUserId: user?.uid || 'no-user',
+            })
+
+            // Verify user data isolation
+            if (user?.uid && userData.sessionType === 'authenticated') {
+                const verification = verifyUserData(user.uid, {
+                    watchlist: userData.watchlist,
+                    ratings: userData.ratings,
+                    userLists: userData.userLists,
+                })
+                console.log('✅ [Watchlists Page] User data verification:', verification)
+            }
+        }
+    }, [user?.uid, userData.sessionType]) // Only depend on stable values
+
+    // Add debug button to check authentication state
+    const debugAuthState = () => {
+        console.log('=== AUTHENTICATION DEBUG ===')
+        console.log('1. Firebase User:', user)
+        console.log('2. Session Type:', userData.sessionType)
+        console.log('3. Is Guest:', userData.isGuest)
+        console.log('4. Is Authenticated:', userData.isAuthenticated)
+        console.log('5. Active Session ID:', userData.activeSessionId)
+        console.log('6. User Session:', userSession)
+        console.log('7. Local Storage:', {
+            guestId: localStorage.getItem('nettrailer_guest_id'),
+            sessionType: localStorage.getItem('nettrailer_session_type'),
         })
-    }, [userData, user])
+    }
 
     const [selectedListId, setSelectedListId] = useState<string | 'all'>('all')
     const [searchQuery, setSearchQuery] = useState('')
@@ -46,12 +79,15 @@ const Watchlists: NextPage = () => {
     const setListModal = useSetRecoilState(listModalState)
 
     // Get all available lists (exclude Liked and Not For Me as they're rating categories, not lists)
-    const defaultLists = getDefaultLists()
-    const customLists = getCustomLists()
-    const filteredDefaultLists = Object.values(defaultLists).filter(
-        (list) => list && list.name !== 'Liked' && list.name !== 'Not For Me'
-    )
-    const allLists = [...filteredDefaultLists, ...customLists] as UserList[]
+    // FIXED: Use useMemo to prevent recreating allLists on every render
+    const allLists = useMemo(() => {
+        const defaultLists = getDefaultLists()
+        const customLists = getCustomLists()
+        const filteredDefaultLists = Object.values(defaultLists).filter(
+            (list) => list && list.name !== 'Liked' && list.name !== 'Not For Me'
+        )
+        return [...filteredDefaultLists, ...customLists] as UserList[]
+    }, [getDefaultLists, getCustomLists]) // Only recreate when the functions change
 
     // Set default to Watchlist when lists are loaded
     useEffect(() => {
@@ -160,6 +196,16 @@ const Watchlists: NextPage = () => {
                             Your watchlists and custom collections. Keep track of what you want to
                             watch and organize your content.
                         </p>
+
+                        {/* Debug Button */}
+                        {process.env.NODE_ENV === 'development' && (
+                            <button
+                                onClick={debugAuthState}
+                                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+                            >
+                                🐛 Debug Auth State
+                            </button>
+                        )}
 
                         {isGuest && (
                             <div className="bg-gray-800/50 p-4 rounded-lg max-w-2xl">

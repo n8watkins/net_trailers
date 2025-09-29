@@ -1,6 +1,6 @@
 import React from 'react'
 import { XMarkIcon, AcademicCapIcon } from '@heroicons/react/24/outline'
-import useUserData from '../hooks/useUserData'
+import { useAuthStatus } from '../hooks/useAuthStatus'
 
 interface TutorialModalProps {
     isOpen: boolean
@@ -8,7 +8,7 @@ interface TutorialModalProps {
 }
 
 const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
-    const { isGuest, isAuthenticated } = useUserData()
+    const { isGuest, isAuthenticated } = useAuthStatus()
 
     if (!isOpen) return null
 

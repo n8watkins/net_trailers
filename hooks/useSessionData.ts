@@ -40,12 +40,16 @@ export const useSessionData = () => {
         addRating: currentStore.addRating,
         removeRating: currentStore.removeRating,
         createList: currentStore.createList,
+        updateList: currentStore.updateList,
+        deleteList: currentStore.deleteList,
         addToList: currentStore.addToList,
         removeFromList: currentStore.removeFromList,
 
         // Store-specific actions
         guestActions: guestStore,
         authActions: authStoreData,
+        clearAllData: guestStore.clearAllData,
+        clearLocalCache: authStoreData.clearLocalCache,
 
         // Utilities
         isInWatchlist: (contentId: number) =>

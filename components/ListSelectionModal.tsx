@@ -129,10 +129,8 @@ function ListSelectionModal() {
 
     const handleUpdateList = () => {
         if (editingList && newListName.trim()) {
-            updateList({
-                id: editingList.id,
+            updateList(editingList.id, {
                 name: newListName.trim(),
-                description: newListDescription.trim() || undefined,
                 emoji: selectedEmoji,
             })
             setEditingList(null)

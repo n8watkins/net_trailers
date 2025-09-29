@@ -39,11 +39,14 @@ export default function useUserData() {
 
             // List management
             createList: (request: any) => sessionData.createList(request.name),
-            updateList: () => {
-                console.warn('updateList not implemented in Zustand stores')
+            updateList: (
+                listId: string,
+                updates: { name?: string; emoji?: string; color?: string }
+            ) => {
+                sessionData.updateList(listId, updates)
             },
-            deleteList: () => {
-                console.warn('deleteList not implemented in Zustand stores')
+            deleteList: (listId: string) => {
+                sessionData.deleteList(listId)
             },
             addToList: sessionData.addToList,
             removeFromList: sessionData.removeFromList,
@@ -61,6 +64,24 @@ export default function useUserData() {
                 UserListsService.getDefaultLists({ userLists: sessionData.userLists } as any),
             getCustomLists: () =>
                 UserListsService.getCustomLists({ userLists: sessionData.userLists } as any),
+
+            // Account management (guest has limited functionality)
+            getAccountDataSummary: () => ({
+                watchlistCount: sessionData.watchlist.length,
+                ratingsCount: sessionData.ratings.length,
+                listsCount: sessionData.userLists.lists.length,
+                totalItems: sessionData.watchlist.length + sessionData.ratings.length,
+                isEmpty: sessionData.watchlist.length === 0 && sessionData.ratings.length === 0,
+            }),
+            clearAccountData: () => {
+                sessionData.clearAllData()
+            },
+            exportAccountData: () => ({
+                watchlist: sessionData.watchlist,
+                ratings: sessionData.ratings,
+                userLists: sessionData.userLists,
+                exportDate: new Date(),
+            }),
 
             // Legacy compatibility - user session structure
             userSession: {
@@ -104,11 +125,14 @@ export default function useUserData() {
 
             // List management
             createList: (request: any) => sessionData.createList(request.name),
-            updateList: () => {
-                console.warn('updateList not implemented in Zustand stores')
+            updateList: (
+                listId: string,
+                updates: { name?: string; emoji?: string; color?: string }
+            ) => {
+                sessionData.updateList(listId, updates)
             },
-            deleteList: () => {
-                console.warn('deleteList not implemented in Zustand stores')
+            deleteList: (listId: string) => {
+                sessionData.deleteList(listId)
             },
             addToList: sessionData.addToList,
             removeFromList: sessionData.removeFromList,
@@ -126,6 +150,29 @@ export default function useUserData() {
                 UserListsService.getDefaultLists({ userLists: sessionData.userLists } as any),
             getCustomLists: () =>
                 UserListsService.getCustomLists({ userLists: sessionData.userLists } as any),
+
+            // Account management (authenticated has full functionality)
+            getAccountDataSummary: async () => ({
+                watchlistCount: sessionData.watchlist.length,
+                ratingsCount: sessionData.ratings.length,
+                listsCount: sessionData.userLists.lists.length,
+                totalItems: sessionData.watchlist.length + sessionData.ratings.length,
+                isEmpty: sessionData.watchlist.length === 0 && sessionData.ratings.length === 0,
+                accountCreated: new Date(), // This would come from Firebase auth
+            }),
+            clearAccountData: async () => {
+                sessionData.clearLocalCache()
+            },
+            exportAccountData: async () => ({
+                watchlist: sessionData.watchlist,
+                ratings: sessionData.ratings,
+                userLists: sessionData.userLists,
+                exportDate: new Date(),
+            }),
+            deleteAccount: async () => {
+                // This would need actual Firebase auth deletion
+                console.warn('deleteAccount not fully implemented')
+            },
 
             // Legacy compatibility - user session structure
             userSession: {
@@ -204,6 +251,17 @@ export default function useUserData() {
             getListsContaining: () => [],
             getDefaultLists: () => ({ watchlist: null, liked: null, disliked: null }),
             getCustomLists: () => [],
+
+            // Account management (disabled during initialization)
+            getAccountDataSummary: () => {
+                throw new Error('Cannot get data summary while session is initializing')
+            },
+            clearAccountData: () => {
+                throw new Error('Cannot clear data while session is initializing')
+            },
+            exportAccountData: () => {
+                throw new Error('Cannot export data while session is initializing')
+            },
 
             // Legacy compatibility
             userSession: {

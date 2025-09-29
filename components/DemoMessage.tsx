@@ -2,13 +2,13 @@ import { useRecoilState, useRecoilValue } from 'recoil'
 import { showDemoMessageState, contentLoadedSuccessfullyState } from '../atoms/userDataAtom'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { useState, useEffect } from 'react'
-import useUserData from '../hooks/useUserData'
+import { useAuthStatus } from '../hooks/useAuthStatus'
 import { useRouter } from 'next/router'
 
 export default function DemoMessage() {
     const [showDemoMessage, setShowDemoMessage] = useRecoilState(showDemoMessageState)
     const contentLoadedSuccessfully = useRecoilValue(contentLoadedSuccessfullyState)
-    const { isGuest, isAuthenticated } = useUserData()
+    const { isGuest, isAuthenticated } = useAuthStatus()
     const [visible, setVisible] = useState(false)
     const router = useRouter()
 
