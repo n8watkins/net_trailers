@@ -144,6 +144,30 @@ const generateToastId = (): string => {
     return `toast_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 }
 
+// Helper to load search history from localStorage
+const loadSearchHistory = (): string[] => {
+    if (typeof window === 'undefined') return []
+    try {
+        const saved = localStorage.getItem('nettrailer-search-history')
+        if (saved) {
+            return JSON.parse(saved)
+        }
+    } catch (error) {
+        console.error('Failed to load search history:', error)
+    }
+    return []
+}
+
+// Helper to save search history to localStorage
+const saveSearchHistory = (history: string[]) => {
+    if (typeof window === 'undefined') return
+    try {
+        localStorage.setItem('nettrailer-search-history', JSON.stringify(history))
+    } catch (error) {
+        console.error('Failed to save search history:', error)
+    }
+}
+
 export const useAppStore = create<AppStore>((set, get) => ({
     // Initial state
     modal: {
@@ -181,7 +205,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             sortBy: 'popularity.desc',
             year: 'all',
         },
-        history: [],
+        history: loadSearchHistory(),
         recentSearches: [],
     },
 
@@ -381,6 +405,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
                 ...state.search.recentSearches.filter((q) => q !== trimmedQuery),
             ].slice(0, 5) // Keep last 5
 
+            // Persist to localStorage
+            saveSearchHistory(newHistory)
+
             set((state) => ({
                 search: {
                     ...state.search,
@@ -392,6 +419,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
     },
 
     clearSearchHistory: () => {
+        // Clear from localStorage
+        saveSearchHistory([])
+
         set((state) => ({
             search: {
                 ...state.search,
