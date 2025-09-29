@@ -1,0 +1,56 @@
+import { useSessionStore } from '../stores/sessionStore'
+import { useGuestStore } from '../stores/guestStore'
+import { useAuthStore } from '../stores/authStore'
+
+export const useSessionData = () => {
+    const { sessionType, activeSessionId, isInitialized, isTransitioning } = useSessionStore()
+
+    const guestStore = useGuestStore()
+    const authStoreData = useAuthStore()
+
+    // Session initialization is now handled by SessionSyncManager component
+
+    // Auth state changes are now handled by SessionSyncManager component
+
+    // Data loading is now handled by SessionSyncManager component
+
+    // AUTO-SAVE DISABLED - Saving happens directly in store actions to prevent infinite loops
+    // The previous auto-save was causing excessive Firestore writes (20k+ per day)
+    // because it triggered on every data change, including lastActive updates
+
+    // Return the appropriate store data based on session type
+    const currentStore = sessionType === 'authenticated' ? authStoreData : guestStore
+
+    return {
+        // Session info
+        sessionType,
+        activeSessionId,
+        isInitialized,
+        isTransitioning,
+
+        // Current store data
+        watchlist: currentStore.watchlist,
+        ratings: currentStore.ratings,
+        userLists: currentStore.userLists,
+        lastActive: currentStore.lastActive,
+
+        // Actions (unified interface)
+        addToWatchlist: currentStore.addToWatchlist,
+        removeFromWatchlist: currentStore.removeFromWatchlist,
+        addRating: currentStore.addRating,
+        removeRating: currentStore.removeRating,
+        createList: currentStore.createList,
+        addToList: currentStore.addToList,
+        removeFromList: currentStore.removeFromList,
+
+        // Store-specific actions
+        guestActions: guestStore,
+        authActions: authStoreData,
+
+        // Utilities
+        isInWatchlist: (contentId: number) =>
+            currentStore.watchlist.some((item) => item.id === contentId),
+        getRating: (contentId: number) =>
+            currentStore.ratings.find((r) => r.contentId === contentId) || null,
+    }
+}

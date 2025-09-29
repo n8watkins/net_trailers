@@ -9,18 +9,28 @@ import { Analytics } from '@vercel/analytics/next'
 import ToastManager from '../components/ToastManager'
 import Layout from '../components/Layout'
 import ListSelectionModal from '../components/ListSelectionModal'
+import DebugControls from '../components/DebugControls'
+import FirebaseCallTracker from '../components/FirebaseCallTracker'
+import AuthFlowDebugger from '../components/AuthFlowDebugger'
+import FirestoreTestButton from '../components/FirestoreTestButton'
+import { SessionSyncManager } from '../components/SessionSyncManager'
 
 function MyApp({ Component, pageProps }: AppProps) {
     return (
         <RecoilRoot>
             <AuthProvider>
                 <ErrorBoundary>
+                    <SessionSyncManager />
                     <Layout>
                         <Component {...pageProps} />
                     </Layout>
                     <DemoMessage />
                     <ToastManager />
                     <ListSelectionModal />
+                    <DebugControls />
+                    <FirebaseCallTracker />
+                    <AuthFlowDebugger />
+                    <FirestoreTestButton />
                     <GoogleAnalytics />
                     <Analytics />
                 </ErrorBoundary>

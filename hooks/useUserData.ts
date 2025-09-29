@@ -1,8 +1,5 @@
-import { useRecoilValue } from 'recoil'
-import { sessionTypeState, activeSessionIdState } from '../atoms/sessionManagerAtom'
-import { useSessionManager } from './useSessionManager'
-import { useGuestData } from './useGuestData'
-import { useAuthData } from './useAuthData'
+import { useSessionData } from './useSessionData'
+import { UserListsService } from '../services/userListsService'
 
 /**
  * Main hook for user data management with complete session isolation
@@ -11,45 +8,147 @@ import { useAuthData } from './useAuthData'
  * No automatic data migration - sessions are completely isolated.
  */
 export default function useUserData() {
-    const sessionType = useRecoilValue(sessionTypeState)
-    const activeSessionId = useRecoilValue(activeSessionIdState)
-    const sessionManager = useSessionManager()
+    const sessionData = useSessionData()
 
-    // Route to appropriate data hook based on session type
-    const guestData = useGuestData()
-    const authData = useAuthData(activeSessionId)
-
-    // Return the appropriate session data
-    if (sessionType === 'guest') {
+    // Return unified interface that works with both guest and authenticated sessions
+    if (sessionData.sessionType === 'guest') {
         const result = {
-            ...guestData,
+            // Session info
+            sessionType: sessionData.sessionType,
+            activeSessionId: sessionData.activeSessionId,
 
-            // Session manager functions
-            sessionType,
-            activeSessionId,
-            sessionManager,
+            // Session state flags
+            isGuest: true,
+            isAuthenticated: false,
+            isInitializing: false,
+
+            // Data from Zustand store
+            watchlist: sessionData.watchlist,
+            ratings: sessionData.ratings,
+            userLists: sessionData.userLists,
+
+            // Actions from Zustand store
+            setRating: (contentId: number, rating: 'liked' | 'disliked', content?: any) => {
+                sessionData.addRating(contentId, rating, content)
+            },
+            removeRating: sessionData.removeRating,
+            addToWatchlist: sessionData.addToWatchlist,
+            removeFromWatchlist: sessionData.removeFromWatchlist,
+            getRating: sessionData.getRating,
+            isInWatchlist: sessionData.isInWatchlist,
+
+            // List management
+            createList: (request: any) => sessionData.createList(request.name),
+            updateList: () => {
+                console.warn('updateList not implemented in Zustand stores')
+            },
+            deleteList: () => {
+                console.warn('deleteList not implemented in Zustand stores')
+            },
+            addToList: sessionData.addToList,
+            removeFromList: sessionData.removeFromList,
+            getList: (listId: string) =>
+                sessionData.userLists.lists.find((l) => l.id === listId) || null,
+            isContentInList: (listId: string, contentId: number) => {
+                const list = sessionData.userLists.lists.find((l) => l.id === listId)
+                return list ? list.items.some((item) => item.id === contentId) : false
+            },
+            getListsContaining: (contentId: number) =>
+                sessionData.userLists.lists.filter((list) =>
+                    list.items.some((item) => item.id === contentId)
+                ),
+            getDefaultLists: () =>
+                UserListsService.getDefaultLists({ userLists: sessionData.userLists } as any),
+            getCustomLists: () =>
+                UserListsService.getCustomLists({ userLists: sessionData.userLists } as any),
+
+            // Legacy compatibility - user session structure
+            userSession: {
+                isGuest: true,
+                guestId: sessionData.activeSessionId,
+                userId: undefined,
+                preferences: {
+                    watchlist: sessionData.watchlist,
+                    ratings: sessionData.ratings,
+                    userLists: sessionData.userLists,
+                    lastActive: sessionData.lastActive,
+                },
+            },
         }
         return result
-    } else if (sessionType === 'authenticated') {
+    } else if (sessionData.sessionType === 'authenticated') {
         const result = {
-            ...authData,
-
-            // Session manager functions
-            sessionType,
-            activeSessionId,
-            sessionManager,
+            // Session info
+            sessionType: sessionData.sessionType,
+            activeSessionId: sessionData.activeSessionId,
 
             // Session state flags
             isGuest: false,
             isAuthenticated: true,
             isInitializing: false,
 
+            // Data from Zustand store
+            watchlist: sessionData.watchlist,
+            ratings: sessionData.ratings,
+            userLists: sessionData.userLists,
+
+            // Actions from Zustand store
+            setRating: (contentId: number, rating: 'liked' | 'disliked', content?: any) => {
+                sessionData.addRating(contentId, rating, content)
+            },
+            removeRating: sessionData.removeRating,
+            addToWatchlist: sessionData.addToWatchlist,
+            removeFromWatchlist: sessionData.removeFromWatchlist,
+            getRating: sessionData.getRating,
+            isInWatchlist: sessionData.isInWatchlist,
+
+            // List management
+            createList: (request: any) => sessionData.createList(request.name),
+            updateList: () => {
+                console.warn('updateList not implemented in Zustand stores')
+            },
+            deleteList: () => {
+                console.warn('deleteList not implemented in Zustand stores')
+            },
+            addToList: sessionData.addToList,
+            removeFromList: sessionData.removeFromList,
+            getList: (listId: string) =>
+                sessionData.userLists.lists.find((l) => l.id === listId) || null,
+            isContentInList: (listId: string, contentId: number) => {
+                const list = sessionData.userLists.lists.find((l) => l.id === listId)
+                return list ? list.items.some((item) => item.id === contentId) : false
+            },
+            getListsContaining: (contentId: number) =>
+                sessionData.userLists.lists.filter((list) =>
+                    list.items.some((item) => item.id === contentId)
+                ),
+            getDefaultLists: () =>
+                UserListsService.getDefaultLists({ userLists: sessionData.userLists } as any),
+            getCustomLists: () =>
+                UserListsService.getCustomLists({ userLists: sessionData.userLists } as any),
+
             // Legacy compatibility - user session structure
             userSession: {
                 isGuest: false,
                 guestId: undefined,
-                userId: authData.authSession.userId,
-                preferences: authData.authSession.preferences,
+                userId: sessionData.activeSessionId,
+                preferences: {
+                    watchlist: sessionData.watchlist,
+                    ratings: sessionData.ratings,
+                    userLists: sessionData.userLists,
+                    lastActive: sessionData.lastActive,
+                },
+            },
+
+            // Auth-specific actions
+            authSession: {
+                userId: sessionData.activeSessionId,
+                preferences: {
+                    watchlist: sessionData.watchlist,
+                    ratings: sessionData.ratings,
+                    userLists: sessionData.userLists,
+                    lastActive: sessionData.lastActive,
+                },
             },
         }
         return result
@@ -59,7 +158,6 @@ export default function useUserData() {
             // Session info
             sessionType: 'initializing' as const,
             activeSessionId: '',
-            sessionManager,
 
             // Session state flags
             isGuest: false,
