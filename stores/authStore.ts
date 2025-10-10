@@ -163,7 +163,30 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
 
-        set({ syncStatus: 'synced' })
+        // Save to Firebase
+        if (state.userId) {
+            firebaseTracker.track('saveUserData-addRating', 'AuthStore', state.userId, {
+                ratingsCount: updatedRatings.length,
+            })
+            const { AuthStorageService } = await import('../services/authStorageService')
+            AuthStorageService.saveUserData(state.userId, {
+                watchlist: state.watchlist,
+                ratings: updatedRatings,
+                userLists: state.userLists,
+                lastActive: Date.now(),
+            })
+                .then(() => {
+                    console.log('✅ [AuthStore] Saved to Firestore')
+                    set({ syncStatus: 'synced' })
+                })
+                .catch((error) => {
+                    console.error('❌ [AuthStore] Failed to save to Firestore:', error)
+                    set({ syncStatus: 'offline' })
+                })
+        } else {
+            set({ syncStatus: 'synced' })
+        }
+
         console.log('⭐ [AuthStore] Added rating:', { contentId, rating })
     },
 
@@ -171,12 +194,36 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         const state = get()
         set({ syncStatus: 'syncing' })
 
+        const updatedRatings = state.ratings.filter((r) => r.contentId !== contentId)
         set({
-            ratings: state.ratings.filter((r) => r.contentId !== contentId),
+            ratings: updatedRatings,
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
 
-        set({ syncStatus: 'synced' })
+        // Save to Firebase
+        if (state.userId) {
+            firebaseTracker.track('saveUserData-removeRating', 'AuthStore', state.userId, {
+                ratingsCount: updatedRatings.length,
+            })
+            const { AuthStorageService } = await import('../services/authStorageService')
+            AuthStorageService.saveUserData(state.userId, {
+                watchlist: state.watchlist,
+                ratings: updatedRatings,
+                userLists: state.userLists,
+                lastActive: Date.now(),
+            })
+                .then(() => {
+                    console.log('✅ [AuthStore] Saved to Firestore')
+                    set({ syncStatus: 'synced' })
+                })
+                .catch((error) => {
+                    console.error('❌ [AuthStore] Failed to save to Firestore:', error)
+                    set({ syncStatus: 'offline' })
+                })
+        } else {
+            set({ syncStatus: 'synced' })
+        }
+
         console.log('🗑️ [AuthStore] Removed rating:', contentId)
     },
 
@@ -239,7 +286,31 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
 
-        set({ syncStatus: 'synced' })
+        // Save to Firebase
+        if (state.userId) {
+            firebaseTracker.track('saveUserData-addToList', 'AuthStore', state.userId, {
+                listId,
+                listsCount: updatedPrefs.userLists.lists.length,
+            })
+            const { AuthStorageService } = await import('../services/authStorageService')
+            AuthStorageService.saveUserData(state.userId, {
+                watchlist: state.watchlist,
+                ratings: state.ratings,
+                userLists: updatedPrefs.userLists,
+                lastActive: Date.now(),
+            })
+                .then(() => {
+                    console.log('✅ [AuthStore] Saved to Firestore')
+                    set({ syncStatus: 'synced' })
+                })
+                .catch((error) => {
+                    console.error('❌ [AuthStore] Failed to save to Firestore:', error)
+                    set({ syncStatus: 'offline' })
+                })
+        } else {
+            set({ syncStatus: 'synced' })
+        }
+
         console.log('📝 [AuthStore] Added to list:', { listId, content: getTitle(content) })
     },
 
@@ -258,7 +329,31 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
 
-        set({ syncStatus: 'synced' })
+        // Save to Firebase
+        if (state.userId) {
+            firebaseTracker.track('saveUserData-removeFromList', 'AuthStore', state.userId, {
+                listId,
+                listsCount: updatedPrefs.userLists.lists.length,
+            })
+            const { AuthStorageService } = await import('../services/authStorageService')
+            AuthStorageService.saveUserData(state.userId, {
+                watchlist: state.watchlist,
+                ratings: state.ratings,
+                userLists: updatedPrefs.userLists,
+                lastActive: Date.now(),
+            })
+                .then(() => {
+                    console.log('✅ [AuthStore] Saved to Firestore')
+                    set({ syncStatus: 'synced' })
+                })
+                .catch((error) => {
+                    console.error('❌ [AuthStore] Failed to save to Firestore:', error)
+                    set({ syncStatus: 'offline' })
+                })
+        } else {
+            set({ syncStatus: 'synced' })
+        }
+
         console.log('🗑️ [AuthStore] Removed from list:', { listId, contentId })
     },
 
@@ -280,7 +375,31 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
 
-        set({ syncStatus: 'synced' })
+        // Save to Firebase
+        if (state.userId) {
+            firebaseTracker.track('saveUserData-updateList', 'AuthStore', state.userId, {
+                listId,
+                listsCount: updatedPrefs.userLists.lists.length,
+            })
+            const { AuthStorageService } = await import('../services/authStorageService')
+            AuthStorageService.saveUserData(state.userId, {
+                watchlist: state.watchlist,
+                ratings: state.ratings,
+                userLists: updatedPrefs.userLists,
+                lastActive: Date.now(),
+            })
+                .then(() => {
+                    console.log('✅ [AuthStore] Saved to Firestore')
+                    set({ syncStatus: 'synced' })
+                })
+                .catch((error) => {
+                    console.error('❌ [AuthStore] Failed to save to Firestore:', error)
+                    set({ syncStatus: 'offline' })
+                })
+        } else {
+            set({ syncStatus: 'synced' })
+        }
+
         console.log('✏️ [AuthStore] Updated list:', { listId, updates })
     },
 
@@ -299,7 +418,31 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
 
-        set({ syncStatus: 'synced' })
+        // Save to Firebase
+        if (state.userId) {
+            firebaseTracker.track('saveUserData-deleteList', 'AuthStore', state.userId, {
+                listId,
+                listsCount: updatedPrefs.userLists.lists.length,
+            })
+            const { AuthStorageService } = await import('../services/authStorageService')
+            AuthStorageService.saveUserData(state.userId, {
+                watchlist: state.watchlist,
+                ratings: state.ratings,
+                userLists: updatedPrefs.userLists,
+                lastActive: Date.now(),
+            })
+                .then(() => {
+                    console.log('✅ [AuthStore] Saved to Firestore')
+                    set({ syncStatus: 'synced' })
+                })
+                .catch((error) => {
+                    console.error('❌ [AuthStore] Failed to save to Firestore:', error)
+                    set({ syncStatus: 'offline' })
+                })
+        } else {
+            set({ syncStatus: 'synced' })
+        }
+
         console.log('🗑️ [AuthStore] Deleted list:', listId)
     },
 
