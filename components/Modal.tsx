@@ -7,9 +7,7 @@ import React, {
     MouseEvent,
 } from 'react'
 import MuiModal from '@mui/material/Modal'
-import { useRecoilState, useRecoilValue } from 'recoil'
-import { modalState, movieState, autoPlayWithSoundState } from '../atoms/modalAtom'
-import { loadingState } from '../atoms/errorAtom'
+import { useAppStore } from '../stores/appStore'
 import { createErrorHandler } from '../utils/errorHandler'
 import {
     getTitle,
@@ -59,15 +57,17 @@ import SimpleLikeButton from './SimpleLikeButton'
 import WatchLaterButton from './WatchLaterButton'
 import useUserData from '../hooks/useUserData'
 import { useToast } from '../hooks/useToast'
-import { useSetRecoilState } from 'recoil'
-import { listModalState } from '../atoms/listModalAtom'
 import { UserList } from '../types/userLists'
 
 function Modal() {
-    const [showModal, setShowModal] = useRecoilState(modalState)
-    const [currentMovie, setCurrentMovie] = useRecoilState(movieState)
-    const [autoPlayWithSound, setAutoPlayWithSound] = useRecoilState(autoPlayWithSoundState)
-    const [isLoading, setIsLoading] = useRecoilState(loadingState)
+    // Zustand store
+    const { modal, closeModal, setAutoPlayWithSound, isLoading, setLoading, openListModal } =
+        useAppStore()
+
+    // Extract modal state
+    const showModal = modal.isOpen
+    const currentMovie = modal.content?.content || null
+    const autoPlayWithSound = modal.content?.autoPlayWithSound || false
     const [trailer, setTrailer] = useState('')
     const [genres, setGenres] = useState<Genre[]>([])
     const [enhancedMovieData, setEnhancedMovieData] = useState<Content | null>(null)
@@ -124,7 +124,6 @@ function Modal() {
         showError,
     } = useToast()
     const errorHandler = createErrorHandler(showError)
-    const setListModal = useSetRecoilState(listModalState)
 
     let timeout: ReturnType<typeof setTimeout> | null = null
     let timeout2: ReturnType<typeof setTimeout> | null = null
@@ -199,7 +198,7 @@ function Modal() {
     }
 
     const handleClose = () => {
-        setShowModal(false)
+        closeModal()
         // Reset loaded movie ID when closing modal to allow fresh data next time
         setLoadedMovieId(null)
         setTrailer('')
@@ -256,10 +255,7 @@ function Modal() {
 
     const handleManageAllLists = () => {
         if (!currentMovie) return
-        setListModal({
-            isOpen: true,
-            content: currentMovie as Content,
-        })
+        openListModal(currentMovie as Content, 'manage')
     }
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -279,7 +275,7 @@ function Modal() {
 
         async function fetchMovie() {
             try {
-                setIsLoading(true)
+                setLoading(true)
                 const mediaType = currentMovie?.media_type === 'tv' ? 'tv' : 'movie'
                 const response = await fetch(
                     `/api/movies/details/${currentMovie?.id}?media_type=${mediaType}`
@@ -312,12 +308,12 @@ function Modal() {
                 setTrailer('')
                 setGenres([])
             } finally {
-                setIsLoading(false)
+                setLoading(false)
             }
         }
 
         fetchMovie()
-    }, [currentMovie, loadedMovieId, errorHandler, setIsLoading])
+    }, [currentMovie, loadedMovieId, errorHandler, setLoading])
 
     useEffect(() => {
         document.addEventListener('fullscreenchange', handleFullscreenChange)
@@ -437,7 +433,7 @@ function Modal() {
             // Reset the flag after use
             setAutoPlayWithSound(false)
         }
-    }, [autoPlayWithSound, trailer, showModal, setAutoPlayWithSound])
+    }, [autoPlayWithSound, trailer, showModal])
 
     // Handle click outside inline dropdown
     useEffect(() => {
