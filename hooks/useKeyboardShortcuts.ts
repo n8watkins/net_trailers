@@ -3,6 +3,8 @@ import { useRouter } from 'next/router'
 
 interface UseKeyboardShortcutsProps {
     onOpenShortcuts?: () => void
+    onOpenTutorial?: () => void
+    onOpenAbout?: () => void
     onToggleModal?: () => void
     onFocusSearch?: () => void
     onToggleMute?: () => void
@@ -18,6 +20,8 @@ interface UseKeyboardShortcutsProps {
 
 export function useKeyboardShortcuts({
     onOpenShortcuts,
+    onOpenTutorial,
+    onOpenAbout,
     onToggleModal,
     onFocusSearch,
     onToggleMute,
@@ -60,6 +64,20 @@ export function useKeyboardShortcuts({
             if (event.altKey && event.key === '/') {
                 event.preventDefault()
                 onFocusSearch?.()
+                return
+            }
+
+            // Alt+T to open tutorial modal (works globally, even when typing)
+            if (event.altKey && event.key.toLowerCase() === 't') {
+                event.preventDefault()
+                onOpenTutorial?.()
+                return
+            }
+
+            // Alt+A to open about modal (works globally, even when typing)
+            if (event.altKey && event.key.toLowerCase() === 'a') {
+                event.preventDefault()
+                onOpenAbout?.()
                 return
             }
 
@@ -152,6 +170,8 @@ export function useKeyboardShortcuts({
         [
             router,
             onOpenShortcuts,
+            onOpenTutorial,
+            onOpenAbout,
             onToggleModal,
             onFocusSearch,
             onToggleMute,

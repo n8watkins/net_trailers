@@ -27,7 +27,9 @@ const shortcuts: KeyboardShortcut[] = [
     { keys: ['R'], description: 'Watch on YouTube', category: 'Content Actions' },
 
     // General
-    { keys: ['?'], description: 'Open keyboard shortcuts menu', category: 'General' },
+    { keys: ['?'], description: 'Toggle keyboard shortcuts menu', category: 'General' },
+    { keys: ['Alt', 'T'], description: 'Open tutorial', category: 'General' },
+    { keys: ['Alt', 'A'], description: 'Open about NetTrailers', category: 'General' },
 ]
 
 const shortcutsByCategory = shortcuts.reduce(

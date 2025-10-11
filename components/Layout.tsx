@@ -64,6 +64,8 @@ function Layout({ children }: LayoutProps) {
     // Set up global keyboard shortcuts
     useKeyboardShortcuts({
         onOpenShortcuts: handleOpenShortcuts,
+        onOpenTutorial: handleOpenTutorial,
+        onOpenAbout: handleOpenAboutModal,
         onFocusSearch: handleFocusSearch,
         searchInputRef,
         isModalOpen,
