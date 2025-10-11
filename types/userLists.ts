@@ -12,6 +12,10 @@ export interface UserList {
     emoji?: string // Optional emoji icon for the list
 }
 
+// DEPRECATED - OLD SCHEMA
+// UserListsState is no longer used in new schema
+// New schema uses: userCreatedWatchlists: UserList[] directly
+// Keeping temporarily for backward compatibility during migration
 export interface UserListsState {
     lists: UserList[]
     defaultListIds: {

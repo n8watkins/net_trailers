@@ -1,18 +1,13 @@
 import { atom } from 'recoil'
 import { Content } from '../typings'
-import { UserList, UserListsState } from '../types/userLists'
+import { UserList } from '../types/userLists'
 
-export interface AuthRating {
-    contentId: number
-    rating: 'liked' | 'disliked'
-    timestamp: number
-    content?: Content
-}
-
+// NEW SCHEMA - No more ratings, no more userLists.lists
 export interface AuthPreferences {
-    watchlist: Content[]
-    ratings: AuthRating[]
-    userLists: UserListsState
+    likedMovies: Content[]
+    hiddenMovies: Content[]
+    defaultWatchlist: Content[]
+    userCreatedWatchlists: UserList[]
     lastActive: number
 }
 
@@ -27,16 +22,10 @@ export interface AuthSession {
 export const defaultAuthSession: AuthSession = {
     userId: '',
     preferences: {
-        watchlist: [],
-        ratings: [],
-        userLists: {
-            lists: [],
-            defaultListIds: {
-                watchlist: '',
-                liked: '',
-                disliked: '',
-            },
-        },
+        likedMovies: [],
+        hiddenMovies: [],
+        defaultWatchlist: [],
+        userCreatedWatchlists: [],
         lastActive: Date.now(),
     },
     isActive: false,

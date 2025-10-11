@@ -1,21 +1,26 @@
 import { create } from 'zustand'
 import { Content, getTitle } from '../typings'
-import { UserRating } from '../types/userData'
-import { UserListsState } from '../types/userLists'
+import { UserList } from '../types/userLists'
 import { UserListsService } from '../services/userListsService'
+import { GuestStorageService } from '../services/guestStorageService'
 
+// NEW SCHEMA - Flat structure with liked/hidden instead of ratings
 export interface GuestState {
-    watchlist: Content[]
-    ratings: UserRating[]
-    userLists: UserListsState
+    guestId?: string // Track which guest session this data belongs to
+    likedMovies: Content[]
+    hiddenMovies: Content[]
+    defaultWatchlist: Content[]
+    userCreatedWatchlists: UserList[]
     lastActive: number
 }
 
 export interface GuestActions {
     addToWatchlist: (content: Content) => void
     removeFromWatchlist: (contentId: number) => void
-    addRating: (contentId: number, rating: 'liked' | 'disliked', content?: Content) => void
-    removeRating: (contentId: number) => void
+    addLikedMovie: (content: Content) => void
+    removeLikedMovie: (contentId: number) => void
+    addHiddenMovie: (content: Content) => void
+    removeHiddenMovie: (contentId: number) => void
     createList: (listName: string) => string
     addToList: (listId: string, content: Content) => void
     removeFromList: (listId: string, contentId: number) => void
@@ -24,14 +29,17 @@ export interface GuestActions {
     updatePreferences: (prefs: Partial<GuestState>) => void
     clearAllData: () => void
     loadData: (data: GuestState) => void
+    syncFromLocalStorage: (guestId: string) => void
 }
 
 export type GuestStore = GuestState & GuestActions
 
 const getDefaultState = (): GuestState => ({
-    watchlist: [],
-    ratings: [],
-    userLists: UserListsService.initializeDefaultLists(),
+    guestId: undefined,
+    likedMovies: [],
+    hiddenMovies: [],
+    defaultWatchlist: [],
+    userCreatedWatchlists: [],
     lastActive: 0, // Initialize to 0 for SSR compatibility, will be set to actual timestamp after hydration
 })
 
@@ -42,73 +50,175 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
     // Actions
     addToWatchlist: (content: Content) => {
         const state = get()
-        const isAlreadyInWatchlist = state.watchlist.some((item) => item.id === content.id)
+        const isAlreadyInWatchlist = state.defaultWatchlist.some((item) => item.id === content.id)
         if (isAlreadyInWatchlist) return
 
+        const newWatchlist = [...state.defaultWatchlist, content]
         set({
-            watchlist: [...state.watchlist, content],
+            defaultWatchlist: newWatchlist,
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
+
+        // Save to localStorage
+        if (state.guestId) {
+            GuestStorageService.saveGuestData(state.guestId, {
+                likedMovies: state.likedMovies,
+                hiddenMovies: state.hiddenMovies,
+                defaultWatchlist: newWatchlist,
+                userCreatedWatchlists: state.userCreatedWatchlists,
+                lastActive: Date.now(),
+            })
+        }
+
         console.log('📝 [GuestStore] Added to watchlist:', getTitle(content))
     },
 
     removeFromWatchlist: (contentId: number) => {
         const state = get()
+        const newWatchlist = state.defaultWatchlist.filter((item) => item.id !== contentId)
         set({
-            watchlist: state.watchlist.filter((item) => item.id !== contentId),
+            defaultWatchlist: newWatchlist,
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
+
+        // Save to localStorage
+        if (state.guestId) {
+            GuestStorageService.saveGuestData(state.guestId, {
+                likedMovies: state.likedMovies,
+                hiddenMovies: state.hiddenMovies,
+                defaultWatchlist: newWatchlist,
+                userCreatedWatchlists: state.userCreatedWatchlists,
+                lastActive: Date.now(),
+            })
+        }
+
         console.log('🗑️ [GuestStore] Removed from watchlist:', contentId)
     },
 
-    addRating: (contentId: number, rating: 'liked' | 'disliked', content?: Content) => {
+    addLikedMovie: (content: Content) => {
         const state = get()
-        const existingRatingIndex = state.ratings.findIndex((r) => r.contentId === contentId)
+        const isAlreadyLiked = state.likedMovies.some((m) => m.id === content.id)
+        if (isAlreadyLiked) return
 
-        const newRating: UserRating = {
-            contentId,
-            rating,
-            timestamp: typeof window !== 'undefined' ? Date.now() : 0,
-            content,
-        }
-
-        let updatedRatings: UserRating[]
-        if (existingRatingIndex >= 0) {
-            updatedRatings = [...state.ratings]
-            updatedRatings[existingRatingIndex] = newRating
-        } else {
-            updatedRatings = [...state.ratings, newRating]
-        }
+        // Remove from hidden (mutual exclusion)
+        const newHiddenMovies = state.hiddenMovies.filter((m) => m.id !== content.id)
+        const newLikedMovies = [...state.likedMovies, content]
 
         set({
-            ratings: updatedRatings,
+            likedMovies: newLikedMovies,
+            hiddenMovies: newHiddenMovies,
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
-        console.log('⭐ [GuestStore] Added rating:', { contentId, rating })
+
+        // Save to localStorage
+        if (state.guestId) {
+            GuestStorageService.saveGuestData(state.guestId, {
+                likedMovies: newLikedMovies,
+                hiddenMovies: newHiddenMovies,
+                defaultWatchlist: state.defaultWatchlist,
+                userCreatedWatchlists: state.userCreatedWatchlists,
+                lastActive: Date.now(),
+            })
+        }
+
+        console.log('👍 [GuestStore] Added to liked:', getTitle(content))
     },
 
-    removeRating: (contentId: number) => {
+    removeLikedMovie: (contentId: number) => {
         const state = get()
+        const newLikedMovies = state.likedMovies.filter((m) => m.id !== contentId)
         set({
-            ratings: state.ratings.filter((r) => r.contentId !== contentId),
+            likedMovies: newLikedMovies,
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
-        console.log('🗑️ [GuestStore] Removed rating:', contentId)
+
+        // Save to localStorage
+        if (state.guestId) {
+            GuestStorageService.saveGuestData(state.guestId, {
+                likedMovies: newLikedMovies,
+                hiddenMovies: state.hiddenMovies,
+                defaultWatchlist: state.defaultWatchlist,
+                userCreatedWatchlists: state.userCreatedWatchlists,
+                lastActive: Date.now(),
+            })
+        }
+
+        console.log('🗑️ [GuestStore] Removed from liked:', contentId)
+    },
+
+    addHiddenMovie: (content: Content) => {
+        const state = get()
+        const isAlreadyHidden = state.hiddenMovies.some((m) => m.id === content.id)
+        if (isAlreadyHidden) return
+
+        // Remove from liked (mutual exclusion)
+        const newLikedMovies = state.likedMovies.filter((m) => m.id !== content.id)
+        const newHiddenMovies = [...state.hiddenMovies, content]
+
+        set({
+            likedMovies: newLikedMovies,
+            hiddenMovies: newHiddenMovies,
+            lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+        })
+
+        // Save to localStorage
+        if (state.guestId) {
+            GuestStorageService.saveGuestData(state.guestId, {
+                likedMovies: newLikedMovies,
+                hiddenMovies: newHiddenMovies,
+                defaultWatchlist: state.defaultWatchlist,
+                userCreatedWatchlists: state.userCreatedWatchlists,
+                lastActive: Date.now(),
+            })
+        }
+
+        console.log('🙈 [GuestStore] Added to hidden:', getTitle(content))
+    },
+
+    removeHiddenMovie: (contentId: number) => {
+        const state = get()
+        const newHiddenMovies = state.hiddenMovies.filter((m) => m.id !== contentId)
+        set({
+            hiddenMovies: newHiddenMovies,
+            lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+        })
+
+        // Save to localStorage
+        if (state.guestId) {
+            GuestStorageService.saveGuestData(state.guestId, {
+                likedMovies: state.likedMovies,
+                hiddenMovies: newHiddenMovies,
+                defaultWatchlist: state.defaultWatchlist,
+                userCreatedWatchlists: state.userCreatedWatchlists,
+                lastActive: Date.now(),
+            })
+        }
+
+        console.log('🗑️ [GuestStore] Removed from hidden:', contentId)
     },
 
     createList: (listName: string) => {
         const state = get()
         // Create a new list using the UserListsService
-        const updatedPrefs = UserListsService.createList(
-            { ...state, userLists: state.userLists } as any,
-            { name: listName }
-        )
-        const newList = updatedPrefs.userLists.lists[updatedPrefs.userLists.lists.length - 1]
+        const updatedPrefs = UserListsService.createList(state as any, { name: listName })
+        const newList =
+            updatedPrefs.userCreatedWatchlists[updatedPrefs.userCreatedWatchlists.length - 1]
 
         set({
-            userLists: updatedPrefs.userLists,
+            userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
+
+        // Save to localStorage
+        if (state.guestId) {
+            GuestStorageService.saveGuestData(state.guestId, {
+                likedMovies: state.likedMovies,
+                hiddenMovies: state.hiddenMovies,
+                defaultWatchlist: state.defaultWatchlist,
+                userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
+                lastActive: Date.now(),
+            })
+        }
 
         console.log('📋 [GuestStore] Created list:', listName, newList.id)
         return newList.id
@@ -117,15 +227,23 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
     addToList: (listId: string, content: Content) => {
         const state = get()
         // Add content to list using the UserListsService
-        const updatedPrefs = UserListsService.addToList(
-            { ...state, userLists: state.userLists } as any,
-            { listId, content }
-        )
+        const updatedPrefs = UserListsService.addToList(state as any, { listId, content })
 
         set({
-            userLists: updatedPrefs.userLists,
+            userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
+
+        // Save to localStorage
+        if (state.guestId) {
+            GuestStorageService.saveGuestData(state.guestId, {
+                likedMovies: state.likedMovies,
+                hiddenMovies: state.hiddenMovies,
+                defaultWatchlist: state.defaultWatchlist,
+                userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
+                lastActive: Date.now(),
+            })
+        }
 
         console.log('📝 [GuestStore] Added to list:', { listId, content: getTitle(content) })
     },
@@ -133,15 +251,23 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
     removeFromList: (listId: string, contentId: number) => {
         const state = get()
         // Remove content from list using the UserListsService
-        const updatedPrefs = UserListsService.removeFromList(
-            { ...state, userLists: state.userLists } as any,
-            { listId, contentId }
-        )
+        const updatedPrefs = UserListsService.removeFromList(state as any, { listId, contentId })
 
         set({
-            userLists: updatedPrefs.userLists,
+            userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
+
+        // Save to localStorage
+        if (state.guestId) {
+            GuestStorageService.saveGuestData(state.guestId, {
+                likedMovies: state.likedMovies,
+                hiddenMovies: state.hiddenMovies,
+                defaultWatchlist: state.defaultWatchlist,
+                userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
+                lastActive: Date.now(),
+            })
+        }
 
         console.log('🗑️ [GuestStore] Removed from list:', { listId, contentId })
     },
@@ -150,15 +276,23 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
         const state = get()
 
         // Update list using the UserListsService
-        const updatedPrefs = UserListsService.updateList(
-            { ...state, userLists: state.userLists } as any,
-            { id: listId, ...updates }
-        )
+        const updatedPrefs = UserListsService.updateList(state as any, { id: listId, ...updates })
 
         set({
-            userLists: updatedPrefs.userLists,
+            userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
+
+        // Save to localStorage
+        if (state.guestId) {
+            GuestStorageService.saveGuestData(state.guestId, {
+                likedMovies: state.likedMovies,
+                hiddenMovies: state.hiddenMovies,
+                defaultWatchlist: state.defaultWatchlist,
+                userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
+                lastActive: Date.now(),
+            })
+        }
 
         console.log('✏️ [GuestStore] Updated list:', { listId, updates })
     },
@@ -167,15 +301,23 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
         const state = get()
 
         // Delete list using the UserListsService
-        const updatedPrefs = UserListsService.deleteList(
-            { ...state, userLists: state.userLists } as any,
-            listId
-        )
+        const updatedPrefs = UserListsService.deleteList(state as any, listId)
 
         set({
-            userLists: updatedPrefs.userLists,
+            userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
+
+        // Save to localStorage
+        if (state.guestId) {
+            GuestStorageService.saveGuestData(state.guestId, {
+                likedMovies: state.likedMovies,
+                hiddenMovies: state.hiddenMovies,
+                defaultWatchlist: state.defaultWatchlist,
+                userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
+                lastActive: Date.now(),
+            })
+        }
 
         console.log('🗑️ [GuestStore] Deleted list:', listId)
     },
@@ -199,9 +341,29 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
         console.log('📥 [GuestStore] Loaded data:', {
-            watchlistCount: data.watchlist.length,
-            ratingsCount: data.ratings.length,
-            listsCount: data.userLists.lists.length,
+            watchlistCount: data.defaultWatchlist.length,
+            likedCount: data.likedMovies.length,
+            hiddenCount: data.hiddenMovies.length,
+            listsCount: data.userCreatedWatchlists.length,
+        })
+    },
+
+    syncFromLocalStorage: (guestId: string) => {
+        const loadedData = GuestStorageService.loadGuestData(guestId)
+        set({
+            guestId,
+            likedMovies: loadedData.likedMovies,
+            hiddenMovies: loadedData.hiddenMovies,
+            defaultWatchlist: loadedData.defaultWatchlist,
+            userCreatedWatchlists: loadedData.userCreatedWatchlists,
+            lastActive: loadedData.lastActive,
+        })
+        console.log('🔄 [GuestStore] Synced from localStorage:', {
+            guestId,
+            watchlistCount: loadedData.defaultWatchlist.length,
+            likedCount: loadedData.likedMovies.length,
+            hiddenCount: loadedData.hiddenMovies.length,
+            listsCount: loadedData.userCreatedWatchlists.length,
         })
     },
 }))
