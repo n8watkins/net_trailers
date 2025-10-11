@@ -10,7 +10,8 @@ import { useToast } from '../hooks/useToast'
 
 interface DataSummary {
     watchlistCount: number
-    ratingsCount: number
+    likedCount: number
+    hiddenCount: number
     listsCount: number
     totalItems: number
     isEmpty: boolean
@@ -39,7 +40,8 @@ export default function AccountManagement() {
                     // During initialization, create empty summary
                     summary = {
                         watchlistCount: 0,
-                        ratingsCount: 0,
+                        likedCount: 0,
+                        hiddenCount: 0,
                         listsCount: 0,
                         totalItems: 0,
                         isEmpty: true,
@@ -53,7 +55,8 @@ export default function AccountManagement() {
                     // Fallback empty summary
                     summary = {
                         watchlistCount: 0,
-                        ratingsCount: 0,
+                        likedCount: 0,
+                        hiddenCount: 0,
                         listsCount: 0,
                         totalItems: 0,
                         isEmpty: true,
@@ -66,7 +69,8 @@ export default function AccountManagement() {
                 // Set empty summary on error
                 setDataSummary({
                     watchlistCount: 0,
-                    ratingsCount: 0,
+                    likedCount: 0,
+                    hiddenCount: 0,
                     listsCount: 0,
                     totalItems: 0,
                     isEmpty: true,
@@ -109,7 +113,8 @@ export default function AccountManagement() {
                 // Fallback empty summary for session types without this method
                 setDataSummary({
                     watchlistCount: 0,
-                    ratingsCount: 0,
+                    likedCount: 0,
+                    hiddenCount: 0,
                     listsCount: 0,
                     totalItems: 0,
                     isEmpty: true,
@@ -232,7 +237,7 @@ export default function AccountManagement() {
 
             {/* Data Summary */}
             {dataSummary && (
-                <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="mb-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     <div className="p-3 bg-[#1a1a1a] rounded-lg border border-gray-700">
                         <div className="text-2xl font-bold text-red-600">
                             {dataSummary.watchlistCount}
@@ -241,9 +246,15 @@ export default function AccountManagement() {
                     </div>
                     <div className="p-3 bg-[#1a1a1a] rounded-lg border border-gray-700">
                         <div className="text-2xl font-bold text-green-600">
-                            {dataSummary.ratingsCount}
+                            {dataSummary.likedCount}
                         </div>
-                        <div className="text-sm text-gray-400">Ratings</div>
+                        <div className="text-sm text-gray-400">Liked</div>
+                    </div>
+                    <div className="p-3 bg-[#1a1a1a] rounded-lg border border-gray-700">
+                        <div className="text-2xl font-bold text-red-600">
+                            {dataSummary.hiddenCount}
+                        </div>
+                        <div className="text-sm text-gray-400">Hidden</div>
                     </div>
                     <div className="p-3 bg-[#1a1a1a] rounded-lg border border-gray-700">
                         <div className="text-2xl font-bold text-blue-600">
@@ -296,7 +307,8 @@ export default function AccountManagement() {
                                 <p className="text-gray-300 mb-4">This will permanently remove:</p>
                                 <ul className="list-disc list-inside text-sm text-gray-400 mb-4">
                                     <li>{dataSummary.watchlistCount} watchlist items</li>
-                                    <li>{dataSummary.ratingsCount} ratings</li>
+                                    <li>{dataSummary.likedCount} liked items</li>
+                                    <li>{dataSummary.hiddenCount} hidden items</li>
                                     <li>{dataSummary.listsCount} custom lists</li>
                                 </ul>
                                 <div className="flex gap-2">
