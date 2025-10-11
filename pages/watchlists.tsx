@@ -27,7 +27,7 @@ import { verifyUserData } from '../utils/verifyUserData'
 const Watchlists: NextPage = () => {
     const userData = useUserData()
     const { user } = useAuth()
-    const { ratings, watchlist, isGuest, userLists, getDefaultLists, getCustomLists } = userData
+    const { isGuest, getAllLists } = userData
     const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
 
     // Debug logging and verification - FIXED: Only run when user changes
@@ -47,12 +47,7 @@ const Watchlists: NextPage = () => {
 
             // Verify user data isolation
             if (user?.uid && userData.sessionType === 'authenticated') {
-                const verification = verifyUserData(user.uid, {
-                    watchlist: userData.watchlist,
-                    ratings: userData.ratings,
-                    userLists: userData.userLists,
-                })
-                console.log('✅ [Watchlists Page] User data verification:', verification)
+                console.log('✅ [Watchlists Page] User data loaded for:', user.uid)
             }
         }
     }, [user?.uid, userData.sessionType]) // Only depend on stable values
@@ -78,16 +73,11 @@ const Watchlists: NextPage = () => {
     const setCurrentMovie = useSetRecoilState(movieState)
     const setListModal = useSetRecoilState(listModalState)
 
-    // Get all available lists (exclude Liked and Not For Me as they're rating categories, not lists)
+    // Get all available lists
     // FIXED: Use useMemo to prevent recreating allLists on every render
     const allLists = useMemo(() => {
-        const defaultLists = getDefaultLists()
-        const customLists = getCustomLists()
-        const filteredDefaultLists = Object.values(defaultLists).filter(
-            (list) => list && list.name !== 'Liked' && list.name !== 'Not For Me'
-        )
-        return [...filteredDefaultLists, ...customLists] as UserList[]
-    }, [getDefaultLists, getCustomLists]) // Only recreate when the functions change
+        return getAllLists()
+    }, [getAllLists]) // Only recreate when the function changes
 
     // Set default to Watchlist when lists are loaded
     useEffect(() => {

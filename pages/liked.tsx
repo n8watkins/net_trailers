@@ -14,28 +14,20 @@ import { exportUserDataToCSV } from '../utils/csvExport'
 
 const Liked: NextPage = () => {
     const userData = useUserData()
-    const { getDefaultLists } = userData
+    const { likedMovies } = userData
     const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
 
     const [searchQuery, setSearchQuery] = useState('')
     const setShowModal = useSetRecoilState(modalState)
     const setCurrentMovie = useSetRecoilState(movieState)
 
-    // Get liked content from the default lists
-    const defaultLists = getDefaultLists()
-    const likedList = defaultLists.liked
-
-    // Get liked content
-    const likedContent = likedList
-        ? likedList.items.map((item) => ({
-              contentId: item.id,
-              rating: 'liked',
-              timestamp: Date.now(),
-              content: item,
-              listId: likedList.id,
-              listName: likedList.name,
-          }))
-        : []
+    // Get liked content directly from likedMovies
+    const likedContent = likedMovies.map((item) => ({
+        contentId: item.id,
+        rating: 'liked',
+        timestamp: Date.now(),
+        content: item,
+    }))
 
     // Apply search filter
     const filteredContent = searchQuery.trim()
@@ -72,10 +64,7 @@ const Liked: NextPage = () => {
             <h3 className="text-2xl font-bold text-white mb-6">{title}</h3>
             <div className="flex flex-wrap gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 md:gap-x-8 md:gap-y-12">
                 {items.map((item: any) => (
-                    <div
-                        key={`${item.contentId}-${item.listId}`}
-                        className="relative mb-12 sm:mb-16 md:mb-20"
-                    >
+                    <div key={item.contentId} className="relative mb-12 sm:mb-16 md:mb-20">
                         <ContentCard content={item.content} className="" />
                         {/* Liked badge overlay */}
                         <div className="absolute top-2 right-2 bg-green-600/80 rounded-full p-1.5 z-10">

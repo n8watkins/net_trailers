@@ -45,8 +45,8 @@ const GenrePage: NextPage<GenrePageProps> = () => {
 
     const contentToRender = useMemo(() => {
         // Filter out disliked content
-        return filterDislikedContent(content, userSession.preferences.ratings)
-    }, [content, userSession.preferences.ratings])
+        return filterDislikedContent(content, userSession.preferences.hiddenMovies)
+    }, [content, userSession.preferences.hiddenMovies])
 
     // Load genre content with traditional infinite scroll
     const loadGenreContent = useCallback(

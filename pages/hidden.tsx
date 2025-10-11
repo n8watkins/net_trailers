@@ -14,28 +14,20 @@ import { exportUserDataToCSV } from '../utils/csvExport'
 
 const Hidden: NextPage = () => {
     const userData = useUserData()
-    const { getDefaultLists } = userData
+    const { hiddenMovies } = userData
     const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
 
     const [searchQuery, setSearchQuery] = useState('')
     const setShowModal = useSetRecoilState(modalState)
     const setCurrentMovie = useSetRecoilState(movieState)
 
-    // Get hidden content from the default lists (Not For Me list)
-    const defaultLists = getDefaultLists()
-    const hiddenList = defaultLists.disliked
-
-    // Get hidden content
-    const hiddenContent = hiddenList
-        ? hiddenList.items.map((item) => ({
-              contentId: item.id,
-              rating: 'hidden',
-              timestamp: Date.now(),
-              content: item,
-              listId: hiddenList.id,
-              listName: hiddenList.name,
-          }))
-        : []
+    // Get hidden content directly from hiddenMovies
+    const hiddenContent = hiddenMovies.map((item) => ({
+        contentId: item.id,
+        rating: 'hidden',
+        timestamp: Date.now(),
+        content: item,
+    }))
 
     // Apply search filter
     const filteredContent = searchQuery.trim()
@@ -72,10 +64,7 @@ const Hidden: NextPage = () => {
             <h3 className="text-2xl font-bold text-white mb-6">{title}</h3>
             <div className="flex flex-wrap gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 md:gap-x-8 md:gap-y-12">
                 {items.map((item: any) => (
-                    <div
-                        key={`${item.contentId}-${item.listId}`}
-                        className="relative mb-12 sm:mb-16 md:mb-20"
-                    >
+                    <div key={item.contentId} className="relative mb-12 sm:mb-16 md:mb-20">
                         <ContentCard
                             content={item.content}
                             className="opacity-75 hover:opacity-100 transition-opacity duration-200"
