@@ -1,28 +1,26 @@
 import { Content } from '../typings'
-import { UserRating, UserPreferences } from '../atoms/userDataAtom'
+import { UserPreferences } from '../atoms/userDataAtom'
 
 /**
  * Content filtering utilities for hiding disliked/hidden content from recommendations
  */
 
 /**
- * Filter content array to exclude disliked items
+ * Filter content array to exclude hidden items
  * @param content Array of content to filter
- * @param ratings User ratings array
- * @returns Filtered content array without disliked items
+ * @param hiddenMovies User's hidden movies array
+ * @returns Filtered content array without hidden items
  */
-export function filterDislikedContent(content: Content[], ratings: UserRating[]): Content[] {
-    if (!ratings || ratings.length === 0) {
+export function filterDislikedContent(content: Content[], hiddenMovies: Content[]): Content[] {
+    if (!hiddenMovies || hiddenMovies.length === 0) {
         return content
     }
 
-    // Create a Set of disliked content IDs for O(1) lookup
-    const dislikedIds = new Set(
-        ratings.filter((rating) => rating.rating === 'disliked').map((rating) => rating.contentId)
-    )
+    // Create a Set of hidden content IDs for O(1) lookup
+    const hiddenIds = new Set(hiddenMovies.map((item) => item.id))
 
-    // Filter out disliked content
-    return content.filter((item) => !dislikedIds.has(item.id))
+    // Filter out hidden content
+    return content.filter((item) => !hiddenIds.has(item.id))
 }
 
 /**
@@ -35,60 +33,51 @@ export function filterHiddenContent(
     content: Content[],
     userPreferences: UserPreferences | null
 ): Content[] {
-    if (!userPreferences?.ratings || userPreferences.ratings.length === 0) {
+    if (!userPreferences?.hiddenMovies || userPreferences.hiddenMovies.length === 0) {
         return content
     }
 
-    return filterDislikedContent(content, userPreferences.ratings)
+    return filterDislikedContent(content, userPreferences.hiddenMovies)
 }
 
 /**
- * Check if specific content is disliked
+ * Check if specific content is hidden
  * @param contentId The ID of the content to check
- * @param ratings User ratings array
- * @returns true if content is disliked, false otherwise
+ * @param hiddenMovies User's hidden movies array
+ * @returns true if content is hidden, false otherwise
  */
-export function isContentDisliked(contentId: number, ratings: UserRating[]): boolean {
-    return ratings.some((rating) => rating.contentId === contentId && rating.rating === 'disliked')
+export function isContentDisliked(contentId: number, hiddenMovies: Content[]): boolean {
+    return hiddenMovies.some((item) => item.id === contentId)
 }
 
 /**
  * Check if specific content is hidden by the user
  * @param contentId Content ID to check
- * @param userPreferences User's preferences containing ratings
+ * @param userPreferences User's preferences containing hiddenMovies
  * @returns True if content is hidden, false otherwise
  */
 export function isContentHidden(
     contentId: number,
     userPreferences: UserPreferences | null
 ): boolean {
-    if (!userPreferences?.ratings) {
+    if (!userPreferences?.hiddenMovies) {
         return false
     }
 
-    return isContentDisliked(contentId, userPreferences.ratings)
+    return isContentDisliked(contentId, userPreferences.hiddenMovies)
 }
 
 /**
  * Gets all hidden content from user preferences
- * @param userPreferences User's preferences containing ratings and content
+ * @param userPreferences User's preferences containing hiddenMovies
  * @returns Array of hidden content items
  */
 export function getHiddenContent(userPreferences: UserPreferences | null): Content[] {
-    if (!userPreferences?.ratings) {
+    if (!userPreferences?.hiddenMovies) {
         return []
     }
 
-    // Find the actual content objects from ratings that include content data
-    const hiddenContent: Content[] = []
-
-    userPreferences.ratings.forEach((rating) => {
-        if (rating.rating === 'disliked' && rating.content) {
-            hiddenContent.push(rating.content)
-        }
-    })
-
-    return hiddenContent
+    return userPreferences.hiddenMovies
 }
 
 /**

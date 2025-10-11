@@ -19,9 +19,7 @@ import {
 function ListSelectionModal() {
     const [listModal, setListModal] = useRecoilState(listModalState)
     const {
-        userLists,
-        getDefaultLists,
-        getCustomLists,
+        getAllLists,
         addToList,
         removeFromList,
         isContentInList,
@@ -39,13 +37,7 @@ function ListSelectionModal() {
     const [showIconPicker, setShowIconPicker] = useState(false)
 
     const targetContent = listModal.content
-    const defaultLists = getDefaultLists()
-    const customLists = getCustomLists()
-    // Exclude Liked and Not For Me as they're rating categories, not user lists
-    const filteredDefaultLists = Object.values(defaultLists).filter(
-        (list) => list && list.name !== 'Liked' && list.name !== 'Not For Me'
-    )
-    const allLists = [...filteredDefaultLists, ...customLists] as UserList[]
+    const allLists = getAllLists()
     const isManagementMode = !targetContent
 
     if (!listModal.isOpen) return null
@@ -93,7 +85,6 @@ function ListSelectionModal() {
         if (newListName.trim()) {
             createList({
                 name: newListName.trim(),
-                description: newListDescription.trim() || undefined,
                 isPublic: false,
                 emoji: selectedEmoji,
             })

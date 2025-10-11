@@ -16,7 +16,7 @@ function Row({ title, content }: Props) {
     const userSession = useRecoilValue(userSessionState)
 
     // Filter out disliked content
-    const filteredContent = filterDislikedContent(content, userSession.preferences.ratings)
+    const filteredContent = filterDislikedContent(content, userSession.preferences.hiddenMovies)
 
     // Don't render if no content after filtering
     if (!filteredContent || filteredContent.length === 0) {

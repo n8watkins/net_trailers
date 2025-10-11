@@ -21,8 +21,14 @@ function ListDropdown({
     position,
     variant = 'dropdown',
 }: ListDropdownProps) {
-    const { getDefaultLists, getListsContaining, addToList, removeFromList, createList } =
-        useUserData()
+    const {
+        getListsContaining,
+        createList,
+        isInWatchlist,
+        addToWatchlist,
+        removeFromWatchlist,
+        defaultWatchlist,
+    } = useUserData()
 
     const { showSuccess, showWatchlistAdd, showWatchlistRemove } = useToast()
     const setListModal = useSetRecoilState(listModalState)
@@ -31,10 +37,8 @@ function ListDropdown({
     const [newListName, setNewListName] = useState('')
     const dropdownRef = useRef<HTMLDivElement>(null)
 
-    const defaultLists = getDefaultLists()
-    const watchlist = defaultLists.watchlist
     const listsContaining = getListsContaining(content.id)
-    const isInWatchlist = watchlist ? watchlist.items.some((item) => item.id === content.id) : false
+    const inWatchlist = isInWatchlist(content.id)
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -59,20 +63,17 @@ function ListDropdown({
     const handleWatchlistToggle = () => {
         console.log('📋 ListDropdown handleWatchlistToggle called')
         console.log('📋 Content:', getTitle(content))
-        console.log('📋 isInWatchlist:', isInWatchlist)
-        console.log('📋 watchlist exists:', !!watchlist)
-        if (isInWatchlist && watchlist) {
-            console.log('📋 Removing from list via removeFromList...')
-            removeFromList(watchlist.id, content.id)
+        console.log('📋 inWatchlist:', inWatchlist)
+        if (inWatchlist) {
+            console.log('📋 Removing from watchlist...')
+            removeFromWatchlist(content.id)
             console.log('📋 Calling showWatchlistRemove')
             showWatchlistRemove(`Removed ${getTitle(content)} from My List`)
-        } else if (watchlist) {
-            console.log('📋 Adding to list via addToList...')
-            addToList(watchlist.id, content)
+        } else {
+            console.log('📋 Adding to watchlist...')
+            addToWatchlist(content)
             console.log('📋 Calling showWatchlistAdd')
             showWatchlistAdd(`Added ${getTitle(content)} to My List`)
-        } else {
-            console.log('📋❌ No watchlist found in ListDropdown!')
         }
         onClose()
     }
@@ -129,10 +130,8 @@ function ListDropdown({
                 </div>
 
                 <div className="flex items-center space-x-2">
-                    {watchlist && (
-                        <span className="text-xs text-gray-400">{watchlist.items.length}</span>
-                    )}
-                    {isInWatchlist ? (
+                    <span className="text-xs text-gray-400">{defaultWatchlist.length}</span>
+                    {inWatchlist ? (
                         <CheckIcon className="w-4 h-4 text-green-400" />
                     ) : (
                         <PlusIcon className="w-4 h-4 text-gray-400" />

@@ -279,7 +279,9 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                             Tutorial
                         </button>
 
-                        {(ratings.length > 0 || watchlist.length > 0) && (
+                        {(likedMovies.length > 0 ||
+                            hiddenMovies.length > 0 ||
+                            defaultWatchlist.length > 0) && (
                             <button
                                 onClick={handleExportCSV}
                                 className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"

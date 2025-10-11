@@ -40,7 +40,7 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
     const userSession = useRecoilValue(userSessionState)
 
     // Filter out disliked content from search results
-    const filteredResults = filterDislikedContent(results, userSession.preferences.ratings)
+    const filteredResults = filterDislikedContent(results, userSession.preferences.hiddenMovies)
 
     // Keyboard navigation state (only for search page)
     const [selectedIndex, setSelectedIndex] = useState(-1)

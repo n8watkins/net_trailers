@@ -32,7 +32,7 @@ function Banner({ trending }: Props) {
             // Filter out disliked content first
             const filteredTrending = filterDislikedContent(
                 trending,
-                userSession.preferences.ratings
+                userSession.preferences.hiddenMovies
             )
 
             if (filteredTrending.length > 0) {
@@ -61,7 +61,7 @@ function Banner({ trending }: Props) {
                 setCarouselContent([])
             }
         }
-    }, [trending, userSession.preferences.ratings])
+    }, [trending, userSession.preferences.hiddenMovies])
 
     // Auto-advance carousel every 8 seconds with smooth transition
     useEffect(() => {
