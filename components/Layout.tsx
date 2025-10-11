@@ -25,8 +25,13 @@ function Layout({ children }: LayoutProps) {
     }, [showKeyboardShortcuts])
 
     const handleOpenAboutModal = useCallback(() => {
-        setShowAboutModal(true)
-    }, [])
+        setShowAboutModal(!showAboutModal)
+        if (!showAboutModal) {
+            // Only mark as visited when opening
+        } else {
+            markAsVisited()
+        }
+    }, [showAboutModal])
 
     const handleCloseAboutModal = useCallback(() => {
         setShowAboutModal(false)
@@ -34,8 +39,8 @@ function Layout({ children }: LayoutProps) {
     }, [])
 
     const handleOpenTutorial = useCallback(() => {
-        setShowTutorial(true)
-    }, [])
+        setShowTutorial(!showTutorial)
+    }, [showTutorial])
 
     const handleCloseTutorial = useCallback(() => {
         setShowTutorial(false)
@@ -70,6 +75,8 @@ function Layout({ children }: LayoutProps) {
         searchInputRef,
         isModalOpen,
         isShortcutsModalOpen: showKeyboardShortcuts,
+        isTutorialModalOpen: showTutorial,
+        isAboutModalOpen: showAboutModal,
     })
 
     return (

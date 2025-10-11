@@ -16,6 +16,8 @@ interface UseKeyboardShortcutsProps {
     searchInputRef?: React.RefObject<HTMLInputElement>
     isModalOpen?: boolean
     isShortcutsModalOpen?: boolean
+    isTutorialModalOpen?: boolean
+    isAboutModalOpen?: boolean
 }
 
 export function useKeyboardShortcuts({
@@ -33,6 +35,8 @@ export function useKeyboardShortcuts({
     searchInputRef,
     isModalOpen = false,
     isShortcutsModalOpen = false,
+    isTutorialModalOpen = false,
+    isAboutModalOpen = false,
 }: UseKeyboardShortcutsProps = {}) {
     const router = useRouter()
 
@@ -67,14 +71,14 @@ export function useKeyboardShortcuts({
                 return
             }
 
-            // Alt+T to open tutorial modal (works globally, even when typing)
+            // Alt+T to toggle tutorial modal (works globally, even when typing)
             if (event.altKey && event.key.toLowerCase() === 't') {
                 event.preventDefault()
                 onOpenTutorial?.()
                 return
             }
 
-            // Alt+I to open about modal (works globally, even when typing)
+            // Alt+I to toggle about modal (works globally, even when typing)
             if (event.altKey && event.key.toLowerCase() === 'i') {
                 event.preventDefault()
                 onOpenAbout?.()
@@ -183,6 +187,8 @@ export function useKeyboardShortcuts({
             searchInputRef,
             isModalOpen,
             isShortcutsModalOpen,
+            isTutorialModalOpen,
+            isAboutModalOpen,
         ]
     )
 
