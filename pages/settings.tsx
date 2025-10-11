@@ -16,6 +16,7 @@ import { useAuthStatus } from '../hooks/useAuthStatus'
 import { exportUserDataToCSV } from '../utils/csvExport'
 import { useToast } from '../hooks/useToast'
 import Header from '../components/Header'
+import ConfirmationModal from '../components/ConfirmationModal'
 
 type SettingsSection = 'profile' | 'email' | 'password' | 'share' | 'account'
 
@@ -647,129 +648,54 @@ const Settings: React.FC<SettingsProps> = ({
                                                             </button>
 
                                                             {/* Clear Data Button */}
-                                                            {!showClearConfirm ? (
+                                                            <button
+                                                                onClick={() =>
+                                                                    setShowClearConfirm(true)
+                                                                }
+                                                                disabled={dataSummary.isEmpty}
+                                                                className={`w-full text-left p-4 rounded-lg border transition-colors ${
+                                                                    dataSummary.isEmpty
+                                                                        ? 'bg-[#141414] border-[#313131] cursor-not-allowed opacity-50'
+                                                                        : 'bg-[#141414] hover:bg-orange-900/20 border-orange-600/30'
+                                                                }`}
+                                                            >
+                                                                <div className="flex items-center justify-between">
+                                                                    <div className="flex-1">
+                                                                        <span className="text-orange-400 font-medium flex items-center gap-2">
+                                                                            <TrashIcon className="w-5 h-5" />
+                                                                            Clear Data
+                                                                        </span>
+                                                                        <p className="text-[#b3b3b3] text-sm mt-1">
+                                                                            Remove all saved
+                                                                            watchlists, likes, and
+                                                                            preferences
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            </button>
+
+                                                            {/* Delete Account Button (Authenticated Only) */}
+                                                            {!isGuest && (
                                                                 <button
                                                                     onClick={() =>
-                                                                        setShowClearConfirm(true)
+                                                                        setShowDeleteConfirm(true)
                                                                     }
-                                                                    disabled={dataSummary.isEmpty}
-                                                                    className={`w-full text-left p-4 rounded-lg border transition-colors ${
-                                                                        dataSummary.isEmpty
-                                                                            ? 'bg-[#141414] border-[#313131] cursor-not-allowed opacity-50'
-                                                                            : 'bg-[#141414] hover:bg-orange-900/20 border-orange-600/30'
-                                                                    }`}
+                                                                    className="w-full text-left p-4 bg-[#141414] hover:bg-red-900/20 rounded-lg border border-red-600/30 transition-colors"
                                                                 >
                                                                     <div className="flex items-center justify-between">
                                                                         <div className="flex-1">
-                                                                            <span className="text-orange-400 font-medium flex items-center gap-2">
+                                                                            <span className="text-red-400 font-medium flex items-center gap-2">
                                                                                 <TrashIcon className="w-5 h-5" />
-                                                                                Clear Data
+                                                                                Delete Account
                                                                             </span>
                                                                             <p className="text-[#b3b3b3] text-sm mt-1">
-                                                                                Remove all saved
-                                                                                watchlists, likes,
-                                                                                and preferences
+                                                                                Permanently delete
+                                                                                your account and all
+                                                                                data
                                                                             </p>
                                                                         </div>
                                                                     </div>
                                                                 </button>
-                                                            ) : (
-                                                                <div className="p-4 bg-orange-900/20 rounded-lg border border-orange-600/50">
-                                                                    <p className="text-orange-400 font-medium mb-2">
-                                                                        Are you sure?
-                                                                    </p>
-                                                                    <p className="text-[#b3b3b3] text-sm mb-4">
-                                                                        This will permanently delete
-                                                                        all your data. This action
-                                                                        cannot be undone.
-                                                                    </p>
-                                                                    <div className="flex gap-3">
-                                                                        <button
-                                                                            onClick={
-                                                                                handleClearData
-                                                                            }
-                                                                            className="bannerButton bg-orange-600 text-white hover:bg-orange-700"
-                                                                        >
-                                                                            Yes, Clear All Data
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() =>
-                                                                                setShowClearConfirm(
-                                                                                    false
-                                                                                )
-                                                                            }
-                                                                            className="bannerButton bg-[#313131] text-white hover:bg-[#454545]"
-                                                                        >
-                                                                            Cancel
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            )}
-
-                                                            {/* Delete Account Button (Authenticated Only) */}
-                                                            {!isGuest && (
-                                                                <>
-                                                                    {!showDeleteConfirm ? (
-                                                                        <button
-                                                                            onClick={() =>
-                                                                                setShowDeleteConfirm(
-                                                                                    true
-                                                                                )
-                                                                            }
-                                                                            className="w-full text-left p-4 bg-[#141414] hover:bg-red-900/20 rounded-lg border border-red-600/30 transition-colors"
-                                                                        >
-                                                                            <div className="flex items-center justify-between">
-                                                                                <div className="flex-1">
-                                                                                    <span className="text-red-400 font-medium flex items-center gap-2">
-                                                                                        <TrashIcon className="w-5 h-5" />
-                                                                                        Delete
-                                                                                        Account
-                                                                                    </span>
-                                                                                    <p className="text-[#b3b3b3] text-sm mt-1">
-                                                                                        Permanently
-                                                                                        delete your
-                                                                                        account and
-                                                                                        all data
-                                                                                    </p>
-                                                                                </div>
-                                                                            </div>
-                                                                        </button>
-                                                                    ) : (
-                                                                        <div className="p-4 bg-red-900/20 rounded-lg border border-red-600/50">
-                                                                            <p className="text-red-400 font-medium mb-2">
-                                                                                Delete Account?
-                                                                            </p>
-                                                                            <p className="text-[#b3b3b3] text-sm mb-4">
-                                                                                This will
-                                                                                permanently delete
-                                                                                your account, all
-                                                                                your data, and
-                                                                                cannot be undone.
-                                                                            </p>
-                                                                            <div className="flex gap-3">
-                                                                                <button
-                                                                                    onClick={
-                                                                                        handleDeleteAccount
-                                                                                    }
-                                                                                    className="bannerButton bg-red-600 text-white hover:bg-red-700"
-                                                                                >
-                                                                                    Yes, Delete
-                                                                                    Account
-                                                                                </button>
-                                                                                <button
-                                                                                    onClick={() =>
-                                                                                        setShowDeleteConfirm(
-                                                                                            false
-                                                                                        )
-                                                                                    }
-                                                                                    className="bannerButton bg-[#313131] text-white hover:bg-[#454545]"
-                                                                                >
-                                                                                    Cancel
-                                                                                </button>
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-                                                                </>
                                                             )}
                                                         </div>
                                                     </div>
@@ -800,6 +726,35 @@ const Settings: React.FC<SettingsProps> = ({
                     </div>
                 </div>
             </main>
+
+            {/* Confirmation Modals */}
+            <ConfirmationModal
+                isOpen={showClearConfirm}
+                onClose={() => setShowClearConfirm(false)}
+                onConfirm={handleClearData}
+                title="Clear All Data?"
+                message="This will permanently delete all your watchlists, liked items, hidden content, and preferences. This action cannot be undone."
+                confirmText={`You currently have ${dataSummary.totalItems} items that will be deleted.`}
+                confirmButtonText="Clear All Data"
+                cancelButtonText="Cancel"
+                requireTyping={true}
+                confirmationPhrase="CLEAR DATA"
+                dangerLevel="warning"
+            />
+
+            <ConfirmationModal
+                isOpen={showDeleteConfirm}
+                onClose={() => setShowDeleteConfirm(false)}
+                onConfirm={handleDeleteAccount}
+                title="Delete Account?"
+                message="This will permanently delete your account, all your data, and cannot be undone. You will lose access to all your watchlists, custom lists, and preferences."
+                confirmText="This action is irreversible. Your account will be deleted immediately."
+                confirmButtonText="Delete My Account"
+                cancelButtonText="Cancel"
+                requireTyping={true}
+                confirmationPhrase="DELETE"
+                dangerLevel="danger"
+            />
         </div>
     )
 }
