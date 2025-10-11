@@ -30,7 +30,6 @@ function ListSelectionModal() {
 
     const [showCreateList, setShowCreateList] = useState(false)
     const [newListName, setNewListName] = useState('')
-    const [newListDescription, setNewListDescription] = useState('')
     const [selectedEmoji, setSelectedEmoji] = useState('🎬')
     const [editingList, setEditingList] = useState<UserList | null>(null)
     const [deletingList, setDeletingList] = useState<UserList | null>(null)
@@ -46,7 +45,6 @@ function ListSelectionModal() {
         setListModal({ isOpen: false, content: null })
         setShowCreateList(false)
         setNewListName('')
-        setNewListDescription('')
         setSelectedEmoji('🎬')
         setEditingList(null)
         setDeletingList(null)
@@ -89,7 +87,6 @@ function ListSelectionModal() {
                 emoji: selectedEmoji,
             })
             setNewListName('')
-            setNewListDescription('')
             setSelectedEmoji('🎬')
             setShowCreateList(false)
         }
@@ -105,7 +102,6 @@ function ListSelectionModal() {
         } else if (e.key === 'Escape') {
             setShowCreateList(false)
             setNewListName('')
-            setNewListDescription('')
             setEditingList(null)
         }
     }
@@ -113,7 +109,6 @@ function ListSelectionModal() {
     const handleEditList = (list: UserList) => {
         setEditingList(list)
         setNewListName(list.name)
-        setNewListDescription(list.description || '')
         setSelectedEmoji(list.emoji || '🎬')
         setShowCreateList(true)
     }
@@ -126,7 +121,6 @@ function ListSelectionModal() {
             })
             setEditingList(null)
             setNewListName('')
-            setNewListDescription('')
             setSelectedEmoji('🎬')
             setShowCreateList(false)
         }
@@ -157,7 +151,7 @@ function ListSelectionModal() {
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-700">
                     <h2 className="text-xl font-semibold text-white">
-                        {isManagementMode ? 'Manage Lists' : 'Add to Lists'}
+                        {isManagementMode ? 'My Lists' : 'Add to Lists'}
                     </h2>
                     <button
                         onClick={onClose}
@@ -211,11 +205,6 @@ function ListSelectionModal() {
                                                 <div className="text-white font-medium">
                                                     {list.name}
                                                 </div>
-                                                {list.description && (
-                                                    <div className="text-gray-400 text-sm">
-                                                        {list.description}
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
 
@@ -266,11 +255,6 @@ function ListSelectionModal() {
                                                 <div className="text-white font-medium">
                                                     {list.name}
                                                 </div>
-                                                {list.description && (
-                                                    <div className="text-gray-400 text-sm">
-                                                        {list.description}
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
 
@@ -312,7 +296,7 @@ function ListSelectionModal() {
                                     </button>
 
                                     {/* Form inputs */}
-                                    <div className="flex-1 space-y-3">
+                                    <div className="flex-1">
                                         <input
                                             type="text"
                                             placeholder="List name"
@@ -321,14 +305,6 @@ function ListSelectionModal() {
                                             onKeyDown={handleKeyPress}
                                             className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent"
                                             autoFocus
-                                        />
-                                        <input
-                                            type="text"
-                                            placeholder="Description (optional)"
-                                            value={newListDescription}
-                                            onChange={(e) => setNewListDescription(e.target.value)}
-                                            onKeyDown={handleKeyPress}
-                                            className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent"
                                         />
                                     </div>
                                 </div>
@@ -345,7 +321,6 @@ function ListSelectionModal() {
                                         onClick={() => {
                                             setShowCreateList(false)
                                             setNewListName('')
-                                            setNewListDescription('')
                                             setSelectedEmoji('🎬')
                                             setEditingList(null)
                                             setShowIconPicker(false)
