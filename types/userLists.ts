@@ -33,7 +33,6 @@ export interface UserListItem {
 
 export interface CreateListRequest {
     name: string
-    description?: string
     isPublic?: boolean
     color?: string
     emoji?: string
@@ -42,7 +41,6 @@ export interface CreateListRequest {
 export interface UpdateListRequest {
     id: string
     name?: string
-    description?: string
     isPublic?: boolean
     color?: string
     emoji?: string

@@ -21,7 +21,6 @@ export class UserListsService {
         const newList: UserList = {
             id: this.generateId(),
             name: request.name,
-            description: request.description,
             items: [],
             isPublic: request.isPublic || false,
             createdAt: Date.now(),
