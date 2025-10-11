@@ -37,7 +37,8 @@ async function clearTestUser() {
         console.log('\n📝 Step 2: Checking current data...')
         const summary = await AuthStorageService.getDataSummary(userId)
         console.log(`   Watchlist: ${summary.watchlistCount} items`)
-        console.log(`   Ratings: ${summary.ratingsCount} items`)
+        console.log(`   Liked: ${summary.likedCount} items`)
+        console.log(`   Hidden: ${summary.hiddenCount} items`)
         console.log(`   Lists: ${summary.listsCount} lists`)
         console.log(`   Total items: ${summary.totalItems}`)
 
@@ -58,22 +59,18 @@ async function clearTestUser() {
         console.log('📊 VERIFICATION RESULTS')
         console.log('='.repeat(70))
 
-        console.log(`\n✅ Watchlist: ${verifyData.watchlist.length} items (should be 0)`)
-        console.log(`✅ Ratings: ${verifyData.ratings.length} items (should be 0)`)
+        console.log(`\n✅ Watchlist: ${verifyData.defaultWatchlist.length} items (should be 0)`)
+        console.log(`✅ Liked movies: ${verifyData.likedMovies.length} items (should be 0)`)
+        console.log(`✅ Hidden movies: ${verifyData.hiddenMovies.length} items (should be 0)`)
         console.log(
-            `✅ Lists: ${verifyData.userLists.lists.length} lists (should be 3 default lists)`
+            `✅ Custom watchlists: ${verifyData.userCreatedWatchlists.length} lists (should be 0)`
         )
-
-        // Check that only default lists remain
-        const customLists = verifyData.userLists.lists.filter(
-            (list) => !Object.values(verifyData.userLists.defaultListIds).includes(list.id)
-        )
-        console.log(`✅ Custom lists: ${customLists.length} (should be 0)`)
 
         if (
-            verifyData.watchlist.length === 0 &&
-            verifyData.ratings.length === 0 &&
-            customLists.length === 0
+            verifyData.defaultWatchlist.length === 0 &&
+            verifyData.likedMovies.length === 0 &&
+            verifyData.hiddenMovies.length === 0 &&
+            verifyData.userCreatedWatchlists.length === 0
         ) {
             console.log('\n' + '█'.repeat(70))
             console.log('🎉 TEST USER DATA SUCCESSFULLY CLEARED!')

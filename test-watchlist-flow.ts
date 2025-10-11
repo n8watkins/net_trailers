@@ -23,28 +23,30 @@ async function testWatchlistFlow() {
         // Step 1: Initialize default preferences
         console.log('\n📝 Step 1: Creating default preferences...')
         let preferences: AuthPreferences = {
-            watchlist: [],
-            ratings: [],
-            userLists: UserListsService.initializeDefaultLists(),
+            defaultWatchlist: [],
+            likedMovies: [],
+            hiddenMovies: [],
+            userCreatedWatchlists: [],
             lastActive: Date.now(),
         }
-        console.log('✅ Default lists created:', {
-            totalLists: preferences.userLists.lists.length,
-            defaultLists: Object.keys(preferences.userLists.defaultListIds),
+        console.log('✅ Default preferences created:', {
+            watchlistCount: 0,
+            likedCount: 0,
+            hiddenCount: 0,
+            customListsCount: 0,
         })
 
         // Step 2: Create a custom list
         console.log('\n📝 Step 2: Creating a custom list...')
         preferences = UserListsService.createList(preferences, {
             name: 'My Sci-Fi Favorites',
-            description: 'Best sci-fi movies and shows',
             isPublic: false,
             color: '#3b82f6', // blue-500
             emoji: '🚀',
         })
         console.log('✅ Custom list created:', {
-            totalLists: preferences.userLists.lists.length,
-            customLists: UserListsService.getCustomLists(preferences).map((l) => ({
+            totalLists: preferences.userCreatedWatchlists.length,
+            customLists: preferences.userCreatedWatchlists.map((l) => ({
                 name: l.name,
                 emoji: l.emoji,
                 itemCount: l.items.length,
@@ -53,7 +55,7 @@ async function testWatchlistFlow() {
 
         // Step 3: Add content to the custom list
         console.log('\n📝 Step 3: Adding content to the custom list...')
-        const sciFiList = UserListsService.getCustomLists(preferences)[0]
+        const sciFiList = preferences.userCreatedWatchlists[0]
         const testMovie: Content = {
             id: 550, // Fight Club
             title: 'Inception',
@@ -92,8 +94,8 @@ async function testWatchlistFlow() {
         // Step 6: Load back from Firebase
         const loadedPreferences = await AuthStorageService.loadUserData(testUserId)
         console.log('✅ Data loaded from Firebase:', {
-            totalLists: loadedPreferences.userLists.lists.length,
-            customLists: UserListsService.getCustomLists(loadedPreferences).map((l) => ({
+            totalLists: loadedPreferences.userCreatedWatchlists.length,
+            customLists: loadedPreferences.userCreatedWatchlists.map((l) => ({
                 name: l.name,
                 emoji: l.emoji,
                 itemCount: l.items.length,
@@ -102,7 +104,7 @@ async function testWatchlistFlow() {
 
         // Step 7: Verify the data
         console.log('\n📝 Step 7: Verifying data integrity...')
-        const loadedCustomLists = UserListsService.getCustomLists(loadedPreferences)
+        const loadedCustomLists = loadedPreferences.userCreatedWatchlists
         const loadedSciFiList = loadedCustomLists.find((l) => l.name === 'My Sci-Fi Favorites')
 
         if (!loadedSciFiList) {

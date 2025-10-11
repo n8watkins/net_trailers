@@ -10,7 +10,7 @@ import { auth } from '../firebase'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 import { useAuthStore } from '../stores/authStore'
 import { AuthStorageService } from '../services/authStorageService'
-import { Content } from '../typings'
+import { Content, getTitle } from '../typings'
 
 const TEST_USER = {
     email: 'test@nettrailer.dev',
@@ -82,9 +82,10 @@ async function testUserWatchlist() {
         // Step 3: Check current data
         console.log('\n📝 Step 3: Checking current user data...')
         const currentData = await AuthStorageService.loadUserData(userId)
-        console.log(`   Watchlist items: ${currentData.watchlist.length}`)
-        console.log(`   Ratings: ${currentData.ratings.length}`)
-        console.log(`   Custom lists: ${currentData.userLists.lists.length}`)
+        console.log(`   Watchlist items: ${currentData.defaultWatchlist.length}`)
+        console.log(`   Liked movies: ${currentData.likedMovies.length}`)
+        console.log(`   Hidden movies: ${currentData.hiddenMovies.length}`)
+        console.log(`   Custom lists: ${currentData.userCreatedWatchlists.length}`)
 
         // Step 4: Create a custom list
         console.log('\n📝 Step 4: Creating custom list...')
@@ -97,12 +98,12 @@ async function testUserWatchlist() {
         // Step 5: Add movies to the list
         console.log('\n📝 Step 5: Adding movies to the list...')
         await authStore.addToList(listId, testMovie)
-        console.log(`✅ Added: ${testMovie.title}`)
+        console.log(`✅ Added: ${getTitle(testMovie)}`)
 
         await new Promise((resolve) => setTimeout(resolve, 1000))
 
         await authStore.addToList(listId, testMovie2)
-        console.log(`✅ Added: ${testMovie2.title}`)
+        console.log(`✅ Added: ${getTitle(testMovie2)}`)
 
         // Wait for save to complete
         await new Promise((resolve) => setTimeout(resolve, 2000))
@@ -110,20 +111,20 @@ async function testUserWatchlist() {
         // Step 6: Add to main watchlist
         console.log('\n📝 Step 6: Adding movie to main watchlist...')
         await authStore.addToWatchlist(testMovie)
-        console.log(`✅ Added to watchlist: ${testMovie.title}`)
+        console.log(`✅ Added to watchlist: ${getTitle(testMovie)}`)
 
         // Wait for save
         await new Promise((resolve) => setTimeout(resolve, 2000))
 
-        // Step 7: Add ratings
-        console.log('\n📝 Step 7: Adding ratings...')
-        await authStore.addRating(testMovie.id, 'liked', testMovie)
-        console.log(`✅ Rated ${testMovie.title} as: liked`)
+        // Step 7: Add to liked movies
+        console.log('\n📝 Step 7: Adding to liked movies...')
+        await authStore.addLikedMovie(testMovie)
+        console.log(`✅ Added ${getTitle(testMovie)} to liked movies`)
 
         await new Promise((resolve) => setTimeout(resolve, 1000))
 
-        await authStore.addRating(testMovie2.id, 'liked', testMovie2)
-        console.log(`✅ Rated ${testMovie2.title} as: liked`)
+        await authStore.addLikedMovie(testMovie2)
+        console.log(`✅ Added ${getTitle(testMovie2)} to liked movies`)
 
         // Wait for save
         await new Promise((resolve) => setTimeout(resolve, 2000))
@@ -140,34 +141,37 @@ async function testUserWatchlist() {
         console.log(`📧 Email: ${TEST_USER.email}`)
 
         console.log(`\n📋 Watchlist:`)
-        console.log(`   Total items: ${verifyData.watchlist.length}`)
-        verifyData.watchlist.forEach((item, i) => {
-            console.log(`   ${i + 1}. ${item.title || item.name} (ID: ${item.id})`)
+        console.log(`   Total items: ${verifyData.defaultWatchlist.length}`)
+        verifyData.defaultWatchlist.forEach((item, i) => {
+            console.log(`   ${i + 1}. ${getTitle(item)} (ID: ${item.id})`)
         })
 
-        console.log(`\n⭐ Ratings:`)
-        console.log(`   Total ratings: ${verifyData.ratings.length}`)
-        verifyData.ratings.forEach((rating, i) => {
-            const title = rating.content?.title || rating.content?.name || 'Unknown'
-            console.log(`   ${i + 1}. ${title}: ${rating.rating}`)
+        console.log(`\n⭐ Liked Movies:`)
+        console.log(`   Total liked: ${verifyData.likedMovies.length}`)
+        verifyData.likedMovies.forEach((item, i) => {
+            console.log(`   ${i + 1}. ${getTitle(item)} (ID: ${item.id})`)
         })
 
-        console.log(`\n📚 Lists:`)
-        console.log(`   Total lists: ${verifyData.userLists.lists.length}`)
-        verifyData.userLists.lists.forEach((list, i) => {
-            const isDefault = Object.values(verifyData.userLists.defaultListIds).includes(list.id)
-            const type = isDefault ? '(default)' : '(custom)'
-            console.log(`   ${i + 1}. ${list.name} ${type}: ${list.items.length} items`)
+        console.log(`\n🚫 Hidden Movies:`)
+        console.log(`   Total hidden: ${verifyData.hiddenMovies.length}`)
+        verifyData.hiddenMovies.forEach((item, i) => {
+            console.log(`   ${i + 1}. ${getTitle(item)} (ID: ${item.id})`)
+        })
+
+        console.log(`\n📚 Custom Watchlists:`)
+        console.log(`   Total lists: ${verifyData.userCreatedWatchlists.length}`)
+        verifyData.userCreatedWatchlists.forEach((list, i) => {
+            console.log(`   ${i + 1}. ${list.name}: ${list.items.length} items`)
             if (list.items.length > 0) {
                 list.items.forEach((item, j) => {
-                    console.log(`      - ${item.title || item.name}`)
+                    console.log(`      - ${getTitle(item)}`)
                 })
             }
         })
 
         // Step 9: Verify custom list
         console.log('\n📝 Step 9: Verifying custom list...')
-        const customList = verifyData.userLists.lists.find((l) => l.id === listId)
+        const customList = verifyData.userCreatedWatchlists.find((l) => l.id === listId)
 
         if (!customList) {
             throw new Error('❌ Custom list not found in Firebase!')
@@ -194,24 +198,24 @@ async function testUserWatchlist() {
 
         // Step 10: Verify watchlist
         console.log('\n📝 Step 10: Verifying main watchlist...')
-        if (verifyData.watchlist.length === 0) {
+        if (verifyData.defaultWatchlist.length === 0) {
             throw new Error('❌ Watchlist is empty!')
         }
 
-        const inWatchlist = verifyData.watchlist.some((i) => i.id === testMovie.id)
+        const inWatchlist = verifyData.defaultWatchlist.some((i) => i.id === testMovie.id)
         if (!inWatchlist) {
             throw new Error('❌ Movie not found in watchlist!')
         }
 
         console.log('✅ Movie found in watchlist!')
 
-        // Step 11: Verify ratings
-        console.log('\n📝 Step 11: Verifying ratings...')
-        if (verifyData.ratings.length !== 2) {
-            throw new Error(`❌ Expected 2 ratings, found ${verifyData.ratings.length}`)
+        // Step 11: Verify liked movies
+        console.log('\n📝 Step 11: Verifying liked movies...')
+        if (verifyData.likedMovies.length !== 2) {
+            throw new Error(`❌ Expected 2 liked movies, found ${verifyData.likedMovies.length}`)
         }
 
-        console.log('✅ Both ratings saved!')
+        console.log('✅ Both movies liked!')
 
         // Final Summary
         console.log('\n' + '█'.repeat(70))
@@ -223,7 +227,7 @@ async function testUserWatchlist() {
         console.log('   • Custom lists are created in Firebase')
         console.log('   • Movies are added to custom lists')
         console.log('   • Movies are added to main watchlist')
-        console.log('   • Ratings are saved')
+        console.log('   • Movies are added to liked movies')
         console.log('   • All data persists to Firebase')
         console.log(`   • All data is associated with user: ${userId}`)
 

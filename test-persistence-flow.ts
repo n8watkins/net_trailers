@@ -63,22 +63,23 @@ async function testAuthenticatedUserPersistence() {
         await authStore.addToList(listId, testMovie)
         console.log('✅ Content added to list')
 
-        // Step 4: Add rating
-        console.log('\n📝 Step 4: Adding rating...')
-        await authStore.addRating(testMovie.id, 'liked', testMovie)
-        console.log('✅ Rating added')
+        // Step 4: Add to liked movies
+        console.log('\n📝 Step 4: Adding to liked movies...')
+        await authStore.addLikedMovie(testMovie)
+        console.log('✅ Added to liked movies')
 
         // Step 5: Verify data was saved to Firebase
         console.log('\n📝 Step 5: Loading data back from Firebase...')
         const loadedData = await AuthStorageService.loadUserData(testUserId)
         console.log('✅ Data loaded from Firebase:', {
-            lists: loadedData.userLists.lists.length,
-            ratings: loadedData.ratings.length,
+            lists: loadedData.userCreatedWatchlists.length,
+            liked: loadedData.likedMovies.length,
+            hidden: loadedData.hiddenMovies.length,
         })
 
         // Step 6: Verify the list exists in loaded data
         console.log('\n📝 Step 6: Verifying data integrity...')
-        const loadedList = loadedData.userLists.lists.find((l) => l.id === listId)
+        const loadedList = loadedData.userCreatedWatchlists.find((l) => l.id === listId)
         if (!loadedList) {
             throw new Error('❌ List not found in Firebase!')
         }
@@ -88,8 +89,8 @@ async function testAuthenticatedUserPersistence() {
         if (loadedList.items[0].id !== testMovie.id) {
             throw new Error('❌ Movie ID mismatch!')
         }
-        if (loadedData.ratings.length !== 1) {
-            throw new Error(`❌ Expected 1 rating, found ${loadedData.ratings.length}`)
+        if (loadedData.likedMovies.length !== 1) {
+            throw new Error(`❌ Expected 1 liked movie, found ${loadedData.likedMovies.length}`)
         }
         console.log('✅ All Firebase data verified!')
 
@@ -155,22 +156,23 @@ async function testGuestUserPersistence() {
         guestStore.addToList(listId, testMovie)
         console.log('✅ Content added to list')
 
-        // Step 4: Add rating
-        console.log('\n📝 Step 4: Adding rating...')
-        guestStore.addRating(testMovie.id, 'liked', testMovie)
-        console.log('✅ Rating added')
+        // Step 4: Add to liked movies
+        console.log('\n📝 Step 4: Adding to liked movies...')
+        guestStore.addLikedMovie(testMovie)
+        console.log('✅ Added to liked movies')
 
         // Step 5: Verify data was saved to localStorage
         console.log('\n📝 Step 5: Loading data back from localStorage...')
         const loadedData = GuestStorageService.loadGuestData(testGuestId)
         console.log('✅ Data loaded from localStorage:', {
-            lists: loadedData.userLists.lists.length,
-            ratings: loadedData.ratings.length,
+            lists: loadedData.userCreatedWatchlists.length,
+            liked: loadedData.likedMovies.length,
+            hidden: loadedData.hiddenMovies.length,
         })
 
         // Step 6: Verify the list exists in loaded data
         console.log('\n📝 Step 6: Verifying data integrity...')
-        const loadedList = loadedData.userLists.lists.find((l) => l.id === listId)
+        const loadedList = loadedData.userCreatedWatchlists.find((l) => l.id === listId)
         if (!loadedList) {
             throw new Error('❌ List not found in localStorage!')
         }
@@ -180,8 +182,8 @@ async function testGuestUserPersistence() {
         if (loadedList.items[0].id !== testMovie.id) {
             throw new Error('❌ Movie ID mismatch!')
         }
-        if (loadedData.ratings.length !== 1) {
-            throw new Error(`❌ Expected 1 rating, found ${loadedData.ratings.length}`)
+        if (loadedData.likedMovies.length !== 1) {
+            throw new Error(`❌ Expected 1 liked movie, found ${loadedData.likedMovies.length}`)
         }
         console.log('✅ All localStorage data verified!')
 
@@ -189,8 +191,8 @@ async function testGuestUserPersistence() {
         console.log('\n📝 Step 7: Verifying data is NOT in Firebase...')
         try {
             const firebaseData = await AuthStorageService.loadUserData(testGuestId)
-            if (firebaseData.userLists.lists.length > 3) {
-                // More than default lists
+            if (firebaseData.userCreatedWatchlists.length > 0) {
+                // Has custom lists
                 console.warn(
                     '⚠️ WARNING: Guest data found in Firebase (should only be in localStorage!)'
                 )

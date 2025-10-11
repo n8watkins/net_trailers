@@ -6,6 +6,7 @@
 import { AuthStorageService } from '../services/authStorageService'
 import { auth, db } from '../firebase'
 import { doc, getDoc } from 'firebase/firestore'
+import { getTitle } from '../typings'
 
 export async function testFirestoreFlow() {
     console.log('🧪 === STARTING COMPREHENSIVE FIRESTORE TEST ===')
@@ -64,19 +65,74 @@ export async function testFirestoreFlow() {
         // Step 4: Test AuthStorageService save
         console.log('\n📌 Step 4: Testing AuthStorageService save...')
         const testPreferences = {
-            watchlist: [
-                { id: 1, title: 'Test Movie 1', media_type: 'movie' as const },
-                { id: 2, title: 'Test Movie 2', media_type: 'movie' as const },
-            ],
-            ratings: [{ contentId: 1, rating: 'liked' as const, timestamp: Date.now() }],
-            userLists: {
-                lists: [{ id: 'test-list-1', name: 'Test List', items: [], emoji: '📋' }],
-                defaultListIds: {
-                    watchlist: 'default-watchlist',
-                    liked: 'default-liked',
-                    disliked: 'default-disliked',
+            defaultWatchlist: [
+                {
+                    id: 1,
+                    title: 'Test Movie 1',
+                    media_type: 'movie' as const,
+                    overview: 'Test movie 1',
+                    poster_path: '/test1.jpg',
+                    backdrop_path: '/test1-backdrop.jpg',
+                    vote_average: 8.0,
+                    vote_count: 100,
+                    popularity: 50,
+                    release_date: '2024-01-01',
+                    genre_ids: [28],
+                    adult: false,
+                    original_language: 'en',
+                    original_title: 'Test Movie 1',
+                    origin_country: ['US'],
                 },
-            },
+                {
+                    id: 2,
+                    title: 'Test Movie 2',
+                    media_type: 'movie' as const,
+                    overview: 'Test movie 2',
+                    poster_path: '/test2.jpg',
+                    backdrop_path: '/test2-backdrop.jpg',
+                    vote_average: 7.5,
+                    vote_count: 80,
+                    popularity: 40,
+                    release_date: '2024-02-01',
+                    genre_ids: [12],
+                    adult: false,
+                    original_language: 'en',
+                    original_title: 'Test Movie 2',
+                    origin_country: ['US'],
+                },
+            ],
+            likedMovies: [
+                {
+                    id: 1,
+                    title: 'Test Movie 1',
+                    media_type: 'movie' as const,
+                    overview: 'Test movie 1',
+                    poster_path: '/test1.jpg',
+                    backdrop_path: '/test1-backdrop.jpg',
+                    vote_average: 8.0,
+                    vote_count: 100,
+                    popularity: 50,
+                    release_date: '2024-01-01',
+                    genre_ids: [28],
+                    adult: false,
+                    original_language: 'en',
+                    original_title: 'Test Movie 1',
+                    origin_country: ['US'],
+                },
+            ],
+            hiddenMovies: [],
+            userCreatedWatchlists: [
+                {
+                    id: 'test-list-1',
+                    name: 'Test List',
+                    items: [],
+                    emoji: '📋',
+                    color: '#3B82F6',
+                    isPublic: false,
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                },
+            ],
             lastActive: Date.now(),
         }
 
@@ -93,14 +149,18 @@ export async function testFirestoreFlow() {
         try {
             const loadedData = await AuthStorageService.loadUserData(currentUser.uid)
             console.log('✅ AuthStorageService load successful. Data:', {
-                watchlistCount: loadedData.watchlist?.length || 0,
-                ratingsCount: loadedData.ratings?.length || 0,
-                listsCount: loadedData.userLists?.lists?.length || 0,
-                watchlistItems: loadedData.watchlist?.map((w) => ({ id: w.id, title: w.title })),
+                watchlistCount: loadedData.defaultWatchlist?.length || 0,
+                likedCount: loadedData.likedMovies?.length || 0,
+                hiddenCount: loadedData.hiddenMovies?.length || 0,
+                listsCount: loadedData.userCreatedWatchlists?.length || 0,
+                watchlistItems: loadedData.defaultWatchlist?.map((w) => ({
+                    id: w.id,
+                    title: getTitle(w),
+                })),
             })
 
             // Verify the data matches what we saved
-            if (loadedData.watchlist?.length >= 2) {
+            if (loadedData.defaultWatchlist?.length >= 2) {
                 console.log('✅ Watchlist data persisted correctly')
             } else {
                 console.error('❌ Watchlist data not found or incomplete')
@@ -118,7 +178,9 @@ export async function testFirestoreFlow() {
 
             console.log('Current auth store state:', {
                 userId: authStore.userId,
-                watchlistCount: authStore.watchlist?.length || 0,
+                watchlistCount: authStore.defaultWatchlist?.length || 0,
+                likedCount: authStore.likedMovies?.length || 0,
+                hiddenCount: authStore.hiddenMovies?.length || 0,
                 syncStatus: authStore.syncStatus,
             })
 
@@ -139,11 +201,11 @@ export async function testFirestoreFlow() {
                 adult: false,
                 original_language: 'en',
                 original_title: 'Test Movie',
-                video: false,
+                origin_country: ['US'],
             })
 
             console.log('After adding, store state:', {
-                watchlistCount: useAuthStore.getState().watchlist?.length || 0,
+                watchlistCount: useAuthStore.getState().defaultWatchlist?.length || 0,
                 syncStatus: useAuthStore.getState().syncStatus,
             })
 
@@ -153,7 +215,7 @@ export async function testFirestoreFlow() {
             // Check if it saved to Firestore
             const verifyDoc = await getDoc(doc(db, 'users', currentUser.uid))
             const verifyData = verifyDoc.data()
-            const hasTestMovie = verifyData?.watchlist?.some((item: any) => item.id === 999)
+            const hasTestMovie = verifyData?.defaultWatchlist?.some((item: any) => item.id === 999)
 
             if (hasTestMovie) {
                 console.log('✅ Test movie successfully saved to Firestore!')

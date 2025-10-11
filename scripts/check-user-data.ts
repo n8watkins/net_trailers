@@ -41,18 +41,18 @@ async function checkUserData() {
         console.log(JSON.stringify(userData, null, 2))
 
         console.log('\n📊 Data Summary:')
-        console.log(`- Watchlist items: ${userData.watchlist.length}`)
-        console.log(`- Ratings: ${userData.ratings.length}`)
-        console.log(`- Custom lists: ${userData.userLists.lists.length}`)
-        console.log(`- Default lists: ${Object.keys(userData.userLists.defaultListIds).length}`)
+        console.log(`- Watchlist items: ${userData.defaultWatchlist.length}`)
+        console.log(`- Liked movies: ${userData.likedMovies.length}`)
+        console.log(`- Hidden movies: ${userData.hiddenMovies.length}`)
+        console.log(`- Custom watchlists: ${userData.userCreatedWatchlists.length}`)
 
-        if (userData.userLists.lists.length > 3) {
-            console.log('\n🎉 Found custom lists:')
-            userData.userLists.lists.slice(3).forEach((list) => {
+        if (userData.userCreatedWatchlists.length > 0) {
+            console.log('\n🎉 Found custom watchlists:')
+            userData.userCreatedWatchlists.forEach((list) => {
                 console.log(`  - ${list.name} (${list.items.length} items)`)
             })
         } else {
-            console.log('\n⚠️  No custom lists found (only defaults)')
+            console.log('\n⚠️  No custom watchlists found')
         }
 
         console.log('\n🔗 To view in Firebase Console:')
