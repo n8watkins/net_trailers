@@ -5,9 +5,8 @@ import Image from 'next/image'
 import { BASE_URL } from '../constants/movie'
 import { PlayIcon } from '@heroicons/react/24/solid'
 import { InformationCircleIcon } from '@heroicons/react/24/outline'
-import { modalState, movieState, autoPlayWithSoundState } from '../atoms/modalAtom'
-import { useRecoilState, useRecoilValue } from 'recoil'
-import { userSessionState } from '../atoms/userDataAtom'
+import { useAppStore } from '../stores/appStore'
+import useUserData from '../hooks/useUserData'
 import { filterDislikedContent } from '../utils/contentFilter'
 
 interface Props {
@@ -16,10 +15,8 @@ interface Props {
 
 //pass props to Banner component
 function Banner({ trending }: Props) {
-    const [showModal, setShowModal] = useRecoilState(modalState)
-    const [currentContent, setCurrentContent] = useRecoilState(movieState)
-    const [autoPlayWithSound, setAutoPlayWithSound] = useRecoilState(autoPlayWithSoundState)
-    const userSession = useRecoilValue(userSessionState)
+    const { openModal } = useAppStore()
+    const { hiddenMovies } = useUserData()
 
     const [currentIndex, setCurrentIndex] = useState(0)
     const [carouselContent, setCarouselContent] = useState<Content[]>([])
@@ -30,10 +27,7 @@ function Banner({ trending }: Props) {
     useEffect(() => {
         if (trending.length > 0) {
             // Filter out disliked content first
-            const filteredTrending = filterDislikedContent(
-                trending,
-                userSession.preferences.hiddenMovies
-            )
+            const filteredTrending = filterDislikedContent(trending, hiddenMovies)
 
             if (filteredTrending.length > 0) {
                 // Fisher-Yates shuffle algorithm for unbiased randomization
@@ -61,7 +55,7 @@ function Banner({ trending }: Props) {
                 setCarouselContent([])
             }
         }
-    }, [trending, userSession.preferences.hiddenMovies])
+    }, [trending, hiddenMovies])
 
     // Auto-advance carousel every 8 seconds with smooth transition
     useEffect(() => {
@@ -156,9 +150,10 @@ function Banner({ trending }: Props) {
                         <button
                             className="bannerButton bg-white text-black hover:bg-white/80 transition-all duration-200 font-bold"
                             onClick={() => {
-                                setAutoPlayWithSound(true)
-                                setShowModal(true)
-                                setCurrentContent(featuredContent)
+                                if (featuredContent) {
+                                    // Play mode - autoPlay=true, autoPlayWithSound=true (starts with sound)
+                                    openModal(featuredContent, true, true)
+                                }
                             }}
                         >
                             <PlayIcon className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 lg:h-7 lg:w-7" />
@@ -167,9 +162,10 @@ function Banner({ trending }: Props) {
                         <button
                             className="bannerButton bg-gray-600/70 text-white hover:bg-gray-600/50 transition-all duration-200 font-semibold backdrop-blur-sm"
                             onClick={() => {
-                                setAutoPlayWithSound(false)
-                                setShowModal(true)
-                                setCurrentContent(featuredContent)
+                                if (featuredContent) {
+                                    // More info mode - autoPlay=true, autoPlayWithSound=false (starts muted)
+                                    openModal(featuredContent, true, false)
+                                }
                             }}
                         >
                             <InformationCircleIcon className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 lg:h-7 lg:w-7" />

@@ -1,9 +1,8 @@
 import React, { useRef, useState } from 'react'
 import { Content, getTitle, getYear, getContentType, isMovie } from '../typings'
 import Image from 'next/image'
-import { useRecoilState } from 'recoil'
 import { PlayIcon } from '@heroicons/react/24/solid'
-import { modalState, movieState, autoPlayWithSoundState } from '../atoms/modalAtom'
+import { useAppStore } from '../stores/appStore'
 import WatchLaterButton from './WatchLaterButton'
 
 interface Props {
@@ -13,16 +12,13 @@ interface Props {
 }
 function ContentCard({ content, className = '', size = 'medium' }: Props) {
     const posterImage = content?.poster_path
-    const [showModal, setShowModal] = useRecoilState(modalState)
-    const [currentContent, setCurrentContent] = useRecoilState(movieState)
-    const [autoPlayWithSound, setAutoPlayWithSound] = useRecoilState(autoPlayWithSoundState)
+    const { openModal } = useAppStore()
     const [imageLoaded, setImageLoaded] = useState(false)
 
     const handleImageClick = () => {
         if (content) {
-            setAutoPlayWithSound(false) // More info mode - starts muted
-            setShowModal(true)
-            setCurrentContent(content)
+            // More info mode - autoPlay=true, autoPlayWithSound=false (starts muted)
+            openModal(content, true, false)
         }
     }
 
@@ -116,9 +112,10 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                         <button
                             onClick={(e) => {
                                 e.stopPropagation()
-                                setAutoPlayWithSound(true)
-                                setShowModal(true)
-                                setCurrentContent(content || null)
+                                if (content) {
+                                    // Watch mode - autoPlay=true, autoPlayWithSound=true (starts with sound)
+                                    openModal(content, true, true)
+                                }
                             }}
                             className="bg-black text-white font-bold
                                  px-4 py-1.5 md:px-6 md:py-2
