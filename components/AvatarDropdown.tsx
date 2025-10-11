@@ -190,7 +190,9 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                                     <AcademicCapIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
                                     Tutorial
                                 </div>
-                                <span className="text-xs text-gray-500 font-mono">Alt+T</span>
+                                <span className="text-xs text-gray-400 font-mono font-semibold">
+                                    Alt+T
+                                </span>
                             </button>
 
                             <button
@@ -201,7 +203,9 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                                     <InformationCircleIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
                                     About NetTrailers
                                 </div>
-                                <span className="text-xs text-gray-500 font-mono">Alt+A</span>
+                                <span className="text-xs text-gray-400 font-mono font-semibold">
+                                    Alt+I
+                                </span>
                             </button>
 
                             <button
@@ -215,7 +219,9 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                                     <CommandLineIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
                                     Keyboard Shortcuts
                                 </div>
-                                <span className="text-xs text-gray-500 font-mono">?</span>
+                                <span className="text-xs text-gray-400 font-mono font-semibold">
+                                    ?
+                                </span>
                             </button>
                         </div>
                     </div>
@@ -310,7 +316,9 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                                 <AcademicCapIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
                                 Tutorial
                             </div>
-                            <span className="text-xs text-gray-500 font-mono">Alt+T</span>
+                            <span className="text-xs text-gray-400 font-mono font-semibold">
+                                Alt+T
+                            </span>
                         </button>
 
                         <button
@@ -321,7 +329,9 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                                 <InformationCircleIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
                                 About NetTrailers
                             </div>
-                            <span className="text-xs text-gray-500 font-mono">Alt+A</span>
+                            <span className="text-xs text-gray-400 font-mono font-semibold">
+                                Alt+I
+                            </span>
                         </button>
 
                         <button
@@ -335,7 +345,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                                 <CommandLineIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
                                 Keyboard Shortcuts
                             </div>
-                            <span className="text-xs text-gray-500 font-mono">?</span>
+                            <span className="text-xs text-gray-400 font-mono font-semibold">?</span>
                         </button>
 
                         <div className="h-px bg-gray-700/50 mx-5 my-2"></div>

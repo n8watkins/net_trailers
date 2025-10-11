@@ -29,7 +29,7 @@ const shortcuts: KeyboardShortcut[] = [
     // General
     { keys: ['?'], description: 'Toggle keyboard shortcuts menu', category: 'General' },
     { keys: ['Alt', 'T'], description: 'Open tutorial', category: 'General' },
-    { keys: ['Alt', 'A'], description: 'Open about NetTrailers', category: 'General' },
+    { keys: ['Alt', 'I'], description: 'Open about NetTrailers', category: 'General' },
 ]
 
 const shortcutsByCategory = shortcuts.reduce(

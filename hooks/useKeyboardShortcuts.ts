@@ -74,8 +74,8 @@ export function useKeyboardShortcuts({
                 return
             }
 
-            // Alt+A to open about modal (works globally, even when typing)
-            if (event.altKey && event.key.toLowerCase() === 'a') {
+            // Alt+I to open about modal (works globally, even when typing)
+            if (event.altKey && event.key.toLowerCase() === 'i') {
                 event.preventDefault()
                 onOpenAbout?.()
                 return
