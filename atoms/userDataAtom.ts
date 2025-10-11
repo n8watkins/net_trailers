@@ -1,7 +1,9 @@
 import { atom } from 'recoil'
 import { Content } from '../typings'
-import { UserList, UserListsState } from '../types/userLists'
+import { UserList } from '../types/userLists'
 
+// DEPRECATED - UserRating is no longer used in new schema
+// Keeping temporarily for backward compatibility during migration
 export interface UserRating {
     contentId: number
     rating: 'liked' | 'disliked'
@@ -9,10 +11,12 @@ export interface UserRating {
     content?: Content // Store the full content object for display
 }
 
+// NEW SCHEMA - No more ratings, no more userLists structure
 export interface UserPreferences {
-    watchlist: Content[]
-    ratings: UserRating[]
-    userLists: UserListsState
+    defaultWatchlist: Content[]
+    likedMovies: Content[]
+    hiddenMovies: Content[]
+    userCreatedWatchlists: UserList[]
     lastActive: number
 }
 
@@ -26,22 +30,16 @@ export interface UserSession {
     createdAt?: number
 }
 
-// Default user session
+// Default user session (NEW SCHEMA)
 const defaultUserSession: UserSession = {
     isGuest: false,
     guestId: undefined,
     userId: undefined,
     preferences: {
-        watchlist: [],
-        ratings: [],
-        userLists: {
-            lists: [],
-            defaultListIds: {
-                watchlist: '',
-                liked: '',
-                disliked: '',
-            },
-        },
+        defaultWatchlist: [],
+        likedMovies: [],
+        hiddenMovies: [],
+        userCreatedWatchlists: [],
         lastActive: Date.now(),
     },
 }

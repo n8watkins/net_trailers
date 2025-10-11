@@ -47,28 +47,41 @@ export function useAuthData(userId: string) {
         })
     }
 
-    // Rating operations
-    const setRating = (contentId: number, rating: 'liked' | 'disliked', content?: Content) => {
+    // Liked/Hidden operations (replaces rating operations)
+    const addLikedMovie = (content: Content) => {
         updateSession((session) => ({
             ...session,
-            preferences: AuthStorageService.addRating(
-                session.preferences,
-                contentId,
-                rating,
-                content
-            ),
+            preferences: AuthStorageService.addLikedMovie(session.preferences, content),
         }))
     }
 
-    const removeRating = (contentId: number) => {
+    const removeLikedMovie = (contentId: number) => {
         updateSession((session) => ({
             ...session,
-            preferences: AuthStorageService.removeRating(session.preferences, contentId),
+            preferences: AuthStorageService.removeLikedMovie(session.preferences, contentId),
         }))
     }
 
-    const getRating = (contentId: number) => {
-        return AuthStorageService.getRating(authSession.preferences, contentId)
+    const addHiddenMovie = (content: Content) => {
+        updateSession((session) => ({
+            ...session,
+            preferences: AuthStorageService.addHiddenMovie(session.preferences, content),
+        }))
+    }
+
+    const removeHiddenMovie = (contentId: number) => {
+        updateSession((session) => ({
+            ...session,
+            preferences: AuthStorageService.removeHiddenMovie(session.preferences, contentId),
+        }))
+    }
+
+    const isLiked = (contentId: number) => {
+        return AuthStorageService.isLiked(authSession.preferences, contentId)
+    }
+
+    const isHidden = (contentId: number) => {
+        return AuthStorageService.isHidden(authSession.preferences, contentId)
     }
 
     // Watchlist operations
@@ -141,12 +154,8 @@ export function useAuthData(userId: string) {
         return UserListsService.getListsContaining(authSession.preferences, contentId)
     }
 
-    const getDefaultLists = () => {
-        return UserListsService.getDefaultLists(authSession.preferences)
-    }
-
-    const getCustomLists = (): UserList[] => {
-        return UserListsService.getCustomLists(authSession.preferences)
+    const getAllLists = (): UserList[] => {
+        return UserListsService.getAllLists(authSession.preferences)
     }
 
     // Force sync with Firebase (useful for offline recovery)
@@ -239,15 +248,19 @@ export function useAuthData(userId: string) {
         isAuthenticated: true,
         sessionId: authSession.userId,
 
-        // Data
-        watchlist: authSession.preferences.watchlist,
-        ratings: authSession.preferences.ratings,
-        userLists: authSession.preferences.userLists,
+        // Data (NEW SCHEMA)
+        defaultWatchlist: authSession.preferences.defaultWatchlist,
+        likedMovies: authSession.preferences.likedMovies,
+        hiddenMovies: authSession.preferences.hiddenMovies,
+        userCreatedWatchlists: authSession.preferences.userCreatedWatchlists,
 
-        // Rating actions
-        setRating,
-        removeRating,
-        getRating,
+        // Liked/Hidden actions (replaces rating actions)
+        addLikedMovie,
+        removeLikedMovie,
+        addHiddenMovie,
+        removeHiddenMovie,
+        isLiked,
+        isHidden,
 
         // Watchlist actions
         addToWatchlist,
@@ -263,8 +276,7 @@ export function useAuthData(userId: string) {
         getList,
         isContentInList,
         getListsContaining,
-        getDefaultLists,
-        getCustomLists,
+        getAllLists,
 
         // Auth-specific actions
         forceSyncData,

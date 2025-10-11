@@ -239,18 +239,16 @@ export function useSessionManager() {
 
         try {
             // Data loading is handled by SessionSyncManager component
-            // Just set up the session state here
+            // Just set up the session state here (NEW SCHEMA)
             setUserSession({
                 isGuest: false,
                 guestId: undefined,
                 userId: user.uid,
                 preferences: {
-                    watchlist: [],
-                    ratings: [],
-                    userLists: {
-                        lists: [],
-                        defaultListIds: { watchlist: '', liked: '', disliked: '' },
-                    },
+                    defaultWatchlist: [],
+                    likedMovies: [],
+                    hiddenMovies: [],
+                    userCreatedWatchlists: [],
                     lastActive: Date.now(),
                 },
                 isActive: true,

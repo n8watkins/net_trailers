@@ -22,22 +22,24 @@ export default function useUserData() {
             isAuthenticated: false,
             isInitializing: false,
 
-            // Data from Zustand store
-            watchlist: sessionData.watchlist,
-            ratings: sessionData.ratings,
-            userLists: sessionData.userLists,
+            // Data from Zustand store (NEW SCHEMA)
+            defaultWatchlist: sessionData.defaultWatchlist,
+            likedMovies: sessionData.likedMovies,
+            hiddenMovies: sessionData.hiddenMovies,
+            userCreatedWatchlists: sessionData.userCreatedWatchlists,
 
-            // Actions from Zustand store
-            setRating: (contentId: number, rating: 'liked' | 'disliked', content?: any) => {
-                sessionData.addRating(contentId, rating, content)
-            },
-            removeRating: sessionData.removeRating,
+            // Actions from Zustand store (NEW SCHEMA)
+            addLikedMovie: sessionData.addLikedMovie,
+            removeLikedMovie: sessionData.removeLikedMovie,
+            addHiddenMovie: sessionData.addHiddenMovie,
+            removeHiddenMovie: sessionData.removeHiddenMovie,
             addToWatchlist: sessionData.addToWatchlist,
             removeFromWatchlist: sessionData.removeFromWatchlist,
-            getRating: sessionData.getRating,
+            isLiked: sessionData.isLiked,
+            isHidden: sessionData.isHidden,
             isInWatchlist: sessionData.isInWatchlist,
 
-            // List management
+            // List management (NEW SCHEMA)
             createList: (request: any) => sessionData.createList(request.name),
             updateList: (
                 listId: string,
@@ -51,35 +53,40 @@ export default function useUserData() {
             addToList: sessionData.addToList,
             removeFromList: sessionData.removeFromList,
             getList: (listId: string) =>
-                sessionData.userLists.lists.find((l) => l.id === listId) || null,
+                sessionData.userCreatedWatchlists.find((l) => l.id === listId) || null,
             isContentInList: (listId: string, contentId: number) => {
-                const list = sessionData.userLists.lists.find((l) => l.id === listId)
+                const list = sessionData.userCreatedWatchlists.find((l) => l.id === listId)
                 return list ? list.items.some((item) => item.id === contentId) : false
             },
             getListsContaining: (contentId: number) =>
-                sessionData.userLists.lists.filter((list) =>
+                sessionData.userCreatedWatchlists.filter((list) =>
                     list.items.some((item) => item.id === contentId)
                 ),
-            getDefaultLists: () =>
-                UserListsService.getDefaultLists({ userLists: sessionData.userLists } as any),
-            getCustomLists: () =>
-                UserListsService.getCustomLists({ userLists: sessionData.userLists } as any),
+            getAllLists: () => sessionData.userCreatedWatchlists,
 
             // Account management (guest has limited functionality)
             getAccountDataSummary: () => ({
-                watchlistCount: sessionData.watchlist.length,
-                ratingsCount: sessionData.ratings.length,
-                listsCount: sessionData.userLists.lists.length,
-                totalItems: sessionData.watchlist.length + sessionData.ratings.length,
-                isEmpty: sessionData.watchlist.length === 0 && sessionData.ratings.length === 0,
+                watchlistCount: sessionData.defaultWatchlist.length,
+                likedCount: sessionData.likedMovies.length,
+                hiddenCount: sessionData.hiddenMovies.length,
+                listsCount: sessionData.userCreatedWatchlists.length,
+                totalItems:
+                    sessionData.defaultWatchlist.length +
+                    sessionData.likedMovies.length +
+                    sessionData.hiddenMovies.length,
+                isEmpty:
+                    sessionData.defaultWatchlist.length === 0 &&
+                    sessionData.likedMovies.length === 0 &&
+                    sessionData.hiddenMovies.length === 0,
             }),
             clearAccountData: () => {
                 sessionData.clearAllData()
             },
             exportAccountData: () => ({
-                watchlist: sessionData.watchlist,
-                ratings: sessionData.ratings,
-                userLists: sessionData.userLists,
+                defaultWatchlist: sessionData.defaultWatchlist,
+                likedMovies: sessionData.likedMovies,
+                hiddenMovies: sessionData.hiddenMovies,
+                userCreatedWatchlists: sessionData.userCreatedWatchlists,
                 exportDate: new Date(),
             }),
 
@@ -89,9 +96,10 @@ export default function useUserData() {
                 guestId: sessionData.activeSessionId,
                 userId: undefined,
                 preferences: {
-                    watchlist: sessionData.watchlist,
-                    ratings: sessionData.ratings,
-                    userLists: sessionData.userLists,
+                    defaultWatchlist: sessionData.defaultWatchlist,
+                    likedMovies: sessionData.likedMovies,
+                    hiddenMovies: sessionData.hiddenMovies,
+                    userCreatedWatchlists: sessionData.userCreatedWatchlists,
                     lastActive: sessionData.lastActive,
                 },
             },
@@ -108,22 +116,24 @@ export default function useUserData() {
             isAuthenticated: true,
             isInitializing: false,
 
-            // Data from Zustand store
-            watchlist: sessionData.watchlist,
-            ratings: sessionData.ratings,
-            userLists: sessionData.userLists,
+            // Data from Zustand store (NEW SCHEMA)
+            defaultWatchlist: sessionData.defaultWatchlist,
+            likedMovies: sessionData.likedMovies,
+            hiddenMovies: sessionData.hiddenMovies,
+            userCreatedWatchlists: sessionData.userCreatedWatchlists,
 
-            // Actions from Zustand store
-            setRating: (contentId: number, rating: 'liked' | 'disliked', content?: any) => {
-                sessionData.addRating(contentId, rating, content)
-            },
-            removeRating: sessionData.removeRating,
+            // Actions from Zustand store (NEW SCHEMA)
+            addLikedMovie: sessionData.addLikedMovie,
+            removeLikedMovie: sessionData.removeLikedMovie,
+            addHiddenMovie: sessionData.addHiddenMovie,
+            removeHiddenMovie: sessionData.removeHiddenMovie,
             addToWatchlist: sessionData.addToWatchlist,
             removeFromWatchlist: sessionData.removeFromWatchlist,
-            getRating: sessionData.getRating,
+            isLiked: sessionData.isLiked,
+            isHidden: sessionData.isHidden,
             isInWatchlist: sessionData.isInWatchlist,
 
-            // List management
+            // List management (NEW SCHEMA)
             createList: (request: any) => sessionData.createList(request.name),
             updateList: (
                 listId: string,
@@ -137,36 +147,41 @@ export default function useUserData() {
             addToList: sessionData.addToList,
             removeFromList: sessionData.removeFromList,
             getList: (listId: string) =>
-                sessionData.userLists.lists.find((l) => l.id === listId) || null,
+                sessionData.userCreatedWatchlists.find((l) => l.id === listId) || null,
             isContentInList: (listId: string, contentId: number) => {
-                const list = sessionData.userLists.lists.find((l) => l.id === listId)
+                const list = sessionData.userCreatedWatchlists.find((l) => l.id === listId)
                 return list ? list.items.some((item) => item.id === contentId) : false
             },
             getListsContaining: (contentId: number) =>
-                sessionData.userLists.lists.filter((list) =>
+                sessionData.userCreatedWatchlists.filter((list) =>
                     list.items.some((item) => item.id === contentId)
                 ),
-            getDefaultLists: () =>
-                UserListsService.getDefaultLists({ userLists: sessionData.userLists } as any),
-            getCustomLists: () =>
-                UserListsService.getCustomLists({ userLists: sessionData.userLists } as any),
+            getAllLists: () => sessionData.userCreatedWatchlists,
 
             // Account management (authenticated has full functionality)
             getAccountDataSummary: async () => ({
-                watchlistCount: sessionData.watchlist.length,
-                ratingsCount: sessionData.ratings.length,
-                listsCount: sessionData.userLists.lists.length,
-                totalItems: sessionData.watchlist.length + sessionData.ratings.length,
-                isEmpty: sessionData.watchlist.length === 0 && sessionData.ratings.length === 0,
+                watchlistCount: sessionData.defaultWatchlist.length,
+                likedCount: sessionData.likedMovies.length,
+                hiddenCount: sessionData.hiddenMovies.length,
+                listsCount: sessionData.userCreatedWatchlists.length,
+                totalItems:
+                    sessionData.defaultWatchlist.length +
+                    sessionData.likedMovies.length +
+                    sessionData.hiddenMovies.length,
+                isEmpty:
+                    sessionData.defaultWatchlist.length === 0 &&
+                    sessionData.likedMovies.length === 0 &&
+                    sessionData.hiddenMovies.length === 0,
                 accountCreated: new Date(), // This would come from Firebase auth
             }),
             clearAccountData: async () => {
                 sessionData.clearLocalCache()
             },
             exportAccountData: async () => ({
-                watchlist: sessionData.watchlist,
-                ratings: sessionData.ratings,
-                userLists: sessionData.userLists,
+                defaultWatchlist: sessionData.defaultWatchlist,
+                likedMovies: sessionData.likedMovies,
+                hiddenMovies: sessionData.hiddenMovies,
+                userCreatedWatchlists: sessionData.userCreatedWatchlists,
                 exportDate: new Date(),
             }),
             deleteAccount: async () => {
@@ -180,9 +195,10 @@ export default function useUserData() {
                 guestId: undefined,
                 userId: sessionData.activeSessionId,
                 preferences: {
-                    watchlist: sessionData.watchlist,
-                    ratings: sessionData.ratings,
-                    userLists: sessionData.userLists,
+                    defaultWatchlist: sessionData.defaultWatchlist,
+                    likedMovies: sessionData.likedMovies,
+                    hiddenMovies: sessionData.hiddenMovies,
+                    userCreatedWatchlists: sessionData.userCreatedWatchlists,
                     lastActive: sessionData.lastActive,
                 },
             },
@@ -191,9 +207,10 @@ export default function useUserData() {
             authSession: {
                 userId: sessionData.activeSessionId,
                 preferences: {
-                    watchlist: sessionData.watchlist,
-                    ratings: sessionData.ratings,
-                    userLists: sessionData.userLists,
+                    defaultWatchlist: sessionData.defaultWatchlist,
+                    likedMovies: sessionData.likedMovies,
+                    hiddenMovies: sessionData.hiddenMovies,
+                    userCreatedWatchlists: sessionData.userCreatedWatchlists,
                     lastActive: sessionData.lastActive,
                 },
             },
@@ -211,16 +228,23 @@ export default function useUserData() {
             isAuthenticated: false,
             isInitializing: true,
 
-            // Empty data during initialization
-            watchlist: [],
-            ratings: [],
-            userLists: { lists: [], defaultListIds: { watchlist: '', liked: '', disliked: '' } },
+            // Empty data during initialization (NEW SCHEMA)
+            defaultWatchlist: [],
+            likedMovies: [],
+            hiddenMovies: [],
+            userCreatedWatchlists: [],
 
             // Placeholder functions (will throw errors if called during initialization)
-            setRating: () => {
+            addLikedMovie: () => {
                 throw new Error('Cannot modify data while session is initializing')
             },
-            removeRating: () => {
+            removeLikedMovie: () => {
+                throw new Error('Cannot modify data while session is initializing')
+            },
+            addHiddenMovie: () => {
+                throw new Error('Cannot modify data while session is initializing')
+            },
+            removeHiddenMovie: () => {
                 throw new Error('Cannot modify data while session is initializing')
             },
             addToWatchlist: () => {
@@ -229,7 +253,8 @@ export default function useUserData() {
             removeFromWatchlist: () => {
                 throw new Error('Cannot modify data while session is initializing')
             },
-            getRating: () => null,
+            isLiked: () => false,
+            isHidden: () => false,
             isInWatchlist: () => false,
             createList: () => {
                 throw new Error('Cannot modify data while session is initializing')
@@ -249,8 +274,7 @@ export default function useUserData() {
             getList: () => null,
             isContentInList: () => false,
             getListsContaining: () => [],
-            getDefaultLists: () => ({ watchlist: null, liked: null, disliked: null }),
-            getCustomLists: () => [],
+            getAllLists: () => [],
 
             // Account management (disabled during initialization)
             getAccountDataSummary: () => {
@@ -269,12 +293,10 @@ export default function useUserData() {
                 guestId: undefined,
                 userId: undefined,
                 preferences: {
-                    watchlist: [],
-                    ratings: [],
-                    userLists: {
-                        lists: [],
-                        defaultListIds: { watchlist: '', liked: '', disliked: '' },
-                    },
+                    defaultWatchlist: [],
+                    likedMovies: [],
+                    hiddenMovies: [],
+                    userCreatedWatchlists: [],
                     lastActive: Date.now(),
                 },
             },
