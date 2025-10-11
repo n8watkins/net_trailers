@@ -11,11 +11,11 @@ export const useWatchlist = () => {
     const sessionType = useSessionStore((state) => state.sessionType)
 
     // Use the appropriate store based on session type
-    const authWatchlist = useAuthStore((state) => state.watchlist)
+    const authWatchlist = useAuthStore((state) => state.defaultWatchlist)
     const authAddToWatchlist = useAuthStore((state) => state.addToWatchlist)
     const authRemoveFromWatchlist = useAuthStore((state) => state.removeFromWatchlist)
 
-    const guestWatchlist = useGuestStore((state) => state.watchlist)
+    const guestWatchlist = useGuestStore((state) => state.defaultWatchlist)
     const guestAddToWatchlist = useGuestStore((state) => state.addToWatchlist)
     const guestRemoveFromWatchlist = useGuestStore((state) => state.removeFromWatchlist)
 

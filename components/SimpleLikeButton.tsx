@@ -3,7 +3,7 @@ import ToolTipMod from './ToolTipMod'
 import { useRecoilValue, useRecoilState } from 'recoil'
 import { movieState } from '../atoms/modalAtom'
 import { showDemoMessageState } from '../atoms/userDataAtom'
-import { useRatings } from '../hooks/useRatings'
+import { useLikedHidden } from '../hooks/useLikedHidden'
 import { Content } from '../typings'
 import { HandThumbUpIcon as HandThumbUpIconOutline } from '@heroicons/react/24/outline'
 
@@ -11,20 +11,19 @@ import { HandThumbUpIcon as HandThumbUpIconFilled } from '@heroicons/react/24/so
 
 function SimpleLikeButton() {
     const currentMovie = useRecoilValue(movieState)
-    const { getRating, setRating, removeRating, ratings } = useRatings()
+    const { isLiked: checkIsLiked, addLikedMovie, removeLikedMovie, likedMovies } = useLikedHidden()
     const [showDemoMessage, setShowDemoMessage] = useRecoilState(showDemoMessageState)
     const [isAnimating, setIsAnimating] = useState(false)
 
-    // Get current rating from user data
-    const currentRating = currentMovie ? getRating(currentMovie.id) : null
-    const isLiked = currentRating?.rating === 'liked'
+    // Get current liked status
+    const isLiked = currentMovie ? checkIsLiked(currentMovie.id) : false
 
     // Handle like toggle
     const handleLikeToggle = () => {
         if (!currentMovie) return
 
         // Show demo message for first-time users
-        if (showDemoMessage && ratings.length === 0) {
+        if (showDemoMessage && likedMovies.length === 0) {
             setShowDemoMessage(true)
         }
 
@@ -34,13 +33,13 @@ function SimpleLikeButton() {
             setTimeout(() => setIsAnimating(false), 800) // Animation duration
         }
 
+        const contentObj = currentMovie as Content
         if (isLiked) {
-            // Remove rating if already liked
-            removeRating(currentMovie.id)
+            // Remove if already liked
+            removeLikedMovie(contentObj.id)
         } else {
-            // Set like rating with the content object
-            const contentObj = currentMovie as Content
-            setRating(contentObj.id, 'liked', contentObj)
+            // Add to liked
+            addLikedMovie(contentObj)
         }
     }
 
