@@ -39,6 +39,12 @@ function ListSelectionModal() {
     const allLists = getAllLists()
     const isManagementMode = !targetContent
 
+    // Count custom lists (exclude default lists)
+    const customLists = allLists.filter(
+        (list) => !['Liked', 'Not For Me', 'Watchlist'].includes(list.name)
+    )
+    const hasNoCustomLists = customLists.length === 0
+
     if (!listModal.isOpen) return null
 
     const onClose = () => {
@@ -182,6 +188,19 @@ function ListSelectionModal() {
                                     {targetContent.media_type === 'movie' ? 'Movie' : 'TV Show'}
                                 </p>
                             </div>
+                        </div>
+                    )}
+
+                    {/* Empty State Message - Only show in management mode when no custom lists */}
+                    {isManagementMode && hasNoCustomLists && (
+                        <div className="mb-4 p-4 bg-gray-800/50 border border-gray-700 rounded-lg">
+                            <p className="text-gray-300 text-sm text-center">
+                                You haven&apos;t created any custom lists yet.
+                                <br />
+                                <span className="text-gray-400">
+                                    Create a list to organize your favorite content!
+                                </span>
+                            </p>
                         </div>
                     )}
 
