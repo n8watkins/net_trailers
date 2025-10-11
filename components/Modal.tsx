@@ -215,7 +215,7 @@ function Modal() {
         setNewListName('')
     }
 
-    // Inline dropdown helper functions
+    // Inline dropdown helper functions (NEW SCHEMA)
     const handleWatchlistToggle = () => {
         console.log('🎬 Modal handleWatchlistToggle called')
         if (!currentMovie) {
@@ -223,22 +223,18 @@ function Modal() {
             return
         }
         console.log('🎬 Current movie:', getTitle(currentMovie as Content))
-        const defaultLists = getDefaultLists()
-        const watchlist = defaultLists.watchlist
-        const isInWatchlist = watchlist
-            ? watchlist.items.some((item) => item.id === currentMovie.id)
-            : false
+        const inWatchlist = isInWatchlist(currentMovie.id)
 
-        console.log('🎬 isInWatchlist:', isInWatchlist, 'watchlist exists:', !!watchlist)
+        console.log('🎬 isInWatchlist:', inWatchlist)
 
-        if (isInWatchlist && watchlist) {
+        if (inWatchlist) {
             console.log('🎬 Removing from watchlist...')
-            removeFromList(watchlist.id, currentMovie.id)
+            removeFromWatchlist(currentMovie.id)
             console.log('🎬 Calling showWatchlistRemove')
             showWatchlistRemove(`Removed ${getTitle(currentMovie as Content)} from My List`)
-        } else if (watchlist) {
+        } else {
             console.log('🎬 Adding to watchlist...')
-            addToList(watchlist.id, currentMovie as Content)
+            addToWatchlist(currentMovie as Content)
             console.log('🎬 Calling showWatchlistAdd')
             showWatchlistAdd(`Added ${getTitle(currentMovie as Content)} to My List`)
         }
@@ -368,14 +364,13 @@ function Modal() {
                 if (currentMovie && showModal && !showJsonDebug) {
                     e.preventDefault()
 
-                    // Get the current rating and toggle like
-                    const currentRating = getRating(currentMovie.id)
-                    const isLiked = currentRating?.rating === 'liked'
+                    // Toggle like (NEW SCHEMA)
+                    const liked = isLiked(currentMovie.id)
 
-                    if (isLiked) {
-                        removeRating(currentMovie.id)
+                    if (liked) {
+                        removeLikedMovie(currentMovie.id)
                     } else {
-                        setRating(currentMovie.id, 'liked', currentMovie as Content)
+                        addLikedMovie(currentMovie as Content)
                     }
                 }
             } else if (e.key === 'h' || e.key === 'H') {
@@ -383,19 +378,19 @@ function Modal() {
                 if (currentMovie && showModal && !showJsonDebug) {
                     e.preventDefault()
 
-                    const currentRating = getRating(currentMovie.id)
-                    const isHidden = currentRating?.rating === 'disliked'
+                    // Toggle hidden (NEW SCHEMA)
+                    const hidden = isHidden(currentMovie.id)
 
-                    if (isHidden) {
-                        // Unhide (remove rating)
-                        removeRating(currentMovie.id)
+                    if (hidden) {
+                        // Unhide (remove from hidden)
+                        removeHiddenMovie(currentMovie.id)
                         showContentShown(
                             `${getTitle(currentMovie as Content)} Shown`,
                             'Will appear in recommendations again'
                         )
                     } else {
-                        // Hide (set disliked rating)
-                        setRating(currentMovie.id, 'disliked', currentMovie as Content)
+                        // Hide (add to hidden)
+                        addHiddenMovie(currentMovie as Content)
                         showContentHidden(
                             `${getTitle(currentMovie as Content)} Hidden`,
                             'Hidden from recommendations'
@@ -421,9 +416,12 @@ function Modal() {
         trailer,
         muted,
         playing,
-        getRating,
-        setRating,
-        removeRating,
+        isLiked,
+        isHidden,
+        addLikedMovie,
+        removeLikedMovie,
+        addHiddenMovie,
+        removeHiddenMovie,
         currentMovie,
         showContentShown,
         showContentHidden,
@@ -582,31 +580,10 @@ function Modal() {
                                         className="bg-[#141414] border border-gray-600 rounded-lg shadow-2xl p-4 mb-4 w-64 max-w-sm"
                                     >
                                         {(() => {
-                                            const defaultLists = getDefaultLists()
-                                            const watchlist = defaultLists.watchlist
                                             const listsContaining = getListsContaining(
                                                 currentMovie.id
                                             )
-                                            const isInWatchlist = watchlist
-                                                ? watchlist.items.some(
-                                                      (item) => item.id === currentMovie.id
-                                                  )
-                                                : false
-
-                                            const customLists = getCustomLists()
-                                            // Exclude Liked and Not For Me as they're rating categories, not user lists
-                                            const filteredDefaultLists = Object.values(
-                                                defaultLists
-                                            ).filter(
-                                                (list) =>
-                                                    list &&
-                                                    list.name !== 'Liked' &&
-                                                    list.name !== 'Not For Me'
-                                            )
-                                            const allLists = [
-                                                ...filteredDefaultLists,
-                                                ...customLists,
-                                            ] as UserList[]
+                                            const allLists = getAllLists()
 
                                             return (
                                                 <div className="space-y-3">
@@ -792,7 +769,6 @@ function Modal() {
                                             >
                                                 <button
                                                     className={`relative p-2 sm:p-3 rounded-full border-2 ${(() => {
-                                                        const defaultLists = getDefaultLists()
                                                         const listsContaining = getListsContaining(
                                                             currentMovie.id
                                                         )
@@ -809,7 +785,6 @@ function Modal() {
                                                     }
                                                 >
                                                     {(() => {
-                                                        const defaultLists = getDefaultLists()
                                                         const listsContaining = getListsContaining(
                                                             currentMovie.id
                                                         )
@@ -840,27 +815,25 @@ function Modal() {
                                         {/* Like Button */}
                                         <SimpleLikeButton />
 
-                                        {/* Hide/Unhide Toggle Button */}
+                                        {/* Hide/Unhide Toggle Button (NEW SCHEMA) */}
                                         {currentMovie &&
                                             'media_type' in currentMovie &&
                                             (() => {
-                                                const currentRating = getRating(currentMovie.id)
-                                                const isHidden =
-                                                    currentRating?.rating === 'disliked'
+                                                const hidden = isHidden(currentMovie.id)
 
                                                 return (
-                                                    <ToolTipMod title={isHidden ? 'Show' : 'Hide'}>
+                                                    <ToolTipMod title={hidden ? 'Show' : 'Hide'}>
                                                         <button
                                                             className={`relative p-2 sm:p-3 rounded-full border-2 transition-all duration-200 ${
-                                                                isHidden
+                                                                hidden
                                                                     ? 'border-red-500/50 bg-red-500/20 hover:bg-red-500/40 hover:border-red-500 text-red-300'
                                                                     : 'border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white'
                                                             }`}
                                                             onClick={() => {
                                                                 if (currentMovie) {
-                                                                    if (isHidden) {
-                                                                        // Remove from "Not For Me" list (remove rating)
-                                                                        removeRating(
+                                                                    if (hidden) {
+                                                                        // Remove from hidden movies
+                                                                        removeHiddenMovie(
                                                                             currentMovie.id
                                                                         )
                                                                         showContentShown(
@@ -868,10 +841,8 @@ function Modal() {
                                                                             'Will appear in recommendations again'
                                                                         )
                                                                     } else {
-                                                                        // Add to "Not For Me" list (dislike rating)
-                                                                        setRating(
-                                                                            currentMovie.id,
-                                                                            'disliked',
+                                                                        // Add to hidden movies
+                                                                        addHiddenMovie(
                                                                             currentMovie as Content
                                                                         )
                                                                         showContentHidden(
@@ -882,7 +853,7 @@ function Modal() {
                                                                 }
                                                             }}
                                                         >
-                                                            {isHidden ? (
+                                                            {hidden ? (
                                                                 <EyeSlashIcon className="h-4 w-4 sm:h-6 sm:w-6 text-red-500" />
                                                             ) : (
                                                                 <EyeIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
