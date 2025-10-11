@@ -4,16 +4,20 @@ import Image from 'next/image'
 import {
     EnvelopeIcon,
     KeyIcon,
-    ArrowUpTrayIcon,
     ShareIcon,
     UserCircleIcon,
     TrashIcon,
     ChevronRightIcon,
+    ArrowDownTrayIcon,
 } from '@heroicons/react/24/outline'
 import useAuth from '../hooks/useAuth'
+import useUserData from '../hooks/useUserData'
+import { useAuthStatus } from '../hooks/useAuthStatus'
+import { exportUserDataToCSV } from '../utils/csvExport'
+import { useToast } from '../hooks/useToast'
 import Header from '../components/Header'
 
-type SettingsSection = 'profile' | 'email' | 'password' | 'upload' | 'share' | 'account'
+type SettingsSection = 'profile' | 'email' | 'password' | 'share' | 'account'
 
 interface SettingsProps {
     onOpenAboutModal?: () => void
@@ -27,6 +31,8 @@ interface SidebarItem {
     description: string
     icon: React.ComponentType<any>
     priority: 'low' | 'medium' | 'high' | 'danger'
+    guestOnly?: boolean
+    authenticatedOnly?: boolean
 }
 
 const Settings: React.FC<SettingsProps> = ({
@@ -35,7 +41,13 @@ const Settings: React.FC<SettingsProps> = ({
     onOpenKeyboardShortcuts,
 }) => {
     const [activeSection, setActiveSection] = useState<SettingsSection>('account')
+    const [showClearConfirm, setShowClearConfirm] = useState(false)
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
     const { user } = useAuth()
+    const { isGuest } = useAuthStatus()
+    const userData = useUserData()
+    const { showSuccess, showError } = useToast()
 
     // Define all possible sidebar items
     const allSidebarItems: SidebarItem[] = [
@@ -45,6 +57,7 @@ const Settings: React.FC<SettingsProps> = ({
             description: 'Manage your profile information',
             icon: UserCircleIcon,
             priority: 'medium',
+            authenticatedOnly: true,
         },
         {
             id: 'email',
@@ -52,6 +65,7 @@ const Settings: React.FC<SettingsProps> = ({
             description: 'Change your email address',
             icon: EnvelopeIcon,
             priority: 'medium',
+            authenticatedOnly: true,
         },
         {
             id: 'password',
@@ -59,18 +73,12 @@ const Settings: React.FC<SettingsProps> = ({
             description: 'Update your password',
             icon: KeyIcon,
             priority: 'medium',
-        },
-        {
-            id: 'upload',
-            title: 'Import Data',
-            description: 'Upload watchlists from other platforms',
-            icon: ArrowUpTrayIcon,
-            priority: 'low',
+            authenticatedOnly: true,
         },
         {
             id: 'share',
             title: 'Share & Export',
-            description: 'Share your lists with others',
+            description: 'Share your lists or export data',
             icon: ShareIcon,
             priority: 'low',
         },
@@ -83,11 +91,12 @@ const Settings: React.FC<SettingsProps> = ({
         },
     ]
 
-    // Simple guest mode detection
-    const isGuestMode = !user
-
-    // Show all sidebar items - no complex filtering
-    const sidebarItems = allSidebarItems
+    // Filter sidebar items based on authentication status
+    const sidebarItems = allSidebarItems.filter((item) => {
+        if (isGuest && item.authenticatedOnly) return false
+        if (!isGuest && item.guestOnly) return false
+        return true
+    })
 
     const getUserName = () => {
         if (user?.displayName) {
@@ -96,7 +105,7 @@ const Settings: React.FC<SettingsProps> = ({
         if (user?.email) {
             return user.email.split('@')[0]
         }
-        if (isGuestMode) {
+        if (isGuest) {
             return 'Guest User'
         }
         return 'User'
@@ -129,6 +138,46 @@ const Settings: React.FC<SettingsProps> = ({
                 return 'text-[#b3b3b3]'
         }
     }
+
+    const handleExportData = () => {
+        try {
+            if (userData.userSession?.preferences) {
+                exportUserDataToCSV(userData.userSession.preferences)
+                showSuccess('Data exported successfully!')
+            } else {
+                showError('No data available to export')
+            }
+        } catch (error) {
+            console.error('Error exporting data:', error)
+            showError('Failed to export data')
+        }
+    }
+
+    const handleClearData = () => {
+        try {
+            userData.clearAccountData()
+            setShowClearConfirm(false)
+            showSuccess('All data cleared successfully!')
+        } catch (error) {
+            console.error('Error clearing data:', error)
+            showError('Failed to clear data')
+        }
+    }
+
+    const handleDeleteAccount = async () => {
+        try {
+            if (!isGuest && userData.deleteAccount) {
+                await userData.deleteAccount()
+                setShowDeleteConfirm(false)
+                showSuccess('Account deleted successfully')
+            }
+        } catch (error) {
+            console.error('Error deleting account:', error)
+            showError('Failed to delete account')
+        }
+    }
+
+    const dataSummary = userData.getAccountDataSummary()
 
     return (
         <div className="relative min-h-screen overflow-x-clip">
@@ -205,151 +254,94 @@ const Settings: React.FC<SettingsProps> = ({
                             {/* Main Content */}
                             <div className="flex-1">
                                 <div className="bg-[#141414] rounded-lg border border-[#313131]">
-                                    {activeSection === 'profile' && (
+                                    {activeSection === 'profile' && !isGuest && (
                                         <div className="p-8">
                                             <div className="mb-6">
                                                 <h2 className="text-2xl font-bold text-white mb-2">
                                                     Profile Information
                                                 </h2>
                                                 <p className="text-[#b3b3b3]">
-                                                    {isGuestMode
-                                                        ? 'Manage your guest session information.'
-                                                        : 'Manage your profile and account information.'}
+                                                    Manage your profile and account information.
                                                 </p>
                                             </div>
 
-                                            {isGuestMode ? (
-                                                // Guest user profile
-                                                <div className="space-y-6">
-                                                    <div className="bg-[#0a0a0a] rounded-lg border border-[#313131] p-6">
-                                                        <div className="flex items-center space-x-4 mb-4">
-                                                            <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center">
-                                                                <span className="text-white font-bold text-xl">
-                                                                    G
-                                                                </span>
-                                                            </div>
-                                                            <div>
-                                                                <h3 className="text-xl font-semibold text-white">
-                                                                    Guest User
-                                                                </h3>
-                                                                <p className="text-[#b3b3b3]">
-                                                                    Anonymous session
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                        <div className="space-y-4">
-                                                            <div>
-                                                                <p className="text-[#e5e5e5] font-medium">
-                                                                    Session Status
-                                                                </p>
-                                                                <p className="text-[#b3b3b3]">
-                                                                    Browsing as guest - data is
-                                                                    saved locally
-                                                                </p>
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-[#e5e5e5] font-medium">
-                                                                    Session ID
-                                                                </p>
-                                                                <p className="text-[#777] font-mono text-sm">
-                                                                    {isGuestMode
-                                                                        ? 'Guest Session'
-                                                                        : 'User Session'}
-                                                                </p>
-                                                            </div>
-                                                            <div className="pt-4 border-t border-[#313131]">
-                                                                <p className="text-[#b3b3b3] text-sm mb-4">
-                                                                    To access more features and sync
-                                                                    your data across devices, create
-                                                                    an account.
-                                                                </p>
-                                                                <button className="bannerButton bg-red-600 text-white hover:bg-red-700">
-                                                                    Create Account
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                // Authenticated user profile
-                                                <div className="space-y-6">
-                                                    {/* Profile Picture */}
-                                                    <div className="flex items-center space-x-6">
-                                                        {user?.photoURL ? (
-                                                            <Image
-                                                                src={user.photoURL}
-                                                                alt="Profile"
-                                                                width={96}
-                                                                height={96}
-                                                                className="rounded-full object-cover border-4 border-[#313131]"
-                                                            />
-                                                        ) : (
-                                                            <div className="w-24 h-24 bg-red-600 rounded-full flex items-center justify-center border-4 border-[#313131]">
-                                                                <span className="text-white font-bold text-2xl">
-                                                                    {getUserName()
-                                                                        .charAt(0)
-                                                                        .toUpperCase()}
-                                                                </span>
-                                                            </div>
-                                                        )}
-                                                        <div>
-                                                            <h3 className="text-xl font-semibold text-white">
-                                                                {getUserName()}
-                                                            </h3>
-                                                            <p className="text-[#b3b3b3]">
-                                                                {user?.email || 'No email'}
-                                                            </p>
-                                                            <p className="text-[#777] text-sm mt-1">
-                                                                Member since{' '}
-                                                                {new Date(
-                                                                    user?.metadata?.creationTime ||
-                                                                        Date.now()
-                                                                ).toLocaleDateString()}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Display Name */}
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
-                                                            Display Name
-                                                        </label>
-                                                        <input
-                                                            type="text"
-                                                            value={user?.displayName || ''}
-                                                            placeholder="Enter your display name"
-                                                            className="inputClass w-full max-w-md"
+                                            <div className="space-y-6">
+                                                {/* Profile Picture */}
+                                                <div className="flex items-center space-x-6">
+                                                    {user?.photoURL ? (
+                                                        <Image
+                                                            src={user.photoURL}
+                                                            alt="Profile"
+                                                            width={96}
+                                                            height={96}
+                                                            className="rounded-full object-cover border-4 border-[#313131]"
                                                         />
-                                                    </div>
-
-                                                    {/* Email (read-only) */}
+                                                    ) : (
+                                                        <div className="w-24 h-24 bg-red-600 rounded-full flex items-center justify-center border-4 border-[#313131]">
+                                                            <span className="text-white font-bold text-2xl">
+                                                                {getUserName()
+                                                                    .charAt(0)
+                                                                    .toUpperCase()}
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                     <div>
-                                                        <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
-                                                            Email Address
-                                                        </label>
-                                                        <input
-                                                            type="email"
-                                                            value={user?.email || ''}
-                                                            disabled
-                                                            className="inputClass w-full max-w-md opacity-50 cursor-not-allowed"
-                                                        />
+                                                        <h3 className="text-xl font-semibold text-white">
+                                                            {getUserName()}
+                                                        </h3>
+                                                        <p className="text-[#b3b3b3]">
+                                                            {user?.email || 'No email'}
+                                                        </p>
                                                         <p className="text-[#777] text-sm mt-1">
-                                                            To change your email, use the Email
-                                                            Settings section
+                                                            Member since{' '}
+                                                            {new Date(
+                                                                user?.metadata?.creationTime ||
+                                                                    Date.now()
+                                                            ).toLocaleDateString()}
                                                         </p>
                                                     </div>
-
-                                                    <div className="pt-4">
-                                                        <button className="bannerButton bg-red-600 text-white hover:bg-red-700">
-                                                            Save Changes
-                                                        </button>
-                                                    </div>
                                                 </div>
-                                            )}
+
+                                                {/* Display Name */}
+                                                <div>
+                                                    <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
+                                                        Display Name
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={user?.displayName || ''}
+                                                        placeholder="Enter your display name"
+                                                        className="inputClass w-full max-w-md"
+                                                    />
+                                                </div>
+
+                                                {/* Email (read-only) */}
+                                                <div>
+                                                    <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
+                                                        Email Address
+                                                    </label>
+                                                    <input
+                                                        type="email"
+                                                        value={user?.email || ''}
+                                                        disabled
+                                                        className="inputClass w-full max-w-md opacity-50 cursor-not-allowed"
+                                                    />
+                                                    <p className="text-[#777] text-sm mt-1">
+                                                        To change your email, use the Email Settings
+                                                        section
+                                                    </p>
+                                                </div>
+
+                                                <div className="pt-4">
+                                                    <button className="bannerButton bg-red-600 text-white hover:bg-red-700">
+                                                        Save Changes
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
 
-                                    {activeSection === 'email' && (
+                                    {activeSection === 'email' && !isGuest && (
                                         <div className="p-8">
                                             <div className="mb-6">
                                                 <h2 className="text-2xl font-bold text-white mb-2">
@@ -404,7 +396,7 @@ const Settings: React.FC<SettingsProps> = ({
                                         </div>
                                     )}
 
-                                    {activeSection === 'password' && (
+                                    {activeSection === 'password' && !isGuest && (
                                         <div className="p-8">
                                             <div className="mb-6">
                                                 <h2 className="text-2xl font-bold text-white mb-2">
@@ -459,70 +451,6 @@ const Settings: React.FC<SettingsProps> = ({
                                         </div>
                                     )}
 
-                                    {activeSection === 'upload' && (
-                                        <div className="p-8">
-                                            <div className="mb-6">
-                                                <h2 className="text-2xl font-bold text-white mb-2">
-                                                    Import Data
-                                                </h2>
-                                                <p className="text-[#b3b3b3]">
-                                                    Import watchlists and data from other platforms.
-                                                </p>
-                                            </div>
-
-                                            <div className="max-w-2xl">
-                                                <div className="border-2 border-dashed border-[#313131] rounded-xl p-12 text-center hover:border-[#454545] transition-colors duration-200">
-                                                    <ArrowUpTrayIcon className="w-16 h-16 text-[#b3b3b3] mx-auto mb-6" />
-                                                    <h3 className="text-xl font-semibold text-white mb-2">
-                                                        Upload Watchlist File
-                                                    </h3>
-                                                    <p className="text-[#b3b3b3] mb-6">
-                                                        Support for CSV, JSON, and other formats
-                                                        from Netflix, Hulu, Amazon Prime, and more.
-                                                    </p>
-                                                    <input
-                                                        type="file"
-                                                        accept=".csv,.json,.txt"
-                                                        className="hidden"
-                                                        id="watchlist-upload"
-                                                    />
-                                                    <label
-                                                        htmlFor="watchlist-upload"
-                                                        className="bannerButton bg-red-600 text-white hover:bg-red-700 cursor-pointer"
-                                                    >
-                                                        Choose Files
-                                                    </label>
-                                                </div>
-
-                                                <div className="mt-8">
-                                                    <h4 className="text-lg font-medium text-white mb-4">
-                                                        Supported Platforms
-                                                    </h4>
-                                                    <div className="grid grid-cols-2 gap-4">
-                                                        {[
-                                                            'Netflix',
-                                                            'Amazon Prime',
-                                                            'Hulu',
-                                                            'Disney+',
-                                                            'HBO Max',
-                                                            'Custom CSV',
-                                                        ].map((platform) => (
-                                                            <div
-                                                                key={platform}
-                                                                className="flex items-center p-4 bg-[#0a0a0a] rounded-lg border border-[#313131]"
-                                                            >
-                                                                <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
-                                                                <span className="text-[#e5e5e5]">
-                                                                    {platform}
-                                                                </span>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-
                                     {activeSection === 'share' && (
                                         <div className="p-8">
                                             <div className="mb-6">
@@ -530,38 +458,81 @@ const Settings: React.FC<SettingsProps> = ({
                                                     Share & Export
                                                 </h2>
                                                 <p className="text-[#b3b3b3]">
-                                                    Share your watchlists with others or export your
-                                                    data.
+                                                    {isGuest
+                                                        ? 'Export your data to keep a backup of your watchlists and preferences.'
+                                                        : 'Share your watchlists with others or export your data.'}
                                                 </p>
                                             </div>
 
                                             <div className="space-y-6">
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div className="bg-[#0a0a0a] rounded-xl p-6 border border-[#313131]">
-                                                        <ShareIcon className="w-8 h-8 text-blue-500 mb-4" />
-                                                        <h3 className="text-lg font-semibold text-white mb-2">
-                                                            Share Watchlists
-                                                        </h3>
-                                                        <p className="text-[#b3b3b3] mb-4">
-                                                            Generate shareable links for your
-                                                            watchlists and custom lists.
-                                                        </p>
-                                                        <button className="bannerButton bg-blue-600 text-white hover:bg-blue-700">
-                                                            Manage Sharing
-                                                        </button>
-                                                    </div>
+                                                    {!isGuest && (
+                                                        <div className="bg-[#0a0a0a] rounded-xl p-6 border border-[#313131]">
+                                                            <ShareIcon className="w-8 h-8 text-blue-500 mb-4" />
+                                                            <h3 className="text-lg font-semibold text-white mb-2">
+                                                                Share Watchlists
+                                                            </h3>
+                                                            <p className="text-[#b3b3b3] mb-4">
+                                                                Generate shareable links for your
+                                                                watchlists and custom lists.
+                                                            </p>
+                                                            <button className="bannerButton bg-blue-600 text-white hover:bg-blue-700">
+                                                                Manage Sharing
+                                                            </button>
+                                                        </div>
+                                                    )}
 
-                                                    <div className="bg-[#0a0a0a] rounded-xl p-6 border border-[#313131]">
-                                                        <ArrowUpTrayIcon className="w-8 h-8 text-green-500 mb-4" />
+                                                    <div
+                                                        className={`bg-[#0a0a0a] rounded-xl p-6 border border-[#313131] ${isGuest ? 'md:col-span-2' : ''}`}
+                                                    >
+                                                        <ArrowDownTrayIcon className="w-8 h-8 text-green-500 mb-4" />
                                                         <h3 className="text-lg font-semibold text-white mb-2">
                                                             Export Data
                                                         </h3>
                                                         <p className="text-[#b3b3b3] mb-4">
-                                                            Download your data in various formats
-                                                            (JSON, CSV, XML).
+                                                            Download your watchlists, liked items,
+                                                            and hidden content as CSV file.
                                                         </p>
-                                                        <button className="bannerButton bg-green-600 text-white hover:bg-green-700">
-                                                            Export Data
+
+                                                        {/* Data Summary */}
+                                                        <div className="mb-4 p-4 bg-[#141414] rounded-lg border border-[#313131]">
+                                                            <p className="text-[#e5e5e5] text-sm mb-2">
+                                                                Your data includes:
+                                                            </p>
+                                                            <ul className="text-[#b3b3b3] text-sm space-y-1">
+                                                                <li>
+                                                                    • {dataSummary.watchlistCount}{' '}
+                                                                    watchlist items
+                                                                </li>
+                                                                <li>
+                                                                    • {dataSummary.likedCount} liked
+                                                                    items
+                                                                </li>
+                                                                <li>
+                                                                    • {dataSummary.hiddenCount}{' '}
+                                                                    hidden items
+                                                                </li>
+                                                                {!isGuest && (
+                                                                    <li>
+                                                                        • {dataSummary.listsCount}{' '}
+                                                                        custom lists
+                                                                    </li>
+                                                                )}
+                                                            </ul>
+                                                        </div>
+
+                                                        <button
+                                                            onClick={handleExportData}
+                                                            disabled={dataSummary.isEmpty}
+                                                            className={`bannerButton ${
+                                                                dataSummary.isEmpty
+                                                                    ? 'bg-gray-600 cursor-not-allowed'
+                                                                    : 'bg-green-600 hover:bg-green-700'
+                                                            } text-white`}
+                                                        >
+                                                            {dataSummary.isEmpty
+                                                                ? 'No Data to Export'
+                                                                : 'Export Data (CSV)'}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -576,45 +547,219 @@ const Settings: React.FC<SettingsProps> = ({
                                                     Account Management
                                                 </h2>
                                                 <p className="text-[#b3b3b3]">
-                                                    Manage your account data and deletion options.
+                                                    {isGuest
+                                                        ? 'Manage your local session data.'
+                                                        : 'Manage your account data and deletion options.'}
                                                 </p>
                                             </div>
 
                                             <div className="space-y-6">
+                                                {/* Data Summary Card */}
                                                 <div className="bg-[#0a0a0a] rounded-lg border border-[#313131] p-6">
                                                     <h3 className="text-lg font-semibold text-white mb-4">
-                                                        Account Management
+                                                        {isGuest ? 'Session Data' : 'Account Data'}
                                                     </h3>
-                                                    <p className="text-[#b3b3b3] mb-4">
-                                                        Manage your account data and settings.
-                                                    </p>
+                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                                                        <div className="bg-[#141414] rounded-lg p-4 border border-[#313131]">
+                                                            <p className="text-[#b3b3b3] text-sm">
+                                                                Watchlist
+                                                            </p>
+                                                            <p className="text-white text-2xl font-bold mt-1">
+                                                                {dataSummary.watchlistCount}
+                                                            </p>
+                                                        </div>
+                                                        <div className="bg-[#141414] rounded-lg p-4 border border-[#313131]">
+                                                            <p className="text-[#b3b3b3] text-sm">
+                                                                Liked
+                                                            </p>
+                                                            <p className="text-white text-2xl font-bold mt-1">
+                                                                {dataSummary.likedCount}
+                                                            </p>
+                                                        </div>
+                                                        <div className="bg-[#141414] rounded-lg p-4 border border-[#313131]">
+                                                            <p className="text-[#b3b3b3] text-sm">
+                                                                Hidden
+                                                            </p>
+                                                            <p className="text-white text-2xl font-bold mt-1">
+                                                                {dataSummary.hiddenCount}
+                                                            </p>
+                                                        </div>
+                                                        {!isGuest && (
+                                                            <div className="bg-[#141414] rounded-lg p-4 border border-[#313131]">
+                                                                <p className="text-[#b3b3b3] text-sm">
+                                                                    Lists
+                                                                </p>
+                                                                <p className="text-white text-2xl font-bold mt-1">
+                                                                    {dataSummary.listsCount}
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
                                                     <div className="space-y-3">
-                                                        <button className="w-full text-left p-3 bg-[#141414] hover:bg-[#1a1a1a] rounded-lg border border-[#313131] transition-colors">
-                                                            <span className="text-[#e5e5e5]">
-                                                                Export Data
-                                                            </span>
-                                                            <p className="text-[#b3b3b3] text-sm">
-                                                                Download your watchlists and ratings
-                                                            </p>
+                                                        {/* Export Data Button */}
+                                                        <button
+                                                            onClick={handleExportData}
+                                                            disabled={dataSummary.isEmpty}
+                                                            className={`w-full text-left p-4 rounded-lg border transition-colors ${
+                                                                dataSummary.isEmpty
+                                                                    ? 'bg-[#141414] border-[#313131] cursor-not-allowed opacity-50'
+                                                                    : 'bg-[#141414] hover:bg-[#1a1a1a] border-[#313131]'
+                                                            }`}
+                                                        >
+                                                            <div className="flex items-center justify-between">
+                                                                <div className="flex-1">
+                                                                    <span className="text-[#e5e5e5] font-medium flex items-center gap-2">
+                                                                        <ArrowDownTrayIcon className="w-5 h-5" />
+                                                                        Export Data
+                                                                    </span>
+                                                                    <p className="text-[#b3b3b3] text-sm mt-1">
+                                                                        Download your watchlists and
+                                                                        preferences as CSV
+                                                                    </p>
+                                                                </div>
+                                                            </div>
                                                         </button>
-                                                        <button className="w-full text-left p-3 bg-[#141414] hover:bg-[#1a1a1a] rounded-lg border border-[#313131] transition-colors">
-                                                            <span className="text-[#e5e5e5]">
-                                                                Clear Data
-                                                            </span>
-                                                            <p className="text-[#b3b3b3] text-sm">
-                                                                Remove all saved data
-                                                            </p>
-                                                        </button>
-                                                        <button className="w-full text-left p-3 bg-[#141414] hover:bg-red-900/20 rounded-lg border border-red-600/30 transition-colors">
-                                                            <span className="text-red-400">
-                                                                Delete Account
-                                                            </span>
-                                                            <p className="text-[#b3b3b3] text-sm">
-                                                                Permanently delete your account
-                                                            </p>
-                                                        </button>
+
+                                                        {/* Clear Data Button */}
+                                                        {!showClearConfirm ? (
+                                                            <button
+                                                                onClick={() =>
+                                                                    setShowClearConfirm(true)
+                                                                }
+                                                                disabled={dataSummary.isEmpty}
+                                                                className={`w-full text-left p-4 rounded-lg border transition-colors ${
+                                                                    dataSummary.isEmpty
+                                                                        ? 'bg-[#141414] border-[#313131] cursor-not-allowed opacity-50'
+                                                                        : 'bg-[#141414] hover:bg-orange-900/20 border-orange-600/30'
+                                                                }`}
+                                                            >
+                                                                <div className="flex items-center justify-between">
+                                                                    <div className="flex-1">
+                                                                        <span className="text-orange-400 font-medium flex items-center gap-2">
+                                                                            <TrashIcon className="w-5 h-5" />
+                                                                            Clear Data
+                                                                        </span>
+                                                                        <p className="text-[#b3b3b3] text-sm mt-1">
+                                                                            Remove all saved
+                                                                            watchlists, likes, and
+                                                                            preferences
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            </button>
+                                                        ) : (
+                                                            <div className="p-4 bg-orange-900/20 rounded-lg border border-orange-600/50">
+                                                                <p className="text-orange-400 font-medium mb-2">
+                                                                    Are you sure?
+                                                                </p>
+                                                                <p className="text-[#b3b3b3] text-sm mb-4">
+                                                                    This will permanently delete all
+                                                                    your data. This action cannot be
+                                                                    undone.
+                                                                </p>
+                                                                <div className="flex gap-3">
+                                                                    <button
+                                                                        onClick={handleClearData}
+                                                                        className="bannerButton bg-orange-600 text-white hover:bg-orange-700"
+                                                                    >
+                                                                        Yes, Clear All Data
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() =>
+                                                                            setShowClearConfirm(
+                                                                                false
+                                                                            )
+                                                                        }
+                                                                        className="bannerButton bg-[#313131] text-white hover:bg-[#454545]"
+                                                                    >
+                                                                        Cancel
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Delete Account Button (Authenticated Only) */}
+                                                        {!isGuest && (
+                                                            <>
+                                                                {!showDeleteConfirm ? (
+                                                                    <button
+                                                                        onClick={() =>
+                                                                            setShowDeleteConfirm(
+                                                                                true
+                                                                            )
+                                                                        }
+                                                                        className="w-full text-left p-4 bg-[#141414] hover:bg-red-900/20 rounded-lg border border-red-600/30 transition-colors"
+                                                                    >
+                                                                        <div className="flex items-center justify-between">
+                                                                            <div className="flex-1">
+                                                                                <span className="text-red-400 font-medium flex items-center gap-2">
+                                                                                    <TrashIcon className="w-5 h-5" />
+                                                                                    Delete Account
+                                                                                </span>
+                                                                                <p className="text-[#b3b3b3] text-sm mt-1">
+                                                                                    Permanently
+                                                                                    delete your
+                                                                                    account and all
+                                                                                    data
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+                                                                    </button>
+                                                                ) : (
+                                                                    <div className="p-4 bg-red-900/20 rounded-lg border border-red-600/50">
+                                                                        <p className="text-red-400 font-medium mb-2">
+                                                                            Delete Account?
+                                                                        </p>
+                                                                        <p className="text-[#b3b3b3] text-sm mb-4">
+                                                                            This will permanently
+                                                                            delete your account, all
+                                                                            your data, and cannot be
+                                                                            undone.
+                                                                        </p>
+                                                                        <div className="flex gap-3">
+                                                                            <button
+                                                                                onClick={
+                                                                                    handleDeleteAccount
+                                                                                }
+                                                                                className="bannerButton bg-red-600 text-white hover:bg-red-700"
+                                                                            >
+                                                                                Yes, Delete Account
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() =>
+                                                                                    setShowDeleteConfirm(
+                                                                                        false
+                                                                                    )
+                                                                                }
+                                                                                className="bannerButton bg-[#313131] text-white hover:bg-[#454545]"
+                                                                            >
+                                                                                Cancel
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </div>
+
+                                                {/* Guest Mode Upgrade Prompt */}
+                                                {isGuest && (
+                                                    <div className="bg-[#0a0a0a] rounded-lg border border-blue-600/30 p-6">
+                                                        <h3 className="text-lg font-semibold text-white mb-2">
+                                                            Upgrade to Full Account
+                                                        </h3>
+                                                        <p className="text-[#b3b3b3] mb-4">
+                                                            Create an account to sync your data
+                                                            across devices and unlock additional
+                                                            features like custom lists.
+                                                        </p>
+                                                        <button className="bannerButton bg-red-600 text-white hover:bg-red-700">
+                                                            Create Account
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     )}
