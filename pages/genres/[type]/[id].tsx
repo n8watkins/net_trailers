@@ -12,9 +12,17 @@ import { useRecoilValue } from 'recoil'
 import { userSessionState } from '../../../atoms/userDataAtom'
 import { filterDislikedContent } from '../../../utils/contentFilter'
 
-interface GenrePageProps {}
+interface GenrePageProps {
+    onOpenAboutModal?: () => void
+    onOpenTutorial?: () => void
+    onOpenKeyboardShortcuts?: () => void
+}
 
-const GenrePage: NextPage<GenrePageProps> = () => {
+const GenrePage: NextPage<GenrePageProps> = ({
+    onOpenAboutModal,
+    onOpenTutorial,
+    onOpenKeyboardShortcuts,
+}) => {
     const router = useRouter()
     const { type, id, name, title } = router.query
     const userSession = useRecoilValue(userSessionState)
@@ -273,7 +281,11 @@ const GenrePage: NextPage<GenrePageProps> = () => {
                 <Head>
                     <title>Loading... - NetTrailer</title>
                 </Head>
-                <Header />
+                <Header
+                    onOpenAboutModal={onOpenAboutModal}
+                    onOpenTutorial={onOpenTutorial}
+                    onOpenKeyboardShortcuts={onOpenKeyboardShortcuts}
+                />
                 <main className="relative">
                     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
                         <div className="text-center max-w-md px-6">
@@ -308,7 +320,11 @@ const GenrePage: NextPage<GenrePageProps> = () => {
                 <Head>
                     <title>Error - NetTrailer</title>
                 </Head>
-                <Header />
+                <Header
+                    onOpenAboutModal={onOpenAboutModal}
+                    onOpenTutorial={onOpenTutorial}
+                    onOpenKeyboardShortcuts={onOpenKeyboardShortcuts}
+                />
                 <main className="relative pl-4 pb-16 lg:space-y-24 lg:pl-16">
                     <div className="flex items-center justify-center h-96">
                         <div className="text-center">
@@ -346,7 +362,11 @@ const GenrePage: NextPage<GenrePageProps> = () => {
                 />
             </Head>
 
-            <Header />
+            <Header
+                onOpenAboutModal={onOpenAboutModal}
+                onOpenTutorial={onOpenTutorial}
+                onOpenKeyboardShortcuts={onOpenKeyboardShortcuts}
+            />
 
             <main className="relative pl-4 pb-16 lg:space-y-24 lg:pl-16">
                 <div className="flex flex-col space-y-8 py-16 md:space-y-12 md:py-20 lg:py-24">
