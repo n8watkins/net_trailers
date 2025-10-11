@@ -271,9 +271,10 @@ export class SessionManagerService {
             userId: user.uid,
             isGuest: false,
             preferences: {
-                watchlistCount: userSession.preferences.watchlist.length,
-                ratingsCount: userSession.preferences.ratings.length,
-                listsCount: userSession.preferences.userLists?.lists?.length || 0,
+                watchlistCount: userSession.preferences.defaultWatchlist.length,
+                likedCount: userSession.preferences.likedMovies.length,
+                hiddenCount: userSession.preferences.hiddenMovies.length,
+                listsCount: userSession.preferences.userCreatedWatchlists.length,
             },
             breakdown: {
                 clearSession: `${clearStart}ms`,
@@ -442,13 +443,11 @@ export class SessionManagerService {
     }
 
     private static getDefaultUserPreferences(): UserPreferences {
-        // CRITICAL: Import and use proper default list initialization
-        const { UserListsService } = require('../services/userListsService')
-
         return {
-            watchlist: [],
-            ratings: [],
-            userLists: UserListsService.initializeDefaultLists(), // ← FIX: Proper default lists
+            defaultWatchlist: [],
+            likedMovies: [],
+            hiddenMovies: [],
+            userCreatedWatchlists: [],
             lastActive: Date.now(),
         }
     }
@@ -473,9 +472,10 @@ export class SessionManagerService {
                 guestId: emptySession.guestId,
                 userId: emptySession.userId,
                 preferencesPreview: {
-                    watchlistCount: emptySession.preferences.watchlist.length,
-                    ratingsCount: emptySession.preferences.ratings.length,
-                    listsCount: emptySession.preferences.userLists.lists.length,
+                    watchlistCount: emptySession.preferences.defaultWatchlist.length,
+                    likedCount: emptySession.preferences.likedMovies.length,
+                    hiddenCount: emptySession.preferences.hiddenMovies.length,
+                    listsCount: emptySession.preferences.userCreatedWatchlists.length,
                 },
             },
             timestamp: new Date().toISOString(),

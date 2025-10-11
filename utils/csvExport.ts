@@ -1,4 +1,4 @@
-import { UserPreferences, UserRating } from '../atoms/userDataAtom'
+import { UserPreferences } from '../atoms/userDataAtom'
 import { Content, getTitle, getYear, getContentType, isMovie, isTVShow } from '../typings'
 
 export interface CSVExportRow {
@@ -17,7 +17,7 @@ export function generateCSVContent(userPreferences: UserPreferences): string {
     const rows: CSVExportRow[] = []
 
     // Add watchlist items
-    userPreferences.watchlist.forEach((content) => {
+    userPreferences.defaultWatchlist.forEach((content) => {
         rows.push({
             title: getTitle(content),
             year: getYear(content),
@@ -30,35 +30,32 @@ export function generateCSVContent(userPreferences: UserPreferences): string {
         })
     })
 
-    // Add rated items
-    userPreferences.ratings.forEach((rating) => {
-        if (rating.content) {
-            const content = rating.content
-            rows.push({
-                title: getTitle(content),
-                year: getYear(content),
-                type: getContentType(content),
-                rating: rating.rating,
-                tmdb_id: content.id,
-                imdb_id: content.external_ids?.imdb_id || '',
-                overview: content.overview || '',
-                rating_timestamp: new Date(rating.timestamp).toISOString().split('T')[0],
-                date_added: new Date(rating.timestamp).toISOString().split('T')[0],
-            })
-        } else {
-            // For ratings without full content data, include minimal info
-            rows.push({
-                title: `Content ID: ${rating.contentId}`,
-                year: 'Unknown',
-                type: 'Unknown',
-                rating: rating.rating,
-                tmdb_id: rating.contentId,
-                imdb_id: '',
-                overview: '',
-                rating_timestamp: new Date(rating.timestamp).toISOString().split('T')[0],
-                date_added: new Date(rating.timestamp).toISOString().split('T')[0],
-            })
-        }
+    // Add liked items
+    userPreferences.likedMovies.forEach((content) => {
+        rows.push({
+            title: getTitle(content),
+            year: getYear(content),
+            type: getContentType(content),
+            rating: 'liked',
+            tmdb_id: content.id,
+            imdb_id: content.external_ids?.imdb_id || '',
+            overview: content.overview || '',
+            date_added: new Date(userPreferences.lastActive).toISOString().split('T')[0],
+        })
+    })
+
+    // Add hidden items
+    userPreferences.hiddenMovies.forEach((content) => {
+        rows.push({
+            title: getTitle(content),
+            year: getYear(content),
+            type: getContentType(content),
+            rating: 'hidden',
+            tmdb_id: content.id,
+            imdb_id: content.external_ids?.imdb_id || '',
+            overview: content.overview || '',
+            date_added: new Date(userPreferences.lastActive).toISOString().split('T')[0],
+        })
     })
 
     // Sort by date added (most recent first)

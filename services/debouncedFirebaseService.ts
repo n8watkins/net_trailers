@@ -27,8 +27,9 @@ class DebouncedFirebaseService {
     queueSave(userId: string, preferences: AuthPreferences, source: string = 'unknown') {
         // Track the request
         firebaseTracker.track('queueSave', `DebouncedFirebase-${source}`, userId, {
-            watchlistCount: preferences.watchlist?.length || 0,
-            ratingsCount: preferences.ratings?.length || 0,
+            watchlistCount: preferences.defaultWatchlist?.length || 0,
+            likedCount: preferences.likedMovies?.length || 0,
+            hiddenCount: preferences.hiddenMovies?.length || 0,
         })
 
         // Cancel any pending save for this user
