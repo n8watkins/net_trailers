@@ -4,7 +4,6 @@ import { Content, isMovie, isTVShow } from '../typings'
 import Banner from '../components/Banner'
 import Row from '../components/Row'
 import useAuth from '../hooks/useAuth'
-import Modal from '../components/Modal'
 import NetflixLoader from '../components/NetflixLoader'
 import NetflixError from '../components/NetflixError'
 import { useState, useEffect } from 'react'
@@ -225,7 +224,6 @@ const Home = ({
                         />
                     )}
                 </section>
-                {showModal && <Modal />}
             </main>
         </div>
     )

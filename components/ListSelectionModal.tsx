@@ -166,7 +166,7 @@ function ListSelectionModal() {
     }
 
     return (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center">
+        <div className="fixed inset-0 z-[1400] flex items-center justify-center">
             {/* Backdrop */}
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
@@ -174,9 +174,16 @@ function ListSelectionModal() {
             <div className="relative bg-[#141414] rounded-lg shadow-2xl max-w-md w-full mx-4 max-h-[80vh] overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-700">
-                    <h2 className="text-xl font-semibold text-white">
-                        {isManagementMode ? 'My Lists' : 'Add to Lists'}
-                    </h2>
+                    <div>
+                        <h2 className="text-xl font-semibold text-white">
+                            {isManagementMode ? 'My Lists' : 'Add to Lists'}
+                        </h2>
+                        {!isManagementMode && (
+                            <p className="text-sm text-gray-400 mt-1">
+                                Click any list to add or remove
+                            </p>
+                        )}
+                    </div>
                     <button
                         onClick={onClose}
                         className="p-2 hover:bg-gray-700 rounded-full transition-colors"
@@ -189,22 +196,48 @@ function ListSelectionModal() {
                 <div className="p-6">
                     {/* Target Content Info - Only show when adding content to lists */}
                     {!isManagementMode && targetContent && (
-                        <div className="flex items-center space-x-3 mb-6 p-3 bg-gray-800/50 rounded-lg">
-                            <div className="relative w-12 h-18">
-                                <Image
-                                    src={`https://image.tmdb.org/t/p/w185${targetContent.poster_path}`}
-                                    alt=""
-                                    fill
-                                    className="object-cover rounded"
-                                />
-                            </div>
-                            <div>
-                                <h3 className="text-white font-medium">
-                                    {getTitle(targetContent)}
-                                </h3>
-                                <p className="text-gray-400 text-sm">
-                                    {targetContent.media_type === 'movie' ? 'Movie' : 'TV Show'}
-                                </p>
+                        <div className="mb-6 p-4 bg-gradient-to-r from-gray-800/80 to-gray-900/50 rounded-lg border border-gray-700/50">
+                            <div className="flex items-start space-x-4">
+                                {/* Larger poster image */}
+                                <div className="relative w-24 h-36 flex-shrink-0">
+                                    <Image
+                                        src={`https://image.tmdb.org/t/p/w342${targetContent.poster_path}`}
+                                        alt={getTitle(targetContent)}
+                                        fill
+                                        className="object-cover rounded-lg shadow-lg"
+                                        sizes="(max-width: 96px) 100vw, 96px"
+                                    />
+                                </div>
+                                {/* Content details */}
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="text-white font-bold text-lg leading-tight mb-2 line-clamp-2">
+                                        {getTitle(targetContent)}
+                                    </h3>
+                                    <div className="flex items-center space-x-2 mb-2">
+                                        <span className="inline-block px-2 py-1 bg-gray-700 rounded text-xs text-gray-300 font-medium">
+                                            {targetContent.media_type === 'movie'
+                                                ? 'Movie'
+                                                : 'TV Show'}
+                                        </span>
+                                        {targetContent.release_date && (
+                                            <span className="text-gray-400 text-sm">
+                                                {new Date(targetContent.release_date).getFullYear()}
+                                            </span>
+                                        )}
+                                        {targetContent.first_air_date && (
+                                            <span className="text-gray-400 text-sm">
+                                                {new Date(
+                                                    targetContent.first_air_date
+                                                ).getFullYear()}
+                                            </span>
+                                        )}
+                                    </div>
+                                    {targetContent.overview && (
+                                        <p className="text-gray-400 text-sm line-clamp-2 leading-relaxed">
+                                            {targetContent.overview}
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     )}
@@ -282,9 +315,11 @@ function ListSelectionModal() {
                                         key={list.id}
                                         onClick={() => handleToggleList(list)}
                                         className={`w-full flex items-center justify-between p-3 rounded-lg transition-all duration-200 ${
-                                            isInList
-                                                ? 'bg-white/10 border border-white/20'
-                                                : 'bg-gray-800/50 hover:bg-gray-700/50'
+                                            list.name === 'Watchlist'
+                                                ? 'bg-purple-500/20 border border-purple-500/70'
+                                                : isInList
+                                                  ? 'bg-white/10 border border-white/20'
+                                                  : 'bg-gray-800/50 hover:bg-gray-700/50'
                                         }`}
                                     >
                                         <div className="flex items-center space-x-3">

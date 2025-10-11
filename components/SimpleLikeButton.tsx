@@ -1,18 +1,20 @@
 import React, { useState } from 'react'
 import ToolTipMod from './ToolTipMod'
-import { useRecoilValue, useRecoilState } from 'recoil'
-import { movieState } from '../atoms/modalAtom'
-import { showDemoMessageState } from '../atoms/userDataAtom'
-import { useLikedHidden } from '../hooks/useLikedHidden'
-import { Content } from '../typings'
+import { Content, getTitle } from '../typings'
 import { HandThumbUpIcon as HandThumbUpIconOutline } from '@heroicons/react/24/outline'
-
 import { HandThumbUpIcon as HandThumbUpIconFilled } from '@heroicons/react/24/solid'
+import useUserData from '../hooks/useUserData'
+import { useToast } from '../hooks/useToast'
+import { useAppStore } from '../stores/appStore'
 
 function SimpleLikeButton() {
-    const currentMovie = useRecoilValue(movieState)
-    const { isLiked: checkIsLiked, addLikedMovie, removeLikedMovie, likedMovies } = useLikedHidden()
-    const [showDemoMessage, setShowDemoMessage] = useRecoilState(showDemoMessageState)
+    // Get current movie from Zustand store
+    const { modal } = useAppStore()
+    const currentMovie = modal.content?.content || null
+
+    // Use new schema hooks
+    const { isLiked: checkIsLiked, addLikedMovie, removeLikedMovie } = useUserData()
+    const { showSuccess } = useToast()
     const [isAnimating, setIsAnimating] = useState(false)
 
     // Get current liked status
@@ -21,11 +23,6 @@ function SimpleLikeButton() {
     // Handle like toggle
     const handleLikeToggle = () => {
         if (!currentMovie) return
-
-        // Show demo message for first-time users
-        if (showDemoMessage && likedMovies.length === 0) {
-            setShowDemoMessage(true)
-        }
 
         // Trigger animation when liking (not when unliking)
         if (!isLiked) {
@@ -37,9 +34,11 @@ function SimpleLikeButton() {
         if (isLiked) {
             // Remove if already liked
             removeLikedMovie(contentObj.id)
+            showSuccess(`Unliked ${getTitle(contentObj)}`, 'Removed from your liked content')
         } else {
             // Add to liked
             addLikedMovie(contentObj)
+            showSuccess(`Liked ${getTitle(contentObj)}`, 'Added to your liked content')
         }
     }
 

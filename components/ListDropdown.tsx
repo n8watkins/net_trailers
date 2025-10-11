@@ -2,9 +2,11 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Content, getTitle } from '../typings'
 import useUserData from '../hooks/useUserData'
 import { useToast } from '../hooks/useToast'
-import { useSetRecoilState } from 'recoil'
+import { useRecoilState, useSetRecoilState } from 'recoil'
 import { listModalState } from '../atoms/listModalAtom'
-import { EyeIcon, PlusIcon, CheckIcon, MinusIcon } from '@heroicons/react/24/solid'
+import { authModalState } from '../atoms/authModalAtom'
+import { useAuthStatus } from '../hooks/useAuthStatus'
+import { EyeIcon, PlusIcon, CheckIcon, MinusIcon, LockClosedIcon } from '@heroicons/react/24/solid'
 
 interface ListDropdownProps {
     content: Content
@@ -32,6 +34,8 @@ function ListDropdown({
 
     const { showSuccess, showWatchlistAdd, showWatchlistRemove } = useToast()
     const setListModal = useSetRecoilState(listModalState)
+    const [authModal, setAuthModal] = useRecoilState(authModalState)
+    const { isGuest } = useAuthStatus()
 
     const [showCreateInput, setShowCreateInput] = useState(false)
     const [newListName, setNewListName] = useState('')
@@ -61,18 +65,33 @@ function ListDropdown({
     if (!isOpen) return null
 
     const handleWatchlistToggle = () => {
-        console.log('📋 ListDropdown handleWatchlistToggle called')
-        console.log('📋 Content:', getTitle(content))
-        console.log('📋 inWatchlist:', inWatchlist)
-        if (inWatchlist) {
-            console.log('📋 Removing from watchlist...')
+        console.log('📋 [ListDropdown] handleWatchlistToggle called')
+        console.log('📋 [ListDropdown] Content:', content)
+        console.log('📋 [ListDropdown] Content ID:', content.id)
+        console.log('📋 [ListDropdown] Content Title:', getTitle(content))
+        console.log('📋 [ListDropdown] inWatchlist (cached):', inWatchlist)
+        console.log('📋 [ListDropdown] Current watchlist:', defaultWatchlist)
+        console.log('📋 [ListDropdown] Rechecking isInWatchlist:', isInWatchlist(content.id))
+
+        // Use fresh check instead of cached value
+        const currentlyInWatchlist = isInWatchlist(content.id)
+        console.log('📋 [ListDropdown] Currently in watchlist:', currentlyInWatchlist)
+
+        if (currentlyInWatchlist) {
+            console.log('📋 [ListDropdown] Removing from watchlist...')
             removeFromWatchlist(content.id)
-            console.log('📋 Calling showWatchlistRemove')
+            console.log(
+                '📋 [ListDropdown] After removeFromWatchlist, checking again:',
+                isInWatchlist(content.id)
+            )
             showWatchlistRemove(`Removed ${getTitle(content)} from My List`)
         } else {
-            console.log('📋 Adding to watchlist...')
+            console.log('📋 [ListDropdown] Adding to watchlist...')
             addToWatchlist(content)
-            console.log('📋 Calling showWatchlistAdd')
+            console.log(
+                '📋 [ListDropdown] After addToWatchlist, checking again:',
+                isInWatchlist(content.id)
+            )
             showWatchlistAdd(`Added ${getTitle(content)} to My List`)
         }
         onClose()
@@ -139,8 +158,19 @@ function ListDropdown({
                 </div>
             </button>
 
-            {/* Create New List */}
-            {!showCreateInput ? (
+            {/* Create New List - Auth Gate */}
+            {isGuest ? (
+                <button
+                    onClick={() => {
+                        onClose()
+                        setAuthModal({ isOpen: true, mode: 'signup' })
+                    }}
+                    className="w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-700/50 transition-colors text-left border-b border-gray-600"
+                >
+                    <LockClosedIcon className="w-5 h-5 text-gray-400" />
+                    <span className="text-white font-medium">Sign In to Create Lists</span>
+                </button>
+            ) : !showCreateInput ? (
                 <button
                     onClick={() => setShowCreateInput(true)}
                     className="w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-700/50 transition-colors text-left border-b border-gray-600"

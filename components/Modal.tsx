@@ -517,6 +517,7 @@ function Modal() {
             disableAutoFocus
             disableEnforceFocus
             sx={{
+                zIndex: 50000,
                 '& .MuiBackdrop-root': {
                     backgroundColor: 'rgba(0, 0, 0, 0.9)',
                 },
@@ -980,17 +981,27 @@ function Modal() {
 
                 {/* Keyboard Shortcuts - Below Modal - Hidden in fullscreen */}
                 {!showJsonDebug && !fullScreen && (
-                    <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-full max-w-4xl">
+                    <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-full max-w-4xl z-[50000]">
                         <KeyboardShortcuts
                             shortcuts={[
                                 { key: 'ESC', description: 'Close' },
-                                { key: 'SPACE', description: 'Play/Pause' },
-                                { key: 'M', description: 'Mute/Unmute' },
-                                { key: 'F', description: 'Fullscreen', icon: '⛶' },
-                                { key: 'L', description: 'Like/Unlike', icon: '👍' },
-                                { key: 'H', description: 'Hide/Show' },
-                                { key: 'R', description: 'Watch on YouTube' },
-                            ]}
+                                trailer && {
+                                    key: 'SPACE',
+                                    description: playing ? 'Pause' : 'Play',
+                                },
+                                trailer && { key: 'M', description: muted ? 'Unmute' : 'Mute' },
+                                trailer && { key: 'F', description: 'Fullscreen', icon: '⛶' },
+                                currentMovie && {
+                                    key: 'L',
+                                    description: isLiked(currentMovie.id) ? 'Unlike' : 'Like',
+                                    icon: '👍',
+                                },
+                                currentMovie && {
+                                    key: 'H',
+                                    description: isHidden(currentMovie.id) ? 'Show' : 'Hide',
+                                },
+                                trailer && { key: 'R', description: 'Watch on YouTube' },
+                            ].filter(Boolean)}
                             className="opacity-80 hover:opacity-100 transition-opacity"
                         />
                     </div>

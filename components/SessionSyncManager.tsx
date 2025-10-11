@@ -77,11 +77,14 @@ export function SessionSyncManager() {
                 authStore.syncWithFirebase(user.uid)
             }
         } else if (sessionType === 'guest') {
-            // Load guest data if not already loaded
-            if (!guestStore.lastActive) {
-                console.log('📥 [SessionSyncManager] Loading guest data...')
-                const guestData = GuestStorageService.loadGuestData(activeSessionId)
-                guestStore.loadData(guestData)
+            // FIXED: Sync guest data from localStorage using the correct guestId
+            // Check if we need to load/sync data (either no data or wrong session)
+            if (!guestStore.guestId || guestStore.guestId !== activeSessionId) {
+                console.log('📥 [SessionSyncManager] Syncing guest data from localStorage...', {
+                    activeSessionId,
+                    currentGuestId: guestStore.guestId,
+                })
+                guestStore.syncFromLocalStorage(activeSessionId)
             }
         }
     }, [isInitialized, sessionType, activeSessionId, user])

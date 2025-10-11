@@ -1,17 +1,24 @@
 import { useState, useEffect } from 'react'
-import { BugAntIcon, FireIcon, ChatBubbleBottomCenterTextIcon } from '@heroicons/react/24/outline'
+import {
+    BugAntIcon,
+    FireIcon,
+    ChatBubbleBottomCenterTextIcon,
+    CodeBracketIcon,
+} from '@heroicons/react/24/outline'
 
 interface DebugSettings {
     showFirebaseTracker: boolean
     showFirebaseDebug: boolean
     showToastDebug: boolean
+    showApiResults: boolean
 }
 
 export default function DebugControls() {
     const [settings, setSettings] = useState<DebugSettings>({
-        showFirebaseTracker: true,
+        showFirebaseTracker: false,
         showFirebaseDebug: false,
         showToastDebug: false,
+        showApiResults: false,
     })
 
     // Load settings from localStorage
@@ -62,9 +69,9 @@ export default function DebugControls() {
                         ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
                         : 'bg-gray-800 text-gray-500 border border-gray-700'
                 }`}
-                title="Toggle Firebase Console Debug"
+                title="Toggle Auth Flow Logs"
             >
-                <span className="text-xs">Console</span>
+                <span className="text-xs">Auth Flow Logs</span>
             </button>
 
             {/* Toast Debug Toggle */}
@@ -80,6 +87,20 @@ export default function DebugControls() {
                 <ChatBubbleBottomCenterTextIcon className="w-3 h-3" />
                 <span className="text-xs">Toast</span>
             </button>
+
+            {/* API Results Toggle */}
+            <button
+                onClick={() => toggleSetting('showApiResults')}
+                className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                    settings.showApiResults
+                        ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30'
+                        : 'bg-gray-800 text-gray-500 border border-gray-700'
+                }`}
+                title="Toggle API Results Button"
+            >
+                <CodeBracketIcon className="w-3 h-3" />
+                <span className="text-xs">API Results</span>
+            </button>
         </div>
     )
 }
@@ -87,9 +108,10 @@ export default function DebugControls() {
 // Export a hook to use debug settings in other components
 export function useDebugSettings() {
     const [settings, setSettings] = useState<DebugSettings>({
-        showFirebaseTracker: true,
+        showFirebaseTracker: false,
         showFirebaseDebug: false,
         showToastDebug: false,
+        showApiResults: false,
     })
 
     useEffect(() => {
