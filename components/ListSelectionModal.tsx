@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useRecoilState } from 'recoil'
 import { listModalState } from '../atoms/listModalAtom'
 import useUserData from '../hooks/useUserData'
+import { useAuthStatus } from '../hooks/useAuthStatus'
 import { Content, getTitle } from '../typings'
 import { UserList } from '../types/userLists'
 import Image from 'next/image'
@@ -14,10 +15,12 @@ import {
     PencilIcon,
     TrashIcon,
     Cog6ToothIcon,
+    LockClosedIcon,
 } from '@heroicons/react/24/solid'
 
 function ListSelectionModal() {
     const [listModal, setListModal] = useRecoilState(listModalState)
+    const { isGuest, isAuthenticated } = useAuthStatus()
     const {
         getAllLists,
         addToList,
@@ -26,6 +29,9 @@ function ListSelectionModal() {
         createList,
         updateList,
         deleteList,
+        addToWatchlist,
+        removeFromWatchlist,
+        isInWatchlist,
     } = useUserData()
 
     const [showCreateList, setShowCreateList] = useState(false)
@@ -76,12 +82,22 @@ function ListSelectionModal() {
     const handleToggleList = (list: UserList) => {
         if (!targetContent) return
 
-        const isInList = isContentInList(list.id, targetContent.id)
-
-        if (isInList) {
-            removeFromList(list.id, targetContent.id)
+        // Handle default watchlist separately
+        if (list.id === 'default-watchlist') {
+            const inWatchlist = isInWatchlist(targetContent.id)
+            if (inWatchlist) {
+                removeFromWatchlist(targetContent.id)
+            } else {
+                addToWatchlist(targetContent)
+            }
         } else {
-            addToList(list.id, targetContent)
+            // Handle custom lists
+            const isInList = isContentInList(list.id, targetContent.id)
+            if (isInList) {
+                removeFromList(list.id, targetContent.id)
+            } else {
+                addToList(list.id, targetContent)
+            }
         }
     }
 
@@ -209,9 +225,7 @@ function ListSelectionModal() {
                         {allLists.map((list) => {
                             if (isManagementMode) {
                                 // Management mode - show edit/delete options
-                                const isDefaultList = ['Liked', 'Not For Me', 'Watchlist'].includes(
-                                    list.name
-                                )
+                                const isDefaultList = list.id === 'default-watchlist'
 
                                 return (
                                     <div
@@ -256,7 +270,10 @@ function ListSelectionModal() {
                                 )
                             } else {
                                 // Content addition mode - show toggle functionality
-                                const isInList = isContentInList(list.id, targetContent.id)
+                                const isInList =
+                                    list.id === 'default-watchlist'
+                                        ? isInWatchlist(targetContent.id)
+                                        : isContentInList(list.id, targetContent.id)
 
                                 return (
                                     <button
@@ -291,9 +308,29 @@ function ListSelectionModal() {
                         })}
                     </div>
 
-                    {/* Create New List */}
+                    {/* Create New List - Authenticated Users Only */}
                     <div className="mt-4 pt-4 border-t border-gray-700">
-                        {!showCreateList ? (
+                        {isGuest ? (
+                            <div className="bg-gray-800/30 rounded-lg p-4 border border-gray-700/50">
+                                <div className="flex items-center space-x-3 mb-2">
+                                    <LockClosedIcon className="w-5 h-5 text-gray-400" />
+                                    <h3 className="text-white font-medium">Custom Lists</h3>
+                                </div>
+                                <p className="text-gray-400 text-sm mb-3">
+                                    Sign in to create and manage your own custom watchlists
+                                </p>
+                                <button
+                                    onClick={() => {
+                                        onClose()
+                                        // Redirect to login page or show auth modal
+                                        window.location.href = '/login'
+                                    }}
+                                    className="w-full px-4 py-2 bg-white text-black rounded-lg font-medium transition-all duration-200 hover:bg-gray-200"
+                                >
+                                    Sign In to Create Lists
+                                </button>
+                            </div>
+                        ) : !showCreateList ? (
                             <button
                                 onClick={() => setShowCreateList(true)}
                                 className="w-full flex items-center justify-center space-x-2 p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-all duration-200"
