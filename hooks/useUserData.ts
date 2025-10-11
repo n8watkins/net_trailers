@@ -58,11 +58,35 @@ export default function useUserData() {
                 const list = sessionData.userCreatedWatchlists.find((l) => l.id === listId)
                 return list ? list.items.some((item) => item.id === contentId) : false
             },
-            getListsContaining: (contentId: number) =>
-                sessionData.userCreatedWatchlists.filter((list) =>
-                    list.items.some((item) => item.id === contentId)
-                ),
-            getAllLists: () => sessionData.userCreatedWatchlists,
+            getListsContaining: (contentId: number) => {
+                // Include default watchlist + custom lists
+                const watchlistVirtual = {
+                    id: 'default-watchlist',
+                    name: 'Watchlist',
+                    items: sessionData.defaultWatchlist,
+                    emoji: '📺',
+                    color: '#E50914',
+                    isPublic: false,
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                }
+                const allLists = [watchlistVirtual, ...sessionData.userCreatedWatchlists]
+                return allLists.filter((list) => list.items.some((item) => item.id === contentId))
+            },
+            getAllLists: () => {
+                // Create virtual default watchlist + custom lists
+                const watchlistVirtual = {
+                    id: 'default-watchlist',
+                    name: 'Watchlist',
+                    items: sessionData.defaultWatchlist,
+                    emoji: '📺',
+                    color: '#E50914',
+                    isPublic: false,
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                }
+                return [watchlistVirtual, ...sessionData.userCreatedWatchlists]
+            },
 
             // Account management (guest has limited functionality)
             getAccountDataSummary: () => ({
@@ -152,11 +176,35 @@ export default function useUserData() {
                 const list = sessionData.userCreatedWatchlists.find((l) => l.id === listId)
                 return list ? list.items.some((item) => item.id === contentId) : false
             },
-            getListsContaining: (contentId: number) =>
-                sessionData.userCreatedWatchlists.filter((list) =>
-                    list.items.some((item) => item.id === contentId)
-                ),
-            getAllLists: () => sessionData.userCreatedWatchlists,
+            getListsContaining: (contentId: number) => {
+                // Include default watchlist + custom lists
+                const watchlistVirtual = {
+                    id: 'default-watchlist',
+                    name: 'Watchlist',
+                    items: sessionData.defaultWatchlist,
+                    emoji: '📺',
+                    color: '#E50914',
+                    isPublic: false,
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                }
+                const allLists = [watchlistVirtual, ...sessionData.userCreatedWatchlists]
+                return allLists.filter((list) => list.items.some((item) => item.id === contentId))
+            },
+            getAllLists: () => {
+                // Create virtual default watchlist + custom lists
+                const watchlistVirtual = {
+                    id: 'default-watchlist',
+                    name: 'Watchlist',
+                    items: sessionData.defaultWatchlist,
+                    emoji: '📺',
+                    color: '#E50914',
+                    isPublic: false,
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                }
+                return [watchlistVirtual, ...sessionData.userCreatedWatchlists]
+            },
 
             // Account management (authenticated has full functionality)
             getAccountDataSummary: async () => ({
