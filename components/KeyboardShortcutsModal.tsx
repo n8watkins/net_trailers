@@ -71,7 +71,7 @@ const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ isOpen,
             />
 
             {/* Modal panel */}
-            <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto px-6 py-5 bg-[#181818] border border-gray-600/50 rounded-lg shadow-xl">
+            <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto px-6 py-5 bg-[#0a0a0a] border border-red-500/40 rounded-xl shadow-2xl shadow-red-500/20">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center space-x-3">
