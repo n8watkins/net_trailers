@@ -103,17 +103,22 @@ function Modal() {
 
     const inlineDropdownRef = useRef<HTMLDivElement>(null)
 
-    // User data hooks for inline dropdown
+    // User data hooks for inline dropdown (NEW SCHEMA)
     const {
-        getDefaultLists,
         getListsContaining,
         addToList,
         removeFromList,
         createList,
-        getCustomLists,
-        getRating,
-        setRating,
-        removeRating,
+        getAllLists,
+        isLiked,
+        isHidden,
+        addLikedMovie,
+        addHiddenMovie,
+        removeLikedMovie,
+        removeHiddenMovie,
+        isInWatchlist,
+        addToWatchlist,
+        removeFromWatchlist,
     } = useUserData()
     const {
         showSuccess,
