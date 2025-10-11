@@ -2,24 +2,30 @@ import { useState, useEffect } from 'react'
 import { NextPage } from 'next'
 import Head from 'next/head'
 import Header from '../components/Header'
-import Modal from '../components/Modal'
 import useUserData from '../hooks/useUserData'
 import { EyeSlashIcon, MagnifyingGlassIcon, ArrowDownTrayIcon } from '@heroicons/react/24/solid'
 import { Content, isMovie, isTVShow } from '../typings'
 import { getTitle, getYear } from '../typings'
 import ContentCard from '../components/ContentCard'
-import { useSetRecoilState } from 'recoil'
+import { useSetRecoilState, useRecoilValue } from 'recoil'
 import { modalState, movieState } from '../atoms/modalAtom'
 import { exportUserDataToCSV } from '../utils/csvExport'
 
-const Hidden: NextPage = () => {
+interface Props {
+    onOpenAboutModal?: () => void
+    onOpenTutorial?: () => void
+    onOpenKeyboardShortcuts?: () => void
+}
+
+const Hidden: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }) => {
     const userData = useUserData()
-    const { hiddenMovies } = userData
+    const { hiddenMovies, isGuest } = userData
     const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
 
     const [searchQuery, setSearchQuery] = useState('')
     const setShowModal = useSetRecoilState(modalState)
     const setCurrentMovie = useSetRecoilState(movieState)
+    const showModal = useRecoilValue(modalState)
 
     // Get hidden content directly from hiddenMovies
     const hiddenContent = hiddenMovies.map((item) => ({
@@ -69,10 +75,6 @@ const Hidden: NextPage = () => {
                             content={item.content}
                             className="opacity-75 hover:opacity-100 transition-opacity duration-200"
                         />
-                        {/* Hidden badge overlay */}
-                        <div className="absolute top-2 right-2 bg-red-600/80 rounded-full p-1.5 z-10">
-                            <EyeSlashIcon className="w-4 h-4 text-white" />
-                        </div>
                     </div>
                 ))}
             </div>
@@ -80,7 +82,9 @@ const Hidden: NextPage = () => {
     )
 
     return (
-        <div className="relative min-h-screen bg-gradient-to-b">
+        <div
+            className={`relative min-h-screen overflow-x-clip ${showModal && `overflow-y-hidden`} bg-gradient-to-b`}
+        >
             <Head>
                 <title>Hidden Content - NetTrailer</title>
                 <meta
@@ -89,15 +93,19 @@ const Hidden: NextPage = () => {
                 />
             </Head>
 
-            <Header />
+            <Header
+                onOpenAboutModal={onOpenAboutModal}
+                onOpenTutorial={onOpenTutorial}
+                onOpenKeyboardShortcuts={onOpenKeyboardShortcuts}
+            />
 
             <main className="relative pl-4 pb-24 lg:space-y-24 lg:pl-16">
                 <div className="flex flex-col space-y-8 py-16 md:space-y-12 md:py-20 lg:py-24">
                     {/* Header Section */}
                     <div className="space-y-6">
-                        <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-3 pt-8 sm:pt-10 md:pt-12">
                             <EyeSlashIcon className="w-8 h-8 text-gray-400" />
-                            <h1 className="text-3xl font-bold text-white md:text-4xl lg:text-5xl pt-8 sm:pt-10 md:pt-12">
+                            <h1 className="text-3xl font-bold text-white md:text-4xl lg:text-5xl">
                                 Hidden Content
                             </h1>
                         </div>
@@ -106,6 +114,15 @@ const Hidden: NextPage = () => {
                             Content you&apos;ve hidden from recommendations. These won&apos;t appear
                             in suggestions or on your homepage.
                         </p>
+
+                        {isGuest && (
+                            <div className="bg-gray-800/50 p-4 rounded-lg max-w-2xl">
+                                <p className="text-sm text-gray-300">
+                                    📱 You&apos;re browsing as a guest. Your preferences are saved
+                                    locally. Sign up to sync across devices!
+                                </p>
+                            </div>
+                        )}
 
                         {/* Action Buttons */}
                         {hiddenContent.length > 0 && (
@@ -170,8 +187,6 @@ const Hidden: NextPage = () => {
                     )}
                 </div>
             </main>
-
-            <Modal />
         </div>
     )
 }

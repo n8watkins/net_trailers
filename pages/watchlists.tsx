@@ -2,8 +2,6 @@ import { useState, useEffect, useMemo } from 'react'
 import { NextPage } from 'next'
 import Head from 'next/head'
 import Header from '../components/Header'
-import Modal from '../components/Modal'
-import ListSelectionModal from '../components/ListSelectionModal'
 import useUserData from '../hooks/useUserData'
 import useAuth from '../hooks/useAuth'
 import {
@@ -17,18 +15,31 @@ import {
 import { Content, isMovie, isTVShow } from '../typings'
 import { getTitle, getYear } from '../typings'
 import ContentCard from '../components/ContentCard'
-import { useSetRecoilState } from 'recoil'
+import { useSetRecoilState, useRecoilValue } from 'recoil'
 import { modalState, movieState } from '../atoms/modalAtom'
 import { listModalState } from '../atoms/listModalAtom'
 import { exportUserDataToCSV } from '../utils/csvExport'
 import { UserList } from '../types/userLists'
 import { verifyUserData } from '../utils/verifyUserData'
+import { useDebugSettings } from '../components/DebugControls'
 
-const Watchlists: NextPage = () => {
+interface Props {
+    onOpenAboutModal?: () => void
+    onOpenTutorial?: () => void
+    onOpenKeyboardShortcuts?: () => void
+}
+
+const Watchlists: NextPage<Props> = ({
+    onOpenAboutModal,
+    onOpenTutorial,
+    onOpenKeyboardShortcuts,
+}) => {
     const userData = useUserData()
     const { user } = useAuth()
     const { isGuest, getAllLists } = userData
     const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
+    const debugSettings = useDebugSettings()
+    const showModal = useRecoilValue(modalState)
 
     // Debug logging and verification - FIXED: Only run when user changes
     useEffect(() => {
@@ -160,7 +171,9 @@ const Watchlists: NextPage = () => {
     }
 
     return (
-        <div className="relative min-h-screen bg-gradient-to-b">
+        <div
+            className={`relative min-h-screen overflow-x-clip ${showModal && `overflow-y-hidden`} bg-gradient-to-b`}
+        >
             <Head>
                 <title>Watchlists - NetTrailer</title>
                 <meta
@@ -169,15 +182,19 @@ const Watchlists: NextPage = () => {
                 />
             </Head>
 
-            <Header />
+            <Header
+                onOpenAboutModal={onOpenAboutModal}
+                onOpenTutorial={onOpenTutorial}
+                onOpenKeyboardShortcuts={onOpenKeyboardShortcuts}
+            />
 
             <main className="relative pl-4 pb-24 lg:space-y-24 lg:pl-16">
                 <div className="flex flex-col space-y-8 py-16 md:space-y-12 md:py-20 lg:py-24">
                     {/* Header Section */}
                     <div className="space-y-6">
-                        <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-3 pt-8 sm:pt-10 md:pt-12">
                             <EyeIcon className="w-8 h-8 text-blue-400" />
-                            <h1 className="text-3xl font-bold text-white md:text-4xl lg:text-5xl pt-8 sm:pt-10 md:pt-12">
+                            <h1 className="text-3xl font-bold text-white md:text-4xl lg:text-5xl">
                                 Watchlists
                             </h1>
                         </div>
@@ -187,15 +204,16 @@ const Watchlists: NextPage = () => {
                             watch and organize your content.
                         </p>
 
-                        {/* Debug Button */}
-                        {process.env.NODE_ENV === 'development' && (
-                            <button
-                                onClick={debugAuthState}
-                                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
-                            >
-                                🐛 Debug Auth State
-                            </button>
-                        )}
+                        {/* Debug Button - controlled by Auth Flow Logs toggle */}
+                        {process.env.NODE_ENV === 'development' &&
+                            debugSettings.showFirebaseDebug && (
+                                <button
+                                    onClick={debugAuthState}
+                                    className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+                                >
+                                    🐛 Debug Auth State
+                                </button>
+                            )}
 
                         {isGuest && (
                             <div className="bg-gray-800/50 p-4 rounded-lg max-w-2xl">
@@ -207,30 +225,16 @@ const Watchlists: NextPage = () => {
                         )}
 
                         {/* Action Buttons Row - Above List Filter Buttons */}
-                        {(allLists.some((list) => list.items.length > 0) ||
-                            allLists.length > 3) && (
+                        {allLists.some((list) => list.items.length > 0) && (
                             <div className="flex justify-between items-center py-3 mb-4 border-b border-gray-700/30">
-                                <div className="flex items-center space-x-4">
-                                    {/* Export Button */}
-                                    {allLists.some((list) => list.items.length > 0) && (
-                                        <button
-                                            onClick={handleExportCSV}
-                                            className="flex items-center space-x-2 px-5 py-2.5 bg-gray-800/50 hover:bg-white/10 text-white border border-gray-600 hover:border-gray-400 rounded-full text-sm font-medium transition-all duration-200"
-                                        >
-                                            <ArrowDownTrayIcon className="w-4 h-4" />
-                                            <span>Export to CSV</span>
-                                        </button>
-                                    )}
-
-                                    {/* Manage Lists Button */}
-                                    <button
-                                        onClick={handleManageAllLists}
-                                        className="flex items-center space-x-2 px-5 py-2.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/50 hover:border-blue-400 rounded-full text-sm font-medium transition-all duration-200"
-                                    >
-                                        <Cog6ToothIcon className="w-4 h-4" />
-                                        <span>Manage Lists</span>
-                                    </button>
-                                </div>
+                                {/* Export Button */}
+                                <button
+                                    onClick={handleExportCSV}
+                                    className="flex items-center space-x-2 px-5 py-2.5 bg-gray-800/50 hover:bg-white/10 text-white border border-gray-600 hover:border-gray-400 rounded-full text-sm font-medium transition-all duration-200"
+                                >
+                                    <ArrowDownTrayIcon className="w-4 h-4" />
+                                    <span>Export to CSV</span>
+                                </button>
 
                                 {/* Stats */}
                                 <div className="text-sm text-gray-400">
@@ -379,9 +383,6 @@ const Watchlists: NextPage = () => {
                     )}
                 </div>
             </main>
-
-            <Modal />
-            <ListSelectionModal />
         </div>
     )
 }

@@ -371,6 +371,7 @@ export default function SearchBar({
 
                     <input
                         ref={inputRef}
+                        id="main-search-input"
                         type="text"
                         value={query}
                         onChange={handleInputChange}

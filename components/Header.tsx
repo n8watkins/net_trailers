@@ -164,16 +164,10 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
 
                         {/* Search Bar in Navigation */}
                         <div className="flex items-center search-container">
-                            <div
-                                className={`transition-all duration-300 ease-in-out ${
-                                    isSearchExpanded ? 'w-96' : 'w-72'
-                                }`}
-                                onClick={() => setIsSearchExpanded(true)}
-                            >
+                            <div className="w-96">
                                 <SearchBar
                                     placeholder="Search movies and shows..."
                                     className="w-full"
-                                    onFocus={() => setIsSearchExpanded(true)}
                                 />
                             </div>
                         </div>

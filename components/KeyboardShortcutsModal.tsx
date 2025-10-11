@@ -9,26 +9,25 @@ interface KeyboardShortcut {
 
 const shortcuts: KeyboardShortcut[] = [
     // Navigation
-    { keys: ['/', 'S'], description: 'Focus search bar', category: 'Navigation' },
-    { keys: ['H'], description: 'Go to home page', category: 'Navigation' },
-    { keys: ['L'], description: 'Go to my list/favorites', category: 'Navigation' },
+    { keys: ['Alt', '/'], description: 'Focus search bar', category: 'Navigation' },
+    { keys: ['Alt', 'H'], description: 'Go to home page', category: 'Navigation' },
+    { keys: ['Alt', 'L'], description: 'Go to liked content', category: 'Navigation' },
     { keys: ['Escape'], description: 'Close modal or clear search', category: 'Navigation' },
 
     // Search & Browse
     { keys: ['↑', '↓'], description: 'Navigate search results', category: 'Search & Browse' },
     { keys: ['Enter'], description: 'Open selected result', category: 'Search & Browse' },
-    { keys: ['Ctrl', 'K'], description: 'Quick search (global)', category: 'Search & Browse' },
 
     // Content Actions
-    { keys: ['Space'], description: 'Play/pause video in modal', category: 'Content Actions' },
-    { keys: ['M'], description: 'Toggle mute in video player', category: 'Content Actions' },
+    { keys: ['Space'], description: 'Play/pause video', category: 'Content Actions' },
+    { keys: ['M'], description: 'Toggle mute', category: 'Content Actions' },
     { keys: ['F'], description: 'Toggle fullscreen', category: 'Content Actions' },
-    { keys: ['1'], description: 'Like content (when selected)', category: 'Content Actions' },
-    { keys: ['2'], description: 'Dislike content (when selected)', category: 'Content Actions' },
-    { keys: ['3'], description: 'Add to favorites (when selected)', category: 'Content Actions' },
+    { keys: ['L'], description: 'Like/unlike content', category: 'Content Actions' },
+    { keys: ['H'], description: 'Hide/show content', category: 'Content Actions' },
+    { keys: ['R'], description: 'Watch on YouTube', category: 'Content Actions' },
 
     // General
-    { keys: ['?'], description: 'Show this keyboard shortcuts menu', category: 'General' },
+    { keys: ['?'], description: 'Open keyboard shortcuts menu', category: 'General' },
 ]
 
 const shortcutsByCategory = shortcuts.reduce(
@@ -62,7 +61,7 @@ const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ isOpen,
     }
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[50000] flex items-center justify-center p-4">
             {/* Background overlay */}
             <div
                 className="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-75"

@@ -4,14 +4,26 @@ import Head from 'next/head'
 import Header from '../components/Header'
 import SearchResults from '../components/SearchResults'
 import SearchFilters from '../components/SearchFilters'
-import Modal from '../components/Modal'
 import { useSearch } from '../hooks/useSearch'
+import { useRecoilValue } from 'recoil'
+import { modalState } from '../atoms/modalAtom'
 
-export default function SearchPage() {
+interface Props {
+    onOpenAboutModal?: () => void
+    onOpenTutorial?: () => void
+    onOpenKeyboardShortcuts?: () => void
+}
+
+export default function SearchPage({
+    onOpenAboutModal,
+    onOpenTutorial,
+    onOpenKeyboardShortcuts,
+}: Props) {
     const router = useRouter()
     const { updateQuery, query } = useSearch()
     const [isInitialLoad, setIsInitialLoad] = useState(true)
     const urlUpdateTimeoutRef = useRef<NodeJS.Timeout>()
+    const showModal = useRecoilValue(modalState)
 
     // Update search query from URL parameter (only on initial load)
     useEffect(() => {
@@ -59,7 +71,9 @@ export default function SearchPage() {
     }, [query, router, isInitialLoad])
 
     return (
-        <div className="relative min-h-screen bg-gradient-to-b from-gray-900/10 to-[#010511]">
+        <div
+            className={`relative min-h-screen overflow-x-clip ${showModal && `overflow-y-hidden`} bg-gradient-to-b from-gray-900/10 to-[#010511]`}
+        >
             <Head>
                 <title>{query ? `Search: ${query} - NetTrailer` : 'Search - NetTrailer'}</title>
                 <meta
@@ -72,7 +86,11 @@ export default function SearchPage() {
                 />
             </Head>
 
-            <Header />
+            <Header
+                onOpenAboutModal={onOpenAboutModal}
+                onOpenTutorial={onOpenTutorial}
+                onOpenKeyboardShortcuts={onOpenKeyboardShortcuts}
+            />
 
             <main className="relative pl-16 pb-32 lg:space-y-32 lg:pl-32 xl:pl-40">
                 <div className="pt-32 lg:pt-40">
@@ -87,9 +105,6 @@ export default function SearchPage() {
                     </section>
                 </div>
             </main>
-
-            {/* Modal for detailed movie/TV show view */}
-            <Modal />
         </div>
     )
 }
