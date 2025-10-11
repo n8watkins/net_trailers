@@ -21,6 +21,8 @@ import GenresDropdown from './GenresDropdown'
 import MyListsDropdown from './MyListsDropdown'
 import { useToast } from '../hooks/useToast'
 import { useDebugSettings } from './DebugControls'
+import { useRecoilState } from 'recoil'
+import { authModalState } from '../atoms/authModalAtom'
 
 interface HeaderProps {
     onOpenAboutModal?: () => void
@@ -33,8 +35,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
     const [showSearch, setShowSearch] = useState(false)
     const [showMobileMenu, setShowMobileMenu] = useState(false)
     const [isSearchExpanded, setIsSearchExpanded] = useState(false)
-    const [showAuthModal, setShowAuthModal] = useState(false)
-    const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin')
+    const [authModal, setAuthModal] = useRecoilState(authModalState)
     const router = useRouter()
     const { user } = useAuth()
     const { showSuccess, showError, showWatchlistAdd, showWatchlistRemove } = useToast()
@@ -204,12 +205,10 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                     {/* Avatar Dropdown */}
                     <AvatarDropdown
                         onOpenAuthModal={() => {
-                            setAuthModalMode('signin')
-                            setShowAuthModal(true)
+                            setAuthModal({ isOpen: true, mode: 'signin' })
                         }}
                         onOpenSignUpModal={() => {
-                            setAuthModalMode('signup')
-                            setShowAuthModal(true)
+                            setAuthModal({ isOpen: true, mode: 'signup' })
                         }}
                         onOpenAboutModal={onOpenAboutModal}
                         onOpenTutorial={onOpenTutorial}
@@ -384,9 +383,9 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
 
             {/* Auth Modal - Moved outside header to fix positioning */}
             <AuthModal
-                isOpen={showAuthModal}
-                onClose={() => setShowAuthModal(false)}
-                initialMode={authModalMode}
+                isOpen={authModal.isOpen}
+                onClose={() => setAuthModal({ ...authModal, isOpen: false })}
+                initialMode={authModal.mode}
             />
         </>
     )

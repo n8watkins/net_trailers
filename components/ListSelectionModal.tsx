@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useRecoilState } from 'recoil'
 import { listModalState } from '../atoms/listModalAtom'
+import { authModalState } from '../atoms/authModalAtom'
 import useUserData from '../hooks/useUserData'
 import { useAuthStatus } from '../hooks/useAuthStatus'
 import { Content, getTitle } from '../typings'
@@ -20,6 +21,7 @@ import {
 
 function ListSelectionModal() {
     const [listModal, setListModal] = useRecoilState(listModalState)
+    const [authModal, setAuthModal] = useRecoilState(authModalState)
     const { isGuest, isAuthenticated } = useAuthStatus()
     const {
         getAllLists,
@@ -322,8 +324,8 @@ function ListSelectionModal() {
                                 <button
                                     onClick={() => {
                                         onClose()
-                                        // Redirect to login page or show auth modal
-                                        window.location.href = '/login'
+                                        // Open auth modal with signup mode
+                                        setAuthModal({ isOpen: true, mode: 'signup' })
                                     }}
                                     className="w-full px-4 py-2 bg-white text-black rounded-lg font-medium transition-all duration-200 hover:bg-gray-200"
                                 >

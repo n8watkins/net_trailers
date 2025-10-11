@@ -45,7 +45,11 @@ export default function AuthFlowDebugger() {
     }, [])
 
     const runAuthFlowTest = () => {
-        const steps = []
+        const steps: Array<{
+            step: string
+            status: 'pending' | 'success' | 'error'
+            details?: any
+        }> = []
 
         // Step 1: Check Firebase Config
         const firebaseConfig = {

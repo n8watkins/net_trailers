@@ -63,8 +63,9 @@
 - [ ] Verify text: "Sign in to create and manage your own custom watchlists"
 - [ ] Verify "Sign In to Create Lists" button is visible
 - [ ] Click "Sign In to Create Lists" button
-- [ ] Verify redirects to `/login` page
-- [ ] Return to home page (guest mode should still be active)
+- [ ] Verify auth modal opens (does NOT redirect to /login page)
+- [ ] Verify auth modal opens in "Create Account" mode (signup)
+- [ ] Close auth modal - verify guest mode still active
 
 #### 1.3 Guest Mode - My Lists Management View
 
@@ -84,23 +85,25 @@
 
 #### 2.1 Sign Up Flow
 
-- [ ] Click "Sign In to Create Lists" or go to `/login`
-- [ ] Switch to "Register" tab
+- [ ] Click "Sign In to Create Lists" button (opens auth modal)
+- [ ] Verify modal is in "Create Account" mode
 - [ ] Enter new email (e.g., `testuser+[timestamp]@example.com`)
 - [ ] Enter password (min 6 characters)
-- [ ] Click "Sign Up"
-- [ ] Verify redirects to home page as authenticated user
+- [ ] Enter confirm password (must match)
+- [ ] Click "Create Account"
+- [ ] Verify modal closes and user is authenticated
 - [ ] Verify auth status shown in header (user email or profile icon)
 
 #### 2.2 Sign In Flow
 
 - [ ] Sign out (if signed in)
-- [ ] Go to `/login`
+- [ ] Click avatar dropdown and select "Sign In"
+- [ ] Verify auth modal opens in "Sign In" mode
 - [ ] Use test credentials:
     - Email: `test@nettrailer.dev`
     - Password: `TestPassword123!`
 - [ ] Click "Sign In"
-- [ ] Verify redirects to home page
+- [ ] Verify modal closes and user is authenticated
 - [ ] Verify auth status shown in header
 
 #### 2.3 Session Persistence
