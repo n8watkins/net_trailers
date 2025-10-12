@@ -21,6 +21,8 @@ import ConfirmationModal from '../components/ConfirmationModal'
 import InfoModal from '../components/InfoModal'
 import { useRecoilState } from 'recoil'
 import { authModalState } from '../atoms/authModalAtom'
+import { useAuthStore } from '../stores/authStore'
+import { useGuestStore } from '../stores/guestStore'
 
 type SettingsSection = 'profile' | 'email' | 'password' | 'preferences' | 'share' | 'account'
 
@@ -50,11 +52,20 @@ const Settings: React.FC<SettingsProps> = ({
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [showExportLimitedModal, setShowExportLimitedModal] = useState(false)
 
+    // Preferences state
+    const [childSafetyMode, setChildSafetyMode] = useState(false)
+    const [autoMute, setAutoMute] = useState(true)
+    const [defaultVolume, setDefaultVolume] = useState(50)
+
     const { user } = useAuth()
     const { isGuest } = useAuthStatus()
     const userData = useUserData()
     const { showSuccess, showError } = useToast()
     const [authModal, setAuthModal] = useRecoilState(authModalState)
+
+    // Get direct store access for preferences updates
+    const authStoreUpdatePrefs = useAuthStore((state) => state.updatePreferences)
+    const guestStoreUpdatePrefs = useGuestStore((state) => state.updatePreferences)
 
     // Define all possible sidebar items
     const allSidebarItems: SidebarItem[] = [
@@ -213,6 +224,43 @@ const Settings: React.FC<SettingsProps> = ({
               isEmpty: true,
           }
         : userData.getAccountDataSummary()
+
+    // Load preferences from store only once when initialized
+    React.useEffect(() => {
+        if (!userData.isInitializing && userData.userSession?.preferences) {
+            const prefs = userData.userSession.preferences
+            setChildSafetyMode(prefs.childSafetyMode ?? false)
+            setAutoMute(prefs.autoMute ?? true)
+            setDefaultVolume(prefs.defaultVolume ?? 50)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [userData.isInitializing])
+
+    // Handle saving preferences
+    const handleSavePreferences = async () => {
+        try {
+            // Update preferences through the appropriate store
+            const updatedPreferences = {
+                childSafetyMode,
+                autoMute,
+                defaultVolume,
+            }
+
+            if (isGuest) {
+                // For guest, update the guest store
+                guestStoreUpdatePrefs(updatedPreferences)
+            } else {
+                // For authenticated, update auth store
+                await authStoreUpdatePrefs(updatedPreferences)
+            }
+
+            showSuccess('Preferences saved successfully!')
+            console.log('✅ [Settings] Preferences saved:', updatedPreferences)
+        } catch (error) {
+            console.error('❌ [Settings] Error saving preferences:', error)
+            showError('Failed to save preferences')
+        }
+    }
 
     return (
         <div className="relative min-h-screen overflow-x-clip">
@@ -529,6 +577,12 @@ const Settings: React.FC<SettingsProps> = ({
                                                                 <label className="relative inline-flex items-center cursor-pointer ml-4">
                                                                     <input
                                                                         type="checkbox"
+                                                                        checked={childSafetyMode}
+                                                                        onChange={(e) =>
+                                                                            setChildSafetyMode(
+                                                                                e.target.checked
+                                                                            )
+                                                                        }
                                                                         className="sr-only peer"
                                                                     />
                                                                     <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-red-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
@@ -557,8 +611,13 @@ const Settings: React.FC<SettingsProps> = ({
                                                                 <label className="relative inline-flex items-center cursor-pointer ml-4">
                                                                     <input
                                                                         type="checkbox"
+                                                                        checked={autoMute}
+                                                                        onChange={(e) =>
+                                                                            setAutoMute(
+                                                                                e.target.checked
+                                                                            )
+                                                                        }
                                                                         className="sr-only peer"
-                                                                        defaultChecked
                                                                     />
                                                                     <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-red-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                                                                 </label>
@@ -578,11 +637,18 @@ const Settings: React.FC<SettingsProps> = ({
                                                                         type="range"
                                                                         min="0"
                                                                         max="100"
-                                                                        defaultValue="50"
+                                                                        value={defaultVolume}
+                                                                        onChange={(e) =>
+                                                                            setDefaultVolume(
+                                                                                parseInt(
+                                                                                    e.target.value
+                                                                                )
+                                                                            )
+                                                                        }
                                                                         className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-red-600 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-red-600 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
                                                                     />
                                                                     <span className="text-sm text-[#e5e5e5] min-w-[3rem] text-right">
-                                                                        50%
+                                                                        {defaultVolume}%
                                                                     </span>
                                                                 </div>
                                                             </div>
@@ -591,7 +657,10 @@ const Settings: React.FC<SettingsProps> = ({
 
                                                     {/* Save Button */}
                                                     <div className="flex justify-end">
-                                                        <button className="bannerButton bg-red-600 text-white hover:bg-red-700">
+                                                        <button
+                                                            onClick={handleSavePreferences}
+                                                            className="bannerButton bg-red-600 text-white hover:bg-red-700"
+                                                        >
                                                             Save Preferences
                                                         </button>
                                                     </div>

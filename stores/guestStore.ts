@@ -41,6 +41,9 @@ const getDefaultState = (): GuestState => ({
     defaultWatchlist: [],
     userCreatedWatchlists: [],
     lastActive: 0, // Initialize to 0 for SSR compatibility, will be set to actual timestamp after hydration
+    autoMute: true, // Default to muted for better UX
+    defaultVolume: 50, // Default to 50%
+    childSafetyMode: false, // Default to off
 })
 
 export const useGuestStore = create<GuestStore>((set, get) => ({

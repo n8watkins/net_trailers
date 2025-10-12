@@ -82,6 +82,7 @@ function Modal() {
     const [genres, setGenres] = useState<Genre[]>([])
     const [enhancedMovieData, setEnhancedMovieData] = useState<Content | null>(null)
     const [muted, setMuted] = useState(true)
+    const [volume, setVolume] = useState(0.5) // ReactPlayer uses 0-1 range, default 50%
     const [playing, setPlaying] = useState(true)
     const [trailerEnded, setTrailerEnded] = useState(true)
     const [fullScreen, setFullScreen] = useState(false)
@@ -136,7 +137,13 @@ function Modal() {
         // Subscribe to actual data to trigger re-renders
         defaultWatchlist,
         userCreatedWatchlists,
+        userSession,
     } = useUserData()
+
+    // Get user preferences for video player (must be after useUserData hook)
+    const userAutoMute = userSession?.preferences?.autoMute ?? true
+    const userDefaultVolume = userSession?.preferences?.defaultVolume ?? 50
+
     const {
         showSuccess,
         showWatchlistAdd,
@@ -257,8 +264,10 @@ function Modal() {
         setEnhancedMovieData(null)
         // Reset inline dropdown state
         setShowInlineListDropdown(false)
-        // Reset muted state to always start muted
-        setMuted(true)
+        // Reset muted state to user preference
+        setMuted(userAutoMute)
+        // Reset volume to user preference
+        setVolume(userDefaultVolume / 100)
         // Reset playing state
         setPlaying(true)
         setTrailerEnded(true)
@@ -471,6 +480,12 @@ function Modal() {
         showContentHidden,
     ])
 
+    // Update muted and volume states when user preferences change
+    useEffect(() => {
+        setMuted(userAutoMute)
+        setVolume(userDefaultVolume / 100)
+    }, [userAutoMute, userDefaultVolume])
+
     // Handle auto-play with sound when Play button is clicked
     useEffect(() => {
         if (autoPlayWithSound && trailer && showModal) {
@@ -480,7 +495,7 @@ function Modal() {
             // Reset the flag after use
             setAutoPlayWithSound(false)
         }
-    }, [autoPlayWithSound, trailer, showModal])
+    }, [autoPlayWithSound, trailer, showModal, setAutoPlayWithSound])
 
     // Handle click outside inline dropdown
     useEffect(() => {
@@ -579,7 +594,7 @@ function Modal() {
                                     height="100%"
                                     className={`absolute inset-0 ${fullScreen ? '' : 'rounded-md'}`}
                                     playing={playing}
-                                    volume={0.5}
+                                    volume={volume}
                                     muted={muted}
                                     onEnded={() => {
                                         setTrailerEnded(true)

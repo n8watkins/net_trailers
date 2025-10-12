@@ -9,6 +9,11 @@ export interface AuthPreferences {
     defaultWatchlist: Content[]
     userCreatedWatchlists: UserList[]
     lastActive: number
+    // Playback preferences
+    autoMute?: boolean
+    defaultVolume?: number // 0-100
+    // Content filtering preferences
+    childSafetyMode?: boolean // Restricts to PG-13 and below
 }
 
 export interface AuthSession {

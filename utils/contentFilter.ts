@@ -111,3 +111,103 @@ export function filterSearchResults(
 ): Content[] {
     return filterHiddenContent(searchResults, userPreferences)
 }
+
+// ========================================
+// Child Safety Mode Filtering
+// ========================================
+
+/**
+ * Filter content array based on adult flag (Child Safety Mode)
+ * This is a quick first-pass filter that doesn't require certification data
+ *
+ * @param items - Array of content items
+ * @param childSafetyMode - Whether child safety mode is enabled
+ * @returns Filtered array of content
+ */
+export function filterContentByAdultFlag<T extends { adult?: boolean }>(
+    items: T[],
+    childSafetyMode: boolean
+): T[] {
+    if (!childSafetyMode) {
+        return items
+    }
+
+    return items.filter((item) => item.adult !== true)
+}
+
+/**
+ * Filter content array and return statistics
+ *
+ * @param items - Array of content items
+ * @param childSafetyMode - Whether child safety mode is enabled
+ * @returns Object with filtered items and statistics
+ */
+export function filterContentWithStats<T extends { adult?: boolean }>(
+    items: T[],
+    childSafetyMode: boolean
+): {
+    items: T[]
+    shown: number
+    hidden: number
+    totalBefore: number
+} {
+    const totalBefore = items.length
+
+    if (!childSafetyMode) {
+        return {
+            items,
+            shown: totalBefore,
+            hidden: 0,
+            totalBefore,
+        }
+    }
+
+    const filtered = filterContentByAdultFlag(items, true)
+
+    return {
+        items: filtered,
+        shown: filtered.length,
+        hidden: totalBefore - filtered.length,
+        totalBefore,
+    }
+}
+
+/**
+ * Check if content should be blocked in Child Safety Mode
+ * Uses adult flag as primary indicator
+ *
+ * @param content - Content item to check
+ * @param childSafetyMode - Whether child safety mode is enabled
+ * @returns true if content should be blocked
+ */
+export function isContentRestricted(
+    content: { adult?: boolean },
+    childSafetyMode: boolean
+): boolean {
+    if (!childSafetyMode) {
+        return false
+    }
+
+    // Block if adult flag is true
+    return content.adult === true
+}
+
+/**
+ * Request multiplier for Child Safety Mode
+ * When filtering client-side, we need to request more items
+ * to compensate for items that will be filtered out
+ *
+ * @param childSafetyMode - Whether child safety mode is enabled
+ * @param baseAmount - The desired number of items after filtering
+ * @returns Adjusted amount to request from API
+ */
+export function getRequestMultiplier(childSafetyMode: boolean, baseAmount: number): number {
+    // If child safety is OFF, request exactly what we need
+    if (!childSafetyMode) {
+        return baseAmount
+    }
+
+    // Request 2x items to compensate for filtering
+    // This is a conservative estimate - actual filtering rate varies by content
+    return baseAmount * 2
+}

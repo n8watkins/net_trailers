@@ -48,6 +48,9 @@ const getDefaultState = (): AuthState => ({
     defaultWatchlist: [],
     userCreatedWatchlists: [],
     lastActive: 0, // Initialize to 0 for SSR compatibility, will be set to actual timestamp after hydration
+    autoMute: true, // Default to muted for better UX
+    defaultVolume: 50, // Default to 50%
+    childSafetyMode: false, // Default to off
     syncStatus: 'synced',
 })
 
@@ -526,15 +529,49 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     },
 
     updatePreferences: async (prefs: Partial<AuthState>) => {
+        const state = get()
         set({ syncStatus: 'syncing' })
 
+        // Update local state
         set({
             ...prefs,
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
 
-        set({ syncStatus: 'synced' })
-        console.log('🔄 [AuthStore] Updated preferences')
+        // Save to Firebase (merge preferences with existing data)
+        if (state.userId) {
+            firebaseTracker.track(
+                'saveUserData-updatePreferences',
+                'AuthStore',
+                state.userId,
+                prefs
+            )
+            const { AuthStorageService } = await import('../services/authStorageService')
+            AuthStorageService.saveUserData(state.userId, {
+                likedMovies: state.likedMovies,
+                hiddenMovies: state.hiddenMovies,
+                defaultWatchlist: state.defaultWatchlist,
+                userCreatedWatchlists: state.userCreatedWatchlists,
+                lastActive: Date.now(),
+                ...(prefs.autoMute !== undefined && { autoMute: prefs.autoMute }),
+                ...(prefs.defaultVolume !== undefined && { defaultVolume: prefs.defaultVolume }),
+                ...(prefs.childSafetyMode !== undefined && {
+                    childSafetyMode: prefs.childSafetyMode,
+                }),
+            })
+                .then(() => {
+                    console.log('✅ [AuthStore] Preferences saved to Firestore')
+                    set({ syncStatus: 'synced' })
+                })
+                .catch((error) => {
+                    console.error('❌ [AuthStore] Failed to save preferences to Firestore:', error)
+                    set({ syncStatus: 'offline' })
+                })
+        } else {
+            set({ syncStatus: 'synced' })
+        }
+
+        console.log('🔄 [AuthStore] Updated preferences:', prefs)
     },
 
     syncWithFirebase: async (userId: string) => {
@@ -577,6 +614,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                         defaultWatchlist: firebaseData.defaultWatchlist,
                         userCreatedWatchlists: firebaseData.userCreatedWatchlists,
                         lastActive: firebaseData.lastActive,
+                        autoMute: firebaseData.autoMute ?? true,
+                        defaultVolume: firebaseData.defaultVolume ?? 50,
+                        childSafetyMode: firebaseData.childSafetyMode ?? false,
                         syncStatus: 'synced',
                     })
 
