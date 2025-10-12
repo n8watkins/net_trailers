@@ -968,7 +968,7 @@ function Modal() {
 
                     {/* Content Section - Below Video - Hidden in fullscreen */}
                     {!fullScreen && (
-                        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 flex-1 overflow-y-auto">
+                        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 flex-1 overflow-y-auto min-h-[450px]">
                             {/* Content Metadata - Show immediately with card data, enhanced data loads in background */}
                             {currentMovie || enhancedMovieData ? (
                                 <ContentMetadata
