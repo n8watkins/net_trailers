@@ -24,6 +24,7 @@ import { authModalState } from '../atoms/authModalAtom'
 import { useAuthStore } from '../stores/authStore'
 import { useGuestStore } from '../stores/guestStore'
 import { GuestModeNotification } from '../components/GuestModeNotification'
+import { UpgradeAccountBanner } from '../components/UpgradeAccountBanner'
 
 type SettingsSection = 'profile' | 'email' | 'password' | 'preferences' | 'share' | 'account'
 
@@ -572,13 +573,11 @@ const Settings: React.FC<SettingsProps> = ({
 
                                         {activeSection === 'preferences' && (
                                             <div className="p-8">
-                                                {/* Guest Mode Notification */}
+                                                {/* Upgrade Banner for Guests */}
                                                 {isGuest && (
-                                                    <div className="mb-6">
-                                                        <GuestModeNotification
-                                                            onOpenTutorial={onOpenTutorial}
-                                                        />
-                                                    </div>
+                                                    <UpgradeAccountBanner
+                                                        onOpenTutorial={onOpenTutorial}
+                                                    />
                                                 )}
 
                                                 <div className="mb-6">
@@ -804,13 +803,11 @@ const Settings: React.FC<SettingsProps> = ({
 
                                         {activeSection === 'account' && (
                                             <div className="p-8">
-                                                {/* Guest Mode Notification */}
+                                                {/* Upgrade Banner for Guests */}
                                                 {isGuest && (
-                                                    <div className="mb-6">
-                                                        <GuestModeNotification
-                                                            onOpenTutorial={onOpenTutorial}
-                                                        />
-                                                    </div>
+                                                    <UpgradeAccountBanner
+                                                        onOpenTutorial={onOpenTutorial}
+                                                    />
                                                 )}
 
                                                 <div className="mb-6">
@@ -946,26 +943,6 @@ const Settings: React.FC<SettingsProps> = ({
                                                             )}
                                                         </div>
                                                     </div>
-
-                                                    {/* Guest Mode Upgrade Prompt */}
-                                                    {isGuest && (
-                                                        <div className="bg-[#0a0a0a] rounded-lg border border-blue-600/30 p-6">
-                                                            <h3 className="text-lg font-semibold text-white mb-2">
-                                                                Upgrade to Full Account
-                                                            </h3>
-                                                            <p className="text-[#b3b3b3] mb-4">
-                                                                Create an account to sync your data
-                                                                across devices and unlock additional
-                                                                features like custom lists.
-                                                            </p>
-                                                            <button
-                                                                onClick={handleCreateAccount}
-                                                                className="bannerButton bg-red-600 text-white hover:bg-red-700"
-                                                            >
-                                                                Create Account
-                                                            </button>
-                                                        </div>
-                                                    )}
                                                 </div>
                                             </div>
                                         )}
