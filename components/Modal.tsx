@@ -64,6 +64,7 @@ import { useRecoilState } from 'recoil'
 import { authModalState } from '../atoms/authModalAtom'
 import { listModalState } from '../atoms/listModalAtom'
 import { useDebugSettings } from './DebugControls'
+import { getCachedMovieDetails } from '../utils/prefetchCache'
 
 function Modal() {
     // Debug settings
@@ -316,9 +317,31 @@ function Modal() {
 
         async function fetchMovie() {
             try {
+                const mediaType = currentMovie?.media_type === 'tv' ? 'tv' : 'movie'
+
+                // Check prefetch cache first
+                const cachedData = getCachedMovieDetails(currentMovie.id, mediaType)
+
+                if (cachedData) {
+                    // Use cached data - no loading spinner needed!
+                    if (cachedData?.videos) {
+                        const index = cachedData.videos.results.findIndex(
+                            (element: Element) => element.type === 'Trailer'
+                        )
+                        setTrailer(cachedData.videos?.results[index]?.key)
+                    }
+                    if (cachedData?.genres) {
+                        setGenres(cachedData.genres)
+                    }
+
+                    setEnhancedMovieData(cachedData)
+                    setLoadedMovieId(currentMovie.id)
+                    return // No need to fetch from API
+                }
+
+                // No cached data, fetch from API
                 setLoading(true)
 
-                const mediaType = currentMovie?.media_type === 'tv' ? 'tv' : 'movie'
                 const response = await fetch(
                     `/api/movies/details/${currentMovie?.id}?media_type=${mediaType}`
                 )
