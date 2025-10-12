@@ -50,7 +50,6 @@ import {
 import ReactPlayer from 'react-player'
 import VideoPlayerControls from './VideoPlayerControls'
 import ContentMetadata from './ContentMetadata'
-import ContentMetadataSkeleton from './ContentMetadataSkeleton'
 import KeyboardShortcuts from './KeyboardShortcuts'
 import Image from 'next/image'
 import { Element, Genre } from '../typings'
@@ -977,27 +976,23 @@ function Modal() {
                     {!fullScreen && (
                         <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 flex-1 overflow-y-auto min-h-[450px]">
                             {/* Content Metadata - Show immediately with card data, enhanced data loads in background */}
-                            {currentMovie || enhancedMovieData ? (
-                                <ContentMetadata
-                                    content={(enhancedMovieData || currentMovie) as Content}
-                                    showDebugButton={
-                                        process.env.NODE_ENV === 'development' &&
-                                        debugSettings.showApiResults
+                            <ContentMetadata
+                                content={(enhancedMovieData || currentMovie) as Content}
+                                showDebugButton={
+                                    process.env.NODE_ENV === 'development' &&
+                                    debugSettings.showApiResults
+                                }
+                                onDebugClick={(e) => {
+                                    if (e.ctrlKey || e.metaKey) {
+                                        const mediaType =
+                                            currentMovie?.media_type === 'tv' ? 'tv' : 'movie'
+                                        const url = `/api/movies/details/${currentMovie?.id}?media_type=${mediaType}`
+                                        window.open(url, '_blank')
+                                    } else {
+                                        setShowJsonDebug(true)
                                     }
-                                    onDebugClick={(e) => {
-                                        if (e.ctrlKey || e.metaKey) {
-                                            const mediaType =
-                                                currentMovie?.media_type === 'tv' ? 'tv' : 'movie'
-                                            const url = `/api/movies/details/${currentMovie?.id}?media_type=${mediaType}`
-                                            window.open(url, '_blank')
-                                        } else {
-                                            setShowJsonDebug(true)
-                                        }
-                                    }}
-                                />
-                            ) : (
-                                <ContentMetadataSkeleton />
-                            )}
+                                }}
+                            />
                         </div>
                     )}
                 </div>
