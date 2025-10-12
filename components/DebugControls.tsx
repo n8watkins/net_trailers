@@ -117,7 +117,7 @@ export default function DebugControls() {
 
     return (
         <div
-            className="fixed z-[9999] flex items-center space-x-2 bg-gray-900/95 rounded-lg border border-gray-700 px-3 py-2 select-none transition-all duration-200"
+            className={`fixed z-[9999] flex items-center space-x-2 bg-gray-900/95 rounded-lg border border-gray-700 px-3 py-2 select-none ${isDragging ? '' : 'transition-all duration-200'}`}
             style={{ left: `${position.x}px`, top: `${position.y}px` }}
             onMouseEnter={() => !isDragging && setIsHovered(true)}
             onMouseLeave={() => !isDragging && setIsHovered(false)}
