@@ -33,7 +33,7 @@ const InfoModal: React.FC<InfoModalProps> = ({
             />
 
             {/* Modal panel */}
-            <div className="relative w-full max-w-lg px-8 py-8 overflow-hidden text-center transition-all transform bg-[#141414] rounded-lg shadow-2xl">
+            <div className="relative w-full max-w-lg p-8 overflow-hidden text-center transition-all transform bg-gray-800/30 border border-gray-700/50 rounded-lg shadow-2xl">
                 {/* Close Button */}
                 <button
                     onClick={onClose}
@@ -42,36 +42,33 @@ const InfoModal: React.FC<InfoModalProps> = ({
                     <XMarkIcon className="h-5 w-5" />
                 </button>
 
-                {/* Content */}
-                <div className="bg-gray-800/30 rounded-lg p-8 border border-gray-700/50">
-                    {/* Emoji Icon */}
-                    <div className="flex justify-center mb-6">
-                        <span className="text-6xl">{emoji}</span>
-                    </div>
+                {/* Emoji Icon */}
+                <div className="flex justify-center mb-6">
+                    <span className="text-6xl">{emoji}</span>
+                </div>
 
-                    {/* Title */}
-                    <h3 className="text-white font-bold text-2xl mb-4">{title}</h3>
+                {/* Title */}
+                <h3 className="text-white font-bold text-2xl mb-4">{title}</h3>
 
-                    {/* Message */}
-                    <p className="text-gray-400 text-base leading-relaxed mb-6 max-w-md mx-auto">
-                        {message}
-                    </p>
+                {/* Message */}
+                <p className="text-gray-400 text-base leading-relaxed mb-6 max-w-md mx-auto">
+                    {message}
+                </p>
 
-                    {/* Action Buttons */}
-                    <div className="flex flex-col sm:flex-row gap-3">
-                        <button
-                            onClick={onConfirm}
-                            className="flex-1 px-6 py-3 bg-white text-black rounded-lg font-semibold transition-all duration-200 hover:bg-gray-200"
-                        >
-                            {confirmButtonText}
-                        </button>
-                        <button
-                            onClick={onClose}
-                            className="flex-1 px-6 py-3 bg-gray-700 text-white rounded-lg font-medium transition-all duration-200 hover:bg-gray-600"
-                        >
-                            {cancelButtonText}
-                        </button>
-                    </div>
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <button
+                        onClick={onConfirm}
+                        className="flex-1 px-6 py-3 bg-white text-black rounded-lg font-semibold transition-all duration-200 hover:bg-gray-200"
+                    >
+                        {confirmButtonText}
+                    </button>
+                    <button
+                        onClick={onClose}
+                        className="flex-1 px-6 py-3 bg-gray-700 text-white rounded-lg font-medium transition-all duration-200 hover:bg-gray-600"
+                    >
+                        {cancelButtonText}
+                    </button>
                 </div>
             </div>
         </div>
