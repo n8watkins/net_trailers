@@ -13,6 +13,10 @@ export function UpgradeAccountBanner({ onOpenTutorial }: UpgradeAccountBannerPro
         setAuthModal({ isOpen: true, mode: 'signup' })
     }
 
+    const handleSignIn = () => {
+        setAuthModal({ isOpen: true, mode: 'signin' })
+    }
+
     const handleAdditionalFeaturesClick = () => {
         if (onOpenTutorial) {
             onOpenTutorial()
@@ -26,46 +30,45 @@ export function UpgradeAccountBanner({ onOpenTutorial }: UpgradeAccountBannerPro
                 <div className="absolute -top-10 -right-10 w-32 h-32 bg-blue-600/20 rounded-full blur-3xl"></div>
                 <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-blue-800/20 rounded-full blur-3xl"></div>
 
-                <div className="relative flex items-start gap-4">
-                    {/* Icon */}
-                    <div className="flex-shrink-0">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-800 rounded-full flex items-center justify-center shadow-lg">
-                            <RocketLaunchIcon className="w-6 h-6 text-white" />
-                        </div>
+                <div className="relative">
+                    {/* Title with emoji inline */}
+                    <div className="flex items-center gap-2 mb-3">
+                        <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600">
+                            Upgrade Your Account. It&apos;s Free!
+                        </h3>
+                        <SparklesIcon className="w-5 h-5 text-yellow-400 animate-pulse" />
                     </div>
 
-                    {/* Content */}
-                    <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                            <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600">
-                                Upgrade to Full Account
-                            </h3>
-                            <SparklesIcon className="w-5 h-5 text-yellow-400 animate-pulse" />
-                        </div>
-                        <p className="text-white text-base mb-4 leading-relaxed">
-                            Create an account to{' '}
-                            <span className="font-semibold text-blue-300">
-                                sync your data across devices
-                            </span>{' '}
-                            and unlock{' '}
-                            <button
-                                onClick={handleAdditionalFeaturesClick}
-                                className="font-semibold text-blue-400 underline hover:text-blue-300 transition-colors"
-                            >
-                                additional features
-                            </button>{' '}
-                            like <span className="font-semibold text-cyan-300">custom lists</span>{' '}
-                            and <span className="font-semibold text-sky-300">data export</span>!
-                        </p>
-
-                        {/* Button */}
+                    {/* Description */}
+                    <p className="text-white text-base mb-4 leading-relaxed">
                         <button
                             onClick={handleCreateAccount}
-                            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white text-sm font-semibold rounded-lg transition-all duration-200 shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 hover:scale-105"
+                            className="font-semibold text-blue-400 underline hover:text-blue-300 transition-colors"
                         >
-                            Create Account
-                        </button>
-                    </div>
+                            Create an account
+                        </button>{' '}
+                        to{' '}
+                        <span className="font-semibold text-blue-300">
+                            sync your data across devices
+                        </span>{' '}
+                        and unlock{' '}
+                        <button
+                            onClick={handleAdditionalFeaturesClick}
+                            className="font-semibold text-blue-400 underline hover:text-blue-300 transition-colors"
+                        >
+                            additional features
+                        </button>{' '}
+                        like <span className="font-semibold text-cyan-300">custom lists</span> and{' '}
+                        <span className="font-semibold text-sky-300">data export</span>!
+                    </p>
+
+                    {/* Sign In Button */}
+                    <button
+                        onClick={handleSignIn}
+                        className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white text-sm font-semibold rounded-lg transition-all duration-200 shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 hover:scale-105"
+                    >
+                        Sign In
+                    </button>
                 </div>
             </div>
         </div>
