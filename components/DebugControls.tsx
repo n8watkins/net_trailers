@@ -128,7 +128,7 @@ export default function DebugControls() {
                 title="Drag to move · Hover to expand"
                 onMouseDown={handleDragStart}
             >
-                <BugAntIcon className="w-4 h-4 text-gray-400" />
+                <BugAntIcon className="w-6 h-6 text-gray-400" />
             </div>
 
             {shouldShowControls && (
