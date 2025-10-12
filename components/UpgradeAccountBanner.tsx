@@ -58,8 +58,8 @@ export function UpgradeAccountBanner({ onOpenTutorial }: UpgradeAccountBannerPro
                         >
                             additional features
                         </button>{' '}
-                        like <span className="font-semibold text-cyan-300">custom lists</span> and{' '}
-                        <span className="font-semibold text-sky-300">data export</span>!
+                        like <span className="font-semibold text-blue-300">custom lists</span> and{' '}
+                        <span className="font-semibold text-blue-300">data export</span>!
                     </p>
 
                     {/* Sign In Button */}
