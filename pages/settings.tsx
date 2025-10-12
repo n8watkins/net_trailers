@@ -9,6 +9,7 @@ import {
     TrashIcon,
     ChevronRightIcon,
     ArrowDownTrayIcon,
+    Cog6ToothIcon,
 } from '@heroicons/react/24/outline'
 import useAuth from '../hooks/useAuth'
 import useUserData from '../hooks/useUserData'
@@ -21,7 +22,7 @@ import InfoModal from '../components/InfoModal'
 import { useRecoilState } from 'recoil'
 import { authModalState } from '../atoms/authModalAtom'
 
-type SettingsSection = 'profile' | 'email' | 'password' | 'share' | 'account'
+type SettingsSection = 'profile' | 'email' | 'password' | 'preferences' | 'share' | 'account'
 
 interface SettingsProps {
     onOpenAboutModal?: () => void
@@ -80,6 +81,13 @@ const Settings: React.FC<SettingsProps> = ({
             icon: KeyIcon,
             priority: 'medium',
             authenticatedOnly: true,
+        },
+        {
+            id: 'preferences',
+            title: 'Preferences',
+            description: 'Content filters and playback settings',
+            icon: Cog6ToothIcon,
+            priority: 'low',
         },
         {
             id: 'share',
@@ -481,6 +489,142 @@ const Settings: React.FC<SettingsProps> = ({
                                                     <div className="pt-4">
                                                         <button className="bannerButton bg-red-600 text-white hover:bg-red-700">
                                                             Update Password
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {activeSection === 'preferences' && (
+                                            <div className="p-8">
+                                                <div className="mb-6">
+                                                    <h2 className="text-2xl font-bold text-white mb-2">
+                                                        Preferences
+                                                    </h2>
+                                                    <p className="text-[#b3b3b3]">
+                                                        Customize your content filtering and
+                                                        playback experience
+                                                    </p>
+                                                </div>
+
+                                                <div className="space-y-8">
+                                                    {/* Content & Privacy Section */}
+                                                    <div>
+                                                        <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                                                            Content & Privacy
+                                                        </h3>
+                                                        <div className="space-y-6 bg-[#0a0a0a] rounded-lg border border-[#313131] p-6">
+                                                            {/* Max Content Rating */}
+                                                            <div>
+                                                                <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
+                                                                    Maximum Content Rating
+                                                                </label>
+                                                                <p className="text-xs text-[#b3b3b3] mb-3">
+                                                                    Filter content to show only
+                                                                    movies and TV shows at or below
+                                                                    this rating
+                                                                </p>
+                                                                <select className="inputClass w-full max-w-xs">
+                                                                    <option value="all">
+                                                                        All Ratings (No Filter)
+                                                                    </option>
+                                                                    <option value="G">
+                                                                        G - General Audiences
+                                                                    </option>
+                                                                    <option value="PG">
+                                                                        PG - Parental Guidance
+                                                                    </option>
+                                                                    <option value="PG-13">
+                                                                        PG-13 - Parents Strongly
+                                                                        Cautioned
+                                                                    </option>
+                                                                    <option value="R">
+                                                                        R - Restricted (17+)
+                                                                    </option>
+                                                                    <option value="NC-17">
+                                                                        NC-17 - Adults Only
+                                                                    </option>
+                                                                </select>
+                                                            </div>
+
+                                                            {/* Show Adult Content Toggle */}
+                                                            <div className="flex items-start justify-between pt-4 border-t border-[#313131]">
+                                                                <div className="flex-1">
+                                                                    <label className="block text-sm font-medium text-[#e5e5e5] mb-1">
+                                                                        Show Adult Content
+                                                                    </label>
+                                                                    <p className="text-xs text-[#b3b3b3]">
+                                                                        Include adult/explicit
+                                                                        content in results
+                                                                    </p>
+                                                                </div>
+                                                                <label className="relative inline-flex items-center cursor-pointer ml-4">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        className="sr-only peer"
+                                                                    />
+                                                                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-red-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Playback Settings Section */}
+                                                    <div>
+                                                        <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                                                            Playback Settings
+                                                        </h3>
+                                                        <div className="space-y-6 bg-[#0a0a0a] rounded-lg border border-[#313131] p-6">
+                                                            {/* Auto-mute Toggle */}
+                                                            <div className="flex items-start justify-between">
+                                                                <div className="flex-1">
+                                                                    <label className="block text-sm font-medium text-[#e5e5e5] mb-1">
+                                                                        Auto-mute Trailers
+                                                                    </label>
+                                                                    <p className="text-xs text-[#b3b3b3]">
+                                                                        Start trailers muted when
+                                                                        opening details
+                                                                    </p>
+                                                                </div>
+                                                                <label className="relative inline-flex items-center cursor-pointer ml-4">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        className="sr-only peer"
+                                                                        defaultChecked
+                                                                    />
+                                                                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-red-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                                                                </label>
+                                                            </div>
+
+                                                            {/* Default Volume Slider */}
+                                                            <div className="pt-4 border-t border-[#313131]">
+                                                                <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
+                                                                    Default Volume
+                                                                </label>
+                                                                <p className="text-xs text-[#b3b3b3] mb-3">
+                                                                    Set the initial volume level for
+                                                                    trailers
+                                                                </p>
+                                                                <div className="flex items-center space-x-4">
+                                                                    <input
+                                                                        type="range"
+                                                                        min="0"
+                                                                        max="100"
+                                                                        defaultValue="50"
+                                                                        className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-red-600 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-red-600 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
+                                                                    />
+                                                                    <span className="text-sm text-[#e5e5e5] min-w-[3rem] text-right">
+                                                                        50%
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Save Button */}
+                                                    <div className="flex justify-end">
+                                                        <button className="bannerButton bg-red-600 text-white hover:bg-red-700">
+                                                            Save Preferences
                                                         </button>
                                                     </div>
                                                 </div>
