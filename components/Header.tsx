@@ -129,14 +129,14 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                         <ul className="flex space-x-4 items-center">
                             <li
                                 className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${router.pathname === '/tv' ? 'text-white hover:text-white font-semibold' : ''}`}
-                                onClick={() => router.push('/?filter=tv')}
+                                onClick={() => router.push('/tv')}
                             >
                                 <TvIcon className="h-4 w-4" />
                                 <span>TV Shows</span>
                             </li>
                             <li
                                 className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${router.pathname === '/movies' ? 'text-white hover:text-white font-semibold' : ''}`}
-                                onClick={() => router.push('/?filter=movies')}
+                                onClick={() => router.push('/movies')}
                             >
                                 <FilmIcon className="h-4 w-4" />
                                 <span>Movies</span>
@@ -291,7 +291,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                                         : 'hover:bg-gray-800/50'
                                                 }`}
                                                 onClick={() => {
-                                                    router.push('/?filter=tv')
+                                                    router.push('/tv')
                                                     setShowMobileMenu(false)
                                                 }}
                                             >
@@ -307,7 +307,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                                         : 'hover:bg-gray-800/50'
                                                 }`}
                                                 onClick={() => {
-                                                    router.push('/?filter=movies')
+                                                    router.push('/movies')
                                                     setShowMobileMenu(false)
                                                 }}
                                             >
