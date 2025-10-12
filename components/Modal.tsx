@@ -252,18 +252,19 @@ function Modal() {
 
     const handleClose = () => {
         closeModal()
-        // Reset loaded movie ID when closing modal to allow fresh data next time
-        setLoadedMovieId(null)
-        setTrailer('')
-        setGenres([])
-        setEnhancedMovieData(null)
-        // Reset inline dropdown state
+        // DON'T reset movie data - keep it cached for instant reopen
+        // The data is already in memory, and switching movies clears old data anyway
+        // This works with the prefetch cache for smooth UX
+        // setTrailer('')             // <-- Keep cached!
+        // setGenres([])              // <-- Keep cached!
+        // setEnhancedMovieData(null) // <-- Keep cached!
+        // setLoadedMovieId(null)     // <-- Keep cached!
+
+        // Only reset UI state
         setShowInlineListDropdown(false)
-        // Reset muted state to user preference
+        // Reset video player state to defaults
         setMuted(userAutoMute)
-        // Reset volume to user preference
         setVolume(userDefaultVolume / 100)
-        // Reset playing state
         setPlaying(true)
         setTrailerEnded(true)
     }
