@@ -168,11 +168,6 @@ function Modal() {
         return [watchlistVirtual, ...userCreatedWatchlists]
     }, [defaultWatchlist, userCreatedWatchlists])
 
-    let timeout: ReturnType<typeof setTimeout> | null = null
-    let timeout2: ReturnType<typeof setTimeout> | null = null
-
-    let clickCount = 0
-
     function isFullScreen() {
         return !!document.fullscreenElement
     }
@@ -526,11 +521,6 @@ function Modal() {
         }
     }, [showInlineListDropdown])
 
-    const anchorRef = React.useRef<HTMLDivElement>(null)
-    const [anchorEl, setAnchorEl] = React.useState<HTMLDivElement | null>(null)
-    React.useEffect(() => {
-        setTimeout(() => setAnchorEl(anchorRef?.current), 2000)
-    }, [anchorRef])
     return (
         <MuiModal
             open={showModal}
@@ -781,29 +771,28 @@ function Modal() {
                                     <div className="flex flex-wrap gap-4 sm:gap-8 items-center justify-between">
                                         {/* Left side buttons */}
                                         <div className="flex gap-2 sm:gap-4 items-center">
-                                            {/* Play/Pause button - only show when trailer is available */}
-                                            {trailer && (
-                                                <button
-                                                    className="flex items-center gap-1 sm:gap-2 px-3 py-1.5 sm:px-6 sm:py-2 bg-white text-black hover:bg-white/80 rounded text-sm sm:text-base font-semibold"
-                                                    onClick={togglePlaying}
-                                                >
-                                                    {playing ? (
-                                                        <>
-                                                            <PauseIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-                                                            <span className="hidden sm:inline">
-                                                                Pause
-                                                            </span>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <PlayIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-                                                            <span className="hidden sm:inline">
-                                                                Play
-                                                            </span>
-                                                        </>
-                                                    )}
-                                                </button>
-                                            )}
+                                            {/* Play/Pause button - always show to prevent layout shift */}
+                                            <button
+                                                className="flex items-center gap-1 sm:gap-2 px-3 py-1.5 sm:px-6 sm:py-2 bg-white text-black hover:bg-white/80 rounded text-sm sm:text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                                                onClick={togglePlaying}
+                                                disabled={!trailer}
+                                            >
+                                                {playing ? (
+                                                    <>
+                                                        <PauseIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                                                        <span className="hidden sm:inline">
+                                                            Pause
+                                                        </span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <PlayIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                                                        <span className="hidden sm:inline">
+                                                            Play
+                                                        </span>
+                                                    </>
+                                                )}
+                                            </button>
 
                                             {/* My List Button - Modified to open inline dropdown */}
                                             {currentMovie && 'media_type' in currentMovie && (
