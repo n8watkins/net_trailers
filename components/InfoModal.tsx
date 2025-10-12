@@ -33,7 +33,7 @@ const InfoModal: React.FC<InfoModalProps> = ({
             />
 
             {/* Modal panel */}
-            <div className="relative w-full max-w-lg p-8 overflow-hidden text-center transition-all transform bg-gray-800/30 border border-gray-700/50 rounded-lg shadow-2xl">
+            <div className="relative w-full max-w-lg p-8 overflow-hidden text-center transition-all transform bg-[#0a0a0a] border border-gray-700/50 rounded-lg shadow-2xl">
                 {/* Close Button */}
                 <button
                     onClick={onClose}
