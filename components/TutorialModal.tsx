@@ -1,5 +1,10 @@
 import React from 'react'
-import { XMarkIcon, AcademicCapIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
+import {
+    XMarkIcon,
+    AcademicCapIcon,
+    EyeSlashIcon,
+    ShieldCheckIcon,
+} from '@heroicons/react/24/outline'
 import { HandThumbUpIcon } from '@heroicons/react/24/solid'
 import { useAuthStatus } from '../hooks/useAuthStatus'
 import { useRecoilState } from 'recoil'
@@ -133,6 +138,10 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
                                     </li>
                                     <li className="flex items-start gap-2">
                                         <span className="text-orange-300">✗</span>
+                                        <span>Cannot enable Child Safety Mode</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <span className="text-orange-300">✗</span>
                                         <span>Data saved locally (not synced across devices)</span>
                                     </li>
                                     <li className="flex items-start gap-2">
@@ -235,6 +244,19 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
                                         <p className="text-sm text-gray-400 mt-1">
                                             Press &lsquo;?&rsquo; to view all keyboard shortcuts for
                                             faster navigation
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-start space-x-4">
+                                    <span className="text-[#e50914] font-bold text-lg">•</span>
+                                    <div>
+                                        <p className="font-semibold text-base flex items-center gap-2">
+                                            Child Safety Mode{' '}
+                                            <ShieldCheckIcon className="w-5 h-5 text-red-500" />
+                                        </p>
+                                        <p className="text-sm text-gray-400 mt-1">
+                                            Enable Child Safety Mode to filter out adult content and
+                                            create a safe browsing experience for children
                                         </p>
                                     </div>
                                 </div>
