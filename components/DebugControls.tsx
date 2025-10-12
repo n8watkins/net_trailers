@@ -30,6 +30,7 @@ export default function DebugControls() {
     const [position, setPosition] = useState<Position>({ x: 0, y: 16 })
     const [isDragging, setIsDragging] = useState(false)
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+    const [isHovered, setIsHovered] = useState(false)
     const dragHandleRef = useRef<HTMLDivElement>(null)
     const isFirstMount = useRef(true)
 
@@ -112,72 +113,78 @@ export default function DebugControls() {
 
     return (
         <div
-            className="fixed z-[9999] flex items-center space-x-2 bg-gray-900/95 rounded-lg border border-gray-700 px-3 py-2 select-none"
+            className="fixed z-[9999] flex items-center space-x-2 bg-gray-900/95 rounded-lg border border-gray-700 px-3 py-2 select-none transition-all duration-200"
             style={{ left: `${position.x}px`, top: `${position.y}px` }}
             onMouseDown={handleMouseDown}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
         >
             <div
                 ref={dragHandleRef}
                 className="cursor-move hover:bg-gray-800 rounded p-1 -m-1 transition-colors"
-                title="Drag to move"
+                title="Drag to move · Hover to expand"
             >
                 <BugAntIcon className="w-4 h-4 text-gray-400" />
             </div>
 
-            {/* Firebase Tracker Toggle */}
-            <button
-                onClick={() => toggleSetting('showFirebaseTracker')}
-                className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                    settings.showFirebaseTracker
-                        ? 'bg-orange-600/20 text-orange-400 border border-orange-500/30'
-                        : 'bg-gray-800 text-gray-500 border border-gray-700'
-                }`}
-                title="Toggle Firebase Call Tracker"
-            >
-                <FireIcon className="w-3 h-3" />
-                <span className="text-xs">Firebase</span>
-            </button>
+            {isHovered && (
+                <>
+                    {/* Firebase Tracker Toggle */}
+                    <button
+                        onClick={() => toggleSetting('showFirebaseTracker')}
+                        className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                            settings.showFirebaseTracker
+                                ? 'bg-orange-600/20 text-orange-400 border border-orange-500/30'
+                                : 'bg-gray-800 text-gray-500 border border-gray-700'
+                        }`}
+                        title="Toggle Firebase Call Tracker"
+                    >
+                        <FireIcon className="w-3 h-3" />
+                        <span className="text-xs">Firebase</span>
+                    </button>
 
-            {/* Firebase Debug Toggle */}
-            <button
-                onClick={() => toggleSetting('showFirebaseDebug')}
-                className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                    settings.showFirebaseDebug
-                        ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
-                        : 'bg-gray-800 text-gray-500 border border-gray-700'
-                }`}
-                title="Toggle Auth Flow Logs"
-            >
-                <span className="text-xs">Auth Flow Logs</span>
-            </button>
+                    {/* Firebase Debug Toggle */}
+                    <button
+                        onClick={() => toggleSetting('showFirebaseDebug')}
+                        className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                            settings.showFirebaseDebug
+                                ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
+                                : 'bg-gray-800 text-gray-500 border border-gray-700'
+                        }`}
+                        title="Toggle Auth Flow Logs"
+                    >
+                        <span className="text-xs">Auth Flow Logs</span>
+                    </button>
 
-            {/* Toast Debug Toggle */}
-            <button
-                onClick={() => toggleSetting('showToastDebug')}
-                className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                    settings.showToastDebug
-                        ? 'bg-green-600/20 text-green-400 border border-green-500/30'
-                        : 'bg-gray-800 text-gray-500 border border-gray-700'
-                }`}
-                title="Toggle Toast Debug"
-            >
-                <ChatBubbleBottomCenterTextIcon className="w-3 h-3" />
-                <span className="text-xs">Toast</span>
-            </button>
+                    {/* Toast Debug Toggle */}
+                    <button
+                        onClick={() => toggleSetting('showToastDebug')}
+                        className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                            settings.showToastDebug
+                                ? 'bg-green-600/20 text-green-400 border border-green-500/30'
+                                : 'bg-gray-800 text-gray-500 border border-gray-700'
+                        }`}
+                        title="Toggle Toast Debug"
+                    >
+                        <ChatBubbleBottomCenterTextIcon className="w-3 h-3" />
+                        <span className="text-xs">Toast</span>
+                    </button>
 
-            {/* API Results Toggle */}
-            <button
-                onClick={() => toggleSetting('showApiResults')}
-                className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                    settings.showApiResults
-                        ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30'
-                        : 'bg-gray-800 text-gray-500 border border-gray-700'
-                }`}
-                title="Toggle API Results Button"
-            >
-                <CodeBracketIcon className="w-3 h-3" />
-                <span className="text-xs">API Results</span>
-            </button>
+                    {/* API Results Toggle */}
+                    <button
+                        onClick={() => toggleSetting('showApiResults')}
+                        className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                            settings.showApiResults
+                                ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30'
+                                : 'bg-gray-800 text-gray-500 border border-gray-700'
+                        }`}
+                        title="Toggle API Results Button"
+                    >
+                        <CodeBracketIcon className="w-3 h-3" />
+                        <span className="text-xs">API Results</span>
+                    </button>
+                </>
+            )}
         </div>
     )
 }
