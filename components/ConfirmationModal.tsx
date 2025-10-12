@@ -43,6 +43,12 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         onConfirm()
     }
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            handleConfirm()
+        }
+    }
+
     const isConfirmDisabled = requireTyping && typedText !== confirmationPhrase
 
     const colors = {
@@ -68,14 +74,11 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 
     return (
         <div className="fixed inset-0 z-[50000] flex items-center justify-center p-4">
-            {/* Background overlay */}
-            <div
-                className="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-75"
-                onClick={handleClose}
-            />
+            {/* Background overlay - no onClick to prevent closing */}
+            <div className="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-75" />
 
             {/* Modal panel */}
-            <div className="relative w-full max-w-md px-6 pt-5 pb-4 overflow-hidden text-left transition-all transform bg-[#0a0a0a] border border-red-500/40 rounded-xl shadow-2xl shadow-red-500/20 sm:p-6">
+            <div className="relative w-full max-w-md px-8 py-6 overflow-hidden text-left transition-all transform bg-[#0a0a0a] border border-red-500/40 rounded-xl shadow-2xl shadow-red-500/20">
                 {/* Close Button */}
                 <button
                     onClick={handleClose}
@@ -85,55 +88,57 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                 </button>
 
                 {/* Icon */}
-                <div className="flex items-center justify-center mb-4">
+                <div className="flex items-center justify-center mb-6">
                     <div
-                        className={`w-16 h-16 rounded-full ${colorScheme.bg} border ${colorScheme.border} flex items-center justify-center`}
+                        className={`w-14 h-14 rounded-full ${colorScheme.bg} border ${colorScheme.border} flex items-center justify-center`}
                     >
-                        <ExclamationTriangleIcon className={`w-8 h-8 ${colorScheme.icon}`} />
+                        <ExclamationTriangleIcon className={`w-7 h-7 ${colorScheme.icon}`} />
                     </div>
                 </div>
 
                 {/* Title */}
-                <h3 className={`text-xl font-bold text-center mb-2 ${colorScheme.text}`}>
+                <h3 className={`text-lg font-bold text-center mb-3 ${colorScheme.text}`}>
                     {title}
                 </h3>
 
                 {/* Message */}
-                <p className="text-[#b3b3b3] text-sm text-center mb-4">{message}</p>
+                <p className="text-[#b3b3b3] text-sm text-center mb-6 leading-relaxed">{message}</p>
 
                 {/* Confirm Text */}
-                <div
-                    className={`p-4 ${colorScheme.bg} rounded-lg border ${colorScheme.border} mb-4`}
-                >
-                    <p className="text-white text-sm font-medium">{confirmText}</p>
-                </div>
+                {confirmText && (
+                    <div
+                        className={`p-3 ${colorScheme.bg} rounded-lg border ${colorScheme.border} mb-6`}
+                    >
+                        <p className="text-white text-xs font-medium">{confirmText}</p>
+                    </div>
+                )}
 
                 {/* Typing Confirmation */}
                 {requireTyping && (
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
-                            Type <span className="font-mono font-bold">{confirmationPhrase}</span>{' '}
-                            to confirm:
+                    <div className="mb-6">
+                        <label className="block text-sm text-[#e5e5e5] mb-2">
+                            Type <span className="font-bold">{confirmationPhrase}</span> to confirm:
                         </label>
                         <input
                             type="text"
                             value={typedText}
                             onChange={(e) => setTypedText(e.target.value)}
+                            onKeyDown={handleKeyDown}
                             placeholder={confirmationPhrase}
-                            className="inputClass w-full"
+                            className="w-full text-sm px-4 py-2 bg-[#0a0a0a] border border-[#313131] rounded-lg text-white placeholder-[#666] text-center focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-transparent transition-all"
                             autoFocus
                         />
                     </div>
                 )}
 
                 {/* Action Buttons */}
-                <div className="flex gap-3 mt-6">
+                <div className="flex gap-3">
                     <button
                         onClick={handleConfirm}
                         disabled={isConfirmDisabled}
-                        className={`flex-1 bannerButton ${
+                        className={`flex-1 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                             isConfirmDisabled
-                                ? 'bg-gray-600 cursor-not-allowed opacity-50'
+                                ? 'bg-gray-600 cursor-not-allowed opacity-50 text-white'
                                 : `${colorScheme.button} text-white`
                         }`}
                     >
@@ -141,7 +146,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                     </button>
                     <button
                         onClick={handleClose}
-                        className="flex-1 bannerButton bg-[#313131] text-white hover:bg-[#454545]"
+                        className="flex-1 px-4 py-2 text-sm font-medium text-white bg-[#313131] hover:bg-[#454545] rounded-lg transition-colors"
                     >
                         {cancelButtonText}
                     </button>

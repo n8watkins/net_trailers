@@ -17,6 +17,8 @@ import { exportUserDataToCSV } from '../utils/csvExport'
 import { useToast } from '../hooks/useToast'
 import Header from '../components/Header'
 import ConfirmationModal from '../components/ConfirmationModal'
+import { useRecoilState } from 'recoil'
+import { authModalState } from '../atoms/authModalAtom'
 
 type SettingsSection = 'profile' | 'email' | 'password' | 'share' | 'account'
 
@@ -44,11 +46,13 @@ const Settings: React.FC<SettingsProps> = ({
     const [activeSection, setActiveSection] = useState<SettingsSection>('account')
     const [showClearConfirm, setShowClearConfirm] = useState(false)
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+    const [showExportLimitedModal, setShowExportLimitedModal] = useState(false)
 
     const { user } = useAuth()
     const { isGuest } = useAuthStatus()
     const userData = useUserData()
     const { showSuccess, showError } = useToast()
+    const [authModal, setAuthModal] = useRecoilState(authModalState)
 
     // Define all possible sidebar items
     const allSidebarItems: SidebarItem[] = [
@@ -82,11 +86,12 @@ const Settings: React.FC<SettingsProps> = ({
             description: 'Share your lists or export data',
             icon: ShareIcon,
             priority: 'low',
+            authenticatedOnly: true,
         },
         {
             id: 'account',
-            title: 'Account Management',
-            description: 'Export data, clear data, or delete account',
+            title: 'Data Management',
+            description: 'Export, clear, or manage your data',
             icon: TrashIcon,
             priority: 'danger',
         },
@@ -141,6 +146,12 @@ const Settings: React.FC<SettingsProps> = ({
     }
 
     const handleExportData = () => {
+        // Show limitation modal for guest users
+        if (isGuest) {
+            setShowExportLimitedModal(true)
+            return
+        }
+
         try {
             if (userData.userSession?.preferences) {
                 exportUserDataToCSV(userData.userSession.preferences)
@@ -152,6 +163,10 @@ const Settings: React.FC<SettingsProps> = ({
             console.error('Error exporting data:', error)
             showError('Failed to export data')
         }
+    }
+
+    const handleCreateAccount = () => {
+        setAuthModal({ isOpen: true, mode: 'signup' })
     }
 
     const handleClearData = () => {
@@ -568,12 +583,12 @@ const Settings: React.FC<SettingsProps> = ({
                                             <div className="p-8">
                                                 <div className="mb-6">
                                                     <h2 className="text-2xl font-bold text-white mb-2">
-                                                        Account Management
+                                                        Data Management
                                                     </h2>
                                                     <p className="text-[#b3b3b3]">
                                                         {isGuest
-                                                            ? 'Manage your local session data.'
-                                                            : 'Manage your account data and deletion options.'}
+                                                            ? 'Export, clear, or manage your local session data.'
+                                                            : 'Export, clear, or manage your account data.'}
                                                     </p>
                                                 </div>
 
@@ -711,7 +726,10 @@ const Settings: React.FC<SettingsProps> = ({
                                                                 across devices and unlock additional
                                                                 features like custom lists.
                                                             </p>
-                                                            <button className="bannerButton bg-red-600 text-white hover:bg-red-700">
+                                                            <button
+                                                                onClick={handleCreateAccount}
+                                                                className="bannerButton bg-red-600 text-white hover:bg-red-700"
+                                                            >
                                                                 Create Account
                                                             </button>
                                                         </div>
@@ -738,7 +756,7 @@ const Settings: React.FC<SettingsProps> = ({
                 confirmButtonText="Clear All Data"
                 cancelButtonText="Cancel"
                 requireTyping={true}
-                confirmationPhrase="CLEAR DATA"
+                confirmationPhrase="clear"
                 dangerLevel="warning"
             />
 
@@ -752,8 +770,22 @@ const Settings: React.FC<SettingsProps> = ({
                 confirmButtonText="Delete My Account"
                 cancelButtonText="Cancel"
                 requireTyping={true}
-                confirmationPhrase="DELETE"
+                confirmationPhrase="delete"
                 dangerLevel="danger"
+            />
+
+            {/* Export Limited Modal for Guest Users */}
+            <ConfirmationModal
+                isOpen={showExportLimitedModal}
+                onClose={() => setShowExportLimitedModal(false)}
+                onConfirm={handleCreateAccount}
+                title="Export Data Requires Account"
+                message="CSV export is only available to users with accounts. This ensures your data is properly synced and secure across all your devices."
+                confirmText="Create an account to unlock CSV export and sync your data across devices."
+                confirmButtonText="Create Account"
+                cancelButtonText="Maybe Later"
+                requireTyping={false}
+                dangerLevel="warning"
             />
         </div>
     )

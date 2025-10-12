@@ -104,6 +104,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
                                 </p>
                                 <ul className="text-gray-400 text-xs space-y-1 mb-3">
                                     <li>• Cannot create custom lists</li>
+                                    <li>• Cannot export data to CSV</li>
                                     <li>• Data saved locally (not synced across devices)</li>
                                     <li>• May be lost if you clear browser data</li>
                                 </ul>
