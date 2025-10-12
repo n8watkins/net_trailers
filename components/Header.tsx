@@ -23,6 +23,8 @@ import { useToast } from '../hooks/useToast'
 import { useDebugSettings } from './DebugControls'
 import { useRecoilState } from 'recoil'
 import { authModalState } from '../atoms/authModalAtom'
+import { ChildSafetyIndicator } from './ChildSafetyIndicator'
+import { GuestModeIndicator } from './GuestModeIndicator'
 
 interface HeaderProps {
     onOpenAboutModal?: () => void
@@ -194,6 +196,16 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                 <Bars3Icon className="h-6 w-6 text-white" />
                             )}
                         </button>
+                    </div>
+
+                    {/* Guest Mode Indicator - Hidden on mobile */}
+                    <div className="hidden lg:block">
+                        <GuestModeIndicator />
+                    </div>
+
+                    {/* Child Safety Mode Indicator - Hidden on mobile */}
+                    <div className="hidden lg:block">
+                        <ChildSafetyIndicator />
                     </div>
 
                     {/* Avatar Dropdown */}

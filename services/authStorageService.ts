@@ -108,6 +108,9 @@ export class AuthStorageService {
                         defaultWatchlist: data.defaultWatchlist || [],
                         userCreatedWatchlists: data.userCreatedWatchlists || [],
                         lastActive: data.lastActive || Date.now(),
+                        autoMute: data.autoMute ?? true,
+                        defaultVolume: data.defaultVolume ?? 50,
+                        childSafetyMode: data.childSafetyMode ?? false,
                     }
 
                     // Cache the loaded data
@@ -126,6 +129,9 @@ export class AuthStorageService {
                         defaultWatchlist: [],
                         userCreatedWatchlists: [],
                         lastActive: Date.now(),
+                        autoMute: true,
+                        defaultVolume: 50,
+                        childSafetyMode: false,
                     }
 
                     // Try to save, but don't fail if offline
@@ -180,6 +186,9 @@ export class AuthStorageService {
                     defaultWatchlist: [],
                     userCreatedWatchlists: [],
                     lastActive: Date.now(),
+                    autoMute: true,
+                    defaultVolume: 50,
+                    childSafetyMode: false,
                 }
             }
         })()
@@ -409,6 +418,9 @@ export class AuthStorageService {
             defaultWatchlist: [],
             userCreatedWatchlists: [],
             lastActive: Date.now(),
+            autoMute: true,
+            defaultVolume: 50,
+            childSafetyMode: false,
         }
 
         await this.saveUserData(userId, defaultPrefs)

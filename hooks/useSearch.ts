@@ -3,6 +3,7 @@ import { useRouter } from 'next/router'
 import { useRecoilState } from 'recoil'
 import { searchState, searchHistoryState, SearchFilters } from '../atoms/searchAtom'
 import { getTitle, Content, isMovie, getYear } from '../typings'
+import { useChildSafety } from './useChildSafety'
 
 // Custom debounce hook
 function useDebounce<T>(value: T, delay: number): T {
@@ -98,6 +99,7 @@ export function useSearch() {
     const router = useRouter()
     const [search, setSearch] = useRecoilState(searchState)
     const [searchHistory, setSearchHistory] = useRecoilState(searchHistoryState)
+    const { isEnabled: childSafetyEnabled } = useChildSafety()
     const debouncedQuery = useDebounce(search.query, 200)
     const abortControllerRef = useRef<AbortController>()
     const lastQueryRef = useRef<string>('')
@@ -144,7 +146,7 @@ export function useSearch() {
 
             // Load all remaining pages
             while (allResults.length < search.totalResults) {
-                const url = `/api/search?query=${encodeURIComponent(search.query.trim())}&page=${currentPage}`
+                const url = `/api/search?query=${encodeURIComponent(search.query.trim())}&page=${currentPage}&childSafetyMode=${childSafetyEnabled}`
                 const response = await fetch(url)
 
                 if (!response.ok) break
@@ -178,6 +180,7 @@ export function useSearch() {
         search.currentPage,
         search.totalResults,
         setSearch,
+        childSafetyEnabled,
     ])
 
     // Search function
@@ -210,7 +213,7 @@ export function useSearch() {
             }))
 
             try {
-                const url = `/api/search?query=${encodeURIComponent(trimmedQuery)}&page=${page}`
+                const url = `/api/search?query=${encodeURIComponent(trimmedQuery)}&page=${page}&childSafetyMode=${childSafetyEnabled}`
 
                 const response = await fetch(url, {
                     signal: currentController.signal,
@@ -258,7 +261,7 @@ export function useSearch() {
                 }
             }
         },
-        [setSearch, setSearchHistory, clearResults]
+        [setSearch, setSearchHistory, clearResults, childSafetyEnabled]
     )
 
     // Effect to trigger search when debounced query changes
@@ -278,6 +281,15 @@ export function useSearch() {
             clearResults()
         }
     }, [debouncedQuery, clearResults, search.hasSearched])
+
+    // Effect to re-fetch search results when Child Safety Mode is toggled
+    useEffect(() => {
+        // Only refetch if we have an active search
+        if (search.hasSearched && search.query.trim().length >= 2) {
+            performSearchRef.current(search.query, 1)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [childSafetyEnabled])
 
     // Store performSearch in a ref to avoid dependency issues
     const performSearchRef = useRef(performSearch)

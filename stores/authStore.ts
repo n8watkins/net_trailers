@@ -16,6 +16,11 @@ export interface AuthState {
     userCreatedWatchlists: UserList[]
     lastActive: number
     syncStatus: 'synced' | 'syncing' | 'offline'
+    // Playback preferences
+    autoMute?: boolean
+    defaultVolume?: number // 0-100
+    // Content filtering preferences
+    childSafetyMode?: boolean // Restricts to PG-13 and below
 }
 
 export interface AuthActions {
@@ -529,7 +534,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     },
 
     updatePreferences: async (prefs: Partial<AuthState>) => {
-        const state = get()
         set({ syncStatus: 'syncing' })
 
         // Update local state
@@ -537,6 +541,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             ...prefs,
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
+
+        // Get the UPDATED state after set()
+        const state = get()
 
         // Save to Firebase (merge preferences with existing data)
         if (state.userId) {
@@ -553,14 +560,16 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 defaultWatchlist: state.defaultWatchlist,
                 userCreatedWatchlists: state.userCreatedWatchlists,
                 lastActive: Date.now(),
-                ...(prefs.autoMute !== undefined && { autoMute: prefs.autoMute }),
-                ...(prefs.defaultVolume !== undefined && { defaultVolume: prefs.defaultVolume }),
-                ...(prefs.childSafetyMode !== undefined && {
-                    childSafetyMode: prefs.childSafetyMode,
-                }),
+                autoMute: state.autoMute ?? true,
+                defaultVolume: state.defaultVolume ?? 50,
+                childSafetyMode: state.childSafetyMode ?? false,
             })
                 .then(() => {
-                    console.log('✅ [AuthStore] Preferences saved to Firestore')
+                    console.log('✅ [AuthStore] Preferences saved to Firestore:', {
+                        autoMute: state.autoMute,
+                        defaultVolume: state.defaultVolume,
+                        childSafetyMode: state.childSafetyMode,
+                    })
                     set({ syncStatus: 'synced' })
                 })
                 .catch((error) => {
@@ -570,8 +579,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         } else {
             set({ syncStatus: 'synced' })
         }
-
-        console.log('🔄 [AuthStore] Updated preferences:', prefs)
     },
 
     syncWithFirebase: async (userId: string) => {

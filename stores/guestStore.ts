@@ -12,6 +12,11 @@ export interface GuestState {
     defaultWatchlist: Content[]
     userCreatedWatchlists: UserList[]
     lastActive: number
+    // Playback preferences
+    autoMute?: boolean
+    defaultVolume?: number // 0-100
+    // Content filtering preferences
+    childSafetyMode?: boolean // Restricts to PG-13 and below
 }
 
 export interface GuestActions {
@@ -326,11 +331,35 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
     },
 
     updatePreferences: (prefs: Partial<GuestState>) => {
+        // Update local state first
         set({
             ...prefs,
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
-        console.log('🔄 [GuestStore] Updated preferences')
+
+        // Get the UPDATED state after set()
+        const state = get()
+
+        // Save to localStorage with updated state
+        if (state.guestId) {
+            GuestStorageService.saveGuestData(state.guestId, {
+                likedMovies: state.likedMovies,
+                hiddenMovies: state.hiddenMovies,
+                defaultWatchlist: state.defaultWatchlist,
+                userCreatedWatchlists: state.userCreatedWatchlists,
+                lastActive: Date.now(),
+                autoMute: state.autoMute ?? true,
+                defaultVolume: state.defaultVolume ?? 50,
+                childSafetyMode: state.childSafetyMode ?? false,
+            })
+            console.log('🔄 [GuestStore] Updated preferences and saved to localStorage:', {
+                autoMute: state.autoMute,
+                defaultVolume: state.defaultVolume,
+                childSafetyMode: state.childSafetyMode,
+            })
+        } else {
+            console.warn('⚠️ [GuestStore] No guestId, cannot save to localStorage')
+        }
     },
 
     clearAllData: () => {
@@ -360,6 +389,9 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
             defaultWatchlist: loadedData.defaultWatchlist,
             userCreatedWatchlists: loadedData.userCreatedWatchlists,
             lastActive: loadedData.lastActive,
+            autoMute: loadedData.autoMute ?? true,
+            defaultVolume: loadedData.defaultVolume ?? 50,
+            childSafetyMode: loadedData.childSafetyMode ?? false,
         })
         console.log('🔄 [GuestStore] Synced from localStorage:', {
             guestId,
@@ -367,6 +399,9 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
             likedCount: loadedData.likedMovies.length,
             hiddenCount: loadedData.hiddenMovies.length,
             listsCount: loadedData.userCreatedWatchlists.length,
+            autoMute: loadedData.autoMute,
+            defaultVolume: loadedData.defaultVolume,
+            childSafetyMode: loadedData.childSafetyMode,
         })
     },
 }))

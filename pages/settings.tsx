@@ -23,6 +23,7 @@ import { useRecoilState } from 'recoil'
 import { authModalState } from '../atoms/authModalAtom'
 import { useAuthStore } from '../stores/authStore'
 import { useGuestStore } from '../stores/guestStore'
+import { GuestModeNotification } from '../components/GuestModeNotification'
 
 type SettingsSection = 'profile' | 'email' | 'password' | 'preferences' | 'share' | 'account'
 
@@ -47,7 +48,7 @@ const Settings: React.FC<SettingsProps> = ({
     onOpenTutorial,
     onOpenKeyboardShortcuts,
 }) => {
-    const [activeSection, setActiveSection] = useState<SettingsSection>('account')
+    const [activeSection, setActiveSection] = useState<SettingsSection>('preferences')
     const [showClearConfirm, setShowClearConfirm] = useState(false)
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [showExportLimitedModal, setShowExportLimitedModal] = useState(false)
@@ -56,6 +57,19 @@ const Settings: React.FC<SettingsProps> = ({
     const [childSafetyMode, setChildSafetyMode] = useState(false)
     const [autoMute, setAutoMute] = useState(true)
     const [defaultVolume, setDefaultVolume] = useState(50)
+
+    // Track original preferences to detect changes
+    const [originalPreferences, setOriginalPreferences] = useState({
+        childSafetyMode: false,
+        autoMute: true,
+        defaultVolume: 50,
+    })
+
+    // Check if preferences have changed
+    const preferencesChanged =
+        childSafetyMode !== originalPreferences.childSafetyMode ||
+        autoMute !== originalPreferences.autoMute ||
+        defaultVolume !== originalPreferences.defaultVolume
 
     const { user } = useAuth()
     const { isGuest } = useAuthStatus()
@@ -225,16 +239,27 @@ const Settings: React.FC<SettingsProps> = ({
           }
         : userData.getAccountDataSummary()
 
-    // Load preferences from store only once when initialized
+    // Load preferences from store whenever they change
     React.useEffect(() => {
         if (!userData.isInitializing && userData.userSession?.preferences) {
             const prefs = userData.userSession.preferences
-            setChildSafetyMode(prefs.childSafetyMode ?? false)
-            setAutoMute(prefs.autoMute ?? true)
-            setDefaultVolume(prefs.defaultVolume ?? 50)
+            const loadedPrefs = {
+                childSafetyMode: prefs.childSafetyMode ?? false,
+                autoMute: prefs.autoMute ?? true,
+                defaultVolume: prefs.defaultVolume ?? 50,
+            }
+            setChildSafetyMode(loadedPrefs.childSafetyMode)
+            setAutoMute(loadedPrefs.autoMute)
+            setDefaultVolume(loadedPrefs.defaultVolume)
+            setOriginalPreferences(loadedPrefs)
+            console.log('📖 [Settings] Loaded preferences from store:', loadedPrefs)
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [userData.isInitializing])
+    }, [
+        userData.isInitializing,
+        userData.userSession?.preferences?.childSafetyMode,
+        userData.userSession?.preferences?.autoMute,
+        userData.userSession?.preferences?.defaultVolume,
+    ])
 
     // Handle saving preferences
     const handleSavePreferences = async () => {
@@ -253,6 +278,9 @@ const Settings: React.FC<SettingsProps> = ({
                 // For authenticated, update auth store
                 await authStoreUpdatePrefs(updatedPreferences)
             }
+
+            // Update original preferences to reflect saved state
+            setOriginalPreferences(updatedPreferences)
 
             showSuccess('Preferences saved successfully!')
             console.log('✅ [Settings] Preferences saved:', updatedPreferences)
@@ -280,9 +308,9 @@ const Settings: React.FC<SettingsProps> = ({
                 <div className="pt-20 min-h-screen">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                         {/* Page Title */}
-                        <div className="mb-8">
-                            <h1 className="text-4xl font-bold text-white mb-2">Settings</h1>
-                            <p className="text-[#b3b3b3]">
+                        <div className="mb-6">
+                            <h1 className="text-5xl font-bold text-white mb-3">Settings</h1>
+                            <p className="text-[#b3b3b3] text-base">
                                 Manage your account preferences and data
                             </p>
                         </div>
@@ -296,10 +324,11 @@ const Settings: React.FC<SettingsProps> = ({
                                 </div>
                             </div>
                         ) : (
-                            <div className="flex flex-col lg:flex-row gap-8">
-                                {/* Sidebar */}
-                                <div className="lg:w-80 flex-shrink-0">
-                                    <div className="bg-[#141414] rounded-lg border border-[#313131]">
+                            // Unified Settings Container
+                            <div className="bg-[#141414] rounded-lg border border-[#313131] overflow-hidden">
+                                <div className="flex flex-col lg:flex-row">
+                                    {/* Sidebar */}
+                                    <div className="lg:w-96 flex-shrink-0 border-b lg:border-b-0 lg:border-r border-[#313131]">
                                         <nav className="p-6">
                                             <ul className="space-y-2">
                                                 {sidebarItems.map((item) => {
@@ -341,11 +370,9 @@ const Settings: React.FC<SettingsProps> = ({
                                             </ul>
                                         </nav>
                                     </div>
-                                </div>
 
-                                {/* Main Content */}
-                                <div className="flex-1">
-                                    <div className="bg-[#141414] rounded-lg border border-[#313131]">
+                                    {/* Main Content */}
+                                    <div className="flex-1">
                                         {activeSection === 'profile' && !isGuest && (
                                             <div className="p-8">
                                                 <div className="mb-6">
@@ -545,6 +572,15 @@ const Settings: React.FC<SettingsProps> = ({
 
                                         {activeSection === 'preferences' && (
                                             <div className="p-8">
+                                                {/* Guest Mode Notification */}
+                                                {isGuest && (
+                                                    <div className="mb-6">
+                                                        <GuestModeNotification
+                                                            onOpenTutorial={onOpenTutorial}
+                                                        />
+                                                    </div>
+                                                )}
+
                                                 <div className="mb-6">
                                                     <h2 className="text-2xl font-bold text-white mb-2">
                                                         Preferences
@@ -568,7 +604,7 @@ const Settings: React.FC<SettingsProps> = ({
                                                                     <label className="block text-sm font-medium text-[#e5e5e5] mb-1">
                                                                         Child Safety Mode
                                                                     </label>
-                                                                    <p className="text-xs text-[#b3b3b3]">
+                                                                    <p className="text-sm text-[#b3b3b3]">
                                                                         Restrict content to PG-13
                                                                         and below, filter explicit
                                                                         material
@@ -603,7 +639,7 @@ const Settings: React.FC<SettingsProps> = ({
                                                                     <label className="block text-sm font-medium text-[#e5e5e5] mb-1">
                                                                         Auto-mute Trailers
                                                                     </label>
-                                                                    <p className="text-xs text-[#b3b3b3]">
+                                                                    <p className="text-sm text-[#b3b3b3]">
                                                                         Start trailers muted when
                                                                         opening details
                                                                     </p>
@@ -628,7 +664,7 @@ const Settings: React.FC<SettingsProps> = ({
                                                                 <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
                                                                     Default Volume
                                                                 </label>
-                                                                <p className="text-xs text-[#b3b3b3] mb-3">
+                                                                <p className="text-sm text-[#b3b3b3] mb-3">
                                                                     Set the initial volume level for
                                                                     trailers
                                                                 </p>
@@ -659,7 +695,12 @@ const Settings: React.FC<SettingsProps> = ({
                                                     <div className="flex justify-end">
                                                         <button
                                                             onClick={handleSavePreferences}
-                                                            className="bannerButton bg-red-600 text-white hover:bg-red-700"
+                                                            disabled={!preferencesChanged}
+                                                            className={`px-6 py-2.5 rounded-md font-medium transition-all duration-200 ${
+                                                                preferencesChanged
+                                                                    ? 'bg-red-600 text-white hover:bg-red-700 cursor-pointer'
+                                                                    : 'bg-[#1a1a1a] text-[#666666] cursor-not-allowed border border-[#313131]'
+                                                            }`}
                                                         >
                                                             Save Preferences
                                                         </button>
@@ -763,6 +804,15 @@ const Settings: React.FC<SettingsProps> = ({
 
                                         {activeSection === 'account' && (
                                             <div className="p-8">
+                                                {/* Guest Mode Notification */}
+                                                {isGuest && (
+                                                    <div className="mb-6">
+                                                        <GuestModeNotification
+                                                            onOpenTutorial={onOpenTutorial}
+                                                        />
+                                                    </div>
+                                                )}
+
                                                 <div className="mb-6">
                                                     <h2 className="text-2xl font-bold text-white mb-2">
                                                         Data Management

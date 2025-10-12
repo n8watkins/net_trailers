@@ -125,6 +125,9 @@ export default function useUserData() {
                     hiddenMovies: sessionData.hiddenMovies,
                     userCreatedWatchlists: sessionData.userCreatedWatchlists,
                     lastActive: sessionData.lastActive,
+                    autoMute: sessionData.autoMute ?? true,
+                    defaultVolume: sessionData.defaultVolume ?? 50,
+                    childSafetyMode: sessionData.childSafetyMode ?? false,
                 },
             },
         }
@@ -248,6 +251,9 @@ export default function useUserData() {
                     hiddenMovies: sessionData.hiddenMovies,
                     userCreatedWatchlists: sessionData.userCreatedWatchlists,
                     lastActive: sessionData.lastActive,
+                    autoMute: sessionData.autoMute ?? true,
+                    defaultVolume: sessionData.defaultVolume ?? 50,
+                    childSafetyMode: sessionData.childSafetyMode ?? false,
                 },
             },
 
@@ -260,6 +266,9 @@ export default function useUserData() {
                     hiddenMovies: sessionData.hiddenMovies,
                     userCreatedWatchlists: sessionData.userCreatedWatchlists,
                     lastActive: sessionData.lastActive,
+                    autoMute: sessionData.autoMute ?? true,
+                    defaultVolume: sessionData.defaultVolume ?? 50,
+                    childSafetyMode: sessionData.childSafetyMode ?? false,
                 },
             },
         }

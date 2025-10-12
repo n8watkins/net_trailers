@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
+import { filterContentByAdultFlag } from '../../../utils/contentFilter'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -13,6 +14,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     try {
+        const { childSafetyMode } = req.query
+        const childSafeMode = childSafetyMode === 'true'
+
         const response = await fetch(
             `${BASE_URL}/trending/tv/week?api_key=${API_KEY}&language=en-US&page=1`
         )
@@ -24,16 +28,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const data = await response.json()
 
         // Add media_type to each item for consistency
-        const enrichedResults = data.results.map((item: any) => ({
+        let enrichedResults = data.results.map((item: any) => ({
             ...item,
-            media_type: 'tv'
+            media_type: 'tv',
         }))
+
+        // Apply child safety filtering if enabled
+        if (childSafeMode) {
+            const beforeCount = enrichedResults.length
+            enrichedResults = filterContentByAdultFlag(enrichedResults, true)
+            const hiddenCount = beforeCount - enrichedResults.length
+
+            // Cache for 1 hour
+            res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400')
+            return res.status(200).json({
+                ...data,
+                results: enrichedResults,
+                child_safety_enabled: true,
+                hidden_count: hiddenCount,
+            })
+        }
 
         // Cache for 1 hour
         res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400')
         res.status(200).json({
             ...data,
-            results: enrichedResults
+            results: enrichedResults,
         })
     } catch (error) {
         console.error('TMDB API error:', error)

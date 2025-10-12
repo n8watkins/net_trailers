@@ -10,6 +10,8 @@ import ContentCard from '../components/ContentCard'
 import { useSetRecoilState, useRecoilValue } from 'recoil'
 import { modalState, movieState } from '../atoms/modalAtom'
 import { exportUserDataToCSV } from '../utils/csvExport'
+import { GuestModeNotification } from '../components/GuestModeNotification'
+import { useAuthStatus } from '../hooks/useAuthStatus'
 
 interface Props {
     onOpenAboutModal?: () => void
@@ -19,7 +21,8 @@ interface Props {
 
 const Hidden: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }) => {
     const userData = useUserData()
-    const { hiddenMovies, isGuest } = userData
+    const { hiddenMovies } = userData
+    const { isGuest } = useAuthStatus()
     const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
 
     const [searchQuery, setSearchQuery] = useState('')
@@ -111,37 +114,29 @@ const Hidden: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeybo
                         </div>
 
                         <p className="text-gray-400 max-w-2xl">
-                            Content you&apos;ve hidden from recommendations. These won&apos;t appear
-                            in suggestions or on your homepage.
+                            Curate your recommendations! Hide content you&apos;re not interested in.
                         </p>
 
                         {isGuest && (
-                            <div className="bg-gray-800/50 p-4 rounded-lg max-w-2xl">
-                                <p className="text-sm text-gray-300">
-                                    📱 You&apos;re browsing as a guest. Your preferences are saved
-                                    locally. Sign up to sync across devices!
-                                </p>
-                            </div>
+                            <GuestModeNotification onOpenTutorial={onOpenTutorial} align="left" />
                         )}
 
                         {/* Action Buttons */}
                         {hiddenContent.length > 0 && (
-                            <div className="flex justify-between items-center py-3 mb-4 border-b border-gray-700/30">
-                                <div className="flex items-center space-x-4">
-                                    {/* Export Button */}
-                                    <button
-                                        onClick={handleExportCSV}
-                                        className="flex items-center space-x-2 px-5 py-2.5 bg-gray-800/50 hover:bg-white/10 text-white border border-gray-600 hover:border-gray-400 rounded-full text-sm font-medium transition-all duration-200"
-                                    >
-                                        <ArrowDownTrayIcon className="w-4 h-4" />
-                                        <span>Export to CSV</span>
-                                    </button>
-                                </div>
-
+                            <div className="flex items-center space-x-4 py-3 mb-4 border-b border-gray-700/30">
                                 {/* Stats */}
-                                <div className="text-sm text-gray-400">
+                                <div className="text-lg font-semibold text-white">
                                     {hiddenContent.length} items hidden
                                 </div>
+
+                                {/* Export Button */}
+                                <button
+                                    onClick={handleExportCSV}
+                                    className="flex items-center space-x-2 px-5 py-2.5 bg-gray-800/50 hover:bg-white/10 text-white border border-gray-600 hover:border-gray-400 rounded-full text-sm font-medium transition-all duration-200"
+                                >
+                                    <ArrowDownTrayIcon className="w-4 h-4" />
+                                    <span>Export to CSV</span>
+                                </button>
                             </div>
                         )}
 

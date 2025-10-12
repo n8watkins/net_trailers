@@ -22,6 +22,8 @@ import { exportUserDataToCSV } from '../utils/csvExport'
 import { UserList } from '../types/userLists'
 import { verifyUserData } from '../utils/verifyUserData'
 import { useDebugSettings } from '../components/DebugControls'
+import { GuestModeNotification } from '../components/GuestModeNotification'
+import { useAuthStatus } from '../hooks/useAuthStatus'
 
 interface Props {
     onOpenAboutModal?: () => void
@@ -36,7 +38,8 @@ const Watchlists: NextPage<Props> = ({
 }) => {
     const userData = useUserData()
     const { user } = useAuth()
-    const { isGuest, getAllLists } = userData
+    const { isGuest } = useAuthStatus()
+    const { getAllLists } = userData
     const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
     const debugSettings = useDebugSettings()
     const showModal = useRecoilValue(modalState)
@@ -200,8 +203,7 @@ const Watchlists: NextPage<Props> = ({
                         </div>
 
                         <p className="text-gray-400 max-w-2xl">
-                            Your watchlists and custom collections. Keep track of what you want to
-                            watch and organize your content.
+                            Keep track of the content you love!
                         </p>
 
                         {/* Debug Button - controlled by Auth Flow Logs toggle */}
@@ -216,17 +218,18 @@ const Watchlists: NextPage<Props> = ({
                             )}
 
                         {isGuest && (
-                            <div className="bg-gray-800/50 p-4 rounded-lg max-w-2xl">
-                                <p className="text-sm text-gray-300">
-                                    📱 You&apos;re browsing as a guest. Your preferences are saved
-                                    locally. Sign up to sync across devices!
-                                </p>
-                            </div>
+                            <GuestModeNotification onOpenTutorial={onOpenTutorial} align="left" />
                         )}
 
                         {/* Action Buttons Row - Above List Filter Buttons */}
                         {allLists.some((list) => list.items.length > 0) && (
-                            <div className="flex justify-between items-center py-3 mb-4 border-b border-gray-700/30">
+                            <div className="flex items-center space-x-4 py-3 mb-4 border-b border-gray-700/30">
+                                {/* Stats */}
+                                <div className="text-lg font-semibold text-white">
+                                    {allLists.reduce((total, list) => total + list.items.length, 0)}{' '}
+                                    items total
+                                </div>
+
                                 {/* Export Button */}
                                 <button
                                     onClick={handleExportCSV}
@@ -235,12 +238,6 @@ const Watchlists: NextPage<Props> = ({
                                     <ArrowDownTrayIcon className="w-4 h-4" />
                                     <span>Export to CSV</span>
                                 </button>
-
-                                {/* Stats */}
-                                <div className="text-sm text-gray-400">
-                                    {allLists.reduce((total, list) => total + list.items.length, 0)}{' '}
-                                    items total
-                                </div>
                             </div>
                         )}
 

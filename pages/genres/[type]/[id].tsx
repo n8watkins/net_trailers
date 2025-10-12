@@ -10,7 +10,8 @@ import { Content } from '../../../typings'
 import { movieCache } from '../../../utils/apiCache'
 import { useRecoilValue } from 'recoil'
 import { userSessionState } from '../../../atoms/userDataAtom'
-import { filterDislikedContent } from '../../../utils/contentFilter'
+import { filterDislikedContent, filterContentByAdultFlag } from '../../../utils/contentFilter'
+import { useChildSafety } from '../../../hooks/useChildSafety'
 
 interface GenrePageProps {
     onOpenAboutModal?: () => void
@@ -50,11 +51,17 @@ const GenrePage: NextPage<GenrePageProps> = ({
     const mediaType = Array.isArray(type) ? type[0] : type
     const genreName = Array.isArray(name) ? name[0] : name
     const pageTitle = Array.isArray(title) ? title[0] : title
+    const { isEnabled: childSafetyEnabled } = useChildSafety()
 
     const contentToRender = useMemo(() => {
-        // Filter out disliked content
-        return filterDislikedContent(content, userSession.preferences.hiddenMovies)
-    }, [content, userSession.preferences.hiddenMovies])
+        // First filter out disliked content
+        let filtered = filterDislikedContent(content, userSession.preferences.hiddenMovies)
+
+        // Then apply Child Safety Mode filtering if enabled
+        filtered = filterContentByAdultFlag(filtered, childSafetyEnabled)
+
+        return filtered
+    }, [content, userSession.preferences.hiddenMovies, childSafetyEnabled])
 
     // Load genre content with traditional infinite scroll
     const loadGenreContent = useCallback(

@@ -35,6 +35,11 @@ export const useSessionData = () => {
         userCreatedWatchlists: currentStore.userCreatedWatchlists,
         lastActive: currentStore.lastActive,
 
+        // Preferences
+        autoMute: currentStore.autoMute ?? true,
+        defaultVolume: currentStore.defaultVolume ?? 50,
+        childSafetyMode: currentStore.childSafetyMode ?? false,
+
         // Actions (unified interface - NEW SCHEMA)
         addToWatchlist: currentStore.addToWatchlist,
         removeFromWatchlist: currentStore.removeFromWatchlist,
