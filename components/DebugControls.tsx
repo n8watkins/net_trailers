@@ -31,6 +31,7 @@ export default function DebugControls() {
     const [isDragging, setIsDragging] = useState(false)
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
     const dragHandleRef = useRef<HTMLDivElement>(null)
+    const isFirstMount = useRef(true)
 
     // Load settings from localStorage and initialize position
     useEffect(() => {
@@ -56,8 +57,12 @@ export default function DebugControls() {
         window.dispatchEvent(new CustomEvent('debugSettingsChanged', { detail: settings }))
     }, [settings])
 
-    // Save position to localStorage
+    // Save position to localStorage (skip initial mount to avoid overwriting saved position)
     useEffect(() => {
+        if (isFirstMount.current) {
+            isFirstMount.current = false
+            return
+        }
         localStorage.setItem('debugPosition', JSON.stringify(position))
     }, [position])
 
