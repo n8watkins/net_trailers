@@ -36,7 +36,7 @@ export function UpgradeAccountBanner({ onOpenTutorial }: UpgradeAccountBannerPro
                         <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600">
                             Upgrade Your Account. It&apos;s Free!
                         </h3>
-                        <SparklesIcon className="w-5 h-5 text-yellow-400 animate-pulse" />
+                        <SparklesIcon className="w-5 h-5 text-yellow-400" />
                     </div>
 
                     {/* Description */}
