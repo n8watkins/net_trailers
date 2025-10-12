@@ -52,7 +52,7 @@ export default function ContentMetadata({
                 </button>
             )}
 
-            {/* Year, Rating, Runtime, Type */}
+            {/* Year, Rating, Runtime, Type, TMDB Rating */}
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm sm:text-base md:text-lg font-medium">
                 <span>{getYear(content)}</span>
                 {getRating(content) && (
@@ -73,6 +73,16 @@ export default function ContentMetadata({
                 )}
                 <span className="text-gray-300">•</span>
                 <span className="text-xs sm:text-sm md:text-base">{getContentType(content)}</span>
+                {/* TMDB Rating - Always available from initial API call */}
+                {content.vote_average > 0 && (
+                    <>
+                        <span className="text-gray-300">•</span>
+                        <span className="text-xs sm:text-sm md:text-base text-yellow-400">
+                            ⭐ {content.vote_average.toFixed(1)}
+                        </span>
+                    </>
+                )}
+                {/* IMDb Link - Only after detailed data loads */}
                 {getIMDbRating(content).url && (
                     <>
                         <span className="text-gray-300">•</span>
