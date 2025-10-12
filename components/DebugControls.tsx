@@ -26,23 +26,26 @@ export default function DebugControls() {
         showApiResults: false,
     })
 
-    // Drag state - default position is a bit to the left
-    const [position, setPosition] = useState<Position>({ x: window.innerWidth - 600, y: 16 })
+    // Drag state - default position is a bit to the left (initialized after mount)
+    const [position, setPosition] = useState<Position>({ x: 0, y: 16 })
     const [isDragging, setIsDragging] = useState(false)
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
     const dragHandleRef = useRef<HTMLDivElement>(null)
 
-    // Load settings from localStorage
+    // Load settings from localStorage and initialize position
     useEffect(() => {
         const saved = localStorage.getItem('debugSettings')
         if (saved) {
             setSettings(JSON.parse(saved))
         }
 
-        // Load saved position
+        // Load saved position or set default based on window width
         const savedPosition = localStorage.getItem('debugPosition')
         if (savedPosition) {
             setPosition(JSON.parse(savedPosition))
+        } else {
+            // Set default position based on window width
+            setPosition({ x: window.innerWidth - 600, y: 16 })
         }
     }, [])
 
