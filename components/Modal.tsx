@@ -317,6 +317,10 @@ function Modal() {
         async function fetchMovie() {
             try {
                 setLoading(true)
+
+                // TEMPORARY: 5 second delay for testing loading state
+                await new Promise((resolve) => setTimeout(resolve, 5000))
+
                 const mediaType = currentMovie?.media_type === 'tv' ? 'tv' : 'movie'
                 const response = await fetch(
                     `/api/movies/details/${currentMovie?.id}?media_type=${mediaType}`
