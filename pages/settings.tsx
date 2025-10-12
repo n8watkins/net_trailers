@@ -17,6 +17,7 @@ import { exportUserDataToCSV } from '../utils/csvExport'
 import { useToast } from '../hooks/useToast'
 import Header from '../components/Header'
 import ConfirmationModal from '../components/ConfirmationModal'
+import InfoModal from '../components/InfoModal'
 import { useRecoilState } from 'recoil'
 import { authModalState } from '../atoms/authModalAtom'
 
@@ -775,17 +776,14 @@ const Settings: React.FC<SettingsProps> = ({
             />
 
             {/* Export Limited Modal for Guest Users */}
-            <ConfirmationModal
+            <InfoModal
                 isOpen={showExportLimitedModal}
                 onClose={() => setShowExportLimitedModal(false)}
                 onConfirm={handleCreateAccount}
-                title="Export Data Requires Account"
-                message="CSV export is only available to users with accounts. This ensures your data is properly synced and secure across all your devices."
-                confirmText="Create an account to unlock CSV export and sync your data across devices."
+                title="CSV Export"
+                message="CSV export is only available to users with accounts. Create an account to unlock CSV export and sync your data securely across all your devices."
                 confirmButtonText="Create Account"
                 cancelButtonText="Maybe Later"
-                requireTyping={false}
-                dangerLevel="warning"
             />
         </div>
     )
