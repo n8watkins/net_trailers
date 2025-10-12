@@ -1,5 +1,5 @@
 import React from 'react'
-import { XMarkIcon, LockClosedIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon } from '@heroicons/react/24/outline'
 
 interface InfoModalProps {
     isOpen: boolean
@@ -9,7 +9,7 @@ interface InfoModalProps {
     message: string
     confirmButtonText?: string
     cancelButtonText?: string
-    icon?: React.ComponentType<{ className?: string }>
+    emoji?: string
 }
 
 const InfoModal: React.FC<InfoModalProps> = ({
@@ -20,7 +20,7 @@ const InfoModal: React.FC<InfoModalProps> = ({
     message,
     confirmButtonText = 'Continue',
     cancelButtonText = 'Maybe Later',
-    icon: Icon = LockClosedIcon,
+    emoji = '🔒',
 }) => {
     if (!isOpen) return null
 
@@ -33,7 +33,7 @@ const InfoModal: React.FC<InfoModalProps> = ({
             />
 
             {/* Modal panel */}
-            <div className="relative w-full max-w-md px-6 py-6 overflow-hidden text-left transition-all transform bg-[#141414] rounded-lg shadow-2xl">
+            <div className="relative w-full max-w-lg px-8 py-8 overflow-hidden text-center transition-all transform bg-[#141414] rounded-lg shadow-2xl">
                 {/* Close Button */}
                 <button
                     onClick={onClose}
@@ -43,24 +43,31 @@ const InfoModal: React.FC<InfoModalProps> = ({
                 </button>
 
                 {/* Content */}
-                <div className="bg-gray-800/30 rounded-lg p-5 border border-gray-700/50">
-                    <div className="flex items-center space-x-3 mb-3">
-                        <Icon className="w-5 h-5 text-gray-400" />
-                        <h3 className="text-white font-semibold text-lg">{title}</h3>
+                <div className="bg-gray-800/30 rounded-lg p-8 border border-gray-700/50">
+                    {/* Emoji Icon */}
+                    <div className="flex justify-center mb-6">
+                        <span className="text-6xl">{emoji}</span>
                     </div>
-                    <p className="text-gray-400 text-sm leading-relaxed mb-4">{message}</p>
+
+                    {/* Title */}
+                    <h3 className="text-white font-bold text-2xl mb-4">{title}</h3>
+
+                    {/* Message */}
+                    <p className="text-gray-400 text-base leading-relaxed mb-6 max-w-md mx-auto">
+                        {message}
+                    </p>
 
                     {/* Action Buttons */}
-                    <div className="flex space-x-3">
+                    <div className="flex flex-col sm:flex-row gap-3">
                         <button
                             onClick={onConfirm}
-                            className="flex-1 px-4 py-2 bg-white text-black rounded-lg font-medium transition-all duration-200 hover:bg-gray-200"
+                            className="flex-1 px-6 py-3 bg-white text-black rounded-lg font-semibold transition-all duration-200 hover:bg-gray-200"
                         >
                             {confirmButtonText}
                         </button>
                         <button
                             onClick={onClose}
-                            className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg font-medium transition-all duration-200 hover:bg-gray-600"
+                            className="flex-1 px-6 py-3 bg-gray-700 text-white rounded-lg font-medium transition-all duration-200 hover:bg-gray-600"
                         >
                             {cancelButtonText}
                         </button>

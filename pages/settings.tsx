@@ -780,10 +780,11 @@ const Settings: React.FC<SettingsProps> = ({
                 isOpen={showExportLimitedModal}
                 onClose={() => setShowExportLimitedModal(false)}
                 onConfirm={handleCreateAccount}
-                title="CSV Export"
-                message="CSV export is only available to users with accounts. Create an account to unlock CSV export and sync your data securely across all your devices."
+                title="Create an Account to Continue"
+                message="CSV export is only available to users with accounts. Create an account to unlock data export and sync your content across all devices."
                 confirmButtonText="Create Account"
                 cancelButtonText="Maybe Later"
+                emoji="🔐"
             />
         </div>
     )
