@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
     BugAntIcon,
     FireIcon,
@@ -13,6 +13,11 @@ interface DebugSettings {
     showApiResults: boolean
 }
 
+interface Position {
+    x: number
+    y: number
+}
+
 export default function DebugControls() {
     const [settings, setSettings] = useState<DebugSettings>({
         showFirebaseTracker: false,
@@ -21,11 +26,23 @@ export default function DebugControls() {
         showApiResults: false,
     })
 
+    // Drag state - default position is a bit to the left
+    const [position, setPosition] = useState<Position>({ x: window.innerWidth - 600, y: 16 })
+    const [isDragging, setIsDragging] = useState(false)
+    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+    const dragHandleRef = useRef<HTMLDivElement>(null)
+
     // Load settings from localStorage
     useEffect(() => {
         const saved = localStorage.getItem('debugSettings')
         if (saved) {
             setSettings(JSON.parse(saved))
+        }
+
+        // Load saved position
+        const savedPosition = localStorage.getItem('debugPosition')
+        if (savedPosition) {
+            setPosition(JSON.parse(savedPosition))
         }
     }, [])
 
@@ -36,6 +53,48 @@ export default function DebugControls() {
         window.dispatchEvent(new CustomEvent('debugSettingsChanged', { detail: settings }))
     }, [settings])
 
+    // Save position to localStorage
+    useEffect(() => {
+        localStorage.setItem('debugPosition', JSON.stringify(position))
+    }, [position])
+
+    // Handle drag start
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if (dragHandleRef.current?.contains(e.target as Node)) {
+            setIsDragging(true)
+            setDragOffset({
+                x: e.clientX - position.x,
+                y: e.clientY - position.y,
+            })
+        }
+    }
+
+    // Handle dragging
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            if (isDragging) {
+                setPosition({
+                    x: e.clientX - dragOffset.x,
+                    y: e.clientY - dragOffset.y,
+                })
+            }
+        }
+
+        const handleMouseUp = () => {
+            setIsDragging(false)
+        }
+
+        if (isDragging) {
+            document.addEventListener('mousemove', handleMouseMove)
+            document.addEventListener('mouseup', handleMouseUp)
+        }
+
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove)
+            document.removeEventListener('mouseup', handleMouseUp)
+        }
+    }, [isDragging, dragOffset])
+
     const toggleSetting = (key: keyof DebugSettings) => {
         setSettings((prev) => ({ ...prev, [key]: !prev[key] }))
     }
@@ -44,8 +103,18 @@ export default function DebugControls() {
     if (process.env.NODE_ENV !== 'development') return null
 
     return (
-        <div className="fixed top-4 right-20 z-[9999] flex items-center space-x-2 bg-gray-900/95 rounded-lg border border-gray-700 px-3 py-2">
-            <BugAntIcon className="w-4 h-4 text-gray-400" />
+        <div
+            className="fixed z-[9999] flex items-center space-x-2 bg-gray-900/95 rounded-lg border border-gray-700 px-3 py-2 select-none"
+            style={{ left: `${position.x}px`, top: `${position.y}px` }}
+            onMouseDown={handleMouseDown}
+        >
+            <div
+                ref={dragHandleRef}
+                className="cursor-move hover:bg-gray-800 rounded p-1 -m-1 transition-colors"
+                title="Drag to move"
+            >
+                <BugAntIcon className="w-4 h-4 text-gray-400" />
+            </div>
 
             {/* Firebase Tracker Toggle */}
             <button
