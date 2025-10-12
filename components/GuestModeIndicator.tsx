@@ -16,7 +16,7 @@ export function GuestModeIndicator() {
     return (
         <div className="flex items-center space-x-2 px-4 py-2 bg-[#141414] border border-[#454545] rounded-md hover:border-[#666666] transition-colors">
             <UserCircleIcon className="w-5 h-5 text-blue-400 flex-shrink-0" />
-            <span className="text-sm font-medium text-[#e5e5e5] whitespace-nowrap">Guest</span>
+            <span className="text-sm font-medium text-[#e5e5e5] whitespace-nowrap">Guest Mode</span>
         </div>
     )
 }
