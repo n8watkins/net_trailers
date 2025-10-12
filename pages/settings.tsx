@@ -514,48 +514,16 @@ const Settings: React.FC<SettingsProps> = ({
                                                             Content & Privacy
                                                         </h3>
                                                         <div className="space-y-6 bg-[#0a0a0a] rounded-lg border border-[#313131] p-6">
-                                                            {/* Max Content Rating */}
-                                                            <div>
-                                                                <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
-                                                                    Maximum Content Rating
-                                                                </label>
-                                                                <p className="text-xs text-[#b3b3b3] mb-3">
-                                                                    Filter content to show only
-                                                                    movies and TV shows at or below
-                                                                    this rating
-                                                                </p>
-                                                                <select className="inputClass w-full max-w-xs">
-                                                                    <option value="all">
-                                                                        All Ratings (No Filter)
-                                                                    </option>
-                                                                    <option value="G">
-                                                                        G - General Audiences
-                                                                    </option>
-                                                                    <option value="PG">
-                                                                        PG - Parental Guidance
-                                                                    </option>
-                                                                    <option value="PG-13">
-                                                                        PG-13 - Parents Strongly
-                                                                        Cautioned
-                                                                    </option>
-                                                                    <option value="R">
-                                                                        R - Restricted (17+)
-                                                                    </option>
-                                                                    <option value="NC-17">
-                                                                        NC-17 - Adults Only
-                                                                    </option>
-                                                                </select>
-                                                            </div>
-
-                                                            {/* Show Adult Content Toggle */}
-                                                            <div className="flex items-start justify-between pt-4 border-t border-[#313131]">
+                                                            {/* Child Safety Mode Toggle */}
+                                                            <div className="flex items-start justify-between">
                                                                 <div className="flex-1">
                                                                     <label className="block text-sm font-medium text-[#e5e5e5] mb-1">
-                                                                        Show Adult Content
+                                                                        Child Safety Mode
                                                                     </label>
                                                                     <p className="text-xs text-[#b3b3b3]">
-                                                                        Include adult/explicit
-                                                                        content in results
+                                                                        Restrict content to PG-13
+                                                                        and below, filter explicit
+                                                                        material
                                                                     </p>
                                                                 </div>
                                                                 <label className="relative inline-flex items-center cursor-pointer ml-4">
