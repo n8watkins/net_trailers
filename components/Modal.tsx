@@ -311,6 +311,12 @@ function Modal() {
     useEffect(() => {
         if (!currentMovie || !currentMovie.id) return
 
+        // If switching to a different movie, clear old enhanced data immediately
+        if (loadedMovieId !== currentMovie.id && loadedMovieId !== null) {
+            setEnhancedMovieData(null)
+            setTrailer('')
+        }
+
         // Only fetch if we haven't already loaded this movie's details
         if (loadedMovieId === currentMovie.id) return
 
@@ -776,32 +782,29 @@ function Modal() {
                                     <div className="flex flex-wrap gap-4 sm:gap-8 items-center justify-between">
                                         {/* Left side buttons */}
                                         <div className="flex gap-2 sm:gap-4 items-center">
-                                            {/* Play/Pause button - always show, disable if no trailer */}
-                                            <button
-                                                className={`flex items-center gap-1 sm:gap-2 px-3 py-1.5 sm:px-6 sm:py-2 rounded text-sm sm:text-base font-semibold ${
-                                                    trailer
-                                                        ? 'bg-white text-black hover:bg-white/80'
-                                                        : 'bg-white/50 text-black/50 cursor-not-allowed'
-                                                }`}
-                                                onClick={trailer ? togglePlaying : undefined}
-                                                disabled={!trailer}
-                                            >
-                                                {playing || !trailer ? (
-                                                    <>
-                                                        <PauseIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-                                                        <span className="hidden sm:inline">
-                                                            {trailer ? 'Pause' : 'Loading...'}
-                                                        </span>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <PlayIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-                                                        <span className="hidden sm:inline">
-                                                            Play
-                                                        </span>
-                                                    </>
-                                                )}
-                                            </button>
+                                            {/* Play/Pause button - only show when trailer is available */}
+                                            {trailer && (
+                                                <button
+                                                    className="flex items-center gap-1 sm:gap-2 px-3 py-1.5 sm:px-6 sm:py-2 bg-white text-black hover:bg-white/80 rounded text-sm sm:text-base font-semibold"
+                                                    onClick={togglePlaying}
+                                                >
+                                                    {playing ? (
+                                                        <>
+                                                            <PauseIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                                                            <span className="hidden sm:inline">
+                                                                Pause
+                                                            </span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <PlayIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                                                            <span className="hidden sm:inline">
+                                                                Play
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                </button>
+                                            )}
 
                                             {/* My List Button - Modified to open inline dropdown */}
                                             {currentMovie && 'media_type' in currentMovie && (
