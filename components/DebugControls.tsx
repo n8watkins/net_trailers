@@ -67,21 +67,22 @@ export default function DebugControls() {
         localStorage.setItem('debugPosition', JSON.stringify(position))
     }, [position])
 
-    // Handle drag start
-    const handleMouseDown = (e: React.MouseEvent) => {
-        if (dragHandleRef.current?.contains(e.target as Node)) {
-            setIsDragging(true)
-            setDragOffset({
-                x: e.clientX - position.x,
-                y: e.clientY - position.y,
-            })
-        }
+    // Handle drag start - only from the bug icon
+    const handleDragStart = (e: React.MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        setIsDragging(true)
+        setDragOffset({
+            x: e.clientX - position.x,
+            y: e.clientY - position.y,
+        })
     }
 
     // Handle dragging
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
             if (isDragging) {
+                e.preventDefault()
                 setPosition({
                     x: e.clientX - dragOffset.x,
                     y: e.clientY - dragOffset.y,
@@ -104,6 +105,9 @@ export default function DebugControls() {
         }
     }, [isDragging, dragOffset])
 
+    // Keep component expanded while dragging
+    const shouldShowControls = isHovered || isDragging
+
     const toggleSetting = (key: keyof DebugSettings) => {
         setSettings((prev) => ({ ...prev, [key]: !prev[key] }))
     }
@@ -115,19 +119,19 @@ export default function DebugControls() {
         <div
             className="fixed z-[9999] flex items-center space-x-2 bg-gray-900/95 rounded-lg border border-gray-700 px-3 py-2 select-none transition-all duration-200"
             style={{ left: `${position.x}px`, top: `${position.y}px` }}
-            onMouseDown={handleMouseDown}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
+            onMouseEnter={() => !isDragging && setIsHovered(true)}
+            onMouseLeave={() => !isDragging && setIsHovered(false)}
         >
             <div
                 ref={dragHandleRef}
                 className="cursor-move hover:bg-gray-800 rounded p-1 -m-1 transition-colors"
                 title="Drag to move · Hover to expand"
+                onMouseDown={handleDragStart}
             >
                 <BugAntIcon className="w-4 h-4 text-gray-400" />
             </div>
 
-            {isHovered && (
+            {shouldShowControls && (
                 <>
                     {/* Firebase Tracker Toggle */}
                     <button
