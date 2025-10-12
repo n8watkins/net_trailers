@@ -173,6 +173,12 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                 />
                             </div>
                         </div>
+
+                        {/* Indicators - After Search Bar */}
+                        <div className="flex items-center space-x-3 ml-4">
+                            <GuestModeIndicator />
+                            <ChildSafetyIndicator />
+                        </div>
                     </div>
                 </div>
 
@@ -196,16 +202,6 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                 <Bars3Icon className="h-6 w-6 text-white" />
                             )}
                         </button>
-                    </div>
-
-                    {/* Guest Mode Indicator - Hidden on mobile */}
-                    <div className="hidden lg:block">
-                        <GuestModeIndicator />
-                    </div>
-
-                    {/* Child Safety Mode Indicator - Hidden on mobile */}
-                    <div className="hidden lg:block">
-                        <ChildSafetyIndicator />
                     </div>
 
                     {/* Avatar Dropdown */}
