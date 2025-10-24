@@ -867,15 +867,11 @@ function Modal() {
                                                 >
                                                     <button
                                                         ref={inlineDropdownButtonRef}
-                                                        className={`group relative p-2 sm:p-3 rounded-full border-2 ${(() => {
-                                                            const listsContaining =
-                                                                getListsContaining(currentMovie.id)
-                                                            const isInAnyList =
-                                                                listsContaining.length > 0
-                                                            return isInAnyList
-                                                                ? 'border-green-400/60 bg-green-500/20 hover:bg-green-500/30'
-                                                                : 'border-white/30 bg-black/20 hover:bg-black/50'
-                                                        })()} hover:border-white text-white transition-all duration-200`}
+                                                        className={`group relative p-2 sm:p-3 rounded-full border-2 text-white transition-colors ${
+                                                            showInlineListDropdown
+                                                                ? 'border-white bg-black/50'
+                                                                : 'border-white/30 bg-black/20 hover:bg-black/50 hover:border-white'
+                                                        }`}
                                                         onClick={(e) => {
                                                             e.preventDefault()
                                                             e.stopPropagation()
@@ -894,9 +890,21 @@ function Modal() {
                                                             return (
                                                                 <>
                                                                     {isInAnyList ? (
-                                                                        <CheckIcon className="h-4 w-4 sm:h-6 sm:w-6 text-green-400 group-hover:text-white transition-colors" />
+                                                                        <CheckIcon
+                                                                            className={`h-4 w-4 sm:h-6 sm:w-6 transition-colors ${
+                                                                                showInlineListDropdown
+                                                                                    ? 'text-white'
+                                                                                    : 'text-green-400 group-hover:text-white'
+                                                                            }`}
+                                                                        />
                                                                     ) : (
-                                                                        <PlusIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
+                                                                        <PlusIcon
+                                                                            className={`h-4 w-4 sm:h-6 sm:w-6 transition-colors ${
+                                                                                showInlineListDropdown
+                                                                                    ? 'text-white'
+                                                                                    : 'text-white/70 group-hover:text-white'
+                                                                            }`}
+                                                                        />
                                                                     )}
 
                                                                     {/* Show count badge if in multiple lists */}
