@@ -253,7 +253,7 @@ function ListSelectionModal() {
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
             {/* Modal */}
-            <div className="relative bg-[#141414] rounded-lg shadow-2xl max-w-md w-full mx-4 max-h-[80vh] overflow-hidden">
+            <div className="relative bg-[#141414] rounded-lg shadow-2xl max-w-md w-full mx-4 max-h-[90vh] overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-700">
                     <div>
@@ -275,7 +275,7 @@ function ListSelectionModal() {
                 </div>
 
                 {/* Content */}
-                <div className="p-6 max-h-[calc(80vh-100px)] overflow-y-auto">
+                <div className="p-6 max-h-[calc(90vh-100px)] overflow-y-auto">
                     {/* Target Content Info - Only show when adding content to lists */}
                     {!isManagementMode && targetContent && (
                         <div className="mb-6 p-4 bg-gradient-to-r from-gray-800/80 to-gray-900/50 rounded-lg border border-gray-700/50">
