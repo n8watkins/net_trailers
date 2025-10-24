@@ -60,6 +60,18 @@ function ListSelectionModal() {
     )
     const hasNoCustomLists = customLists.length === 0
 
+    // Helper function to convert hex color to rgba with opacity
+    const hexToRgba = (hex: string, opacity: number): string => {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+        if (result) {
+            const r = parseInt(result[1], 16)
+            const g = parseInt(result[2], 16)
+            const b = parseInt(result[3], 16)
+            return `rgba(${r}, ${g}, ${b}, ${opacity})`
+        }
+        return `rgba(107, 114, 128, ${opacity})` // Fallback to gray
+    }
+
     if (!listModal.isOpen) return null
 
     const onClose = () => {
@@ -322,11 +334,20 @@ function ListSelectionModal() {
                                 // Management mode - show edit/delete options
                                 const isDefaultList = list.id === 'default-watchlist'
 
+                                const listColor = list.color || '#6b7280'
+                                const bgGradient = `linear-gradient(to right, ${hexToRgba(listColor, 0.25)}, ${hexToRgba(listColor, 0.05)})`
+
                                 return (
                                     <div
                                         key={list.id}
-                                        className="w-full flex items-center justify-between p-3 rounded-lg bg-gray-800/50 border-l-4"
-                                        style={{ borderLeftColor: list.color || '#6b7280' }}
+                                        className="w-full flex items-center justify-between p-3 rounded-lg border-l-[6px] border-t border-r border-b transition-all duration-200"
+                                        style={{
+                                            borderLeftColor: listColor,
+                                            borderTopColor: hexToRgba(listColor, 0.3),
+                                            borderRightColor: hexToRgba(listColor, 0.3),
+                                            borderBottomColor: hexToRgba(listColor, 0.3),
+                                            background: bgGradient,
+                                        }}
                                     >
                                         <div className="flex items-center space-x-3">
                                             {getListIcon(list)}
@@ -372,15 +393,32 @@ function ListSelectionModal() {
                                         : isContentInList(list.id, targetContent.id)
                                 const isDefaultList = list.id === 'default-watchlist'
 
+                                const listColor = list.color || '#6b7280'
+                                const bgGradient = isInList
+                                    ? `linear-gradient(to right, ${hexToRgba(listColor, 0.35)}, ${hexToRgba(listColor, 0.15)})`
+                                    : `linear-gradient(to right, ${hexToRgba(listColor, 0.2)}, ${hexToRgba(listColor, 0.05)})`
+
                                 return (
                                     <div
                                         key={list.id}
-                                        className={`w-full flex items-center justify-between p-3 rounded-lg transition-all duration-200 border-l-4 ${
+                                        className={`w-full flex items-center justify-between p-3 rounded-lg transition-all duration-200 border-l-[6px] border-t border-r border-b ${
                                             isInList
-                                                ? 'bg-white/10 border-t border-r border-b border-white/20'
-                                                : 'bg-gray-800/50 hover:bg-gray-700/50'
+                                                ? 'hover:brightness-110'
+                                                : 'hover:brightness-125'
                                         }`}
-                                        style={{ borderLeftColor: list.color || '#6b7280' }}
+                                        style={{
+                                            borderLeftColor: listColor,
+                                            borderTopColor: isInList
+                                                ? hexToRgba(listColor, 0.5)
+                                                : hexToRgba(listColor, 0.3),
+                                            borderRightColor: isInList
+                                                ? hexToRgba(listColor, 0.5)
+                                                : hexToRgba(listColor, 0.3),
+                                            borderBottomColor: isInList
+                                                ? hexToRgba(listColor, 0.5)
+                                                : hexToRgba(listColor, 0.3),
+                                            background: bgGradient,
+                                        }}
                                     >
                                         <button
                                             onClick={() => handleToggleList(list)}
