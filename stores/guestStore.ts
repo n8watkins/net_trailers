@@ -227,7 +227,7 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
             })
         }
 
-        console.log('📋 [GuestStore] Created list:', listName, newList.id)
+        console.log('📋 [GuestStore] Created list:', request.name, newList.id)
         return newList.id
     },
 

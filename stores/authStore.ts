@@ -366,7 +366,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             set({ syncStatus: 'synced' })
         }
 
-        console.log('📋 [AuthStore] Created list:', listName, newList.id)
+        console.log('📋 [AuthStore] Created list:', request.name, newList.id)
         return newList.id
     },
 
