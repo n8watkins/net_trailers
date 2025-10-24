@@ -111,7 +111,7 @@ function Modal() {
 
     // Inline watchlist dropdown state
     const [showInlineListDropdown, setShowInlineListDropdown] = useState(false)
-    const [isWatchlistHoverEnabled, setIsWatchlistHoverEnabled] = useState(true)
+    const [isWatchlistButtonHovered, setIsWatchlistButtonHovered] = useState(false)
 
     const inlineDropdownRef = useRef<HTMLDivElement>(null)
     const inlineDropdownButtonRef = useRef<HTMLButtonElement>(null)
@@ -868,31 +868,21 @@ function Modal() {
                                                 >
                                                     <button
                                                         ref={inlineDropdownButtonRef}
-                                                        className={`group relative p-2 sm:p-3 rounded-full border-2 text-white ${
-                                                            showInlineListDropdown
+                                                        className={`group relative p-2 sm:p-3 rounded-full border-2 text-white transition-colors ${
+                                                            showInlineListDropdown ||
+                                                            isWatchlistButtonHovered
                                                                 ? 'border-white bg-black/50'
-                                                                : `border-white/30 bg-black/20 transition-colors ${
-                                                                      isWatchlistHoverEnabled
-                                                                          ? 'hover:bg-black/50 hover:border-white'
-                                                                          : ''
-                                                                  }`
+                                                                : 'border-white/30 bg-black/20'
                                                         }`}
+                                                        onMouseEnter={() =>
+                                                            setIsWatchlistButtonHovered(true)
+                                                        }
+                                                        onMouseLeave={() =>
+                                                            setIsWatchlistButtonHovered(false)
+                                                        }
                                                         onClick={(e) => {
                                                             e.preventDefault()
                                                             e.stopPropagation()
-
-                                                            if (showInlineListDropdown) {
-                                                                // Closing: disable hover temporarily
-                                                                setIsWatchlistHoverEnabled(false)
-                                                                setTimeout(
-                                                                    () =>
-                                                                        setIsWatchlistHoverEnabled(
-                                                                            true
-                                                                        ),
-                                                                    100
-                                                                )
-                                                            }
-
                                                             // Toggle the dropdown open/closed
                                                             setShowInlineListDropdown(
                                                                 !showInlineListDropdown
@@ -909,26 +899,20 @@ function Modal() {
                                                                 <>
                                                                     {isInAnyList ? (
                                                                         <CheckIcon
-                                                                            className={`h-4 w-4 sm:h-6 sm:w-6 ${
-                                                                                showInlineListDropdown
+                                                                            className={`h-4 w-4 sm:h-6 sm:w-6 transition-colors ${
+                                                                                showInlineListDropdown ||
+                                                                                isWatchlistButtonHovered
                                                                                     ? 'text-white'
-                                                                                    : `text-green-400 transition-colors ${
-                                                                                          isWatchlistHoverEnabled
-                                                                                              ? 'group-hover:text-white'
-                                                                                              : ''
-                                                                                      }`
+                                                                                    : 'text-green-400'
                                                                             }`}
                                                                         />
                                                                     ) : (
                                                                         <PlusIcon
-                                                                            className={`h-4 w-4 sm:h-6 sm:w-6 ${
-                                                                                showInlineListDropdown
+                                                                            className={`h-4 w-4 sm:h-6 sm:w-6 transition-colors ${
+                                                                                showInlineListDropdown ||
+                                                                                isWatchlistButtonHovered
                                                                                     ? 'text-white'
-                                                                                    : `text-white/70 transition-colors ${
-                                                                                          isWatchlistHoverEnabled
-                                                                                              ? 'group-hover:text-white'
-                                                                                              : ''
-                                                                                      }`
+                                                                                    : 'text-white/70'
                                                                             }`}
                                                                         />
                                                                     )}
