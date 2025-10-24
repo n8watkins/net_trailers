@@ -26,7 +26,12 @@ export interface GuestActions {
     removeLikedMovie: (contentId: number) => void
     addHiddenMovie: (content: Content) => void
     removeHiddenMovie: (contentId: number) => void
-    createList: (listName: string) => string
+    createList: (request: {
+        name: string
+        emoji?: string
+        color?: string
+        isPublic?: boolean
+    }) => string
     addToList: (listId: string, content: Content) => void
     removeFromList: (listId: string, contentId: number) => void
     updateList: (listId: string, updates: { name?: string; emoji?: string; color?: string }) => void
@@ -199,10 +204,10 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
         console.log('🗑️ [GuestStore] Removed from hidden:', contentId)
     },
 
-    createList: (listName: string) => {
+    createList: (request: { name: string; emoji?: string; color?: string; isPublic?: boolean }) => {
         const state = get()
         // Create a new list using the UserListsService
-        const updatedPrefs = UserListsService.createList(state as any, { name: listName })
+        const updatedPrefs = UserListsService.createList(state as any, request)
         const newList =
             updatedPrefs.userCreatedWatchlists[updatedPrefs.userCreatedWatchlists.length - 1]
 

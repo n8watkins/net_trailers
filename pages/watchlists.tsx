@@ -38,7 +38,7 @@ const Watchlists: NextPage<Props> = ({
 }) => {
     const userData = useUserData()
     const { user } = useAuth()
-    const { isGuest } = useAuthStatus()
+    const { isGuest, isInitialized } = useAuthStatus()
     const { getAllLists } = userData
     const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
     const debugSettings = useDebugSettings()
@@ -217,7 +217,7 @@ const Watchlists: NextPage<Props> = ({
                                 </button>
                             )}
 
-                        {isGuest && (
+                        {isInitialized && isGuest && (
                             <GuestModeNotification onOpenTutorial={onOpenTutorial} align="left" />
                         )}
 

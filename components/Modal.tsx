@@ -803,11 +803,9 @@ function Modal() {
                                                             key={list.id}
                                                             onClick={handleListToggle}
                                                             className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 border-2 ${
-                                                                list.name === 'Watchlist'
-                                                                    ? 'bg-yellow-500/20 border-yellow-500/70'
-                                                                    : isInList
-                                                                      ? 'bg-white/10 border-green-500/50 hover:bg-white/15 hover:border-green-500/70'
-                                                                      : 'bg-gray-800/50 border-gray-700/30 hover:bg-gray-700/70 hover:border-gray-600/50'
+                                                                isInList
+                                                                    ? 'bg-white/10 border-green-500/50 hover:bg-white/15 hover:border-green-500/70'
+                                                                    : 'bg-gray-800/50 border-gray-700/30 hover:bg-gray-700/70 hover:border-gray-600/50'
                                                             }`}
                                                         >
                                                             <div className="flex items-center space-x-3">

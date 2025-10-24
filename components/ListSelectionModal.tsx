@@ -8,6 +8,8 @@ import { Content, getTitle } from '../typings'
 import { UserList } from '../types/userLists'
 import Image from 'next/image'
 import IconPickerModal from './IconPickerModal'
+import ColorPickerModal from './ColorPickerModal'
+import { useToast } from '../hooks/useToast'
 import {
     XMarkIcon,
     PlusIcon,
@@ -23,6 +25,7 @@ function ListSelectionModal() {
     const [listModal, setListModal] = useRecoilState(listModalState)
     const [authModal, setAuthModal] = useRecoilState(authModalState)
     const { isGuest, isAuthenticated } = useAuthStatus()
+    const { showError } = useToast()
     const {
         getAllLists,
         addToList,
@@ -39,9 +42,11 @@ function ListSelectionModal() {
     const [showCreateList, setShowCreateList] = useState(false)
     const [newListName, setNewListName] = useState('')
     const [selectedEmoji, setSelectedEmoji] = useState('🎬')
+    const [selectedColor, setSelectedColor] = useState('#ef4444')
     const [editingList, setEditingList] = useState<UserList | null>(null)
     const [deletingList, setDeletingList] = useState<UserList | null>(null)
     const [showIconPicker, setShowIconPicker] = useState(false)
+    const [showColorPicker, setShowColorPicker] = useState(false)
 
     const targetContent = listModal.content
     const allLists = getAllLists()
@@ -60,9 +65,11 @@ function ListSelectionModal() {
         setShowCreateList(false)
         setNewListName('')
         setSelectedEmoji('🎬')
+        setSelectedColor('#ef4444')
         setEditingList(null)
         setDeletingList(null)
         setShowIconPicker(false)
+        setShowColorPicker(false)
     }
 
     const getListIcon = (list: UserList) => {
@@ -104,16 +111,32 @@ function ListSelectionModal() {
     }
 
     const handleCreateList = () => {
-        if (newListName.trim()) {
-            createList({
-                name: newListName.trim(),
-                isPublic: false,
-                emoji: selectedEmoji,
-            })
-            setNewListName('')
-            setSelectedEmoji('🎬')
-            setShowCreateList(false)
+        const trimmedName = newListName.trim()
+        if (!trimmedName) return
+
+        // Check for duplicate name (case-insensitive)
+        const isDuplicate = allLists.some(
+            (list) => list.name.toLowerCase() === trimmedName.toLowerCase()
+        )
+
+        if (isDuplicate) {
+            showError(
+                'Duplicate List Name',
+                `A list named "${trimmedName}" already exists. Please choose a different name.`
+            )
+            return
         }
+
+        createList({
+            name: trimmedName,
+            isPublic: false,
+            emoji: selectedEmoji,
+            color: selectedColor,
+        })
+        setNewListName('')
+        setSelectedEmoji('🎬')
+        setSelectedColor('#ef4444')
+        setShowCreateList(false)
     }
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -126,6 +149,8 @@ function ListSelectionModal() {
         } else if (e.key === 'Escape') {
             setShowCreateList(false)
             setNewListName('')
+            setSelectedEmoji('🎬')
+            setSelectedColor('#ef4444')
             setEditingList(null)
         }
     }
@@ -134,20 +159,40 @@ function ListSelectionModal() {
         setEditingList(list)
         setNewListName(list.name)
         setSelectedEmoji(list.emoji || '🎬')
+        setSelectedColor(list.color || '#ef4444')
         setShowCreateList(true)
     }
 
     const handleUpdateList = () => {
-        if (editingList && newListName.trim()) {
-            updateList(editingList.id, {
-                name: newListName.trim(),
-                emoji: selectedEmoji,
-            })
-            setEditingList(null)
-            setNewListName('')
-            setSelectedEmoji('🎬')
-            setShowCreateList(false)
+        if (!editingList) return
+
+        const trimmedName = newListName.trim()
+        if (!trimmedName) return
+
+        // Check for duplicate name (case-insensitive), excluding the current list being edited
+        const isDuplicate = allLists.some(
+            (list) =>
+                list.id !== editingList.id && list.name.toLowerCase() === trimmedName.toLowerCase()
+        )
+
+        if (isDuplicate) {
+            showError(
+                'Duplicate List Name',
+                `A list named "${trimmedName}" already exists. Please choose a different name.`
+            )
+            return
         }
+
+        updateList(editingList.id, {
+            name: trimmedName,
+            emoji: selectedEmoji,
+            color: selectedColor,
+        })
+        setEditingList(null)
+        setNewListName('')
+        setSelectedEmoji('🎬')
+        setSelectedColor('#ef4444')
+        setShowCreateList(false)
     }
 
     const handleDeleteList = (list: UserList) => {
@@ -166,7 +211,7 @@ function ListSelectionModal() {
     }
 
     return (
-        <div className="fixed inset-0 z-[1400] flex items-center justify-center">
+        <div className="fixed inset-0 z-[55000] flex items-center justify-center">
             {/* Backdrop */}
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
@@ -265,7 +310,8 @@ function ListSelectionModal() {
                                 return (
                                     <div
                                         key={list.id}
-                                        className="w-full flex items-center justify-between p-3 rounded-lg bg-gray-800/50"
+                                        className="w-full flex items-center justify-between p-3 rounded-lg bg-gray-800/50 border-l-4"
+                                        style={{ borderLeftColor: list.color || '#6b7280' }}
                                     >
                                         <div className="flex items-center space-x-3">
                                             {getListIcon(list)}
@@ -309,27 +355,29 @@ function ListSelectionModal() {
                                     list.id === 'default-watchlist'
                                         ? isInWatchlist(targetContent.id)
                                         : isContentInList(list.id, targetContent.id)
+                                const isDefaultList = list.id === 'default-watchlist'
 
                                 return (
-                                    <button
+                                    <div
                                         key={list.id}
-                                        onClick={() => handleToggleList(list)}
-                                        className={`w-full flex items-center justify-between p-3 rounded-lg transition-all duration-200 ${
-                                            list.name === 'Watchlist'
-                                                ? 'bg-purple-500/20 border border-purple-500/70'
-                                                : isInList
-                                                  ? 'bg-white/10 border border-white/20'
-                                                  : 'bg-gray-800/50 hover:bg-gray-700/50'
+                                        className={`w-full flex items-center justify-between p-3 rounded-lg transition-all duration-200 border-l-4 ${
+                                            isInList
+                                                ? 'bg-white/10 border-t border-r border-b border-white/20'
+                                                : 'bg-gray-800/50 hover:bg-gray-700/50'
                                         }`}
+                                        style={{ borderLeftColor: list.color || '#6b7280' }}
                                     >
-                                        <div className="flex items-center space-x-3">
+                                        <button
+                                            onClick={() => handleToggleList(list)}
+                                            className="flex items-center space-x-3 flex-1 text-left"
+                                        >
                                             {getListIcon(list)}
-                                            <div className="text-left">
+                                            <div>
                                                 <div className="text-white font-medium">
                                                     {list.name}
                                                 </div>
                                             </div>
-                                        </div>
+                                        </button>
 
                                         <div className="flex items-center space-x-2">
                                             <span className="text-xs text-gray-400">
@@ -338,8 +386,34 @@ function ListSelectionModal() {
                                             {isInList && (
                                                 <CheckIcon className="w-5 h-5 text-green-400" />
                                             )}
+
+                                            {/* Show edit/delete for custom lists */}
+                                            {!isDefaultList && (
+                                                <>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            handleEditList(list)
+                                                        }}
+                                                        className="p-1.5 hover:bg-gray-600 rounded transition-colors"
+                                                        title="Edit list"
+                                                    >
+                                                        <PencilIcon className="w-4 h-4 text-gray-400 hover:text-white" />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            handleDeleteList(list)
+                                                        }}
+                                                        className="p-1.5 hover:bg-gray-600 rounded transition-colors"
+                                                        title="Delete list"
+                                                    >
+                                                        <TrashIcon className="w-4 h-4 text-gray-400 hover:text-red-400" />
+                                                    </button>
+                                                </>
+                                            )}
                                         </div>
-                                    </button>
+                                    </div>
                                 )
                             }
                         })}
@@ -380,13 +454,45 @@ function ListSelectionModal() {
                                 {/* Icon selector and form inputs */}
                                 <div className="flex items-start space-x-3">
                                     {/* Icon selector */}
-                                    <button
-                                        onClick={() => setShowIconPicker(true)}
-                                        className="flex-shrink-0 w-12 h-12 bg-gray-800 border border-gray-600 rounded-lg flex items-center justify-center text-2xl transition-all duration-200 hover:bg-gray-700 hover:border-gray-500"
-                                        title="Choose an icon"
-                                    >
-                                        {selectedEmoji}
-                                    </button>
+                                    <div className="relative flex-shrink-0">
+                                        <button
+                                            onClick={() => setShowIconPicker(true)}
+                                            className="w-12 h-12 bg-gray-800 border border-gray-600 rounded-lg flex items-center justify-center text-2xl transition-all duration-200 hover:bg-gray-700 hover:border-gray-500"
+                                            title="Choose an icon"
+                                        >
+                                            {selectedEmoji}
+                                        </button>
+
+                                        {/* Icon Picker Dropdown */}
+                                        <IconPickerModal
+                                            isOpen={showIconPicker}
+                                            selectedIcon={selectedEmoji}
+                                            onSelectIcon={setSelectedEmoji}
+                                            onClose={() => setShowIconPicker(false)}
+                                        />
+                                    </div>
+
+                                    {/* Color selector */}
+                                    <div className="relative flex-shrink-0">
+                                        <button
+                                            onClick={() => setShowColorPicker(true)}
+                                            className="w-12 h-12 bg-gray-800 border-2 border-gray-700 rounded-lg transition-all duration-200 hover:bg-gray-700 hover:border-gray-600"
+                                            title="Choose a color"
+                                        >
+                                            <div
+                                                className="w-full h-full rounded-md"
+                                                style={{ backgroundColor: selectedColor }}
+                                            />
+                                        </button>
+
+                                        {/* Color Picker Dropdown */}
+                                        <ColorPickerModal
+                                            isOpen={showColorPicker}
+                                            selectedColor={selectedColor}
+                                            onSelectColor={setSelectedColor}
+                                            onClose={() => setShowColorPicker(false)}
+                                        />
+                                    </div>
 
                                     {/* Form inputs */}
                                     <div className="flex-1">
@@ -396,7 +502,7 @@ function ListSelectionModal() {
                                             value={newListName}
                                             onChange={(e) => setNewListName(e.target.value)}
                                             onKeyDown={handleKeyPress}
-                                            className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent"
+                                            className="w-full h-12 px-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent"
                                             autoFocus
                                         />
                                     </div>
@@ -415,8 +521,10 @@ function ListSelectionModal() {
                                             setShowCreateList(false)
                                             setNewListName('')
                                             setSelectedEmoji('🎬')
+                                            setSelectedColor('#ef4444')
                                             setEditingList(null)
                                             setShowIconPicker(false)
+                                            setShowColorPicker(false)
                                         }}
                                         className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg font-medium transition-all duration-200 hover:bg-gray-600"
                                     >
@@ -429,7 +537,7 @@ function ListSelectionModal() {
 
                     {/* Delete Confirmation Modal */}
                     {deletingList && (
-                        <div className="fixed inset-0 z-[400] flex items-center justify-center">
+                        <div className="fixed inset-0 z-[56000] flex items-center justify-center">
                             <div
                                 className="absolute inset-0 bg-black/80 backdrop-blur-sm"
                                 onClick={cancelDeleteList}
@@ -459,14 +567,6 @@ function ListSelectionModal() {
                             </div>
                         </div>
                     )}
-
-                    {/* Icon Picker Modal */}
-                    <IconPickerModal
-                        isOpen={showIconPicker}
-                        selectedIcon={selectedEmoji}
-                        onSelectIcon={setSelectedEmoji}
-                        onClose={() => setShowIconPicker(false)}
-                    />
                 </div>
             </div>
         </div>

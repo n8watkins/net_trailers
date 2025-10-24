@@ -6,10 +6,12 @@ import { useSessionStore } from '../stores/sessionStore'
  */
 export const useAuthStatus = () => {
     const sessionType = useSessionStore((state) => state.sessionType)
+    const isInitialized = useSessionStore((state) => state.isInitialized)
 
     return {
         isGuest: sessionType === 'guest',
         isAuthenticated: sessionType === 'authenticated',
+        isInitialized,
         sessionType,
     }
 }

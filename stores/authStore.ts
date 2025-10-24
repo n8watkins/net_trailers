@@ -30,7 +30,12 @@ export interface AuthActions {
     removeLikedMovie: (contentId: number) => Promise<void>
     addHiddenMovie: (content: Content) => Promise<void>
     removeHiddenMovie: (contentId: number) => Promise<void>
-    createList: (listName: string) => Promise<string>
+    createList: (request: {
+        name: string
+        emoji?: string
+        color?: string
+        isPublic?: boolean
+    }) => Promise<string>
     addToList: (listId: string, content: Content) => Promise<void>
     removeFromList: (listId: string, contentId: number) => Promise<void>
     updateList: (
@@ -317,12 +322,17 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         console.log('🗑️ [AuthStore] Removed from hidden:', contentId)
     },
 
-    createList: async (listName: string) => {
+    createList: async (request: {
+        name: string
+        emoji?: string
+        color?: string
+        isPublic?: boolean
+    }) => {
         const state = get()
         set({ syncStatus: 'syncing' })
 
         // Create a new list using the UserListsService
-        const updatedPrefs = UserListsService.createList(state as any, { name: listName })
+        const updatedPrefs = UserListsService.createList(state as any, request)
         const newList =
             updatedPrefs.userCreatedWatchlists[updatedPrefs.userCreatedWatchlists.length - 1]
 

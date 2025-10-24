@@ -22,7 +22,7 @@ interface Props {
 const Liked: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }) => {
     const userData = useUserData()
     const { likedMovies } = userData
-    const { isGuest } = useAuthStatus()
+    const { isGuest, isInitialized } = useAuthStatus()
     const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
 
     const [searchQuery, setSearchQuery] = useState('')
@@ -111,7 +111,7 @@ const Liked: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboa
                             Movies and TV shows you&apos;ve rated positively.
                         </p>
 
-                        {isGuest && (
+                        {isInitialized && isGuest && (
                             <GuestModeNotification onOpenTutorial={onOpenTutorial} align="left" />
                         )}
 

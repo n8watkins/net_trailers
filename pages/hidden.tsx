@@ -22,7 +22,7 @@ interface Props {
 const Hidden: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }) => {
     const userData = useUserData()
     const { hiddenMovies } = userData
-    const { isGuest } = useAuthStatus()
+    const { isGuest, isInitialized } = useAuthStatus()
     const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
 
     const [searchQuery, setSearchQuery] = useState('')
@@ -117,7 +117,7 @@ const Hidden: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeybo
                             Curate your recommendations! Hide content you&apos;re not interested in.
                         </p>
 
-                        {isGuest && (
+                        {isInitialized && isGuest && (
                             <GuestModeNotification onOpenTutorial={onOpenTutorial} align="left" />
                         )}
 

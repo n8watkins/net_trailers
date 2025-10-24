@@ -40,7 +40,7 @@ export default function useUserData() {
             isInWatchlist: sessionData.isInWatchlist,
 
             // List management (NEW SCHEMA)
-            createList: (request: any) => sessionData.createList(request.name),
+            createList: (request: any) => sessionData.createList(request),
             updateList: (
                 listId: string,
                 updates: { name?: string; emoji?: string; color?: string }
@@ -161,7 +161,7 @@ export default function useUserData() {
             isInWatchlist: sessionData.isInWatchlist,
 
             // List management (NEW SCHEMA)
-            createList: (request: any) => sessionData.createList(request.name),
+            createList: (request: any) => sessionData.createList(request),
             updateList: (
                 listId: string,
                 updates: { name?: string; emoji?: string; color?: string }
