@@ -335,7 +335,6 @@ function ListSelectionModal() {
                                 const isDefaultList = list.id === 'default-watchlist'
 
                                 const listColor = list.color || '#6b7280'
-                                const bgGradient = `linear-gradient(to right, ${hexToRgba(listColor, 0.25)}, ${hexToRgba(listColor, 0.05)})`
 
                                 return (
                                     <div
@@ -346,7 +345,7 @@ function ListSelectionModal() {
                                             borderTopColor: hexToRgba(listColor, 0.3),
                                             borderRightColor: hexToRgba(listColor, 0.3),
                                             borderBottomColor: hexToRgba(listColor, 0.3),
-                                            background: bgGradient,
+                                            backgroundColor: hexToRgba(listColor, 0.15),
                                         }}
                                     >
                                         <div className="flex items-center space-x-3">
@@ -394,9 +393,6 @@ function ListSelectionModal() {
                                 const isDefaultList = list.id === 'default-watchlist'
 
                                 const listColor = list.color || '#6b7280'
-                                const bgGradient = isInList
-                                    ? `linear-gradient(to right, ${hexToRgba(listColor, 0.35)}, ${hexToRgba(listColor, 0.15)})`
-                                    : `linear-gradient(to right, ${hexToRgba(listColor, 0.2)}, ${hexToRgba(listColor, 0.05)})`
 
                                 return (
                                     <div
@@ -417,7 +413,9 @@ function ListSelectionModal() {
                                             borderBottomColor: isInList
                                                 ? hexToRgba(listColor, 0.5)
                                                 : hexToRgba(listColor, 0.3),
-                                            background: bgGradient,
+                                            backgroundColor: isInList
+                                                ? hexToRgba(listColor, 0.25)
+                                                : hexToRgba(listColor, 0.15),
                                         }}
                                     >
                                         <button

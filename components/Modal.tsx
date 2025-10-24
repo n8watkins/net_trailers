@@ -24,6 +24,18 @@ import {
     Content,
     isMovie,
 } from '../typings'
+
+// Helper function to convert hex color to rgba with opacity
+const hexToRgba = (hex: string, opacity: number): string => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+    if (result) {
+        const r = parseInt(result[1], 16)
+        const g = parseInt(result[2], 16)
+        const b = parseInt(result[3], 16)
+        return `rgba(${r}, ${g}, ${b}, ${opacity})`
+    }
+    return `rgba(107, 114, 128, ${opacity})` // Fallback to gray
+}
 import {
     HandThumbDownIcon as HandThumbDownIconFilled,
     HandThumbUpIcon,
@@ -798,15 +810,32 @@ function Modal() {
                                                         }
                                                     }
 
+                                                    const listColor = list.color || '#6b7280'
+
                                                     return (
                                                         <button
                                                             key={list.id}
                                                             onClick={handleListToggle}
-                                                            className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 border-2 ${
+                                                            className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 border-l-[6px] border-t border-r border-b ${
                                                                 isInList
-                                                                    ? 'bg-white/10 border-green-500/50 hover:bg-white/15 hover:border-green-500/70'
-                                                                    : 'bg-gray-800/50 border-gray-700/30 hover:bg-gray-700/70 hover:border-gray-600/50'
+                                                                    ? 'hover:brightness-110'
+                                                                    : 'hover:brightness-125'
                                                             }`}
+                                                            style={{
+                                                                borderLeftColor: listColor,
+                                                                borderTopColor: isInList
+                                                                    ? hexToRgba(listColor, 0.5)
+                                                                    : hexToRgba(listColor, 0.3),
+                                                                borderRightColor: isInList
+                                                                    ? hexToRgba(listColor, 0.5)
+                                                                    : hexToRgba(listColor, 0.3),
+                                                                borderBottomColor: isInList
+                                                                    ? hexToRgba(listColor, 0.5)
+                                                                    : hexToRgba(listColor, 0.3),
+                                                                backgroundColor: isInList
+                                                                    ? hexToRgba(listColor, 0.25)
+                                                                    : hexToRgba(listColor, 0.15),
+                                                            }}
                                                         >
                                                             <div className="flex items-center space-x-3">
                                                                 {getListIcon()}
