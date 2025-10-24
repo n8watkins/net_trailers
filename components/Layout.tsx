@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react'
+import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import KeyboardShortcutsModal from './KeyboardShortcutsModal'
 import TutorialModal from './TutorialModal'
@@ -7,6 +7,7 @@ import AboutModal from './AboutModal'
 import ScrollToTopButton from './ScrollToTopButton'
 import { markAsVisited } from '../utils/firstVisitTracker'
 import { useAppStore } from '../stores/appStore'
+import { shouldShowAboutModal, markAboutModalShown } from '../utils/aboutModalTimer'
 
 interface LayoutProps {
     children: React.ReactNode
@@ -36,6 +37,7 @@ function Layout({ children }: LayoutProps) {
     const handleCloseAboutModal = useCallback(() => {
         setShowAboutModal(false)
         markAsVisited()
+        markAboutModalShown() // Mark as shown when closing
     }, [])
 
     const handleOpenTutorial = useCallback(() => {
@@ -64,6 +66,18 @@ function Layout({ children }: LayoutProps) {
                 searchInput.select()
             }
         }
+    }, [])
+
+    // Auto-show About modal every 24 hours
+    useEffect(() => {
+        // Small delay to ensure page has loaded
+        const timer = setTimeout(() => {
+            if (shouldShowAboutModal()) {
+                setShowAboutModal(true)
+            }
+        }, 1000) // 1 second delay after page load
+
+        return () => clearTimeout(timer)
     }, [])
 
     // Set up global keyboard shortcuts
