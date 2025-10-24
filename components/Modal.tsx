@@ -427,6 +427,11 @@ function Modal() {
     // Handle keyboard shortcuts for modal
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
+            // Disable keyboard shortcuts when list modal is open
+            if (listModal.isOpen) {
+                return
+            }
+
             if (e.key === 'Escape') {
                 e.preventDefault()
                 if (showJsonDebug) {
@@ -533,6 +538,7 @@ function Modal() {
         currentMovie,
         showContentShown,
         showContentHidden,
+        listModal,
     ])
 
     // Update muted and volume states when user preferences change
@@ -818,7 +824,7 @@ function Modal() {
                                                             onClick={handleListToggle}
                                                             className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 border-l-[6px] border-t border-r border-b ${
                                                                 isInList
-                                                                    ? 'hover:brightness-110'
+                                                                    ? 'ring-1 ring-green-400 hover:brightness-110'
                                                                     : 'hover:brightness-125'
                                                             }`}
                                                             style={{
@@ -837,20 +843,13 @@ function Modal() {
                                                                     : hexToRgba(listColor, 0.15),
                                                             }}
                                                         >
-                                                            <div className="flex items-center space-x-3">
-                                                                {getListIcon()}
+                                                            <div className="flex items-center space-x-4">
+                                                                <div>{getListIcon()}</div>
                                                                 <span
                                                                     className={`font-semibold ${isInList ? 'text-white' : 'text-gray-200'}`}
                                                                 >
                                                                     {list.name}
                                                                 </span>
-                                                            </div>
-                                                            <div className="flex items-center space-x-2">
-                                                                {isInList ? (
-                                                                    <CheckIcon className="w-5 h-5 text-green-400" />
-                                                                ) : (
-                                                                    <PlusIcon className="w-5 h-5 text-gray-400" />
-                                                                )}
                                                             </div>
                                                         </button>
                                                     )

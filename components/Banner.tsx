@@ -130,7 +130,7 @@ function Banner({ trending }: Props) {
                             : 'opacity-100 transform translate-y-0'
                     }`}
                 >
-                    {featuredContent && (
+                    {featuredContent ? (
                         <>
                             <h1 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight">
                                 {getTitle(featuredContent)}
@@ -146,6 +146,19 @@ function Banner({ trending }: Props) {
                             <p className="text-xs md:text-base lg:text-lg leading-relaxed text-gray-200 max-w-lg lg:max-w-xl">
                                 {truncateString(featuredContent?.overview)}
                             </p>
+                        </>
+                    ) : (
+                        <>
+                            {/* Skeleton for title */}
+                            <div className="h-8 sm:h-10 md:h-12 lg:h-14 xl:h-16 w-3/4"></div>
+                            {/* Skeleton for metadata */}
+                            <div className="h-4 md:h-5 w-32 mb-2"></div>
+                            {/* Skeleton for description - multiple lines */}
+                            <div className="space-y-2 max-w-lg lg:max-w-xl">
+                                <div className="h-4 md:h-5 lg:h-6 w-full"></div>
+                                <div className="h-4 md:h-5 lg:h-6 w-full"></div>
+                                <div className="h-4 md:h-5 lg:h-6 w-3/4"></div>
+                            </div>
                         </>
                     )}
 

@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from 'react'
-import { CheckIcon } from '@heroicons/react/24/solid'
 
 interface ColorPickerModalProps {
     isOpen: boolean
@@ -16,14 +15,16 @@ function ColorPickerModal({
 }: ColorPickerModalProps) {
     const dropdownRef = useRef<HTMLDivElement>(null)
 
-    // 16 vibrant colors that pop on dark backgrounds
+    // 16 vibrant colors that pop on dark backgrounds (Red, Yellow, Purple, Blue)
     const colors = [
         '#ef4444', // Red
+        '#dc2626', // Red (darker)
         '#f97316', // Orange
+        '#f43f5e', // Rose
         '#fbbf24', // Amber/Gold
         '#facc15', // Yellow
-        '#a3e635', // Lime
-        '#4ade80', // Green
+        '#eab308', // Yellow (darker)
+        '#f59e0b', // Amber
         '#2dd4bf', // Teal
         '#22d3ee', // Cyan
         '#38bdf8', // Sky Blue
@@ -32,8 +33,6 @@ function ColorPickerModal({
         '#8b5cf6', // Violet
         '#a855f7', // Purple
         '#d946ef', // Fuchsia
-        '#ec4899', // Pink
-        '#f43f5e', // Rose
     ]
 
     // Close on click outside
@@ -72,17 +71,11 @@ function ColorPickerModal({
                         <div
                             className={`w-full h-full rounded-md transition-all duration-200 hover:scale-110 hover:shadow-lg border ${
                                 selectedColor === color
-                                    ? 'ring-2 ring-white ring-offset-2 ring-offset-[#141414] scale-105 border-white'
+                                    ? 'ring-1 ring-white scale-105 border-white'
                                     : 'border-gray-600 hover:border-white/50'
                             }`}
                             style={{ backgroundColor: color }}
-                        >
-                            {selectedColor === color && (
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <CheckIcon className="w-4 h-4 text-white drop-shadow-lg" />
-                                </div>
-                            )}
-                        </div>
+                        />
                     </button>
                 ))}
             </div>

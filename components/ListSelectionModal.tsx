@@ -275,7 +275,7 @@ function ListSelectionModal() {
                 </div>
 
                 {/* Content */}
-                <div className="p-6">
+                <div className="p-6 max-h-[calc(80vh-100px)] overflow-y-auto">
                     {/* Target Content Info - Only show when adding content to lists */}
                     {!isManagementMode && targetContent && (
                         <div className="mb-6 p-4 bg-gradient-to-r from-gray-800/80 to-gray-900/50 rounded-lg border border-gray-700/50">
@@ -338,7 +338,7 @@ function ListSelectionModal() {
                     )}
 
                     {/* Lists */}
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                    <div className="space-y-2">
                         {allLists.map((list) => {
                             if (isManagementMode) {
                                 // Management mode - show edit/delete options
@@ -361,27 +361,53 @@ function ListSelectionModal() {
                                                 backgroundColor: hexToRgba(currentColor, 0.2),
                                             }}
                                         >
-                                            <div className="flex items-center space-x-2 mb-3">
+                                            <div className="flex items-center space-x-2">
                                                 {/* Icon Picker Button */}
-                                                <button
-                                                    onClick={() => setShowEditIconPicker(true)}
-                                                    className="w-10 h-10 bg-gray-800 border-2 border-gray-600 rounded-lg flex items-center justify-center text-2xl hover:bg-gray-700 hover:border-gray-500 transition-all"
-                                                    title="Change icon"
-                                                >
-                                                    {editingListEmoji}
-                                                </button>
+                                                <div className="relative">
+                                                    <button
+                                                        onClick={() => setShowEditIconPicker(true)}
+                                                        className="w-8 h-8 bg-gray-800 border border-gray-600 rounded flex items-center justify-center text-lg hover:bg-gray-700 hover:border-gray-500 transition-all"
+                                                        title="Change icon"
+                                                    >
+                                                        {editingListEmoji}
+                                                    </button>
+                                                    <IconPickerModal
+                                                        isOpen={showEditIconPicker}
+                                                        selectedIcon={editingListEmoji}
+                                                        onSelectIcon={(emoji) => {
+                                                            setEditingListEmoji(emoji)
+                                                            setShowEditIconPicker(false)
+                                                        }}
+                                                        onClose={() => setShowEditIconPicker(false)}
+                                                    />
+                                                </div>
 
                                                 {/* Color Picker Button */}
-                                                <button
-                                                    onClick={() => setShowEditColorPicker(true)}
-                                                    className="w-10 h-10 bg-gray-800 border-2 border-gray-700 rounded-lg transition-all hover:bg-gray-700 hover:border-gray-600"
-                                                    title="Change color"
-                                                >
-                                                    <div
-                                                        className="w-full h-full rounded-md"
-                                                        style={{ backgroundColor: currentColor }}
+                                                <div className="relative">
+                                                    <button
+                                                        onClick={() => setShowEditColorPicker(true)}
+                                                        className="w-8 h-8 bg-gray-800 border border-gray-700 rounded transition-all hover:bg-gray-700 hover:border-gray-600 p-1 flex items-center justify-center"
+                                                        title="Change color"
+                                                    >
+                                                        <div
+                                                            className="w-full h-full rounded"
+                                                            style={{
+                                                                backgroundColor: currentColor,
+                                                            }}
+                                                        />
+                                                    </button>
+                                                    <ColorPickerModal
+                                                        isOpen={showEditColorPicker}
+                                                        selectedColor={editingListColor}
+                                                        onSelectColor={(color) => {
+                                                            setEditingListColor(color)
+                                                            setShowEditColorPicker(false)
+                                                        }}
+                                                        onClose={() =>
+                                                            setShowEditColorPicker(false)
+                                                        }
                                                     />
-                                                </button>
+                                                </div>
 
                                                 {/* Name Input */}
                                                 <input
@@ -390,7 +416,7 @@ function ListSelectionModal() {
                                                     onChange={(e) =>
                                                         setEditingListName(e.target.value)
                                                     }
-                                                    className="flex-1 px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent"
+                                                    className="flex-1 h-8 px-2 bg-gray-800 border border-gray-600 rounded text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent"
                                                     placeholder="List name"
                                                     autoFocus
                                                     onKeyDown={(e) => {
@@ -401,23 +427,25 @@ function ListSelectionModal() {
                                                         }
                                                     }}
                                                 />
-                                            </div>
 
-                                            <div className="flex space-x-2">
+                                                {/* Save Button */}
                                                 <button
                                                     onClick={() =>
                                                         handleSaveEdit(list.id, list.name)
                                                     }
-                                                    className="flex-1 px-4 py-2 bg-white text-black rounded-lg font-medium hover:bg-gray-200 transition-all"
+                                                    className="w-8 h-8 flex items-center justify-center bg-white text-black rounded hover:bg-gray-200 transition-all"
+                                                    title="Save"
                                                 >
-                                                    <CheckIcon className="w-4 h-4 inline mr-1" />
-                                                    Save
+                                                    <CheckIcon className="w-4 h-4" />
                                                 </button>
+
+                                                {/* Cancel Button */}
                                                 <button
                                                     onClick={handleCancelEdit}
-                                                    className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-600 transition-all"
+                                                    className="w-8 h-8 flex items-center justify-center bg-gray-700 text-white rounded hover:bg-gray-600 transition-all"
+                                                    title="Discard"
                                                 >
-                                                    Cancel
+                                                    <XMarkIcon className="w-4 h-4" />
                                                 </button>
                                             </div>
                                         </div>
@@ -437,7 +465,7 @@ function ListSelectionModal() {
                                             backgroundColor: hexToRgba(listColor, 0.15),
                                         }}
                                     >
-                                        <div className="flex items-center space-x-3">
+                                        <div className="flex items-center space-x-4">
                                             {getListIcon(list)}
                                             <div className="text-left">
                                                 <div className="text-white font-medium">
@@ -447,10 +475,6 @@ function ListSelectionModal() {
                                         </div>
 
                                         <div className="flex items-center space-x-2">
-                                            <span className="text-xs text-gray-400">
-                                                {list.items.length} items
-                                            </span>
-
                                             {/* Only show edit/delete for custom lists */}
                                             {!isDefaultList && (
                                                 <>
@@ -480,15 +504,122 @@ function ListSelectionModal() {
                                         ? isInWatchlist(targetContent.id)
                                         : isContentInList(list.id, targetContent.id)
                                 const isDefaultList = list.id === 'default-watchlist'
-
+                                const isEditing = editingListId === list.id
                                 const listColor = list.color || '#6b7280'
 
+                                // If this list is being edited, show inline edit form
+                                if (isEditing) {
+                                    const currentColor = editingListColor || listColor
+                                    return (
+                                        <div
+                                            key={list.id}
+                                            className="w-full p-3 rounded-lg border-l-[6px] border-t border-r border-b transition-all duration-200"
+                                            style={{
+                                                borderLeftColor: currentColor,
+                                                borderTopColor: hexToRgba(currentColor, 0.5),
+                                                borderRightColor: hexToRgba(currentColor, 0.5),
+                                                borderBottomColor: hexToRgba(currentColor, 0.5),
+                                                backgroundColor: hexToRgba(currentColor, 0.2),
+                                            }}
+                                        >
+                                            <div className="flex items-center space-x-2">
+                                                {/* Icon Picker Button */}
+                                                <div className="relative">
+                                                    <button
+                                                        onClick={() => setShowEditIconPicker(true)}
+                                                        className="w-8 h-8 bg-gray-800 border border-gray-600 rounded flex items-center justify-center text-lg hover:bg-gray-700 hover:border-gray-500 transition-all"
+                                                        title="Change icon"
+                                                    >
+                                                        {editingListEmoji}
+                                                    </button>
+                                                    <IconPickerModal
+                                                        isOpen={showEditIconPicker}
+                                                        selectedIcon={editingListEmoji}
+                                                        onSelectIcon={(emoji) => {
+                                                            setEditingListEmoji(emoji)
+                                                            setShowEditIconPicker(false)
+                                                        }}
+                                                        onClose={() => setShowEditIconPicker(false)}
+                                                    />
+                                                </div>
+
+                                                {/* Color Picker Button */}
+                                                <div className="relative">
+                                                    <button
+                                                        onClick={() => setShowEditColorPicker(true)}
+                                                        className="w-8 h-8 bg-gray-800 border border-gray-700 rounded transition-all hover:bg-gray-700 hover:border-gray-600 p-1 flex items-center justify-center"
+                                                        title="Change color"
+                                                    >
+                                                        <div
+                                                            className="w-full h-full rounded"
+                                                            style={{
+                                                                backgroundColor: currentColor,
+                                                            }}
+                                                        />
+                                                    </button>
+                                                    <ColorPickerModal
+                                                        isOpen={showEditColorPicker}
+                                                        selectedColor={editingListColor}
+                                                        onSelectColor={(color) => {
+                                                            setEditingListColor(color)
+                                                            setShowEditColorPicker(false)
+                                                        }}
+                                                        onClose={() =>
+                                                            setShowEditColorPicker(false)
+                                                        }
+                                                    />
+                                                </div>
+
+                                                {/* Name Input */}
+                                                <input
+                                                    type="text"
+                                                    value={editingListName}
+                                                    onChange={(e) =>
+                                                        setEditingListName(e.target.value)
+                                                    }
+                                                    className="flex-1 h-8 px-2 bg-gray-800 border border-gray-600 rounded text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent"
+                                                    placeholder="List name"
+                                                    autoFocus
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            handleSaveEdit(list.id, list.name)
+                                                        } else if (e.key === 'Escape') {
+                                                            handleCancelEdit()
+                                                        }
+                                                    }}
+                                                />
+
+                                                {/* Save Button */}
+                                                <button
+                                                    onClick={() =>
+                                                        handleSaveEdit(list.id, list.name)
+                                                    }
+                                                    className="w-8 h-8 flex items-center justify-center bg-white text-black rounded hover:bg-gray-200 transition-all"
+                                                    title="Save"
+                                                >
+                                                    <CheckIcon className="w-4 h-4" />
+                                                </button>
+
+                                                {/* Cancel Button */}
+                                                <button
+                                                    onClick={handleCancelEdit}
+                                                    className="w-8 h-8 flex items-center justify-center bg-gray-700 text-white rounded hover:bg-gray-600 transition-all"
+                                                    title="Discard"
+                                                >
+                                                    <XMarkIcon className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )
+                                }
+
+                                // Normal display mode
                                 return (
                                     <div
                                         key={list.id}
                                         className={`w-full flex items-center justify-between p-3 rounded-lg transition-all duration-200 border-l-[6px] border-t border-r border-b ${
                                             isInList
-                                                ? 'hover:brightness-110'
+                                                ? 'ring-1 ring-green-400 hover:brightness-110'
                                                 : 'hover:brightness-125'
                                         }`}
                                         style={{
@@ -509,9 +640,9 @@ function ListSelectionModal() {
                                     >
                                         <button
                                             onClick={() => handleToggleList(list)}
-                                            className="flex items-center space-x-3 flex-1 text-left"
+                                            className="flex items-center space-x-4 flex-1 text-left"
                                         >
-                                            {getListIcon(list)}
+                                            <div>{getListIcon(list)}</div>
                                             <div>
                                                 <div className="text-white font-medium">
                                                     {list.name}
@@ -520,13 +651,6 @@ function ListSelectionModal() {
                                         </button>
 
                                         <div className="flex items-center space-x-2">
-                                            <span className="text-xs text-gray-400">
-                                                {list.items.length}
-                                            </span>
-                                            {isInList && (
-                                                <CheckIcon className="w-5 h-5 text-green-400" />
-                                            )}
-
                                             {/* Show edit/delete for custom lists */}
                                             {!isDefaultList && (
                                                 <>
@@ -592,7 +716,7 @@ function ListSelectionModal() {
                         ) : (
                             <div className="space-y-3">
                                 {/* Icon selector and form inputs */}
-                                <div className="flex items-start space-x-3">
+                                <div className="flex items-center space-x-3">
                                     {/* Icon selector */}
                                     <div className="relative flex-shrink-0">
                                         <button
@@ -616,7 +740,7 @@ function ListSelectionModal() {
                                     <div className="relative flex-shrink-0">
                                         <button
                                             onClick={() => setShowColorPicker(true)}
-                                            className="w-12 h-12 bg-gray-800 border-2 border-gray-700 rounded-lg transition-all duration-200 hover:bg-gray-700 hover:border-gray-600"
+                                            className="w-12 h-12 bg-gray-800 border-2 border-gray-700 rounded-lg transition-all duration-200 hover:bg-gray-700 hover:border-gray-600 p-1.5 flex items-center justify-center"
                                             title="Choose a color"
                                         >
                                             <div
@@ -707,26 +831,6 @@ function ListSelectionModal() {
                         </div>
                     )}
                 </div>
-
-                {/* Edit Mode Icon & Color Pickers */}
-                <IconPickerModal
-                    isOpen={showEditIconPicker}
-                    selectedIcon={editingListEmoji}
-                    onSelectIcon={(emoji) => {
-                        setEditingListEmoji(emoji)
-                        setShowEditIconPicker(false)
-                    }}
-                    onClose={() => setShowEditIconPicker(false)}
-                />
-                <ColorPickerModal
-                    isOpen={showEditColorPicker}
-                    selectedColor={editingListColor}
-                    onSelectColor={(color) => {
-                        setEditingListColor(color)
-                        setShowEditColorPicker(false)
-                    }}
-                    onClose={() => setShowEditColorPicker(false)}
-                />
             </div>
         </div>
     )
