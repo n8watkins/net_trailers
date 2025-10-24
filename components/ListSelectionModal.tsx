@@ -10,6 +10,8 @@ import Image from 'next/image'
 import IconPickerModal from './IconPickerModal'
 import ColorPickerModal from './ColorPickerModal'
 import { useToast } from '../hooks/useToast'
+import { listNameSchema, validateListNameUnique } from '../schemas/listSchema'
+import { z } from 'zod'
 import {
     XMarkIcon,
     PlusIcon,
@@ -111,32 +113,34 @@ function ListSelectionModal() {
     }
 
     const handleCreateList = () => {
-        const trimmedName = newListName.trim()
-        if (!trimmedName) return
+        // Validate with Zod schema
+        try {
+            const validatedName = listNameSchema.parse(newListName)
 
-        // Check for duplicate name (case-insensitive)
-        const isDuplicate = allLists.some(
-            (list) => list.name.toLowerCase() === trimmedName.toLowerCase()
-        )
+            // Check for duplicate name
+            const existingNames = allLists.map((list) => list.name)
+            const uniqueCheck = validateListNameUnique(validatedName, existingNames)
 
-        if (isDuplicate) {
-            showError(
-                'Duplicate List Name',
-                `A list named "${trimmedName}" already exists. Please choose a different name.`
-            )
-            return
+            if (!uniqueCheck.isValid) {
+                showError('Duplicate List Name', uniqueCheck.error || '')
+                return
+            }
+
+            createList({
+                name: validatedName,
+                isPublic: false,
+                emoji: selectedEmoji,
+                color: selectedColor,
+            })
+            setNewListName('')
+            setSelectedEmoji('🎬')
+            setSelectedColor('#ef4444')
+            setShowCreateList(false)
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                showError('Invalid List Name', error.errors[0].message)
+            }
         }
-
-        createList({
-            name: trimmedName,
-            isPublic: false,
-            emoji: selectedEmoji,
-            color: selectedColor,
-        })
-        setNewListName('')
-        setSelectedEmoji('🎬')
-        setSelectedColor('#ef4444')
-        setShowCreateList(false)
     }
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -166,33 +170,38 @@ function ListSelectionModal() {
     const handleUpdateList = () => {
         if (!editingList) return
 
-        const trimmedName = newListName.trim()
-        if (!trimmedName) return
+        // Validate with Zod schema
+        try {
+            const validatedName = listNameSchema.parse(newListName)
 
-        // Check for duplicate name (case-insensitive), excluding the current list being edited
-        const isDuplicate = allLists.some(
-            (list) =>
-                list.id !== editingList.id && list.name.toLowerCase() === trimmedName.toLowerCase()
-        )
-
-        if (isDuplicate) {
-            showError(
-                'Duplicate List Name',
-                `A list named "${trimmedName}" already exists. Please choose a different name.`
+            // Check for duplicate name (excluding current list being edited)
+            const existingNames = allLists.map((list) => list.name)
+            const uniqueCheck = validateListNameUnique(
+                validatedName,
+                existingNames,
+                editingList.name
             )
-            return
-        }
 
-        updateList(editingList.id, {
-            name: trimmedName,
-            emoji: selectedEmoji,
-            color: selectedColor,
-        })
-        setEditingList(null)
-        setNewListName('')
-        setSelectedEmoji('🎬')
-        setSelectedColor('#ef4444')
-        setShowCreateList(false)
+            if (!uniqueCheck.isValid) {
+                showError('Duplicate List Name', uniqueCheck.error || '')
+                return
+            }
+
+            updateList(editingList.id, {
+                name: validatedName,
+                emoji: selectedEmoji,
+                color: selectedColor,
+            })
+            setEditingList(null)
+            setNewListName('')
+            setSelectedEmoji('🎬')
+            setSelectedColor('#ef4444')
+            setShowCreateList(false)
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                showError('Invalid List Name', error.errors[0].message)
+            }
+        }
     }
 
     const handleDeleteList = (list: UserList) => {
