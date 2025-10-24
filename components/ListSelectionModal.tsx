@@ -45,10 +45,15 @@ function ListSelectionModal() {
     const [newListName, setNewListName] = useState('')
     const [selectedEmoji, setSelectedEmoji] = useState('🎬')
     const [selectedColor, setSelectedColor] = useState('#ef4444')
-    const [editingList, setEditingList] = useState<UserList | null>(null)
+    const [editingListId, setEditingListId] = useState<string | null>(null)
+    const [editingListName, setEditingListName] = useState('')
+    const [editingListEmoji, setEditingListEmoji] = useState('')
+    const [editingListColor, setEditingListColor] = useState('')
     const [deletingList, setDeletingList] = useState<UserList | null>(null)
     const [showIconPicker, setShowIconPicker] = useState(false)
     const [showColorPicker, setShowColorPicker] = useState(false)
+    const [showEditIconPicker, setShowEditIconPicker] = useState(false)
+    const [showEditColorPicker, setShowEditColorPicker] = useState(false)
 
     const targetContent = listModal.content
     const allLists = getAllLists()
@@ -80,10 +85,15 @@ function ListSelectionModal() {
         setNewListName('')
         setSelectedEmoji('🎬')
         setSelectedColor('#ef4444')
-        setEditingList(null)
+        setEditingListId(null)
+        setEditingListName('')
+        setEditingListEmoji('')
+        setEditingListColor('')
         setDeletingList(null)
         setShowIconPicker(false)
         setShowColorPicker(false)
+        setShowEditIconPicker(false)
+        setShowEditColorPicker(false)
     }
 
     const getListIcon = (list: UserList) => {
@@ -163,63 +173,59 @@ function ListSelectionModal() {
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
-            if (editingList) {
-                handleUpdateList()
-            } else {
-                handleCreateList()
-            }
+            handleCreateList()
         } else if (e.key === 'Escape') {
             setShowCreateList(false)
             setNewListName('')
             setSelectedEmoji('🎬')
             setSelectedColor('#ef4444')
-            setEditingList(null)
         }
     }
 
     const handleEditList = (list: UserList) => {
-        setEditingList(list)
-        setNewListName(list.name)
-        setSelectedEmoji(list.emoji || '🎬')
-        setSelectedColor(list.color || '#ef4444')
-        setShowCreateList(true)
+        setEditingListId(list.id)
+        setEditingListName(list.name)
+        setEditingListEmoji(list.emoji || '🎬')
+        setEditingListColor(list.color || '#ef4444')
     }
 
-    const handleUpdateList = () => {
-        if (!editingList) return
-
+    const handleSaveEdit = (listId: string, originalName: string) => {
         // Validate with Zod schema
         try {
-            const validatedName = listNameSchema.parse(newListName)
+            const validatedName = listNameSchema.parse(editingListName)
 
             // Check for duplicate name (excluding current list being edited)
             const existingNames = allLists.map((list) => list.name)
-            const uniqueCheck = validateListNameUnique(
-                validatedName,
-                existingNames,
-                editingList.name
-            )
+            const uniqueCheck = validateListNameUnique(validatedName, existingNames, originalName)
 
             if (!uniqueCheck.isValid) {
                 showError('Duplicate List Name', uniqueCheck.error || '')
                 return
             }
 
-            updateList(editingList.id, {
+            updateList(listId, {
                 name: validatedName,
-                emoji: selectedEmoji,
-                color: selectedColor,
+                emoji: editingListEmoji,
+                color: editingListColor,
             })
-            setEditingList(null)
-            setNewListName('')
-            setSelectedEmoji('🎬')
-            setSelectedColor('#ef4444')
-            setShowCreateList(false)
+            setEditingListId(null)
+            setEditingListName('')
+            setEditingListEmoji('')
+            setEditingListColor('')
         } catch (error) {
             if (error instanceof z.ZodError) {
                 showError('Invalid List Name', error.errors[0].message)
             }
         }
+    }
+
+    const handleCancelEdit = () => {
+        setEditingListId(null)
+        setEditingListName('')
+        setEditingListEmoji('')
+        setEditingListColor('')
+        setShowEditIconPicker(false)
+        setShowEditColorPicker(false)
     }
 
     const handleDeleteList = (list: UserList) => {
@@ -230,6 +236,10 @@ function ListSelectionModal() {
         if (deletingList) {
             deleteList(deletingList.id)
             setDeletingList(null)
+            // Also cancel edit if deleting the list being edited
+            if (editingListId === deletingList.id) {
+                handleCancelEdit()
+            }
         }
     }
 
@@ -333,9 +343,88 @@ function ListSelectionModal() {
                             if (isManagementMode) {
                                 // Management mode - show edit/delete options
                                 const isDefaultList = list.id === 'default-watchlist'
-
+                                const isEditing = editingListId === list.id
                                 const listColor = list.color || '#6b7280'
 
+                                // If this list is being edited, show inline edit form
+                                if (isEditing) {
+                                    const currentColor = editingListColor || listColor
+                                    return (
+                                        <div
+                                            key={list.id}
+                                            className="w-full p-3 rounded-lg border-l-[6px] border-t border-r border-b transition-all duration-200"
+                                            style={{
+                                                borderLeftColor: currentColor,
+                                                borderTopColor: hexToRgba(currentColor, 0.5),
+                                                borderRightColor: hexToRgba(currentColor, 0.5),
+                                                borderBottomColor: hexToRgba(currentColor, 0.5),
+                                                backgroundColor: hexToRgba(currentColor, 0.2),
+                                            }}
+                                        >
+                                            <div className="flex items-center space-x-2 mb-3">
+                                                {/* Icon Picker Button */}
+                                                <button
+                                                    onClick={() => setShowEditIconPicker(true)}
+                                                    className="w-10 h-10 bg-gray-800 border-2 border-gray-600 rounded-lg flex items-center justify-center text-2xl hover:bg-gray-700 hover:border-gray-500 transition-all"
+                                                    title="Change icon"
+                                                >
+                                                    {editingListEmoji}
+                                                </button>
+
+                                                {/* Color Picker Button */}
+                                                <button
+                                                    onClick={() => setShowEditColorPicker(true)}
+                                                    className="w-10 h-10 bg-gray-800 border-2 border-gray-700 rounded-lg transition-all hover:bg-gray-700 hover:border-gray-600"
+                                                    title="Change color"
+                                                >
+                                                    <div
+                                                        className="w-full h-full rounded-md"
+                                                        style={{ backgroundColor: currentColor }}
+                                                    />
+                                                </button>
+
+                                                {/* Name Input */}
+                                                <input
+                                                    type="text"
+                                                    value={editingListName}
+                                                    onChange={(e) =>
+                                                        setEditingListName(e.target.value)
+                                                    }
+                                                    className="flex-1 px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent"
+                                                    placeholder="List name"
+                                                    autoFocus
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            handleSaveEdit(list.id, list.name)
+                                                        } else if (e.key === 'Escape') {
+                                                            handleCancelEdit()
+                                                        }
+                                                    }}
+                                                />
+                                            </div>
+
+                                            <div className="flex space-x-2">
+                                                <button
+                                                    onClick={() =>
+                                                        handleSaveEdit(list.id, list.name)
+                                                    }
+                                                    className="flex-1 px-4 py-2 bg-white text-black rounded-lg font-medium hover:bg-gray-200 transition-all"
+                                                >
+                                                    <CheckIcon className="w-4 h-4 inline mr-1" />
+                                                    Save
+                                                </button>
+                                                <button
+                                                    onClick={handleCancelEdit}
+                                                    className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-600 transition-all"
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )
+                                }
+
+                                // Normal display mode
                                 return (
                                     <div
                                         key={list.id}
@@ -561,11 +650,11 @@ function ListSelectionModal() {
 
                                 <div className="flex space-x-2">
                                     <button
-                                        onClick={editingList ? handleUpdateList : handleCreateList}
+                                        onClick={handleCreateList}
                                         disabled={!newListName.trim()}
                                         className="flex-1 px-4 py-2 bg-white text-black rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200"
                                     >
-                                        {editingList ? 'Update' : 'Create'}
+                                        Create
                                     </button>
                                     <button
                                         onClick={() => {
@@ -573,7 +662,6 @@ function ListSelectionModal() {
                                             setNewListName('')
                                             setSelectedEmoji('🎬')
                                             setSelectedColor('#ef4444')
-                                            setEditingList(null)
                                             setShowIconPicker(false)
                                             setShowColorPicker(false)
                                         }}
@@ -619,6 +707,26 @@ function ListSelectionModal() {
                         </div>
                     )}
                 </div>
+
+                {/* Edit Mode Icon & Color Pickers */}
+                <IconPickerModal
+                    isOpen={showEditIconPicker}
+                    selectedIcon={editingListEmoji}
+                    onSelectIcon={(emoji) => {
+                        setEditingListEmoji(emoji)
+                        setShowEditIconPicker(false)
+                    }}
+                    onClose={() => setShowEditIconPicker(false)}
+                />
+                <ColorPickerModal
+                    isOpen={showEditColorPicker}
+                    selectedColor={editingListColor}
+                    onSelectColor={(color) => {
+                        setEditingListColor(color)
+                        setShowEditColorPicker(false)
+                    }}
+                    onClose={() => setShowEditColorPicker(false)}
+                />
             </div>
         </div>
     )
