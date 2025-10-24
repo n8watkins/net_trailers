@@ -111,6 +111,7 @@ function Modal() {
 
     // Inline watchlist dropdown state
     const [showInlineListDropdown, setShowInlineListDropdown] = useState(false)
+    const [isWatchlistHoverEnabled, setIsWatchlistHoverEnabled] = useState(true)
 
     const inlineDropdownRef = useRef<HTMLDivElement>(null)
     const inlineDropdownButtonRef = useRef<HTMLButtonElement>(null)
@@ -870,11 +871,28 @@ function Modal() {
                                                         className={`group relative p-2 sm:p-3 rounded-full border-2 text-white ${
                                                             showInlineListDropdown
                                                                 ? 'border-white bg-black/50'
-                                                                : 'border-white/30 bg-black/20 hover:bg-black/50 hover:border-white transition-colors'
+                                                                : `border-white/30 bg-black/20 transition-colors ${
+                                                                      isWatchlistHoverEnabled
+                                                                          ? 'hover:bg-black/50 hover:border-white'
+                                                                          : ''
+                                                                  }`
                                                         }`}
                                                         onClick={(e) => {
                                                             e.preventDefault()
                                                             e.stopPropagation()
+
+                                                            if (showInlineListDropdown) {
+                                                                // Closing: disable hover temporarily
+                                                                setIsWatchlistHoverEnabled(false)
+                                                                setTimeout(
+                                                                    () =>
+                                                                        setIsWatchlistHoverEnabled(
+                                                                            true
+                                                                        ),
+                                                                    100
+                                                                )
+                                                            }
+
                                                             // Toggle the dropdown open/closed
                                                             setShowInlineListDropdown(
                                                                 !showInlineListDropdown
@@ -894,7 +912,11 @@ function Modal() {
                                                                             className={`h-4 w-4 sm:h-6 sm:w-6 ${
                                                                                 showInlineListDropdown
                                                                                     ? 'text-white'
-                                                                                    : 'text-green-400 group-hover:text-white transition-colors'
+                                                                                    : `text-green-400 transition-colors ${
+                                                                                          isWatchlistHoverEnabled
+                                                                                              ? 'group-hover:text-white'
+                                                                                              : ''
+                                                                                      }`
                                                                             }`}
                                                                         />
                                                                     ) : (
@@ -902,7 +924,11 @@ function Modal() {
                                                                             className={`h-4 w-4 sm:h-6 sm:w-6 ${
                                                                                 showInlineListDropdown
                                                                                     ? 'text-white'
-                                                                                    : 'text-white/70 group-hover:text-white transition-colors'
+                                                                                    : `text-white/70 transition-colors ${
+                                                                                          isWatchlistHoverEnabled
+                                                                                              ? 'group-hover:text-white'
+                                                                                              : ''
+                                                                                      }`
                                                                             }`}
                                                                         />
                                                                     )}
