@@ -867,10 +867,10 @@ function Modal() {
                                                 >
                                                     <button
                                                         ref={inlineDropdownButtonRef}
-                                                        className={`group relative p-2 sm:p-3 rounded-full border-2 text-white transition-colors ${
+                                                        className={`group relative p-2 sm:p-3 rounded-full border-2 text-white ${
                                                             showInlineListDropdown
                                                                 ? 'border-white bg-black/50'
-                                                                : 'border-white/30 bg-black/20 hover:bg-black/50 hover:border-white'
+                                                                : 'border-white/30 bg-black/20 hover:bg-black/50 hover:border-white transition-colors'
                                                         }`}
                                                         onClick={(e) => {
                                                             e.preventDefault()
@@ -891,18 +891,18 @@ function Modal() {
                                                                 <>
                                                                     {isInAnyList ? (
                                                                         <CheckIcon
-                                                                            className={`h-4 w-4 sm:h-6 sm:w-6 transition-colors ${
+                                                                            className={`h-4 w-4 sm:h-6 sm:w-6 ${
                                                                                 showInlineListDropdown
                                                                                     ? 'text-white'
-                                                                                    : 'text-green-400 group-hover:text-white'
+                                                                                    : 'text-green-400 group-hover:text-white transition-colors'
                                                                             }`}
                                                                         />
                                                                     ) : (
                                                                         <PlusIcon
-                                                                            className={`h-4 w-4 sm:h-6 sm:w-6 transition-colors ${
+                                                                            className={`h-4 w-4 sm:h-6 sm:w-6 ${
                                                                                 showInlineListDropdown
                                                                                     ? 'text-white'
-                                                                                    : 'text-white/70 group-hover:text-white'
+                                                                                    : 'text-white/70 group-hover:text-white transition-colors'
                                                                             }`}
                                                                         />
                                                                     )}
