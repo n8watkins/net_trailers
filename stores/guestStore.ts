@@ -108,13 +108,10 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
         const isAlreadyLiked = state.likedMovies.some((m) => m.id === content.id)
         if (isAlreadyLiked) return
 
-        // Remove from hidden (mutual exclusion)
-        const newHiddenMovies = state.hiddenMovies.filter((m) => m.id !== content.id)
         const newLikedMovies = [...state.likedMovies, content]
 
         set({
             likedMovies: newLikedMovies,
-            hiddenMovies: newHiddenMovies,
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
 
@@ -122,7 +119,7 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
         if (state.guestId) {
             GuestStorageService.saveGuestData(state.guestId, {
                 likedMovies: newLikedMovies,
-                hiddenMovies: newHiddenMovies,
+                hiddenMovies: state.hiddenMovies,
                 defaultWatchlist: state.defaultWatchlist,
                 userCreatedWatchlists: state.userCreatedWatchlists,
                 lastActive: Date.now(),

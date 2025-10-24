@@ -161,13 +161,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
         set({ syncStatus: 'syncing' })
 
-        // Remove from hidden (mutual exclusion)
-        const newHiddenMovies = state.hiddenMovies.filter((m) => m.id !== content.id)
         const newLikedMovies = [...state.likedMovies, content]
 
         set({
             likedMovies: newLikedMovies,
-            hiddenMovies: newHiddenMovies,
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
 
@@ -179,7 +176,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             const { AuthStorageService } = await import('../services/authStorageService')
             AuthStorageService.saveUserData(state.userId, {
                 likedMovies: newLikedMovies,
-                hiddenMovies: newHiddenMovies,
+                hiddenMovies: state.hiddenMovies,
                 defaultWatchlist: state.defaultWatchlist,
                 userCreatedWatchlists: state.userCreatedWatchlists,
                 lastActive: Date.now(),
