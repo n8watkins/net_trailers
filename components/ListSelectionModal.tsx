@@ -97,11 +97,11 @@ function ListSelectionModal() {
     }
 
     const getListIcon = (list: UserList) => {
-        const iconClass = 'w-5 h-5 text-white'
+        const iconClass = 'w-6 h-6 text-white'
 
         // Return emoji if the list has one (custom lists)
         if (list.emoji) {
-            return <span className="text-lg">{list.emoji}</span>
+            return <span className="text-xl">{list.emoji}</span>
         }
 
         // Default icons for system lists
@@ -456,7 +456,7 @@ function ListSelectionModal() {
                                 return (
                                     <div
                                         key={list.id}
-                                        className="w-full flex items-center justify-between p-3 rounded-lg border-l-[6px] border-t border-r border-b transition-all duration-200"
+                                        className="w-full flex items-center justify-between p-4 rounded-lg border-l-[6px] border-t border-r border-b transition-all duration-200"
                                         style={{
                                             borderLeftColor: listColor,
                                             borderTopColor: hexToRgba(listColor, 0.3),
@@ -468,7 +468,7 @@ function ListSelectionModal() {
                                         <div className="flex items-center space-x-4">
                                             {getListIcon(list)}
                                             <div className="text-left">
-                                                <div className="text-white font-medium">
+                                                <div className="text-white font-medium text-base">
                                                     {list.name}
                                                 </div>
                                             </div>
@@ -617,7 +617,7 @@ function ListSelectionModal() {
                                 return (
                                     <div
                                         key={list.id}
-                                        className={`w-full flex items-center justify-between p-3 rounded-lg transition-all duration-200 border-l-[6px] border-t border-r border-b ${
+                                        className={`w-full flex items-center justify-between p-4 rounded-lg transition-all duration-200 border-l-[6px] border-t border-r border-b ${
                                             isInList
                                                 ? 'ring-1 ring-green-400 hover:brightness-110'
                                                 : 'hover:brightness-125'
@@ -644,7 +644,7 @@ function ListSelectionModal() {
                                         >
                                             <div>{getListIcon(list)}</div>
                                             <div>
-                                                <div className="text-white font-medium">
+                                                <div className="text-white font-medium text-base">
                                                     {list.name}
                                                 </div>
                                             </div>
