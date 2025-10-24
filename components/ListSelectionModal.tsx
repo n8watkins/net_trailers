@@ -352,7 +352,7 @@ function ListSelectionModal() {
                                     return (
                                         <div
                                             key={list.id}
-                                            className="w-full p-3.5 rounded-lg border-l-[6px] border-t border-r border-b transition-all duration-200"
+                                            className="w-full p-4 rounded-lg border-l-[6px] border-t border-r border-b transition-all duration-200"
                                             style={{
                                                 borderLeftColor: currentColor,
                                                 borderTopColor: hexToRgba(currentColor, 0.5),
@@ -456,7 +456,7 @@ function ListSelectionModal() {
                                 return (
                                     <div
                                         key={list.id}
-                                        className="w-full flex items-center justify-between p-3.5 rounded-lg border-l-[6px] border-t border-r border-b transition-all duration-200"
+                                        className="w-full flex items-center justify-between p-4 rounded-lg border-l-[6px] border-t border-r border-b transition-all duration-200"
                                         style={{
                                             borderLeftColor: listColor,
                                             borderTopColor: hexToRgba(listColor, 0.3),
@@ -513,7 +513,7 @@ function ListSelectionModal() {
                                     return (
                                         <div
                                             key={list.id}
-                                            className="w-full p-3.5 rounded-lg border-l-[6px] border-t border-r border-b transition-all duration-200"
+                                            className="w-full p-4 rounded-lg border-l-[6px] border-t border-r border-b transition-all duration-200"
                                             style={{
                                                 borderLeftColor: currentColor,
                                                 borderTopColor: hexToRgba(currentColor, 0.5),
@@ -617,7 +617,7 @@ function ListSelectionModal() {
                                 return (
                                     <div
                                         key={list.id}
-                                        className={`w-full flex items-center justify-between p-3.5 rounded-lg transition-all duration-200 border-l-[6px] border-t border-r border-b ${
+                                        className={`w-full flex items-center justify-between p-4 rounded-lg transition-all duration-200 border-l-[6px] border-t border-r border-b ${
                                             isInList
                                                 ? 'ring-1 ring-green-400 hover:brightness-110'
                                                 : 'hover:brightness-125'
