@@ -879,10 +879,10 @@ function Modal() {
                                                         onClick={(e) => {
                                                             e.preventDefault()
                                                             e.stopPropagation()
-                                                            // Only open if closed, don't close if already open
-                                                            if (!showInlineListDropdown) {
-                                                                setShowInlineListDropdown(true)
-                                                            }
+                                                            // Toggle the dropdown open/closed
+                                                            setShowInlineListDropdown(
+                                                                !showInlineListDropdown
+                                                            )
                                                         }}
                                                     >
                                                         {(() => {
