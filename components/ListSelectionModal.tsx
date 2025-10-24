@@ -27,7 +27,7 @@ function ListSelectionModal() {
     const [listModal, setListModal] = useRecoilState(listModalState)
     const [authModal, setAuthModal] = useRecoilState(authModalState)
     const { isGuest, isAuthenticated } = useAuthStatus()
-    const { showError } = useToast()
+    const { showError, showWatchlistAdd, showWatchlistRemove, showSuccess } = useToast()
     const {
         getAllLists,
         addToList,
@@ -93,21 +93,27 @@ function ListSelectionModal() {
     const handleToggleList = (list: UserList) => {
         if (!targetContent) return
 
+        const contentTitle = getTitle(targetContent)
+
         // Handle default watchlist separately
         if (list.id === 'default-watchlist') {
             const inWatchlist = isInWatchlist(targetContent.id)
             if (inWatchlist) {
                 removeFromWatchlist(targetContent.id)
+                showWatchlistRemove(`Removed "${contentTitle}" from ${list.name}`)
             } else {
                 addToWatchlist(targetContent)
+                showWatchlistAdd(`Added "${contentTitle}" to ${list.name}`)
             }
         } else {
             // Handle custom lists
             const isInList = isContentInList(list.id, targetContent.id)
             if (isInList) {
                 removeFromList(list.id, targetContent.id)
+                showSuccess('Removed from List', `Removed "${contentTitle}" from "${list.name}"`)
             } else {
                 addToList(list.id, targetContent)
+                showSuccess('Added to List', `Added "${contentTitle}" to "${list.name}"`)
             }
         }
     }
