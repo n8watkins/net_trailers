@@ -51,6 +51,7 @@ import ReactPlayer from 'react-player'
 import VideoPlayerControls from './VideoPlayerControls'
 import ContentMetadata from './ContentMetadata'
 import KeyboardShortcuts from './KeyboardShortcuts'
+import VolumeSlider from './VolumeSlider'
 import Image from 'next/image'
 import { Element, Genre } from '../typings'
 import ToolTipMod from '../components/ToolTipMod'
@@ -83,6 +84,7 @@ function Modal() {
     const [enhancedMovieData, setEnhancedMovieData] = useState<Content | null>(null)
     const [muted, setMuted] = useState(true)
     const [volume, setVolume] = useState(0.5) // ReactPlayer uses 0-1 range, default 50%
+    const [previousVolume, setPreviousVolume] = useState(0.5) // Track volume before muting
     const [playing, setPlaying] = useState(true)
     const [trailerEnded, setTrailerEnded] = useState(true)
     const [fullScreen, setFullScreen] = useState(false)
@@ -112,6 +114,11 @@ function Modal() {
 
     const inlineDropdownRef = useRef<HTMLDivElement>(null)
     const inlineDropdownButtonRef = useRef<HTMLButtonElement>(null)
+
+    // Volume slider state
+    const [showVolumeSlider, setShowVolumeSlider] = useState(false)
+    const volumeSliderRef = useRef<HTMLDivElement>(null)
+    const volumeButtonRef = useRef<HTMLDivElement>(null)
 
     // Auth status for inline dropdown (NEW SCHEMA)
     const { isGuest } = useAuthStatus()
@@ -236,7 +243,16 @@ function Modal() {
     }
 
     const handleMuteToggle = () => {
-        setMuted(!muted)
+        if (muted) {
+            // Unmuting: restore previous volume
+            setMuted(false)
+            setVolume(previousVolume > 0 ? previousVolume : 0.5)
+        } else {
+            // Muting: save current volume and set to 0
+            setPreviousVolume(volume)
+            setMuted(true)
+            setVolume(0)
+        }
     }
 
     const togglePlaying = () => {
@@ -265,6 +281,7 @@ function Modal() {
         // Reset video player state to defaults
         setMuted(userAutoMute)
         setVolume(userDefaultVolume / 100)
+        setPreviousVolume(userDefaultVolume / 100)
         setPlaying(true)
         setTrailerEnded(true)
     }
@@ -544,6 +561,29 @@ function Modal() {
             document.removeEventListener('mousedown', handleClickOutside)
         }
     }, [showInlineListDropdown])
+
+    // Handle click outside volume slider
+    useEffect(() => {
+        const handleClickOutside = (event: Event) => {
+            // Don't close if clicking the button or the slider itself
+            if (
+                volumeSliderRef.current &&
+                !volumeSliderRef.current.contains(event.target as Node) &&
+                volumeButtonRef.current &&
+                !volumeButtonRef.current.contains(event.target as Node)
+            ) {
+                setShowVolumeSlider(false)
+            }
+        }
+
+        if (showVolumeSlider) {
+            document.addEventListener('mousedown', handleClickOutside)
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [showVolumeSlider])
 
     return (
         <MuiModal
@@ -827,7 +867,7 @@ function Modal() {
                                                 >
                                                     <button
                                                         ref={inlineDropdownButtonRef}
-                                                        className={`relative p-2 sm:p-3 rounded-full border-2 ${(() => {
+                                                        className={`group relative p-2 sm:p-3 rounded-full border-2 ${(() => {
                                                             const listsContaining =
                                                                 getListsContaining(currentMovie.id)
                                                             const isInAnyList =
@@ -854,9 +894,9 @@ function Modal() {
                                                             return (
                                                                 <>
                                                                     {isInAnyList ? (
-                                                                        <CheckIcon className="h-4 w-4 sm:h-6 sm:w-6 text-green-400" />
+                                                                        <CheckIcon className="h-4 w-4 sm:h-6 sm:w-6 text-green-400 group-hover:text-white transition-colors" />
                                                                     ) : (
-                                                                        <PlusIcon className="h-4 w-4 sm:h-6 sm:w-6" />
+                                                                        <PlusIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
                                                                     )}
 
                                                                     {/* Show count badge if in multiple lists */}
@@ -886,11 +926,7 @@ function Modal() {
                                                             title={hidden ? 'Show' : 'Hide'}
                                                         >
                                                             <button
-                                                                className={`relative p-2 sm:p-3 rounded-full border-2 transition-all duration-200 ${
-                                                                    hidden
-                                                                        ? 'border-red-500/50 bg-red-500/20 hover:bg-red-500/40 hover:border-red-500 text-red-300'
-                                                                        : 'border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white'
-                                                                }`}
+                                                                className="group relative p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-colors duration-200"
                                                                 onClick={() => {
                                                                     if (currentMovie) {
                                                                         if (hidden) {
@@ -916,9 +952,9 @@ function Modal() {
                                                                 }}
                                                             >
                                                                 {hidden ? (
-                                                                    <EyeSlashIcon className="h-4 w-4 sm:h-6 sm:w-6 text-red-500" />
+                                                                    <EyeSlashIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
                                                                 ) : (
-                                                                    <EyeIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
+                                                                    <EyeIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
                                                                 )}
                                                             </button>
                                                         </ToolTipMod>
@@ -929,24 +965,93 @@ function Modal() {
                                         {/* Right side buttons - Video Controls */}
                                         {trailer && (
                                             <div className="flex gap-2 sm:gap-4 items-center">
-                                                {/* Volume/Mute Button */}
-                                                <ToolTipMod title={muted ? 'Unmute' : 'Mute'}>
-                                                    <button
-                                                        className="p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white"
-                                                        onClick={handleMuteToggle}
+                                                {/* Volume/Mute Button with Slider */}
+                                                <div
+                                                    ref={volumeButtonRef}
+                                                    className="relative z-10"
+                                                    onMouseEnter={() => setShowVolumeSlider(true)}
+                                                    onMouseLeave={() => setShowVolumeSlider(false)}
+                                                >
+                                                    {/* Custom Vertical Volume Slider - Behind button at bottom */}
+                                                    {showVolumeSlider && (
+                                                        <div
+                                                            ref={volumeSliderRef}
+                                                            className="absolute bottom-full left-1/2 transform -translate-x-1/2 z-0"
+                                                            style={{ marginBottom: '-26px' }}
+                                                            onMouseEnter={() =>
+                                                                setShowVolumeSlider(true)
+                                                            }
+                                                            onMouseLeave={() =>
+                                                                setShowVolumeSlider(false)
+                                                            }
+                                                        >
+                                                            {/* Larger transparent hover area - extends down behind button */}
+                                                            <div className="flex flex-col items-center px-8 pt-4 pb-6">
+                                                                <VolumeSlider
+                                                                    volume={volume}
+                                                                    onChange={(newVolume) => {
+                                                                        setVolume(newVolume)
+
+                                                                        // Update previous volume if not zero (so we can restore it later)
+                                                                        if (newVolume > 0) {
+                                                                            setPreviousVolume(
+                                                                                newVolume
+                                                                            )
+                                                                        }
+
+                                                                        // Unmute if volume is increased from 0
+                                                                        if (
+                                                                            newVolume > 0 &&
+                                                                            muted
+                                                                        ) {
+                                                                            setMuted(false)
+                                                                        }
+                                                                        // Mute if volume is set to 0
+                                                                        if (newVolume === 0) {
+                                                                            setMuted(true)
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    <ToolTipMod
+                                                        title={
+                                                            showVolumeSlider
+                                                                ? ''
+                                                                : muted
+                                                                  ? 'Unmute'
+                                                                  : 'Mute'
+                                                        }
                                                     >
-                                                        {muted ? (
-                                                            <SpeakerXMarkIcon className="h-4 w-4 sm:h-6 sm:w-6" />
-                                                        ) : (
-                                                            <SpeakerWaveIcon className="h-4 w-4 sm:h-6 sm:w-6" />
-                                                        )}
-                                                    </button>
-                                                </ToolTipMod>
+                                                        <button
+                                                            className={`group relative z-20 p-2 sm:p-3 rounded-full border-2 text-white transition-colors ${
+                                                                showVolumeSlider
+                                                                    ? 'border-white bg-[#1a1a1a]'
+                                                                    : 'border-white/30 bg-[#141414] hover:bg-[#1a1a1a] hover:border-white'
+                                                            }`}
+                                                            onClick={handleMuteToggle}
+                                                            onMouseEnter={() =>
+                                                                setShowVolumeSlider(true)
+                                                            }
+                                                            onMouseLeave={() =>
+                                                                setShowVolumeSlider(false)
+                                                            }
+                                                        >
+                                                            {muted ? (
+                                                                <SpeakerXMarkIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
+                                                            ) : (
+                                                                <SpeakerWaveIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
+                                                            )}
+                                                        </button>
+                                                    </ToolTipMod>
+                                                </div>
 
                                                 {/* YouTube Link Button */}
                                                 <ToolTipMod title="Watch on YouTube">
                                                     <button
-                                                        className="p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white"
+                                                        className="group p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-colors"
                                                         onClick={() =>
                                                             window.open(
                                                                 `https://www.youtube.com/watch?v=${trailer}`,
@@ -954,7 +1059,7 @@ function Modal() {
                                                             )
                                                         }
                                                     >
-                                                        <ArrowTopRightOnSquareIcon className="h-4 w-4 sm:h-6 sm:w-6" />
+                                                        <ArrowTopRightOnSquareIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
                                                     </button>
                                                 </ToolTipMod>
 
@@ -967,13 +1072,13 @@ function Modal() {
                                                     }
                                                 >
                                                     <button
-                                                        className="p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white"
+                                                        className="group p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-colors"
                                                         onClick={handleFullscreenButtonClick}
                                                     >
                                                         {fullScreen ? (
-                                                            <ArrowsPointingInIcon className="h-4 w-4 sm:h-6 sm:w-6" />
+                                                            <ArrowsPointingInIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
                                                         ) : (
-                                                            <ArrowsPointingOutIcon className="h-4 w-4 sm:h-6 sm:w-6" />
+                                                            <ArrowsPointingOutIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
                                                         )}
                                                     </button>
                                                 </ToolTipMod>
@@ -1012,7 +1117,7 @@ function Modal() {
 
                 {/* Keyboard Shortcuts - Below Modal - Hidden in fullscreen */}
                 {!showJsonDebug && !fullScreen && (
-                    <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-full max-w-4xl z-[50000]">
+                    <div className="absolute -bottom-24 sm:-bottom-20 left-1/2 transform -translate-x-1/2 w-full max-w-4xl z-[50000]">
                         <KeyboardShortcuts
                             shortcuts={[
                                 { key: 'ESC', description: 'Close' },

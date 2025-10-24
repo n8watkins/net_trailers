@@ -175,3 +175,83 @@
         content: '🐛 Report a bug';
     }
 }
+
+/* Vertical volume slider styling */
+input[type='range'].slider-vertical {
+    writing-mode: bt-lr; /* IE */
+    -webkit-appearance: slider-vertical; /* Webkit */
+    width: 10px;
+    height: 80px;
+    background: transparent;
+    outline: none;
+    accent-color: transparent !important;
+}
+
+/* Remove default styling completely */
+input[type='range'].slider-vertical:focus {
+    outline: none;
+}
+
+/* Webkit/Chrome thumb - BLACK ball with WHITE border */
+input[type='range'].slider-vertical::-webkit-slider-thumb {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    width: 14px !important;
+    height: 14px !important;
+    background-color: #000000 !important;
+    background: #000000 !important;
+    cursor: pointer !important;
+    border-radius: 50% !important;
+    border: 2px solid #ffffff !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: relative !important;
+    left: 4px !important; /* Move a bit more to the right */
+}
+
+/* Firefox thumb - BLACK ball with WHITE border */
+input[type='range'].slider-vertical::-moz-range-thumb {
+    width: 14px !important;
+    height: 14px !important;
+    background-color: #000000 !important;
+    background: #000000 !important;
+    cursor: pointer !important;
+    border-radius: 50% !important;
+    border: 2px solid #ffffff !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Webkit/Chrome track - starts white, fills with black from bottom */
+input[type='range'].slider-vertical::-webkit-slider-runnable-track {
+    width: 10px !important;
+    height: 80px !important;
+    background: linear-gradient(
+        to top,
+        #000000 0%,
+        #000000 var(--volume-fill, 0%),
+        #ffffff var(--volume-fill, 0%),
+        #ffffff 100%
+    ) !important;
+    border: 1px solid #ffffff !important;
+    border-radius: 5px !important;
+    box-sizing: border-box !important;
+}
+
+/* Firefox track - starts white at top */
+input[type='range'].slider-vertical::-moz-range-track {
+    width: 10px !important;
+    height: 80px !important;
+    background: #ffffff !important;
+    border: 1px solid #ffffff !important;
+    border-radius: 5px !important;
+    box-sizing: border-box !important;
+}
+
+/* Firefox progress (filled portion) - black fill from bottom */
+input[type='range'].slider-vertical::-moz-range-progress {
+    background: #000000 !important;
+    border-radius: 5px !important;
+}

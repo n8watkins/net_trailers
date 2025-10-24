@@ -26,6 +26,9 @@ export default function DebugControls() {
         showApiResults: false,
     })
 
+    // Visibility state - hidden by default, toggled with Alt+Shift+D
+    const [isVisible, setIsVisible] = useState(false)
+
     // Drag state - default position is a bit to the left (initialized after mount)
     const [position, setPosition] = useState<Position>({ x: 0, y: 16 })
     const [isDragging, setIsDragging] = useState(false)
@@ -33,6 +36,20 @@ export default function DebugControls() {
     const [isHovered, setIsHovered] = useState(false)
     const dragHandleRef = useRef<HTMLDivElement>(null)
     const isFirstMount = useRef(true)
+
+    // Keyboard shortcut handler for Alt+Shift+D
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Alt+Shift+D to toggle visibility
+            if (e.altKey && e.shiftKey && e.key.toLowerCase() === 'd') {
+                e.preventDefault()
+                setIsVisible((prev) => !prev)
+            }
+        }
+
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [])
 
     // Load settings from localStorage and initialize position
     useEffect(() => {
@@ -114,6 +131,9 @@ export default function DebugControls() {
 
     // Only show in development
     if (process.env.NODE_ENV !== 'development') return null
+
+    // Don't render if not visible
+    if (!isVisible) return null
 
     return (
         <div

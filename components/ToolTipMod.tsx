@@ -8,6 +8,11 @@ interface ToolTipModProps {
 }
 
 function ToolTipMod({ children, title }: ToolTipModProps) {
+    // Don't render tooltip if title is empty
+    if (!title) {
+        return children
+    }
+
     return (
         <Tooltip
             title={title}
@@ -15,34 +20,42 @@ function ToolTipMod({ children, title }: ToolTipModProps) {
             arrow
             enterDelay={200}
             leaveDelay={0}
-            componentsProps={{
-                popper: {
-                    modifiers: [
-                        {
-                            name: 'offset',
-                            options: {
-                                offset: [0, 15, 0, 0],
-                            },
-                        },
-                    ],
+            disableInteractive={false}
+            PopperProps={{
+                sx: {
+                    zIndex: 60000, // Higher than modal's 50000
                 },
-
+                container: typeof document !== 'undefined' ? document.body : undefined,
+                modifiers: [
+                    {
+                        name: 'offset',
+                        options: {
+                            offset: [0, 10],
+                        },
+                    },
+                    {
+                        name: 'preventOverflow',
+                        options: {
+                            boundary: 'viewport',
+                        },
+                    },
+                ],
+            }}
+            slotProps={{
                 arrow: {
                     sx: {
-                        color: '#4A4A4A',
-                        '&::before': {
-                            backgroundColor: 'white',
-                        },
+                        color: 'white',
                     },
                 },
                 tooltip: {
                     sx: {
                         color: '#141414',
-                        fontSize: '1.3rem',
+                        fontSize: '0.875rem',
                         fontWeight: '600',
                         backgroundColor: 'white',
-                        border: '1px solid white',
-                        boxShadow: '5px 5px 20px black',
+                        padding: '8px 12px',
+                        borderRadius: '4px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
                     },
                 },
             }}

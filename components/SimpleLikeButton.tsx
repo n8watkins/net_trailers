@@ -45,23 +45,13 @@ function SimpleLikeButton() {
     return (
         <ToolTipMod title={isLiked ? 'Unlike' : 'Like'}>
             <button
-                className={`relative p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-all duration-200 ${
-                    isAnimating ? 'animate-pulse scale-105' : ''
-                }`}
+                className="group relative p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-colors duration-200"
                 onClick={handleLikeToggle}
             >
                 {isLiked ? (
-                    <HandThumbUpIconFilled
-                        className={`h-4 w-4 sm:h-6 sm:w-6 text-white transition-all duration-300 drop-shadow-lg ${
-                            isAnimating ? 'animate-heartBeat' : 'hover:scale-110'
-                        }`}
-                    />
+                    <HandThumbUpIconFilled className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
                 ) : (
-                    <HandThumbUpIconOutline
-                        className={`h-4 w-4 sm:h-6 sm:w-6 text-white/70 transition-all duration-300 hover:text-white ${
-                            isAnimating ? 'animate-heartBeat' : 'hover:scale-110'
-                        }`}
-                    />
+                    <HandThumbUpIconOutline className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
                 )}
             </button>
         </ToolTipMod>

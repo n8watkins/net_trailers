@@ -130,20 +130,24 @@ function Banner({ trending }: Props) {
                             : 'opacity-100 transform translate-y-0'
                     }`}
                 >
-                    <h1 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight">
-                        {featuredContent ? getTitle(featuredContent) : 'Loading...'}
-                    </h1>
-                    <div className="flex items-center space-x-2 mb-2">
-                        <span className="text-xs md:text-sm text-gray-300">
-                            {featuredContent ? getContentType(featuredContent) : ''}
-                        </span>
-                        <span className="text-xs md:text-sm text-gray-300">
-                            {featuredContent ? getYear(featuredContent) : ''}
-                        </span>
-                    </div>
-                    <p className="text-xs md:text-base lg:text-lg leading-relaxed text-gray-200 max-w-lg lg:max-w-xl">
-                        {truncateString(featuredContent?.overview)}
-                    </p>
+                    {featuredContent && (
+                        <>
+                            <h1 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight">
+                                {getTitle(featuredContent)}
+                            </h1>
+                            <div className="flex items-center space-x-2 mb-2">
+                                <span className="text-xs md:text-sm text-gray-300">
+                                    {getContentType(featuredContent)}
+                                </span>
+                                <span className="text-xs md:text-sm text-gray-300">
+                                    {getYear(featuredContent)}
+                                </span>
+                            </div>
+                            <p className="text-xs md:text-base lg:text-lg leading-relaxed text-gray-200 max-w-lg lg:max-w-xl">
+                                {truncateString(featuredContent?.overview)}
+                            </p>
+                        </>
+                    )}
 
                     {/* Buttons*/}
                     <div className="flex gap-2 sm:gap-3 md:gap-4 pt-3 md:pt-4">

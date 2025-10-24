@@ -53,6 +53,7 @@ const Settings: React.FC<SettingsProps> = ({
     const [showClearConfirm, setShowClearConfirm] = useState(false)
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [showExportLimitedModal, setShowExportLimitedModal] = useState(false)
+    const [showChildSafetyModal, setShowChildSafetyModal] = useState(false)
 
     // Preferences state
     const [childSafetyMode, setChildSafetyMode] = useState(false)
@@ -201,6 +202,9 @@ const Settings: React.FC<SettingsProps> = ({
     }
 
     const handleCreateAccount = () => {
+        // Close any info modals before opening auth modal
+        setShowExportLimitedModal(false)
+        setShowChildSafetyModal(false)
         setAuthModal({ isOpen: true, mode: 'signup' })
     }
 
@@ -613,14 +617,20 @@ const Settings: React.FC<SettingsProps> = ({
                                                                     <input
                                                                         type="checkbox"
                                                                         checked={childSafetyMode}
-                                                                        onChange={(e) =>
+                                                                        onChange={(e) => {
+                                                                            if (isGuest) {
+                                                                                setShowChildSafetyModal(
+                                                                                    true
+                                                                                )
+                                                                                return
+                                                                            }
                                                                             setChildSafetyMode(
                                                                                 e.target.checked
                                                                             )
-                                                                        }
+                                                                        }}
                                                                         className="sr-only peer"
                                                                     />
-                                                                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-red-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                                                                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                                                                 </label>
                                                             </div>
                                                         </div>
@@ -654,7 +664,7 @@ const Settings: React.FC<SettingsProps> = ({
                                                                         }
                                                                         className="sr-only peer"
                                                                     />
-                                                                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-red-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                                                                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                                                                 </label>
                                                             </div>
 
@@ -672,6 +682,7 @@ const Settings: React.FC<SettingsProps> = ({
                                                                         type="range"
                                                                         min="0"
                                                                         max="100"
+                                                                        step="5"
                                                                         value={defaultVolume}
                                                                         onChange={(e) =>
                                                                             setDefaultVolume(
@@ -695,7 +706,7 @@ const Settings: React.FC<SettingsProps> = ({
                                                         <button
                                                             onClick={handleSavePreferences}
                                                             disabled={!preferencesChanged}
-                                                            className={`px-6 py-2.5 rounded-md font-medium transition-all duration-200 ${
+                                                            className={`px-6 py-2.5 rounded-md font-medium transition-all duration-200 focus:outline-none ${
                                                                 preferencesChanged
                                                                     ? 'bg-red-600 text-white hover:bg-red-700 cursor-pointer'
                                                                     : 'bg-[#1a1a1a] text-[#666666] cursor-not-allowed border border-[#313131]'
@@ -993,6 +1004,18 @@ const Settings: React.FC<SettingsProps> = ({
                 confirmButtonText="Create Account"
                 cancelButtonText="Maybe Later"
                 emoji="🔐"
+            />
+
+            {/* Child Safety Mode Modal for Guest Users */}
+            <InfoModal
+                isOpen={showChildSafetyModal}
+                onClose={() => setShowChildSafetyModal(false)}
+                onConfirm={handleCreateAccount}
+                title="Create an Account to Enable Child Safety Mode"
+                message="Child Safety Mode restricts content to PG-13 and below, filtering explicit material. This feature is only available to users with accounts to ensure consistent content restrictions across all devices."
+                confirmButtonText="Create Account"
+                cancelButtonText="Maybe Later"
+                emoji="🔒"
             />
         </div>
     )
