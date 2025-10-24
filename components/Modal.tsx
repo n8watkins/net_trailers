@@ -3,13 +3,12 @@ import React, {
     useState,
     useRef,
     useCallback,
+    useMemo,
     MouseEventHandler,
     MouseEvent,
 } from 'react'
 import MuiModal from '@mui/material/Modal'
-import { useRecoilState, useRecoilValue } from 'recoil'
-import { modalState, movieState, autoPlayWithSoundState } from '../atoms/modalAtom'
-import { loadingState } from '../atoms/errorAtom'
+import { useAppStore } from '../stores/appStore'
 import { createErrorHandler } from '../utils/errorHandler'
 import {
     getTitle,
@@ -45,13 +44,14 @@ import {
     EyeIcon,
     MinusIcon,
     EyeSlashIcon,
+    LockClosedIcon,
 } from '@heroicons/react/24/solid'
 
 import ReactPlayer from 'react-player'
 import VideoPlayerControls from './VideoPlayerControls'
 import ContentMetadata from './ContentMetadata'
-import ContentMetadataSkeleton from './ContentMetadataSkeleton'
 import KeyboardShortcuts from './KeyboardShortcuts'
+import VolumeSlider from './VolumeSlider'
 import Image from 'next/image'
 import { Element, Genre } from '../typings'
 import ToolTipMod from '../components/ToolTipMod'
@@ -59,19 +59,32 @@ import SimpleLikeButton from './SimpleLikeButton'
 import WatchLaterButton from './WatchLaterButton'
 import useUserData from '../hooks/useUserData'
 import { useToast } from '../hooks/useToast'
-import { useSetRecoilState } from 'recoil'
-import { listModalState } from '../atoms/listModalAtom'
 import { UserList } from '../types/userLists'
+import { useAuthStatus } from '../hooks/useAuthStatus'
+import { useRecoilState } from 'recoil'
+import { authModalState } from '../atoms/authModalAtom'
+import { listModalState } from '../atoms/listModalAtom'
+import { useDebugSettings } from './DebugControls'
+import { getCachedMovieDetails } from '../utils/prefetchCache'
 
 function Modal() {
-    const [showModal, setShowModal] = useRecoilState(modalState)
-    const [currentMovie, setCurrentMovie] = useRecoilState(movieState)
-    const [autoPlayWithSound, setAutoPlayWithSound] = useRecoilState(autoPlayWithSoundState)
-    const [isLoading, setIsLoading] = useRecoilState(loadingState)
+    // Debug settings
+    const debugSettings = useDebugSettings()
+
+    // Zustand store
+    const { modal, closeModal, setAutoPlayWithSound, isLoading, setLoading, openListModal } =
+        useAppStore()
+
+    // Extract modal state
+    const showModal = modal.isOpen
+    const currentMovie = modal.content?.content || null
+    const autoPlayWithSound = modal.content?.autoPlayWithSound || false
     const [trailer, setTrailer] = useState('')
     const [genres, setGenres] = useState<Genre[]>([])
     const [enhancedMovieData, setEnhancedMovieData] = useState<Content | null>(null)
     const [muted, setMuted] = useState(true)
+    const [volume, setVolume] = useState(0.5) // ReactPlayer uses 0-1 range, default 50%
+    const [previousVolume, setPreviousVolume] = useState(0.5) // Track volume before muting
     const [playing, setPlaying] = useState(true)
     const [trailerEnded, setTrailerEnded] = useState(true)
     const [fullScreen, setFullScreen] = useState(false)
@@ -98,23 +111,47 @@ function Modal() {
 
     // Inline watchlist dropdown state
     const [showInlineListDropdown, setShowInlineListDropdown] = useState(false)
-    const [showCreateInput, setShowCreateInput] = useState(false)
-    const [newListName, setNewListName] = useState('')
+    const [isWatchlistButtonHovered, setIsWatchlistButtonHovered] = useState(false)
 
     const inlineDropdownRef = useRef<HTMLDivElement>(null)
+    const inlineDropdownButtonRef = useRef<HTMLButtonElement>(null)
 
-    // User data hooks for inline dropdown
+    // Volume slider state
+    const [showVolumeSlider, setShowVolumeSlider] = useState(false)
+    const volumeSliderRef = useRef<HTMLDivElement>(null)
+    const volumeButtonRef = useRef<HTMLDivElement>(null)
+
+    // Auth status for inline dropdown (NEW SCHEMA)
+    const { isGuest } = useAuthStatus()
+    const [authModal, setAuthModal] = useRecoilState(authModalState)
+    const [listModal, setListModal] = useRecoilState(listModalState)
+
+    // User data hooks for inline dropdown (NEW SCHEMA)
     const {
-        getDefaultLists,
         getListsContaining,
         addToList,
         removeFromList,
         createList,
-        getCustomLists,
-        getRating,
-        setRating,
-        removeRating,
+        getAllLists,
+        isLiked,
+        isHidden,
+        addLikedMovie,
+        addHiddenMovie,
+        removeLikedMovie,
+        removeHiddenMovie,
+        isInWatchlist,
+        addToWatchlist,
+        removeFromWatchlist,
+        // Subscribe to actual data to trigger re-renders
+        defaultWatchlist,
+        userCreatedWatchlists,
+        userSession,
     } = useUserData()
+
+    // Get user preferences for video player (must be after useUserData hook)
+    const userAutoMute = userSession?.preferences?.autoMute ?? true
+    const userDefaultVolume = userSession?.preferences?.defaultVolume ?? 50
+
     const {
         showSuccess,
         showWatchlistAdd,
@@ -124,12 +161,21 @@ function Modal() {
         showError,
     } = useToast()
     const errorHandler = createErrorHandler(showError)
-    const setListModal = useSetRecoilState(listModalState)
 
-    let timeout: ReturnType<typeof setTimeout> | null = null
-    let timeout2: ReturnType<typeof setTimeout> | null = null
-
-    let clickCount = 0
+    // Memoize the list computation so it updates when data changes
+    const allLists = useMemo(() => {
+        const watchlistVirtual = {
+            id: 'default-watchlist',
+            name: 'Watchlist',
+            items: defaultWatchlist,
+            emoji: '📺',
+            color: '#E50914',
+            isPublic: false,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        }
+        return [watchlistVirtual, ...userCreatedWatchlists]
+    }, [defaultWatchlist, userCreatedWatchlists])
 
     function isFullScreen() {
         return !!document.fullscreenElement
@@ -139,7 +185,14 @@ function Modal() {
         if (player && typeof player.getCurrentTime === 'function') {
             setSecondsPlayed(player.getCurrentTime())
         }
-        togglePlaying()
+        // If starting to play, also unmute
+        if (!playing) {
+            setMuted(false)
+            setPlaying(true)
+            setTrailerEnded(false)
+        } else {
+            setPlaying(false)
+        }
     }
 
     const handleFullscreenChange = useCallback(() => {
@@ -191,27 +244,50 @@ function Modal() {
     }
 
     const handleMuteToggle = () => {
-        setMuted(!muted)
+        if (muted) {
+            // Unmuting: restore previous volume
+            setMuted(false)
+            setVolume(previousVolume > 0 ? previousVolume : 0.5)
+        } else {
+            // Muting: save current volume and set to 0
+            setPreviousVolume(volume)
+            setMuted(true)
+            setVolume(0)
+        }
     }
 
     const togglePlaying = () => {
-        setPlaying(!playing)
+        // If starting to play, also unmute
+        if (!playing) {
+            setMuted(false)
+            setPlaying(true)
+            setTrailerEnded(false)
+        } else {
+            setPlaying(false)
+        }
     }
 
     const handleClose = () => {
-        setShowModal(false)
-        // Reset loaded movie ID when closing modal to allow fresh data next time
-        setLoadedMovieId(null)
-        setTrailer('')
-        setGenres([])
-        setEnhancedMovieData(null)
-        // Reset inline dropdown state
+        closeModal()
+        // DON'T reset movie data - keep it cached for instant reopen
+        // The data is already in memory, and switching movies clears old data anyway
+        // This works with the prefetch cache for smooth UX
+        // setTrailer('')             // <-- Keep cached!
+        // setGenres([])              // <-- Keep cached!
+        // setEnhancedMovieData(null) // <-- Keep cached!
+        // setLoadedMovieId(null)     // <-- Keep cached!
+
+        // Only reset UI state
         setShowInlineListDropdown(false)
-        setShowCreateInput(false)
-        setNewListName('')
+        // Reset video player state to defaults
+        setMuted(userAutoMute)
+        setVolume(userDefaultVolume / 100)
+        setPreviousVolume(userDefaultVolume / 100)
+        setPlaying(true)
+        setTrailerEnded(true)
     }
 
-    // Inline dropdown helper functions
+    // Inline dropdown helper functions (NEW SCHEMA)
     const handleWatchlistToggle = () => {
         console.log('🎬 Modal handleWatchlistToggle called')
         if (!currentMovie) {
@@ -219,68 +295,72 @@ function Modal() {
             return
         }
         console.log('🎬 Current movie:', getTitle(currentMovie as Content))
-        const defaultLists = getDefaultLists()
-        const watchlist = defaultLists.watchlist
-        const isInWatchlist = watchlist
-            ? watchlist.items.some((item) => item.id === currentMovie.id)
-            : false
+        const inWatchlist = isInWatchlist(currentMovie.id)
 
-        console.log('🎬 isInWatchlist:', isInWatchlist, 'watchlist exists:', !!watchlist)
+        console.log('🎬 isInWatchlist:', inWatchlist)
 
-        if (isInWatchlist && watchlist) {
+        if (inWatchlist) {
             console.log('🎬 Removing from watchlist...')
-            removeFromList(watchlist.id, currentMovie.id)
+            removeFromWatchlist(currentMovie.id)
             console.log('🎬 Calling showWatchlistRemove')
             showWatchlistRemove(`Removed ${getTitle(currentMovie as Content)} from My List`)
-        } else if (watchlist) {
+        } else {
             console.log('🎬 Adding to watchlist...')
-            addToList(watchlist.id, currentMovie as Content)
+            addToWatchlist(currentMovie as Content)
             console.log('🎬 Calling showWatchlistAdd')
             showWatchlistAdd(`Added ${getTitle(currentMovie as Content)} to My List`)
         }
     }
 
-    const handleCreateList = () => {
-        if (newListName.trim()) {
-            const listName = newListName.trim()
-            createList({
-                name: listName,
-                isPublic: false,
-                color: '#6b7280', // gray-500 default color
-            })
-            showSuccess(`Created "${listName}"`, 'Your new list is ready to use')
-            setNewListName('')
-            setShowCreateInput(false)
-        }
-    }
-
-    const handleManageAllLists = () => {
+    const handleOpenCreateList = () => {
         if (!currentMovie) return
+        // Open list modal with current content to show create option
         setListModal({
             isOpen: true,
             content: currentMovie as Content,
         })
-    }
-
-    const handleKeyPress = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter') {
-            handleCreateList()
-        } else if (e.key === 'Escape') {
-            setShowCreateInput(false)
-            setNewListName('')
-        }
+        setShowInlineListDropdown(false)
     }
 
     useEffect(() => {
         if (!currentMovie || !currentMovie.id) return
+
+        // If switching to a different movie, clear old enhanced data immediately
+        if (loadedMovieId !== currentMovie.id && loadedMovieId !== null) {
+            setEnhancedMovieData(null)
+            setTrailer('')
+        }
 
         // Only fetch if we haven't already loaded this movie's details
         if (loadedMovieId === currentMovie.id) return
 
         async function fetchMovie() {
             try {
-                setIsLoading(true)
                 const mediaType = currentMovie?.media_type === 'tv' ? 'tv' : 'movie'
+
+                // Check prefetch cache first
+                const cachedData = getCachedMovieDetails(currentMovie.id, mediaType)
+
+                if (cachedData) {
+                    // Use cached data - no loading spinner needed!
+                    if (cachedData?.videos) {
+                        const index = cachedData.videos.results.findIndex(
+                            (element: Element) => element.type === 'Trailer'
+                        )
+                        setTrailer(cachedData.videos?.results[index]?.key)
+                    }
+                    if (cachedData?.genres) {
+                        setGenres(cachedData.genres)
+                    }
+
+                    setEnhancedMovieData(cachedData)
+                    setLoadedMovieId(currentMovie.id)
+                    return // No need to fetch from API
+                }
+
+                // No cached data, fetch from API
+                setLoading(true)
+
                 const response = await fetch(
                     `/api/movies/details/${currentMovie?.id}?media_type=${mediaType}`
                 )
@@ -301,8 +381,13 @@ function Modal() {
                     setGenres(data.genres)
                 }
 
-                // Store the complete enhanced data
-                setEnhancedMovieData(data)
+                // Store the complete enhanced data with media_type preserved
+                // CRITICAL: Ensure media_type is set for type guards to work
+                const enhancedData = {
+                    ...data,
+                    media_type: mediaType, // Preserve the media_type from the query
+                }
+                setEnhancedMovieData(enhancedData as Content)
 
                 // Mark this movie as loaded
                 setLoadedMovieId(currentMovie?.id || 0)
@@ -312,12 +397,13 @@ function Modal() {
                 setTrailer('')
                 setGenres([])
             } finally {
-                setIsLoading(false)
+                setLoading(false)
             }
         }
 
         fetchMovie()
-    }, [currentMovie, loadedMovieId, errorHandler, setIsLoading])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentMovie, loadedMovieId, setLoading])
 
     useEffect(() => {
         document.addEventListener('fullscreenchange', handleFullscreenChange)
@@ -360,21 +446,27 @@ function Modal() {
                 // Toggle play/pause when spacebar is pressed (only if trailer exists)
                 if (trailer && showModal && !showJsonDebug) {
                     e.preventDefault()
-                    togglePlaying()
+                    // If starting to play, also unmute
+                    if (!playing) {
+                        setMuted(false)
+                        setPlaying(true)
+                        setTrailerEnded(false)
+                    } else {
+                        setPlaying(false)
+                    }
                 }
             } else if (e.key === 'l' || e.key === 'L') {
                 // Toggle like when 'l' is pressed (only if modal is open)
                 if (currentMovie && showModal && !showJsonDebug) {
                     e.preventDefault()
 
-                    // Get the current rating and toggle like
-                    const currentRating = getRating(currentMovie.id)
-                    const isLiked = currentRating?.rating === 'liked'
+                    // Toggle like (NEW SCHEMA)
+                    const liked = isLiked(currentMovie.id)
 
-                    if (isLiked) {
-                        removeRating(currentMovie.id)
+                    if (liked) {
+                        removeLikedMovie(currentMovie.id)
                     } else {
-                        setRating(currentMovie.id, 'liked', currentMovie as Content)
+                        addLikedMovie(currentMovie as Content)
                     }
                 }
             } else if (e.key === 'h' || e.key === 'H') {
@@ -382,19 +474,19 @@ function Modal() {
                 if (currentMovie && showModal && !showJsonDebug) {
                     e.preventDefault()
 
-                    const currentRating = getRating(currentMovie.id)
-                    const isHidden = currentRating?.rating === 'disliked'
+                    // Toggle hidden (NEW SCHEMA)
+                    const hidden = isHidden(currentMovie.id)
 
-                    if (isHidden) {
-                        // Unhide (remove rating)
-                        removeRating(currentMovie.id)
+                    if (hidden) {
+                        // Unhide (remove from hidden)
+                        removeHiddenMovie(currentMovie.id)
                         showContentShown(
                             `${getTitle(currentMovie as Content)} Shown`,
                             'Will appear in recommendations again'
                         )
                     } else {
-                        // Hide (set disliked rating)
-                        setRating(currentMovie.id, 'disliked', currentMovie as Content)
+                        // Hide (add to hidden)
+                        addHiddenMovie(currentMovie as Content)
                         showContentHidden(
                             `${getTitle(currentMovie as Content)} Hidden`,
                             'Hidden from recommendations'
@@ -420,13 +512,22 @@ function Modal() {
         trailer,
         muted,
         playing,
-        getRating,
-        setRating,
-        removeRating,
+        isLiked,
+        isHidden,
+        addLikedMovie,
+        removeLikedMovie,
+        addHiddenMovie,
+        removeHiddenMovie,
         currentMovie,
         showContentShown,
         showContentHidden,
     ])
+
+    // Update muted and volume states when user preferences change
+    useEffect(() => {
+        setMuted(userAutoMute)
+        setVolume(userDefaultVolume / 100)
+    }, [userAutoMute, userDefaultVolume])
 
     // Handle auto-play with sound when Play button is clicked
     useEffect(() => {
@@ -442,13 +543,14 @@ function Modal() {
     // Handle click outside inline dropdown
     useEffect(() => {
         const handleClickOutside = (event: Event) => {
+            // Don't close if clicking the button or the dropdown itself
             if (
                 inlineDropdownRef.current &&
-                !inlineDropdownRef.current.contains(event.target as Node)
+                !inlineDropdownRef.current.contains(event.target as Node) &&
+                inlineDropdownButtonRef.current &&
+                !inlineDropdownButtonRef.current.contains(event.target as Node)
             ) {
                 setShowInlineListDropdown(false)
-                setShowCreateInput(false)
-                setNewListName('')
             }
         }
 
@@ -461,11 +563,29 @@ function Modal() {
         }
     }, [showInlineListDropdown])
 
-    const anchorRef = React.useRef<HTMLDivElement>(null)
-    const [anchorEl, setAnchorEl] = React.useState<HTMLDivElement | null>(null)
-    React.useEffect(() => {
-        setTimeout(() => setAnchorEl(anchorRef?.current), 2000)
-    }, [anchorRef])
+    // Handle click outside volume slider
+    useEffect(() => {
+        const handleClickOutside = (event: Event) => {
+            // Don't close if clicking the button or the slider itself
+            if (
+                volumeSliderRef.current &&
+                !volumeSliderRef.current.contains(event.target as Node) &&
+                volumeButtonRef.current &&
+                !volumeButtonRef.current.contains(event.target as Node)
+            ) {
+                setShowVolumeSlider(false)
+            }
+        }
+
+        if (showVolumeSlider) {
+            document.addEventListener('mousedown', handleClickOutside)
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [showVolumeSlider])
+
     return (
         <MuiModal
             open={showModal}
@@ -473,217 +593,185 @@ function Modal() {
             disableAutoFocus
             disableEnforceFocus
             sx={{
+                zIndex: 50000,
                 '& .MuiBackdrop-root': {
                     backgroundColor: 'rgba(0, 0, 0, 0.9)',
                 },
             }}
         >
             <div
-                className="fixed inset-0 flex justify-center items-center p-2 sm:p-4 md:p-8"
+                className={`fixed inset-0 flex justify-center items-center ${
+                    fullScreen ? '' : 'p-2 sm:p-4 md:p-8'
+                }`}
                 onClick={handleClose}
             >
                 <div
-                    className="relative w-full max-w-sm sm:max-w-2xl md:max-w-3xl lg:max-w-5xl z-10 rounded-md max-h-[92vh] bg-[#141414] overflow-y-auto flex flex-col"
+                    className={`relative w-full z-10 bg-[#141414] flex flex-col ${
+                        fullScreen
+                            ? 'h-screen max-h-screen'
+                            : 'rounded-md max-w-sm sm:max-w-2xl md:max-w-3xl lg:max-w-5xl max-h-[92vh] overflow-y-auto'
+                    }`}
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Video Container - Responsive */}
-                    <div className="relative w-full aspect-[16/10] bg-black flex-shrink-0">
-                        {/* Close Button */}
-                        <button
-                            className="absolute top-2 right-2 sm:top-4 sm:right-4 z-30 rounded-full bg-black/80 p-1 sm:p-2"
-                            onClick={handleClose}
-                        >
-                            <XMarkIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
-                        </button>
+                    <div
+                        className={`relative w-full bg-black flex-shrink-0 ${
+                            fullScreen ? 'h-screen' : 'aspect-[16/10]'
+                        }`}
+                    >
+                        {/* Close Button - Hidden in fullscreen */}
+                        {!fullScreen && (
+                            <button
+                                className="absolute top-2 right-2 sm:top-4 sm:right-4 z-30 rounded-full bg-black/80 p-1 sm:p-2"
+                                onClick={handleClose}
+                            >
+                                <XMarkIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
+                            </button>
+                        )}
 
-                        {/* Clickable Overlay */}
+                        {/* Video Player or Static Image */}
                         <div
-                            className="absolute inset-0 bg-transparent cursor-pointer z-10"
+                            className="absolute inset-0 pointer-events-auto z-0"
                             onClick={(e) => {
                                 handleSingleOrDoubleClick(e)
                             }}
-                        ></div>
-
-                        {/* Video Player or Static Image */}
-                        {(trailer && !trailerEnded) || playing || fullScreen ? (
-                            <ReactPlayer
-                                config={{
-                                    youtube: {
-                                        playerVars: {
-                                            cc_load_policy: 1,
-                                            autoplay: 0,
-                                            controls: 0,
-                                            iv_load_policy: 3,
-                                            modestbranding: 1,
+                        >
+                            {(trailer && !trailerEnded) || playing || fullScreen ? (
+                                <ReactPlayer
+                                    config={{
+                                        youtube: {
+                                            playerVars: {
+                                                cc_load_policy: 1,
+                                                autoplay: 0,
+                                                controls: 0,
+                                                iv_load_policy: 3,
+                                                modestbranding: 1,
+                                            },
+                                            embedOptions: {},
                                         },
-                                        embedOptions: {},
-                                    },
-                                }}
-                                url={`https://www.youtube.com/watch?v=${trailer}`}
-                                width="100%"
-                                height="100%"
-                                className="absolute inset-0 rounded-md"
-                                playing={playing}
-                                volume={0.5}
-                                muted={muted}
-                                onEnded={() => {
-                                    setTrailerEnded(true)
-                                    setPlaying(false)
-                                    setFullScreen(false)
-                                    setSecondsPlayed(0)
-                                }}
-                                onPause={() => {
-                                    setPlaying(false)
-                                    setTrailerEnded(true)
-                                }}
-                                onPlay={() => {
-                                    setPlaying(true)
-                                    setTrailerEnded(false)
-                                }}
-                                onReady={handlePlayerReady}
-                                ref={handlePlayerRef}
-                            />
-                        ) : (
-                            <Image
-                                src={`https://image.tmdb.org/t/p/original/${currentMovie?.backdrop_path}`}
-                                alt="movie_backdrop"
-                                fill
-                                quality={100}
-                                priority
-                                style={{ objectFit: 'cover' }}
-                                className="rounded-md"
-                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
-                            />
+                                    }}
+                                    url={`https://www.youtube.com/watch?v=${trailer}`}
+                                    width="100%"
+                                    height="100%"
+                                    className={`absolute inset-0 ${fullScreen ? '' : 'rounded-md'}`}
+                                    playing={playing}
+                                    volume={volume}
+                                    muted={muted}
+                                    onEnded={() => {
+                                        setTrailerEnded(true)
+                                        setPlaying(false)
+                                        setFullScreen(false)
+                                        setSecondsPlayed(0)
+                                    }}
+                                    onPause={() => {
+                                        setPlaying(false)
+                                        setTrailerEnded(true)
+                                    }}
+                                    onPlay={() => {
+                                        setPlaying(true)
+                                        setTrailerEnded(false)
+                                    }}
+                                    onReady={handlePlayerReady}
+                                    ref={handlePlayerRef}
+                                />
+                            ) : (
+                                <Image
+                                    src={`https://image.tmdb.org/t/p/original/${currentMovie?.backdrop_path}`}
+                                    alt="movie_backdrop"
+                                    fill
+                                    quality={100}
+                                    priority
+                                    style={{ objectFit: 'cover' }}
+                                    className={fullScreen ? '' : 'rounded-md'}
+                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
+                                />
+                            )}
+                        </div>
+
+                        {/* Gradient Overlay - Hidden in fullscreen */}
+                        {!fullScreen && (
+                            <div className="absolute bottom-0 left-0 right-0 h-24 sm:h-32 md:h-40 bg-gradient-to-t from-[#141414] via-[#141414]/90 to-transparent z-20"></div>
                         )}
 
-                        {/* Gradient Overlay */}
-                        <div className="absolute bottom-0 left-0 right-0 h-24 sm:h-32 md:h-40 bg-gradient-to-t from-[#141414] via-[#141414]/90 to-transparent z-20"></div>
+                        {/* Controls Overlay - Hidden in fullscreen */}
+                        {!fullScreen && (
+                            <div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6 z-30">
+                                <div className="space-y-4">
+                                    {/* Inline Watchlist Dropdown */}
+                                    {currentMovie && showInlineListDropdown && (
+                                        <div
+                                            ref={inlineDropdownRef}
+                                            className="bg-[#141414] border border-gray-600 rounded-lg shadow-2xl p-4 mb-4 w-64 max-w-sm relative"
+                                        >
+                                            <div className="space-y-3">
+                                                {/* Create New List Button - At the top */}
+                                                <button
+                                                    onClick={handleOpenCreateList}
+                                                    className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gray-800/30 hover:bg-gray-700/50 border-2 border-gray-600/30 hover:border-gray-500/50 rounded-lg transition-all duration-200"
+                                                >
+                                                    <PlusIcon className="w-5 h-5 text-gray-400" />
+                                                    <span className="text-gray-300 font-medium">
+                                                        Create New List
+                                                    </span>
+                                                </button>
 
-                        {/* Video Player Controls */}
-                        <VideoPlayerControls
-                            trailer={trailer}
-                            muted={muted}
-                            fullScreen={fullScreen}
-                            onMuteToggle={handleMuteToggle}
-                            onFullscreenClick={handleFullscreenButtonClick}
-                            currentMovieTitle={
-                                currentMovie ? getTitle(currentMovie as Content) : ''
-                            }
-                        />
-
-                        {/* Controls Overlay */}
-                        <div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6 z-30">
-                            <div className="space-y-4">
-                                {/* Inline Watchlist Dropdown */}
-                                {currentMovie && showInlineListDropdown && (
-                                    <div
-                                        ref={inlineDropdownRef}
-                                        className="bg-[#141414] border border-gray-600 rounded-lg shadow-2xl p-4 mb-4 w-64 max-w-sm"
-                                    >
-                                        {(() => {
-                                            const defaultLists = getDefaultLists()
-                                            const watchlist = defaultLists.watchlist
-                                            const listsContaining = getListsContaining(
-                                                currentMovie.id
-                                            )
-                                            const isInWatchlist = watchlist
-                                                ? watchlist.items.some(
-                                                      (item) => item.id === currentMovie.id
-                                                  )
-                                                : false
-
-                                            const customLists = getCustomLists()
-                                            // Exclude Liked and Not For Me as they're rating categories, not user lists
-                                            const filteredDefaultLists = Object.values(
-                                                defaultLists
-                                            ).filter(
-                                                (list) =>
-                                                    list &&
-                                                    list.name !== 'Liked' &&
-                                                    list.name !== 'Not For Me'
-                                            )
-                                            const allLists = [
-                                                ...filteredDefaultLists,
-                                                ...customLists,
-                                            ] as UserList[]
-
-                                            return (
-                                                <div className="space-y-3">
-                                                    {/* Create New List - Always at top */}
-                                                    {!showCreateInput ? (
-                                                        <button
-                                                            onClick={() => setShowCreateInput(true)}
-                                                            className="w-full flex items-center space-x-3 px-3 py-2 hover:bg-gray-700/50 transition-colors text-left rounded"
-                                                        >
-                                                            <PlusIcon className="w-5 h-5 text-green-400" />
-                                                            <span className="text-white font-medium">
-                                                                Create New List
-                                                            </span>
-                                                        </button>
-                                                    ) : (
-                                                        <div className="space-y-2">
-                                                            <input
-                                                                type="text"
-                                                                placeholder="List name..."
-                                                                value={newListName}
-                                                                onChange={(e) =>
-                                                                    setNewListName(e.target.value)
-                                                                }
-                                                                onKeyDown={handleKeyPress}
-                                                                className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                                                                autoFocus
-                                                            />
-                                                            <div className="flex space-x-2">
-                                                                <button
-                                                                    onClick={handleCreateList}
-                                                                    disabled={!newListName.trim()}
-                                                                    className="flex-1 px-3 py-1.5 bg-green-600 text-white rounded text-sm font-medium transition-colors hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                                >
-                                                                    Create
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => {
-                                                                        setShowCreateInput(false)
-                                                                        setNewListName('')
-                                                                    }}
-                                                                    className="flex-1 px-3 py-1.5 bg-gray-600 text-white rounded text-sm font-medium transition-colors hover:bg-gray-700"
-                                                                >
-                                                                    Cancel
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    )}
-
-                                                    {/* All Lists */}
-                                                    {allLists.map((list) => {
-                                                        const isInList = list.items.some(
-                                                            (item) => item.id === currentMovie.id
-                                                        )
-                                                        const getListIcon = () => {
-                                                            if (list.name === 'Liked') {
-                                                                return (
-                                                                    <HandThumbUpIcon className="w-5 h-5 text-green-400" />
-                                                                )
-                                                            } else if (list.name === 'Not For Me') {
-                                                                return (
-                                                                    <HandThumbDownIcon className="w-5 h-5 text-red-400" />
-                                                                )
-                                                            } else if (list.name === 'Watchlist') {
-                                                                return (
-                                                                    <EyeIcon className="w-5 h-5 text-blue-400" />
-                                                                )
-                                                            }
+                                                {/* All Lists */}
+                                                {allLists.map((list) => {
+                                                    const isInList = list.items.some(
+                                                        (item) => item.id === currentMovie.id
+                                                    )
+                                                    const getListIcon = () => {
+                                                        if (list.name === 'Liked') {
                                                             return (
-                                                                <EyeIcon className="w-5 h-5 text-white" />
+                                                                <HandThumbUpIcon className="w-5 h-5 text-green-400" />
+                                                            )
+                                                        } else if (list.name === 'Not For Me') {
+                                                            return (
+                                                                <HandThumbDownIcon className="w-5 h-5 text-red-400" />
+                                                            )
+                                                        } else if (list.name === 'Watchlist') {
+                                                            return (
+                                                                <EyeIcon className="w-5 h-5 text-blue-400" />
                                                             )
                                                         }
+                                                        return (
+                                                            <EyeIcon className="w-5 h-5 text-white" />
+                                                        )
+                                                    }
 
-                                                        const handleListToggle = () => {
-                                                            console.log(
-                                                                '🎬 Modal handleListToggle called for list:',
-                                                                list.name
+                                                    const handleListToggle = () => {
+                                                        console.log(
+                                                            '🎬 Modal handleListToggle called for list:',
+                                                            list.name
+                                                        )
+                                                        console.log('🎬 isInList:', isInList)
+
+                                                        // Handle default watchlist separately (just like ListSelectionModal)
+                                                        if (list.id === 'default-watchlist') {
+                                                            const inWatchlist = isInWatchlist(
+                                                                currentMovie.id
                                                             )
-                                                            console.log('🎬 isInList:', isInList)
+                                                            if (inWatchlist) {
+                                                                console.log(
+                                                                    '🎬 Removing from watchlist...'
+                                                                )
+                                                                removeFromWatchlist(currentMovie.id)
+                                                                showWatchlistRemove(
+                                                                    `Removed ${getTitle(currentMovie as Content)} from ${list.name}`
+                                                                )
+                                                            } else {
+                                                                console.log(
+                                                                    '🎬 Adding to watchlist...'
+                                                                )
+                                                                addToWatchlist(
+                                                                    currentMovie as Content
+                                                                )
+                                                                showWatchlistAdd(
+                                                                    `Added ${getTitle(currentMovie as Content)} to ${list.name}`
+                                                                )
+                                                            }
+                                                        } else {
+                                                            // Handle custom lists
                                                             if (isInList) {
                                                                 console.log(
                                                                     '🎬 Removing from list...'
@@ -692,81 +780,67 @@ function Modal() {
                                                                     list.id,
                                                                     currentMovie.id
                                                                 )
-                                                                // Show appropriate toast based on list type
-                                                                if (
-                                                                    list.name === 'My List' ||
-                                                                    list.name === 'Watchlist'
-                                                                ) {
-                                                                    showWatchlistRemove(
-                                                                        `Removed ${getTitle(currentMovie as Content)} from ${list.name}`
-                                                                    )
-                                                                } else {
-                                                                    showSuccess(
-                                                                        'Removed from list',
-                                                                        `Removed ${getTitle(currentMovie as Content)} from "${list.name}"`
-                                                                    )
-                                                                }
+                                                                showSuccess(
+                                                                    'Removed from list',
+                                                                    `Removed ${getTitle(currentMovie as Content)} from "${list.name}"`
+                                                                )
                                                             } else {
                                                                 console.log('🎬 Adding to list...')
                                                                 addToList(
                                                                     list.id,
                                                                     currentMovie as Content
                                                                 )
-                                                                // Show appropriate toast based on list type
-                                                                if (
-                                                                    list.name === 'My List' ||
-                                                                    list.name === 'Watchlist'
-                                                                ) {
-                                                                    showWatchlistAdd(
-                                                                        `Added ${getTitle(currentMovie as Content)} to ${list.name}`
-                                                                    )
-                                                                } else {
-                                                                    showSuccess(
-                                                                        'Added to list',
-                                                                        `Added ${getTitle(currentMovie as Content)} to "${list.name}"`
-                                                                    )
-                                                                }
+                                                                showSuccess(
+                                                                    'Added to list',
+                                                                    `Added ${getTitle(currentMovie as Content)} to "${list.name}"`
+                                                                )
                                                             }
                                                         }
+                                                    }
 
-                                                        return (
-                                                            <button
-                                                                key={list.id}
-                                                                onClick={handleListToggle}
-                                                                className="w-full flex items-center justify-between px-3 py-2 hover:bg-gray-700/50 transition-colors text-left rounded"
-                                                            >
-                                                                <div className="flex items-center space-x-3">
-                                                                    {getListIcon()}
-                                                                    <span className="text-white font-medium">
-                                                                        {list.name}
-                                                                    </span>
-                                                                </div>
-                                                                <div className="flex items-center space-x-2">
-                                                                    {isInList ? (
-                                                                        <CheckIcon className="w-4 h-4 text-green-400" />
-                                                                    ) : (
-                                                                        <PlusIcon className="w-4 h-4 text-gray-400" />
-                                                                    )}
-                                                                </div>
-                                                            </button>
-                                                        )
-                                                    })}
-                                                </div>
-                                            )
-                                        })()}
-                                    </div>
-                                )}
+                                                    return (
+                                                        <button
+                                                            key={list.id}
+                                                            onClick={handleListToggle}
+                                                            className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 border-2 ${
+                                                                isInList
+                                                                    ? 'bg-white/10 border-green-500/50 hover:bg-white/15 hover:border-green-500/70'
+                                                                    : 'bg-gray-800/50 border-gray-700/30 hover:bg-gray-700/70 hover:border-gray-600/50'
+                                                            }`}
+                                                        >
+                                                            <div className="flex items-center space-x-3">
+                                                                {getListIcon()}
+                                                                <span
+                                                                    className={`font-semibold ${isInList ? 'text-white' : 'text-gray-200'}`}
+                                                                >
+                                                                    {list.name}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex items-center space-x-2">
+                                                                {isInList ? (
+                                                                    <CheckIcon className="w-5 h-5 text-green-400" />
+                                                                ) : (
+                                                                    <PlusIcon className="w-5 h-5 text-gray-400" />
+                                                                )}
+                                                            </div>
+                                                        </button>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
 
-                                {/* Control Buttons Row */}
-                                <div className="flex flex-wrap gap-4 sm:gap-8 items-center justify-between">
-                                    {/* Left side buttons */}
-                                    <div className="flex gap-2 sm:gap-4 items-center">
-                                        {trailer && (
+                                    {/* Control Buttons Row */}
+                                    <div className="flex flex-wrap gap-4 sm:gap-8 items-center justify-between">
+                                        {/* Left side buttons */}
+                                        <div className="flex gap-2 sm:gap-4 items-center">
+                                            {/* Play/Pause button - always show to prevent layout shift */}
                                             <button
-                                                className="flex items-center gap-1 sm:gap-2 px-3 py-1.5 sm:px-6 sm:py-2 bg-white text-black hover:bg-white/80 rounded text-sm sm:text-base font-semibold"
+                                                className="flex items-center gap-1 sm:gap-2 px-3 py-1.5 sm:px-6 sm:py-2 bg-white text-black hover:bg-white/80 rounded text-sm sm:text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                                                 onClick={togglePlaying}
+                                                disabled={!trailer}
                                             >
-                                                {playing || !trailer ? (
+                                                {playing ? (
                                                     <>
                                                         <PauseIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                                                         <span className="hidden sm:inline">
@@ -782,129 +856,266 @@ function Modal() {
                                                     </>
                                                 )}
                                             </button>
-                                        )}
 
-                                        {/* My List Button - Modified to toggle inline dropdown */}
-                                        {currentMovie && 'media_type' in currentMovie && (
-                                            <ToolTipMod
-                                                title={showInlineListDropdown ? '' : 'Add to Lists'}
-                                            >
-                                                <button
-                                                    className={`relative p-2 sm:p-3 rounded-full border-2 ${(() => {
-                                                        const defaultLists = getDefaultLists()
-                                                        const listsContaining = getListsContaining(
-                                                            currentMovie.id
-                                                        )
-                                                        const isInAnyList =
-                                                            listsContaining.length > 0
-                                                        return isInAnyList
-                                                            ? 'border-green-400/60 bg-green-500/20 hover:bg-green-500/30'
-                                                            : 'border-white/30 bg-black/20 hover:bg-black/50'
-                                                    })()} hover:border-white text-white transition-all duration-200`}
-                                                    onClick={() =>
-                                                        setShowInlineListDropdown(
-                                                            !showInlineListDropdown
-                                                        )
+                                            {/* My List Button - Modified to open inline dropdown */}
+                                            {currentMovie && 'media_type' in currentMovie && (
+                                                <ToolTipMod
+                                                    title={
+                                                        showInlineListDropdown ? '' : 'Add to Lists'
                                                     }
                                                 >
-                                                    {(() => {
-                                                        const defaultLists = getDefaultLists()
-                                                        const listsContaining = getListsContaining(
-                                                            currentMovie.id
-                                                        )
-                                                        const isInAnyList =
-                                                            listsContaining.length > 0
+                                                    <button
+                                                        ref={inlineDropdownButtonRef}
+                                                        className={`group relative p-2 sm:p-3 rounded-full border-2 text-white transition-colors ${
+                                                            showInlineListDropdown ||
+                                                            isWatchlistButtonHovered
+                                                                ? 'border-white bg-black/50'
+                                                                : 'border-white/30 bg-black/20'
+                                                        }`}
+                                                        onMouseEnter={() =>
+                                                            setIsWatchlistButtonHovered(true)
+                                                        }
+                                                        onMouseLeave={() =>
+                                                            setIsWatchlistButtonHovered(false)
+                                                        }
+                                                        onClick={(e) => {
+                                                            e.preventDefault()
+                                                            e.stopPropagation()
+                                                            // Toggle the dropdown open/closed
+                                                            setShowInlineListDropdown(
+                                                                !showInlineListDropdown
+                                                            )
+                                                        }}
+                                                    >
+                                                        {(() => {
+                                                            const listsContaining =
+                                                                getListsContaining(currentMovie.id)
+                                                            const isInAnyList =
+                                                                listsContaining.length > 0
 
-                                                        return (
-                                                            <>
-                                                                {isInAnyList ? (
-                                                                    <CheckIcon className="h-4 w-4 sm:h-6 sm:w-6 text-green-400" />
-                                                                ) : (
-                                                                    <PlusIcon className="h-4 w-4 sm:h-6 sm:w-6" />
-                                                                )}
+                                                            return (
+                                                                <>
+                                                                    {isInAnyList ? (
+                                                                        <CheckIcon
+                                                                            className={`h-4 w-4 sm:h-6 sm:w-6 transition-colors ${
+                                                                                showInlineListDropdown ||
+                                                                                isWatchlistButtonHovered
+                                                                                    ? 'text-white'
+                                                                                    : 'text-green-400'
+                                                                            }`}
+                                                                        />
+                                                                    ) : (
+                                                                        <PlusIcon
+                                                                            className={`h-4 w-4 sm:h-6 sm:w-6 transition-colors ${
+                                                                                showInlineListDropdown ||
+                                                                                isWatchlistButtonHovered
+                                                                                    ? 'text-white'
+                                                                                    : 'text-white/70'
+                                                                            }`}
+                                                                        />
+                                                                    )}
 
-                                                                {/* Show count badge if in multiple lists */}
-                                                                {listsContaining.length > 1 && (
-                                                                    <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                                                                        {listsContaining.length}
-                                                                    </span>
-                                                                )}
-                                                            </>
-                                                        )
-                                                    })()}
-                                                </button>
-                                            </ToolTipMod>
-                                        )}
+                                                                    {/* Show count badge if in multiple lists */}
+                                                                    {listsContaining.length > 1 && (
+                                                                        <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                                                            {listsContaining.length}
+                                                                        </span>
+                                                                    )}
+                                                                </>
+                                                            )
+                                                        })()}
+                                                    </button>
+                                                </ToolTipMod>
+                                            )}
 
-                                        {/* Like Button */}
-                                        <SimpleLikeButton />
+                                            {/* Like Button */}
+                                            <SimpleLikeButton />
 
-                                        {/* Hide/Unhide Toggle Button */}
-                                        {currentMovie &&
-                                            'media_type' in currentMovie &&
-                                            (() => {
-                                                const currentRating = getRating(currentMovie.id)
-                                                const isHidden =
-                                                    currentRating?.rating === 'disliked'
+                                            {/* Hide/Unhide Toggle Button (NEW SCHEMA) */}
+                                            {currentMovie &&
+                                                'media_type' in currentMovie &&
+                                                (() => {
+                                                    const hidden = isHidden(currentMovie.id)
 
-                                                return (
-                                                    <ToolTipMod title={isHidden ? 'Show' : 'Hide'}>
-                                                        <button
-                                                            className={`relative p-2 sm:p-3 rounded-full border-2 transition-all duration-200 ${
-                                                                isHidden
-                                                                    ? 'border-red-500/50 bg-red-500/20 hover:bg-red-500/40 hover:border-red-500 text-red-300'
-                                                                    : 'border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white'
-                                                            }`}
-                                                            onClick={() => {
-                                                                if (currentMovie) {
-                                                                    if (isHidden) {
-                                                                        // Remove from "Not For Me" list (remove rating)
-                                                                        removeRating(
-                                                                            currentMovie.id
-                                                                        )
-                                                                        showContentShown(
-                                                                            `${getTitle(currentMovie as Content)} Shown`,
-                                                                            'Will appear in recommendations again'
-                                                                        )
-                                                                    } else {
-                                                                        // Add to "Not For Me" list (dislike rating)
-                                                                        setRating(
-                                                                            currentMovie.id,
-                                                                            'disliked',
-                                                                            currentMovie as Content
-                                                                        )
-                                                                        showContentHidden(
-                                                                            `${getTitle(currentMovie as Content)} Hidden`,
-                                                                            'Hidden from recommendations'
-                                                                        )
-                                                                    }
-                                                                }
-                                                            }}
+                                                    return (
+                                                        <ToolTipMod
+                                                            title={hidden ? 'Show' : 'Hide'}
                                                         >
-                                                            {isHidden ? (
-                                                                <EyeSlashIcon className="h-4 w-4 sm:h-6 sm:w-6 text-red-500" />
+                                                            <button
+                                                                className="group relative p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-colors duration-200"
+                                                                onClick={() => {
+                                                                    if (currentMovie) {
+                                                                        if (hidden) {
+                                                                            // Remove from hidden movies
+                                                                            removeHiddenMovie(
+                                                                                currentMovie.id
+                                                                            )
+                                                                            showContentShown(
+                                                                                `${getTitle(currentMovie as Content)} Shown`,
+                                                                                'Will appear in recommendations again'
+                                                                            )
+                                                                        } else {
+                                                                            // Add to hidden movies
+                                                                            addHiddenMovie(
+                                                                                currentMovie as Content
+                                                                            )
+                                                                            showContentHidden(
+                                                                                `${getTitle(currentMovie as Content)} Hidden`,
+                                                                                'Hidden from recommendations'
+                                                                            )
+                                                                        }
+                                                                    }
+                                                                }}
+                                                            >
+                                                                {hidden ? (
+                                                                    <EyeSlashIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
+                                                                ) : (
+                                                                    <EyeIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
+                                                                )}
+                                                            </button>
+                                                        </ToolTipMod>
+                                                    )
+                                                })()}
+                                        </div>
+
+                                        {/* Right side buttons - Video Controls */}
+                                        {trailer && (
+                                            <div className="flex gap-2 sm:gap-4 items-center">
+                                                {/* Volume/Mute Button with Slider */}
+                                                <div
+                                                    ref={volumeButtonRef}
+                                                    className="relative z-10"
+                                                    onMouseEnter={() => setShowVolumeSlider(true)}
+                                                    onMouseLeave={() => setShowVolumeSlider(false)}
+                                                >
+                                                    {/* Custom Vertical Volume Slider - Behind button at bottom */}
+                                                    {showVolumeSlider && (
+                                                        <div
+                                                            ref={volumeSliderRef}
+                                                            className="absolute bottom-full left-1/2 transform -translate-x-1/2 z-0"
+                                                            style={{ marginBottom: '-26px' }}
+                                                            onMouseEnter={() =>
+                                                                setShowVolumeSlider(true)
+                                                            }
+                                                            onMouseLeave={() =>
+                                                                setShowVolumeSlider(false)
+                                                            }
+                                                        >
+                                                            {/* Larger transparent hover area - extends down behind button */}
+                                                            <div className="flex flex-col items-center px-8 pt-4 pb-6">
+                                                                <VolumeSlider
+                                                                    volume={volume}
+                                                                    onChange={(newVolume) => {
+                                                                        setVolume(newVolume)
+
+                                                                        // Update previous volume if not zero (so we can restore it later)
+                                                                        if (newVolume > 0) {
+                                                                            setPreviousVolume(
+                                                                                newVolume
+                                                                            )
+                                                                        }
+
+                                                                        // Unmute if volume is increased from 0
+                                                                        if (
+                                                                            newVolume > 0 &&
+                                                                            muted
+                                                                        ) {
+                                                                            setMuted(false)
+                                                                        }
+                                                                        // Mute if volume is set to 0
+                                                                        if (newVolume === 0) {
+                                                                            setMuted(true)
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    <ToolTipMod
+                                                        title={
+                                                            showVolumeSlider
+                                                                ? ''
+                                                                : muted
+                                                                  ? 'Unmute'
+                                                                  : 'Mute'
+                                                        }
+                                                    >
+                                                        <button
+                                                            className={`group relative z-20 p-2 sm:p-3 rounded-full border-2 text-white transition-colors ${
+                                                                showVolumeSlider
+                                                                    ? 'border-white bg-[#1a1a1a]'
+                                                                    : 'border-white/30 bg-[#141414] hover:bg-[#1a1a1a] hover:border-white'
+                                                            }`}
+                                                            onClick={handleMuteToggle}
+                                                            onMouseEnter={() =>
+                                                                setShowVolumeSlider(true)
+                                                            }
+                                                            onMouseLeave={() =>
+                                                                setShowVolumeSlider(false)
+                                                            }
+                                                        >
+                                                            {muted ? (
+                                                                <SpeakerXMarkIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
                                                             ) : (
-                                                                <EyeIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
+                                                                <SpeakerWaveIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
                                                             )}
                                                         </button>
                                                     </ToolTipMod>
-                                                )
-                                            })()}
+                                                </div>
+
+                                                {/* YouTube Link Button */}
+                                                <ToolTipMod title="Watch on YouTube">
+                                                    <button
+                                                        className="group p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-colors"
+                                                        onClick={() =>
+                                                            window.open(
+                                                                `https://www.youtube.com/watch?v=${trailer}`,
+                                                                '_blank'
+                                                            )
+                                                        }
+                                                    >
+                                                        <ArrowTopRightOnSquareIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
+                                                    </button>
+                                                </ToolTipMod>
+
+                                                {/* Fullscreen Button */}
+                                                <ToolTipMod
+                                                    title={
+                                                        fullScreen
+                                                            ? 'Exit Fullscreen'
+                                                            : 'Fullscreen'
+                                                    }
+                                                >
+                                                    <button
+                                                        className="group p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-colors"
+                                                        onClick={handleFullscreenButtonClick}
+                                                    >
+                                                        {fullScreen ? (
+                                                            <ArrowsPointingInIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
+                                                        ) : (
+                                                            <ArrowsPointingOutIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
+                                                        )}
+                                                    </button>
+                                                </ToolTipMod>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
                     </div>
 
-                    {/* Content Section - Below Video */}
-                    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 flex-1 overflow-y-auto">
-                        {/* Content Metadata */}
-                        {isLoading && !enhancedMovieData ? (
-                            <ContentMetadataSkeleton />
-                        ) : enhancedMovieData ? (
+                    {/* Content Section - Below Video - Hidden in fullscreen */}
+                    {!fullScreen && (
+                        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 flex-1 overflow-y-auto min-h-[450px]">
+                            {/* Content Metadata - Show immediately with card data, enhanced data loads in background */}
                             <ContentMetadata
-                                content={enhancedMovieData}
-                                showDebugButton={true}
+                                content={(enhancedMovieData || currentMovie) as Content}
+                                showDebugButton={
+                                    process.env.NODE_ENV === 'development' &&
+                                    debugSettings.showApiResults
+                                }
                                 onDebugClick={(e) => {
                                     if (e.ctrlKey || e.metaKey) {
                                         const mediaType =
@@ -916,23 +1127,33 @@ function Modal() {
                                     }
                                 }}
                             />
-                        ) : null}
-                    </div>
+                        </div>
+                    )}
                 </div>
 
-                {/* Keyboard Shortcuts - Below Modal */}
-                {!showJsonDebug && (
-                    <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-full max-w-4xl">
+                {/* Keyboard Shortcuts - Below Modal - Hidden in fullscreen */}
+                {!showJsonDebug && !fullScreen && (
+                    <div className="absolute -bottom-24 sm:-bottom-20 left-1/2 transform -translate-x-1/2 w-full max-w-4xl z-[50000]">
                         <KeyboardShortcuts
                             shortcuts={[
                                 { key: 'ESC', description: 'Close' },
-                                { key: 'SPACE', description: 'Play/Pause' },
-                                { key: 'M', description: 'Mute/Unmute' },
-                                { key: 'F', description: 'Fullscreen', icon: '⛶' },
-                                { key: 'L', description: 'Like/Unlike', icon: '👍' },
-                                { key: 'H', description: 'Hide/Show' },
-                                { key: 'R', description: 'Watch on YouTube' },
-                            ]}
+                                trailer && {
+                                    key: 'SPACE',
+                                    description: playing ? 'Pause' : 'Play',
+                                },
+                                trailer && { key: 'M', description: muted ? 'Unmute' : 'Mute' },
+                                trailer && { key: 'F', description: 'Fullscreen', icon: '⛶' },
+                                currentMovie && {
+                                    key: 'L',
+                                    description: isLiked(currentMovie.id) ? 'Unlike' : 'Like',
+                                    icon: '👍',
+                                },
+                                currentMovie && {
+                                    key: 'H',
+                                    description: isHidden(currentMovie.id) ? 'Show' : 'Hide',
+                                },
+                                trailer && { key: 'R', description: 'Watch on YouTube' },
+                            ].filter(Boolean)}
                             className="opacity-80 hover:opacity-100 transition-opacity"
                         />
                     </div>

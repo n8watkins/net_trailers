@@ -1,17 +1,18 @@
 import { Content } from '../typings'
+import { UserList } from './userLists'
 
-export interface UserRating {
-    contentId: number
-    rating: 'liked' | 'disliked'
-    timestamp: number
-    content?: Content
-}
-
+// NEW SCHEMA - No more ratings, no more userLists structure
 export interface UserPreferences {
-    watchlist: Content[]
-    ratings: UserRating[]
-    userLists: any[]
+    likedMovies: Content[]
+    hiddenMovies: Content[]
+    defaultWatchlist: Content[]
+    userCreatedWatchlists: UserList[]
     lastActive: number
+    // Playback preferences
+    autoMute: boolean
+    defaultVolume: number // 0-100
+    // Content filtering preferences
+    childSafetyMode: boolean // Restricts to PG-13 and below
 }
 
 export interface UserSession {

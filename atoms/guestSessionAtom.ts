@@ -1,19 +1,19 @@
 import { atom } from 'recoil'
 import { Content } from '../typings'
-import { UserList, UserListsState } from '../types/userLists'
+import { UserList } from '../types/userLists'
 
-export interface GuestRating {
-    contentId: number
-    rating: 'liked' | 'disliked'
-    timestamp: number
-    content?: Content
-}
-
+// NEW SCHEMA - No more ratings, no more userLists.lists
 export interface GuestPreferences {
-    watchlist: Content[]
-    ratings: GuestRating[]
-    userLists: UserListsState
+    likedMovies: Content[]
+    hiddenMovies: Content[]
+    defaultWatchlist: Content[]
+    userCreatedWatchlists: UserList[]
     lastActive: number
+    // Playback preferences
+    autoMute?: boolean
+    defaultVolume?: number // 0-100
+    // Content filtering preferences
+    childSafetyMode?: boolean // Restricts to PG-13 and below
 }
 
 export interface GuestSession {
@@ -27,16 +27,10 @@ export interface GuestSession {
 const defaultGuestSession: GuestSession = {
     guestId: '',
     preferences: {
-        watchlist: [],
-        ratings: [],
-        userLists: {
-            lists: [],
-            defaultListIds: {
-                watchlist: '',
-                liked: '',
-                disliked: '',
-            },
-        },
+        likedMovies: [],
+        hiddenMovies: [],
+        defaultWatchlist: [],
+        userCreatedWatchlists: [],
         lastActive: Date.now(),
     },
     isActive: false,

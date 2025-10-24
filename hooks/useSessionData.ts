@@ -28,17 +28,25 @@ export const useSessionData = () => {
         isInitialized,
         isTransitioning,
 
-        // Current store data
-        watchlist: currentStore.watchlist,
-        ratings: currentStore.ratings,
-        userLists: currentStore.userLists,
+        // Current store data (NEW SCHEMA)
+        defaultWatchlist: currentStore.defaultWatchlist,
+        likedMovies: currentStore.likedMovies,
+        hiddenMovies: currentStore.hiddenMovies,
+        userCreatedWatchlists: currentStore.userCreatedWatchlists,
         lastActive: currentStore.lastActive,
 
-        // Actions (unified interface)
+        // Preferences
+        autoMute: currentStore.autoMute ?? true,
+        defaultVolume: currentStore.defaultVolume ?? 50,
+        childSafetyMode: currentStore.childSafetyMode ?? false,
+
+        // Actions (unified interface - NEW SCHEMA)
         addToWatchlist: currentStore.addToWatchlist,
         removeFromWatchlist: currentStore.removeFromWatchlist,
-        addRating: currentStore.addRating,
-        removeRating: currentStore.removeRating,
+        addLikedMovie: currentStore.addLikedMovie,
+        removeLikedMovie: currentStore.removeLikedMovie,
+        addHiddenMovie: currentStore.addHiddenMovie,
+        removeHiddenMovie: currentStore.removeHiddenMovie,
         createList: currentStore.createList,
         updateList: currentStore.updateList,
         deleteList: currentStore.deleteList,
@@ -51,10 +59,12 @@ export const useSessionData = () => {
         clearAllData: guestStore.clearAllData,
         clearLocalCache: authStoreData.clearLocalCache,
 
-        // Utilities
+        // Utilities (NEW SCHEMA)
         isInWatchlist: (contentId: number) =>
-            currentStore.watchlist.some((item) => item.id === contentId),
-        getRating: (contentId: number) =>
-            currentStore.ratings.find((r) => r.contentId === contentId) || null,
+            currentStore.defaultWatchlist.some((item) => item.id === contentId),
+        isLiked: (contentId: number) =>
+            currentStore.likedMovies.some((item) => item.id === contentId),
+        isHidden: (contentId: number) =>
+            currentStore.hiddenMovies.some((item) => item.id === contentId),
     }
 }

@@ -12,6 +12,10 @@ export interface UserList {
     emoji?: string // Optional emoji icon for the list
 }
 
+// DEPRECATED - OLD SCHEMA
+// UserListsState is no longer used in new schema
+// New schema uses: userCreatedWatchlists: UserList[] directly
+// Keeping temporarily for backward compatibility during migration
 export interface UserListsState {
     lists: UserList[]
     defaultListIds: {
@@ -29,7 +33,6 @@ export interface UserListItem {
 
 export interface CreateListRequest {
     name: string
-    description?: string
     isPublic?: boolean
     color?: string
     emoji?: string
@@ -38,7 +41,6 @@ export interface CreateListRequest {
 export interface UpdateListRequest {
     id: string
     name?: string
-    description?: string
     isPublic?: boolean
     color?: string
     emoji?: string

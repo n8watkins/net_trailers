@@ -2,40 +2,41 @@ import { useState, useEffect } from 'react'
 import { NextPage } from 'next'
 import Head from 'next/head'
 import Header from '../components/Header'
-import Modal from '../components/Modal'
 import useUserData from '../hooks/useUserData'
 import { EyeSlashIcon, MagnifyingGlassIcon, ArrowDownTrayIcon } from '@heroicons/react/24/solid'
 import { Content, isMovie, isTVShow } from '../typings'
 import { getTitle, getYear } from '../typings'
 import ContentCard from '../components/ContentCard'
-import { useSetRecoilState } from 'recoil'
+import { useSetRecoilState, useRecoilValue } from 'recoil'
 import { modalState, movieState } from '../atoms/modalAtom'
 import { exportUserDataToCSV } from '../utils/csvExport'
+import { GuestModeNotification } from '../components/GuestModeNotification'
+import { useAuthStatus } from '../hooks/useAuthStatus'
 
-const Hidden: NextPage = () => {
+interface Props {
+    onOpenAboutModal?: () => void
+    onOpenTutorial?: () => void
+    onOpenKeyboardShortcuts?: () => void
+}
+
+const Hidden: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }) => {
     const userData = useUserData()
-    const { getDefaultLists } = userData
+    const { hiddenMovies } = userData
+    const { isGuest, isInitialized } = useAuthStatus()
     const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
 
     const [searchQuery, setSearchQuery] = useState('')
     const setShowModal = useSetRecoilState(modalState)
     const setCurrentMovie = useSetRecoilState(movieState)
+    const showModal = useRecoilValue(modalState)
 
-    // Get hidden content from the default lists (Not For Me list)
-    const defaultLists = getDefaultLists()
-    const hiddenList = defaultLists.disliked
-
-    // Get hidden content
-    const hiddenContent = hiddenList
-        ? hiddenList.items.map((item) => ({
-              contentId: item.id,
-              rating: 'hidden',
-              timestamp: Date.now(),
-              content: item,
-              listId: hiddenList.id,
-              listName: hiddenList.name,
-          }))
-        : []
+    // Get hidden content directly from hiddenMovies
+    const hiddenContent = hiddenMovies.map((item) => ({
+        contentId: item.id,
+        rating: 'hidden',
+        timestamp: Date.now(),
+        content: item,
+    }))
 
     // Apply search filter
     const filteredContent = searchQuery.trim()
@@ -72,18 +73,11 @@ const Hidden: NextPage = () => {
             <h3 className="text-2xl font-bold text-white mb-6">{title}</h3>
             <div className="flex flex-wrap gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 md:gap-x-8 md:gap-y-12">
                 {items.map((item: any) => (
-                    <div
-                        key={`${item.contentId}-${item.listId}`}
-                        className="relative mb-12 sm:mb-16 md:mb-20"
-                    >
+                    <div key={item.contentId} className="relative mb-12 sm:mb-16 md:mb-20">
                         <ContentCard
                             content={item.content}
                             className="opacity-75 hover:opacity-100 transition-opacity duration-200"
                         />
-                        {/* Hidden badge overlay */}
-                        <div className="absolute top-2 right-2 bg-red-600/80 rounded-full p-1.5 z-10">
-                            <EyeSlashIcon className="w-4 h-4 text-white" />
-                        </div>
                     </div>
                 ))}
             </div>
@@ -91,7 +85,9 @@ const Hidden: NextPage = () => {
     )
 
     return (
-        <div className="relative min-h-screen bg-gradient-to-b">
+        <div
+            className={`relative min-h-screen overflow-x-clip ${showModal && `overflow-y-hidden`} bg-gradient-to-b`}
+        >
             <Head>
                 <title>Hidden Content - NetTrailer</title>
                 <meta
@@ -100,42 +96,47 @@ const Hidden: NextPage = () => {
                 />
             </Head>
 
-            <Header />
+            <Header
+                onOpenAboutModal={onOpenAboutModal}
+                onOpenTutorial={onOpenTutorial}
+                onOpenKeyboardShortcuts={onOpenKeyboardShortcuts}
+            />
 
             <main className="relative pl-4 pb-24 lg:space-y-24 lg:pl-16">
                 <div className="flex flex-col space-y-8 py-16 md:space-y-12 md:py-20 lg:py-24">
                     {/* Header Section */}
                     <div className="space-y-6">
-                        <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-3 pt-8 sm:pt-10 md:pt-12">
                             <EyeSlashIcon className="w-8 h-8 text-gray-400" />
-                            <h1 className="text-3xl font-bold text-white md:text-4xl lg:text-5xl pt-8 sm:pt-10 md:pt-12">
+                            <h1 className="text-3xl font-bold text-white md:text-4xl lg:text-5xl">
                                 Hidden Content
                             </h1>
                         </div>
 
                         <p className="text-gray-400 max-w-2xl">
-                            Content you&apos;ve hidden from recommendations. These won&apos;t appear
-                            in suggestions or on your homepage.
+                            Curate your recommendations! Hide content you&apos;re not interested in.
                         </p>
+
+                        {isInitialized && isGuest && (
+                            <GuestModeNotification onOpenTutorial={onOpenTutorial} align="left" />
+                        )}
 
                         {/* Action Buttons */}
                         {hiddenContent.length > 0 && (
-                            <div className="flex justify-between items-center py-3 mb-4 border-b border-gray-700/30">
-                                <div className="flex items-center space-x-4">
-                                    {/* Export Button */}
-                                    <button
-                                        onClick={handleExportCSV}
-                                        className="flex items-center space-x-2 px-5 py-2.5 bg-gray-800/50 hover:bg-white/10 text-white border border-gray-600 hover:border-gray-400 rounded-full text-sm font-medium transition-all duration-200"
-                                    >
-                                        <ArrowDownTrayIcon className="w-4 h-4" />
-                                        <span>Export to CSV</span>
-                                    </button>
-                                </div>
-
+                            <div className="flex items-center space-x-4 py-3 mb-4 border-b border-gray-700/30">
                                 {/* Stats */}
-                                <div className="text-sm text-gray-400">
+                                <div className="text-lg font-semibold text-white">
                                     {hiddenContent.length} items hidden
                                 </div>
+
+                                {/* Export Button */}
+                                <button
+                                    onClick={handleExportCSV}
+                                    className="flex items-center space-x-2 px-5 py-2.5 bg-gray-800/50 hover:bg-white/10 text-white border border-gray-600 hover:border-gray-400 rounded-full text-sm font-medium transition-all duration-200"
+                                >
+                                    <ArrowDownTrayIcon className="w-4 h-4" />
+                                    <span>Export to CSV</span>
+                                </button>
                             </div>
                         )}
 
@@ -181,8 +182,6 @@ const Hidden: NextPage = () => {
                     )}
                 </div>
             </main>
-
-            <Modal />
         </div>
     )
 }

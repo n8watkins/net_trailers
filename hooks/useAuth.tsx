@@ -129,7 +129,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 const user = userCredential.user
                 const displayName = user.displayName || user.email?.split('@')[0] || 'there'
                 showSuccess(`Welcome ${displayName}! Account created successfully.`)
-                router.push('/')
+                // Don't redirect - stay on current page
                 setLoading(false)
             })
             .catch((error) => {
@@ -150,7 +150,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 const user = userCredential.user
                 const displayName = user.displayName || user.email?.split('@')[0] || 'Nathan'
                 showSuccess(`Welcome back, ${displayName}!`)
-                router.push('/')
+                // Don't redirect - stay on current page
                 setLoading(false)
             })
             .catch((error) => {
@@ -175,7 +175,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 const user = result.user
                 const displayName = user.displayName || user.email?.split('@')[0] || 'there'
                 showSuccess(`Welcome ${displayName}!`)
-                router.push('/')
+                // Don't redirect - stay on current page
             })
             .catch((error) => {
                 errorHandler.handleAuthError(error)

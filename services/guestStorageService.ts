@@ -1,10 +1,12 @@
 import { Content } from '../typings'
-import { GuestPreferences, GuestRating } from '../atoms/guestSessionAtom'
-import { UserListsService } from './userListsService'
+import { GuestPreferences } from '../atoms/guestSessionAtom'
+
+// NEW SCHEMA - v2 with localStorage versioning
+const STORAGE_VERSION = 2
 
 export class GuestStorageService {
     private static getStorageKey(guestId: string): string {
-        return `nettrailer_guest_data_${guestId}`
+        return `nettrailer_guest_data_v${STORAGE_VERSION}_${guestId}`
     }
 
     private static getGuestIdKey(): string {
@@ -42,42 +44,133 @@ export class GuestStorageService {
 
     // Load guest data
     static loadGuestData(guestId: string): GuestPreferences {
+        console.log('🔍 [GuestStorageService] loadGuestData called:', { guestId })
+
         if (typeof window === 'undefined') {
+            console.log('⚠️ [GuestStorageService] SSR environment, returning defaults')
             return this.getDefaultPreferences()
         }
 
         try {
-            const data = localStorage.getItem(this.getStorageKey(guestId))
+            // Clear old v1 guest data on first load
+            this.clearOldV1Data()
+
+            const storageKey = this.getStorageKey(guestId)
+            const data = localStorage.getItem(storageKey)
+
+            console.log('🔍 [GuestStorageService] Reading from localStorage:', {
+                key: storageKey,
+                hasData: !!data,
+                dataLength: data?.length || 0,
+            })
+
             if (!data) {
+                console.log('⚠️ [GuestStorageService] No data found, returning defaults')
                 return this.getDefaultPreferences()
             }
 
             const parsedData = JSON.parse(data) as GuestPreferences
 
-            // Migrate old data structure if needed
-            if (!parsedData.userLists) {
-                return UserListsService.migrateOldPreferences(parsedData as any) as GuestPreferences
-            }
+            console.log('✅ [GuestStorageService] Successfully loaded data:', {
+                watchlistCount: parsedData.defaultWatchlist?.length || 0,
+                likedCount: parsedData.likedMovies?.length || 0,
+                hiddenCount: parsedData.hiddenMovies?.length || 0,
+                autoMute: parsedData.autoMute,
+                defaultVolume: parsedData.defaultVolume,
+                childSafetyMode: parsedData.childSafetyMode,
+            })
 
-            return parsedData
+            // NEW SCHEMA - No migration needed
+            return {
+                likedMovies: parsedData.likedMovies || [],
+                hiddenMovies: parsedData.hiddenMovies || [],
+                defaultWatchlist: parsedData.defaultWatchlist || [],
+                userCreatedWatchlists: parsedData.userCreatedWatchlists || [],
+                lastActive: parsedData.lastActive || Date.now(),
+                autoMute: parsedData.autoMute ?? true,
+                defaultVolume: parsedData.defaultVolume ?? 50,
+                childSafetyMode: parsedData.childSafetyMode ?? false,
+            }
         } catch (error) {
-            console.error(`Failed to load guest data for ${guestId}:`, error)
+            console.error(
+                `❌ [GuestStorageService] Failed to load guest data for ${guestId}:`,
+                error
+            )
             return this.getDefaultPreferences()
         }
     }
 
+    // Clear old v1 localStorage keys
+    private static clearOldV1Data(): void {
+        if (typeof window === 'undefined') return
+
+        // Clear old v1 guest data keys
+        Object.keys(localStorage).forEach((key) => {
+            if (key.startsWith('nettrailer_guest_data_') && !key.includes('_v2_')) {
+                localStorage.removeItem(key)
+                console.log('🧹 Cleared old v1 guest data:', key)
+            }
+        })
+    }
+
     // Save guest data
     static saveGuestData(guestId: string, preferences: GuestPreferences): void {
-        if (typeof window === 'undefined') return
+        console.log('💾 [GuestStorageService] saveGuestData called:', {
+            guestId,
+            preferences: {
+                watchlistCount: preferences.defaultWatchlist?.length || 0,
+                likedCount: preferences.likedMovies?.length || 0,
+                autoMute: preferences.autoMute,
+                defaultVolume: preferences.defaultVolume,
+                childSafetyMode: preferences.childSafetyMode,
+            },
+        })
+
+        if (typeof window === 'undefined') {
+            console.log('⚠️ [GuestStorageService] SSR environment, cannot save')
+            return
+        }
 
         try {
             const dataToSave = {
                 ...preferences,
                 lastActive: Date.now(),
             }
-            localStorage.setItem(this.getStorageKey(guestId), JSON.stringify(dataToSave))
+
+            const storageKey = this.getStorageKey(guestId)
+            const jsonData = JSON.stringify(dataToSave)
+
+            localStorage.setItem(storageKey, jsonData)
+
+            console.log('✅ [GuestStorageService] Successfully saved to localStorage:', {
+                key: storageKey,
+                dataSize: jsonData.length,
+                saved: {
+                    autoMute: dataToSave.autoMute,
+                    defaultVolume: dataToSave.defaultVolume,
+                    childSafetyMode: dataToSave.childSafetyMode,
+                },
+            })
+
+            // Verify it was saved correctly
+            const verification = localStorage.getItem(storageKey)
+            if (verification) {
+                const parsed = JSON.parse(verification)
+                console.log('✅ [GuestStorageService] Verification - data in localStorage:', {
+                    autoMute: parsed.autoMute,
+                    defaultVolume: parsed.defaultVolume,
+                    childSafetyMode: parsed.childSafetyMode,
+                })
+            } else {
+                console.error(
+                    '❌ [GuestStorageService] Verification FAILED - data not in localStorage!'
+                )
+            }
         } catch (error) {
-            console.error(`Failed to save guest data for ${guestId}:`, error)
+            console.error(
+                `❌ [GuestStorageService] Failed to save guest data for ${guestId}:`,
+                error
+            )
         }
     }
 
@@ -92,9 +185,10 @@ export class GuestStorageService {
             const parsed = JSON.parse(data) as GuestPreferences
             // Check if there's meaningful data (not just defaults)
             return (
-                parsed.watchlist.length > 0 ||
-                parsed.ratings.length > 0 ||
-                (parsed.userLists && parsed.userLists.lists.some((list) => list.items.length > 0))
+                parsed.likedMovies.length > 0 ||
+                parsed.hiddenMovies.length > 0 ||
+                parsed.defaultWatchlist.length > 0 ||
+                parsed.userCreatedWatchlists.some((list) => list.items.length > 0)
             )
         } catch {
             return false
@@ -131,80 +225,105 @@ export class GuestStorageService {
         localStorage.removeItem('nettrailer_guest_data')
     }
 
-    // Add or update a rating
-    static addRating(
-        preferences: GuestPreferences,
-        contentId: number,
-        rating: 'liked' | 'disliked',
-        content?: Content
-    ): GuestPreferences {
-        const existingRatingIndex = preferences.ratings.findIndex((r) => r.contentId === contentId)
+    // Add to liked movies (mutual exclusion with hidden)
+    static addLikedMovie(preferences: GuestPreferences, content: Content): GuestPreferences {
+        // Remove from hidden if exists (mutual exclusion)
+        const hiddenMovies = preferences.hiddenMovies.filter((m) => m.id !== content.id)
 
-        const newRating: GuestRating = {
-            contentId,
-            rating,
-            timestamp: Date.now(),
-            content,
-        }
-
-        let updatedRatings: GuestRating[]
-        if (existingRatingIndex >= 0) {
-            updatedRatings = [...preferences.ratings]
-            updatedRatings[existingRatingIndex] = newRating
-        } else {
-            updatedRatings = [...preferences.ratings, newRating]
-        }
+        // Add to liked if not already there
+        const isAlreadyLiked = preferences.likedMovies.some((m) => m.id === content.id)
+        const likedMovies = isAlreadyLiked
+            ? preferences.likedMovies
+            : [...preferences.likedMovies, content]
 
         return {
             ...preferences,
-            ratings: updatedRatings,
+            likedMovies,
+            hiddenMovies,
         }
     }
 
-    // Remove a rating
-    static removeRating(preferences: GuestPreferences, contentId: number): GuestPreferences {
+    // Remove from liked movies
+    static removeLikedMovie(preferences: GuestPreferences, contentId: number): GuestPreferences {
         return {
             ...preferences,
-            ratings: preferences.ratings.filter((r) => r.contentId !== contentId),
+            likedMovies: preferences.likedMovies.filter((m) => m.id !== contentId),
         }
     }
 
-    // Add to watchlist
+    // Add to hidden movies (mutual exclusion with liked)
+    static addHiddenMovie(preferences: GuestPreferences, content: Content): GuestPreferences {
+        // Remove from liked if exists (mutual exclusion)
+        const likedMovies = preferences.likedMovies.filter((m) => m.id !== content.id)
+
+        // Add to hidden if not already there
+        const isAlreadyHidden = preferences.hiddenMovies.some((m) => m.id === content.id)
+        const hiddenMovies = isAlreadyHidden
+            ? preferences.hiddenMovies
+            : [...preferences.hiddenMovies, content]
+
+        return {
+            ...preferences,
+            likedMovies,
+            hiddenMovies,
+        }
+    }
+
+    // Remove from hidden movies
+    static removeHiddenMovie(preferences: GuestPreferences, contentId: number): GuestPreferences {
+        return {
+            ...preferences,
+            hiddenMovies: preferences.hiddenMovies.filter((m) => m.id !== contentId),
+        }
+    }
+
+    // Check if content is liked
+    static isLiked(preferences: GuestPreferences, contentId: number): boolean {
+        return preferences.likedMovies.some((m) => m.id === contentId)
+    }
+
+    // Check if content is hidden
+    static isHidden(preferences: GuestPreferences, contentId: number): boolean {
+        return preferences.hiddenMovies.some((m) => m.id === contentId)
+    }
+
+    // Add to default watchlist
     static addToWatchlist(preferences: GuestPreferences, content: Content): GuestPreferences {
-        const isAlreadyInWatchlist = preferences.watchlist.some((item) => item.id === content.id)
+        const isAlreadyInWatchlist = preferences.defaultWatchlist.some(
+            (item) => item.id === content.id
+        )
         if (isAlreadyInWatchlist) return preferences
 
         return {
             ...preferences,
-            watchlist: [...preferences.watchlist, content],
+            defaultWatchlist: [...preferences.defaultWatchlist, content],
         }
     }
 
-    // Remove from watchlist
+    // Remove from default watchlist
     static removeFromWatchlist(preferences: GuestPreferences, contentId: number): GuestPreferences {
         return {
             ...preferences,
-            watchlist: preferences.watchlist.filter((item) => item.id !== contentId),
+            defaultWatchlist: preferences.defaultWatchlist.filter((item) => item.id !== contentId),
         }
     }
 
-    // Get rating for specific content
-    static getRating(preferences: GuestPreferences, contentId: number): GuestRating | null {
-        return preferences.ratings.find((r) => r.contentId === contentId) || null
-    }
-
-    // Check if content is in watchlist
+    // Check if content is in default watchlist
     static isInWatchlist(preferences: GuestPreferences, contentId: number): boolean {
-        return preferences.watchlist.some((item) => item.id === contentId)
+        return preferences.defaultWatchlist.some((item) => item.id === contentId)
     }
 
     // Get default preferences
     private static getDefaultPreferences(): GuestPreferences {
         return {
-            watchlist: [],
-            ratings: [],
-            userLists: UserListsService.initializeDefaultLists(),
+            likedMovies: [],
+            hiddenMovies: [],
+            defaultWatchlist: [],
+            userCreatedWatchlists: [],
             lastActive: Date.now(),
+            autoMute: true, // Default to muted for better UX
+            defaultVolume: 50, // Default to 50%
+            childSafetyMode: false, // Default to off
         }
     }
 
@@ -213,7 +332,8 @@ export class GuestStorageService {
         guestId: string
         hasData: boolean
         watchlistCount: number
-        ratingsCount: number
+        likedCount: number
+        hiddenCount: number
         listsCount: number
         lastActive?: number
     } {
@@ -221,9 +341,10 @@ export class GuestStorageService {
         return {
             guestId,
             hasData: this.hasGuestData(guestId),
-            watchlistCount: preferences.watchlist.length,
-            ratingsCount: preferences.ratings.length,
-            listsCount: preferences.userLists.lists.length,
+            watchlistCount: preferences.defaultWatchlist.length,
+            likedCount: preferences.likedMovies.length,
+            hiddenCount: preferences.hiddenMovies.length,
+            listsCount: preferences.userCreatedWatchlists.length,
             lastActive: preferences.lastActive,
         }
     }
@@ -233,12 +354,13 @@ export class GuestStorageService {
         if (typeof window === 'undefined') return []
 
         const guestSessions: string[] = []
+        const prefix = `nettrailer_guest_data_v${STORAGE_VERSION}_`
 
-        // Check localStorage for guest data keys
+        // Check localStorage for v2 guest data keys
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i)
-            if (key && key.startsWith('nettrailer_guest_data_')) {
-                const guestId = key.replace('nettrailer_guest_data_', '')
+            if (key && key.startsWith(prefix)) {
+                const guestId = key.replace(prefix, '')
                 guestSessions.push(guestId)
             }
         }
@@ -257,21 +379,24 @@ export class GuestStorageService {
     // Get data summary for confirmation dialogs
     static getDataSummary(guestId: string): {
         watchlistCount: number
-        ratingsCount: number
+        likedCount: number
+        hiddenCount: number
         listsCount: number
         totalItems: number
         isEmpty: boolean
     } {
         const preferences = this.loadGuestData(guestId)
         const totalItems =
-            preferences.watchlist.length +
-            preferences.ratings.length +
-            preferences.userLists.lists.reduce((acc, list) => acc + list.items.length, 0)
+            preferences.defaultWatchlist.length +
+            preferences.likedMovies.length +
+            preferences.hiddenMovies.length +
+            preferences.userCreatedWatchlists.reduce((acc, list) => acc + list.items.length, 0)
 
         return {
-            watchlistCount: preferences.watchlist.length,
-            ratingsCount: preferences.ratings.length,
-            listsCount: preferences.userLists.lists.length,
+            watchlistCount: preferences.defaultWatchlist.length,
+            likedCount: preferences.likedMovies.length,
+            hiddenCount: preferences.hiddenMovies.length,
+            listsCount: preferences.userCreatedWatchlists.length,
             totalItems,
             isEmpty: totalItems === 0,
         }

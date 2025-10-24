@@ -1,24 +1,70 @@
-import { useState, useEffect } from 'react'
-import { BugAntIcon, FireIcon, ChatBubbleBottomCenterTextIcon } from '@heroicons/react/24/outline'
+import { useState, useEffect, useRef } from 'react'
+import {
+    BugAntIcon,
+    FireIcon,
+    ChatBubbleBottomCenterTextIcon,
+    CodeBracketIcon,
+} from '@heroicons/react/24/outline'
 
 interface DebugSettings {
     showFirebaseTracker: boolean
     showFirebaseDebug: boolean
     showToastDebug: boolean
+    showApiResults: boolean
+}
+
+interface Position {
+    x: number
+    y: number
 }
 
 export default function DebugControls() {
     const [settings, setSettings] = useState<DebugSettings>({
-        showFirebaseTracker: true,
+        showFirebaseTracker: false,
         showFirebaseDebug: false,
         showToastDebug: false,
+        showApiResults: false,
     })
 
-    // Load settings from localStorage
+    // Visibility state - hidden by default, toggled with Alt+Shift+D
+    const [isVisible, setIsVisible] = useState(false)
+
+    // Drag state - default position is a bit to the left (initialized after mount)
+    const [position, setPosition] = useState<Position>({ x: 0, y: 16 })
+    const [isDragging, setIsDragging] = useState(false)
+    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+    const [isHovered, setIsHovered] = useState(false)
+    const dragHandleRef = useRef<HTMLDivElement>(null)
+    const isFirstMount = useRef(true)
+
+    // Keyboard shortcut handler for Alt+Shift+D
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Alt+Shift+D to toggle visibility
+            if (e.altKey && e.shiftKey && e.key.toLowerCase() === 'd') {
+                e.preventDefault()
+                setIsVisible((prev) => !prev)
+            }
+        }
+
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [])
+
+    // Load settings from localStorage and initialize position
     useEffect(() => {
         const saved = localStorage.getItem('debugSettings')
         if (saved) {
             setSettings(JSON.parse(saved))
+        }
+
+        // Load saved position or set default based on window width
+        const savedPosition = localStorage.getItem('debugPosition')
+        if (savedPosition) {
+            setPosition(JSON.parse(savedPosition))
+        } else {
+            // Set default position based on window width
+            setPosition({ x: window.innerWidth - 600, y: 16 })
         }
     }, [])
 
@@ -29,6 +75,56 @@ export default function DebugControls() {
         window.dispatchEvent(new CustomEvent('debugSettingsChanged', { detail: settings }))
     }, [settings])
 
+    // Save position to localStorage (skip initial mount to avoid overwriting saved position)
+    useEffect(() => {
+        if (isFirstMount.current) {
+            isFirstMount.current = false
+            return
+        }
+        localStorage.setItem('debugPosition', JSON.stringify(position))
+    }, [position])
+
+    // Handle drag start - only from the bug icon
+    const handleDragStart = (e: React.MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        setIsDragging(true)
+        setDragOffset({
+            x: e.clientX - position.x,
+            y: e.clientY - position.y,
+        })
+    }
+
+    // Handle dragging
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            if (isDragging) {
+                e.preventDefault()
+                setPosition({
+                    x: e.clientX - dragOffset.x,
+                    y: e.clientY - dragOffset.y,
+                })
+            }
+        }
+
+        const handleMouseUp = () => {
+            setIsDragging(false)
+        }
+
+        if (isDragging) {
+            document.addEventListener('mousemove', handleMouseMove)
+            document.addEventListener('mouseup', handleMouseUp)
+        }
+
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove)
+            document.removeEventListener('mouseup', handleMouseUp)
+        }
+    }, [isDragging, dragOffset])
+
+    // Keep component expanded while dragging
+    const shouldShowControls = isHovered || isDragging
+
     const toggleSetting = (key: keyof DebugSettings) => {
         setSettings((prev) => ({ ...prev, [key]: !prev[key] }))
     }
@@ -36,50 +132,83 @@ export default function DebugControls() {
     // Only show in development
     if (process.env.NODE_ENV !== 'development') return null
 
+    // Don't render if not visible
+    if (!isVisible) return null
+
     return (
-        <div className="fixed top-4 right-20 z-[9999] flex items-center space-x-2 bg-gray-900/95 rounded-lg border border-gray-700 px-3 py-2">
-            <BugAntIcon className="w-4 h-4 text-gray-400" />
-
-            {/* Firebase Tracker Toggle */}
-            <button
-                onClick={() => toggleSetting('showFirebaseTracker')}
-                className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                    settings.showFirebaseTracker
-                        ? 'bg-orange-600/20 text-orange-400 border border-orange-500/30'
-                        : 'bg-gray-800 text-gray-500 border border-gray-700'
-                }`}
-                title="Toggle Firebase Call Tracker"
+        <div
+            className={`fixed z-[9999] flex items-center space-x-2 bg-gray-900/95 rounded-lg border border-gray-700 px-3 py-2 select-none ${isDragging ? '' : 'transition-all duration-200'}`}
+            style={{ left: `${position.x}px`, top: `${position.y}px` }}
+            onMouseEnter={() => !isDragging && setIsHovered(true)}
+            onMouseLeave={() => !isDragging && setIsHovered(false)}
+        >
+            <div
+                ref={dragHandleRef}
+                className="cursor-move hover:bg-gray-800 rounded p-1 -m-1 transition-colors"
+                title="Drag to move · Hover to expand"
+                onMouseDown={handleDragStart}
             >
-                <FireIcon className="w-3 h-3" />
-                <span className="text-xs">Firebase</span>
-            </button>
+                <BugAntIcon className="w-6 h-6 text-gray-400" />
+            </div>
 
-            {/* Firebase Debug Toggle */}
-            <button
-                onClick={() => toggleSetting('showFirebaseDebug')}
-                className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                    settings.showFirebaseDebug
-                        ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
-                        : 'bg-gray-800 text-gray-500 border border-gray-700'
-                }`}
-                title="Toggle Firebase Console Debug"
-            >
-                <span className="text-xs">Console</span>
-            </button>
+            {shouldShowControls && (
+                <>
+                    {/* Firebase Tracker Toggle */}
+                    <button
+                        onClick={() => toggleSetting('showFirebaseTracker')}
+                        className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                            settings.showFirebaseTracker
+                                ? 'bg-orange-600/20 text-orange-400 border border-orange-500/30'
+                                : 'bg-gray-800 text-gray-500 border border-gray-700'
+                        }`}
+                        title="Toggle Firebase Call Tracker"
+                    >
+                        <FireIcon className="w-3 h-3" />
+                        <span className="text-xs">Firebase</span>
+                    </button>
 
-            {/* Toast Debug Toggle */}
-            <button
-                onClick={() => toggleSetting('showToastDebug')}
-                className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                    settings.showToastDebug
-                        ? 'bg-green-600/20 text-green-400 border border-green-500/30'
-                        : 'bg-gray-800 text-gray-500 border border-gray-700'
-                }`}
-                title="Toggle Toast Debug"
-            >
-                <ChatBubbleBottomCenterTextIcon className="w-3 h-3" />
-                <span className="text-xs">Toast</span>
-            </button>
+                    {/* Firebase Debug Toggle */}
+                    <button
+                        onClick={() => toggleSetting('showFirebaseDebug')}
+                        className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                            settings.showFirebaseDebug
+                                ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
+                                : 'bg-gray-800 text-gray-500 border border-gray-700'
+                        }`}
+                        title="Toggle Auth Flow Logs"
+                    >
+                        <span className="text-xs">Auth Flow Logs</span>
+                    </button>
+
+                    {/* Toast Debug Toggle */}
+                    <button
+                        onClick={() => toggleSetting('showToastDebug')}
+                        className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                            settings.showToastDebug
+                                ? 'bg-green-600/20 text-green-400 border border-green-500/30'
+                                : 'bg-gray-800 text-gray-500 border border-gray-700'
+                        }`}
+                        title="Toggle Toast Debug"
+                    >
+                        <ChatBubbleBottomCenterTextIcon className="w-3 h-3" />
+                        <span className="text-xs">Toast</span>
+                    </button>
+
+                    {/* API Results Toggle */}
+                    <button
+                        onClick={() => toggleSetting('showApiResults')}
+                        className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                            settings.showApiResults
+                                ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30'
+                                : 'bg-gray-800 text-gray-500 border border-gray-700'
+                        }`}
+                        title="Toggle API Results Button"
+                    >
+                        <CodeBracketIcon className="w-3 h-3" />
+                        <span className="text-xs">API Results</span>
+                    </button>
+                </>
+            )}
         </div>
     )
 }
@@ -87,9 +216,10 @@ export default function DebugControls() {
 // Export a hook to use debug settings in other components
 export function useDebugSettings() {
     const [settings, setSettings] = useState<DebugSettings>({
-        showFirebaseTracker: true,
+        showFirebaseTracker: false,
         showFirebaseDebug: false,
         showToastDebug: false,
+        showApiResults: false,
     })
 
     useEffect(() => {

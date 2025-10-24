@@ -1,32 +1,28 @@
 import React, { useState } from 'react'
 import ToolTipMod from './ToolTipMod'
-import { useRecoilValue, useRecoilState } from 'recoil'
-import { movieState } from '../atoms/modalAtom'
-import { showDemoMessageState } from '../atoms/userDataAtom'
-import { useRatings } from '../hooks/useRatings'
-import { Content } from '../typings'
+import { Content, getTitle } from '../typings'
 import { HandThumbUpIcon as HandThumbUpIconOutline } from '@heroicons/react/24/outline'
-
 import { HandThumbUpIcon as HandThumbUpIconFilled } from '@heroicons/react/24/solid'
+import useUserData from '../hooks/useUserData'
+import { useToast } from '../hooks/useToast'
+import { useAppStore } from '../stores/appStore'
 
 function SimpleLikeButton() {
-    const currentMovie = useRecoilValue(movieState)
-    const { getRating, setRating, removeRating, ratings } = useRatings()
-    const [showDemoMessage, setShowDemoMessage] = useRecoilState(showDemoMessageState)
+    // Get current movie from Zustand store
+    const { modal } = useAppStore()
+    const currentMovie = modal.content?.content || null
+
+    // Use new schema hooks
+    const { isLiked: checkIsLiked, addLikedMovie, removeLikedMovie } = useUserData()
+    const { showSuccess } = useToast()
     const [isAnimating, setIsAnimating] = useState(false)
 
-    // Get current rating from user data
-    const currentRating = currentMovie ? getRating(currentMovie.id) : null
-    const isLiked = currentRating?.rating === 'liked'
+    // Get current liked status
+    const isLiked = currentMovie ? checkIsLiked(currentMovie.id) : false
 
     // Handle like toggle
     const handleLikeToggle = () => {
         if (!currentMovie) return
-
-        // Show demo message for first-time users
-        if (showDemoMessage && ratings.length === 0) {
-            setShowDemoMessage(true)
-        }
 
         // Trigger animation when liking (not when unliking)
         if (!isLiked) {
@@ -34,36 +30,28 @@ function SimpleLikeButton() {
             setTimeout(() => setIsAnimating(false), 800) // Animation duration
         }
 
+        const contentObj = currentMovie as Content
         if (isLiked) {
-            // Remove rating if already liked
-            removeRating(currentMovie.id)
+            // Remove if already liked
+            removeLikedMovie(contentObj.id)
+            showSuccess(`Unliked ${getTitle(contentObj)}`, 'Removed from your liked content')
         } else {
-            // Set like rating with the content object
-            const contentObj = currentMovie as Content
-            setRating(contentObj.id, 'liked', contentObj)
+            // Add to liked
+            addLikedMovie(contentObj)
+            showSuccess(`Liked ${getTitle(contentObj)}`, 'Added to your liked content')
         }
     }
 
     return (
         <ToolTipMod title={isLiked ? 'Unlike' : 'Like'}>
             <button
-                className={`relative p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-all duration-200 ${
-                    isAnimating ? 'animate-pulse scale-105' : ''
-                }`}
+                className="group relative p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-colors duration-200"
                 onClick={handleLikeToggle}
             >
                 {isLiked ? (
-                    <HandThumbUpIconFilled
-                        className={`h-4 w-4 sm:h-6 sm:w-6 text-white transition-all duration-300 drop-shadow-lg ${
-                            isAnimating ? 'animate-heartBeat' : 'hover:scale-110'
-                        }`}
-                    />
+                    <HandThumbUpIconFilled className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
                 ) : (
-                    <HandThumbUpIconOutline
-                        className={`h-4 w-4 sm:h-6 sm:w-6 text-white/70 transition-all duration-300 hover:text-white ${
-                            isAnimating ? 'animate-heartBeat' : 'hover:scale-110'
-                        }`}
-                    />
+                    <HandThumbUpIconOutline className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
                 )}
             </button>
         </ToolTipMod>

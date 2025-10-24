@@ -55,8 +55,8 @@ export function compareUserData(user1Data: any, user2Data: any) {
     const user1Lists = new Set(user1Data?.userLists?.lists?.map((l: any) => l.id) || [])
     const user2Lists = new Set(user2Data?.userLists?.lists?.map((l: any) => l.id) || [])
 
-    const sharedWatchlist = [...user1Watchlist].filter((id) => user2Watchlist.has(id))
-    const sharedLists = [...user1Lists].filter((id) => user2Lists.has(id))
+    const sharedWatchlist = Array.from(user1Watchlist).filter((id) => user2Watchlist.has(id))
+    const sharedLists = Array.from(user1Lists).filter((id) => user2Lists.has(id))
 
     const result = {
         user1Summary: {

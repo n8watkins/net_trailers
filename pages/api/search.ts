@@ -1,8 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
+import { filterContentByAdultFlag } from '../../utils/contentFilter'
 
 interface SearchParams {
     query: string
     page?: string
+    childSafetyMode?: string
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -11,7 +13,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     try {
-        const { query, page = '1' } = req.query as Partial<SearchParams> & { query: string }
+        const {
+            query,
+            page = '1',
+            childSafetyMode,
+        } = req.query as Partial<SearchParams> & { query: string }
+        const childSafeMode = childSafetyMode === 'true'
 
         if (!query || typeof query !== 'string' || query.trim().length === 0) {
             return res.status(400).json({ message: 'Query parameter is required' })
@@ -38,22 +45,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const data = await response.json()
 
         // Filter out person results (keep only movies and TV shows)
-        const filteredResults = data.results
-            .filter((item: any) => item.media_type === 'movie' || item.media_type === 'tv')
+        let filteredResults = data.results.filter(
+            (item: any) => item.media_type === 'movie' || item.media_type === 'tv'
+        )
 
+        // Apply child safety filtering if enabled
+        if (childSafeMode) {
+            const beforeCount = filteredResults.length
+            filteredResults = filterContentByAdultFlag(filteredResults, true)
+            const hiddenCount = beforeCount - filteredResults.length
+
+            return res.status(200).json({
+                results: filteredResults,
+                total_results: data.total_results,
+                total_pages: data.total_pages,
+                page: parseInt(page),
+                child_safety_enabled: true,
+                hidden_count: hiddenCount,
+            })
+        }
+
+        // Return normal results if child safety is off
         return res.status(200).json({
             results: filteredResults,
             total_results: data.total_results,
             total_pages: data.total_pages,
-            page: parseInt(page)
+            page: parseInt(page),
         })
-
     } catch (error) {
         console.error('Search API error:', error)
         return res.status(500).json({
             message: 'Internal server error',
-            error: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+            error: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined,
         })
     }
 }
-

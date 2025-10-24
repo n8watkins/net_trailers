@@ -61,9 +61,28 @@ const Toast: React.FC<ToastProps> = ({ toast, onClose, duration = 5000 }) => {
         }, 300)
     }
 
+    const getToastStyles = () => {
+        switch (toast.type) {
+            case 'error':
+                return 'bg-gradient-to-r from-red-900/40 to-red-800/40 border-red-500/70 shadow-red-500/20'
+            case 'success':
+                return 'bg-[#181818] border-gray-600/50'
+            case 'watchlist-add':
+                return 'bg-[#181818] border-gray-600/50'
+            case 'watchlist-remove':
+                return 'bg-[#181818] border-gray-600/50'
+            case 'content-hidden':
+                return 'bg-[#181818] border-gray-600/50'
+            case 'content-shown':
+                return 'bg-[#181818] border-gray-600/50'
+            default:
+                return 'bg-[#181818] border-gray-600/50'
+        }
+    }
+
     return (
         <div
-            className={`bg-[#181818] border border-gray-600/50 rounded-lg shadow-xl p-4 sm:p-6 min-w-80 sm:min-w-96 max-w-sm sm:max-w-md lg:max-w-lg w-auto transition-all duration-300 ease-in-out ${
+            className={`${getToastStyles()} border rounded-lg shadow-xl p-4 sm:p-6 min-w-80 sm:min-w-96 max-w-sm sm:max-w-md lg:max-w-lg w-auto transition-all duration-300 ease-in-out ${
                 !isVisible
                     ? 'opacity-0 transform -translate-x-full'
                     : isExiting
@@ -76,7 +95,9 @@ const Toast: React.FC<ToastProps> = ({ toast, onClose, duration = 5000 }) => {
                     {toast.type === 'success' && (
                         <CheckCircleIcon className="h-7 w-7 text-green-400" />
                     )}
-                    {toast.type === 'error' && <XCircleIcon className="h-7 w-7 text-red-400" />}
+                    {toast.type === 'error' && (
+                        <XCircleIcon className="h-8 w-8 text-red-400 animate-pulse" />
+                    )}
                     {toast.type === 'watchlist-add' && (
                         <PlusCircleIcon className="h-7 w-7 text-blue-400" />
                     )}
@@ -91,8 +112,18 @@ const Toast: React.FC<ToastProps> = ({ toast, onClose, duration = 5000 }) => {
                     )}
                 </div>
                 <div className="ml-4 flex-1">
-                    <p className="text-base font-medium text-white">{toast.title}</p>
-                    {toast.message && <p className="text-sm text-gray-300 mt-1">{toast.message}</p>}
+                    <p
+                        className={`text-base font-medium ${toast.type === 'error' ? 'text-red-100 font-semibold' : 'text-white'}`}
+                    >
+                        {toast.title}
+                    </p>
+                    {toast.message && (
+                        <p
+                            className={`text-sm mt-1 ${toast.type === 'error' ? 'text-red-200' : 'text-gray-300'}`}
+                        >
+                            {toast.message}
+                        </p>
+                    )}
                 </div>
                 <div className="ml-4 flex-shrink-0 flex">
                     <button

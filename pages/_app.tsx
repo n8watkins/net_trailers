@@ -8,6 +8,7 @@ import GoogleAnalytics from '../components/Analytics'
 import { Analytics } from '@vercel/analytics/next'
 import ToastManager from '../components/ToastManager'
 import Layout from '../components/Layout'
+import Modal from '../components/Modal'
 import ListSelectionModal from '../components/ListSelectionModal'
 import DebugControls from '../components/DebugControls'
 import FirebaseCallTracker from '../components/FirebaseCallTracker'
@@ -24,6 +25,7 @@ function MyApp({ Component, pageProps }: AppProps) {
                     <Layout>
                         <Component {...pageProps} />
                     </Layout>
+                    <Modal />
                     <DemoMessage />
                     <ToastManager />
                     <ListSelectionModal />

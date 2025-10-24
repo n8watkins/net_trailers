@@ -1,8 +1,12 @@
 import { Content } from '../typings'
-import { UserRating, UserPreferences, UserSession } from '../atoms/userDataAtom'
-import { doc, setDoc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore'
+import { UserPreferences } from '../types/userData'
+import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { db } from '../firebase'
-import { UserListsService } from './userListsService'
+
+// DEPRECATED - This service is being phased out in favor of:
+// - AuthStorageService for authenticated users
+// - GuestStorageService for guest users
+// Keeping minimal compatibility during migration
 
 const GUEST_STORAGE_KEY = 'nettrailer_guest_data'
 const GUEST_ID_KEY = 'nettrailer_guest_id'
@@ -28,44 +32,46 @@ export class UserDataService {
     // Load user data for guest users
     static loadGuestData(): UserPreferences {
         if (typeof window === 'undefined') {
-            const defaultPrefs = {
-                watchlist: [],
-                ratings: [],
-                userLists: UserListsService.initializeDefaultLists(),
+            return {
+                likedMovies: [],
+                hiddenMovies: [],
+                defaultWatchlist: [],
+                userCreatedWatchlists: [],
                 lastActive: Date.now(),
             }
-            return defaultPrefs
         }
 
         try {
             const data = localStorage.getItem(GUEST_STORAGE_KEY)
             if (!data) {
-                const defaultPrefs = {
-                    watchlist: [],
-                    ratings: [],
-                    userLists: UserListsService.initializeDefaultLists(),
+                return {
+                    likedMovies: [],
+                    hiddenMovies: [],
+                    defaultWatchlist: [],
+                    userCreatedWatchlists: [],
                     lastActive: Date.now(),
                 }
-                return defaultPrefs
             }
 
             const parsedData = JSON.parse(data)
 
-            // Migrate old data structure if needed
-            if (!parsedData.userLists) {
-                return UserListsService.migrateOldPreferences(parsedData)
+            // Return new schema format
+            return {
+                likedMovies: parsedData.likedMovies || [],
+                hiddenMovies: parsedData.hiddenMovies || [],
+                defaultWatchlist: parsedData.defaultWatchlist || [],
+                userCreatedWatchlists: parsedData.userCreatedWatchlists || [],
+                lastActive: parsedData.lastActive || Date.now(),
             }
-
-            return parsedData
         } catch (error) {
             console.error('Failed to load guest data:', error)
-            const defaultPrefs = {
-                watchlist: [],
-                ratings: [],
-                userLists: UserListsService.initializeDefaultLists(),
+            return {
+                likedMovies: [],
+                hiddenMovies: [],
+                defaultWatchlist: [],
+                userCreatedWatchlists: [],
                 lastActive: Date.now(),
             }
-            return defaultPrefs
         }
     }
 
@@ -84,73 +90,86 @@ export class UserDataService {
         }
     }
 
-    // Add or update a rating
-    static addRating(
-        preferences: UserPreferences,
-        contentId: number,
-        rating: 'liked' | 'disliked',
-        content?: Content
-    ): UserPreferences {
-        const existingRatingIndex = preferences.ratings.findIndex((r) => r.contentId === contentId)
-
-        const newRating: UserRating = {
-            contentId,
-            rating,
-            timestamp: Date.now(),
-            content, // Store the content object if provided
-        }
-
-        let updatedRatings: UserRating[]
-        if (existingRatingIndex >= 0) {
-            // Update existing rating
-            updatedRatings = [...preferences.ratings]
-            updatedRatings[existingRatingIndex] = newRating
-        } else {
-            // Add new rating
-            updatedRatings = [...preferences.ratings, newRating]
-        }
+    // Add to liked movies (mutual exclusion with hidden)
+    static addLikedMovie(preferences: UserPreferences, content: Content): UserPreferences {
+        const hiddenMovies = preferences.hiddenMovies.filter((m) => m.id !== content.id)
+        const isAlreadyLiked = preferences.likedMovies.some((m) => m.id === content.id)
+        const likedMovies = isAlreadyLiked
+            ? preferences.likedMovies
+            : [...preferences.likedMovies, content]
 
         return {
             ...preferences,
-            ratings: updatedRatings,
+            likedMovies,
+            hiddenMovies,
         }
     }
 
-    // Remove a rating
-    static removeRating(preferences: UserPreferences, contentId: number): UserPreferences {
+    // Remove from liked movies
+    static removeLikedMovie(preferences: UserPreferences, contentId: number): UserPreferences {
         return {
             ...preferences,
-            ratings: preferences.ratings.filter((r) => r.contentId !== contentId),
+            likedMovies: preferences.likedMovies.filter((m) => m.id !== contentId),
         }
     }
 
-    // Add to watchlist
+    // Add to hidden movies (mutual exclusion with liked)
+    static addHiddenMovie(preferences: UserPreferences, content: Content): UserPreferences {
+        const likedMovies = preferences.likedMovies.filter((m) => m.id !== content.id)
+        const isAlreadyHidden = preferences.hiddenMovies.some((m) => m.id === content.id)
+        const hiddenMovies = isAlreadyHidden
+            ? preferences.hiddenMovies
+            : [...preferences.hiddenMovies, content]
+
+        return {
+            ...preferences,
+            likedMovies,
+            hiddenMovies,
+        }
+    }
+
+    // Remove from hidden movies
+    static removeHiddenMovie(preferences: UserPreferences, contentId: number): UserPreferences {
+        return {
+            ...preferences,
+            hiddenMovies: preferences.hiddenMovies.filter((m) => m.id !== contentId),
+        }
+    }
+
+    // Check if content is liked
+    static isLiked(preferences: UserPreferences, contentId: number): boolean {
+        return preferences.likedMovies.some((m) => m.id === contentId)
+    }
+
+    // Check if content is hidden
+    static isHidden(preferences: UserPreferences, contentId: number): boolean {
+        return preferences.hiddenMovies.some((m) => m.id === contentId)
+    }
+
+    // Add to default watchlist
     static addToWatchlist(preferences: UserPreferences, content: Content): UserPreferences {
-        const isAlreadyInWatchlist = preferences.watchlist.some((item) => item.id === content.id)
+        const isAlreadyInWatchlist = preferences.defaultWatchlist.some(
+            (item) => item.id === content.id
+        )
         if (isAlreadyInWatchlist) return preferences
 
         return {
             ...preferences,
-            watchlist: [...preferences.watchlist, content],
+            defaultWatchlist: [...preferences.defaultWatchlist, content],
         }
     }
 
-    // Remove from watchlist
+    // Remove from default watchlist
     static removeFromWatchlist(preferences: UserPreferences, contentId: number): UserPreferences {
         return {
             ...preferences,
-            watchlist: preferences.watchlist.filter((item) => item.id !== contentId),
+            defaultWatchlist: preferences.defaultWatchlist.filter((item) => item.id !== contentId),
         }
     }
 
-    // Get rating for specific content
-    static getRating(preferences: UserPreferences, contentId: number): UserRating | null {
-        return preferences.ratings.find((r) => r.contentId === contentId) || null
-    }
-
-    // Check if content is in watchlist
+    // Check if content is in default watchlist
     static isInWatchlist(preferences: UserPreferences, contentId: number): boolean {
-        return preferences.watchlist.some((item) => item.id === contentId)
+        return preferences.defaultWatchlist.some((item) => item.id === contentId)
     }
 
     // Load user data for authenticated users
@@ -160,31 +179,20 @@ export class UserDataService {
 
             if (userDoc.exists()) {
                 const data = userDoc.data()
-                let preferences: UserPreferences = {
-                    watchlist: data.watchlist || [],
-                    ratings: data.ratings || [],
-                    userLists: data.userLists || UserListsService.initializeDefaultLists(),
+                return {
+                    likedMovies: data.likedMovies || [],
+                    hiddenMovies: data.hiddenMovies || [],
+                    defaultWatchlist: data.defaultWatchlist || [],
+                    userCreatedWatchlists: data.userCreatedWatchlists || [],
                     lastActive: data.lastActive || Date.now(),
                 }
-
-                // Migrate old data structure if needed
-                if (!data.userLists) {
-                    preferences = UserListsService.migrateOldPreferences(preferences)
-                    // Save migrated data back to Firebase
-                    try {
-                        await this.saveUserData(userId, preferences)
-                    } catch (saveError) {
-                        console.warn('Failed to save migrated data (offline?):', saveError)
-                    }
-                }
-
-                return preferences
             } else {
                 // Create default user document
                 const defaultPreferences: UserPreferences = {
-                    watchlist: [],
-                    ratings: [],
-                    userLists: UserListsService.initializeDefaultLists(),
+                    likedMovies: [],
+                    hiddenMovies: [],
+                    defaultWatchlist: [],
+                    userCreatedWatchlists: [],
                     lastActive: Date.now(),
                 }
                 // Try to save, but don't fail if offline
@@ -207,9 +215,10 @@ export class UserDataService {
 
             // Return default preferences if Firebase fails
             return {
-                watchlist: [],
-                ratings: [],
-                userLists: UserListsService.initializeDefaultLists(),
+                likedMovies: [],
+                hiddenMovies: [],
+                defaultWatchlist: [],
+                userCreatedWatchlists: [],
                 lastActive: Date.now(),
             }
         }
@@ -249,9 +258,19 @@ export class UserDataService {
 
             // Merge guest data with existing data (guest data takes precedence for newer items)
             const mergedPreferences: UserPreferences = {
-                watchlist: this.mergeWatchlists(existingData.watchlist, guestPreferences.watchlist),
-                ratings: this.mergeRatings(existingData.ratings, guestPreferences.ratings),
-                userLists: guestPreferences.userLists || UserListsService.initializeDefaultLists(),
+                likedMovies: this.mergeContentArrays(
+                    existingData.likedMovies,
+                    guestPreferences.likedMovies
+                ),
+                hiddenMovies: this.mergeContentArrays(
+                    existingData.hiddenMovies,
+                    guestPreferences.hiddenMovies
+                ),
+                defaultWatchlist: this.mergeContentArrays(
+                    existingData.defaultWatchlist,
+                    guestPreferences.defaultWatchlist
+                ),
+                userCreatedWatchlists: guestPreferences.userCreatedWatchlists || [],
                 lastActive: Date.now(),
             }
 
@@ -269,35 +288,14 @@ export class UserDataService {
         }
     }
 
-    // Helper: Merge watchlists, avoiding duplicates
-    private static mergeWatchlists(existing: Content[], guest: Content[]): Content[] {
+    // Helper: Merge content arrays, avoiding duplicates
+    private static mergeContentArrays(existing: Content[], guest: Content[]): Content[] {
         const merged = [...existing]
 
         guest.forEach((guestItem) => {
             const exists = existing.some((item) => item.id === guestItem.id)
             if (!exists) {
                 merged.push(guestItem)
-            }
-        })
-
-        return merged
-    }
-
-    // Helper: Merge ratings, guest data takes precedence for same content
-    private static mergeRatings(existing: UserRating[], guest: UserRating[]): UserRating[] {
-        const merged = [...existing]
-
-        guest.forEach((guestRating) => {
-            const existingIndex = merged.findIndex((r) => r.contentId === guestRating.contentId)
-
-            if (existingIndex >= 0) {
-                // Replace if guest rating is newer
-                if (guestRating.timestamp > merged[existingIndex].timestamp) {
-                    merged[existingIndex] = guestRating
-                }
-            } else {
-                // Add new rating
-                merged.push(guestRating)
             }
         })
 

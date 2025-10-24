@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { SessionStorageService } from '../services/sessionStorageService'
+import { GuestStorageService } from '../services/guestStorageService'
 
 export type SessionType = 'guest' | 'authenticated' | 'initializing'
 
@@ -41,7 +42,8 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
 
     // Actions
     initializeGuestSession: () => {
-        const guestId = generateGuestId()
+        // FIXED: Get or create guest ID from localStorage (was always creating new ID)
+        const guestId = GuestStorageService.getGuestId()
         set({
             sessionType: 'guest',
             activeSessionId: guestId,
@@ -68,7 +70,8 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     },
 
     switchToGuest: () => {
-        const guestId = generateGuestId()
+        // FIXED: Get or create guest ID from localStorage (was always creating new ID)
+        const guestId = GuestStorageService.getGuestId()
         set({
             sessionType: 'guest',
             activeSessionId: guestId,

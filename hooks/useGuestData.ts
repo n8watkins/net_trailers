@@ -24,28 +24,41 @@ export function useGuestData() {
         })
     }
 
-    // Rating operations
-    const setRating = (contentId: number, rating: 'liked' | 'disliked', content?: Content) => {
+    // Liked/Hidden operations (replaces rating operations)
+    const addLikedMovie = (content: Content) => {
         updateSession((session) => ({
             ...session,
-            preferences: GuestStorageService.addRating(
-                session.preferences,
-                contentId,
-                rating,
-                content
-            ),
+            preferences: GuestStorageService.addLikedMovie(session.preferences, content),
         }))
     }
 
-    const removeRating = (contentId: number) => {
+    const removeLikedMovie = (contentId: number) => {
         updateSession((session) => ({
             ...session,
-            preferences: GuestStorageService.removeRating(session.preferences, contentId),
+            preferences: GuestStorageService.removeLikedMovie(session.preferences, contentId),
         }))
     }
 
-    const getRating = (contentId: number) => {
-        return GuestStorageService.getRating(guestSession.preferences, contentId)
+    const addHiddenMovie = (content: Content) => {
+        updateSession((session) => ({
+            ...session,
+            preferences: GuestStorageService.addHiddenMovie(session.preferences, content),
+        }))
+    }
+
+    const removeHiddenMovie = (contentId: number) => {
+        updateSession((session) => ({
+            ...session,
+            preferences: GuestStorageService.removeHiddenMovie(session.preferences, contentId),
+        }))
+    }
+
+    const isLiked = (contentId: number) => {
+        return GuestStorageService.isLiked(guestSession.preferences, contentId)
+    }
+
+    const isHidden = (contentId: number) => {
+        return GuestStorageService.isHidden(guestSession.preferences, contentId)
     }
 
     // Watchlist operations
@@ -118,12 +131,8 @@ export function useGuestData() {
         return UserListsService.getListsContaining(guestSession.preferences, contentId)
     }
 
-    const getDefaultLists = () => {
-        return UserListsService.getDefaultLists(guestSession.preferences)
-    }
-
-    const getCustomLists = (): UserList[] => {
-        return UserListsService.getCustomLists(guestSession.preferences)
+    const getAllLists = (): UserList[] => {
+        return UserListsService.getAllLists(guestSession.preferences)
     }
 
     // Account management functions
@@ -150,15 +159,19 @@ export function useGuestData() {
         isAuthenticated: false,
         sessionId: guestSession.guestId,
 
-        // Data
-        watchlist: guestSession.preferences.watchlist,
-        ratings: guestSession.preferences.ratings,
-        userLists: guestSession.preferences.userLists,
+        // Data (NEW SCHEMA)
+        defaultWatchlist: guestSession.preferences.defaultWatchlist,
+        likedMovies: guestSession.preferences.likedMovies,
+        hiddenMovies: guestSession.preferences.hiddenMovies,
+        userCreatedWatchlists: guestSession.preferences.userCreatedWatchlists,
 
-        // Rating actions
-        setRating,
-        removeRating,
-        getRating,
+        // Liked/Hidden actions (replaces rating actions)
+        addLikedMovie,
+        removeLikedMovie,
+        addHiddenMovie,
+        removeHiddenMovie,
+        isLiked,
+        isHidden,
 
         // Watchlist actions
         addToWatchlist,
@@ -174,8 +187,7 @@ export function useGuestData() {
         getList,
         isContentInList,
         getListsContaining,
-        getDefaultLists,
-        getCustomLists,
+        getAllLists,
 
         // Account management actions (guest-specific)
         clearAccountData,

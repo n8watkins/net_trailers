@@ -3,7 +3,7 @@ import ToolTipMod from './ToolTipMod'
 import { useRecoilValue, useRecoilState } from 'recoil'
 import { movieState } from '../atoms/modalAtom'
 import { showDemoMessageState } from '../atoms/userDataAtom'
-import { useRatings } from '../hooks/useRatings'
+import { useLikedHidden } from '../hooks/useLikedHidden'
 import { Content } from '../typings'
 import {
     HandThumbUpIcon as HandThumbUpIconOutline,
@@ -17,20 +17,26 @@ import {
 
 function LikeOptions() {
     const currentMovie = useRecoilValue(movieState)
-    const { getRating, setRating, removeRating, ratings } = useRatings()
+    const {
+        isLiked,
+        isHidden,
+        addLikedMovie,
+        removeLikedMovie,
+        addHiddenMovie,
+        removeHiddenMovie,
+        likedMovies,
+    } = useLikedHidden()
     const [showDemoMessage, setShowDemoMessage] = useRecoilState(showDemoMessageState)
 
     const [showOptions, setShowOptions] = useState(false)
 
-    // Get current rating from user data
-    const currentRating = currentMovie ? getRating(currentMovie.id) : null
-
+    // Get current liked/hidden status
     const userRating = {
-        disliked: currentRating?.rating === 'disliked',
-        liked: currentRating?.rating === 'liked',
+        disliked: currentMovie ? isHidden(currentMovie.id) : false,
+        liked: currentMovie ? isLiked(currentMovie.id) : false,
     }
 
-    const rated = currentRating !== null
+    const rated = userRating.liked || userRating.disliked
     const handleMouseEnter = () => {
         setShowOptions(true)
     }
@@ -42,17 +48,29 @@ function LikeOptions() {
         if (!currentMovie) return
 
         // Show demo message for first-time users
-        if (showDemoMessage && ratings.length === 0) {
+        if (showDemoMessage && likedMovies.length === 0) {
             setShowDemoMessage(true)
         }
 
-        if (currentRating?.rating === rating) {
-            // Remove rating if clicking the same rating
-            removeRating(currentMovie.id)
+        const contentObj = currentMovie as Content
+
+        if (rating === 'liked') {
+            if (userRating.liked) {
+                // Remove if already liked
+                removeLikedMovie(contentObj.id)
+            } else {
+                // Add to liked (automatically removes from hidden due to mutual exclusion)
+                addLikedMovie(contentObj)
+            }
         } else {
-            // Set new rating with the content object (ensure it's a Content object)
-            const contentObj = currentMovie as Content
-            setRating(contentObj.id, rating, contentObj)
+            // rating === 'disliked'
+            if (userRating.disliked) {
+                // Remove if already hidden
+                removeHiddenMovie(contentObj.id)
+            } else {
+                // Add to hidden (automatically removes from liked due to mutual exclusion)
+                addHiddenMovie(contentObj)
+            }
         }
     }
 

@@ -1,10 +1,10 @@
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState, useCallback } from 'react'
 import { Content, getTitle, getYear, getContentType, isMovie } from '../typings'
 import Image from 'next/image'
-import { useRecoilState } from 'recoil'
 import { PlayIcon } from '@heroicons/react/24/solid'
-import { modalState, movieState, autoPlayWithSoundState } from '../atoms/modalAtom'
+import { useAppStore } from '../stores/appStore'
 import WatchLaterButton from './WatchLaterButton'
+import { prefetchMovieDetails } from '../utils/prefetchCache'
 
 interface Props {
     content?: Content
@@ -13,18 +13,40 @@ interface Props {
 }
 function ContentCard({ content, className = '', size = 'medium' }: Props) {
     const posterImage = content?.poster_path
-    const [showModal, setShowModal] = useRecoilState(modalState)
-    const [currentContent, setCurrentContent] = useRecoilState(movieState)
-    const [autoPlayWithSound, setAutoPlayWithSound] = useRecoilState(autoPlayWithSoundState)
+    const { openModal } = useAppStore()
     const [imageLoaded, setImageLoaded] = useState(false)
+    const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
     const handleImageClick = () => {
         if (content) {
-            setAutoPlayWithSound(false) // More info mode - starts muted
-            setShowModal(true)
-            setCurrentContent(content)
+            // More info mode - autoPlay=true, autoPlayWithSound=false (starts muted)
+            openModal(content, true, false)
         }
     }
+
+    // Prefetch on hover (debounced to avoid fetching while user is just scrolling)
+    const handleMouseEnter = useCallback(() => {
+        if (!content) return
+
+        // Clear any existing timeout
+        if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current)
+        }
+
+        // Wait 300ms before prefetching (user might just be passing by)
+        hoverTimeoutRef.current = setTimeout(() => {
+            const mediaType = content.media_type === 'tv' ? 'tv' : 'movie'
+            prefetchMovieDetails(content.id, mediaType)
+        }, 300)
+    }, [content])
+
+    const handleMouseLeave = useCallback(() => {
+        // Cancel prefetch if user leaves before timeout
+        if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current)
+            hoverTimeoutRef.current = null
+        }
+    }, [])
 
     // Size classes for image portion only
     const getImageSizeClasses = () => {
@@ -58,6 +80,8 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                        ${getCardSizeClasses()}
                        hover:z-40 ${className}`}
             onClick={handleImageClick}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
         >
             {/* Image Container with Fixed Dimensions */}
             <div
@@ -116,9 +140,10 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                         <button
                             onClick={(e) => {
                                 e.stopPropagation()
-                                setAutoPlayWithSound(true)
-                                setShowModal(true)
-                                setCurrentContent(content || null)
+                                if (content) {
+                                    // Watch mode - autoPlay=true, autoPlayWithSound=true (starts with sound)
+                                    openModal(content, true, true)
+                                }
                             }}
                             className="bg-black text-white font-bold
                                  px-4 py-1.5 md:px-6 md:py-2

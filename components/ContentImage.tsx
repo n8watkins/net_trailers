@@ -1,9 +1,8 @@
 import React, { useRef } from 'react'
 import { Content, getTitle, getYear, getContentType, isMovie } from '../typings'
 import Image from 'next/image'
-import { useRecoilState } from 'recoil'
 import { PlayIcon } from '@heroicons/react/24/solid'
-import { modalState, movieState, autoPlayWithSoundState } from '../atoms/modalAtom'
+import { useAppStore } from '../stores/appStore'
 import WatchLaterButton from './WatchLaterButton'
 
 type ContentImageVariant = 'thumbnail' | 'search' | 'favorites' | 'banner'
@@ -28,24 +27,20 @@ function ContentImage({
     showRating = false,
 }: Props) {
     const posterImage = content?.poster_path
-    const [showModal, setShowModal] = useRecoilState(modalState)
-    const [currentContent, setCurrentContent] = useRecoilState(movieState)
-    const [autoPlayWithSound, setAutoPlayWithSound] = useRecoilState(autoPlayWithSoundState)
+    const { openModal } = useAppStore()
 
     const handleImageClick = () => {
         if (content) {
-            setAutoPlayWithSound(false) // More info mode - starts muted
-            setShowModal(true)
-            setCurrentContent(content)
+            // More info mode - autoPlay=true, autoPlayWithSound=false (starts muted)
+            openModal(content, true, false)
         }
     }
 
     const handlePlayClick = (e: React.MouseEvent) => {
         e.stopPropagation()
         if (content) {
-            setAutoPlayWithSound(true)
-            setShowModal(true)
-            setCurrentContent(content)
+            // Play mode - autoPlay=true, autoPlayWithSound=true (starts with sound)
+            openModal(content, true, true)
         }
     }
 

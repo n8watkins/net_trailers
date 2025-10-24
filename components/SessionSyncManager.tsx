@@ -68,7 +68,18 @@ export function SessionSyncManager() {
 
     // Sync data when session changes
     useEffect(() => {
-        if (!isInitialized) return
+        console.log('🔍 [SessionSyncManager] Sync effect triggered:', {
+            isInitialized,
+            sessionType,
+            activeSessionId,
+            hasUser: !!user,
+            guestStoreId: guestStore.guestId,
+        })
+
+        if (!isInitialized) {
+            console.log('⏸️ [SessionSyncManager] Not initialized yet, skipping sync')
+            return
+        }
 
         if (sessionType === 'authenticated' && user) {
             // Check if we need to sync with Firebase
@@ -77,11 +88,25 @@ export function SessionSyncManager() {
                 authStore.syncWithFirebase(user.uid)
             }
         } else if (sessionType === 'guest') {
-            // Load guest data if not already loaded
-            if (!guestStore.lastActive) {
-                console.log('📥 [SessionSyncManager] Loading guest data...')
-                const guestData = GuestStorageService.loadGuestData(activeSessionId)
-                guestStore.loadData(guestData)
+            // FIXED: Sync guest data from localStorage using the correct guestId
+            // Check if we need to load/sync data (either no data or wrong session)
+            const needsSync = !guestStore.guestId || guestStore.guestId !== activeSessionId
+            console.log('🔍 [SessionSyncManager] Guest session check:', {
+                needsSync,
+                guestStoreId: guestStore.guestId,
+                activeSessionId,
+                condition1: !guestStore.guestId,
+                condition2: guestStore.guestId !== activeSessionId,
+            })
+
+            if (needsSync) {
+                console.log('📥 [SessionSyncManager] Syncing guest data from localStorage...', {
+                    activeSessionId,
+                    currentGuestId: guestStore.guestId,
+                })
+                guestStore.syncFromLocalStorage(activeSessionId)
+            } else {
+                console.log('✅ [SessionSyncManager] Guest data already synced, skipping')
             }
         }
     }, [isInitialized, sessionType, activeSessionId, user])

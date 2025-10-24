@@ -24,11 +24,11 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
 
     return (
         <div
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[50000] flex items-center justify-center p-4"
             onClick={onClose}
         >
             <div
-                className="bg-[#181818] rounded-lg max-w-4xl w-full p-6 border border-gray-600/50 relative max-h-[90vh] overflow-y-auto"
+                className="bg-[#0a0a0a] rounded-xl max-w-4xl w-full p-6 border border-red-500/40 shadow-2xl shadow-red-500/20 relative max-h-[90vh] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Close Button */}

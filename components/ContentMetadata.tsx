@@ -11,6 +11,7 @@ import {
     getIMDbRating,
     Content,
 } from '../typings'
+import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/solid'
 
 interface ContentMetadataProps {
     content: Content
@@ -51,7 +52,7 @@ export default function ContentMetadata({
                 </button>
             )}
 
-            {/* Year, Rating, Runtime, Type */}
+            {/* Year, Rating, Runtime, Type, TMDB Rating */}
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm sm:text-base md:text-lg font-medium">
                 <span>{getYear(content)}</span>
                 {getRating(content) && (
@@ -72,6 +73,30 @@ export default function ContentMetadata({
                 )}
                 <span className="text-gray-300">•</span>
                 <span className="text-xs sm:text-sm md:text-base">{getContentType(content)}</span>
+                {/* TMDB Rating - Always available from initial API call */}
+                {content.vote_average > 0 && (
+                    <>
+                        <span className="text-gray-300">•</span>
+                        <span className="text-xs sm:text-sm md:text-base text-yellow-400">
+                            ⭐ {content.vote_average.toFixed(1)}
+                        </span>
+                    </>
+                )}
+                {/* IMDb Link - Only after detailed data loads */}
+                {getIMDbRating(content).url && (
+                    <>
+                        <span className="text-gray-300">•</span>
+                        <a
+                            href={getIMDbRating(content).url!}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-yellow-400 hover:text-yellow-300 underline text-xs sm:text-sm md:text-base flex items-center gap-1"
+                        >
+                            <span>IMDb</span>
+                            <ArrowTopRightOnSquareIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+                        </a>
+                    </>
+                )}
             </div>
 
             {/* Overview */}
@@ -105,20 +130,6 @@ export default function ContentMetadata({
                     <div>
                         <span className="text-gray-400">Genres: </span>
                         <span className="text-white">{getGenreNames(content).join(', ')}</span>
-                    </div>
-                )}
-
-                {getIMDbRating(content).url && (
-                    <div>
-                        <span className="text-gray-400">IMDb: </span>
-                        <a
-                            href={getIMDbRating(content).url!}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-yellow-400 hover:text-yellow-300 underline"
-                        >
-                            View on IMDb
-                        </a>
                     </div>
                 )}
             </div>

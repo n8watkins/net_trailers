@@ -21,6 +21,10 @@ import GenresDropdown from './GenresDropdown'
 import MyListsDropdown from './MyListsDropdown'
 import { useToast } from '../hooks/useToast'
 import { useDebugSettings } from './DebugControls'
+import { useRecoilState } from 'recoil'
+import { authModalState } from '../atoms/authModalAtom'
+import { ChildSafetyIndicator } from './ChildSafetyIndicator'
+import { GuestModeIndicator } from './GuestModeIndicator'
 
 interface HeaderProps {
     onOpenAboutModal?: () => void
@@ -33,8 +37,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
     const [showSearch, setShowSearch] = useState(false)
     const [showMobileMenu, setShowMobileMenu] = useState(false)
     const [isSearchExpanded, setIsSearchExpanded] = useState(false)
-    const [showAuthModal, setShowAuthModal] = useState(false)
-    const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin')
+    const [authModal, setAuthModal] = useRecoilState(authModalState)
     const router = useRouter()
     const { user } = useAuth()
     const { showSuccess, showError, showWatchlistAdd, showWatchlistRemove } = useToast()
@@ -126,14 +129,14 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                         <ul className="flex space-x-4 items-center">
                             <li
                                 className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${router.pathname === '/tv' ? 'text-white hover:text-white font-semibold' : ''}`}
-                                onClick={() => router.push('/?filter=tv')}
+                                onClick={() => router.push('/tv')}
                             >
                                 <TvIcon className="h-4 w-4" />
                                 <span>TV Shows</span>
                             </li>
                             <li
                                 className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${router.pathname === '/movies' ? 'text-white hover:text-white font-semibold' : ''}`}
-                                onClick={() => router.push('/?filter=movies')}
+                                onClick={() => router.push('/movies')}
                             >
                                 <FilmIcon className="h-4 w-4" />
                                 <span>Movies</span>
@@ -163,18 +166,17 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
 
                         {/* Search Bar in Navigation */}
                         <div className="flex items-center search-container">
-                            <div
-                                className={`transition-all duration-300 ease-in-out ${
-                                    isSearchExpanded ? 'w-96' : 'w-72'
-                                }`}
-                                onClick={() => setIsSearchExpanded(true)}
-                            >
+                            <div className="w-96">
                                 <SearchBar
                                     placeholder="Search movies and shows..."
                                     className="w-full"
-                                    onFocus={() => setIsSearchExpanded(true)}
                                 />
                             </div>
+                        </div>
+
+                        {/* Child Safety Indicator - After Search Bar */}
+                        <div className="flex items-center ml-4">
+                            <ChildSafetyIndicator />
                         </div>
                     </div>
                 </div>
@@ -201,15 +203,18 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                         </button>
                     </div>
 
+                    {/* Guest Mode Indicator - Hidden on mobile */}
+                    <div className="hidden lg:block">
+                        <GuestModeIndicator />
+                    </div>
+
                     {/* Avatar Dropdown */}
                     <AvatarDropdown
                         onOpenAuthModal={() => {
-                            setAuthModalMode('signin')
-                            setShowAuthModal(true)
+                            setAuthModal({ isOpen: true, mode: 'signin' })
                         }}
                         onOpenSignUpModal={() => {
-                            setAuthModalMode('signup')
-                            setShowAuthModal(true)
+                            setAuthModal({ isOpen: true, mode: 'signup' })
                         }}
                         onOpenAboutModal={onOpenAboutModal}
                         onOpenTutorial={onOpenTutorial}
@@ -286,7 +291,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                                         : 'hover:bg-gray-800/50'
                                                 }`}
                                                 onClick={() => {
-                                                    router.push('/?filter=tv')
+                                                    router.push('/tv')
                                                     setShowMobileMenu(false)
                                                 }}
                                             >
@@ -302,7 +307,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                                         : 'hover:bg-gray-800/50'
                                                 }`}
                                                 onClick={() => {
-                                                    router.push('/?filter=movies')
+                                                    router.push('/movies')
                                                     setShowMobileMenu(false)
                                                 }}
                                             >
@@ -384,9 +389,9 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
 
             {/* Auth Modal - Moved outside header to fix positioning */}
             <AuthModal
-                isOpen={showAuthModal}
-                onClose={() => setShowAuthModal(false)}
-                initialMode={authModalMode}
+                isOpen={authModal.isOpen}
+                onClose={() => setAuthModal({ ...authModal, isOpen: false })}
+                initialMode={authModal.mode}
             />
         </>
     )

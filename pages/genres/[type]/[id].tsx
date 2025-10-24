@@ -10,11 +10,20 @@ import { Content } from '../../../typings'
 import { movieCache } from '../../../utils/apiCache'
 import { useRecoilValue } from 'recoil'
 import { userSessionState } from '../../../atoms/userDataAtom'
-import { filterDislikedContent } from '../../../utils/contentFilter'
+import { filterDislikedContent, filterContentByAdultFlag } from '../../../utils/contentFilter'
+import { useChildSafety } from '../../../hooks/useChildSafety'
 
-interface GenrePageProps {}
+interface GenrePageProps {
+    onOpenAboutModal?: () => void
+    onOpenTutorial?: () => void
+    onOpenKeyboardShortcuts?: () => void
+}
 
-const GenrePage: NextPage<GenrePageProps> = () => {
+const GenrePage: NextPage<GenrePageProps> = ({
+    onOpenAboutModal,
+    onOpenTutorial,
+    onOpenKeyboardShortcuts,
+}) => {
     const router = useRouter()
     const { type, id, name, title } = router.query
     const userSession = useRecoilValue(userSessionState)
@@ -42,11 +51,17 @@ const GenrePage: NextPage<GenrePageProps> = () => {
     const mediaType = Array.isArray(type) ? type[0] : type
     const genreName = Array.isArray(name) ? name[0] : name
     const pageTitle = Array.isArray(title) ? title[0] : title
+    const { isEnabled: childSafetyEnabled } = useChildSafety()
 
     const contentToRender = useMemo(() => {
-        // Filter out disliked content
-        return filterDislikedContent(content, userSession.preferences.ratings)
-    }, [content, userSession.preferences.ratings])
+        // First filter out disliked content
+        let filtered = filterDislikedContent(content, userSession.preferences.hiddenMovies)
+
+        // Then apply Child Safety Mode filtering if enabled
+        filtered = filterContentByAdultFlag(filtered, childSafetyEnabled)
+
+        return filtered
+    }, [content, userSession.preferences.hiddenMovies, childSafetyEnabled])
 
     // Load genre content with traditional infinite scroll
     const loadGenreContent = useCallback(
@@ -273,7 +288,11 @@ const GenrePage: NextPage<GenrePageProps> = () => {
                 <Head>
                     <title>Loading... - NetTrailer</title>
                 </Head>
-                <Header />
+                <Header
+                    onOpenAboutModal={onOpenAboutModal}
+                    onOpenTutorial={onOpenTutorial}
+                    onOpenKeyboardShortcuts={onOpenKeyboardShortcuts}
+                />
                 <main className="relative">
                     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
                         <div className="text-center max-w-md px-6">
@@ -308,7 +327,11 @@ const GenrePage: NextPage<GenrePageProps> = () => {
                 <Head>
                     <title>Error - NetTrailer</title>
                 </Head>
-                <Header />
+                <Header
+                    onOpenAboutModal={onOpenAboutModal}
+                    onOpenTutorial={onOpenTutorial}
+                    onOpenKeyboardShortcuts={onOpenKeyboardShortcuts}
+                />
                 <main className="relative pl-4 pb-16 lg:space-y-24 lg:pl-16">
                     <div className="flex items-center justify-center h-96">
                         <div className="text-center">
@@ -346,7 +369,11 @@ const GenrePage: NextPage<GenrePageProps> = () => {
                 />
             </Head>
 
-            <Header />
+            <Header
+                onOpenAboutModal={onOpenAboutModal}
+                onOpenTutorial={onOpenTutorial}
+                onOpenKeyboardShortcuts={onOpenKeyboardShortcuts}
+            />
 
             <main className="relative pl-4 pb-16 lg:space-y-24 lg:pl-16">
                 <div className="flex flex-col space-y-8 py-16 md:space-y-12 md:py-20 lg:py-24">

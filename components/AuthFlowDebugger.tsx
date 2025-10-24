@@ -16,7 +16,7 @@ import { useDebugSettings } from './DebugControls'
 export default function AuthFlowDebugger() {
     const debugSettings = useDebugSettings()
     const { user } = useAuth()
-    const { getDefaultLists, getCustomLists } = useListsReadOnly()
+    const { getAllLists } = useListsReadOnly()
     const { isGuest, isAuthenticated, sessionType } = useAuthStatus()
     const activeSessionId = useSessionStore((state) => state.activeSessionId)
     const sessionManager = useSessionManager()
@@ -34,12 +34,7 @@ export default function AuthFlowDebugger() {
     const [isTestingFirestore, setIsTestingFirestore] = useState(false)
 
     // Get watchlists
-    const defaultLists = getDefaultLists()
-    const customLists = getCustomLists()
-    const allLists = [
-        ...Object.values(defaultLists).filter((list) => list),
-        ...customLists,
-    ] as UserList[]
+    const allLists = getAllLists()
 
     // Direct Firebase listener to bypass any hooks
     useEffect(() => {
@@ -50,7 +45,11 @@ export default function AuthFlowDebugger() {
     }, [])
 
     const runAuthFlowTest = () => {
-        const steps = []
+        const steps: Array<{
+            step: string
+            status: 'pending' | 'success' | 'error'
+            details?: any
+        }> = []
 
         // Step 1: Check Firebase Config
         const firebaseConfig = {
@@ -367,11 +366,7 @@ export default function AuthFlowDebugger() {
                             Total items across all lists:{' '}
                             {allLists.reduce((sum, list) => sum + list.items.length, 0)}
                         </div>
-                        <div>Custom lists: {customLists.length}</div>
-                        <div>
-                            Default lists:{' '}
-                            {Object.values(defaultLists).filter((list) => list).length}
-                        </div>
+                        <div>Total lists: {allLists.length}</div>
                     </div>
                 </div>
             </div>

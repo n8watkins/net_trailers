@@ -1,28 +1,41 @@
 import { create } from 'zustand'
 import { Content, getTitle } from '../typings'
-import { UserRating } from '../types/userData'
-import { UserListsState } from '../types/userLists'
+import { UserList } from '../types/userLists'
 import { UserListsService } from '../services/userListsService'
 import { AuthStorageService } from '../services/authStorageService'
 import { firebaseTracker } from '../utils/firebaseCallTracker'
 import { createDebouncedFunction } from '../utils/debounce'
 import { syncManager } from '../utils/firebaseSyncManager'
 
+// NEW SCHEMA - Flat structure with liked/hidden instead of ratings
 export interface AuthState {
     userId?: string // Track which user this data belongs to
-    watchlist: Content[]
-    ratings: UserRating[]
-    userLists: UserListsState
+    likedMovies: Content[]
+    hiddenMovies: Content[]
+    defaultWatchlist: Content[]
+    userCreatedWatchlists: UserList[]
     lastActive: number
     syncStatus: 'synced' | 'syncing' | 'offline'
+    // Playback preferences
+    autoMute?: boolean
+    defaultVolume?: number // 0-100
+    // Content filtering preferences
+    childSafetyMode?: boolean // Restricts to PG-13 and below
 }
 
 export interface AuthActions {
     addToWatchlist: (content: Content) => Promise<void>
     removeFromWatchlist: (contentId: number) => Promise<void>
-    addRating: (contentId: number, rating: 'liked' | 'disliked', content?: Content) => Promise<void>
-    removeRating: (contentId: number) => Promise<void>
-    createList: (listName: string) => Promise<string>
+    addLikedMovie: (content: Content) => Promise<void>
+    removeLikedMovie: (contentId: number) => Promise<void>
+    addHiddenMovie: (content: Content) => Promise<void>
+    removeHiddenMovie: (contentId: number) => Promise<void>
+    createList: (request: {
+        name: string
+        emoji?: string
+        color?: string
+        isPublic?: boolean
+    }) => Promise<string>
     addToList: (listId: string, content: Content) => Promise<void>
     removeFromList: (listId: string, contentId: number) => Promise<void>
     updateList: (
@@ -40,10 +53,14 @@ export type AuthStore = AuthState & AuthActions
 
 const getDefaultState = (): AuthState => ({
     userId: undefined,
-    watchlist: [],
-    ratings: [],
-    userLists: UserListsService.initializeDefaultLists(),
+    likedMovies: [],
+    hiddenMovies: [],
+    defaultWatchlist: [],
+    userCreatedWatchlists: [],
     lastActive: 0, // Initialize to 0 for SSR compatibility, will be set to actual timestamp after hydration
+    autoMute: true, // Default to muted for better UX
+    defaultVolume: 50, // Default to 50%
+    childSafetyMode: false, // Default to off
     syncStatus: 'synced',
 })
 
@@ -54,7 +71,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     // Actions
     addToWatchlist: async (content: Content) => {
         const state = get()
-        const isAlreadyInWatchlist = state.watchlist.some((item) => item.id === content.id)
+        const isAlreadyInWatchlist = state.defaultWatchlist.some((item) => item.id === content.id)
         if (isAlreadyInWatchlist) {
             console.log('⚠️ [AuthStore] Item already in watchlist:', getTitle(content))
             return
@@ -62,9 +79,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
         set({ syncStatus: 'syncing' })
 
-        const newWatchlist = [...state.watchlist, content]
+        const newWatchlist = [...state.defaultWatchlist, content]
         set({
-            watchlist: newWatchlist,
+            defaultWatchlist: newWatchlist,
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
 
@@ -75,9 +92,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             })
             const { AuthStorageService } = await import('../services/authStorageService')
             AuthStorageService.saveUserData(state.userId, {
-                watchlist: newWatchlist,
-                ratings: state.ratings,
-                userLists: state.userLists,
+                likedMovies: state.likedMovies,
+                hiddenMovies: state.hiddenMovies,
+                defaultWatchlist: newWatchlist,
+                userCreatedWatchlists: state.userCreatedWatchlists,
                 lastActive: Date.now(),
             })
                 .then(() => {
@@ -104,9 +122,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         const state = get()
         set({ syncStatus: 'syncing' })
 
-        const newWatchlist = state.watchlist.filter((item) => item.id !== contentId)
+        const newWatchlist = state.defaultWatchlist.filter((item) => item.id !== contentId)
         set({
-            watchlist: newWatchlist,
+            defaultWatchlist: newWatchlist,
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
 
@@ -117,9 +135,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             })
             const { AuthStorageService } = await import('../services/authStorageService')
             AuthStorageService.saveUserData(state.userId, {
-                watchlist: newWatchlist,
-                ratings: state.ratings,
-                userLists: state.userLists,
+                likedMovies: state.likedMovies,
+                hiddenMovies: state.hiddenMovies,
+                defaultWatchlist: newWatchlist,
+                userCreatedWatchlists: state.userCreatedWatchlists,
                 lastActive: Date.now(),
             })
                 .then(() => {
@@ -137,75 +156,34 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         console.log('🗑️ [AuthStore] Removed from watchlist:', contentId)
     },
 
-    addRating: async (contentId: number, rating: 'liked' | 'disliked', content?: Content) => {
+    addLikedMovie: async (content: Content) => {
         const state = get()
-        const existingRatingIndex = state.ratings.findIndex((r) => r.contentId === contentId)
-
-        set({ syncStatus: 'syncing' })
-
-        const newRating: UserRating = {
-            contentId,
-            rating,
-            timestamp: typeof window !== 'undefined' ? Date.now() : 0,
-            content,
+        const isAlreadyLiked = state.likedMovies.some((m) => m.id === content.id)
+        if (isAlreadyLiked) {
+            console.log('⚠️ [AuthStore] Movie already liked:', getTitle(content))
+            return
         }
 
-        let updatedRatings: UserRating[]
-        if (existingRatingIndex >= 0) {
-            updatedRatings = [...state.ratings]
-            updatedRatings[existingRatingIndex] = newRating
-        } else {
-            updatedRatings = [...state.ratings, newRating]
-        }
-
-        set({
-            ratings: updatedRatings,
-            lastActive: typeof window !== 'undefined' ? Date.now() : 0,
-        })
-
-        set({ syncStatus: 'synced' })
-        console.log('⭐ [AuthStore] Added rating:', { contentId, rating })
-    },
-
-    removeRating: async (contentId: number) => {
-        const state = get()
         set({ syncStatus: 'syncing' })
 
+        const newLikedMovies = [...state.likedMovies, content]
+
         set({
-            ratings: state.ratings.filter((r) => r.contentId !== contentId),
+            likedMovies: newLikedMovies,
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
 
-        set({ syncStatus: 'synced' })
-        console.log('🗑️ [AuthStore] Removed rating:', contentId)
-    },
-
-    createList: async (listName: string) => {
-        const state = get()
-        set({ syncStatus: 'syncing' })
-
-        // Create a new list using the UserListsService
-        const updatedPrefs = UserListsService.createList(
-            { ...state, userLists: state.userLists } as any,
-            { name: listName }
-        )
-        const newList = updatedPrefs.userLists.lists[updatedPrefs.userLists.lists.length - 1]
-
-        set({
-            userLists: updatedPrefs.userLists,
-            lastActive: typeof window !== 'undefined' ? Date.now() : 0,
-        })
-
-        // Save to Firebase with debounce tracking
+        // Save to Firebase
         if (state.userId) {
-            firebaseTracker.track('saveUserData-createList', 'AuthStore', state.userId, {
-                listsCount: updatedPrefs.userLists.lists.length,
+            firebaseTracker.track('saveUserData-addLiked', 'AuthStore', state.userId, {
+                likedCount: newLikedMovies.length,
             })
             const { AuthStorageService } = await import('../services/authStorageService')
             AuthStorageService.saveUserData(state.userId, {
-                watchlist: state.watchlist,
-                ratings: state.ratings,
-                userLists: updatedPrefs.userLists,
+                likedMovies: newLikedMovies,
+                hiddenMovies: state.hiddenMovies,
+                defaultWatchlist: state.defaultWatchlist,
+                userCreatedWatchlists: state.userCreatedWatchlists,
                 lastActive: Date.now(),
             })
                 .then(() => {
@@ -220,7 +198,175 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             set({ syncStatus: 'synced' })
         }
 
-        console.log('📋 [AuthStore] Created list:', listName, newList.id)
+        console.log('👍 [AuthStore] Added to liked:', getTitle(content))
+    },
+
+    removeLikedMovie: async (contentId: number) => {
+        const state = get()
+        set({ syncStatus: 'syncing' })
+
+        const newLikedMovies = state.likedMovies.filter((m) => m.id !== contentId)
+        set({
+            likedMovies: newLikedMovies,
+            lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+        })
+
+        // Save to Firebase
+        if (state.userId) {
+            firebaseTracker.track('saveUserData-removeLiked', 'AuthStore', state.userId, {
+                likedCount: newLikedMovies.length,
+            })
+            const { AuthStorageService } = await import('../services/authStorageService')
+            AuthStorageService.saveUserData(state.userId, {
+                likedMovies: newLikedMovies,
+                hiddenMovies: state.hiddenMovies,
+                defaultWatchlist: state.defaultWatchlist,
+                userCreatedWatchlists: state.userCreatedWatchlists,
+                lastActive: Date.now(),
+            })
+                .then(() => {
+                    console.log('✅ [AuthStore] Saved to Firestore')
+                    set({ syncStatus: 'synced' })
+                })
+                .catch((error) => {
+                    console.error('❌ [AuthStore] Failed to save to Firestore:', error)
+                    set({ syncStatus: 'offline' })
+                })
+        } else {
+            set({ syncStatus: 'synced' })
+        }
+
+        console.log('🗑️ [AuthStore] Removed from liked:', contentId)
+    },
+
+    addHiddenMovie: async (content: Content) => {
+        const state = get()
+        const isAlreadyHidden = state.hiddenMovies.some((m) => m.id === content.id)
+        if (isAlreadyHidden) {
+            console.log('⚠️ [AuthStore] Movie already hidden:', getTitle(content))
+            return
+        }
+
+        set({ syncStatus: 'syncing' })
+
+        const newHiddenMovies = [...state.hiddenMovies, content]
+
+        set({
+            hiddenMovies: newHiddenMovies,
+            lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+        })
+
+        // Save to Firebase
+        if (state.userId) {
+            firebaseTracker.track('saveUserData-addHidden', 'AuthStore', state.userId, {
+                hiddenCount: newHiddenMovies.length,
+            })
+            const { AuthStorageService } = await import('../services/authStorageService')
+            AuthStorageService.saveUserData(state.userId, {
+                likedMovies: state.likedMovies,
+                hiddenMovies: newHiddenMovies,
+                defaultWatchlist: state.defaultWatchlist,
+                userCreatedWatchlists: state.userCreatedWatchlists,
+                lastActive: Date.now(),
+            })
+                .then(() => {
+                    console.log('✅ [AuthStore] Saved to Firestore')
+                    set({ syncStatus: 'synced' })
+                })
+                .catch((error) => {
+                    console.error('❌ [AuthStore] Failed to save to Firestore:', error)
+                    set({ syncStatus: 'offline' })
+                })
+        } else {
+            set({ syncStatus: 'synced' })
+        }
+
+        console.log('🙈 [AuthStore] Added to hidden:', getTitle(content))
+    },
+
+    removeHiddenMovie: async (contentId: number) => {
+        const state = get()
+        set({ syncStatus: 'syncing' })
+
+        const newHiddenMovies = state.hiddenMovies.filter((m) => m.id !== contentId)
+        set({
+            hiddenMovies: newHiddenMovies,
+            lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+        })
+
+        // Save to Firebase
+        if (state.userId) {
+            firebaseTracker.track('saveUserData-removeHidden', 'AuthStore', state.userId, {
+                hiddenCount: newHiddenMovies.length,
+            })
+            const { AuthStorageService } = await import('../services/authStorageService')
+            AuthStorageService.saveUserData(state.userId, {
+                likedMovies: state.likedMovies,
+                hiddenMovies: newHiddenMovies,
+                defaultWatchlist: state.defaultWatchlist,
+                userCreatedWatchlists: state.userCreatedWatchlists,
+                lastActive: Date.now(),
+            })
+                .then(() => {
+                    console.log('✅ [AuthStore] Saved to Firestore')
+                    set({ syncStatus: 'synced' })
+                })
+                .catch((error) => {
+                    console.error('❌ [AuthStore] Failed to save to Firestore:', error)
+                    set({ syncStatus: 'offline' })
+                })
+        } else {
+            set({ syncStatus: 'synced' })
+        }
+
+        console.log('🗑️ [AuthStore] Removed from hidden:', contentId)
+    },
+
+    createList: async (request: {
+        name: string
+        emoji?: string
+        color?: string
+        isPublic?: boolean
+    }) => {
+        const state = get()
+        set({ syncStatus: 'syncing' })
+
+        // Create a new list using the UserListsService
+        const updatedPrefs = UserListsService.createList(state as any, request)
+        const newList =
+            updatedPrefs.userCreatedWatchlists[updatedPrefs.userCreatedWatchlists.length - 1]
+
+        set({
+            userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
+            lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+        })
+
+        // Save to Firebase with debounce tracking
+        if (state.userId) {
+            firebaseTracker.track('saveUserData-createList', 'AuthStore', state.userId, {
+                listsCount: updatedPrefs.userCreatedWatchlists.length,
+            })
+            const { AuthStorageService } = await import('../services/authStorageService')
+            AuthStorageService.saveUserData(state.userId, {
+                likedMovies: state.likedMovies,
+                hiddenMovies: state.hiddenMovies,
+                defaultWatchlist: state.defaultWatchlist,
+                userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
+                lastActive: Date.now(),
+            })
+                .then(() => {
+                    console.log('✅ [AuthStore] Saved to Firestore')
+                    set({ syncStatus: 'synced' })
+                })
+                .catch((error) => {
+                    console.error('❌ [AuthStore] Failed to save to Firestore:', error)
+                    set({ syncStatus: 'offline' })
+                })
+        } else {
+            set({ syncStatus: 'synced' })
+        }
+
+        console.log('📋 [AuthStore] Created list:', request.name, newList.id)
         return newList.id
     },
 
@@ -229,17 +375,39 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         set({ syncStatus: 'syncing' })
 
         // Add content to list using the UserListsService
-        const updatedPrefs = UserListsService.addToList(
-            { ...state, userLists: state.userLists } as any,
-            { listId, content }
-        )
+        const updatedPrefs = UserListsService.addToList(state as any, { listId, content })
 
         set({
-            userLists: updatedPrefs.userLists,
+            userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
 
-        set({ syncStatus: 'synced' })
+        // Save to Firebase
+        if (state.userId) {
+            firebaseTracker.track('saveUserData-addToList', 'AuthStore', state.userId, {
+                listId,
+                listsCount: updatedPrefs.userCreatedWatchlists.length,
+            })
+            const { AuthStorageService } = await import('../services/authStorageService')
+            AuthStorageService.saveUserData(state.userId, {
+                likedMovies: state.likedMovies,
+                hiddenMovies: state.hiddenMovies,
+                defaultWatchlist: state.defaultWatchlist,
+                userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
+                lastActive: Date.now(),
+            })
+                .then(() => {
+                    console.log('✅ [AuthStore] Saved to Firestore')
+                    set({ syncStatus: 'synced' })
+                })
+                .catch((error) => {
+                    console.error('❌ [AuthStore] Failed to save to Firestore:', error)
+                    set({ syncStatus: 'offline' })
+                })
+        } else {
+            set({ syncStatus: 'synced' })
+        }
+
         console.log('📝 [AuthStore] Added to list:', { listId, content: getTitle(content) })
     },
 
@@ -248,17 +416,39 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         set({ syncStatus: 'syncing' })
 
         // Remove content from list using the UserListsService
-        const updatedPrefs = UserListsService.removeFromList(
-            { ...state, userLists: state.userLists } as any,
-            { listId, contentId }
-        )
+        const updatedPrefs = UserListsService.removeFromList(state as any, { listId, contentId })
 
         set({
-            userLists: updatedPrefs.userLists,
+            userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
 
-        set({ syncStatus: 'synced' })
+        // Save to Firebase
+        if (state.userId) {
+            firebaseTracker.track('saveUserData-removeFromList', 'AuthStore', state.userId, {
+                listId,
+                listsCount: updatedPrefs.userCreatedWatchlists.length,
+            })
+            const { AuthStorageService } = await import('../services/authStorageService')
+            AuthStorageService.saveUserData(state.userId, {
+                likedMovies: state.likedMovies,
+                hiddenMovies: state.hiddenMovies,
+                defaultWatchlist: state.defaultWatchlist,
+                userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
+                lastActive: Date.now(),
+            })
+                .then(() => {
+                    console.log('✅ [AuthStore] Saved to Firestore')
+                    set({ syncStatus: 'synced' })
+                })
+                .catch((error) => {
+                    console.error('❌ [AuthStore] Failed to save to Firestore:', error)
+                    set({ syncStatus: 'offline' })
+                })
+        } else {
+            set({ syncStatus: 'synced' })
+        }
+
         console.log('🗑️ [AuthStore] Removed from list:', { listId, contentId })
     },
 
@@ -270,17 +460,39 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         set({ syncStatus: 'syncing' })
 
         // Update list using the UserListsService
-        const updatedPrefs = UserListsService.updateList(
-            { ...state, userLists: state.userLists } as any,
-            { id: listId, ...updates }
-        )
+        const updatedPrefs = UserListsService.updateList(state as any, { id: listId, ...updates })
 
         set({
-            userLists: updatedPrefs.userLists,
+            userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
 
-        set({ syncStatus: 'synced' })
+        // Save to Firebase
+        if (state.userId) {
+            firebaseTracker.track('saveUserData-updateList', 'AuthStore', state.userId, {
+                listId,
+                listsCount: updatedPrefs.userCreatedWatchlists.length,
+            })
+            const { AuthStorageService } = await import('../services/authStorageService')
+            AuthStorageService.saveUserData(state.userId, {
+                likedMovies: state.likedMovies,
+                hiddenMovies: state.hiddenMovies,
+                defaultWatchlist: state.defaultWatchlist,
+                userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
+                lastActive: Date.now(),
+            })
+                .then(() => {
+                    console.log('✅ [AuthStore] Saved to Firestore')
+                    set({ syncStatus: 'synced' })
+                })
+                .catch((error) => {
+                    console.error('❌ [AuthStore] Failed to save to Firestore:', error)
+                    set({ syncStatus: 'offline' })
+                })
+        } else {
+            set({ syncStatus: 'synced' })
+        }
+
         console.log('✏️ [AuthStore] Updated list:', { listId, updates })
     },
 
@@ -289,30 +501,88 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         set({ syncStatus: 'syncing' })
 
         // Delete list using the UserListsService
-        const updatedPrefs = UserListsService.deleteList(
-            { ...state, userLists: state.userLists } as any,
-            listId
-        )
+        const updatedPrefs = UserListsService.deleteList(state as any, listId)
 
         set({
-            userLists: updatedPrefs.userLists,
+            userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
 
-        set({ syncStatus: 'synced' })
+        // Save to Firebase
+        if (state.userId) {
+            firebaseTracker.track('saveUserData-deleteList', 'AuthStore', state.userId, {
+                listId,
+                listsCount: updatedPrefs.userCreatedWatchlists.length,
+            })
+            const { AuthStorageService } = await import('../services/authStorageService')
+            AuthStorageService.saveUserData(state.userId, {
+                likedMovies: state.likedMovies,
+                hiddenMovies: state.hiddenMovies,
+                defaultWatchlist: state.defaultWatchlist,
+                userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
+                lastActive: Date.now(),
+            })
+                .then(() => {
+                    console.log('✅ [AuthStore] Saved to Firestore')
+                    set({ syncStatus: 'synced' })
+                })
+                .catch((error) => {
+                    console.error('❌ [AuthStore] Failed to save to Firestore:', error)
+                    set({ syncStatus: 'offline' })
+                })
+        } else {
+            set({ syncStatus: 'synced' })
+        }
+
         console.log('🗑️ [AuthStore] Deleted list:', listId)
     },
 
     updatePreferences: async (prefs: Partial<AuthState>) => {
         set({ syncStatus: 'syncing' })
 
+        // Update local state
         set({
             ...prefs,
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
 
-        set({ syncStatus: 'synced' })
-        console.log('🔄 [AuthStore] Updated preferences')
+        // Get the UPDATED state after set()
+        const state = get()
+
+        // Save to Firebase (merge preferences with existing data)
+        if (state.userId) {
+            firebaseTracker.track(
+                'saveUserData-updatePreferences',
+                'AuthStore',
+                state.userId,
+                prefs
+            )
+            const { AuthStorageService } = await import('../services/authStorageService')
+            AuthStorageService.saveUserData(state.userId, {
+                likedMovies: state.likedMovies,
+                hiddenMovies: state.hiddenMovies,
+                defaultWatchlist: state.defaultWatchlist,
+                userCreatedWatchlists: state.userCreatedWatchlists,
+                lastActive: Date.now(),
+                autoMute: state.autoMute ?? true,
+                defaultVolume: state.defaultVolume ?? 50,
+                childSafetyMode: state.childSafetyMode ?? false,
+            })
+                .then(() => {
+                    console.log('✅ [AuthStore] Preferences saved to Firestore:', {
+                        autoMute: state.autoMute,
+                        defaultVolume: state.defaultVolume,
+                        childSafetyMode: state.childSafetyMode,
+                    })
+                    set({ syncStatus: 'synced' })
+                })
+                .catch((error) => {
+                    console.error('❌ [AuthStore] Failed to save preferences to Firestore:', error)
+                    set({ syncStatus: 'offline' })
+                })
+        } else {
+            set({ syncStatus: 'synced' })
+        }
     },
 
     syncWithFirebase: async (userId: string) => {
@@ -350,10 +620,14 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
                     set({
                         userId,
-                        watchlist: firebaseData.watchlist,
-                        ratings: firebaseData.ratings,
-                        userLists: firebaseData.userLists,
+                        likedMovies: firebaseData.likedMovies,
+                        hiddenMovies: firebaseData.hiddenMovies,
+                        defaultWatchlist: firebaseData.defaultWatchlist,
+                        userCreatedWatchlists: firebaseData.userCreatedWatchlists,
                         lastActive: firebaseData.lastActive,
+                        autoMute: firebaseData.autoMute ?? true,
+                        defaultVolume: firebaseData.defaultVolume ?? 50,
+                        childSafetyMode: firebaseData.childSafetyMode ?? false,
                         syncStatus: 'synced',
                     })
 
@@ -361,18 +635,19 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                         `✅ [AuthStore] Successfully synced with Firebase for user ${userId}:`,
                         {
                             userId,
-                            watchlist: firebaseData.watchlist.map((w) => ({
+                            defaultWatchlist: firebaseData.defaultWatchlist.map((w) => ({
                                 id: w.id,
                                 title: getTitle(w),
                             })),
-                            watchlistCount: firebaseData.watchlist.length,
-                            ratingsCount: firebaseData.ratings.length,
-                            customLists: firebaseData.userLists.lists.map((l) => ({
+                            watchlistCount: firebaseData.defaultWatchlist.length,
+                            likedCount: firebaseData.likedMovies.length,
+                            hiddenCount: firebaseData.hiddenMovies.length,
+                            customLists: firebaseData.userCreatedWatchlists.map((l) => ({
                                 id: l.id,
                                 name: l.name,
                                 itemCount: l.items?.length || 0,
                             })),
-                            listsCount: firebaseData.userLists.lists.length,
+                            listsCount: firebaseData.userCreatedWatchlists.length,
                         }
                     )
                     return firebaseData
@@ -409,9 +684,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
         console.log(`📥 [AuthStore] Loaded data for user ${data.userId || 'unknown'}:`, {
-            watchlistCount: data.watchlist.length,
-            ratingsCount: data.ratings.length,
-            listsCount: data.userLists.lists.length,
+            watchlistCount: data.defaultWatchlist.length,
+            likedCount: data.likedMovies.length,
+            hiddenCount: data.hiddenMovies.length,
+            listsCount: data.userCreatedWatchlists.length,
         })
     },
 }))

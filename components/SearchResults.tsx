@@ -3,9 +3,8 @@ import { useRouter } from 'next/router'
 import Image from 'next/image'
 import { useSearch } from '../hooks/useSearch'
 import { Content, isMovie, getTitle, getYear, getContentType } from '../typings'
-import { useRecoilState, useRecoilValue } from 'recoil'
-import { modalState, movieState, autoPlayWithSoundState } from '../atoms/modalAtom'
-import { userSessionState } from '../atoms/userDataAtom'
+import { useAppStore } from '../stores/appStore'
+import useUserData from '../hooks/useUserData'
 import { filterDislikedContent } from '../utils/contentFilter'
 
 interface SearchResultsProps {
@@ -34,13 +33,11 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
         isLoadingAll,
     } = useSearch()
 
-    const [showModal, setShowModal] = useRecoilState(modalState)
-    const [currentContent, setCurrentContent] = useRecoilState(movieState)
-    const [autoPlayWithSound, setAutoPlayWithSound] = useRecoilState(autoPlayWithSoundState)
-    const userSession = useRecoilValue(userSessionState)
+    const { openModal, modal } = useAppStore()
+    const { hiddenMovies } = useUserData()
 
     // Filter out disliked content from search results
-    const filteredResults = filterDislikedContent(results, userSession.preferences.ratings)
+    const filteredResults = filterDislikedContent(results, hiddenMovies)
 
     // Keyboard navigation state (only for search page)
     const [selectedIndex, setSelectedIndex] = useState(-1)
@@ -49,11 +46,10 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
 
     const handleContentClick = useCallback(
         (content: Content) => {
-            setAutoPlayWithSound(false) // More info mode - starts muted
-            setShowModal(true)
-            setCurrentContent(content)
+            // More info mode - autoPlay=true, autoPlayWithSound=false (starts muted)
+            openModal(content, true, false)
         },
-        [setAutoPlayWithSound, setShowModal, setCurrentContent]
+        [openModal]
     )
 
     // Scroll selected element into view
@@ -71,7 +67,7 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
     const handleKeyDown = useCallback(
         (e: KeyboardEvent) => {
             // Don't handle keyboard events if modal is open or not on search page
-            if (!isOnSearchPage || filteredResults.length === 0 || showModal) return
+            if (!isOnSearchPage || filteredResults.length === 0 || modal.isOpen) return
 
             // Don't interfere with dropdown/select interactions
             const target = e.target as HTMLElement
@@ -113,7 +109,7 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
                 setSelectedIndex(-1)
             }
         },
-        [isOnSearchPage, filteredResults, selectedIndex, showModal, handleContentClick]
+        [isOnSearchPage, filteredResults, selectedIndex, modal.isOpen, handleContentClick]
     )
 
     // Set up keyboard event listeners

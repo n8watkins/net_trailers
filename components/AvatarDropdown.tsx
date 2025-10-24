@@ -40,7 +40,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
     const dropdownRef = useRef<HTMLDivElement>(null)
     const { user, logOut } = useAuth()
     const userData = useUserData()
-    const { ratings, watchlist } = userData
+    const { likedMovies, hiddenMovies, defaultWatchlist } = userData
     const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
     const router = useRouter()
 
@@ -155,39 +155,57 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
 
                             <button
                                 onClick={handleSettingsClick}
-                                className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                                className="group flex items-center justify-between w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                             >
-                                <CogIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
-                                Settings
+                                <div className="flex items-center">
+                                    <CogIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                    Settings
+                                </div>
                             </button>
+
+                            {(likedMovies.length > 0 ||
+                                hiddenMovies.length > 0 ||
+                                defaultWatchlist.length > 0) && (
+                                <button
+                                    onClick={handleExportCSV}
+                                    className="group flex items-center justify-between w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                                >
+                                    <div className="flex items-center">
+                                        <ArrowDownTrayIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                        Export Data
+                                    </div>
+                                </button>
+                            )}
+
+                            <div className="h-px bg-gray-700/50 mx-5 my-2"></div>
 
                             <button
                                 onClick={() => {
                                     setIsOpen(false)
                                     onOpenTutorial?.()
                                 }}
-                                className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                                className="group flex items-center justify-between w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                             >
-                                <AcademicCapIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
-                                Tutorial
+                                <div className="flex items-center">
+                                    <AcademicCapIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                    Tutorial
+                                </div>
+                                <span className="text-xs text-gray-400 font-mono font-semibold">
+                                    Alt+T
+                                </span>
                             </button>
-
-                            {(ratings.length > 0 || watchlist.length > 0) && (
-                                <button
-                                    onClick={handleExportCSV}
-                                    className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
-                                >
-                                    <ArrowDownTrayIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
-                                    Export Data
-                                </button>
-                            )}
 
                             <button
                                 onClick={handleAboutClick}
-                                className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                                className="group flex items-center justify-between w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                             >
-                                <InformationCircleIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
-                                About NetTrailers
+                                <div className="flex items-center">
+                                    <InformationCircleIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                    About NetTrailers
+                                </div>
+                                <span className="text-xs text-gray-400 font-mono font-semibold">
+                                    Alt+I
+                                </span>
                             </button>
 
                             <button
@@ -195,10 +213,15 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                                     setIsOpen(false)
                                     onOpenKeyboardShortcuts?.()
                                 }}
-                                className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                                className="group flex items-center justify-between w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                             >
-                                <CommandLineIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
-                                Keyboard Shortcuts
+                                <div className="flex items-center">
+                                    <CommandLineIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                    Keyboard Shortcuts
+                                </div>
+                                <span className="text-xs text-gray-400 font-mono font-semibold">
+                                    ?
+                                </span>
                             </button>
                         </div>
                     </div>
@@ -258,11 +281,27 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
 
                         <button
                             onClick={handleSettingsClick}
-                            className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                            className="group flex items-center justify-between w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                         >
-                            <CogIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
-                            Settings
+                            <div className="flex items-center">
+                                <CogIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                Settings
+                            </div>
                         </button>
+
+                        {(likedMovies.length > 0 ||
+                            hiddenMovies.length > 0 ||
+                            defaultWatchlist.length > 0) && (
+                            <button
+                                onClick={handleExportCSV}
+                                className="group flex items-center justify-between w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                            >
+                                <div className="flex items-center">
+                                    <ArrowDownTrayIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                    Export Data
+                                </div>
+                            </button>
+                        )}
 
                         <div className="h-px bg-gray-700/50 mx-5 my-2"></div>
 
@@ -271,28 +310,28 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                                 setIsOpen(false)
                                 onOpenTutorial?.()
                             }}
-                            className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                            className="group flex items-center justify-between w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                         >
-                            <AcademicCapIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
-                            Tutorial
+                            <div className="flex items-center">
+                                <AcademicCapIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                Tutorial
+                            </div>
+                            <span className="text-xs text-gray-400 font-mono font-semibold">
+                                Alt+T
+                            </span>
                         </button>
-
-                        {(ratings.length > 0 || watchlist.length > 0) && (
-                            <button
-                                onClick={handleExportCSV}
-                                className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
-                            >
-                                <ArrowDownTrayIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
-                                Export Data
-                            </button>
-                        )}
 
                         <button
                             onClick={handleAboutClick}
-                            className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                            className="group flex items-center justify-between w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                         >
-                            <InformationCircleIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
-                            About NetTrailers
+                            <div className="flex items-center">
+                                <InformationCircleIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                About NetTrailers
+                            </div>
+                            <span className="text-xs text-gray-400 font-mono font-semibold">
+                                Alt+I
+                            </span>
                         </button>
 
                         <button
@@ -300,10 +339,13 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                                 setIsOpen(false)
                                 onOpenKeyboardShortcuts?.()
                             }}
-                            className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                            className="group flex items-center justify-between w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                         >
-                            <CommandLineIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
-                            Keyboard Shortcuts
+                            <div className="flex items-center">
+                                <CommandLineIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                Keyboard Shortcuts
+                            </div>
+                            <span className="text-xs text-gray-400 font-mono font-semibold">?</span>
                         </button>
 
                         <div className="h-px bg-gray-700/50 mx-5 my-2"></div>

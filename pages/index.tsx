@@ -4,10 +4,9 @@ import { Content, isMovie, isTVShow } from '../typings'
 import Banner from '../components/Banner'
 import Row from '../components/Row'
 import useAuth from '../hooks/useAuth'
-import Modal from '../components/Modal'
 import NetflixLoader from '../components/NetflixLoader'
 import NetflixError from '../components/NetflixError'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/router'
 import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil'
 import { modalState } from '../atoms/modalAtom'
@@ -15,6 +14,8 @@ import { contentLoadedSuccessfullyState } from '../atoms/userDataAtom'
 import { mainPageDataState, hasVisitedMainPageState, cacheStatusState } from '../atoms/cacheAtom'
 import { mainPageCache, cachedFetch } from '../utils/apiCache'
 import Head from 'next/head'
+import { useChildSafety } from '../hooks/useChildSafety'
+import { filterContentByAdultFlag } from '../utils/contentFilter'
 interface Props {
     trending: Content[]
     topRatedMovies: Content[]
@@ -49,6 +50,37 @@ const Home = ({
     const [mainPageData, setMainPageData] = useRecoilState(mainPageDataState)
     const [hasVisitedMainPage, setHasVisitedMainPage] = useRecoilState(hasVisitedMainPageState)
     const [cacheStatus, setCacheStatus] = useRecoilState(cacheStatusState)
+    const { isEnabled: childSafetyEnabled } = useChildSafety()
+
+    // Apply client-side Child Safety filtering to all content
+    const filteredTrending = useMemo(
+        () => filterContentByAdultFlag(trending, childSafetyEnabled),
+        [trending, childSafetyEnabled]
+    )
+    const filteredTopRated = useMemo(
+        () => filterContentByAdultFlag(topRatedMovies, childSafetyEnabled),
+        [topRatedMovies, childSafetyEnabled]
+    )
+    const filteredAction = useMemo(
+        () => filterContentByAdultFlag(actionMovies, childSafetyEnabled),
+        [actionMovies, childSafetyEnabled]
+    )
+    const filteredComedy = useMemo(
+        () => filterContentByAdultFlag(comedyMovies, childSafetyEnabled),
+        [comedyMovies, childSafetyEnabled]
+    )
+    const filteredHorror = useMemo(
+        () => filterContentByAdultFlag(horrorMovies, childSafetyEnabled),
+        [horrorMovies, childSafetyEnabled]
+    )
+    const filteredRomance = useMemo(
+        () => filterContentByAdultFlag(romanceMovies, childSafetyEnabled),
+        [romanceMovies, childSafetyEnabled]
+    )
+    const filteredDocumentaries = useMemo(
+        () => filterContentByAdultFlag(documentaries, childSafetyEnabled),
+        [documentaries, childSafetyEnabled]
+    )
 
     // Check if we have any content at all
     const hasAnyContent =
@@ -135,10 +167,10 @@ const Home = ({
             />
             <main id="content" className="relative">
                 <div className="relative h-screen w-full">
-                    <Banner trending={trending} />
+                    <Banner trending={filteredTrending} />
                 </div>
                 <section className="relative -mt-48 z-10 pb-52 space-y-8">
-                    {trending.length > 0 && (
+                    {filteredTrending.length > 0 && (
                         <div className="pt-8 sm:pt-12 md:pt-16">
                             <Row
                                 title={
@@ -148,11 +180,11 @@ const Home = ({
                                           ? 'Trending Movies'
                                           : 'Trending'
                                 }
-                                content={trending}
+                                content={filteredTrending}
                             />
                         </div>
                     )}
-                    {topRatedMovies.length > 0 && (
+                    {filteredTopRated.length > 0 && (
                         <Row
                             title={
                                 filter === 'tv'
@@ -161,10 +193,10 @@ const Home = ({
                                       ? 'Top Rated Movies'
                                       : 'Top Rated Movies'
                             }
-                            content={topRatedMovies}
+                            content={filteredTopRated}
                         />
                     )}
-                    {actionMovies.length > 0 && (
+                    {filteredAction.length > 0 && (
                         <Row
                             title={
                                 filter === 'tv'
@@ -173,10 +205,10 @@ const Home = ({
                                       ? 'Action Movies'
                                       : 'Action Movies'
                             }
-                            content={actionMovies}
+                            content={filteredAction}
                         />
                     )}
-                    {comedyMovies.length > 0 && (
+                    {filteredComedy.length > 0 && (
                         <Row
                             title={
                                 filter === 'tv'
@@ -185,10 +217,10 @@ const Home = ({
                                       ? 'Comedy Movies'
                                       : 'Comedy Movies'
                             }
-                            content={comedyMovies}
+                            content={filteredComedy}
                         />
                     )}
-                    {horrorMovies.length > 0 && (
+                    {filteredHorror.length > 0 && (
                         <Row
                             title={
                                 filter === 'tv'
@@ -197,10 +229,10 @@ const Home = ({
                                       ? 'Horror Movies'
                                       : 'Horror Movies'
                             }
-                            content={horrorMovies}
+                            content={filteredHorror}
                         />
                     )}
-                    {romanceMovies.length > 0 && (
+                    {filteredRomance.length > 0 && (
                         <Row
                             title={
                                 filter === 'tv'
@@ -209,10 +241,10 @@ const Home = ({
                                       ? 'Romance Movies'
                                       : 'Romance Movies'
                             }
-                            content={romanceMovies}
+                            content={filteredRomance}
                         />
                     )}
-                    {documentaries.length > 0 && (
+                    {filteredDocumentaries.length > 0 && (
                         <Row
                             title={
                                 filter === 'tv'
@@ -221,11 +253,10 @@ const Home = ({
                                       ? 'Documentaries'
                                       : 'Documentaries'
                             }
-                            content={documentaries}
+                            content={filteredDocumentaries}
                         />
                     )}
                 </section>
-                {showModal && <Modal />}
             </main>
         </div>
     )

@@ -22,8 +22,9 @@ export const useHydrationSafe = () => {
 
     const safeExecuteAsync = async (operation: () => Promise<void>) => {
         if (isHydrated) {
-            startTransition(async () => {
-                await operation()
+            startTransition(() => {
+                // Execute async operation but don't await inside transition
+                operation()
             })
         }
     }

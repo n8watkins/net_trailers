@@ -1,7 +1,13 @@
 import Head from 'next/head'
 import Header from '../components/Header'
 
-function Privacy() {
+interface PrivacyProps {
+    onOpenAboutModal?: () => void
+    onOpenTutorial?: () => void
+    onOpenKeyboardShortcuts?: () => void
+}
+
+function Privacy({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: PrivacyProps) {
     return (
         <div className="relative min-h-screen bg-gradient-to-b from-gray-900/10 to-[#0a0a0a]">
             <Head>
@@ -14,7 +20,11 @@ function Privacy() {
                 <link rel="icon" href="/favicon.ico" />
             </Head>
 
-            <Header />
+            <Header
+                onOpenAboutModal={onOpenAboutModal}
+                onOpenTutorial={onOpenTutorial}
+                onOpenKeyboardShortcuts={onOpenKeyboardShortcuts}
+            />
 
             <main className="relative pl-4 pb-24 lg:space-y-24 lg:pl-16 mt-20">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

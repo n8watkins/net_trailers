@@ -35,7 +35,8 @@ export default function PostHydrationEffects() {
                         if (savedSearchHistory) {
                             const history = JSON.parse(savedSearchHistory)
                             if (Array.isArray(history) && history.length > 0) {
-                                debug.logEffect('Restoring search history', {
+                                debug.logEffect({
+                                    action: 'Restoring search history',
                                     count: history.length,
                                 })
                                 // Note: Only restore if store has the method
@@ -53,7 +54,7 @@ export default function PostHydrationEffects() {
                         const savedPreferences = localStorage.getItem('userPreferences')
                         if (savedPreferences) {
                             const preferences = JSON.parse(savedPreferences)
-                            debug.logEffect('Restoring user preferences', preferences)
+                            debug.logEffect({ action: 'Restoring user preferences', preferences })
                             // Apply preferences if methods exist
                             if (
                                 preferences.showDemoMessage !== undefined &&
@@ -63,7 +64,7 @@ export default function PostHydrationEffects() {
                             }
                         }
                     } catch (error) {
-                        debug.logEffect('Error syncing localStorage', error)
+                        debug.logEffect({ action: 'Error syncing localStorage', error })
                     }
                 }
 
@@ -73,13 +74,16 @@ export default function PostHydrationEffects() {
 
                     // Restore search query from URL
                     if (query.q && typeof query.q === 'string' && store.setSearchQuery) {
-                        debug.logEffect('Restoring search query from URL', { query: query.q })
+                        debug.logEffect({
+                            action: 'Restoring search query from URL',
+                            query: query.q,
+                        })
                         store.setSearchQuery(query.q)
                     }
 
                     // Handle auth redirects if needed
                     if (query.redirect && typeof query.redirect === 'string') {
-                        debug.logEffect('Processing redirect', { redirect: query.redirect })
+                        debug.logEffect({ action: 'Processing redirect', redirect: query.redirect })
                         // Only redirect if user is authenticated
                         if (session.sessionType === 'authenticated') {
                             router.replace(query.redirect as string)

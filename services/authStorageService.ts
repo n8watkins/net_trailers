@@ -1,8 +1,7 @@
 import { Content } from '../typings'
-import { AuthPreferences, AuthRating } from '../atoms/authSessionAtom'
+import { AuthPreferences } from '../atoms/authSessionAtom'
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore'
 import { db } from '../firebase'
-import { UserListsService } from './userListsService'
 import { firebaseTracker } from '../utils/firebaseCallTracker'
 
 // Simple in-memory cache for user data
@@ -35,9 +34,10 @@ export class AuthStorageService {
         if (!userId || userId === 'undefined' || userId === 'null') {
             console.warn('Invalid userId provided to loadUserData:', userId)
             return {
-                watchlist: [],
-                ratings: [],
-                userLists: UserListsService.initializeDefaultLists(),
+                likedMovies: [],
+                hiddenMovies: [],
+                defaultWatchlist: [],
+                userCreatedWatchlists: [],
                 lastActive: Date.now(),
             }
         }
@@ -92,47 +92,25 @@ export class AuthStorageService {
                     console.log('✅ [AuthStorageService] Loaded user data from Firestore:', {
                         userId,
                         documentPath: `users/${userId}`,
-                        hasWatchlist: !!data.watchlist,
-                        watchlistCount: data.watchlist?.length || 0,
-                        watchlistItems:
-                            data.watchlist?.map((w: any) => ({
-                                id: w.id,
-                                title: w.title || w.name,
-                            })) || [],
-                        hasRatings: !!data.ratings,
-                        ratingsCount: data.ratings?.length || 0,
-                        hasUserLists: !!data.userLists,
-                        listsCount: data.userLists?.lists?.length || 0,
-                        customLists:
-                            data.userLists?.lists?.map((l: any) => ({
-                                id: l.id,
-                                name: l.name,
-                                itemCount: l.items?.length || 0,
-                            })) || [],
+                        hasDefaultWatchlist: !!data.defaultWatchlist,
+                        defaultWatchlistCount: data.defaultWatchlist?.length || 0,
+                        hasLikedMovies: !!data.likedMovies,
+                        likedMoviesCount: data.likedMovies?.length || 0,
+                        hasHiddenMovies: !!data.hiddenMovies,
+                        hiddenMoviesCount: data.hiddenMovies?.length || 0,
+                        customListsCount: data.userCreatedWatchlists?.length || 0,
                     })
-                    let preferences: AuthPreferences = {
-                        watchlist: data.watchlist || [],
-                        ratings: data.ratings || [],
-                        userLists: data.userLists || UserListsService.initializeDefaultLists(),
-                        lastActive: data.lastActive || Date.now(),
-                    }
 
-                    // Migrate old data structure if needed
-                    if (!data.userLists) {
-                        preferences = UserListsService.migrateOldPreferences(
-                            preferences as any
-                        ) as AuthPreferences
-                        // Save migrated data back to Firebase
-                        try {
-                            firebaseTracker.track(
-                                'saveUserData-migration',
-                                'AuthStorageService',
-                                userId
-                            )
-                            await this.saveUserData(userId, preferences)
-                        } catch (saveError) {
-                            console.warn('Failed to save migrated auth data (offline?):', saveError)
-                        }
+                    // NEW SCHEMA - No migration needed
+                    const preferences: AuthPreferences = {
+                        likedMovies: data.likedMovies || [],
+                        hiddenMovies: data.hiddenMovies || [],
+                        defaultWatchlist: data.defaultWatchlist || [],
+                        userCreatedWatchlists: data.userCreatedWatchlists || [],
+                        lastActive: data.lastActive || Date.now(),
+                        autoMute: data.autoMute ?? true,
+                        defaultVolume: data.defaultVolume ?? 50,
+                        childSafetyMode: data.childSafetyMode ?? false,
                     }
 
                     // Cache the loaded data
@@ -146,10 +124,14 @@ export class AuthStorageService {
                 } else {
                     // Create default user document
                     const defaultPreferences: AuthPreferences = {
-                        watchlist: [],
-                        ratings: [],
-                        userLists: UserListsService.initializeDefaultLists(),
+                        likedMovies: [],
+                        hiddenMovies: [],
+                        defaultWatchlist: [],
+                        userCreatedWatchlists: [],
                         lastActive: Date.now(),
+                        autoMute: true,
+                        defaultVolume: 50,
+                        childSafetyMode: false,
                     }
 
                     // Try to save, but don't fail if offline
@@ -199,10 +181,14 @@ export class AuthStorageService {
 
                 // Return default preferences if Firebase fails
                 return {
-                    watchlist: [],
-                    ratings: [],
-                    userLists: UserListsService.initializeDefaultLists(),
+                    likedMovies: [],
+                    hiddenMovies: [],
+                    defaultWatchlist: [],
+                    userCreatedWatchlists: [],
                     lastActive: Date.now(),
+                    autoMute: true,
+                    defaultVolume: 50,
+                    childSafetyMode: false,
                 }
             }
         })()
@@ -225,10 +211,11 @@ export class AuthStorageService {
             console.log('🔥 [AuthStorageService] Saving to Firestore:', {
                 userId,
                 path: `users/${userId}`,
-                listsCount: preferences.userLists?.lists?.length || 0,
-                watchlistCount: preferences.watchlist?.length || 0,
+                likedMoviesCount: preferences.likedMovies?.length || 0,
+                hiddenMoviesCount: preferences.hiddenMovies?.length || 0,
+                defaultWatchlistCount: preferences.defaultWatchlist?.length || 0,
+                customListsCount: preferences.userCreatedWatchlists?.length || 0,
                 dataSize: JSON.stringify(dataToSave).length,
-                hasUserLists: !!preferences.userLists,
                 cleanedData: dataToSave,
             })
 
@@ -238,8 +225,9 @@ export class AuthStorageService {
             }
 
             firebaseTracker.track('saveUserData', 'AuthStorageService', userId, {
-                watchlistCount: preferences.watchlist?.length || 0,
-                ratingsCount: preferences.ratings?.length || 0,
+                likedMoviesCount: preferences.likedMovies?.length || 0,
+                hiddenMoviesCount: preferences.hiddenMovies?.length || 0,
+                defaultWatchlistCount: preferences.defaultWatchlist?.length || 0,
             })
             await setDoc(doc(db, 'users', userId), dataToSave, { merge: true })
             console.log('✅ [AuthStorageService] Successfully saved to Firestore for user:', userId)
@@ -285,71 +273,84 @@ export class AuthStorageService {
         }
     }
 
-    // Add or update a rating
-    static addRating(
-        preferences: AuthPreferences,
-        contentId: number,
-        rating: 'liked' | 'disliked',
-        content?: Content
-    ): AuthPreferences {
-        const existingRatingIndex = preferences.ratings.findIndex((r) => r.contentId === contentId)
+    // Add to liked movies (with mutual exclusion from hidden)
+    static addLikedMovie(preferences: AuthPreferences, content: Content): AuthPreferences {
+        // Remove from hidden if exists (mutual exclusion)
+        const hiddenMovies = preferences.hiddenMovies.filter((m) => m.id !== content.id)
 
-        const newRating: AuthRating = {
-            contentId,
-            rating,
-            timestamp: Date.now(),
-            content,
-        }
+        // Add to liked if not already there
+        const isAlreadyLiked = preferences.likedMovies.some((m) => m.id === content.id)
+        const likedMovies = isAlreadyLiked
+            ? preferences.likedMovies
+            : [...preferences.likedMovies, content]
 
-        let updatedRatings: AuthRating[]
-        if (existingRatingIndex >= 0) {
-            updatedRatings = [...preferences.ratings]
-            updatedRatings[existingRatingIndex] = newRating
-        } else {
-            updatedRatings = [...preferences.ratings, newRating]
-        }
+        return { ...preferences, likedMovies, hiddenMovies }
+    }
 
+    // Remove from liked movies
+    static removeLikedMovie(preferences: AuthPreferences, contentId: number): AuthPreferences {
         return {
             ...preferences,
-            ratings: updatedRatings,
+            likedMovies: preferences.likedMovies.filter((m) => m.id !== contentId),
         }
     }
 
-    // Remove a rating
-    static removeRating(preferences: AuthPreferences, contentId: number): AuthPreferences {
+    // Add to hidden movies (with mutual exclusion from liked)
+    static addHiddenMovie(preferences: AuthPreferences, content: Content): AuthPreferences {
+        // Remove from liked if exists (mutual exclusion)
+        const likedMovies = preferences.likedMovies.filter((m) => m.id !== content.id)
+
+        // Add to hidden if not already there
+        const isAlreadyHidden = preferences.hiddenMovies.some((m) => m.id === content.id)
+        const hiddenMovies = isAlreadyHidden
+            ? preferences.hiddenMovies
+            : [...preferences.hiddenMovies, content]
+
+        return { ...preferences, likedMovies, hiddenMovies }
+    }
+
+    // Remove from hidden movies
+    static removeHiddenMovie(preferences: AuthPreferences, contentId: number): AuthPreferences {
         return {
             ...preferences,
-            ratings: preferences.ratings.filter((r) => r.contentId !== contentId),
+            hiddenMovies: preferences.hiddenMovies.filter((m) => m.id !== contentId),
         }
     }
 
-    // Add to watchlist
+    // Check if movie is liked
+    static isLiked(preferences: AuthPreferences, contentId: number): boolean {
+        return preferences.likedMovies.some((m) => m.id === contentId)
+    }
+
+    // Check if movie is hidden
+    static isHidden(preferences: AuthPreferences, contentId: number): boolean {
+        return preferences.hiddenMovies.some((m) => m.id === contentId)
+    }
+
+    // Add to default watchlist
     static addToWatchlist(preferences: AuthPreferences, content: Content): AuthPreferences {
-        const isAlreadyInWatchlist = preferences.watchlist.some((item) => item.id === content.id)
+        const isAlreadyInWatchlist = preferences.defaultWatchlist.some(
+            (item) => item.id === content.id
+        )
         if (isAlreadyInWatchlist) return preferences
 
         return {
             ...preferences,
-            watchlist: [...preferences.watchlist, content],
+            defaultWatchlist: [...preferences.defaultWatchlist, content],
         }
     }
 
-    // Remove from watchlist
+    // Remove from default watchlist
     static removeFromWatchlist(preferences: AuthPreferences, contentId: number): AuthPreferences {
         return {
             ...preferences,
-            watchlist: preferences.watchlist.filter((item) => item.id !== contentId),
+            defaultWatchlist: preferences.defaultWatchlist.filter((item) => item.id !== contentId),
         }
     }
 
-    // Get rating for specific content
-    static getRating(preferences: AuthPreferences, contentId: number): AuthRating | null {
-        return preferences.ratings.find((r) => r.contentId === contentId) || null
-    }
-
-    // Check if content is in watchlist
+    // Check if content is in default watchlist
     static isInWatchlist(preferences: AuthPreferences, contentId: number): boolean {
-        return preferences.watchlist.some((item) => item.id === contentId)
+        return preferences.defaultWatchlist.some((item) => item.id === contentId)
     }
 
     // Delete user data (for account deletion)
@@ -379,7 +380,8 @@ export class AuthStorageService {
         userId: string
         exists: boolean
         watchlistCount: number
-        ratingsCount: number
+        likedCount: number
+        hiddenCount: number
         listsCount: number
         lastActive?: number
     }> {
@@ -390,9 +392,10 @@ export class AuthStorageService {
             return {
                 userId,
                 exists,
-                watchlistCount: preferences.watchlist.length,
-                ratingsCount: preferences.ratings.length,
-                listsCount: preferences.userLists.lists.length,
+                watchlistCount: preferences.defaultWatchlist.length,
+                likedCount: preferences.likedMovies.length,
+                hiddenCount: preferences.hiddenMovies.length,
+                listsCount: preferences.userCreatedWatchlists.length,
                 lastActive: preferences.lastActive,
             }
         } catch (error) {
@@ -400,7 +403,8 @@ export class AuthStorageService {
                 userId,
                 exists: false,
                 watchlistCount: 0,
-                ratingsCount: 0,
+                likedCount: 0,
+                hiddenCount: 0,
                 listsCount: 0,
             }
         }
@@ -409,10 +413,14 @@ export class AuthStorageService {
     // Clear user data (reset to defaults but keep account)
     static async clearUserData(userId: string): Promise<AuthPreferences> {
         const defaultPrefs: AuthPreferences = {
-            watchlist: [],
-            ratings: [],
-            userLists: UserListsService.initializeDefaultLists(),
+            likedMovies: [],
+            hiddenMovies: [],
+            defaultWatchlist: [],
+            userCreatedWatchlists: [],
             lastActive: Date.now(),
+            autoMute: true,
+            defaultVolume: 50,
+            childSafetyMode: false,
         }
 
         await this.saveUserData(userId, defaultPrefs)
@@ -423,7 +431,8 @@ export class AuthStorageService {
     // Get data summary for confirmation dialogs
     static async getDataSummary(userId: string): Promise<{
         watchlistCount: number
-        ratingsCount: number
+        likedCount: number
+        hiddenCount: number
         listsCount: number
         totalItems: number
         isEmpty: boolean
@@ -432,14 +441,16 @@ export class AuthStorageService {
         try {
             const preferences = await this.loadUserData(userId)
             const totalItems =
-                preferences.watchlist.length +
-                preferences.ratings.length +
-                preferences.userLists.lists.reduce((acc, list) => acc + list.items.length, 0)
+                preferences.defaultWatchlist.length +
+                preferences.likedMovies.length +
+                preferences.hiddenMovies.length +
+                preferences.userCreatedWatchlists.reduce((acc, list) => acc + list.items.length, 0)
 
             return {
-                watchlistCount: preferences.watchlist.length,
-                ratingsCount: preferences.ratings.length,
-                listsCount: preferences.userLists.lists.length,
+                watchlistCount: preferences.defaultWatchlist.length,
+                likedCount: preferences.likedMovies.length,
+                hiddenCount: preferences.hiddenMovies.length,
+                listsCount: preferences.userCreatedWatchlists.length,
                 totalItems,
                 isEmpty: totalItems === 0,
                 accountCreated: preferences.lastActive
@@ -450,7 +461,8 @@ export class AuthStorageService {
             console.error('Failed to get data summary:', error)
             return {
                 watchlistCount: 0,
-                ratingsCount: 0,
+                likedCount: 0,
+                hiddenCount: 0,
                 listsCount: 0,
                 totalItems: 0,
                 isEmpty: true,
@@ -485,7 +497,7 @@ export class AuthStorageService {
 
             console.log(`🗑️ User account and data permanently deleted for ${userId}`)
             console.log(
-                `📄 Backup created with ${backup.data.watchlist.length} watchlist items, ${backup.data.ratings.length} ratings`
+                `📄 Backup created with ${backup.data.defaultWatchlist.length} watchlist items, ${backup.data.likedMovies.length} liked, ${backup.data.hiddenMovies.length} hidden`
             )
 
             // Note: This doesn't delete the Firebase Auth account, just the user data

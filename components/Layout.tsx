@@ -1,6 +1,4 @@
 import React, { useState, useRef, useCallback } from 'react'
-import { useRecoilValue } from 'recoil'
-import { modalState } from '../atoms/modalAtom'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import KeyboardShortcutsModal from './KeyboardShortcutsModal'
 import TutorialModal from './TutorialModal'
@@ -8,6 +6,7 @@ import Footer from './Footer'
 import AboutModal from './AboutModal'
 import ScrollToTopButton from './ScrollToTopButton'
 import { markAsVisited } from '../utils/firstVisitTracker'
+import { useAppStore } from '../stores/appStore'
 
 interface LayoutProps {
     children: React.ReactNode
@@ -17,7 +16,8 @@ function Layout({ children }: LayoutProps) {
     const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
     const [showAboutModal, setShowAboutModal] = useState(false)
     const [showTutorial, setShowTutorial] = useState(false)
-    const isModalOpen = useRecoilValue(modalState)
+    const { modal } = useAppStore()
+    const isModalOpen = modal.isOpen
     const searchInputRef = useRef<HTMLInputElement>(null)
 
     const handleOpenShortcuts = useCallback(() => {
@@ -25,8 +25,13 @@ function Layout({ children }: LayoutProps) {
     }, [showKeyboardShortcuts])
 
     const handleOpenAboutModal = useCallback(() => {
-        setShowAboutModal(true)
-    }, [])
+        setShowAboutModal(!showAboutModal)
+        if (!showAboutModal) {
+            // Only mark as visited when opening
+        } else {
+            markAsVisited()
+        }
+    }, [showAboutModal])
 
     const handleCloseAboutModal = useCallback(() => {
         setShowAboutModal(false)
@@ -34,47 +39,44 @@ function Layout({ children }: LayoutProps) {
     }, [])
 
     const handleOpenTutorial = useCallback(() => {
-        setShowTutorial(true)
-    }, [])
+        setShowTutorial(!showTutorial)
+    }, [showTutorial])
 
     const handleCloseTutorial = useCallback(() => {
         setShowTutorial(false)
     }, [])
 
-    const handleFocusSearch = () => {
-        // Navigate to search page if not already there
-        const router = require('next/router').default
-        if (typeof window !== 'undefined' && window.location.pathname !== '/search') {
-            router.push('/search')
-            // Wait for navigation then focus
-            setTimeout(() => {
-                const searchInput = document.querySelector(
+    const handleFocusSearch = useCallback(() => {
+        // Focus the search bar in the navbar (works on all pages)
+        if (typeof window !== 'undefined') {
+            // Try to find by ID first
+            let searchInput = document.getElementById('main-search-input') as HTMLInputElement
+
+            // Fallback to query selector if ID not found
+            if (!searchInput) {
+                searchInput = document.querySelector(
                     'input[type="text"][placeholder*="search" i]'
                 ) as HTMLInputElement
-                if (searchInput) {
-                    searchInput.focus()
-                    searchInput.select()
-                }
-            }, 100)
-        } else {
-            // Already on search page, just focus the input
-            const searchInput = document.querySelector(
-                'input[type="text"][placeholder*="search" i]'
-            ) as HTMLInputElement
+            }
+
             if (searchInput) {
                 searchInput.focus()
                 searchInput.select()
             }
         }
-    }
+    }, [])
 
     // Set up global keyboard shortcuts
     useKeyboardShortcuts({
         onOpenShortcuts: handleOpenShortcuts,
+        onOpenTutorial: handleOpenTutorial,
+        onOpenAbout: handleOpenAboutModal,
         onFocusSearch: handleFocusSearch,
         searchInputRef,
         isModalOpen,
         isShortcutsModalOpen: showKeyboardShortcuts,
+        isTutorialModalOpen: showTutorial,
+        isAboutModalOpen: showAboutModal,
     })
 
     return (

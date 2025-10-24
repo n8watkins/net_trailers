@@ -15,8 +15,7 @@ interface WatchLaterButtonProps {
 }
 
 function WatchLaterButton({ content, variant = 'modal', className = '' }: WatchLaterButtonProps) {
-    const { getDefaultLists, getListsContaining, addToWatchlist, removeFromWatchlist } =
-        useUserData()
+    const { getListsContaining, addToWatchlist, removeFromWatchlist, isInWatchlist } = useUserData()
     const { showSuccess, showError, showWatchlistAdd, showWatchlistRemove } = useToast()
     const setListModal = useSetRecoilState(listModalState)
 
@@ -25,10 +24,8 @@ function WatchLaterButton({ content, variant = 'modal', className = '' }: WatchL
     const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0 })
     const buttonRef = useRef<HTMLButtonElement>(null)
 
-    const defaultLists = getDefaultLists()
-    const watchlist = defaultLists.watchlist
     const listsContaining = getListsContaining(content.id)
-    const isInWatchlist = watchlist ? watchlist.items.some((item) => item.id === content.id) : false
+    const inWatchlist = isInWatchlist(content.id)
     const isInAnyList = listsContaining.length > 0
 
     const handleDropdownToggle = (e: React.MouseEvent) => {
@@ -48,10 +45,10 @@ function WatchLaterButton({ content, variant = 'modal', className = '' }: WatchL
     const handleQuickWatchlist = (e: React.MouseEvent) => {
         e.stopPropagation()
         try {
-            if (isInWatchlist && watchlist) {
+            if (inWatchlist) {
                 removeFromWatchlist(content.id)
                 showWatchlistRemove(`Removed ${getTitle(content)} from My List`)
-            } else if (watchlist) {
+            } else {
                 addToWatchlist(content)
                 showWatchlistAdd(`Added ${getTitle(content)} to My List`)
             }
@@ -68,7 +65,7 @@ function WatchLaterButton({ content, variant = 'modal', className = '' }: WatchL
                     ref={buttonRef}
                     onClick={handleDropdownToggle}
                     className={`${
-                        isInWatchlist
+                        inWatchlist
                             ? 'bg-red-600/90 border-red-500 hover:bg-red-700'
                             : 'bg-gray-800/90 border-gray-600 hover:bg-gray-700'
                     } text-white
@@ -80,11 +77,11 @@ function WatchLaterButton({ content, variant = 'modal', className = '' }: WatchL
                              shadow-lg hover:shadow-xl
                              border hover:border-gray-500
                              group/watchlist ${className}`}
-                    title={isInWatchlist ? 'Remove from My List' : 'Add to My List'}
+                    title={inWatchlist ? 'Remove from My List' : 'Add to My List'}
                 >
                     <svg
                         className={`w-4 h-4 group-hover/watchlist:scale-110 transition-transform duration-200 ${
-                            isInWatchlist ? 'fill-current' : 'fill-none'
+                            inWatchlist ? 'fill-current' : 'fill-none'
                         }`}
                         stroke="currentColor"
                         viewBox="0 0 24 24"
