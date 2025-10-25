@@ -108,6 +108,7 @@ const TVShows = ({
 
         // Set content loaded successfully
         setContentLoadedSuccessfully(true)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
         trending,
         topRatedMovies,
@@ -116,9 +117,8 @@ const TVShows = ({
         horrorMovies,
         romanceMovies,
         documentaries,
-        setContentLoadedSuccessfully,
-        setMainPageData,
-        setHasVisitedMainPage,
+        // Note: Zustand setters are stable and should NOT be in dependencies
+        // Including them causes infinite loops
     ])
 
     // Show error screen if no content is available
