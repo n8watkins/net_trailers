@@ -35,9 +35,10 @@ function WatchLaterButton({ content, variant = 'modal', className = '' }: WatchL
 
         if (!showDropdown && buttonRef.current) {
             const rect = buttonRef.current.getBoundingClientRect()
+            // For fixed positioning, use viewport coordinates (no scroll offset)
             setDropdownPosition({
-                x: rect.left + window.scrollX,
-                y: rect.top + window.scrollY,
+                x: rect.left,
+                y: rect.bottom, // Use bottom for dropup positioning
             })
         }
 

@@ -132,9 +132,9 @@ function ListDropdown({
             ref={dropdownRef}
             className={`fixed w-64 bg-[#141414] border border-gray-600 rounded-lg shadow-2xl z-[1400] overflow-hidden`}
             style={{
-                left: Math.max(0, Math.min(position.x, window.innerWidth - 256)), // Keep within viewport
+                left: Math.max(8, Math.min(position.x, window.innerWidth - 264)), // Keep within viewport with 8px margin
                 ...(variant === 'dropup'
-                    ? { bottom: window.innerHeight - position.y + 8 } // 8px gap above button
+                    ? { bottom: window.innerHeight - position.y + 8 } // 8px gap above button (position.y is button's bottom)
                     : { top: position.y + 8 }), // 8px gap below button
             }}
         >
