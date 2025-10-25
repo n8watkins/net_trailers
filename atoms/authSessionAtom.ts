@@ -10,10 +10,10 @@ export interface AuthPreferences {
     userCreatedWatchlists: UserList[]
     lastActive: number
     // Playback preferences
-    autoMute?: boolean
-    defaultVolume?: number // 0-100
+    autoMute: boolean
+    defaultVolume: number // 0-100
     // Content filtering preferences
-    childSafetyMode?: boolean // Restricts to PG-13 and below
+    childSafetyMode: boolean // Restricts to PG-13 and below
 }
 
 export interface AuthSession {
@@ -32,6 +32,9 @@ export const defaultAuthSession: AuthSession = {
         defaultWatchlist: [],
         userCreatedWatchlists: [],
         lastActive: Date.now(),
+        autoMute: false,
+        defaultVolume: 50,
+        childSafetyMode: false,
     },
     isActive: false,
     lastSyncedAt: Date.now(),

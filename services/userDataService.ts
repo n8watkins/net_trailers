@@ -12,6 +12,13 @@ const GUEST_STORAGE_KEY = 'nettrailer_guest_data'
 const GUEST_ID_KEY = 'nettrailer_guest_id'
 
 export class UserDataService {
+    // Default user preferences values
+    private static DEFAULT_PREFERENCES = {
+        autoMute: false,
+        defaultVolume: 50,
+        childSafetyMode: false,
+    }
+
     // Generate a unique guest ID
     static generateGuestId(): string {
         return `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -38,6 +45,7 @@ export class UserDataService {
                 defaultWatchlist: [],
                 userCreatedWatchlists: [],
                 lastActive: Date.now(),
+                ...this.DEFAULT_PREFERENCES,
             }
         }
 
@@ -50,6 +58,7 @@ export class UserDataService {
                     defaultWatchlist: [],
                     userCreatedWatchlists: [],
                     lastActive: Date.now(),
+                    ...this.DEFAULT_PREFERENCES,
                 }
             }
 
@@ -62,6 +71,10 @@ export class UserDataService {
                 defaultWatchlist: parsedData.defaultWatchlist || [],
                 userCreatedWatchlists: parsedData.userCreatedWatchlists || [],
                 lastActive: parsedData.lastActive || Date.now(),
+                autoMute: parsedData.autoMute ?? this.DEFAULT_PREFERENCES.autoMute,
+                defaultVolume: parsedData.defaultVolume ?? this.DEFAULT_PREFERENCES.defaultVolume,
+                childSafetyMode:
+                    parsedData.childSafetyMode ?? this.DEFAULT_PREFERENCES.childSafetyMode,
             }
         } catch (error) {
             console.error('Failed to load guest data:', error)
@@ -71,6 +84,7 @@ export class UserDataService {
                 defaultWatchlist: [],
                 userCreatedWatchlists: [],
                 lastActive: Date.now(),
+                ...this.DEFAULT_PREFERENCES,
             }
         }
     }
@@ -185,6 +199,10 @@ export class UserDataService {
                     defaultWatchlist: data.defaultWatchlist || [],
                     userCreatedWatchlists: data.userCreatedWatchlists || [],
                     lastActive: data.lastActive || Date.now(),
+                    autoMute: data.autoMute ?? this.DEFAULT_PREFERENCES.autoMute,
+                    defaultVolume: data.defaultVolume ?? this.DEFAULT_PREFERENCES.defaultVolume,
+                    childSafetyMode:
+                        data.childSafetyMode ?? this.DEFAULT_PREFERENCES.childSafetyMode,
                 }
             } else {
                 // Create default user document
@@ -194,6 +212,7 @@ export class UserDataService {
                     defaultWatchlist: [],
                     userCreatedWatchlists: [],
                     lastActive: Date.now(),
+                    ...this.DEFAULT_PREFERENCES,
                 }
                 // Try to save, but don't fail if offline
                 try {
@@ -220,6 +239,7 @@ export class UserDataService {
                 defaultWatchlist: [],
                 userCreatedWatchlists: [],
                 lastActive: Date.now(),
+                ...this.DEFAULT_PREFERENCES,
             }
         }
     }
@@ -272,6 +292,10 @@ export class UserDataService {
                 ),
                 userCreatedWatchlists: guestPreferences.userCreatedWatchlists || [],
                 lastActive: Date.now(),
+                // Prefer guest preferences for playback and content filtering settings
+                autoMute: guestPreferences.autoMute ?? existingData.autoMute,
+                defaultVolume: guestPreferences.defaultVolume ?? existingData.defaultVolume,
+                childSafetyMode: guestPreferences.childSafetyMode ?? existingData.childSafetyMode,
             }
 
             // Save merged data to Firebase

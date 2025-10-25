@@ -41,7 +41,7 @@
         "tailwind-scrollbar-hide": "^1.1.7",
         "tailwindcss-autofill": "^1.0.2",
         "tailwindcss-shadow-fill": "^1.0.1",
-        "zod": "^4.1.12",
+        "zod": "^3.25.76",
         "zustand": "^5.0.8"
     },
     "devDependencies": {
@@ -63,7 +63,7 @@
         "prettier": "^3.6.2",
         "tailwind-scrollbar": "^2.1.0",
         "tailwindcss": "^3.4.17",
-        "typescript": "4.9.4"
+        "typescript": "^5.9.3"
     },
     "lint-staged": {
         "*.{js,jsx,ts,tsx}": [

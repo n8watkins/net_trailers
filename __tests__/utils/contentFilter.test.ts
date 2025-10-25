@@ -8,14 +8,36 @@ import {
     isContentRestricted,
     getRequestMultiplier,
 } from '../../utils/contentFilter'
+import { Movie } from '../../typings'
+
+// Helper to create minimal valid Movie objects for testing
+function createMockMovie(id: number, title: string, adult?: boolean): Movie {
+    return {
+        id,
+        title,
+        original_title: title,
+        media_type: 'movie',
+        backdrop_path: '/test.jpg',
+        genre_ids: [],
+        origin_country: ['US'],
+        original_language: 'en',
+        overview: 'Test overview',
+        popularity: 100,
+        poster_path: '/poster.jpg',
+        vote_average: 7.5,
+        vote_count: 1000,
+        release_date: '2024-01-01',
+        adult,
+    }
+}
 
 describe('filterContentByAdultFlag', () => {
     const testContent = [
-        { id: 1, title: 'Family Movie', adult: false },
-        { id: 2, title: 'Adult Movie', adult: true },
-        { id: 3, title: 'Another Family Movie', adult: false },
-        { id: 4, title: 'Explicit Content', adult: true },
-        { id: 5, title: 'Kids Show' }, // No adult flag
+        createMockMovie(1, 'Family Movie', false),
+        createMockMovie(2, 'Adult Movie', true),
+        createMockMovie(3, 'Another Family Movie', false),
+        createMockMovie(4, 'Explicit Content', true),
+        createMockMovie(5, 'Kids Show'), // No adult flag
     ]
 
     test('should return all items when childSafetyMode is disabled', () => {
@@ -27,7 +49,10 @@ describe('filterContentByAdultFlag', () => {
     test('should filter out adult content when childSafetyMode is enabled', () => {
         const result = filterContentByAdultFlag(testContent, true)
         expect(result).toHaveLength(3)
-        expect(result.every((item) => item.adult !== true)).toBe(true)
+        // All returned movies should not be marked as adult
+        expect(
+            result.every((item) => (item.media_type === 'movie' ? item.adult !== true : true))
+        ).toBe(true)
     })
 
     test('should handle items without adult flag as safe', () => {
@@ -50,11 +75,11 @@ describe('filterContentByAdultFlag', () => {
 
 describe('filterContentWithStats', () => {
     const testContent = [
-        { id: 1, title: 'Family Movie', adult: false },
-        { id: 2, title: 'Adult Movie', adult: true },
-        { id: 3, title: 'Another Family Movie', adult: false },
-        { id: 4, title: 'Explicit Content', adult: true },
-        { id: 5, title: 'Kids Show' }, // No adult flag
+        createMockMovie(1, 'Family Movie', false),
+        createMockMovie(2, 'Adult Movie', true),
+        createMockMovie(3, 'Another Family Movie', false),
+        createMockMovie(4, 'Explicit Content', true),
+        createMockMovie(5, 'Kids Show'), // No adult flag
     ]
 
     test('should return stats when childSafetyMode is disabled', () => {
@@ -83,8 +108,8 @@ describe('filterContentWithStats', () => {
 
     test('should handle all safe content', () => {
         const safeContent = [
-            { id: 1, adult: false },
-            { id: 2, adult: false },
+            createMockMovie(1, 'Safe 1', false),
+            createMockMovie(2, 'Safe 2', false),
         ]
         const result = filterContentWithStats(safeContent, true)
         expect(result.shown).toBe(2)
@@ -93,8 +118,8 @@ describe('filterContentWithStats', () => {
 
     test('should handle all restricted content', () => {
         const restrictedContent = [
-            { id: 1, adult: true },
-            { id: 2, adult: true },
+            createMockMovie(1, 'Adult 1', true),
+            createMockMovie(2, 'Adult 2', true),
         ]
         const result = filterContentWithStats(restrictedContent, true)
         expect(result.shown).toBe(0)

@@ -124,15 +124,20 @@ export function filterSearchResults(
  * @param childSafetyMode - Whether child safety mode is enabled
  * @returns Filtered array of content
  */
-export function filterContentByAdultFlag<T extends { adult?: boolean }>(
-    items: T[],
-    childSafetyMode: boolean
-): T[] {
+export function filterContentByAdultFlag(items: Content[], childSafetyMode: boolean): Content[] {
     if (!childSafetyMode) {
         return items
     }
 
-    return items.filter((item) => item.adult !== true)
+    // Filter out adult content - only Movies have the adult flag, TVShows don't
+    return items.filter((item) => {
+        // If it's a Movie, check the adult flag
+        if (item.media_type === 'movie') {
+            return item.adult !== true
+        }
+        // TVShows don't have adult flag, so keep them (they use content_ratings instead)
+        return true
+    })
 }
 
 /**
@@ -142,11 +147,11 @@ export function filterContentByAdultFlag<T extends { adult?: boolean }>(
  * @param childSafetyMode - Whether child safety mode is enabled
  * @returns Object with filtered items and statistics
  */
-export function filterContentWithStats<T extends { adult?: boolean }>(
-    items: T[],
+export function filterContentWithStats(
+    items: Content[],
     childSafetyMode: boolean
 ): {
-    items: T[]
+    items: Content[]
     shown: number
     hidden: number
     totalBefore: number
