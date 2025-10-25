@@ -17,8 +17,12 @@ export interface SessionActions {
     initializeAuthSession: (userId: string) => void
     switchToGuest: () => void
     switchToAuth: (userId: string) => void
-    setMigrationAvailable: (available: boolean) => void
-    setTransitioning: (transitioning: boolean) => void
+    setMigrationAvailable: (available: boolean | ((prev: boolean) => boolean)) => void
+    setTransitioning: (transitioning: boolean | ((prev: boolean) => boolean)) => void
+    // Individual setters for compatibility with SessionManagerService
+    setSessionType: (type: SessionType | ((prev: SessionType) => SessionType)) => void
+    setActiveSessionId: (id: string | ((prev: string) => string)) => void
+    setIsInitialized: (initialized: boolean | ((prev: boolean) => boolean)) => void
 }
 
 export type SessionStore = SessionState & SessionActions
@@ -91,11 +95,39 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
         console.log('🔄 [SessionStore] Switched to auth session:', userId)
     },
 
-    setMigrationAvailable: (available: boolean) => {
-        set({ migrationAvailable: available })
+    setMigrationAvailable: (available: boolean | ((prev: boolean) => boolean)) => {
+        set((state) => ({
+            migrationAvailable:
+                typeof available === 'function' ? available(state.migrationAvailable) : available,
+        }))
     },
 
-    setTransitioning: (transitioning: boolean) => {
-        set({ isTransitioning: transitioning })
+    setTransitioning: (transitioning: boolean | ((prev: boolean) => boolean)) => {
+        set((state) => ({
+            isTransitioning:
+                typeof transitioning === 'function'
+                    ? transitioning(state.isTransitioning)
+                    : transitioning,
+        }))
+    },
+
+    // Individual setters for compatibility with SessionManagerService
+    setSessionType: (type: SessionType | ((prev: SessionType) => SessionType)) => {
+        set((state) => ({
+            sessionType: typeof type === 'function' ? type(state.sessionType) : type,
+        }))
+    },
+
+    setActiveSessionId: (id: string | ((prev: string) => string)) => {
+        set((state) => ({
+            activeSessionId: typeof id === 'function' ? id(state.activeSessionId) : id,
+        }))
+    },
+
+    setIsInitialized: (initialized: boolean | ((prev: boolean) => boolean)) => {
+        set((state) => ({
+            isInitialized:
+                typeof initialized === 'function' ? initialized(state.isInitialized) : initialized,
+        }))
     },
 }))

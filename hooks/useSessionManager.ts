@@ -1,34 +1,120 @@
-import { useEffect } from 'react'
-import { useRecoilState, useRecoilValue } from 'recoil'
-import {
-    sessionTypeState,
-    activeSessionIdState,
-    isSessionInitializedState,
-    migrationAvailableState,
-    isTransitioningSessionState,
-    currentSessionInfoSelector,
-} from '../atoms/sessionManagerAtom'
-import { userSessionState } from '../atoms/userDataAtom'
+import { useEffect, useCallback } from 'react'
+import { useSessionStore } from '../stores/sessionStore'
+import { useAuthStore } from '../stores/authStore'
+import { useGuestStore } from '../stores/guestStore'
 import { SessionManagerService, SessionManagerState } from '../services/sessionManagerService'
 import { GuestStorageService } from '../services/guestStorageService'
+import { UserSession } from '../atoms/userDataAtom'
 import useAuth from './useAuth'
 
 export function useSessionManager() {
     const { user, loading: authLoading } = useAuth()
 
-    // Session manager state
-    const [sessionType, setSessionType] = useRecoilState(sessionTypeState)
-    const [activeSessionId, setActiveSessionId] = useRecoilState(activeSessionIdState)
-    const [isSessionInitialized, setIsSessionInitialized] =
-        useRecoilState(isSessionInitializedState)
-    const [migrationAvailable, setMigrationAvailable] = useRecoilState(migrationAvailableState)
-    const [isTransitioning, setIsTransitioning] = useRecoilState(isTransitioningSessionState)
+    // Session manager state from Zustand stores
+    const sessionStore = useSessionStore()
+    const authStore = useAuthStore()
+    const guestStore = useGuestStore()
 
-    // Unified session state
-    const [userSession, setUserSession] = useRecoilState(userSessionState)
+    const {
+        sessionType,
+        activeSessionId,
+        isInitialized: isSessionInitialized,
+        isTransitioning,
+        migrationAvailable,
+        setSessionType,
+        setActiveSessionId,
+        setIsInitialized: setIsSessionInitialized,
+        setMigrationAvailable,
+        setTransitioning: setIsTransitioning,
+    } = sessionStore
 
-    // Current session info
-    const currentSession = useRecoilValue(currentSessionInfoSelector)
+    // Create a unified setUserSession wrapper for SessionManagerService compatibility
+    // This bridges the old UserSession concept to the new Zustand store architecture
+    const setUserSession = useCallback(
+        (sessionInput: UserSession | ((prev: UserSession) => UserSession)) => {
+            // Handle function updates (for compatibility with Recoil-style updaters)
+            let session: UserSession
+            if (typeof sessionInput === 'function') {
+                // Reconstruct current UserSession from stores
+                const currentSession: UserSession = {
+                    isGuest: sessionType === 'guest',
+                    guestId: sessionType === 'guest' ? activeSessionId : undefined,
+                    userId: sessionType === 'authenticated' ? activeSessionId : undefined,
+                    preferences:
+                        sessionType === 'guest'
+                            ? {
+                                  defaultWatchlist: guestStore.defaultWatchlist,
+                                  likedMovies: guestStore.likedMovies,
+                                  hiddenMovies: guestStore.hiddenMovies,
+                                  userCreatedWatchlists: guestStore.userCreatedWatchlists,
+                                  lastActive: guestStore.lastActive,
+                                  autoMute: guestStore.autoMute ?? true,
+                                  defaultVolume: guestStore.defaultVolume ?? 50,
+                                  childSafetyMode: guestStore.childSafetyMode ?? false,
+                              }
+                            : {
+                                  defaultWatchlist: authStore.defaultWatchlist,
+                                  likedMovies: authStore.likedMovies,
+                                  hiddenMovies: authStore.hiddenMovies,
+                                  userCreatedWatchlists: authStore.userCreatedWatchlists,
+                                  lastActive: authStore.lastActive,
+                                  autoMute: authStore.autoMute ?? false,
+                                  defaultVolume: authStore.defaultVolume ?? 50,
+                                  childSafetyMode: authStore.childSafetyMode ?? false,
+                              },
+                    isActive: true,
+                    lastSyncedAt: Date.now(),
+                    createdAt: Date.now(),
+                }
+                session = sessionInput(currentSession)
+            } else {
+                session = sessionInput
+            }
+
+            // Update the appropriate stores based on session type
+            if (session.isGuest && session.guestId) {
+                // Update guest store
+                guestStore.loadData({
+                    guestId: session.guestId,
+                    likedMovies: session.preferences.likedMovies,
+                    hiddenMovies: session.preferences.hiddenMovies,
+                    defaultWatchlist: session.preferences.defaultWatchlist,
+                    userCreatedWatchlists: session.preferences.userCreatedWatchlists,
+                    lastActive: session.preferences.lastActive,
+                    autoMute: session.preferences.autoMute,
+                    defaultVolume: session.preferences.defaultVolume,
+                    childSafetyMode: session.preferences.childSafetyMode,
+                })
+            } else if (!session.isGuest && session.userId) {
+                // Update auth store
+                authStore.loadData({
+                    userId: session.userId,
+                    likedMovies: session.preferences.likedMovies,
+                    hiddenMovies: session.preferences.hiddenMovies,
+                    defaultWatchlist: session.preferences.defaultWatchlist,
+                    userCreatedWatchlists: session.preferences.userCreatedWatchlists,
+                    lastActive: session.preferences.lastActive,
+                    autoMute: session.preferences.autoMute,
+                    defaultVolume: session.preferences.defaultVolume,
+                    childSafetyMode: session.preferences.childSafetyMode,
+                    syncStatus: 'synced', // Set as synced since we're loading data
+                })
+            }
+
+            console.log('[useSessionManager] setUserSession updated stores:', {
+                isGuest: session.isGuest,
+                sessionId: session.guestId || session.userId,
+            })
+        },
+        [sessionType, activeSessionId, authStore, guestStore]
+    )
+
+    // Current session info (reconstructed from stores)
+    const currentSession = {
+        sessionType,
+        activeSessionId,
+        isInitialized: isSessionInitialized,
+    }
 
     // Initialize session when auth state changes
     useEffect(() => {
@@ -192,17 +278,8 @@ export function useSessionManager() {
     // Initialize guest session
     const startGuestSession = async () => {
         const guestId = GuestStorageService.getGuestId()
-        const preferences = GuestStorageService.loadGuestData(guestId)
-
-        setUserSession({
-            isGuest: true,
-            guestId,
-            userId: undefined,
-            preferences,
-            isActive: true,
-            lastSyncedAt: Date.now(),
-            createdAt: Date.now(),
-        })
+        // Use guest store's syncFromLocalStorage which handles everything
+        guestStore.syncFromLocalStorage(guestId)
 
         setSessionType('guest')
         setActiveSessionId(guestId)
@@ -214,17 +291,8 @@ export function useSessionManager() {
     // Initialize a fresh guest session (for complete data isolation)
     const startFreshGuestSession = async () => {
         const guestId = GuestStorageService.createFreshGuestSession()
-        const preferences = GuestStorageService.loadGuestData(guestId)
-
-        setUserSession({
-            isGuest: true,
-            guestId,
-            userId: undefined,
-            preferences,
-            isActive: true,
-            lastSyncedAt: Date.now(),
-            createdAt: Date.now(),
-        })
+        // Use guest store's syncFromLocalStorage to load the fresh session
+        guestStore.syncFromLocalStorage(guestId)
 
         setSessionType('guest')
         setActiveSessionId(guestId)
@@ -239,26 +307,13 @@ export function useSessionManager() {
 
         try {
             // Data loading is handled by SessionSyncManager component
-            // Just set up the session state here (NEW SCHEMA)
-            setUserSession({
-                isGuest: false,
-                guestId: undefined,
-                userId: user.uid,
-                preferences: {
-                    defaultWatchlist: [],
-                    likedMovies: [],
-                    hiddenMovies: [],
-                    userCreatedWatchlists: [],
-                    lastActive: Date.now(),
-                },
-                isActive: true,
-                lastSyncedAt: Date.now(),
-                createdAt: Date.now(),
-            })
-
+            // Just set up the session state here - auth store will load data async
             setSessionType('authenticated')
             setActiveSessionId(user.uid)
             setIsSessionInitialized(true)
+
+            // Note: authStore.loadUserData is called by SessionSyncManager
+            console.log('🔐 Auth session started:', user.uid)
         } catch (error) {
             console.error('Failed to start auth session:', error)
             // Fallback to guest session
@@ -301,15 +356,17 @@ export function useSessionManager() {
     const logCurrentState = () => {
         SessionManagerService.logCurrentState(sessionType, activeSessionId, isSessionInitialized)
 
+        const isGuest = sessionType === 'guest'
+        const guestId = isGuest ? activeSessionId : undefined
+        const userId = !isGuest ? activeSessionId : undefined
+
         console.log('📊 Session Details:', {
             session: {
-                isGuest: userSession.isGuest,
-                guestId: userSession.guestId,
-                userId: userSession.userId,
-                active: userSession.isActive,
-                hasGuestData: userSession.guestId
-                    ? GuestStorageService.hasGuestData(userSession.guestId)
-                    : false,
+                isGuest,
+                guestId,
+                userId,
+                active: isSessionInitialized,
+                hasGuestData: guestId ? GuestStorageService.hasGuestData(guestId) : false,
             },
             migration: {
                 available: migrationAvailable,
