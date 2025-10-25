@@ -19,8 +19,7 @@ import { useToast } from '../hooks/useToast'
 import Header from '../components/Header'
 import ConfirmationModal from '../components/ConfirmationModal'
 import InfoModal from '../components/InfoModal'
-import { useRecoilState } from 'recoil'
-import { authModalState } from '../atoms/authModalAtom'
+import { useAppStore } from '../stores/appStore'
 import { useAuthStore } from '../stores/authStore'
 import { useGuestStore } from '../stores/guestStore'
 import { GuestModeNotification } from '../components/GuestModeNotification'
@@ -77,7 +76,7 @@ const Settings: React.FC<SettingsProps> = ({
     const { isGuest } = useAuthStatus()
     const userData = useUserData()
     const { showSuccess, showError } = useToast()
-    const [authModal, setAuthModal] = useRecoilState(authModalState)
+    const { openAuthModal } = useAppStore()
 
     // Get direct store access for preferences updates
     const authStoreUpdatePrefs = useAuthStore((state) => state.updatePreferences)
@@ -209,7 +208,7 @@ const Settings: React.FC<SettingsProps> = ({
         // Close any info modals before opening auth modal
         setShowExportLimitedModal(false)
         setShowChildSafetyModal(false)
-        setAuthModal({ isOpen: true, mode: 'signup' })
+        openAuthModal('signup')
     }
 
     const handleClearData = () => {

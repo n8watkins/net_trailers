@@ -74,7 +74,6 @@ import { useToast } from '../hooks/useToast'
 import { UserList } from '../types/userLists'
 import { useAuthStatus } from '../hooks/useAuthStatus'
 import { useRecoilState } from 'recoil'
-import { authModalState } from '../atoms/authModalAtom'
 import { listModalState } from '../atoms/listModalAtom'
 import { useDebugSettings } from './DebugControls'
 import { getCachedMovieDetails } from '../utils/prefetchCache'
@@ -135,7 +134,6 @@ function Modal() {
 
     // Auth status for inline dropdown (NEW SCHEMA)
     const { isGuest } = useAuthStatus()
-    const [authModal, setAuthModal] = useRecoilState(authModalState)
     const [listModal, setListModal] = useRecoilState(listModalState)
 
     // User data hooks for inline dropdown (NEW SCHEMA)
