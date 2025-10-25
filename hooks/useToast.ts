@@ -22,9 +22,8 @@ export const useToast = () => {
             id,
         }
         setToasts((prev) => {
-            // Only show one toast at a time - replace existing toasts
-            const newToasts = [newToast]
-            return newToasts
+            // Append new toast (max limit enforced by appStore)
+            return [...prev, newToast]
         })
     }
 

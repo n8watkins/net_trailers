@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import {
     CheckCircleIcon,
     XCircleIcon,
@@ -8,6 +8,7 @@ import {
     EyeIcon,
     EyeSlashIcon,
 } from '@heroicons/react/24/outline'
+import { TOAST_DURATION, TOAST_EXIT_DURATION } from '../stores/appStore'
 
 /**
  * Toast message interface for the unified notification system
@@ -34,31 +35,36 @@ interface ToastProps {
 
 /**
  * Individual toast notification component
- * Features slide-in/slide-out animations and auto-dismiss after 5 seconds
+ * Features slide-in/slide-out animations and auto-dismiss after configured duration
  * Part of the unified toast system - handles all 6 toast types consistently
  */
-const Toast: React.FC<ToastProps> = ({ toast, onClose, duration = 5000 }) => {
+const Toast: React.FC<ToastProps> = ({ toast, onClose, duration = TOAST_DURATION }) => {
     const [isVisible, setIsVisible] = useState(false)
     const [isExiting, setIsExiting] = useState(false)
+    const timersRef = useRef<{ main?: NodeJS.Timeout; exit?: NodeJS.Timeout }>({})
 
     useEffect(() => {
         setIsVisible(true)
 
-        const timer = setTimeout(() => {
+        timersRef.current.main = setTimeout(() => {
             setIsExiting(true)
-            setTimeout(() => {
+            timersRef.current.exit = setTimeout(() => {
                 onClose(toast.id)
-            }, 300)
+            }, TOAST_EXIT_DURATION)
         }, duration)
 
-        return () => clearTimeout(timer)
+        return () => {
+            // Clean up all timers on unmount
+            if (timersRef.current.main) clearTimeout(timersRef.current.main)
+            if (timersRef.current.exit) clearTimeout(timersRef.current.exit)
+        }
     }, [toast.id, onClose, duration])
 
     const handleClose = () => {
         setIsExiting(true)
-        setTimeout(() => {
+        timersRef.current.exit = setTimeout(() => {
             onClose(toast.id)
-        }, 300)
+        }, TOAST_EXIT_DURATION)
     }
 
     const getToastStyles = () => {

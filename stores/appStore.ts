@@ -4,6 +4,11 @@ import { startTransition } from 'react'
 import { hydrationDebug } from '../utils/hydrationDebug'
 import { debugSetter } from '../utils/debugStore'
 
+// Toast configuration constants
+export const MAX_TOASTS = 5
+export const TOAST_DURATION = 5000
+export const TOAST_EXIT_DURATION = 300
+
 // Modal types
 export interface ModalContent {
     content: Content
@@ -150,11 +155,14 @@ export interface AppActions {
 
 export type AppStore = AppState & AppActions
 
+// Counter for SSR toast IDs to prevent duplicate keys
+let ssrIdCounter = 0
+
 const generateToastId = (): string => {
-    // Generate empty string during SSR, actual ID only on client
-    // This prevents hydration mismatches while still providing unique IDs after hydration
+    // Generate counter-based IDs during SSR to prevent duplicates
+    // Client-side uses timestamp + random for uniqueness
     if (typeof window === 'undefined') {
-        return '' // Empty string during SSR
+        return `ssr_toast_${ssrIdCounter++}`
     }
     return `toast_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 }
@@ -376,15 +384,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
         }
 
         set((state) => ({
-            toasts: [...state.toasts, toast],
+            // Limit to MAX_TOASTS to prevent unbounded growth
+            toasts: [...state.toasts, toast].slice(-MAX_TOASTS),
         }))
 
-        // Auto-dismiss after 5 seconds
-        setTimeout(() => {
-            get().dismissToast(toast.id)
-        }, 5000)
-
-        console.log('🍞 [AppStore] Toast shown:', { type, title, message })
+        // Note: Auto-dismiss is handled by Toast component for proper cleanup
+        if (process.env.NODE_ENV === 'development') {
+            console.log('🍞 [AppStore] Toast shown:', { type, title, message })
+        }
     },
 
     dismissToast: (id: string) => {

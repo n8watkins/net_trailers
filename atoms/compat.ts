@@ -3,7 +3,7 @@
  * This provides a temporary bridge to get the app working while migration continues
  */
 
-import { useAppStore } from '../stores/appStore'
+import { useAppStore, MAX_TOASTS } from '../stores/appStore'
 import { useSessionStore } from '../stores/sessionStore'
 import { useSessionData } from '../hooks/useSessionData'
 import { useEffect, useRef } from 'react'
@@ -145,11 +145,11 @@ export const useRecoilState = (atom: any) => {
                 // Handle functional updates from useToast
                 if (typeof value === 'function') {
                     const newToasts = value(toasts)
-                    // Directly update the appStore toasts array
-                    useAppStore.setState({ toasts: newToasts })
+                    // Apply max limit and update the appStore toasts array
+                    useAppStore.setState({ toasts: newToasts.slice(-MAX_TOASTS) })
                 } else if (Array.isArray(value)) {
-                    // Direct array replacement
-                    useAppStore.setState({ toasts: value })
+                    // Direct array replacement with limit
+                    useAppStore.setState({ toasts: value.slice(-MAX_TOASTS) })
                 }
             },
         ]
