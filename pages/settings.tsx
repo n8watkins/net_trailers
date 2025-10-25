@@ -189,7 +189,11 @@ const Settings: React.FC<SettingsProps> = ({
         }
 
         try {
-            if (userData.userSession?.preferences) {
+            if (
+                !userData.isInitializing &&
+                userData.userSession?.preferences &&
+                'autoMute' in userData.userSession.preferences
+            ) {
                 exportUserDataToCSV(userData.userSession.preferences)
                 showSuccess('Data exported successfully!')
             } else {
@@ -221,7 +225,11 @@ const Settings: React.FC<SettingsProps> = ({
 
     const handleDeleteAccount = async () => {
         try {
-            if (!isGuest && userData.deleteAccount) {
+            if (
+                !isGuest &&
+                userData.sessionType === 'authenticated' &&
+                'deleteAccount' in userData
+            ) {
                 await userData.deleteAccount()
                 setShowDeleteConfirm(false)
                 showSuccess('Account deleted successfully')
@@ -233,20 +241,58 @@ const Settings: React.FC<SettingsProps> = ({
     }
 
     // Handle initializing state - provide default empty data summary
-    const dataSummary = userData.isInitializing
-        ? {
-              watchlistCount: 0,
-              likedCount: 0,
-              hiddenCount: 0,
-              listsCount: 0,
-              totalItems: 0,
-              isEmpty: true,
-          }
-        : userData.getAccountDataSummary()
+    const [dataSummary, setDataSummary] = React.useState<{
+        watchlistCount: number
+        likedCount: number
+        hiddenCount: number
+        listsCount: number
+        totalItems: number
+        isEmpty: boolean
+        accountCreated?: Date
+    }>({
+        watchlistCount: 0,
+        likedCount: 0,
+        hiddenCount: 0,
+        listsCount: 0,
+        totalItems: 0,
+        isEmpty: true,
+    })
+
+    // Load data summary (handles both sync and async cases)
+    React.useEffect(() => {
+        if (userData.isInitializing) {
+            setDataSummary({
+                watchlistCount: 0,
+                likedCount: 0,
+                hiddenCount: 0,
+                listsCount: 0,
+                totalItems: 0,
+                isEmpty: true,
+            })
+        } else {
+            const summary = userData.getAccountDataSummary()
+            // Check if it's a Promise (authenticated) or sync value (guest)
+            if (summary instanceof Promise) {
+                summary.then(setDataSummary)
+            } else {
+                setDataSummary(summary)
+            }
+        }
+    }, [
+        userData.isInitializing,
+        userData.defaultWatchlist.length,
+        userData.likedMovies.length,
+        userData.hiddenMovies.length,
+        userData.userCreatedWatchlists.length,
+    ])
 
     // Load preferences from store whenever they change
     React.useEffect(() => {
-        if (!userData.isInitializing && userData.userSession?.preferences) {
+        if (
+            !userData.isInitializing &&
+            userData.userSession?.preferences &&
+            'autoMute' in userData.userSession.preferences
+        ) {
             const prefs = userData.userSession.preferences
             const loadedPrefs = {
                 childSafetyMode: prefs.childSafetyMode ?? false,
@@ -259,12 +305,7 @@ const Settings: React.FC<SettingsProps> = ({
             setOriginalPreferences(loadedPrefs)
             console.log('📖 [Settings] Loaded preferences from store:', loadedPrefs)
         }
-    }, [
-        userData.isInitializing,
-        userData.userSession?.preferences?.childSafetyMode,
-        userData.userSession?.preferences?.autoMute,
-        userData.userSession?.preferences?.defaultVolume,
-    ])
+    }, [userData.isInitializing, userData.sessionType, userData.userSession?.preferences])
 
     // Handle saving preferences
     const handleSavePreferences = async () => {
