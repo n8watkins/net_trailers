@@ -56,7 +56,7 @@ export function GuestModeNotification({
                     </div>
                     <div className="flex items-center">
                         <button
-                            onClick={() => setAuthModal({ isOpen: true, mode: 'signin' })}
+                            onClick={() => openAuthModal('signin')}
                             className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-sm font-medium rounded-md transition-colors whitespace-nowrap shadow-lg"
                         >
                             Sign In

@@ -21,6 +21,8 @@ export const recentSearchesState = Symbol('recentSearchesState')
 export const userSessionState = Symbol('userSessionState')
 export const sessionTypeState = Symbol('sessionTypeState')
 export const activeSessionIdState = Symbol('activeSessionIdState')
+export const showDemoMessageState = Symbol('showDemoMessageState')
+export const contentLoadedSuccessfullyState = Symbol('contentLoadedSuccessfullyState')
 
 export const useRecoilState = (atom: any) => {
     // Always call all hooks at the top level
@@ -45,6 +47,10 @@ export const useRecoilState = (atom: any) => {
         addToSearchHistory,
         clearSearchHistory,
         setAutoPlayWithSound,
+        showDemoMessage,
+        setShowDemoMessage,
+        contentLoadedSuccessfully,
+        setContentLoadedSuccessfully,
     } = appStore
 
     const { sessionType, activeSessionId } = sessionStore
@@ -224,6 +230,16 @@ export const useRecoilState = (atom: any) => {
                 console.warn('Active session ID is read-only in compatibility layer')
             },
         ]
+    }
+
+    // Show demo message state
+    if (atom === showDemoMessageState) {
+        return [showDemoMessage, (value: boolean) => setShowDemoMessage(value)]
+    }
+
+    // Content loaded successfully state
+    if (atom === contentLoadedSuccessfullyState) {
+        return [contentLoadedSuccessfully, (value: boolean) => setContentLoadedSuccessfully(value)]
     }
 
     // Unmapped atom

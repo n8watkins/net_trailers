@@ -9,6 +9,14 @@ const nextConfig = {
     typescript: {
         ignoreBuildErrors: true,
     },
+    webpack: (config, { isServer }) => {
+        // Alias 'recoil' to our React 19-compatible shim
+        config.resolve.alias = {
+            ...config.resolve.alias,
+            recoil: require('path').resolve(__dirname, './recoil-shim.ts'),
+        }
+        return config
+    },
     images: {
         remotePatterns: [
             {
