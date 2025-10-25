@@ -8,11 +8,11 @@ import NetflixLoader from '../components/NetflixLoader'
 import NetflixError from '../components/NetflixError'
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/router'
-import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil'
+import { useRecoilValue, useSetRecoilState } from 'recoil'
 import { modalState } from '../atoms/modalAtom'
 import { contentLoadedSuccessfullyState } from '../atoms/userDataAtom'
-import { mainPageDataState, hasVisitedMainPageState, cacheStatusState } from '../atoms/cacheAtom'
 import { mainPageCache, cachedFetch } from '../utils/apiCache'
+import { useCacheStore } from '../stores/cacheStore'
 import Head from 'next/head'
 import { useChildSafety } from '../hooks/useChildSafety'
 import { filterContentByAdultFlag } from '../utils/contentFilter'
@@ -47,9 +47,7 @@ const Home = ({
     const showModal = useRecoilValue(modalState)
     const { filter } = router.query
     const setContentLoadedSuccessfully = useSetRecoilState(contentLoadedSuccessfullyState)
-    const [mainPageData, setMainPageData] = useRecoilState(mainPageDataState)
-    const [hasVisitedMainPage, setHasVisitedMainPage] = useRecoilState(hasVisitedMainPageState)
-    const [cacheStatus, setCacheStatus] = useRecoilState(cacheStatusState)
+    const { setMainPageData, setHasVisitedMainPage } = useCacheStore()
     const { isEnabled: childSafetyEnabled } = useChildSafety()
 
     // Apply client-side Child Safety filtering to all content
@@ -107,11 +105,6 @@ const Home = ({
 
         setMainPageData(currentData)
         setHasVisitedMainPage(true)
-        setCacheStatus((prev) => ({
-            ...prev,
-            mainPageCached: true,
-            lastCacheUpdate: Date.now(),
-        }))
 
         // Set content loaded successfully
         setContentLoadedSuccessfully(true)
@@ -123,11 +116,9 @@ const Home = ({
         horrorMovies,
         romanceMovies,
         documentaries,
-        hasVisitedMainPage,
         setContentLoadedSuccessfully,
         setMainPageData,
         setHasVisitedMainPage,
-        setCacheStatus,
     ])
 
     // Show error screen if no content is available
