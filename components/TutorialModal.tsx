@@ -7,8 +7,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { HandThumbUpIcon } from '@heroicons/react/24/solid'
 import { useAuthStatus } from '../hooks/useAuthStatus'
-import { useRecoilState } from 'recoil'
-import { authModalState } from '../atoms/authModalAtom'
+import { useAppStore } from '../stores/appStore'
 
 interface TutorialModalProps {
     isOpen: boolean
@@ -17,11 +16,11 @@ interface TutorialModalProps {
 
 const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
     const { isGuest, isAuthenticated } = useAuthStatus()
-    const [authModal, setAuthModal] = useRecoilState(authModalState)
+    const { openAuthModal } = useAppStore()
 
     const handleSignUp = () => {
         onClose()
-        setAuthModal({ isOpen: true, mode: 'signup' })
+        openAuthModal('signup')
     }
 
     if (!isOpen) return null
@@ -163,9 +162,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
                                 </div>
                                 <div className="flex justify-center gap-3">
                                     <button
-                                        onClick={() =>
-                                            setAuthModal({ isOpen: true, mode: 'signin' })
-                                        }
+                                        onClick={() => openAuthModal('signin')}
                                         className="px-5 py-2 bg-[#1a1a1a] hover:bg-[#252525] text-white text-sm font-medium rounded-lg transition-colors border border-[#454545]"
                                     >
                                         Sign In

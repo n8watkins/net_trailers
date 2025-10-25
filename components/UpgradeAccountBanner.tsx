@@ -1,20 +1,19 @@
 import { SparklesIcon, RocketLaunchIcon } from '@heroicons/react/24/solid'
-import { useRecoilState } from 'recoil'
-import { authModalState } from '../atoms/authModalAtom'
+import { useAppStore } from '../stores/appStore'
 
 interface UpgradeAccountBannerProps {
     onOpenTutorial?: () => void
 }
 
 export function UpgradeAccountBanner({ onOpenTutorial }: UpgradeAccountBannerProps) {
-    const [authModal, setAuthModal] = useRecoilState(authModalState)
+    const { openAuthModal } = useAppStore()
 
     const handleCreateAccount = () => {
-        setAuthModal({ isOpen: true, mode: 'signup' })
+        openAuthModal('signup')
     }
 
     const handleSignIn = () => {
-        setAuthModal({ isOpen: true, mode: 'signin' })
+        openAuthModal('signin')
     }
 
     const handleAdditionalFeaturesClick = () => {
