@@ -1,8 +1,9 @@
 /**
  * Web Vitals metric interface
+ * Note: Using string for name to support future metrics from React 19+
  */
 interface WebVitalMetric {
-    name: 'CLS' | 'FCP' | 'FID' | 'INP' | 'LCP' | 'TTFB'
+    name: 'CLS' | 'FCP' | 'FID' | 'INP' | 'LCP' | 'TTFB' | string
     value: number
     rating: 'good' | 'needs-improvement' | 'poor'
     id: string
@@ -14,7 +15,7 @@ interface WebVitalMetric {
  * Thresholds for Web Vitals metrics
  * Based on Google's recommended values
  */
-const THRESHOLDS = {
+const THRESHOLDS: Record<string, { good: number; poor: number } | undefined> = {
     CLS: { good: 0.1, poor: 0.25 },
     FCP: { good: 1800, poor: 3000 },
     FID: { good: 100, poor: 300 },
@@ -26,8 +27,17 @@ const THRESHOLDS = {
 /**
  * Get the rating for a metric value
  */
-function getRating(name: WebVitalMetric['name'], value: number): WebVitalMetric['rating'] {
+function getRating(name: string, value: number): WebVitalMetric['rating'] {
     const threshold = THRESHOLDS[name]
+
+    // Handle unknown metrics gracefully (React 19+ may introduce new metrics)
+    if (!threshold) {
+        if (process.env.NODE_ENV === 'development') {
+            console.warn(`[Web Vitals] Unknown metric: ${name} (value: ${value})`)
+        }
+        return 'good' // Default to good for unknown metrics
+    }
+
     if (value <= threshold.good) return 'good'
     if (value <= threshold.poor) return 'needs-improvement'
     return 'poor'
