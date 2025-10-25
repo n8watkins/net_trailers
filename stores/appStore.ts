@@ -5,7 +5,7 @@ import { hydrationDebug } from '../utils/hydrationDebug'
 import { debugSetter } from '../utils/debugStore'
 
 // Toast configuration constants
-export const MAX_TOASTS = 5
+export const MAX_TOASTS = 2 // Maximum 2 toasts displayed at once
 export const TOAST_DURATION = 5000
 export const TOAST_EXIT_DURATION = 300
 
@@ -383,10 +383,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
             timestamp: typeof window !== 'undefined' ? Date.now() : 0,
         }
 
-        set((state) => ({
-            // Limit to MAX_TOASTS to prevent unbounded growth
-            toasts: [...state.toasts, toast].slice(-MAX_TOASTS),
-        }))
+        // If we're at max capacity, dismiss the oldest toast to make room
+        const currentToasts = get().toasts
+        if (currentToasts.length >= MAX_TOASTS && currentToasts.length > 0) {
+            const oldestToast = currentToasts[0]
+            // Dismiss the oldest toast - this will trigger its exit animation
+            get().dismissToast(oldestToast.id)
+        }
+
+        // Add the new toast after a brief delay to allow exit animation
+        setTimeout(() => {
+            set((state) => ({
+                toasts: [...state.toasts, toast].slice(-MAX_TOASTS),
+            }))
+        }, 50) // Small delay for smooth transition
 
         // Note: Auto-dismiss is handled by Toast component for proper cleanup
         if (process.env.NODE_ENV === 'development') {
