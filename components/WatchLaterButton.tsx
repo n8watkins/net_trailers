@@ -7,6 +7,7 @@ import { useSetRecoilState } from 'recoil'
 import { listModalState } from '../atoms/listModalAtom'
 import ToolTipMod from './ToolTipMod'
 import ListDropdown from './ListDropdown'
+import { useRouter } from 'next/router'
 
 interface WatchLaterButtonProps {
     content: Content
@@ -18,6 +19,7 @@ function WatchLaterButton({ content, variant = 'modal', className = '' }: WatchL
     const { getListsContaining, addToWatchlist, removeFromWatchlist, isInWatchlist } = useUserData()
     const { showSuccess, showError, showWatchlistAdd, showWatchlistRemove } = useToast()
     const setListModal = useSetRecoilState(listModalState)
+    const router = useRouter()
 
     const [isHovered, setIsHovered] = useState(false)
     const [showDropdown, setShowDropdown] = useState(false)
@@ -42,6 +44,11 @@ function WatchLaterButton({ content, variant = 'modal', className = '' }: WatchL
         setShowDropdown(!showDropdown)
     }
 
+    const handleNavigateToWatchlists = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        router.push('/watchlists')
+    }
+
     const handleQuickWatchlist = (e: React.MouseEvent) => {
         e.stopPropagation()
         try {
@@ -60,54 +67,44 @@ function WatchLaterButton({ content, variant = 'modal', className = '' }: WatchL
 
     if (variant === 'thumbnail') {
         return (
-            <>
-                <button
-                    ref={buttonRef}
-                    onClick={handleDropdownToggle}
-                    className={`${
-                        inWatchlist
-                            ? 'bg-red-600/90 border-red-500 hover:bg-red-700'
-                            : 'bg-gray-800/90 border-gray-600 hover:bg-gray-700'
-                    } text-white
-                             px-3 py-1.5 md:px-4 md:py-2
-                             text-xs md:text-sm
-                             rounded-md hover:scale-105
-                             transition-all duration-200
-                             flex items-center justify-center gap-1
-                             shadow-lg hover:shadow-xl
-                             border hover:border-gray-500
-                             group/watchlist ${className}`}
-                    title={inWatchlist ? 'Remove from My List' : 'Add to My List'}
+            <button
+                ref={buttonRef}
+                onClick={handleNavigateToWatchlists}
+                className={`${
+                    inWatchlist
+                        ? 'bg-red-600/90 border-red-500 hover:bg-red-700'
+                        : 'bg-gray-800/90 border-gray-600 hover:bg-gray-700'
+                } text-white
+                         px-3 py-1.5 md:px-4 md:py-2
+                         text-xs md:text-sm
+                         rounded-md hover:scale-105
+                         transition-all duration-200
+                         flex items-center justify-center gap-1
+                         shadow-lg hover:shadow-xl
+                         border hover:border-gray-500
+                         group/watchlist ${className}`}
+                title="Go to My Watchlists"
+            >
+                <svg
+                    className={`w-4 h-4 group-hover/watchlist:scale-110 transition-transform duration-200 ${
+                        inWatchlist ? 'fill-current' : 'fill-none'
+                    }`}
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                 >
-                    <svg
-                        className={`w-4 h-4 group-hover/watchlist:scale-110 transition-transform duration-200 ${
-                            inWatchlist ? 'fill-current' : 'fill-none'
-                        }`}
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                        />
-                    </svg>
-                    {isInAnyList && listsContaining.length > 1 && (
-                        <span className="text-xs bg-white/20 px-1 rounded">
-                            +{listsContaining.length - 1}
-                        </span>
-                    )}
-                </button>
-
-                <ListDropdown
-                    content={content}
-                    isOpen={showDropdown}
-                    onClose={() => setShowDropdown(false)}
-                    position={dropdownPosition}
-                    variant="dropup"
-                />
-            </>
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                    />
+                </svg>
+                {isInAnyList && listsContaining.length > 1 && (
+                    <span className="text-xs bg-white/20 px-1 rounded">
+                        +{listsContaining.length - 1}
+                    </span>
+                )}
+            </button>
         )
     }
 
