@@ -178,8 +178,8 @@
 
 /* Vertical volume slider styling */
 input[type='range'].slider-vertical {
-    writing-mode: bt-lr; /* IE */
-    -webkit-appearance: slider-vertical; /* Webkit */
+    writing-mode: vertical-lr; /* Modern standard */
+    direction: rtl; /* Makes slider go bottom-to-top */
     width: 10px;
     height: 80px;
     background: transparent;
