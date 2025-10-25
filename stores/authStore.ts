@@ -97,6 +97,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 defaultWatchlist: newWatchlist,
                 userCreatedWatchlists: state.userCreatedWatchlists,
                 lastActive: Date.now(),
+                autoMute: state.autoMute ?? false,
+                defaultVolume: state.defaultVolume ?? 50,
+                childSafetyMode: state.childSafetyMode ?? false,
             })
                 .then(() => {
                     console.log('✅ [AuthStore] Saved to Firestore')
@@ -140,6 +143,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 defaultWatchlist: newWatchlist,
                 userCreatedWatchlists: state.userCreatedWatchlists,
                 lastActive: Date.now(),
+                autoMute: state.autoMute ?? false,
+                defaultVolume: state.defaultVolume ?? 50,
+                childSafetyMode: state.childSafetyMode ?? false,
             })
                 .then(() => {
                     console.log('✅ [AuthStore] Saved to Firestore')
@@ -185,6 +191,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 defaultWatchlist: state.defaultWatchlist,
                 userCreatedWatchlists: state.userCreatedWatchlists,
                 lastActive: Date.now(),
+                autoMute: state.autoMute ?? false,
+                defaultVolume: state.defaultVolume ?? 50,
+                childSafetyMode: state.childSafetyMode ?? false,
             })
                 .then(() => {
                     console.log('✅ [AuthStore] Saved to Firestore')
@@ -223,6 +232,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 defaultWatchlist: state.defaultWatchlist,
                 userCreatedWatchlists: state.userCreatedWatchlists,
                 lastActive: Date.now(),
+                autoMute: state.autoMute ?? false,
+                defaultVolume: state.defaultVolume ?? 50,
+                childSafetyMode: state.childSafetyMode ?? false,
             })
                 .then(() => {
                     console.log('✅ [AuthStore] Saved to Firestore')
@@ -268,6 +280,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 defaultWatchlist: state.defaultWatchlist,
                 userCreatedWatchlists: state.userCreatedWatchlists,
                 lastActive: Date.now(),
+                autoMute: state.autoMute ?? false,
+                defaultVolume: state.defaultVolume ?? 50,
+                childSafetyMode: state.childSafetyMode ?? false,
             })
                 .then(() => {
                     console.log('✅ [AuthStore] Saved to Firestore')
@@ -306,6 +321,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 defaultWatchlist: state.defaultWatchlist,
                 userCreatedWatchlists: state.userCreatedWatchlists,
                 lastActive: Date.now(),
+                autoMute: state.autoMute ?? false,
+                defaultVolume: state.defaultVolume ?? 50,
+                childSafetyMode: state.childSafetyMode ?? false,
             })
                 .then(() => {
                     console.log('✅ [AuthStore] Saved to Firestore')
@@ -353,6 +371,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 defaultWatchlist: state.defaultWatchlist,
                 userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
                 lastActive: Date.now(),
+                autoMute: state.autoMute ?? false,
+                defaultVolume: state.defaultVolume ?? 50,
+                childSafetyMode: state.childSafetyMode ?? false,
             })
                 .then(() => {
                     console.log('✅ [AuthStore] Saved to Firestore')
@@ -395,6 +416,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 defaultWatchlist: state.defaultWatchlist,
                 userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
                 lastActive: Date.now(),
+                autoMute: state.autoMute ?? false,
+                defaultVolume: state.defaultVolume ?? 50,
+                childSafetyMode: state.childSafetyMode ?? false,
             })
                 .then(() => {
                     console.log('✅ [AuthStore] Saved to Firestore')
@@ -436,6 +460,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 defaultWatchlist: state.defaultWatchlist,
                 userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
                 lastActive: Date.now(),
+                autoMute: state.autoMute ?? false,
+                defaultVolume: state.defaultVolume ?? 50,
+                childSafetyMode: state.childSafetyMode ?? false,
             })
                 .then(() => {
                     console.log('✅ [AuthStore] Saved to Firestore')
@@ -480,6 +507,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 defaultWatchlist: state.defaultWatchlist,
                 userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
                 lastActive: Date.now(),
+                autoMute: state.autoMute ?? false,
+                defaultVolume: state.defaultVolume ?? 50,
+                childSafetyMode: state.childSafetyMode ?? false,
             })
                 .then(() => {
                     console.log('✅ [AuthStore] Saved to Firestore')
@@ -521,6 +551,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 defaultWatchlist: state.defaultWatchlist,
                 userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
                 lastActive: Date.now(),
+                autoMute: state.autoMute ?? false,
+                defaultVolume: state.defaultVolume ?? 50,
+                childSafetyMode: state.childSafetyMode ?? false,
             })
                 .then(() => {
                     console.log('✅ [AuthStore] Saved to Firestore')
@@ -564,7 +597,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 defaultWatchlist: state.defaultWatchlist,
                 userCreatedWatchlists: state.userCreatedWatchlists,
                 lastActive: Date.now(),
-                autoMute: state.autoMute ?? true,
+                autoMute: state.autoMute ?? false,
                 defaultVolume: state.defaultVolume ?? 50,
                 childSafetyMode: state.childSafetyMode ?? false,
             })
