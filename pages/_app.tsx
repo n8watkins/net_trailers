@@ -15,6 +15,7 @@ import FirebaseCallTracker from '../components/FirebaseCallTracker'
 import AuthFlowDebugger from '../components/AuthFlowDebugger'
 import FirestoreTestButton from '../components/FirestoreTestButton'
 import { SessionSyncManager } from '../components/SessionSyncManager'
+import { reportWebVitals as reportWebVitalsUtil } from '../utils/performance'
 
 function MyApp({ Component, pageProps }: AppProps) {
     return (
@@ -39,6 +40,12 @@ function MyApp({ Component, pageProps }: AppProps) {
             </AuthProvider>
         </RecoilRoot>
     )
+}
+
+// Report Web Vitals (development only)
+// Logs performance metrics to console with color-coding
+export function reportWebVitals(metric: any) {
+    reportWebVitalsUtil(metric)
 }
 
 export default MyApp
