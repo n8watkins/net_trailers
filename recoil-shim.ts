@@ -8,6 +8,9 @@
  * Usage: Import from './recoil-shim' instead of 'recoil'
  */
 
+// Import from compat to use in this file
+import * as compat from './atoms/compat'
+
 // Re-export our compat layer hooks and symbols
 export {
     useRecoilState,
@@ -30,9 +33,6 @@ export {
     showDemoMessageState,
     contentLoadedSuccessfullyState,
 } from './atoms/compat'
-
-// Atom registry - maps atom keys to their compat symbols
-import * as compat from './atoms/compat'
 
 // Cache for created symbols to ensure consistency
 const symbolCache = new Map<string, symbol>()
@@ -101,9 +101,9 @@ export function RecoilRoot({ children }: { children: React.ReactNode }): React.R
 export default {
     atom,
     selector,
-    useRecoilState,
-    useRecoilValue,
-    useSetRecoilState,
-    useRecoilCallback,
+    useRecoilState: compat.useRecoilState,
+    useRecoilValue: compat.useRecoilValue,
+    useSetRecoilState: compat.useSetRecoilState,
+    useRecoilCallback: compat.useRecoilCallback,
     RecoilRoot,
 }
