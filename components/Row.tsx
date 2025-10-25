@@ -2,8 +2,7 @@ import React, { useRef, useState } from 'react'
 import { Content } from '../typings'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 import ContentCard from './ContentCard'
-import { useRecoilValue } from 'recoil'
-import { userSessionState } from '../atoms/userDataAtom'
+import { useSessionData } from '../hooks/useSessionData'
 import { filterDislikedContent } from '../utils/contentFilter'
 
 interface Props {
@@ -13,10 +12,10 @@ interface Props {
 function Row({ title, content }: Props) {
     const rowRef = useRef<HTMLDivElement>(null)
     const [isMoved, setIsMoved] = useState(false)
-    const userSession = useRecoilValue(userSessionState)
+    const sessionData = useSessionData()
 
     // Filter out disliked content
-    const filteredContent = filterDislikedContent(content, userSession.preferences.hiddenMovies)
+    const filteredContent = filterDislikedContent(content, sessionData.hiddenMovies)
 
     // Don't render if no content after filtering
     if (!filteredContent || filteredContent.length === 0) {
