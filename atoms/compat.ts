@@ -183,9 +183,22 @@ export const useRecoilState = (atom: any) => {
     if (atom === userSessionState) {
         return [
             {
-                watchlist: sessionData.watchlist,
-                ratings: sessionData.ratings,
-                userLists: sessionData.userLists,
+                isGuest: sessionType === 'guest',
+                guestId: sessionType === 'guest' ? activeSessionId : undefined,
+                userId: sessionType === 'authenticated' ? activeSessionId : undefined,
+                preferences: {
+                    defaultWatchlist: sessionData.defaultWatchlist,
+                    likedMovies: sessionData.likedMovies,
+                    hiddenMovies: sessionData.hiddenMovies,
+                    userCreatedWatchlists: sessionData.userCreatedWatchlists,
+                    lastActive: sessionData.lastActive,
+                    autoMute: sessionData.autoMute,
+                    defaultVolume: sessionData.defaultVolume,
+                    childSafetyMode: sessionData.childSafetyMode,
+                },
+                isActive: sessionData.isInitialized,
+                lastSyncedAt: Date.now(),
+                createdAt: Date.now(),
             },
             () => {
                 console.warn('Direct user session setting not supported - use sessionStore actions')
