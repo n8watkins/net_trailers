@@ -25,8 +25,7 @@ export function useToastDirect() {
 
     // Helper to show toast with title and optional message
     const addToast = (toast: ToastMessageInput) => {
-        const message = toast.message ? `${toast.title}: ${toast.message}` : toast.title
-        showToast(toast.type, message)
+        showToast(toast.type, toast.title, toast.message)
     }
 
     // Remove a specific toast
@@ -41,33 +40,27 @@ export function useToastDirect() {
 
     // Convenience methods for each toast type
     const showSuccess = (title: string, message?: string) => {
-        const toastMessage = message ? `${title}: ${message}` : title
-        showToast('success', toastMessage)
+        showToast('success', title, message)
     }
 
     const showError = (title: string, message?: string) => {
-        const toastMessage = message ? `${title}: ${message}` : title
-        showToast('error', toastMessage)
+        showToast('error', title, message)
     }
 
     const showWatchlistAdd = (title: string, message?: string) => {
-        const toastMessage = message ? `${title}: ${message}` : title
-        showToast('watchlist-add', toastMessage)
+        showToast('watchlist-add', title, message)
     }
 
     const showWatchlistRemove = (title: string, message?: string) => {
-        const toastMessage = message ? `${title}: ${message}` : title
-        showToast('watchlist-remove', toastMessage)
+        showToast('watchlist-remove', title, message)
     }
 
     const showContentHidden = (title: string, message?: string) => {
-        const toastMessage = message ? `${title}: ${message}` : title
-        showToast('content-hidden', toastMessage)
+        showToast('content-hidden', title, message)
     }
 
     const showContentShown = (title: string, message?: string) => {
-        const toastMessage = message ? `${title}: ${message}` : title
-        showToast('content-shown', toastMessage)
+        showToast('content-shown', title, message)
     }
 
     return {

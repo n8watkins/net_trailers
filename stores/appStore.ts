@@ -28,7 +28,8 @@ export type ToastType =
 export interface ToastMessage {
     id: string
     type: ToastType
-    message: string
+    title: string
+    message?: string
     timestamp: number
 }
 
@@ -122,7 +123,7 @@ export interface AppActions {
     setAuthModalMode: (mode: 'signin' | 'signup') => void
 
     // Toast actions
-    showToast: (type: ToastType, message: string) => void
+    showToast: (type: ToastType, title: string, message?: string) => void
     dismissToast: (id: string) => void
 
     // Loading actions
@@ -365,10 +366,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
     },
 
     // Toast actions
-    showToast: (type: ToastType, message: string) => {
+    showToast: (type: ToastType, title: string, message?: string) => {
         const toast: ToastMessage = {
             id: generateToastId(),
             type,
+            title,
             message,
             timestamp: typeof window !== 'undefined' ? Date.now() : 0,
         }
@@ -382,7 +384,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             get().dismissToast(toast.id)
         }, 5000)
 
-        console.log('🍞 [AppStore] Toast shown:', { type, message })
+        console.log('🍞 [AppStore] Toast shown:', { type, title, message })
     },
 
     dismissToast: (id: string) => {

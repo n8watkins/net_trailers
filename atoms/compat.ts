@@ -142,13 +142,14 @@ export const useRecoilState = (atom: any) => {
         return [
             toasts,
             (value: any) => {
-                // Handle toast array updates
-                if (Array.isArray(value)) {
-                    // Clear existing and add new toasts
-                    // This is a simplified approach - in reality we'd need better logic
-                    console.warn(
-                        'Direct toast array setting not fully supported in compatibility layer'
-                    )
+                // Handle functional updates from useToast
+                if (typeof value === 'function') {
+                    const newToasts = value(toasts)
+                    // Directly update the appStore toasts array
+                    useAppStore.setState({ toasts: newToasts })
+                } else if (Array.isArray(value)) {
+                    // Direct array replacement
+                    useAppStore.setState({ toasts: value })
                 }
             },
         ]
