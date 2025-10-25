@@ -8,8 +8,7 @@ import Modal from '../../../components/Modal'
 import ContentCard from '../../../components/ContentCard'
 import { Content } from '../../../typings'
 import { movieCache } from '../../../utils/apiCache'
-import { useRecoilValue } from 'recoil'
-import { userSessionState } from '../../../atoms/userDataAtom'
+import { useSessionData } from '../../../hooks/useSessionData'
 import { filterDislikedContent, filterContentByAdultFlag } from '../../../utils/contentFilter'
 import { useChildSafety } from '../../../hooks/useChildSafety'
 
@@ -26,7 +25,7 @@ const GenrePage: NextPage<GenrePageProps> = ({
 }) => {
     const router = useRouter()
     const { type, id, name, title } = router.query
-    const userSession = useRecoilValue(userSessionState)
+    const sessionData = useSessionData()
     const [content, setContent] = useState<Content[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -55,13 +54,13 @@ const GenrePage: NextPage<GenrePageProps> = ({
 
     const contentToRender = useMemo(() => {
         // First filter out disliked content
-        let filtered = filterDislikedContent(content, userSession.preferences.hiddenMovies)
+        let filtered = filterDislikedContent(content, sessionData.hiddenMovies)
 
         // Then apply Child Safety Mode filtering if enabled
         filtered = filterContentByAdultFlag(filtered, childSafetyEnabled)
 
         return filtered
-    }, [content, userSession.preferences.hiddenMovies, childSafetyEnabled])
+    }, [content, sessionData.hiddenMovies, childSafetyEnabled])
 
     // Load genre content with traditional infinite scroll
     const loadGenreContent = useCallback(
