@@ -1,7 +1,7 @@
 // Initialize Firebase
 import { initializeApp, getApp, getApps } from 'firebase/app'
-import { getFirestore } from 'firebase/firestore'
-import { getAuth, onAuthStateChanged } from 'firebase/auth'
+import { initializeFirestore, persistentLocalCache } from 'firebase/firestore'
+import { getAuth } from 'firebase/auth'
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -22,35 +22,17 @@ if (!firebaseConfig.apiKey) {
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp()
-const db = getFirestore(app)
+
+// Initialize Firestore with persistence enabled from the start
+// This must be done BEFORE any Firestore operations
+const db = initializeFirestore(app, {
+    localCache: persistentLocalCache({
+        // Optional: Configure cache size (default is 40MB)
+        // cacheSizeBytes: 40 * 1024 * 1024,
+    }),
+})
+
 const auth = getAuth(app)
-
-// Enable offline persistence for Firestore ONLY when authenticated
-// This prevents Firestore errors when user is not authenticated
-if (typeof window !== 'undefined') {
-    let persistenceEnabled = false
-
-    // Only enable persistence after authentication is confirmed
-    onAuthStateChanged(auth, (user) => {
-        if (user && !persistenceEnabled) {
-            // User is authenticated, enable persistence
-            import('firebase/firestore').then(({ enableIndexedDbPersistence }) => {
-                enableIndexedDbPersistence(db).catch((err) => {
-                    if (err.code === 'failed-precondition') {
-                        // Multiple tabs open, persistence can only be enabled in one tab at a time
-                        console.warn('Firestore persistence failed: Multiple tabs open')
-                    } else if (err.code === 'unimplemented') {
-                        // The current browser doesn't support persistence
-                        console.warn('Firestore persistence not supported in this browser')
-                    } else {
-                        console.warn('Firestore persistence error:', err)
-                    }
-                })
-                persistenceEnabled = true
-            })
-        }
-    })
-}
 
 export default app
 export { auth, db }
