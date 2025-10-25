@@ -21,8 +21,7 @@ import GenresDropdown from './GenresDropdown'
 import MyListsDropdown from './MyListsDropdown'
 import { useToast } from '../hooks/useToast'
 import { useDebugSettings } from './DebugControls'
-import { useRecoilState } from 'recoil'
-import { authModalState } from '../atoms/authModalAtom'
+import { useAppStore } from '../stores/appStore'
 import { ChildSafetyIndicator } from './ChildSafetyIndicator'
 import { GuestModeIndicator } from './GuestModeIndicator'
 
@@ -37,7 +36,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
     const [showSearch, setShowSearch] = useState(false)
     const [showMobileMenu, setShowMobileMenu] = useState(false)
     const [isSearchExpanded, setIsSearchExpanded] = useState(false)
-    const [authModal, setAuthModal] = useRecoilState(authModalState)
+    const { authModal, openAuthModal, closeAuthModal } = useAppStore()
     const router = useRouter()
     const { user } = useAuth()
     const { showSuccess, showError, showWatchlistAdd, showWatchlistRemove } = useToast()
@@ -211,12 +210,8 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
 
                     {/* Avatar Dropdown */}
                     <AvatarDropdown
-                        onOpenAuthModal={() => {
-                            setAuthModal({ isOpen: true, mode: 'signin' })
-                        }}
-                        onOpenSignUpModal={() => {
-                            setAuthModal({ isOpen: true, mode: 'signup' })
-                        }}
+                        onOpenAuthModal={() => openAuthModal('signin')}
+                        onOpenSignUpModal={() => openAuthModal('signup')}
                         onOpenAboutModal={onOpenAboutModal}
                         onOpenTutorial={onOpenTutorial}
                         onOpenKeyboardShortcuts={onOpenKeyboardShortcuts}
@@ -391,7 +386,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
             {/* Auth Modal - Moved outside header to fix positioning */}
             <AuthModal
                 isOpen={authModal.isOpen}
-                onClose={() => setAuthModal({ ...authModal, isOpen: false })}
+                onClose={closeAuthModal}
                 initialMode={authModal.mode}
             />
         </>
