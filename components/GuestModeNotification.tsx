@@ -1,6 +1,5 @@
 import { UserCircleIcon } from '@heroicons/react/24/outline'
-import { useRecoilState } from 'recoil'
-import { authModalState } from '../atoms/authModalAtom'
+import { useAppStore } from '../stores/appStore'
 
 interface GuestModeNotificationProps {
     onOpenTutorial?: () => void
@@ -16,7 +15,7 @@ export function GuestModeNotification({
     onOpenTutorial,
     align = 'center',
 }: GuestModeNotificationProps) {
-    const [authModal, setAuthModal] = useRecoilState(authModalState)
+    const { openAuthModal } = useAppStore()
 
     const handleLimitationsClick = () => {
         if (onOpenTutorial) {
@@ -25,7 +24,7 @@ export function GuestModeNotification({
     }
 
     const handleCreateAccountClick = () => {
-        setAuthModal({ isOpen: true, mode: 'signup' })
+        openAuthModal('signup')
     }
 
     return (

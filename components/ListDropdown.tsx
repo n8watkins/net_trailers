@@ -2,10 +2,10 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Content, getTitle } from '../typings'
 import useUserData from '../hooks/useUserData'
 import { useToast } from '../hooks/useToast'
-import { useRecoilState, useSetRecoilState } from 'recoil'
+import { useSetRecoilState } from 'recoil'
 import { listModalState } from '../atoms/listModalAtom'
-import { authModalState } from '../atoms/authModalAtom'
 import { useAuthStatus } from '../hooks/useAuthStatus'
+import { useAppStore } from '../stores/appStore'
 import { EyeIcon, PlusIcon, CheckIcon, MinusIcon, LockClosedIcon } from '@heroicons/react/24/solid'
 
 interface ListDropdownProps {
@@ -34,7 +34,7 @@ function ListDropdown({
 
     const { showSuccess, showWatchlistAdd, showWatchlistRemove } = useToast()
     const setListModal = useSetRecoilState(listModalState)
-    const [authModal, setAuthModal] = useRecoilState(authModalState)
+    const { openAuthModal } = useAppStore()
     const { isGuest } = useAuthStatus()
 
     const [showCreateInput, setShowCreateInput] = useState(false)
@@ -163,7 +163,7 @@ function ListDropdown({
                 <button
                     onClick={() => {
                         onClose()
-                        setAuthModal({ isOpen: true, mode: 'signup' })
+                        openAuthModal('signup')
                     }}
                     className="w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-700/50 transition-colors text-left border-b border-gray-600"
                 >

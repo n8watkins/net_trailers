@@ -1,8 +1,7 @@
 import { ShieldCheckIcon } from '@heroicons/react/24/solid'
 import { useChildSafety } from '../hooks/useChildSafety'
 import { useAuthStatus } from '../hooks/useAuthStatus'
-import { useRecoilState } from 'recoil'
-import { authModalState } from '../atoms/authModalAtom'
+import { useAppStore } from '../stores/appStore'
 
 /**
  * Visual indicator that displays when Child Safety Mode is active
@@ -21,7 +20,7 @@ import { authModalState } from '../atoms/authModalAtom'
 export function ChildSafetyIndicator() {
     const { isEnabled, isLoading } = useChildSafety()
     const { isGuest } = useAuthStatus()
-    const [authModal, setAuthModal] = useRecoilState(authModalState)
+    const { openAuthModal } = useAppStore()
 
     // Don't render if loading or disabled
     if (isLoading || !isEnabled) {
@@ -31,7 +30,7 @@ export function ChildSafetyIndicator() {
     const handleClick = () => {
         // If user is a guest, show auth modal to sign up
         if (isGuest) {
-            setAuthModal({ isOpen: true, mode: 'signup' })
+            openAuthModal('signup')
         }
         // If authenticated, do nothing (just visual indicator)
         // In the future, this could open settings or PIN protection

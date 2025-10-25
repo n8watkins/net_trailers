@@ -66,6 +66,12 @@ export interface ListModalState {
     mode?: 'manage' | 'create' | 'add'
 }
 
+// Auth modal state
+export interface AuthModalState {
+    isOpen: boolean
+    mode: 'signin' | 'signup'
+}
+
 // App state interface
 export interface AppState {
     // Modal state
@@ -73,6 +79,9 @@ export interface AppState {
 
     // List modal state
     listModal: ListModalState
+
+    // Auth modal state
+    authModal: AuthModalState
 
     // Toast notifications
     toasts: ToastMessage[]
@@ -106,6 +115,11 @@ export interface AppActions {
     openListModal: (content?: Content, mode?: 'manage' | 'create' | 'add') => void
     closeListModal: () => void
     setListModalMode: (mode: 'manage' | 'create' | 'add') => void
+
+    // Auth modal actions
+    openAuthModal: (mode?: 'signin' | 'signup') => void
+    closeAuthModal: () => void
+    setAuthModalMode: (mode: 'signin' | 'signup') => void
 
     // Toast actions
     showToast: (type: ToastType, message: string) => void
@@ -179,6 +193,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
         isOpen: false,
         content: null,
         mode: undefined,
+    },
+
+    authModal: {
+        isOpen: false,
+        mode: 'signin',
     },
 
     toasts: [],
@@ -306,6 +325,40 @@ export const useAppStore = create<AppStore>((set, get) => ({
         set((state) => ({
             listModal: {
                 ...state.listModal,
+                mode,
+            },
+        }))
+    },
+
+    // Auth modal actions
+    openAuthModal: (mode: 'signin' | 'signup' = 'signin') => {
+        startTransition(() => {
+            set({
+                authModal: {
+                    isOpen: true,
+                    mode,
+                },
+            })
+            console.log('✅ [AppStore] Auth modal opened:', mode)
+        })
+    },
+
+    closeAuthModal: () => {
+        startTransition(() => {
+            set({
+                authModal: {
+                    isOpen: false,
+                    mode: 'signin',
+                },
+            })
+            console.log('❌ [AppStore] Auth modal closed')
+        })
+    },
+
+    setAuthModalMode: (mode: 'signin' | 'signup') => {
+        set((state) => ({
+            authModal: {
+                ...state.authModal,
                 mode,
             },
         }))
