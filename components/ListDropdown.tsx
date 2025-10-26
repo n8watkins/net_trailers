@@ -139,103 +139,112 @@ function ListDropdown({
     return createPortal(
         <div
             ref={dropdownRef}
-            className={`fixed w-64 bg-[#141414] border border-gray-600 rounded-lg shadow-2xl z-[1400] overflow-hidden`}
-            style={{
-                left: Math.max(8, Math.min(position.x, window.innerWidth - 264)), // Keep within viewport with 8px margin
-                ...(variant === 'dropup'
-                    ? { bottom: window.innerHeight - position.y + 4 } // Reduced gap to 4px for better hover continuity
-                    : { top: position.y + 8 }), // 8px gap below button
-            }}
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
+            style={{
+                position: 'fixed',
+                left: Math.max(8, Math.min(position.x, window.innerWidth - 264)),
+                ...(variant === 'dropup'
+                    ? { bottom: window.innerHeight - position.y - 16 } // Extend down by 16px to overlap with button area
+                    : { top: position.y + 8 }),
+                width: '256px',
+                zIndex: 1400,
+            }}
         >
-            {/* My List Option */}
-            <button
-                onClick={handleWatchlistToggle}
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-700/50 transition-colors text-left border-b border-gray-600"
-            >
-                <div className="flex items-center space-x-3">
-                    <EyeIcon className="w-5 h-5 text-blue-400" />
-                    <span className="text-white font-medium">My List</span>
-                </div>
+            {/* Invisible hover bridge */}
+            {variant === 'dropup' && <div className="h-5 w-full" />}
 
-                <div className="flex items-center space-x-2">
-                    <span className="text-xs text-gray-400">{defaultWatchlist.length}</span>
-                    {inWatchlist ? (
-                        <CheckIcon className="w-4 h-4 text-green-400" />
-                    ) : (
-                        <PlusIcon className="w-4 h-4 text-gray-400" />
-                    )}
-                </div>
-            </button>
-
-            {/* Create New List - Auth Gate */}
-            {isGuest ? (
+            {/* Actual dropdown content */}
+            <div className="bg-[#141414] border border-gray-600 rounded-lg shadow-2xl overflow-hidden">
+                {/* My List Option */}
                 <button
-                    onClick={() => {
-                        onClose()
-                        openAuthModal('signup')
-                    }}
-                    className="w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-700/50 transition-colors text-left border-b border-gray-600"
+                    onClick={handleWatchlistToggle}
+                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-700/50 transition-colors text-left border-b border-gray-600"
                 >
-                    <LockClosedIcon className="w-5 h-5 text-gray-400" />
-                    <span className="text-white font-medium">Sign In to Create Lists</span>
-                </button>
-            ) : !showCreateInput ? (
-                <button
-                    onClick={() => setShowCreateInput(true)}
-                    className="w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-700/50 transition-colors text-left border-b border-gray-600"
-                >
-                    <PlusIcon className="w-5 h-5 text-green-400" />
-                    <span className="text-white font-medium">Create New List</span>
-                </button>
-            ) : (
-                <div className="p-4 border-b border-gray-600">
-                    <input
-                        type="text"
-                        placeholder="List name..."
-                        value={newListName}
-                        onChange={(e) => setNewListName(e.target.value)}
-                        onKeyDown={handleKeyPress}
-                        className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                        autoFocus
-                    />
-                    <div className="flex space-x-2 mt-3">
-                        <button
-                            onClick={handleCreateList}
-                            disabled={!newListName.trim()}
-                            className="flex-1 px-3 py-1.5 bg-green-600 text-white rounded text-sm font-medium transition-colors hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            Create
-                        </button>
-                        <button
-                            onClick={() => {
-                                setShowCreateInput(false)
-                                setNewListName('')
-                            }}
-                            className="flex-1 px-3 py-1.5 bg-gray-600 text-white rounded text-sm font-medium transition-colors hover:bg-gray-700"
-                        >
-                            Cancel
-                        </button>
+                    <div className="flex items-center space-x-3">
+                        <EyeIcon className="w-5 h-5 text-blue-400" />
+                        <span className="text-white font-medium">My List</span>
                     </div>
-                </div>
-            )}
 
-            {/* Manage All Lists */}
-            <button
-                onClick={handleManageAllLists}
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-700/50 transition-colors text-left"
-            >
-                <span className="text-white font-medium">Manage All Lists</span>
-                {listsContaining.length > 0 && (
                     <div className="flex items-center space-x-2">
-                        <span className="text-xs text-gray-400">
-                            In {listsContaining.length} list{listsContaining.length > 1 ? 's' : ''}
-                        </span>
-                        <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                        <span className="text-xs text-gray-400">{defaultWatchlist.length}</span>
+                        {inWatchlist ? (
+                            <CheckIcon className="w-4 h-4 text-green-400" />
+                        ) : (
+                            <PlusIcon className="w-4 h-4 text-gray-400" />
+                        )}
+                    </div>
+                </button>
+
+                {/* Create New List - Auth Gate */}
+                {isGuest ? (
+                    <button
+                        onClick={() => {
+                            onClose()
+                            openAuthModal('signup')
+                        }}
+                        className="w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-700/50 transition-colors text-left border-b border-gray-600"
+                    >
+                        <LockClosedIcon className="w-5 h-5 text-gray-400" />
+                        <span className="text-white font-medium">Sign In to Create Lists</span>
+                    </button>
+                ) : !showCreateInput ? (
+                    <button
+                        onClick={() => setShowCreateInput(true)}
+                        className="w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-700/50 transition-colors text-left border-b border-gray-600"
+                    >
+                        <PlusIcon className="w-5 h-5 text-green-400" />
+                        <span className="text-white font-medium">Create New List</span>
+                    </button>
+                ) : (
+                    <div className="p-4 border-b border-gray-600">
+                        <input
+                            type="text"
+                            placeholder="List name..."
+                            value={newListName}
+                            onChange={(e) => setNewListName(e.target.value)}
+                            onKeyDown={handleKeyPress}
+                            className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                            autoFocus
+                        />
+                        <div className="flex space-x-2 mt-3">
+                            <button
+                                onClick={handleCreateList}
+                                disabled={!newListName.trim()}
+                                className="flex-1 px-3 py-1.5 bg-green-600 text-white rounded text-sm font-medium transition-colors hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Create
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowCreateInput(false)
+                                    setNewListName('')
+                                }}
+                                className="flex-1 px-3 py-1.5 bg-gray-600 text-white rounded text-sm font-medium transition-colors hover:bg-gray-700"
+                            >
+                                Cancel
+                            </button>
+                        </div>
                     </div>
                 )}
-            </button>
+
+                {/* Manage All Lists */}
+                <button
+                    onClick={handleManageAllLists}
+                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-700/50 transition-colors text-left"
+                >
+                    <span className="text-white font-medium">Manage All Lists</span>
+                    {listsContaining.length > 0 && (
+                        <div className="flex items-center space-x-2">
+                            <span className="text-xs text-gray-400">
+                                In {listsContaining.length} list
+                                {listsContaining.length > 1 ? 's' : ''}
+                            </span>
+                            <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                        </div>
+                    )}
+                </button>
+            </div>
         </div>,
         document.body
     )
