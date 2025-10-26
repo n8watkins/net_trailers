@@ -73,25 +73,26 @@ function WatchLaterButton({
     }
 
     if (variant === 'thumbnail') {
+        const handleMouseEnter = () => {
+            if (buttonRef.current) {
+                const rect = buttonRef.current.getBoundingClientRect()
+                // Right-align the dropdown (256px wide) to the button's right edge
+                setDropdownPosition({
+                    x: rect.right - 256, // Dropdown width is 256px (w-64)
+                    y: rect.top, // Use top instead of bottom for higher positioning
+                })
+            }
+            setShowDropdown(true)
+            onDropdownStateChange?.(true)
+        }
+
+        const handleMouseLeave = () => {
+            setShowDropdown(false)
+            onDropdownStateChange?.(false)
+        }
+
         return (
-            <div
-                onMouseEnter={(e) => {
-                    if (buttonRef.current) {
-                        const rect = buttonRef.current.getBoundingClientRect()
-                        // Right-align the dropdown (256px wide) to the button's right edge
-                        setDropdownPosition({
-                            x: rect.right - 256, // Dropdown width is 256px (w-64)
-                            y: rect.top, // Use top instead of bottom for higher positioning
-                        })
-                    }
-                    setShowDropdown(true)
-                    onDropdownStateChange?.(true)
-                }}
-                onMouseLeave={() => {
-                    setShowDropdown(false)
-                    onDropdownStateChange?.(false)
-                }}
-            >
+            <div onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
                 <button
                     ref={buttonRef}
                     onClick={(e) => {
@@ -122,6 +123,8 @@ function WatchLaterButton({
                     }}
                     position={dropdownPosition}
                     variant="dropup"
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
                 />
             </div>
         )

@@ -15,6 +15,8 @@ interface ListDropdownProps {
     onClose: () => void
     position: { x: number; y: number }
     variant?: 'dropdown' | 'dropup'
+    onMouseEnter?: () => void
+    onMouseLeave?: () => void
 }
 
 function ListDropdown({
@@ -23,6 +25,8 @@ function ListDropdown({
     onClose,
     position,
     variant = 'dropdown',
+    onMouseEnter,
+    onMouseLeave,
 }: ListDropdownProps) {
     const {
         getListsContaining,
@@ -139,9 +143,11 @@ function ListDropdown({
             style={{
                 left: Math.max(8, Math.min(position.x, window.innerWidth - 264)), // Keep within viewport with 8px margin
                 ...(variant === 'dropup'
-                    ? { bottom: window.innerHeight - position.y + 16 } // Position above button's top with 16px gap
+                    ? { bottom: window.innerHeight - position.y + 4 } // Reduced gap to 4px for better hover continuity
                     : { top: position.y + 8 }), // 8px gap below button
             }}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
         >
             {/* My List Option */}
             <button
