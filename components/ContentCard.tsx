@@ -13,6 +13,7 @@ import WatchLaterButton from './WatchLaterButton'
 import { prefetchMovieDetails } from '../utils/prefetchCache'
 import useUserData from '../hooks/useUserData'
 import { useToast } from '../hooks/useToast'
+import ToolTipMod from './ToolTipMod'
 
 interface Props {
     content?: Content
@@ -204,94 +205,99 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                 }`}
                             >
                                 {/* Like Button - Toggle */}
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        if (content) {
-                                            if (liked) {
-                                                removeLikedMovie(content.id)
-                                                showSuccess(
-                                                    `Removed ${getTitle(content)} from Liked`
-                                                )
-                                            } else {
-                                                addLikedMovie(content)
-                                                showSuccess(`Added ${getTitle(content)} to Liked`)
+                                <ToolTipMod title={liked ? 'Remove from Liked' : 'Like'}>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            if (content) {
+                                                if (liked) {
+                                                    removeLikedMovie(content.id)
+                                                    showSuccess(
+                                                        `Removed ${getTitle(content)} from Liked`
+                                                    )
+                                                } else {
+                                                    addLikedMovie(content)
+                                                    showSuccess(
+                                                        `Added ${getTitle(content)} to Liked`
+                                                    )
+                                                }
                                             }
-                                        }
-                                    }}
-                                    className={`p-3 rounded-full border-2 transition-all duration-200 ${
-                                        liked
-                                            ? 'border-green-400/60 bg-green-500/20 hover:bg-green-500/30'
-                                            : 'border-white/30 bg-black/85 hover:bg-black'
-                                    } text-white`}
-                                    title={liked ? 'Remove from Liked' : 'Like'}
-                                >
-                                    <HandThumbUpIcon
-                                        className={`h-5 w-5 ${liked ? 'text-green-400' : ''}`}
-                                    />
-                                </button>
+                                        }}
+                                        className={`p-3 rounded-full border-2 transition-all duration-200 ${
+                                            liked
+                                                ? 'border-green-400/60 bg-green-500/20 hover:bg-green-500/30'
+                                                : 'border-white/30 bg-black/85 hover:bg-black'
+                                        } text-white`}
+                                    >
+                                        <HandThumbUpIcon
+                                            className={`h-5 w-5 ${liked ? 'text-green-400' : ''}`}
+                                        />
+                                    </button>
+                                </ToolTipMod>
 
                                 {/* Hide Button - Toggle */}
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        if (content) {
-                                            if (hidden) {
-                                                removeHiddenMovie(content.id)
-                                                showContentShown(
-                                                    `${getTitle(content)} Shown`,
-                                                    'Will appear in recommendations again'
-                                                )
-                                            } else {
-                                                addHiddenMovie(content)
-                                                showContentHidden(
-                                                    `${getTitle(content)} Hidden`,
-                                                    'Hidden from recommendations'
-                                                )
+                                <ToolTipMod title={hidden ? 'Show' : 'Hide'}>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            if (content) {
+                                                if (hidden) {
+                                                    removeHiddenMovie(content.id)
+                                                    showContentShown(
+                                                        `${getTitle(content)} Shown`,
+                                                        'Will appear in recommendations again'
+                                                    )
+                                                } else {
+                                                    addHiddenMovie(content)
+                                                    showContentHidden(
+                                                        `${getTitle(content)} Hidden`,
+                                                        'Hidden from recommendations'
+                                                    )
+                                                }
                                             }
-                                        }
-                                    }}
-                                    className={`p-3 rounded-full border-2 transition-all duration-200 ${
-                                        hidden
-                                            ? 'border-orange-400/60 bg-orange-500/20 hover:bg-orange-500/30'
-                                            : 'border-white/30 bg-black/85 hover:bg-black'
-                                    } text-white`}
-                                    title={hidden ? 'Show in Recommendations' : 'Hide'}
-                                >
-                                    {hidden ? (
-                                        <EyeSlashIcon className="h-5 w-5 text-orange-400" />
-                                    ) : (
-                                        <EyeIcon className="h-5 w-5" />
-                                    )}
-                                </button>
+                                        }}
+                                        className={`p-3 rounded-full border-2 transition-all duration-200 ${
+                                            hidden
+                                                ? 'border-orange-400/60 bg-orange-500/20 hover:bg-orange-500/30'
+                                                : 'border-white/30 bg-black/85 hover:bg-black'
+                                        } text-white`}
+                                    >
+                                        {hidden ? (
+                                            <EyeSlashIcon className="h-5 w-5 text-orange-400" />
+                                        ) : (
+                                            <EyeIcon className="h-5 w-5" />
+                                        )}
+                                    </button>
+                                </ToolTipMod>
                             </div>
 
                             {/* Bookmark Icon - Visual trigger for hover menu */}
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation()
-                                }}
-                                className={`p-3 rounded-full border-2 transition-all duration-200 ${
-                                    showHoverActions
-                                        ? 'bg-red-600 border-red-500 text-black'
-                                        : 'bg-black border-white/30 text-white hover:bg-red-600 hover:border-red-500 hover:text-black'
-                                }`}
-                                title="Quick Actions"
-                            >
-                                <svg
-                                    className="w-5 h-5"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
+                            <ToolTipMod title="Quick Actions">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                    }}
+                                    className={`p-3 rounded-full border-2 transition-all duration-200 ${
+                                        showHoverActions
+                                            ? 'bg-red-600 border-red-500 text-black'
+                                            : 'bg-black border-white/30 text-white hover:bg-red-600 hover:border-red-500 hover:text-black'
+                                    }`}
                                 >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                                    />
-                                </svg>
-                            </button>
+                                    <svg
+                                        className="w-5 h-5"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                                        />
+                                    </svg>
+                                </button>
+                            </ToolTipMod>
                         </div>
 
                         {/* WatchLaterButton - Dropdown menu for list management */}
