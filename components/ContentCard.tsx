@@ -205,7 +205,10 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                 }`}
                             >
                                 {/* Like Button - Toggle */}
-                                <ToolTipMod title={liked ? 'Remove from Liked' : 'Like'}>
+                                <ToolTipMod
+                                    title={liked ? 'Remove from Liked' : 'Like'}
+                                    placement="right"
+                                >
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation()
@@ -223,20 +226,24 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                                 }
                                             }
                                         }}
-                                        className={`p-3 rounded-full border-2 transition-all duration-200 ${
+                                        className={`group/like p-3 rounded-full border-2 transition-all duration-200 ${
                                             liked
                                                 ? 'border-green-400/60 bg-green-500/20 hover:bg-green-500/30'
-                                                : 'border-white/30 bg-black/85 hover:bg-black'
-                                        } text-white`}
+                                                : 'border-white/40 bg-black/85 hover:bg-black hover:border-white'
+                                        }`}
                                     >
                                         <HandThumbUpIcon
-                                            className={`h-5 w-5 ${liked ? 'text-green-400' : ''}`}
+                                            className={`h-5 w-5 transition-colors duration-200 ${
+                                                liked
+                                                    ? 'text-green-400'
+                                                    : 'text-white/60 group-hover/like:text-white'
+                                            }`}
                                         />
                                     </button>
                                 </ToolTipMod>
 
                                 {/* Hide Button - Toggle */}
-                                <ToolTipMod title={hidden ? 'Show' : 'Hide'}>
+                                <ToolTipMod title={hidden ? 'Show' : 'Hide'} placement="right">
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation()
@@ -256,16 +263,16 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                                 }
                                             }
                                         }}
-                                        className={`p-3 rounded-full border-2 transition-all duration-200 ${
+                                        className={`group/hide p-3 rounded-full border-2 transition-all duration-200 ${
                                             hidden
                                                 ? 'border-orange-400/60 bg-orange-500/20 hover:bg-orange-500/30'
-                                                : 'border-white/30 bg-black/85 hover:bg-black'
-                                        } text-white`}
+                                                : 'border-white/40 bg-black/85 hover:bg-black hover:border-white'
+                                        }`}
                                     >
                                         {hidden ? (
                                             <EyeSlashIcon className="h-5 w-5 text-orange-400" />
                                         ) : (
-                                            <EyeIcon className="h-5 w-5" />
+                                            <EyeIcon className="h-5 w-5 text-white/60 group-hover/hide:text-white transition-colors duration-200" />
                                         )}
                                     </button>
                                 </ToolTipMod>

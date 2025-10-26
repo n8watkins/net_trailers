@@ -5,9 +5,10 @@ interface ToolTipModProps {
     children: React.ReactElement
     title: string
     anchorEl?: HTMLElement | null
+    placement?: TooltipProps['placement']
 }
 
-function ToolTipMod({ children, title }: ToolTipModProps) {
+function ToolTipMod({ children, title, placement = 'top' }: ToolTipModProps) {
     // Don't render tooltip if title is empty
     if (!title) {
         return children
@@ -16,7 +17,7 @@ function ToolTipMod({ children, title }: ToolTipModProps) {
     return (
         <Tooltip
             title={title}
-            placement="top"
+            placement={placement}
             arrow
             enterDelay={200}
             leaveDelay={0}
