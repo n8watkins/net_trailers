@@ -171,9 +171,9 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                             onMouseEnter={() => setShowHoverActions(true)}
                             onMouseLeave={() => setShowHoverActions(false)}
                         >
-                            {/* Hover Action Buttons - Fade in above bookmark */}
+                            {/* Hover Action Buttons - Fade in above bookmark (vertical stack) */}
                             <div
-                                className={`absolute bottom-full mb-2 right-0 flex gap-2 transition-all duration-300 ${
+                                className={`absolute bottom-full mb-1 right-0 flex flex-col gap-2 transition-all duration-300 ${
                                     showHoverActions
                                         ? 'opacity-100 translate-y-0'
                                         : 'opacity-0 translate-y-2 pointer-events-none'
@@ -190,10 +190,10 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                             )
                                         }
                                     }}
-                                    className="p-2 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-all duration-200"
+                                    className="p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-all duration-200"
                                     title="Add to My List"
                                 >
-                                    <PlusIcon className="h-4 w-4" />
+                                    <PlusIcon className="h-5 w-5" />
                                 </button>
 
                                 {/* Like Button */}
@@ -203,10 +203,10 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                         // TODO: Implement like functionality
                                         console.log('Like clicked')
                                     }}
-                                    className="p-2 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-all duration-200"
+                                    className="p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-all duration-200"
                                     title="Like"
                                 >
-                                    <HeartIcon className="h-4 w-4" />
+                                    <HeartIcon className="h-5 w-5" />
                                 </button>
 
                                 {/* Hide Button */}
@@ -216,10 +216,10 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                         // TODO: Implement hide functionality
                                         console.log('Hide clicked')
                                     }}
-                                    className="p-2 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-all duration-200"
+                                    className="p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-all duration-200"
                                     title="Hide"
                                 >
-                                    <EyeSlashIcon className="h-4 w-4" />
+                                    <EyeSlashIcon className="h-5 w-5" />
                                 </button>
                             </div>
 
