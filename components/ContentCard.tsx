@@ -191,7 +191,7 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                         >
                             {/* Hover Action Buttons - Fade in above bookmark (vertical stack) */}
                             <div
-                                className={`absolute bottom-full mb-1 right-0 flex flex-col gap-2 transition-all duration-300 ${
+                                className={`absolute bottom-full pb-1 right-0 flex flex-col gap-2 transition-all duration-300 ${
                                     showHoverActions
                                         ? 'opacity-100 translate-y-0'
                                         : 'opacity-0 translate-y-2 pointer-events-none'
@@ -261,7 +261,7 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                 onClick={(e) => {
                                     e.stopPropagation()
                                 }}
-                                className={`p-2 rounded-full border-2 transition-all duration-200 ${
+                                className={`p-3 rounded-full border-2 transition-all duration-200 ${
                                     showHoverActions
                                         ? 'bg-red-600 border-red-500 text-black'
                                         : 'bg-black border-white/30 text-white hover:bg-red-600 hover:border-red-500 hover:text-black'
@@ -269,7 +269,7 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                 title="Quick Actions"
                             >
                                 <svg
-                                    className="w-4 h-4"
+                                    className="w-5 h-5"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
                                     fill="none"
