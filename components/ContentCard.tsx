@@ -279,44 +279,38 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                             </div>
 
                             {/* Bookmark Icon - Visual trigger for hover menu */}
-                            <ToolTipMod title="Quick Actions">
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                    }}
-                                    className={`p-3 rounded-full border-2 transition-all duration-200 ${
-                                        showHoverActions
-                                            ? 'bg-red-600 border-red-500 text-black'
-                                            : 'bg-black border-white/30 text-white hover:bg-red-600 hover:border-red-500 hover:text-black'
-                                    }`}
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                }}
+                                className={`p-3 rounded-full border-2 transition-all duration-200 ${
+                                    showHoverActions
+                                        ? 'bg-red-600 border-red-500 text-black'
+                                        : 'bg-black border-white/30 text-white hover:bg-red-600 hover:border-red-500 hover:text-black'
+                                }`}
+                            >
+                                <svg
+                                    className="w-5 h-5"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
                                 >
-                                    <svg
-                                        className="w-5 h-5"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                                        />
-                                    </svg>
-                                </button>
-                            </ToolTipMod>
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                                    />
+                                </svg>
+                            </button>
                         </div>
 
                         {/* WatchLaterButton - Dropdown menu for list management */}
-                        <ToolTipMod title="Add to Lists">
-                            <div>
-                                <WatchLaterButton
-                                    content={content}
-                                    variant="thumbnail"
-                                    onDropdownStateChange={setIsDropdownOpen}
-                                />
-                            </div>
-                        </ToolTipMod>
+                        <WatchLaterButton
+                            content={content}
+                            variant="thumbnail"
+                            onDropdownStateChange={setIsDropdownOpen}
+                        />
                     </div>
                 )}
             </div>

@@ -78,8 +78,9 @@ function WatchLaterButton({
                 onMouseEnter={(e) => {
                     if (buttonRef.current) {
                         const rect = buttonRef.current.getBoundingClientRect()
+                        // Right-align the dropdown (256px wide) to the button's right edge
                         setDropdownPosition({
-                            x: rect.left,
+                            x: rect.right - 256, // Dropdown width is 256px (w-64)
                             y: rect.top, // Use top instead of bottom for higher positioning
                         })
                     }
