@@ -1,11 +1,12 @@
 import React, { useRef, useState, useCallback } from 'react'
 import { Content, getTitle, getYear, getContentType, isMovie } from '../typings'
 import Image from 'next/image'
-import { PlayIcon, PlusIcon } from '@heroicons/react/24/solid'
+import { PlayIcon, PlusIcon, HeartIcon, EyeSlashIcon } from '@heroicons/react/24/solid'
 import { useAppStore } from '../stores/appStore'
 import WatchLaterButton from './WatchLaterButton'
 import { prefetchMovieDetails } from '../utils/prefetchCache'
 import useUserData from '../hooks/useUserData'
+import { useToast } from '../hooks/useToast'
 
 interface Props {
     content?: Content
@@ -16,9 +17,11 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
     const posterImage = content?.poster_path
     const { openModal } = useAppStore()
     const { addToWatchlist } = useUserData()
+    const { showWatchlistAdd } = useToast()
     const [imageLoaded, setImageLoaded] = useState(false)
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const [showQuickAdd, setShowQuickAdd] = useState(false) // Toggle for duplicate button
+    const [showHoverActions, setShowHoverActions] = useState(false) // Show hover menu above watchlist button
 
     const handleImageClick = () => {
         if (content) {
@@ -162,23 +165,95 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                             <span>Watch</span>
                         </button>
 
-                        {/* Quick Add Button - Modal variant style with + icon (not rendered yet) */}
-                        {showQuickAdd && (
+                        {/* Watchlist Hover Menu - Shows bookmark icon, displays action buttons on hover */}
+                        <div
+                            className="relative flex items-end"
+                            onMouseEnter={() => setShowHoverActions(true)}
+                            onMouseLeave={() => setShowHoverActions(false)}
+                        >
+                            {/* Hover Action Buttons - Fade in above bookmark */}
+                            <div
+                                className={`absolute bottom-full mb-2 right-0 flex gap-2 transition-all duration-300 ${
+                                    showHoverActions
+                                        ? 'opacity-100 translate-y-0'
+                                        : 'opacity-0 translate-y-2 pointer-events-none'
+                                }`}
+                            >
+                                {/* Quick Add Button */}
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        if (content) {
+                                            addToWatchlist(content)
+                                            showWatchlistAdd(
+                                                `Added ${getTitle(content)} to My List`
+                                            )
+                                        }
+                                    }}
+                                    className="p-2 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-all duration-200"
+                                    title="Add to My List"
+                                >
+                                    <PlusIcon className="h-4 w-4" />
+                                </button>
+
+                                {/* Like Button */}
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        // TODO: Implement like functionality
+                                        console.log('Like clicked')
+                                    }}
+                                    className="p-2 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-all duration-200"
+                                    title="Like"
+                                >
+                                    <HeartIcon className="h-4 w-4" />
+                                </button>
+
+                                {/* Hide Button */}
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        // TODO: Implement hide functionality
+                                        console.log('Hide clicked')
+                                    }}
+                                    className="p-2 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-all duration-200"
+                                    title="Hide"
+                                >
+                                    <EyeSlashIcon className="h-4 w-4" />
+                                </button>
+                            </div>
+
+                            {/* Bookmark Icon - Trigger for hover menu */}
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation()
-                                    if (content) {
-                                        addToWatchlist(content)
-                                    }
+                                    // Keep the original dropdown functionality as fallback
                                 }}
-                                className="p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-all duration-200"
-                                title="Quick Add to My List"
+                                className="bg-blue-600 border-blue-400 hover:bg-blue-700 text-white
+                                     px-3 py-1.5 md:px-4 md:py-2
+                                     text-xs md:text-sm
+                                     rounded-md hover:scale-105
+                                     transition-all duration-200
+                                     flex items-center justify-center gap-1
+                                     shadow-lg hover:shadow-xl shadow-blue-500/50
+                                     border-2 hover:border-white"
+                                title="Watchlist Options"
                             >
-                                <PlusIcon className="h-4 w-4 sm:h-6 sm:w-6" />
+                                <svg
+                                    className="w-4 h-4"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                                    />
+                                </svg>
                             </button>
-                        )}
-
-                        <WatchLaterButton content={content} variant="thumbnail" />
+                        </div>
                     </div>
                 )}
             </div>
