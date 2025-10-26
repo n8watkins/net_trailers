@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Content, getTitle } from '../typings'
 import useUserData from '../hooks/useUserData'
 import { useToast } from '../hooks/useToast'
@@ -64,6 +65,9 @@ function ListDropdown({
 
     if (!isOpen) return null
 
+    // Don't render on server side
+    if (typeof window === 'undefined') return null
+
     const handleWatchlistToggle = () => {
         console.log('📋 [ListDropdown] handleWatchlistToggle called')
         console.log('📋 [ListDropdown] Content:', content)
@@ -127,7 +131,8 @@ function ListDropdown({
         }
     }
 
-    return (
+    // Render dropdown using portal to escape parent transforms (scale, etc.)
+    return createPortal(
         <div
             ref={dropdownRef}
             className={`fixed w-64 bg-[#141414] border border-gray-600 rounded-lg shadow-2xl z-[1400] overflow-hidden`}
@@ -225,7 +230,8 @@ function ListDropdown({
                     </div>
                 )}
             </button>
-        </div>
+        </div>,
+        document.body
     )
 }
 
