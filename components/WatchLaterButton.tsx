@@ -13,9 +13,15 @@ interface WatchLaterButtonProps {
     content: Content
     variant?: 'thumbnail' | 'modal'
     className?: string
+    onDropdownStateChange?: (isOpen: boolean) => void
 }
 
-function WatchLaterButton({ content, variant = 'modal', className = '' }: WatchLaterButtonProps) {
+function WatchLaterButton({
+    content,
+    variant = 'modal',
+    className = '',
+    onDropdownStateChange,
+}: WatchLaterButtonProps) {
     const { getListsContaining, addToWatchlist, removeFromWatchlist, isInWatchlist } = useUserData()
     const { showSuccess, showError, showWatchlistAdd, showWatchlistRemove } = useToast()
     const setListModal = useSetRecoilState(listModalState)
@@ -74,12 +80,16 @@ function WatchLaterButton({ content, variant = 'modal', className = '' }: WatchL
                         const rect = buttonRef.current.getBoundingClientRect()
                         setDropdownPosition({
                             x: rect.left,
-                            y: rect.bottom,
+                            y: rect.top, // Use top instead of bottom for higher positioning
                         })
                     }
                     setShowDropdown(true)
+                    onDropdownStateChange?.(true)
                 }}
-                onMouseLeave={() => setShowDropdown(false)}
+                onMouseLeave={() => {
+                    setShowDropdown(false)
+                    onDropdownStateChange?.(false)
+                }}
             >
                 <button
                     ref={buttonRef}
@@ -99,24 +109,16 @@ function WatchLaterButton({ content, variant = 'modal', className = '' }: WatchL
                              ${className}`}
                     title={inWatchlist ? 'In Lists' : 'Add to Lists'}
                 >
-                    <svg
-                        className={`w-5 h-5 ${inWatchlist ? 'fill-current' : 'fill-none'}`}
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                        />
-                    </svg>
+                    <PlusIcon className="w-5 h-5" />
                 </button>
 
                 <ListDropdown
                     content={content}
                     isOpen={showDropdown}
-                    onClose={() => setShowDropdown(false)}
+                    onClose={() => {
+                        setShowDropdown(false)
+                        onDropdownStateChange?.(false)
+                    }}
                     position={dropdownPosition}
                     variant="dropup"
                 />

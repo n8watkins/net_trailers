@@ -36,6 +36,8 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const [showQuickAdd, setShowQuickAdd] = useState(false) // Toggle for duplicate button
     const [showHoverActions, setShowHoverActions] = useState(false) // Show hover menu above watchlist button
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false) // Track watchlist dropdown state
+    const [isCardHovered, setIsCardHovered] = useState(false) // Track card hover state
 
     // Check if content is liked or hidden
     const liked = content ? isLiked(content.id) : false
@@ -51,6 +53,7 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
     // Prefetch on hover (debounced to avoid fetching while user is just scrolling)
     const handleMouseEnter = useCallback(() => {
         if (!content) return
+        setIsCardHovered(true)
 
         // Clear any existing timeout
         if (hoverTimeoutRef.current) {
@@ -65,6 +68,7 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
     }, [content])
 
     const handleMouseLeave = useCallback(() => {
+        setIsCardHovered(false)
         // Cancel prefetch if user leaves before timeout
         if (hoverTimeoutRef.current) {
             clearTimeout(hoverTimeoutRef.current)
@@ -109,7 +113,9 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
         >
             {/* Image Container with Fixed Dimensions */}
             <div
-                className={`relative ${getImageSizeClasses()} group-hover:scale-110 transition-transform duration-300 ease-out`}
+                className={`relative ${getImageSizeClasses()} ${
+                    isCardHovered || isDropdownOpen ? 'scale-110' : 'scale-100'
+                } transition-transform duration-300 ease-out`}
             >
                 {/* Loading Skeleton */}
                 {!imageLoaded && posterImage && (
@@ -289,7 +295,11 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                         </div>
 
                         {/* WatchLaterButton - Dropdown menu for list management */}
-                        <WatchLaterButton content={content} variant="thumbnail" />
+                        <WatchLaterButton
+                            content={content}
+                            variant="thumbnail"
+                            onDropdownStateChange={setIsDropdownOpen}
+                        />
                     </div>
                 )}
             </div>

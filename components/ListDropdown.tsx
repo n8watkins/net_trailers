@@ -139,7 +139,7 @@ function ListDropdown({
             style={{
                 left: Math.max(8, Math.min(position.x, window.innerWidth - 264)), // Keep within viewport with 8px margin
                 ...(variant === 'dropup'
-                    ? { bottom: window.innerHeight - position.y + 8 } // 8px gap above button (position.y is button's bottom)
+                    ? { bottom: window.innerHeight - position.y + 16 } // Position above button's top with 16px gap
                     : { top: position.y + 8 }), // 8px gap below button
             }}
         >
