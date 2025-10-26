@@ -74,16 +74,16 @@ function WatchLaterButton({ content, variant = 'modal', className = '' }: WatchL
                     onClick={handleDropdownToggle}
                     className={`${
                         inWatchlist
-                            ? 'bg-red-600/90 border-red-500 hover:bg-red-700'
-                            : 'bg-gray-800/90 border-gray-600 hover:bg-gray-700'
+                            ? 'bg-green-600 border-green-400 hover:bg-green-700'
+                            : 'bg-blue-600 border-blue-400 hover:bg-blue-700'
                     } text-white
                              px-3 py-1.5 md:px-4 md:py-2
                              text-xs md:text-sm
                              rounded-md hover:scale-105
                              transition-all duration-200
                              flex items-center justify-center gap-1
-                             shadow-lg hover:shadow-xl
-                             border hover:border-gray-500
+                             shadow-lg hover:shadow-xl shadow-blue-500/50
+                             border-2 hover:border-white
                              group/watchlist ${className}`}
                     title={inWatchlist ? 'Manage Lists' : 'Add to Lists'}
                 >
