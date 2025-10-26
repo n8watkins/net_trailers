@@ -36,8 +36,9 @@ function WatchLaterButton({ content, variant = 'modal', className = '' }: WatchL
         if (!showDropdown && buttonRef.current) {
             const rect = buttonRef.current.getBoundingClientRect()
             // For fixed positioning, use viewport coordinates (no scroll offset)
+            // Right-align the dropdown (256px wide) to the button's right edge
             setDropdownPosition({
-                x: rect.left,
+                x: rect.right - 256, // Dropdown width is 256px (w-64)
                 y: rect.bottom, // Use bottom for dropup positioning
             })
         }
