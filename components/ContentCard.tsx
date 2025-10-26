@@ -301,11 +301,15 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                         </div>
 
                         {/* WatchLaterButton - Dropdown menu for list management */}
-                        <WatchLaterButton
-                            content={content}
-                            variant="thumbnail"
-                            onDropdownStateChange={setIsDropdownOpen}
-                        />
+                        <ToolTipMod title="Add to Lists">
+                            <div>
+                                <WatchLaterButton
+                                    content={content}
+                                    variant="thumbnail"
+                                    onDropdownStateChange={setIsDropdownOpen}
+                                />
+                            </div>
+                        </ToolTipMod>
                     </div>
                 )}
             </div>
