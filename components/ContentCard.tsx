@@ -1,10 +1,11 @@
 import React, { useRef, useState, useCallback } from 'react'
 import { Content, getTitle, getYear, getContentType, isMovie } from '../typings'
 import Image from 'next/image'
-import { PlayIcon } from '@heroicons/react/24/solid'
+import { PlayIcon, PlusIcon } from '@heroicons/react/24/solid'
 import { useAppStore } from '../stores/appStore'
 import WatchLaterButton from './WatchLaterButton'
 import { prefetchMovieDetails } from '../utils/prefetchCache'
+import useUserData from '../hooks/useUserData'
 
 interface Props {
     content?: Content
@@ -14,8 +15,10 @@ interface Props {
 function ContentCard({ content, className = '', size = 'medium' }: Props) {
     const posterImage = content?.poster_path
     const { openModal } = useAppStore()
+    const { addToWatchlist } = useUserData()
     const [imageLoaded, setImageLoaded] = useState(false)
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const [showQuickAdd, setShowQuickAdd] = useState(false) // Toggle for duplicate button
 
     const handleImageClick = () => {
         if (content) {
@@ -158,6 +161,23 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                             <PlayIcon className="w-4 h-4" />
                             <span>Watch</span>
                         </button>
+
+                        {/* Quick Add Button - Modal variant style with + icon (not rendered yet) */}
+                        {showQuickAdd && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    if (content) {
+                                        addToWatchlist(content)
+                                    }
+                                }}
+                                className="p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-all duration-200"
+                                title="Quick Add to My List"
+                            >
+                                <PlusIcon className="h-4 w-4 sm:h-6 sm:w-6" />
+                            </button>
+                        )}
+
                         <WatchLaterButton content={content} variant="thumbnail" />
                     </div>
                 )}
