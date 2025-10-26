@@ -31,7 +31,7 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
         removeHiddenMovie,
         isHidden,
     } = useUserData()
-    const { showWatchlistAdd, showContentHidden, showContentShown } = useToast()
+    const { showWatchlistAdd, showContentHidden, showContentShown, showSuccess } = useToast()
     const [imageLoaded, setImageLoaded] = useState(false)
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const [showQuickAdd, setShowQuickAdd] = useState(false) // Toggle for duplicate button
@@ -204,15 +204,19 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                         if (content) {
                                             if (liked) {
                                                 removeLikedMovie(content.id)
+                                                showSuccess(
+                                                    `Removed ${getTitle(content)} from Liked`
+                                                )
                                             } else {
                                                 addLikedMovie(content)
+                                                showSuccess(`Added ${getTitle(content)} to Liked`)
                                             }
                                         }
                                     }}
                                     className={`p-3 rounded-full border-2 transition-all duration-200 ${
                                         liked
                                             ? 'border-green-400/60 bg-green-500/20 hover:bg-green-500/30'
-                                            : 'border-white/30 bg-black hover:bg-red-600 hover:border-red-500 hover:text-black'
+                                            : 'border-white/30 bg-black/85 hover:bg-black'
                                     } text-white`}
                                     title={liked ? 'Remove from Liked' : 'Like'}
                                 >
@@ -244,7 +248,7 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                     className={`p-3 rounded-full border-2 transition-all duration-200 ${
                                         hidden
                                             ? 'border-orange-400/60 bg-orange-500/20 hover:bg-orange-500/30'
-                                            : 'border-white/30 bg-black hover:bg-red-600 hover:border-red-500 hover:text-black'
+                                            : 'border-white/30 bg-black/85 hover:bg-black'
                                     } text-white`}
                                     title={hidden ? 'Show in Recommendations' : 'Hide'}
                                 >

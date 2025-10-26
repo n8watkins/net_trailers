@@ -68,29 +68,39 @@ function WatchLaterButton({ content, variant = 'modal', className = '' }: WatchL
 
     if (variant === 'thumbnail') {
         return (
-            <>
+            <div
+                onMouseEnter={(e) => {
+                    if (buttonRef.current) {
+                        const rect = buttonRef.current.getBoundingClientRect()
+                        setDropdownPosition({
+                            x: rect.left,
+                            y: rect.bottom,
+                        })
+                    }
+                    setShowDropdown(true)
+                }}
+                onMouseLeave={() => setShowDropdown(false)}
+            >
                 <button
                     ref={buttonRef}
-                    onClick={handleDropdownToggle}
+                    onClick={(e) => {
+                        e.stopPropagation()
+                    }}
                     className={`${
                         inWatchlist
                             ? 'bg-green-600 border-green-400 hover:bg-green-700'
-                            : 'bg-blue-600 border-blue-400 hover:bg-blue-700'
+                            : 'bg-black/85 border-white/30 hover:bg-black'
                     } text-white
-                             px-3 py-1.5 md:px-4 md:py-2
-                             text-xs md:text-sm
-                             rounded-md hover:scale-105
+                             p-3
+                             rounded-full
                              transition-all duration-200
-                             flex items-center justify-center gap-1
-                             shadow-lg hover:shadow-xl shadow-blue-500/50
-                             border-2 hover:border-white
-                             group/watchlist ${className}`}
-                    title={inWatchlist ? 'Manage Lists' : 'Add to Lists'}
+                             flex items-center justify-center
+                             border-2
+                             ${className}`}
+                    title={inWatchlist ? 'In Lists' : 'Add to Lists'}
                 >
                     <svg
-                        className={`w-4 h-4 group-hover/watchlist:scale-110 transition-transform duration-200 ${
-                            inWatchlist ? 'fill-current' : 'fill-none'
-                        }`}
+                        className={`w-5 h-5 ${inWatchlist ? 'fill-current' : 'fill-none'}`}
                         stroke="currentColor"
                         viewBox="0 0 24 24"
                     >
@@ -101,11 +111,6 @@ function WatchLaterButton({ content, variant = 'modal', className = '' }: WatchL
                             d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
                         />
                     </svg>
-                    {isInAnyList && listsContaining.length > 1 && (
-                        <span className="text-xs bg-white/20 px-1 rounded">
-                            +{listsContaining.length - 1}
-                        </span>
-                    )}
                 </button>
 
                 <ListDropdown
@@ -115,7 +120,7 @@ function WatchLaterButton({ content, variant = 'modal', className = '' }: WatchL
                     position={dropdownPosition}
                     variant="dropup"
                 />
-            </>
+            </div>
         )
     }
 
