@@ -1,7 +1,13 @@
 import React, { useRef, useState, useCallback } from 'react'
 import { Content, getTitle, getYear, getContentType, isMovie } from '../typings'
 import Image from 'next/image'
-import { PlayIcon, PlusIcon, HeartIcon, EyeSlashIcon } from '@heroicons/react/24/solid'
+import {
+    PlayIcon,
+    PlusIcon,
+    HandThumbUpIcon,
+    EyeSlashIcon,
+    EyeIcon,
+} from '@heroicons/react/24/solid'
 import { useAppStore } from '../stores/appStore'
 import WatchLaterButton from './WatchLaterButton'
 import { prefetchMovieDetails } from '../utils/prefetchCache'
@@ -16,12 +22,24 @@ interface Props {
 function ContentCard({ content, className = '', size = 'medium' }: Props) {
     const posterImage = content?.poster_path
     const { openModal } = useAppStore()
-    const { addToWatchlist } = useUserData()
-    const { showWatchlistAdd } = useToast()
+    const {
+        addToWatchlist,
+        addLikedMovie,
+        removeLikedMovie,
+        isLiked,
+        addHiddenMovie,
+        removeHiddenMovie,
+        isHidden,
+    } = useUserData()
+    const { showWatchlistAdd, showContentHidden, showContentShown } = useToast()
     const [imageLoaded, setImageLoaded] = useState(false)
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const [showQuickAdd, setShowQuickAdd] = useState(false) // Toggle for duplicate button
     const [showHoverActions, setShowHoverActions] = useState(false) // Show hover menu above watchlist button
+
+    // Check if content is liked or hidden
+    const liked = content ? isLiked(content.id) : false
+    const hidden = content ? isHidden(content.id) : false
 
     const handleImageClick = () => {
         if (content) {
@@ -165,7 +183,7 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                             <span>Watch</span>
                         </button>
 
-                        {/* Watchlist Hover Menu - Shows bookmark icon, displays action buttons on hover */}
+                        {/* Hover Menu with Bookmark Icon - Shows quick actions on hover */}
                         <div
                             className="relative flex items-end"
                             onMouseEnter={() => setShowHoverActions(true)}
@@ -196,48 +214,72 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                     <PlusIcon className="h-5 w-5" />
                                 </button>
 
-                                {/* Like Button */}
+                                {/* Like Button - Toggle */}
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation()
-                                        // TODO: Implement like functionality
-                                        console.log('Like clicked')
+                                        if (content) {
+                                            if (liked) {
+                                                removeLikedMovie(content.id)
+                                            } else {
+                                                addLikedMovie(content)
+                                            }
+                                        }
                                     }}
-                                    className="p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-all duration-200"
-                                    title="Like"
+                                    className={`p-3 rounded-full border-2 transition-all duration-200 ${
+                                        liked
+                                            ? 'border-green-400/60 bg-green-500/20 hover:bg-green-500/30'
+                                            : 'border-white/30 bg-black/20 hover:bg-black/50 hover:border-white'
+                                    } text-white`}
+                                    title={liked ? 'Remove from Liked' : 'Like'}
                                 >
-                                    <HeartIcon className="h-5 w-5" />
+                                    <HandThumbUpIcon
+                                        className={`h-5 w-5 ${liked ? 'text-green-400' : ''}`}
+                                    />
                                 </button>
 
-                                {/* Hide Button */}
+                                {/* Hide Button - Toggle */}
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation()
-                                        // TODO: Implement hide functionality
-                                        console.log('Hide clicked')
+                                        if (content) {
+                                            if (hidden) {
+                                                removeHiddenMovie(content.id)
+                                                showContentShown(
+                                                    `${getTitle(content)} Shown`,
+                                                    'Will appear in recommendations again'
+                                                )
+                                            } else {
+                                                addHiddenMovie(content)
+                                                showContentHidden(
+                                                    `${getTitle(content)} Hidden`,
+                                                    'Hidden from recommendations'
+                                                )
+                                            }
+                                        }
                                     }}
-                                    className="p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-all duration-200"
-                                    title="Hide"
+                                    className={`p-3 rounded-full border-2 transition-all duration-200 ${
+                                        hidden
+                                            ? 'border-orange-400/60 bg-orange-500/20 hover:bg-orange-500/30'
+                                            : 'border-white/30 bg-black/20 hover:bg-black/50 hover:border-white'
+                                    } text-white`}
+                                    title={hidden ? 'Show in Recommendations' : 'Hide'}
                                 >
-                                    <EyeSlashIcon className="h-5 w-5" />
+                                    {hidden ? (
+                                        <EyeSlashIcon className="h-5 w-5 text-orange-400" />
+                                    ) : (
+                                        <EyeIcon className="h-5 w-5" />
+                                    )}
                                 </button>
                             </div>
 
-                            {/* Bookmark Icon - Trigger for hover menu */}
+                            {/* Bookmark Icon - Visual trigger for hover menu */}
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation()
-                                    // Keep the original dropdown functionality as fallback
                                 }}
-                                className="bg-blue-600 border-blue-400 hover:bg-blue-700 text-white
-                                     px-3 py-1.5 md:px-4 md:py-2
-                                     text-xs md:text-sm
-                                     rounded-md hover:scale-105
-                                     transition-all duration-200
-                                     flex items-center justify-center gap-1
-                                     shadow-lg hover:shadow-xl shadow-blue-500/50
-                                     border-2 hover:border-white"
-                                title="Watchlist Options"
+                                className="p-2 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-all duration-200"
+                                title="Quick Actions"
                             >
                                 <svg
                                     className="w-4 h-4"
@@ -254,6 +296,9 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                 </svg>
                             </button>
                         </div>
+
+                        {/* WatchLaterButton - Dropdown menu for list management */}
+                        <WatchLaterButton content={content} variant="thumbnail" />
                     </div>
                 )}
             </div>
