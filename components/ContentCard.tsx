@@ -212,7 +212,7 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                     className={`p-3 rounded-full border-2 transition-all duration-200 ${
                                         liked
                                             ? 'border-green-400/60 bg-green-500/20 hover:bg-green-500/30'
-                                            : 'border-white/30 bg-black/20 hover:bg-black/50 hover:border-white'
+                                            : 'border-white/30 bg-black hover:bg-red-600 hover:border-red-500 hover:text-black'
                                     } text-white`}
                                     title={liked ? 'Remove from Liked' : 'Like'}
                                 >
@@ -244,7 +244,7 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                     className={`p-3 rounded-full border-2 transition-all duration-200 ${
                                         hidden
                                             ? 'border-orange-400/60 bg-orange-500/20 hover:bg-orange-500/30'
-                                            : 'border-white/30 bg-black/20 hover:bg-black/50 hover:border-white'
+                                            : 'border-white/30 bg-black hover:bg-red-600 hover:border-red-500 hover:text-black'
                                     } text-white`}
                                     title={hidden ? 'Show in Recommendations' : 'Hide'}
                                 >
