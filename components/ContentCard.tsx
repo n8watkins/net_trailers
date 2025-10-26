@@ -197,23 +197,6 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                         : 'opacity-0 translate-y-2 pointer-events-none'
                                 }`}
                             >
-                                {/* Quick Add Button */}
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        if (content) {
-                                            addToWatchlist(content)
-                                            showWatchlistAdd(
-                                                `Added ${getTitle(content)} to My List`
-                                            )
-                                        }
-                                    }}
-                                    className="p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-all duration-200"
-                                    title="Add to My List"
-                                >
-                                    <PlusIcon className="h-5 w-5" />
-                                </button>
-
                                 {/* Like Button - Toggle */}
                                 <button
                                     onClick={(e) => {
@@ -278,7 +261,11 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                 onClick={(e) => {
                                     e.stopPropagation()
                                 }}
-                                className="p-2 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-all duration-200"
+                                className={`p-2 rounded-full border-2 transition-all duration-200 ${
+                                    showHoverActions
+                                        ? 'bg-red-600 border-red-500 text-black'
+                                        : 'bg-black border-white/30 text-white hover:bg-red-600 hover:border-red-500 hover:text-black'
+                                }`}
                                 title="Quick Actions"
                             >
                                 <svg
