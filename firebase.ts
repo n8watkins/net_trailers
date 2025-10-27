@@ -24,33 +24,35 @@ if (!firebaseConfig.apiKey) {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp()
 
 // Initialize Firestore with persistence - safe for hot module replacement
-// Use global variable to persist across hot reloads
+// Use global variable to persist across hot reloads (works in both Node.js and browser)
+const globalThis = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : {}
+
 declare global {
     var firestore: ReturnType<typeof getFirestore> | undefined
 }
 
 function getDb() {
     // Return cached global instance if it exists
-    if (global.firestore) {
-        return global.firestore
+    if ((globalThis as any).firestore) {
+        return (globalThis as any).firestore
     }
 
     // Try to initialize with custom options
     try {
-        global.firestore = initializeFirestore(app, {
+        ;(globalThis as any).firestore = initializeFirestore(app, {
             localCache: persistentLocalCache({
                 // Optional: Configure cache size (default is 40MB)
                 // cacheSizeBytes: 40 * 1024 * 1024,
             }),
         })
-        return global.firestore
+        return (globalThis as any).firestore
     } catch (error: any) {
         // If initialization fails because it's already initialized,
         // just use getFirestore() to get the existing instance
         if (error.code === 'failed-precondition') {
             // Silently use the existing instance - this can happen during hot reloads
-            global.firestore = getFirestore(app)
-            return global.firestore
+            ;(globalThis as any).firestore = getFirestore(app)
+            return (globalThis as any).firestore
         }
         // Re-throw if it's a different error
         throw error
