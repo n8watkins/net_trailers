@@ -6,8 +6,8 @@ import { debugSetter } from '../utils/debugStore'
 
 // Toast configuration constants
 export const MAX_TOASTS = 2 // Maximum 2 toasts displayed at once
-export const TOAST_DURATION = 8000 // 8 seconds
-export const TOAST_EXIT_DURATION = 300
+export const TOAST_DURATION = 3000 // 3 seconds
+export const TOAST_EXIT_DURATION = 500 // 500ms fade-out animation
 
 // Modal types
 export interface ModalContent {
