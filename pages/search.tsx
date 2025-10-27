@@ -20,10 +20,14 @@ export default function SearchPage({
     onOpenKeyboardShortcuts,
 }: Props) {
     const router = useRouter()
-    const { updateQuery, query } = useSearch()
+    const { updateQuery, query, isLoading, isLoadingAll, hasSearched, results } = useSearch()
     const [isInitialLoad, setIsInitialLoad] = useState(true)
     const urlUpdateTimeoutRef = useRef<NodeJS.Timeout>()
     const showModal = useRecoilValue(modalState)
+
+    // Loading animation states
+    const [loadingCounter, setLoadingCounter] = useState(0)
+    const [loadingMessage, setLoadingMessage] = useState('')
 
     // Update search query from URL parameter (only on initial load)
     useEffect(() => {
@@ -35,6 +39,47 @@ export default function SearchPage({
             setIsInitialLoad(false)
         }
     }, [router.query, query, updateQuery, isInitialLoad])
+
+    // Loading animation effect
+    useEffect(() => {
+        if ((isLoading || isLoadingAll) && (!hasSearched || results.length === 0)) {
+            setLoadingCounter(0)
+            setLoadingMessage('🔍 Searching the database...')
+
+            // Counter animation - faster to reach 100% before loading completes
+            const counterInterval = setInterval(() => {
+                setLoadingCounter((prev) => {
+                    if (prev >= 100) {
+                        clearInterval(counterInterval)
+                        return 100
+                    }
+                    return prev + 2 // Increment by 2 for faster animation
+                })
+            }, 15) // Faster interval - completes in ~750ms
+
+            // Message rotation - independent of counter
+            const messages = [
+                '🔍 Searching...',
+                '🎬 Finding matches...',
+                '🍿 Looking for titles...',
+                '🎭 Checking database...',
+                '📽️ Almost there...',
+                '🌟 Loading results...',
+                '✨ Ready!',
+            ]
+
+            let messageIndex = 0
+            const messageInterval = setInterval(() => {
+                messageIndex = (messageIndex + 1) % messages.length
+                setLoadingMessage(messages[messageIndex])
+            }, 500) // Change message every half second
+
+            return () => {
+                clearInterval(counterInterval)
+                clearInterval(messageInterval)
+            }
+        }
+    }, [isLoading, isLoadingAll, hasSearched, results.length])
 
     // Update URL when query changes (debounced to prevent interference with typing)
     useEffect(() => {
@@ -69,6 +114,50 @@ export default function SearchPage({
             }
         }
     }, [query, router, isInitialLoad])
+
+    // Show fancy loading animation on initial load or when loading with no results
+    const showFancyLoading = (isLoading || isLoadingAll) && (!hasSearched || results.length === 0)
+
+    if (showFancyLoading) {
+        return (
+            <div className="relative min-h-screen bg-gradient-to-b from-gray-900/10 to-[#010511]">
+                <Head>
+                    <title>{query ? `Searching: ${query} - NetTrailer` : 'Searching - NetTrailer'}</title>
+                </Head>
+                <Header
+                    onOpenAboutModal={onOpenAboutModal}
+                    onOpenTutorial={onOpenTutorial}
+                    onOpenKeyboardShortcuts={onOpenKeyboardShortcuts}
+                />
+                <main className="relative">
+                    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                        <div className="text-center max-w-md px-6">
+                            <div className="flex space-x-3 justify-center mb-6">
+                                <div className="w-6 h-6 bg-red-600 rounded-full animate-bounce"></div>
+                                <div
+                                    className="w-6 h-6 bg-red-600 rounded-full animate-bounce"
+                                    style={{ animationDelay: '0.1s' }}
+                                ></div>
+                                <div
+                                    className="w-6 h-6 bg-red-600 rounded-full animate-bounce"
+                                    style={{ animationDelay: '0.2s' }}
+                                ></div>
+                            </div>
+                            <div className="text-2xl font-bold text-white mb-6 font-mono">
+                                {loadingCounter}%
+                            </div>
+                            <p className="text-white text-xl mb-2 min-h-[3rem] flex items-center justify-center">
+                                {loadingMessage}
+                            </p>
+                            <p className="text-gray-400 text-sm">
+                                {query ? `Searching for "${query}"` : 'Searching...'}
+                            </p>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        )
+    }
 
     return (
         <div
