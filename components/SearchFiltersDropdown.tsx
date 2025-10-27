@@ -19,7 +19,6 @@ interface SearchFiltersDropdownProps {
 export default function SearchFiltersDropdown({ isOpen, onClose }: SearchFiltersDropdownProps) {
     const [search, setSearch] = useRecoilState(searchState)
     const [localFilters, setLocalFilters] = useState<SearchFilters>(search.filters)
-    const [minRating, setMinRating] = useState(4)
     const dropdownRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
@@ -61,7 +60,6 @@ export default function SearchFiltersDropdown({ isOpen, onClose }: SearchFilters
             sortBy: 'popularity.desc',
         }
         setLocalFilters(defaultFilters)
-        setMinRating(4)
         setSearch((prev) => ({
             ...prev,
             filters: defaultFilters,
@@ -116,11 +114,31 @@ export default function SearchFiltersDropdown({ isOpen, onClose }: SearchFilters
                         </div>
                     </div>
 
-                    {/* Release Year and Sort By */}
+                    {/* Rating */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-3">
+                            Rating
+                        </label>
+                        <div className="relative">
+                            <select
+                                value={localFilters.rating}
+                                onChange={(e) => updateFilter('rating', e.target.value)}
+                                className="w-full bg-[#0a0a0a] border border-gray-600/50 text-white rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 appearance-none transition-all duration-200"
+                            >
+                                <option value="all">All Ratings</option>
+                                <option value="7.0+">7.0+ ⭐</option>
+                                <option value="8.0+">8.0+ ⭐</option>
+                                <option value="9.0+">9.0+ ⭐</option>
+                            </select>
+                            <ChevronDownIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        </div>
+                    </div>
+
+                    {/* Year and Sort By */}
                     <div className="grid grid-cols-2 gap-6">
                         <div>
                             <label className="block text-sm font-medium text-gray-300 mb-3">
-                                Release Year
+                                Year
                             </label>
                             <div className="relative">
                                 <select
@@ -129,64 +147,10 @@ export default function SearchFiltersDropdown({ isOpen, onClose }: SearchFilters
                                     className="w-full bg-[#0a0a0a] border border-gray-600/50 text-white rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 appearance-none transition-all duration-200"
                                 >
                                     <option value="all">All Years</option>
-                                    <option value="2024">2024</option>
-                                    <option value="2023">2023</option>
-                                    <option value="2022">2022</option>
-                                    <option value="2021">2021</option>
-                                    <option value="2020">2020</option>
-                                    <option value="2020s">2020-2029</option>
-                                    <option value="2019">2019</option>
-                                    <option value="2018">2018</option>
-                                    <option value="2017">2017</option>
-                                    <option value="2016">2016</option>
-                                    <option value="2015">2015</option>
-                                    <option value="2014">2014</option>
-                                    <option value="2013">2013</option>
-                                    <option value="2012">2012</option>
-                                    <option value="2011">2011</option>
-                                    <option value="2010">2010</option>
-                                    <option value="2010s">2010-2019</option>
-                                    <option value="2009">2009</option>
-                                    <option value="2008">2008</option>
-                                    <option value="2007">2007</option>
-                                    <option value="2006">2006</option>
-                                    <option value="2005">2005</option>
-                                    <option value="2004">2004</option>
-                                    <option value="2003">2003</option>
-                                    <option value="2002">2002</option>
-                                    <option value="2001">2001</option>
-                                    <option value="2000">2000</option>
-                                    <option value="2000s">2000-2009</option>
-                                    <option value="1999">1999</option>
-                                    <option value="1998">1998</option>
-                                    <option value="1997">1997</option>
-                                    <option value="1996">1996</option>
-                                    <option value="1995">1995</option>
-                                    <option value="1994">1994</option>
-                                    <option value="1993">1993</option>
-                                    <option value="1992">1992</option>
-                                    <option value="1991">1991</option>
-                                    <option value="1990">1990</option>
-                                    <option value="1990s">1990-1999</option>
-                                    <option value="1989">1989</option>
-                                    <option value="1988">1988</option>
-                                    <option value="1987">1987</option>
-                                    <option value="1986">1986</option>
-                                    <option value="1985">1985</option>
-                                    <option value="1984">1984</option>
-                                    <option value="1983">1983</option>
-                                    <option value="1982">1982</option>
-                                    <option value="1981">1981</option>
-                                    <option value="1980">1980</option>
-                                    <option value="1980s">1980-1989</option>
-                                    <option value="1970s">1970-1979</option>
-                                    <option value="1960s">1960-1969</option>
-                                    <option value="1950s">1950-1959</option>
-                                    <option value="1940s">1940-1949</option>
-                                    <option value="1930s">1930-1939</option>
-                                    <option value="1920s">1920-1929</option>
-                                    <option value="1910s">1910-1919</option>
-                                    <option value="1900s">1900-1909</option>
+                                    <option value="2020s">2020s</option>
+                                    <option value="2010s">2010s</option>
+                                    <option value="2000s">2000s</option>
+                                    <option value="1990s">1990s</option>
                                 </select>
                                 <ChevronDownIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                             </div>
@@ -203,45 +167,10 @@ export default function SearchFiltersDropdown({ isOpen, onClose }: SearchFilters
                                     className="w-full bg-[#0a0a0a] border border-gray-600/50 text-white rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 appearance-none transition-all duration-200"
                                 >
                                     <option value="popularity.desc">Most Popular</option>
-                                    <option value="vote_average.desc">Highest Rated</option>
-                                    <option value="release_date.desc">Newest First</option>
-                                    <option value="release_date.asc">Oldest First</option>
                                     <option value="revenue.desc">Highest Revenue</option>
-                                    <option value="vote_count.desc">Most Voted</option>
+                                    <option value="vote_average.desc">Most Voted</option>
                                 </select>
                                 <ChevronDownIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Minimum Rating */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-3">
-                            Minimum Rating
-                        </label>
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between text-sm text-gray-400">
-                                <span>Any</span>
-                                <span className="text-white font-medium">{minRating}+</span>
-                                <span>9+</span>
-                            </div>
-                            <div className="relative">
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="9"
-                                    step="1"
-                                    value={minRating}
-                                    onChange={(e) => {
-                                        const value = parseInt(e.target.value)
-                                        setMinRating(value)
-                                        updateFilter('rating', value === 0 ? 'all' : `${value}+`)
-                                    }}
-                                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
-                                    style={{
-                                        background: `linear-gradient(to right, #dc2626 0%, #dc2626 ${(minRating / 9) * 100}%, #374151 ${(minRating / 9) * 100}%, #374151 100%)`,
-                                    }}
-                                />
                             </div>
                         </div>
                     </div>
