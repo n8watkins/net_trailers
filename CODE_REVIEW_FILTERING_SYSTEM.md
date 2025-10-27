@@ -8,12 +8,14 @@
 
 ## Executive Summary
 
-This code review identified **7 significant issues** in the filtering and state management system, ranging from CRITICAL data integrity bugs to documentation inconsistencies. The most severe issues involve:
+This code review identified **5 significant issues** in the filtering and state management system, ranging from CRITICAL data integrity bugs to documentation inconsistencies. The most severe issues involve:
 
 1. **Firebase sync may fail silently on initial load** (prevents users from loading their data)
-2. **Missing mutual exclusion** allows content in both liked AND hidden states simultaneously
-3. **Race conditions** that could cause data corruption across user accounts
-4. **Silent data loss** when users perform actions before store initialization
+2. **Race conditions** that could cause data corruption across user accounts
+3. **Silent data loss** when users perform actions before store initialization
+4. ~~**Search filter infinite loop**~~ ✅ **FIXED** - Browser no longer freezes when applying filters
+
+**Note:** Mutual exclusion between liked/hidden content is **intentionally NOT implemented** per user preference. Users can mark content as both liked AND hidden if desired.
 
 All issues have been documented with tests in `__tests__/stores/authStore.test.ts` and `__tests__/components/SessionSyncManager.test.tsx`.
 
@@ -87,122 +89,48 @@ syncStatus: 'offline',  // Start as offline, trigger sync immediately
 
 ---
 
-## Issue #2: CRITICAL - No Mutual Exclusion Between Liked and Hidden Content
+## ~~Issue #2: Mutual Exclusion~~ - NOT AN ISSUE (Intentional Design)
 
-### Location
-- **Files:** `stores/authStore.ts` (lines 165-300), `stores/guestStore.ts` (lines 111-205)
+### Status: **WORKING AS INTENDED**
 
-### Description
-Content can exist in both `likedMovies` AND `hiddenMovies` arrays simultaneously, despite code comments and documentation claiming mutual exclusion exists.
-
-### The Bug
-
-**Current Implementation:**
-```typescript
-// authStore.ts:165-211
-addLikedMovie: async (content: Content) => {
-    const newLikedMovies = [...state.likedMovies, content]
-    set({ likedMovies: newLikedMovies })
-    // No removal from hiddenMovies!
-}
-
-addHiddenMovie: async (content: Content) => {
-    const newHiddenMovies = [...state.hiddenMovies, content]
-    set({ hiddenMovies: newHiddenMovies })
-    // No removal from likedMovies!
-}
-```
-
-**But the code comments say:**
-```typescript
-// components/LikeOptions.tsx:62
-// Add to liked (automatically removes from hidden due to mutual exclusion)
-
-// components/LikeOptions.tsx:71
-// Add to hidden (automatically removes from liked due to mutual exclusion)
-```
-
-**And documentation says:**
-```
-// CLAUDE.md (from grep results)
-"Mutual exclusion logic ensures content cannot be both liked AND hidden"
-```
-
-### Impact
-- **CRITICAL:** Users can have same content marked as both liked AND hidden
-- Inconsistent UI state (content shows as both liked and hidden)
-- Filtering logic becomes unpredictable
-- Data export/import may corrupt state further
-
-### Comparison with Storage Services
-
-Interestingly, the **storage services** DO have mutual exclusion:
-
-```typescript
-// services/authStorageService.ts:276-287
-static addLikedMovie(preferences: AuthPreferences, content: Content): AuthPreferences {
-    // Remove from hidden if exists (mutual exclusion)
-    const hiddenMovies = preferences.hiddenMovies.filter((m) => m.id !== content.id)
-
-    const likedMovies = isAlreadyLiked
-        ? preferences.likedMovies
-        : [...preferences.likedMovies, content]
-
-    return { ...preferences, likedMovies, hiddenMovies }
-}
-```
-
-But the **stores** don't use these functions - they implement their own logic without mutual exclusion!
+**User Preference:** The system **intentionally allows** content to be in both `likedMovies` AND `hiddenMovies` arrays simultaneously.
 
 ### Historical Context
-Git log shows this commit:
+Git log shows:
 ```
 commit: fix: remove mutual exclusion between liked and hidden content
 ```
 
-So mutual exclusion was **intentionally removed**, but:
-- Documentation wasn't updated
-- Code comments weren't updated
-- Storage services still have it (inconsistency)
+Mutual exclusion was **intentionally removed** per user requirements.
 
-### Recommended Fixes
+### Documentation Cleanup Needed
 
-**Option 1: Implement mutual exclusion in stores**
-```typescript
-addLikedMovie: async (content: Content) => {
-    // Remove from hidden if exists
-    const newHiddenMovies = state.hiddenMovies.filter(m => m.id !== content.id)
-    const newLikedMovies = [...state.likedMovies, content]
+The following comments and docs are **outdated** and should be updated:
 
-    set({
-        likedMovies: newLikedMovies,
-        hiddenMovies: newHiddenMovies  // ← Add this
-    })
-}
-```
+1. **`components/LikeOptions.tsx:62`**
+   ```typescript
+   // OUTDATED: "Add to liked (automatically removes from hidden due to mutual exclusion)"
+   // SHOULD SAY: "Add to liked"
+   ```
 
-**Option 2: Update all documentation to reflect intentional removal**
-- Remove mutual exclusion comments from LikeOptions.tsx
-- Update CLAUDE.md to say "content CAN be both liked and hidden"
-- Remove mutual exclusion logic from storage services for consistency
+2. **`components/LikeOptions.tsx:71`**
+   ```typescript
+   // OUTDATED: "Add to hidden (automatically removes from liked due to mutual exclusion)"
+   // SHOULD SAY: "Add to hidden"
+   ```
 
-**Option 3: Use storage service functions (best for consistency)**
-```typescript
-addLikedMovie: async (content: Content) => {
-    const state = get()
-    const updatedPrefs = AuthStorageService.addLikedMovie(state, content)
+3. **`CLAUDE.md`**
+   ```
+   // OUTDATED: "Mutual exclusion logic ensures content cannot be both liked AND hidden"
+   // SHOULD SAY: "Content can be marked as both liked AND hidden if desired"
+   ```
 
-    set({
-        likedMovies: updatedPrefs.likedMovies,
-        hiddenMovies: updatedPrefs.hiddenMovies
-    })
-}
-```
+4. **`services/authStorageService.ts` and `services/guestStorageService.ts`**
+   - Still contain mutual exclusion logic that's not used by stores
+   - Either remove it OR add comment explaining it's legacy code
 
-### Test Coverage
-- Test: `__tests__/stores/authStore.test.ts`
-- Scenario: "CRITICAL ISSUE: Missing Mutual Exclusion"
-- Tests prove content CAN be in both arrays
+### Recommendation
+Update documentation and comments to match current intentional behavior.
 
 ---
 
@@ -587,36 +515,37 @@ Reality:
 ## Summary of Issues by Severity
 
 ### CRITICAL (Fix Immediately)
-1. ✅ **Firebase sync doesn't trigger on initial load**
+1. ❌ **Firebase sync doesn't trigger on initial load**
    - Users see empty data on first page load
    - Fix: Change sync condition logic
 
-2. ✅ **No mutual exclusion between liked/hidden**
-   - Content can be in both states simultaneously
-   - Fix: Implement mutual exclusion OR update docs
-
-3. ✅ **Silent data loss when userId undefined**
+2. ❌ **Silent data loss when userId undefined**
    - Actions lost if performed before initialization
    - Fix: Validate userId before operations
 
 ### HIGH RISK (Fix Soon)
-4. ✅ **Race condition in account switching**
+3. ❌ **Race condition in account switching**
    - Data corruption possible across accounts
    - Fix: Validate userId in async callbacks
 
 ### MEDIUM (Plan to Fix)
-5. ✅ **Child Safety doesn't filter TV shows**
+4. ❌ **Child Safety doesn't filter TV shows**
    - Inconsistent filtering by content type
    - Fix: Add TV show filtering logic
 
-6. ✅ **Client-side filtering reduces content**
+5. ❌ **Client-side filtering reduces content**
    - Users see fewer items than expected
    - Fix: Over-fetch or server-side filtering
 
-### LOW (Maintenance)
-7. ✅ **Documentation inconsistencies**
-   - Confusing for developers
-   - Fix: Update docs to match implementation
+### FIXED ✅
+6. ✅ **Search filter infinite loop**
+   - Browser froze when applying filters
+   - FIXED: Removed circular dependencies in useEffect
+
+### NOT AN ISSUE (Working as Intended)
+7. ⚪ **No mutual exclusion between liked/hidden**
+   - Intentional design per user preference
+   - Action: Update outdated documentation comments
 
 ---
 
