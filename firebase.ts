@@ -1,6 +1,6 @@
 // Initialize Firebase
 import { initializeApp, getApp, getApps } from 'firebase/app'
-import { initializeFirestore, persistentLocalCache } from 'firebase/firestore'
+import { initializeFirestore, getFirestore, persistentLocalCache } from 'firebase/firestore'
 import { getAuth } from 'firebase/auth'
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -23,14 +23,47 @@ if (!firebaseConfig.apiKey) {
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp()
 
-// Initialize Firestore with persistence enabled from the start
-// This must be done BEFORE any Firestore operations
-const db = initializeFirestore(app, {
-    localCache: persistentLocalCache({
-        // Optional: Configure cache size (default is 40MB)
-        // cacheSizeBytes: 40 * 1024 * 1024,
-    }),
-})
+// Initialize Firestore with persistence - safe for hot module replacement
+// Use global variable to persist across hot reloads
+declare global {
+    var firestore: ReturnType<typeof getFirestore> | undefined
+}
+
+function getDb() {
+    // Return cached global instance if it exists
+    if (global.firestore) {
+        return global.firestore
+    }
+
+    // Try to initialize with custom options
+    try {
+        global.firestore = initializeFirestore(app, {
+            localCache: persistentLocalCache({
+                // Optional: Configure cache size (default is 40MB)
+                // cacheSizeBytes: 40 * 1024 * 1024,
+            }),
+        })
+        return global.firestore
+    } catch (error: any) {
+        // If initialization fails because it's already initialized,
+        // just use getFirestore() to get the existing instance
+        if (error.code === 'failed-precondition') {
+            // Silently use the existing instance - this can happen during hot reloads
+            global.firestore = getFirestore(app)
+            return global.firestore
+        }
+        // Re-throw if it's a different error
+        throw error
+    }
+}
+
+// Export getDb function for lazy initialization
+export function getFirestoreDb() {
+    return getDb()
+}
+
+// Initialize immediately for backward compatibility
+const db = getDb()
 
 const auth = getAuth(app)
 
