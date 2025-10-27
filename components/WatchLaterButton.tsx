@@ -30,7 +30,9 @@ function WatchLaterButton({
     const [isHovered, setIsHovered] = useState(false)
     const [showDropdown, setShowDropdown] = useState(false)
     const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0 })
+    const [isButtonOrDropdownHovered, setIsButtonOrDropdownHovered] = useState(false)
     const buttonRef = useRef<HTMLButtonElement>(null)
+    const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
     const listsContaining = getListsContaining(content.id)
     const inWatchlist = isInWatchlist(content.id)
@@ -74,6 +76,14 @@ function WatchLaterButton({
 
     if (variant === 'thumbnail') {
         const handleMouseEnter = () => {
+            // Clear any pending close timeout
+            if (closeTimeoutRef.current) {
+                clearTimeout(closeTimeoutRef.current)
+                closeTimeoutRef.current = null
+            }
+
+            setIsButtonOrDropdownHovered(true)
+
             if (buttonRef.current) {
                 const rect = buttonRef.current.getBoundingClientRect()
                 // Right-align the dropdown (256px wide) to the button's right edge
@@ -87,28 +97,30 @@ function WatchLaterButton({
         }
 
         const handleMouseLeave = () => {
-            setShowDropdown(false)
-            onDropdownStateChange?.(false)
+            // Delay closing to allow movement between button and dropdown
+            closeTimeoutRef.current = setTimeout(() => {
+                setIsButtonOrDropdownHovered(false)
+                setShowDropdown(false)
+                onDropdownStateChange?.(false)
+            }, 100)
         }
 
         return (
-            <div onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+            <div
+                className="relative z-[110]"
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+            >
                 <button
                     ref={buttonRef}
                     onClick={(e) => {
                         e.stopPropagation()
                     }}
-                    className={`${
-                        inWatchlist
-                            ? 'bg-green-600 border-green-400 hover:bg-green-700'
-                            : 'bg-black/85 border-white/30 hover:bg-black'
-                    } text-white
-                             p-3
-                             rounded-full
-                             transition-all duration-200
-                             flex items-center justify-center
-                             border-2
-                             ${className}`}
+                    className={`p-3 rounded-full border-2 transition-all duration-200 flex items-center justify-center ${
+                        isButtonOrDropdownHovered
+                            ? 'bg-red-600 border-red-500 text-black'
+                            : 'bg-black border-white/30 text-white'
+                    } ${className}`}
                     title={inWatchlist ? 'In Lists' : 'Add to Lists'}
                 >
                     <PlusIcon className="w-5 h-5" />

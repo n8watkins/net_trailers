@@ -58,9 +58,9 @@ function MyListsDropdown() {
                     <div className="py-2">
                         <Link href="/watchlists" onClick={handleLinkClick}>
                             <div
-                                className={`w-full text-left px-4 py-3 hover:bg-gray-700/50 transition-colors flex items-center space-x-3 ${
+                                className={`w-full text-left px-4 py-3 hover:bg-white/10 transition-colors flex items-center space-x-3 ${
                                     isCurrentPath('/watchlists')
-                                        ? 'bg-gray-700/50 text-white font-semibold'
+                                        ? 'bg-white/10 text-white font-semibold'
                                         : 'text-gray-300'
                                 }`}
                             >
@@ -71,9 +71,9 @@ function MyListsDropdown() {
 
                         <Link href="/liked" onClick={handleLinkClick}>
                             <div
-                                className={`w-full text-left px-4 py-3 hover:bg-gray-700/50 transition-colors flex items-center space-x-3 ${
+                                className={`w-full text-left px-4 py-3 hover:bg-white/10 transition-colors flex items-center space-x-3 ${
                                     isCurrentPath('/liked')
-                                        ? 'bg-gray-700/50 text-white font-semibold'
+                                        ? 'bg-white/10 text-white font-semibold'
                                         : 'text-gray-300'
                                 }`}
                             >
@@ -84,9 +84,9 @@ function MyListsDropdown() {
 
                         <Link href="/hidden" onClick={handleLinkClick}>
                             <div
-                                className={`w-full text-left px-4 py-3 hover:bg-gray-700/50 transition-colors flex items-center space-x-3 ${
+                                className={`w-full text-left px-4 py-3 hover:bg-white/10 transition-colors flex items-center space-x-3 ${
                                     isCurrentPath('/hidden')
-                                        ? 'bg-gray-700/50 text-white font-semibold'
+                                        ? 'bg-white/10 text-white font-semibold'
                                         : 'text-gray-300'
                                 }`}
                             >

@@ -297,30 +297,30 @@ export default function AccountManagement() {
 
                         {/* Clear Confirmation */}
                         {showClearConfirm && (
-                            <div className="p-4 bg-yellow-900/20 border border-yellow-600 rounded-lg">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <ExclamationTriangleIcon className="w-5 h-5 text-yellow-500" />
-                                    <h4 className="text-lg font-semibold text-yellow-500">
+                            <div className="p-6 bg-[#141414] border border-yellow-600/50 rounded-xl shadow-lg">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <ExclamationTriangleIcon className="w-6 h-6 text-yellow-500" />
+                                    <h4 className="text-xl font-semibold text-yellow-500">
                                         Confirm Clear Data
                                     </h4>
                                 </div>
                                 <p className="text-gray-300 mb-4">This will permanently remove:</p>
-                                <ul className="list-disc list-inside text-sm text-gray-400 mb-4">
+                                <ul className="list-disc list-inside text-sm text-gray-400 mb-6 space-y-1">
                                     <li>{dataSummary.watchlistCount} watchlist items</li>
                                     <li>{dataSummary.likedCount} liked items</li>
                                     <li>{dataSummary.hiddenCount} hidden items</li>
                                     <li>{dataSummary.listsCount} custom lists</li>
                                 </ul>
-                                <div className="flex gap-2">
+                                <div className="flex gap-3">
                                     <button
                                         onClick={() => setShowClearConfirm(false)}
-                                        className="flex-1 p-2 bg-gray-600 hover:bg-gray-700 text-white rounded"
+                                        className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors duration-200"
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         onClick={handleClearData}
-                                        className="flex-1 p-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded"
+                                        className="flex-1 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-md transition-colors duration-200"
                                     >
                                         Yes, Clear Data
                                     </button>
@@ -344,10 +344,10 @@ export default function AccountManagement() {
 
                         {/* Delete Confirmation */}
                         {showDeleteConfirm && (
-                            <div className="p-4 bg-red-900/20 border border-red-600 rounded-lg">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <ExclamationTriangleIcon className="w-5 h-5 text-red-500" />
-                                    <h4 className="text-lg font-semibold text-red-500">
+                            <div className="p-6 bg-[#141414] border border-red-600/50 rounded-xl shadow-lg">
+                                <div className="flex items-center gap-3 mb-4">
+                                    <ExclamationTriangleIcon className="w-6 h-6 text-red-500" />
+                                    <h4 className="text-xl font-semibold text-red-500">
                                         ⚠️ DANGER ZONE
                                     </h4>
                                 </div>
@@ -355,32 +355,32 @@ export default function AccountManagement() {
                                     This will permanently delete your account and ALL associated
                                     data. This action <strong>cannot be undone</strong>.
                                 </p>
-                                <div className="mb-4">
-                                    <label className="block text-sm text-gray-400 mb-2">
+                                <div className="mb-6">
+                                    <label className="block text-sm font-medium text-gray-400 mb-2">
                                         Type &quot;DELETE MY ACCOUNT&quot; to confirm:
                                     </label>
                                     <input
                                         type="text"
                                         value={confirmText}
                                         onChange={(e) => setConfirmText(e.target.value)}
-                                        className="w-full p-2 bg-[#1a1a1a] border border-gray-600 rounded text-white"
+                                        className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-md text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                                         placeholder="DELETE MY ACCOUNT"
                                     />
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex gap-3">
                                     <button
                                         onClick={() => {
                                             setShowDeleteConfirm(false)
                                             setConfirmText('')
                                         }}
-                                        className="flex-1 p-2 bg-gray-600 hover:bg-gray-700 text-white rounded"
+                                        className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors duration-200"
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         onClick={handleDeleteAccount}
                                         disabled={confirmText !== 'DELETE MY ACCOUNT'}
-                                        className="flex-1 p-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white rounded"
+                                        className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-md transition-colors duration-200"
                                     >
                                         Delete Account
                                     </button>

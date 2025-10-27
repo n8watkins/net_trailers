@@ -256,7 +256,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                                 className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
                                                     router.pathname === '/'
                                                         ? 'text-white font-semibold bg-red-600/20'
-                                                        : 'hover:bg-gray-800/50'
+                                                        : 'hover:bg-white/10'
                                                 }`}
                                                 onClick={() => {
                                                     router.push('/')
@@ -284,7 +284,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                                 className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
                                                     router.pathname === '/tv'
                                                         ? 'text-white font-semibold bg-red-600/20'
-                                                        : 'hover:bg-gray-800/50'
+                                                        : 'hover:bg-white/10'
                                                 }`}
                                                 onClick={() => {
                                                     router.push('/tv')
@@ -300,7 +300,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                                 className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
                                                     router.pathname === '/movies'
                                                         ? 'text-white font-semibold bg-red-600/20'
-                                                        : 'hover:bg-gray-800/50'
+                                                        : 'hover:bg-white/10'
                                                 }`}
                                                 onClick={() => {
                                                     router.push('/movies')
@@ -316,7 +316,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                                 className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
                                                     router.pathname === '/watchlists'
                                                         ? 'text-white font-semibold bg-red-600/20'
-                                                        : 'hover:bg-gray-800/50'
+                                                        : 'hover:bg-white/10'
                                                 }`}
                                                 onClick={() => {
                                                     router.push('/watchlists')
@@ -332,7 +332,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                                 className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
                                                     router.pathname === '/liked'
                                                         ? 'text-white font-semibold bg-red-600/20'
-                                                        : 'hover:bg-gray-800/50'
+                                                        : 'hover:bg-white/10'
                                                 }`}
                                                 onClick={() => {
                                                     router.push('/liked')
@@ -348,7 +348,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                                 className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
                                                     router.pathname === '/hidden'
                                                         ? 'text-white font-semibold bg-red-600/20'
-                                                        : 'hover:bg-gray-800/50'
+                                                        : 'hover:bg-white/10'
                                                 }`}
                                                 onClick={() => {
                                                     router.push('/hidden')
@@ -364,7 +364,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                                 className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
                                                     router.pathname === '/search'
                                                         ? 'text-white font-semibold bg-red-600/20'
-                                                        : 'hover:bg-gray-800/50'
+                                                        : 'hover:bg-white/10'
                                                 }`}
                                                 onClick={() => {
                                                     router.push('/search')

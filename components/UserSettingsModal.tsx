@@ -119,7 +119,7 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, onClose }
                                     onClick={() => handleSectionChange('upload')}
                                     className="w-full flex items-center p-4 text-left hover:bg-gray-800/50 rounded-lg transition-colors duration-200 group"
                                 >
-                                    <ArrowUpTrayIcon className="w-5 h-5 text-gray-400 group-hover:text-red-500 mr-4" />
+                                    <ArrowUpTrayIcon className="w-5 h-5 text-blue-400 group-hover:text-blue-300 mr-4" />
                                     <div>
                                         <p className="text-white font-medium">Upload Watchlists</p>
                                         <p className="text-gray-400 text-sm">
@@ -132,7 +132,7 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, onClose }
                                     onClick={() => handleSectionChange('share')}
                                     className="w-full flex items-center p-4 text-left hover:bg-gray-800/50 rounded-lg transition-colors duration-200 group"
                                 >
-                                    <ShareIcon className="w-5 h-5 text-gray-400 group-hover:text-red-500 mr-4" />
+                                    <ShareIcon className="w-5 h-5 text-green-400 group-hover:text-green-300 mr-4" />
                                     <div>
                                         <p className="text-white font-medium">Share Watchlists</p>
                                         <p className="text-gray-400 text-sm">
@@ -261,8 +261,8 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, onClose }
                                 Import watchlists shared by other users.
                             </p>
 
-                            <div className="border-2 border-dashed border-gray-600 rounded-lg p-8 text-center">
-                                <ArrowUpTrayIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                            <div className="border-2 border-dashed border-blue-500/50 rounded-lg p-8 text-center bg-blue-500/5">
+                                <ArrowUpTrayIcon className="w-12 h-12 text-blue-400 mx-auto mb-4" />
                                 <p className="text-white font-medium mb-2">Upload Watchlist File</p>
                                 <p className="text-gray-400 text-sm mb-4">
                                     Support for CSV, JSON, and other formats
@@ -297,22 +297,22 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, onClose }
                             <p className="text-gray-300">Share your watchlists with other users.</p>
 
                             <div className="space-y-4">
-                                <div className="bg-gray-800/50 rounded-lg p-4">
+                                <div className="bg-green-500/5 border border-green-500/30 rounded-lg p-4">
                                     <h3 className="text-white font-medium mb-2">My Watchlist</h3>
                                     <p className="text-gray-400 text-sm mb-3">
                                         Share your main watchlist
                                     </p>
-                                    <button className="px-3 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors duration-200">
+                                    <button className="px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors duration-200">
                                         Generate Share Link
                                     </button>
                                 </div>
 
-                                <div className="bg-gray-800/50 rounded-lg p-4">
+                                <div className="bg-green-500/5 border border-green-500/30 rounded-lg p-4">
                                     <h3 className="text-white font-medium mb-2">Custom Lists</h3>
                                     <p className="text-gray-400 text-sm mb-3">
                                         Share your custom watchlists
                                     </p>
-                                    <button className="px-3 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors duration-200">
+                                    <button className="px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors duration-200">
                                         Manage Sharing
                                     </button>
                                 </div>

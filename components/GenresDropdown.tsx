@@ -47,7 +47,7 @@ function GenresDropdown() {
                             className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 select-none ${
                                 selectedType === 'movie'
                                     ? 'bg-red-600 text-white'
-                                    : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                                    : 'text-gray-300 hover:text-white hover:bg-white/10'
                             }`}
                             onClick={() => setSelectedType('movie')}
                         >
@@ -58,7 +58,7 @@ function GenresDropdown() {
                             className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 select-none ${
                                 selectedType === 'tv'
                                     ? 'bg-red-600 text-white'
-                                    : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                                    : 'text-gray-300 hover:text-white hover:bg-white/10'
                             }`}
                             onClick={() => setSelectedType('tv')}
                         >
@@ -73,7 +73,7 @@ function GenresDropdown() {
                             {currentGenres.map((genre) => (
                                 <button
                                     key={genre.id}
-                                    className="text-left px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800 rounded-md transition-colors select-none"
+                                    className="text-left px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/10 rounded-md transition-colors select-none"
                                     onClick={() => handleGenreClick(genre.id, genre.name)}
                                 >
                                     {genre.name}

@@ -72,7 +72,8 @@ function ListDropdown({
     // Don't render on server side
     if (typeof window === 'undefined') return null
 
-    const handleWatchlistToggle = () => {
+    const handleWatchlistToggle = (e: React.MouseEvent) => {
+        e.stopPropagation()
         console.log('📋 [ListDropdown] handleWatchlistToggle called')
         console.log('📋 [ListDropdown] Content:', content)
         console.log('📋 [ListDropdown] Content ID:', content.id)
@@ -102,10 +103,11 @@ function ListDropdown({
             )
             showWatchlistAdd(`Added ${getTitle(content)} to My List`)
         }
-        onClose()
+        // Don't close - keep dropdown open
     }
 
-    const handleCreateList = () => {
+    const handleCreateList = (e?: React.MouseEvent) => {
+        e?.stopPropagation()
         if (newListName.trim()) {
             createList({
                 name: newListName.trim(),
@@ -118,7 +120,8 @@ function ListDropdown({
         }
     }
 
-    const handleManageAllLists = () => {
+    const handleManageAllLists = (e: React.MouseEvent) => {
+        e.stopPropagation()
         setListModal({
             isOpen: true,
             content: content,
@@ -145,15 +148,12 @@ function ListDropdown({
                 position: 'fixed',
                 left: Math.max(8, Math.min(position.x, window.innerWidth - 264)),
                 ...(variant === 'dropup'
-                    ? { bottom: window.innerHeight - position.y - 16 } // Extend down by 16px to overlap with button area
+                    ? { bottom: window.innerHeight - position.y } // Even lower
                     : { top: position.y + 8 }),
                 width: '256px',
-                zIndex: 1400,
+                zIndex: 100, // Much higher z-index
             }}
         >
-            {/* Invisible hover bridge */}
-            {variant === 'dropup' && <div className="h-5 w-full" />}
-
             {/* Actual dropdown content */}
             <div className="bg-[#141414] border border-gray-600 rounded-lg shadow-2xl overflow-hidden">
                 {/* My List Option */}
@@ -179,7 +179,8 @@ function ListDropdown({
                 {/* Create New List - Auth Gate */}
                 {isGuest ? (
                     <button
-                        onClick={() => {
+                        onClick={(e) => {
+                            e.stopPropagation()
                             onClose()
                             openAuthModal('signup')
                         }}
@@ -188,44 +189,17 @@ function ListDropdown({
                         <LockClosedIcon className="w-5 h-5 text-gray-400" />
                         <span className="text-white font-medium">Sign In to Create Lists</span>
                     </button>
-                ) : !showCreateInput ? (
+                ) : (
                     <button
-                        onClick={() => setShowCreateInput(true)}
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            handleManageAllLists(e)
+                        }}
                         className="w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-700/50 transition-colors text-left border-b border-gray-600"
                     >
                         <PlusIcon className="w-5 h-5 text-green-400" />
                         <span className="text-white font-medium">Create New List</span>
                     </button>
-                ) : (
-                    <div className="p-4 border-b border-gray-600">
-                        <input
-                            type="text"
-                            placeholder="List name..."
-                            value={newListName}
-                            onChange={(e) => setNewListName(e.target.value)}
-                            onKeyDown={handleKeyPress}
-                            className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                            autoFocus
-                        />
-                        <div className="flex space-x-2 mt-3">
-                            <button
-                                onClick={handleCreateList}
-                                disabled={!newListName.trim()}
-                                className="flex-1 px-3 py-1.5 bg-green-600 text-white rounded text-sm font-medium transition-colors hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                Create
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setShowCreateInput(false)
-                                    setNewListName('')
-                                }}
-                                className="flex-1 px-3 py-1.5 bg-gray-600 text-white rounded text-sm font-medium transition-colors hover:bg-gray-700"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
                 )}
 
                 {/* Manage All Lists */}
@@ -245,6 +219,18 @@ function ListDropdown({
                     )}
                 </button>
             </div>
+
+            {/* Hover bridge - right-aligned, button-width */}
+            {variant === 'dropup' && (
+                <div
+                    style={{
+                        width: '44px', // Button width (p-3 + icon)
+                        height: '16px', // Thinner bridge
+                        backgroundColor: 'rgba(255, 0, 0, 0.5)', // Visible red for debugging
+                        marginLeft: 'auto', // Right-align
+                    }}
+                />
+            )}
         </div>,
         document.body
     )

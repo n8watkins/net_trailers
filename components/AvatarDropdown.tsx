@@ -115,14 +115,14 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                 {isOpen && (
                     <div className="absolute right-0 mt-2 w-64 sm:w-72 bg-black/95 backdrop-blur-sm border border-red-500/40 rounded-xl shadow-2xl shadow-red-500/20 z-[110] py-1 animate-fade-in-down">
                         {/* Guest Account Status */}
-                        <div className="px-5 py-4 border-b border-gray-700/50">
+                        <div className="px-5 py-6 border-b border-gray-700/50">
                             <div className="flex items-center space-x-3">
-                                <div className="w-8 h-8 bg-gray-600 rounded-md flex items-center justify-center">
-                                    <UserIcon className="w-4 h-4 text-white" />
+                                <div className="w-10 h-10 bg-gray-600 rounded-md flex items-center justify-center">
+                                    <UserIcon className="w-5 h-5 text-white" />
                                 </div>
                                 <div>
-                                    <p className="text-white font-medium text-sm">Guest Account</p>
-                                    <p className="text-gray-400 text-xs">Browsing anonymously</p>
+                                    <p className="text-white font-medium text-base">Guest Account</p>
+                                    <p className="text-gray-400 text-sm">Browsing anonymously</p>
                                 </div>
                             </div>
                         </div>
@@ -134,9 +134,9 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                                     setIsOpen(false)
                                     onOpenAuthModal?.()
                                 }}
-                                className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                                className="group flex items-center w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                             >
-                                <UserCircleIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                <UserCircleIcon className="w-6 h-6 mr-4 group-hover:text-red-500 transition-colors duration-200" />
                                 Sign In
                             </button>
 
@@ -145,9 +145,9 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                                     setIsOpen(false)
                                     onOpenSignUpModal?.()
                                 }}
-                                className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                                className="group flex items-center w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                             >
-                                <UserCircleIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                <UserCircleIcon className="w-6 h-6 mr-4 group-hover:text-red-500 transition-colors duration-200" />
                                 Create Account
                             </button>
 
@@ -155,10 +155,10 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
 
                             <button
                                 onClick={handleSettingsClick}
-                                className="group flex items-center justify-between w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                                className="group flex items-center justify-between w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                             >
                                 <div className="flex items-center">
-                                    <CogIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                    <CogIcon className="w-6 h-6 mr-4 group-hover:text-red-500 transition-colors duration-200" />
                                     Settings
                                 </div>
                             </button>
@@ -168,10 +168,10 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                                 defaultWatchlist.length > 0) && (
                                 <button
                                     onClick={handleExportCSV}
-                                    className="group flex items-center justify-between w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                                    className="group flex items-center justify-between w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                                 >
                                     <div className="flex items-center">
-                                        <ArrowDownTrayIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                        <ArrowDownTrayIcon className="w-6 h-6 mr-4 group-hover:text-red-500 transition-colors duration-200" />
                                         Export Data
                                     </div>
                                 </button>
@@ -184,10 +184,10 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                                     setIsOpen(false)
                                     onOpenTutorial?.()
                                 }}
-                                className="group flex items-center justify-between w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                                className="group flex items-center justify-between w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                             >
                                 <div className="flex items-center">
-                                    <AcademicCapIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                    <AcademicCapIcon className="w-6 h-6 mr-4 group-hover:text-red-500 transition-colors duration-200" />
                                     Tutorial
                                 </div>
                                 <span className="text-xs text-gray-400 font-mono font-semibold">
@@ -197,10 +197,10 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
 
                             <button
                                 onClick={handleAboutClick}
-                                className="group flex items-center justify-between w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                                className="group flex items-center justify-between w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                             >
                                 <div className="flex items-center">
-                                    <InformationCircleIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                    <InformationCircleIcon className="w-6 h-6 mr-4 group-hover:text-red-500 transition-colors duration-200" />
                                     About NetTrailers
                                 </div>
                                 <span className="text-xs text-gray-400 font-mono font-semibold">
@@ -213,10 +213,10 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                                     setIsOpen(false)
                                     onOpenKeyboardShortcuts?.()
                                 }}
-                                className="group flex items-center justify-between w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                                className="group flex items-center justify-between w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                             >
                                 <div className="flex items-center">
-                                    <CommandLineIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                    <CommandLineIcon className="w-6 h-6 mr-4 group-hover:text-red-500 transition-colors duration-200" />
                                     Keyboard Shortcuts
                                 </div>
                                 <span className="text-xs text-gray-400 font-mono font-semibold">
@@ -258,13 +258,13 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
             {isOpen && (
                 <div className="absolute right-0 mt-2 w-64 sm:w-72 bg-black/95 backdrop-blur-sm border border-red-500/40 rounded-xl shadow-2xl shadow-red-500/20 z-[110] py-1 animate-fade-in-down">
                     {/* User Info Header */}
-                    <div className="px-5 py-4 border-b border-gray-700/50">
+                    <div className="px-5 py-6 border-b border-gray-700/50">
                         <div className="flex items-center space-x-3">
                             <div className="flex-1 min-w-0">
-                                <p className="text-white font-medium text-sm truncate">
+                                <p className="text-white font-medium text-base truncate">
                                     {getUserName()}
                                 </p>
-                                <p className="text-gray-400 text-xs truncate">{user.email}</p>
+                                <p className="text-gray-400 text-sm truncate">{user.email}</p>
                             </div>
                         </div>
                     </div>
@@ -273,18 +273,18 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                     <div className="py-2">
                         <button
                             onClick={handleProfileClick}
-                            className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                            className="group flex items-center w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                         >
-                            <UserCircleIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                            <UserCircleIcon className="w-6 h-6 mr-4 group-hover:text-red-500 transition-colors duration-200" />
                             Profile
                         </button>
 
                         <button
                             onClick={handleSettingsClick}
-                            className="group flex items-center justify-between w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                            className="group flex items-center justify-between w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                         >
                             <div className="flex items-center">
-                                <CogIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                <CogIcon className="w-6 h-6 mr-4 group-hover:text-red-500 transition-colors duration-200" />
                                 Settings
                             </div>
                         </button>
@@ -294,10 +294,10 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                             defaultWatchlist.length > 0) && (
                             <button
                                 onClick={handleExportCSV}
-                                className="group flex items-center justify-between w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                                className="group flex items-center justify-between w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                             >
                                 <div className="flex items-center">
-                                    <ArrowDownTrayIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                    <ArrowDownTrayIcon className="w-6 h-6 mr-4 group-hover:text-red-500 transition-colors duration-200" />
                                     Export Data
                                 </div>
                             </button>
@@ -310,10 +310,10 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                                 setIsOpen(false)
                                 onOpenTutorial?.()
                             }}
-                            className="group flex items-center justify-between w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                            className="group flex items-center justify-between w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                         >
                             <div className="flex items-center">
-                                <AcademicCapIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                <AcademicCapIcon className="w-6 h-6 mr-4 group-hover:text-red-500 transition-colors duration-200" />
                                 Tutorial
                             </div>
                             <span className="text-xs text-gray-400 font-mono font-semibold">
@@ -323,10 +323,10 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
 
                         <button
                             onClick={handleAboutClick}
-                            className="group flex items-center justify-between w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                            className="group flex items-center justify-between w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                         >
                             <div className="flex items-center">
-                                <InformationCircleIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                <InformationCircleIcon className="w-6 h-6 mr-4 group-hover:text-red-500 transition-colors duration-200" />
                                 About NetTrailers
                             </div>
                             <span className="text-xs text-gray-400 font-mono font-semibold">
@@ -339,10 +339,10 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                                 setIsOpen(false)
                                 onOpenKeyboardShortcuts?.()
                             }}
-                            className="group flex items-center justify-between w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                            className="group flex items-center justify-between w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                         >
                             <div className="flex items-center">
-                                <CommandLineIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                                <CommandLineIcon className="w-6 h-6 mr-4 group-hover:text-red-500 transition-colors duration-200" />
                                 Keyboard Shortcuts
                             </div>
                             <span className="text-xs text-gray-400 font-mono font-semibold">?</span>
@@ -352,9 +352,9 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
 
                         <button
                             onClick={handleLogout}
-                            className="group flex items-center w-full px-5 py-3 text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
+                            className="group flex items-center w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
                         >
-                            <ArrowRightOnRectangleIcon className="w-5 h-5 mr-4 group-hover:text-red-500 transition-colors duration-200" />
+                            <ArrowRightOnRectangleIcon className="w-6 h-6 mr-4 group-hover:text-red-500 transition-colors duration-200" />
                             Sign Out
                         </button>
                     </div>

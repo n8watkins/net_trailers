@@ -392,9 +392,9 @@ const GenrePage: NextPage<GenrePageProps> = ({
                     {content.length > 0 ? (
                         <div className="space-y-8">
                             {/* Flex Layout */}
-                            <div className="flex flex-wrap gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 md:gap-x-8 md:gap-y-12">
+                            <div className="flex flex-wrap gap-x-4 gap-y-20 sm:gap-x-6 sm:gap-y-24 md:gap-x-8 md:gap-y-28 overflow-visible">
                                 {contentToRender.map((item) => (
-                                    <div key={item.id} className="">
+                                    <div key={item.id} className="overflow-visible">
                                         <ContentCard content={item} />
                                     </div>
                                 ))}

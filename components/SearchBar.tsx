@@ -65,6 +65,7 @@ export default function SearchBar({
         isLoading,
         hasSearched,
         totalResults,
+        filters,
         updateQuery,
         clearSearch,
         performSearch,
@@ -312,6 +313,12 @@ export default function SearchBar({
     const quickResults = hasSearched && results.length > 0 ? results.slice(0, 4) : []
     const hasMoreResults = results.length > 4
 
+    // Check if any filters are active
+    const hasActiveFilters = Object.entries(filters).some(([key, value]) => {
+        if (key === 'sortBy') return value !== 'popularity.desc'
+        return value !== 'all'
+    })
+
     return (
         <div
             className={`relative transition-all duration-300 ease-in-out w-full mx-auto ${className}`}
@@ -396,11 +403,13 @@ export default function SearchBar({
                         {/* Filter Button */}
                         <button
                             onClick={() => setShowFilters(!showFilters)}
-                            className={`px-3 py-2 text-gray-400 hover:text-white transition-colors ${
-                                showFilters ? 'text-red-400' : ''
+                            className={`px-3 py-2 transition-colors ${
+                                showFilters || hasActiveFilters
+                                    ? 'text-red-400 hover:text-red-300'
+                                    : 'text-gray-400 hover:text-white'
                             }`}
                             type="button"
-                            title="Search Filters"
+                            title={hasActiveFilters ? 'Active Filters' : 'Search Filters'}
                         >
                             <FunnelIcon className="h-5 w-5" />
                         </button>

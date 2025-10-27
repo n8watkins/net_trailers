@@ -25,6 +25,8 @@ export interface ToastMessage {
         | 'content-shown' // Green eye - showing content
     title: string // Main message text
     message?: string // Optional additional details
+    onUndo?: () => void // Optional undo callback
+    contentId?: number // Optional content ID for undo operations
 }
 
 interface ToastProps {
@@ -65,6 +67,13 @@ const Toast: React.FC<ToastProps> = ({ toast, onClose, duration = TOAST_DURATION
         timersRef.current.exit = setTimeout(() => {
             onClose(toast.id)
         }, TOAST_EXIT_DURATION)
+    }
+
+    const handleUndo = () => {
+        if (toast.onUndo) {
+            toast.onUndo()
+            handleClose()
+        }
     }
 
     const getToastStyles = () => {
@@ -129,6 +138,15 @@ const Toast: React.FC<ToastProps> = ({ toast, onClose, duration = TOAST_DURATION
                         >
                             {toast.message}
                         </p>
+                    )}
+                    {/* Undo button for content-hidden toast */}
+                    {toast.type === 'content-hidden' && toast.onUndo && (
+                        <button
+                            onClick={handleUndo}
+                            className="mt-2 px-3 py-1 text-sm font-medium text-white bg-gray-700 hover:bg-gray-600 rounded-md transition-colors duration-200"
+                        >
+                            Undo
+                        </button>
                     )}
                 </div>
                 <div className="ml-4 flex-shrink-0 flex">

@@ -6,7 +6,7 @@ import { debugSetter } from '../utils/debugStore'
 
 // Toast configuration constants
 export const MAX_TOASTS = 2 // Maximum 2 toasts displayed at once
-export const TOAST_DURATION = 5000
+export const TOAST_DURATION = 8000 // 8 seconds
 export const TOAST_EXIT_DURATION = 300
 
 // Modal types
@@ -36,6 +36,8 @@ export interface ToastMessage {
     title: string
     message?: string
     timestamp: number
+    onUndo?: () => void // Optional undo callback
+    contentId?: number // Optional content ID for undo operations
 }
 
 // Search types

@@ -47,8 +47,8 @@ export const useToast = () => {
         addToast({ type: 'watchlist-remove', title, message })
     }
 
-    const showContentHidden = (title: string, message?: string) => {
-        addToast({ type: 'content-hidden', title, message })
+    const showContentHidden = (title: string, message?: string, onUndo?: () => void) => {
+        addToast({ type: 'content-hidden', title, message, onUndo })
     }
 
     const showContentShown = (title: string, message?: string) => {

@@ -77,14 +77,16 @@ async function applyFilters(results: Content[], filters: SearchFilters): Promise
     if (filters.sortBy !== 'popularity.desc') {
         filteredResults.sort((a, b) => {
             switch (filters.sortBy) {
-                case 'revenue.desc':
+                case 'revenue.desc': {
                     const revenueA = (a as any).revenue || 0
                     const revenueB = (b as any).revenue || 0
                     return revenueB - revenueA
-                case 'vote_average.desc':
+                }
+                case 'vote_average.desc': {
                     const ratingA = a.vote_average || 0
                     const ratingB = b.vote_average || 0
                     return ratingB - ratingA
+                }
                 default:
                     // Default is popularity.desc which should already be sorted by TMDB
                     return 0
@@ -257,8 +259,8 @@ export function useSearch() {
                         isLoading: false,
                         error: error.message || 'Search failed',
                     }))
-                } else {
                 }
+                // AbortError is expected when cancelling requests, ignore it
             }
         },
         [setSearch, setSearchHistory, clearResults, childSafetyEnabled]
@@ -288,6 +290,8 @@ export function useSearch() {
         if (search.hasSearched && search.query.trim().length >= 2) {
             performSearchRef.current(search.query, 1)
         }
+        // We only want to trigger when childSafetyEnabled changes
+        // search.hasSearched and search.query are checked inside the effect
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [childSafetyEnabled])
 
@@ -345,7 +349,8 @@ export function useSearch() {
         search.hasAllResults,
         search.isLoadingAll,
         hasActiveFilters,
-        loadAllResults,
+        // REMOVED loadAllResults from dependencies to prevent infinite loop
+        // The function is stable via useCallback, so we can safely omit it
     ])
 
     // Update search query

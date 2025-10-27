@@ -9,11 +9,12 @@ import {
     EyeIcon,
 } from '@heroicons/react/24/solid'
 import { useAppStore } from '../stores/appStore'
-import WatchLaterButton from './WatchLaterButton'
 import { prefetchMovieDetails } from '../utils/prefetchCache'
 import useUserData from '../hooks/useUserData'
 import { useToast } from '../hooks/useToast'
 import ToolTipMod from './ToolTipMod'
+import { useSetRecoilState } from 'recoil'
+import { listModalState } from '../atoms/listModalAtom'
 
 interface Props {
     content?: Content
@@ -24,25 +25,26 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
     const posterImage = content?.poster_path
     const { openModal } = useAppStore()
     const {
-        addToWatchlist,
         addLikedMovie,
         removeLikedMovie,
         isLiked,
         addHiddenMovie,
         removeHiddenMovie,
         isHidden,
+        getListsContaining,
     } = useUserData()
-    const { showWatchlistAdd, showContentHidden, showContentShown, showSuccess } = useToast()
+    const { showContentHidden, showContentShown, showSuccess } = useToast()
+    const setListModal = useSetRecoilState(listModalState)
     const [imageLoaded, setImageLoaded] = useState(false)
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-    const [showQuickAdd, setShowQuickAdd] = useState(false) // Toggle for duplicate button
-    const [showHoverActions, setShowHoverActions] = useState(false) // Show hover menu above watchlist button
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false) // Track watchlist dropdown state
+    const [showHoverActions, setShowHoverActions] = useState(false) // Show hover menu above bookmark button
     const [isCardHovered, setIsCardHovered] = useState(false) // Track card hover state
 
-    // Check if content is liked or hidden
+    // Check if content is liked, hidden, or in any lists
     const liked = content ? isLiked(content.id) : false
     const hidden = content ? isHidden(content.id) : false
+    const listsContaining = content ? getListsContaining(content.id) : []
+    const isInAnyList = listsContaining.length > 0
 
     const handleImageClick = () => {
         if (content) {
@@ -107,7 +109,8 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
         <div
             className={`relative cursor-pointer transition-all duration-300 ease-out group
                        ${getCardSizeClasses()}
-                       hover:z-40 ${className}`}
+                       hover:z-40 ${className}
+                       min-h-[340px] sm:min-h-[370px] md:min-h-[400px] lg:min-h-[430px] xl:min-h-[490px]`}
             onClick={handleImageClick}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
@@ -115,8 +118,8 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
             {/* Image Container with Fixed Dimensions */}
             <div
                 className={`relative ${getImageSizeClasses()} ${
-                    isCardHovered || isDropdownOpen ? 'scale-110' : 'scale-100'
-                } transition-transform duration-300 ease-out`}
+                    isCardHovered ? 'scale-110' : 'scale-100'
+                } transition-transform duration-300 ease-out origin-center`}
             >
                 {/* Loading Skeleton */}
                 {!imageLoaded && posterImage && (
@@ -162,11 +165,11 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                 {/* Hover Action Buttons */}
                 {content && imageLoaded && (
                     <div
-                        className="absolute bottom-4 left-4 right-4
-                              opacity-0 group-hover:opacity-100
+                        className={`absolute bottom-4 left-4 right-4
                               transition-all duration-300 ease-out
-                              transform translate-y-4 group-hover:translate-y-0
-                              flex gap-3"
+                              transform flex gap-3 ${
+                                  isCardHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                              }`}
                     >
                         <button
                             onClick={(e) => {
@@ -228,15 +231,13 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                         }}
                                         className={`group/like p-3 rounded-full border-2 transition-all duration-200 ${
                                             liked
-                                                ? 'border-green-400/60 bg-green-500/20 hover:bg-green-500/30'
+                                                ? 'border-white bg-black hover:bg-black'
                                                 : 'border-white/40 bg-black/85 hover:bg-black hover:border-white'
                                         }`}
                                     >
                                         <HandThumbUpIcon
                                             className={`h-5 w-5 transition-colors duration-200 ${
-                                                liked
-                                                    ? 'text-green-400'
-                                                    : 'text-white/60 group-hover/like:text-white'
+                                                liked ? 'text-white' : 'text-white/60 group-hover/like:text-white'
                                             }`}
                                         />
                                     </button>
@@ -258,7 +259,8 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                                     addHiddenMovie(content)
                                                     showContentHidden(
                                                         `${getTitle(content)} Hidden`,
-                                                        'Hidden from recommendations'
+                                                        'Hidden from recommendations',
+                                                        () => removeHiddenMovie(content.id) // Undo callback
                                                     )
                                                 }
                                             }
@@ -274,6 +276,24 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                         ) : (
                                             <EyeIcon className="h-5 w-5 text-white/60 group-hover/hide:text-white transition-colors duration-200" />
                                         )}
+                                    </button>
+                                </ToolTipMod>
+
+                                {/* Add to List Button */}
+                                <ToolTipMod title="Add to Lists" placement="right">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            if (content) {
+                                                setListModal({
+                                                    isOpen: true,
+                                                    content: content,
+                                                })
+                                            }
+                                        }}
+                                        className="group/add p-3 rounded-full border-2 border-white/40 bg-black/85 hover:bg-black hover:border-white transition-all duration-200"
+                                    >
+                                        <PlusIcon className="h-5 w-5 text-white/60 group-hover/add:text-white transition-colors duration-200" />
                                     </button>
                                 </ToolTipMod>
                             </div>
@@ -304,13 +324,6 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                 </svg>
                             </button>
                         </div>
-
-                        {/* WatchLaterButton - Dropdown menu for list management */}
-                        <WatchLaterButton
-                            content={content}
-                            variant="thumbnail"
-                            onDropdownStateChange={setIsDropdownOpen}
-                        />
                     </div>
                 )}
             </div>
@@ -318,8 +331,10 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
             {/* Star Rating - Top Left (Outside scaling container) */}
             {content && content.vote_average > 0 && imageLoaded && (
                 <div
-                    className="absolute top-2 left-2 bg-black/80 backdrop-blur-sm rounded-full px-2 py-1 md:px-3 md:py-1.5 z-20
-                          opacity-100 transition-all duration-300 ease-out group-hover:-translate-x-3 group-hover:-translate-y-4"
+                    className={`absolute top-2 left-2 bg-black/80 backdrop-blur-sm rounded-full px-2 py-1 md:px-3 md:py-1.5 z-20
+                          opacity-100 transition-all duration-300 ease-out ${
+                              isCardHovered ? '-translate-x-3 -translate-y-4' : 'translate-x-0 translate-y-0'
+                          }`}
                 >
                     <div className="flex items-center gap-1">
                         <span className="text-yellow-400 text-sm">⭐</span>
@@ -333,8 +348,10 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
             {/* Media Type Pill - Top Right (Outside scaling container) */}
             {content && imageLoaded && (
                 <div
-                    className="absolute top-3 right-3 z-20
-                          opacity-100 transition-all duration-300 ease-out group-hover:translate-x-3 group-hover:-translate-y-4"
+                    className={`absolute top-3 right-3 z-20
+                          opacity-100 transition-all duration-300 ease-out ${
+                              isCardHovered ? 'translate-x-3 -translate-y-4' : 'translate-x-0 translate-y-0'
+                          }`}
                 >
                     <span
                         className={`px-1.5 py-0.5 md:px-3 md:py-1 text-xs md:text-base rounded-full backdrop-blur-sm ${
@@ -351,10 +368,12 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
             {/* Movie Title and Year - Below Content Image */}
             {content && imageLoaded && (
                 <div
-                    className="mt-2 transition-all duration-300 ease-out
-                              group-hover:mt-6 text-left relative z-30 bg-transparent p-2"
+                    className={`transition-all duration-300 ease-out
+                              text-left relative z-30 bg-transparent p-2 min-h-[80px] mt-4 ${
+                                  isCardHovered ? 'translate-y-2' : 'translate-y-0'
+                              }`}
                 >
-                    <h3 className="text-white font-bold leading-tight mb-1 text-base text-left">
+                    <h3 className="text-white font-bold leading-tight mb-1 text-base text-left line-clamp-3">
                         {content ? getTitle(content) : 'No Title'}
                     </h3>
                     <p className="text-gray-400 font-medium leading-tight text-sm text-left">
