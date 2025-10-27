@@ -460,6 +460,8 @@ export default function SearchBar({
                 suggestionsRef={suggestionsRef}
                 query={query}
                 totalResults={totalResults}
+                filteredCount={results.length}
+                hasActiveFilters={hasActiveFilters}
                 quickResults={quickResults}
                 hasMoreResults={hasMoreResults}
                 selectedResultIndex={selectedResultIndex}
