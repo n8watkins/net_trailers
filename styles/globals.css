@@ -255,3 +255,20 @@ input[type='range'].slider-vertical::-moz-range-progress {
     background: #000000 !important;
     border-radius: 5px !important;
 }
+
+/* Override browser autofill/autocomplete white background */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #0a0a0a inset !important;
+    -webkit-text-fill-color: white !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Firefox autofill */
+input:-moz-autofill,
+input:-moz-autofill-preview {
+    background-color: #0a0a0a !important;
+    color: white !important;
+}

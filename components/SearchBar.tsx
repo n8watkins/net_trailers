@@ -386,6 +386,7 @@ export default function SearchBar({
                         onBlur={handleInputBlur}
                         onKeyDown={handleKeyDown}
                         placeholder={!isFocused && !query ? typewriterText : placeholder}
+                        autoComplete="off"
                         className={`
                             block w-full pl-10 pr-12 py-4
                             bg-[#0a0a0a] border border-gray-600/50 rounded-lg
@@ -394,6 +395,8 @@ export default function SearchBar({
                             transition-all duration-300 ease-in-out
                             placeholder:text-ellipsis placeholder:overflow-hidden placeholder:whitespace-nowrap
                             text-base sm:text-lg select-none
+                            autofill:bg-[#0a0a0a] autofill:text-white
+                            autofill:shadow-[inset_0_0_0_1000px_#0a0a0a]
                             ${isFocused ? 'bg-[#0a0a0a] shadow-xl shadow-red-500/30 border-red-500/50' : 'bg-[#0a0a0a]'}
                         `}
                     />
