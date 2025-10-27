@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/router'
 import { useRecoilState } from 'recoil'
 import { searchState, searchHistoryState, SearchFilters } from '../atoms/searchAtom'
-import { getTitle, Content, isMovie, getYear } from '../typings'
+import { getTitle, Content, getYear } from '../typings'
 import { useChildSafety } from './useChildSafety'
 
 // Custom debounce hook
@@ -129,7 +129,61 @@ export function useSearch() {
         })
     }, [])
 
-    // Load all remaining results
+    // Load first N pages for quick search filtering (lighter than loading all)
+    const loadQuickSearchResults = useCallback(
+        async (maxPages: number = 5) => {
+            if (search.isLoadingAll || !search.hasSearched || !search.query.trim()) {
+                return
+            }
+
+            setSearch((prev) => ({ ...prev, isLoadingAll: true }))
+
+            try {
+                const allResults = [...search.results]
+                let currentPage = search.currentPage + 1
+                const targetPages = Math.min(maxPages, search.totalResults / 20)
+
+                // Load up to maxPages (default 5 pages = 100 results)
+                while (currentPage <= targetPages && currentPage <= 5) {
+                    const url = `/api/search?query=${encodeURIComponent(search.query.trim())}&page=${currentPage}&childSafetyMode=${childSafetyEnabled}`
+                    const response = await fetch(url)
+
+                    if (!response.ok) break
+
+                    const data = await response.json()
+                    if (!data.results || data.results.length === 0) break
+
+                    allResults.push(...data.results)
+                    currentPage++
+                }
+
+                const filtered = await applyFilters(allResults, search.filters)
+
+                setSearch((prev) => ({
+                    ...prev,
+                    results: allResults,
+                    filteredResults: filtered,
+                    isLoadingAll: false,
+                    hasAllResults: allResults.length >= search.totalResults,
+                    currentPage: currentPage - 1,
+                }))
+            } catch (_error) {
+                setSearch((prev) => ({ ...prev, isLoadingAll: false }))
+            }
+        },
+        [
+            search.isLoadingAll,
+            search.hasSearched,
+            search.query,
+            search.results,
+            search.currentPage,
+            search.totalResults,
+            setSearch,
+            childSafetyEnabled,
+        ]
+    )
+
+    // Load all remaining results (for /search page)
     const loadAllResults = useCallback(async () => {
         if (
             search.hasAllResults ||
@@ -170,7 +224,7 @@ export function useSearch() {
                 isLoadingAll: false,
                 currentPage: currentPage - 1,
             }))
-        } catch (error) {
+        } catch (_error) {
             setSearch((prev) => ({ ...prev, isLoadingAll: false }))
         }
     }, [
@@ -356,13 +410,34 @@ export function useSearch() {
         if (!hasActiveFilters(search.filters)) {
             lastFilterStateRef.current = ''
         }
-    }, [
-        router.pathname,
-        search.filters,
-        // REMOVED all the other search properties that loadAllResults modifies
-        // This prevents the infinite loop where loadAllResults updates state
-        // which triggers this effect again
-    ])
+    }, [router.pathname, search.filters, hasActiveFilters, loadAllResults])
+
+    // Auto-load first 100 results for quick search when filters are applied (NOT on search page)
+    const lastQuickSearchFilterStateRef = useRef<string>('')
+
+    useEffect(() => {
+        const isOnSearchPage = router.pathname === '/search'
+        const filterStateKey = JSON.stringify(search.filters)
+
+        // Only auto-load for quick search (NOT on /search page) when filters are applied
+        if (
+            !isOnSearchPage &&
+            hasActiveFilters(search.filters) &&
+            search.hasSearched &&
+            search.results.length > 0 &&
+            search.results.length < 100 && // Only load if we have less than 100 results
+            !search.isLoadingAll &&
+            filterStateKey !== lastQuickSearchFilterStateRef.current
+        ) {
+            lastQuickSearchFilterStateRef.current = filterStateKey
+            loadQuickSearchResults()
+        }
+
+        // Reset ref when filters are cleared
+        if (!hasActiveFilters(search.filters)) {
+            lastQuickSearchFilterStateRef.current = ''
+        }
+    }, [router.pathname, search.filters, hasActiveFilters, loadQuickSearchResults])
 
     // Update search query
     const updateQuery = useCallback(
