@@ -319,9 +319,13 @@ export function useSearch() {
         }
 
         updateFilteredResults()
-    }, [search.results, search.filters, setSearch])
+    }, [search.results, search.filters])
+    // Note: setSearch is stable from useRecoilState, safe to omit
 
     // Auto-load all results when filters are applied (only on search page)
+    // Use a ref to track if we've already triggered auto-load for current filter state
+    const lastFilterStateRef = useRef<string>('')
+
     useEffect(() => {
         // Only auto-load if:
         // 1. We're on the search page (not quick search)
@@ -331,26 +335,33 @@ export function useSearch() {
         // 5. We're not already loading all results
         const isOnSearchPage = router.pathname === '/search'
 
+        // Create a unique key for current filter state
+        const filterStateKey = JSON.stringify(search.filters)
+
+        // Only trigger if filters actually changed (not just state updates)
         if (
             isOnSearchPage &&
             hasActiveFilters(search.filters) &&
             search.hasSearched &&
             search.results.length > 0 &&
             !search.hasAllResults &&
-            !search.isLoadingAll
+            !search.isLoadingAll &&
+            filterStateKey !== lastFilterStateRef.current
         ) {
+            lastFilterStateRef.current = filterStateKey
             loadAllResults()
+        }
+
+        // Reset ref when filters are cleared
+        if (!hasActiveFilters(search.filters)) {
+            lastFilterStateRef.current = ''
         }
     }, [
         router.pathname,
         search.filters,
-        search.hasSearched,
-        search.results.length,
-        search.hasAllResults,
-        search.isLoadingAll,
-        hasActiveFilters,
-        // REMOVED loadAllResults from dependencies to prevent infinite loop
-        // The function is stable via useCallback, so we can safely omit it
+        // REMOVED all the other search properties that loadAllResults modifies
+        // This prevents the infinite loop where loadAllResults updates state
+        // which triggers this effect again
     ])
 
     // Update search query
