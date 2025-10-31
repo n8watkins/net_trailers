@@ -9,6 +9,8 @@ import {
 interface DebugSettings {
     showFirebaseTracker: boolean
     showFirebaseDebug: boolean
+    showSessionDebug: boolean
+    showGuestDebug: boolean
     showToastDebug: boolean
     showApiResults: boolean
 }
@@ -22,6 +24,8 @@ export default function DebugControls() {
     const [settings, setSettings] = useState<DebugSettings>({
         showFirebaseTracker: false,
         showFirebaseDebug: false,
+        showSessionDebug: false,
+        showGuestDebug: false,
         showToastDebug: false,
         showApiResults: false,
     })
@@ -177,7 +181,33 @@ export default function DebugControls() {
                         }`}
                         title="Toggle Auth Flow Logs"
                     >
-                        <span className="text-xs">Auth Flow Logs</span>
+                        <span className="text-xs">Auth</span>
+                    </button>
+
+                    {/* Session Debug Toggle */}
+                    <button
+                        onClick={() => toggleSetting('showSessionDebug')}
+                        className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                            settings.showSessionDebug
+                                ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30'
+                                : 'bg-gray-800 text-gray-500 border border-gray-700'
+                        }`}
+                        title="Toggle Session Logs"
+                    >
+                        <span className="text-xs">Session</span>
+                    </button>
+
+                    {/* Guest Debug Toggle */}
+                    <button
+                        onClick={() => toggleSetting('showGuestDebug')}
+                        className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                            settings.showGuestDebug
+                                ? 'bg-teal-600/20 text-teal-400 border border-teal-500/30'
+                                : 'bg-gray-800 text-gray-500 border border-gray-700'
+                        }`}
+                        title="Toggle Guest Logs"
+                    >
+                        <span className="text-xs">Guest</span>
                     </button>
 
                     {/* Toast Debug Toggle */}
@@ -218,6 +248,8 @@ export function useDebugSettings() {
     const [settings, setSettings] = useState<DebugSettings>({
         showFirebaseTracker: false,
         showFirebaseDebug: false,
+        showSessionDebug: false,
+        showGuestDebug: false,
         showToastDebug: false,
         showApiResults: false,
     })

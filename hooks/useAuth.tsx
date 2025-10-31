@@ -24,7 +24,7 @@ import { useAppStore } from '../stores/appStore'
 import { createErrorHandler } from '../utils/errorHandler'
 import { useToast } from './useToast'
 import { cacheAuthState, clearAuthCache, wasRecentlyAuthenticated } from '../utils/authCache'
-import { authLog, authError } from '../utils/authLogger'
+import { authLog, authError } from '../utils/debugLogger'
 
 interface AuthProviderProps {
     children: React.ReactNode

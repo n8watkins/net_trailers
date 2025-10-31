@@ -4,7 +4,7 @@ import { useAuthStore } from '../stores/authStore'
 import { useGuestStore } from '../stores/guestStore'
 import useAuth from '../hooks/useAuth'
 import { getCachedUserId } from '../utils/authCache'
-import { authLog } from '../utils/authLogger'
+import { authLog } from '../utils/debugLogger'
 
 /**
  * Centralized session sync manager - ensures Firebase sync happens only ONCE

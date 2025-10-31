@@ -13,7 +13,7 @@
  * - Cache expires after 7 days of inactivity
  */
 
-import { authLog, authError } from './authLogger'
+import { authLog, authError } from './debugLogger'
 
 const AUTH_CACHE_KEY = 'nettrailer_auth_cache'
 const CACHE_EXPIRY_DAYS = 7
