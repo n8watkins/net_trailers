@@ -83,11 +83,27 @@ export function SessionSyncManager() {
         const shouldBeAuth = !!user
         const currentlyAuth = sessionType === 'authenticated'
 
+        // CRITICAL: Don't switch away from optimistic auth session if Firebase is still confirming
+        // This prevents flickering when we've optimistically initialized auth but Firebase hasn't responded yet
+        if (currentlyAuth && !shouldBeAuth && authLoading) {
+            authLog(
+                '⏸️ [SessionSyncManager] Skipping guest switch - waiting for Firebase auth confirmation',
+                {
+                    currentlyAuth,
+                    shouldBeAuth,
+                    authLoading,
+                    activeSessionId,
+                }
+            )
+            return
+        }
+
         if (currentlyAuth !== shouldBeAuth) {
             authLog('🔄 [SessionSyncManager] Auth state changed, switching session...', {
                 currentlyAuth,
                 shouldBeAuth,
                 userId: user?.uid,
+                authLoading,
             })
 
             if (shouldBeAuth && user) {
@@ -97,12 +113,26 @@ export function SessionSyncManager() {
                 }
                 switchToAuth(user.uid)
             } else {
-                // Clear auth store when logging out
-                authStore.clearLocalCache()
-                switchToGuest()
+                // Only switch to guest if auth is fully loaded (not in progress)
+                if (!authLoading) {
+                    authLog(
+                        '👋 [SessionSyncManager] Auth completed with no user, switching to guest'
+                    )
+                    authStore.clearLocalCache()
+                    switchToGuest()
+                }
             }
         }
-    }, [isInitialized, sessionType, user, activeSessionId, switchToAuth, switchToGuest])
+    }, [
+        isInitialized,
+        sessionType,
+        user,
+        activeSessionId,
+        authLoading,
+        switchToAuth,
+        switchToGuest,
+        authStore,
+    ])
 
     // Sync data when session changes
     useEffect(() => {

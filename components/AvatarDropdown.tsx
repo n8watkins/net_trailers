@@ -18,6 +18,7 @@ import useAuth from '../hooks/useAuth'
 import { useRouter } from 'next/router'
 import useUserData from '../hooks/useUserData'
 import { exportUserDataToCSV } from '../utils/csvExport'
+import { useAuthStatus } from '../hooks/useAuthStatus'
 
 interface AvatarDropdownProps {
     className?: string
@@ -39,6 +40,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
     const [isOpen, setIsOpen] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
     const { user, logOut } = useAuth()
+    const { isAuthenticated, isInitialized, sessionType } = useAuthStatus()
     const userData = useUserData()
     const { likedMovies, hiddenMovies, defaultWatchlist } = userData
     const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
@@ -98,7 +100,23 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
         return 'User'
     }
 
-    if (!user) {
+    // Show loading state during initialization to prevent flicker
+    if (!isInitialized || sessionType === 'initializing') {
+        return (
+            <div className={`relative ${className}`} ref={dropdownRef}>
+                {/* Avatar Button - Loading */}
+                <button
+                    disabled
+                    className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-700 transition-colors duration-200 focus:outline-none cursor-wait"
+                    aria-label="Loading user menu"
+                >
+                    <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                </button>
+            </div>
+        )
+    }
+
+    if (!isAuthenticated) {
         return (
             <div className={`relative ${className}`} ref={dropdownRef}>
                 {/* Avatar Button - Not Logged In */}
@@ -121,7 +139,9 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                                     <UserIcon className="w-5 h-5 text-white" />
                                 </div>
                                 <div>
-                                    <p className="text-white font-medium text-base">Guest Account</p>
+                                    <p className="text-white font-medium text-base">
+                                        Guest Account
+                                    </p>
                                     <p className="text-gray-400 text-sm">Browsing anonymously</p>
                                 </div>
                             </div>
