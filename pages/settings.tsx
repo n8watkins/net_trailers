@@ -92,19 +92,20 @@ const Settings: React.FC<SettingsProps> = ({
 
     // Track the last loaded session ID to detect session changes
     const lastSessionIdRef = React.useRef<string | undefined>(userData.activeSessionId)
-    const hasInitializedRef = React.useRef(false)
 
-    // Update preferences when:
-    // 1. First time data becomes available (initial load)
-    // 2. Session changes (login/logout/switch user)
-    // NOT when the page refreshes with the same session
+    // Initialize as true if data is already available (prevents re-render on refresh)
+    const hasInitializedRef = React.useRef(
+        !userData.isInitializing && !!userData.userSession?.preferences
+    )
+
+    // ONLY update preferences when session actually changes (login/logout/switch user)
+    // NOT on page refresh with the same session
     React.useEffect(() => {
         const currentSessionId = userData.activeSessionId
         const sessionChanged = lastSessionIdRef.current !== currentSessionId
-        const isFirstLoad = !hasInitializedRef.current && !userData.isInitializing
 
-        // Update if session changed OR if this is the first time data is available
-        if ((sessionChanged || isFirstLoad) && userData.userSession?.preferences) {
+        // Only update if session changed - NOT on first load or refresh
+        if (sessionChanged && userData.userSession?.preferences) {
             const prefs = userData.userSession.preferences
             const loadedPrefs = {
                 childSafetyMode: prefs.childSafetyMode ?? false,
@@ -116,9 +117,13 @@ const Settings: React.FC<SettingsProps> = ({
             setDefaultVolume(loadedPrefs.defaultVolume)
             setOriginalPreferences(loadedPrefs)
             lastSessionIdRef.current = currentSessionId
+        }
+
+        // Mark as initialized if data is now available
+        if (!userData.isInitializing && userData.userSession?.preferences) {
             hasInitializedRef.current = true
         }
-    }, [userData.isInitializing, userData.activeSessionId, userData.sessionType])
+    }, [userData.activeSessionId, userData.sessionType, userData.isInitializing])
 
     // Check if preferences have changed
     const preferencesChanged =
