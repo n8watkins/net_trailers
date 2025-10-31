@@ -8,11 +8,11 @@ A Netflix-inspired streaming platform built with modern web technologies, featur
 
 <div align="center">
 
-| Frontend          | Backend              | Database         | APIs        | Styling             | State Management   | Monitoring              | Testing     |
-| ----------------- | -------------------- | ---------------- | ----------- | ------------------- | ------------------ | ----------------------- | ----------- |
-| ▲ **Next.js 16**  | 🔥 **Firebase**      | 🔥 **Firestore** | 🎬 **TMDB** | 🎨 **Tailwind CSS** | 🐻 **Zustand**     | 🛡️ **Sentry**           | 🧪 **Jest** |
-| **TS TypeScript** | 🔐 **Firebase Auth** |                  |             | 🎭 **Material-UI**  | ⚛️ _Recoil Compat_ | 📊 **GA4**              | 🧪 **RTL**  |
-| ⚛️ **React 19**   |                      |                  |             | 🦸 **Heroicons**    |                    | 📈 **Vercel Analytics** |             |
+| Frontend          | Backend              | Database         | APIs        | Styling             | State Management | Monitoring              | Testing     |
+| ----------------- | -------------------- | ---------------- | ----------- | ------------------- | ---------------- | ----------------------- | ----------- |
+| ▲ **Next.js 16**  | 🔥 **Firebase**      | 🔥 **Firestore** | 🎬 **TMDB** | 🎨 **Tailwind CSS** | 🐻 **Zustand**   | 🛡️ **Sentry**           | 🧪 **Jest** |
+| **TS TypeScript** | 🔐 **Firebase Auth** |                  |             | 🎭 **Material-UI**  |                  | 📊 **GA4**              | 🧪 **RTL**  |
+| ⚛️ **React 19**   |                      |                  |             | 🦸 **Heroicons**    |                  | 📈 **Vercel Analytics** |             |
 
 </div>
 
@@ -84,7 +84,7 @@ A Netflix-inspired streaming platform built with modern web technologies, featur
     - Test coverage reporting
 
 - **Architecture**
-    - Zustand state management with Recoil compatibility layer
+    - Zustand state management (100% Zustand, Recoil removed)
     - Next.js 16 with React 19 and App Router patterns
     - Firebase Firestore with optimistic updates and caching
     - API route architecture proxying TMDB API
@@ -271,13 +271,6 @@ net_trailers/
 │   ├── appStore.ts      # App-wide state (modals, search, toasts)
 │   └── cacheStore.ts    # Client-side caching
 │
-├── atoms/               # Recoil compatibility layer (legacy)
-│   ├── compat.ts        # Compatibility shim for Recoil → Zustand
-│   ├── modalAtom.ts     # Modal state
-│   ├── searchAtom.ts    # Search state
-│   ├── toastAtom.ts     # Toast notifications
-│   └── ...
-│
 ├── hooks/               # Custom React hooks
 │   ├── useAuth.tsx      # Authentication hook
 │   ├── useUserData.ts   # User data management
@@ -293,7 +286,8 @@ net_trailers/
 │   └── ...
 │
 ├── types/               # TypeScript type definitions
-│   └── userLists.ts     # User list types
+│   ├── userLists.ts     # User list types
+│   └── atoms.ts         # Shared state type definitions
 │
 ├── typings.d.ts         # Global TypeScript typings
 │   # Includes: Content, Movie, TVShow, Genre types
@@ -328,13 +322,13 @@ net_trailers/
 
 ### State Management Architecture
 
-The app uses a **hybrid state management system** currently in transition:
+The app uses **Zustand** for all state management:
 
-- **Zustand stores** (`/stores/*.ts`) - Modern state management for new features
-- **Recoil compatibility layer** (`atoms/compat.ts`) - Bridges old components with Zustand
-- **Surface level**: Components use `useRecoilState` and `useRecoilValue`
-- **Under the hood**: Intercepted by compatibility shim, actual state in Zustand
-- **Migration strategy**: New features use Zustand directly, legacy code uses compatibility layer
+- **Zustand stores** (`/stores/*.ts`) - All application state management
+- **Direct store access**: Components use Zustand hooks (`useAppStore()`, `useSessionStore()`, etc.)
+- **No provider wrapper**: Zustand works without root provider components
+- **Type-safe selectors**: Optimized performance with granular subscriptions
+- **Migration completed**: Fully migrated from Recoil to Zustand (2025)
 
 ### Content Type System
 

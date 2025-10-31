@@ -350,10 +350,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                         <ul className="text-sm space-y-1">
                             <li className="flex items-start space-x-2">
                                 <span className="text-red-500">•</span>
-                                <span>
-                                    Hybrid state management with Zustand + Recoil compatibility
-                                    layer
-                                </span>
+                                <span>Zustand state management for optimal performance</span>
                             </li>
                             <li className="flex items-start space-x-2">
                                 <span className="text-red-500">•</span>
