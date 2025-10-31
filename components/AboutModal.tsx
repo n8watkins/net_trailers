@@ -98,14 +98,8 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                         >
                                             Portfolio page
                                         </a>{' '}
-                                        for more projects.
-                                    </span>
-                                </li>
-                                <li className="flex items-start">
-                                    <span className="text-red-500 mr-2">•</span>
-                                    <span>
-                                        Feel free to connect with me on my socials if you&apos;d
-                                        like to connect.
+                                        for more projects, or connect with me online if you&apos;d
+                                        like to reach out.
                                     </span>
                                 </li>
                             </ul>
