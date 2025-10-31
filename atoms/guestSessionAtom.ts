@@ -1,4 +1,8 @@
-import { atom } from 'recoil'
+/**
+ * Guest session atoms - LEGACY
+ * TODO: Migrate to Zustand stores
+ * These are temporary type definitions and symbols for backwards compatibility
+ */
 import { Content } from '../typings'
 import { UserList } from '../types/userLists'
 
@@ -24,7 +28,7 @@ export interface GuestSession {
 }
 
 // Default guest session
-const defaultGuestSession: GuestSession = {
+export const defaultGuestSession: GuestSession = {
     guestId: '',
     preferences: {
         likedMovies: [],
@@ -40,14 +44,6 @@ const defaultGuestSession: GuestSession = {
     createdAt: Date.now(),
 }
 
-// Guest session state atom
-export const guestSessionState = atom<GuestSession>({
-    key: 'guestSessionState_v1',
-    default: defaultGuestSession,
-})
-
-// Guest session active state
-export const isGuestSessionActiveState = atom<boolean>({
-    key: 'isGuestSessionActiveState_v1',
-    default: false,
-})
+// Legacy atom symbols (will be handled by useGuestData hook directly, not through compat layer)
+export const guestSessionState = Symbol('guestSessionState_v1')
+export const isGuestSessionActiveState = Symbol('isGuestSessionActiveState_v1')

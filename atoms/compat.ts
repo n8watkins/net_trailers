@@ -1,12 +1,15 @@
 /**
  * Compatibility shim for Recoil to Zustand migration
- * This provides a temporary bridge to get the app working while migration continues
+ * This provides a drop-in replacement for Recoil functionality using Zustand stores
+ *
+ * This file is aliased as 'recoil' in tsconfig.json, so imports from 'recoil'
+ * actually use this file instead of the real Recoil library.
  */
 
 import { useAppStore, MAX_TOASTS } from '../stores/appStore'
 import { useSessionStore } from '../stores/sessionStore'
 import { useSessionData } from '../hooks/useSessionData'
-import { useEffect, useRef } from 'react'
+import type { ReactNode, ReactElement } from 'react'
 
 // Atom placeholders for type checking
 export const modalState = Symbol('modalState')
@@ -24,7 +27,7 @@ export const activeSessionIdState = Symbol('activeSessionIdState')
 export const showDemoMessageState = Symbol('showDemoMessageState')
 export const contentLoadedSuccessfullyState = Symbol('contentLoadedSuccessfullyState')
 
-export const useRecoilState = (atom: any) => {
+export const useRecoilState = (atom: any): [any, any] => {
     // Always call all hooks at the top level
     const appStore = useAppStore()
     const sessionStore = useSessionStore()
@@ -42,8 +45,8 @@ export const useRecoilState = (atom: any) => {
         search,
         setSearch,
         toasts,
-        showToast,
-        dismissToast,
+        showToast: _showToast,
+        dismissToast: _dismissToast,
         addToSearchHistory,
         clearSearchHistory,
         setAutoPlayWithSound,
@@ -61,7 +64,11 @@ export const useRecoilState = (atom: any) => {
             modal,
             (value: any) => {
                 if (typeof value === 'boolean') {
-                    value ? openModal(modal.content?.content || ({} as any)) : closeModal()
+                    if (value) {
+                        openModal(modal.content?.content || ({} as any))
+                    } else {
+                        closeModal()
+                    }
                 } else if (typeof value === 'object' && value !== null) {
                     if (value.isOpen && value.content) {
                         openModal(
@@ -111,7 +118,11 @@ export const useRecoilState = (atom: any) => {
             listModal,
             (value: any) => {
                 if (typeof value === 'boolean') {
-                    value ? openListModal(listModal.content || undefined) : closeListModal()
+                    if (value) {
+                        openListModal(listModal.content || undefined)
+                    } else {
+                        closeListModal()
+                    }
                 } else if (typeof value === 'object' && value !== null) {
                     if (value.isOpen) {
                         openListModal(value.content || undefined, value.mode)
@@ -247,12 +258,12 @@ export const useRecoilState = (atom: any) => {
     throw new Error(`Unmapped atom in compatibility shim: ${atom?.toString()}`)
 }
 
-export const useRecoilValue = (atom: any) => {
+export const useRecoilValue = (atom: any): any => {
     const [value] = useRecoilState(atom)
     return value
 }
 
-export const useSetRecoilState = (atom: any) => {
+export const useSetRecoilState = (atom: any): any => {
     const [, setValue] = useRecoilState(atom)
     return setValue
 }
@@ -278,4 +289,77 @@ export const useRecoilStateLoadable = (atom: any) => {
         },
         is: (other: any) => other === 'hasValue',
     }
+}
+
+// Cache for created symbols to ensure consistency
+const symbolCache = new Map<string, symbol>()
+
+// Stub for atom() - returns a unique symbol
+export function atom<T>(config: { key: string; default: T; effects?: any[] }): symbol {
+    // For known atoms, return their symbol from this file
+    const keyMap: Record<string, symbol> = {
+        modalState_v2: modalState,
+        modalState: modalState,
+        movieState_v2: movieState,
+        movieState: movieState,
+        autoPlayWithSoundState_v2: autoPlayWithSoundState,
+        autoPlayWithSoundState: autoPlayWithSoundState,
+        loadingState_v2: loadingState,
+        loadingState: loadingState,
+        listModalState_v1: listModalState,
+        listModalState: listModalState,
+        searchState_v4: searchState,
+        searchState: searchState,
+        toastsState_v2: toastsState,
+        toastsState: toastsState,
+        searchHistoryState_v2: searchHistoryState,
+        searchHistoryState: searchHistoryState,
+        recentSearchesState_v2: recentSearchesState,
+        recentSearchesState: recentSearchesState,
+        userSessionState_v2: userSessionState,
+        userSessionState: userSessionState,
+        sessionTypeState_v1: sessionTypeState,
+        sessionTypeState: sessionTypeState,
+        activeSessionIdState_v1: activeSessionIdState,
+        activeSessionIdState: activeSessionIdState,
+        showDemoMessageState_v2: showDemoMessageState,
+        showDemoMessageState: showDemoMessageState,
+        contentLoadedSuccessfullyState_v2: contentLoadedSuccessfullyState,
+        contentLoadedSuccessfullyState: contentLoadedSuccessfullyState,
+    }
+
+    // Return mapped symbol if it exists
+    if (keyMap[config.key]) {
+        return keyMap[config.key]
+    }
+
+    // For unmapped atoms, create and cache a unique symbol
+    if (!symbolCache.has(config.key)) {
+        symbolCache.set(config.key, Symbol(config.key))
+    }
+    return symbolCache.get(config.key)!
+}
+
+// Stub for selector() - not actively used
+export function selector<T>(config: { key: string; get: any }): symbol {
+    return Symbol(config.key)
+}
+
+// SetterOrUpdater type (used in sessionManagerService.ts)
+export type SetterOrUpdater<T> = (valOrUpdater: ((currVal: T) => T) | T) => void
+
+// RecoilRoot stub - just renders children since we're using Zustand
+export function RecoilRoot({ children }: { children: ReactNode }): ReactElement {
+    return children as ReactElement
+}
+
+// Default export for compatibility
+export default {
+    atom,
+    selector,
+    useRecoilState,
+    useRecoilValue,
+    useSetRecoilState,
+    useRecoilCallback,
+    RecoilRoot,
 }

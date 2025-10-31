@@ -1,65 +1,25 @@
-import { atom, selector } from 'recoil'
+/**
+ * Session manager atoms - partially re-exported from compat layer
+ * Backed by Zustand stores, not Recoil
+ *
+ * Note: Some legacy atoms kept here for backwards compatibility
+ * TODO: Migrate remaining atoms to Zustand stores
+ */
 
 // Session type enumeration
 export type SessionType = 'guest' | 'authenticated' | 'initializing'
 
-// Current session type state
-export const sessionTypeState = atom<SessionType>({
-    key: 'sessionTypeState_v1',
-    default: 'initializing',
-})
+// Re-export atoms that are in compat layer
+export { sessionTypeState, activeSessionIdState } from './compat'
 
-// Session initialization status
-export const isSessionInitializedState = atom<boolean>({
-    key: 'isSessionInitializedState_v1',
-    default: false,
-})
+// Legacy atoms - these should be migrated to Zustand stores
+// For now, keeping them as simple state that can be imported
+// These are not heavily used and will be deprecated
+export const isSessionInitializedState = Symbol('isSessionInitializedState')
+export const migrationAvailableState = Symbol('migrationAvailableState')
+export const isTransitioningSessionState = Symbol('isTransitioningSessionState')
 
-// Current active session ID (guest ID or user ID)
-export const activeSessionIdState = atom<string>({
-    key: 'activeSessionIdState_v1',
-    default: '',
-})
-
-// Migration availability state (true if guest data exists when user authenticates)
-export const migrationAvailableState = atom<boolean>({
-    key: 'migrationAvailableState_v1',
-    default: false,
-})
-
-// Session transition state (used to track when switching between sessions)
-export const isTransitioningSessionState = atom<boolean>({
-    key: 'isTransitioningSessionState_v1',
-    default: false,
-})
-
-// Selector to determine if any session is active
-export const hasActiveSessionSelector = selector({
-    key: 'hasActiveSessionSelector_v1',
-    get: ({ get }) => {
-        const sessionType = get(sessionTypeState)
-        const sessionId = get(activeSessionIdState)
-        const isInitialized = get(isSessionInitializedState)
-
-        return isInitialized && sessionType !== 'initializing' && sessionId !== ''
-    },
-})
-
-// Selector to get current session info
-export const currentSessionInfoSelector = selector({
-    key: 'currentSessionInfoSelector_v1',
-    get: ({ get }) => {
-        const sessionType = get(sessionTypeState)
-        const sessionId = get(activeSessionIdState)
-        const isInitialized = get(isSessionInitializedState)
-        const isTransitioning = get(isTransitioningSessionState)
-
-        return {
-            type: sessionType,
-            id: sessionId,
-            isInitialized,
-            isTransitioning,
-            isActive: isInitialized && sessionType !== 'initializing' && sessionId !== '',
-        }
-    },
-})
+// Legacy selectors - not actively used
+// Keeping for backwards compatibility only
+export const hasActiveSessionSelector = Symbol('hasActiveSessionSelector')
+export const currentSessionInfoSelector = Symbol('currentSessionInfoSelector')

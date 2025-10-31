@@ -16,7 +16,7 @@
         "incremental": true,
         "baseUrl": ".",
         "paths": {
-            "recoil": ["./recoil-shim.ts"]
+            "recoil": ["./atoms/compat.ts"]
         }
     },
     "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "jest.setup.js", "types/**/*.d.ts"],

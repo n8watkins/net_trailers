@@ -1,4 +1,8 @@
-import { atom } from 'recoil'
+/**
+ * Auth session atoms - LEGACY
+ * TODO: Migrate to Zustand stores
+ * These are temporary type definitions and symbols for backwards compatibility
+ */
 import { Content } from '../typings'
 import { UserList } from '../types/userLists'
 
@@ -40,14 +44,6 @@ export const defaultAuthSession: AuthSession = {
     lastSyncedAt: Date.now(),
 }
 
-// Auth session state atom
-export const authSessionState = atom<AuthSession>({
-    key: 'authSessionState_v1',
-    default: defaultAuthSession,
-})
-
-// Auth session active state
-export const isAuthSessionActiveState = atom<boolean>({
-    key: 'isAuthSessionActiveState_v1',
-    default: false,
-})
+// Legacy atom symbols (will be handled by useAuthData hook directly, not through compat layer)
+export const authSessionState = Symbol('authSessionState_v1')
+export const isAuthSessionActiveState = Symbol('isAuthSessionActiveState_v1')

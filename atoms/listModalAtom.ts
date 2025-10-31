@@ -1,4 +1,7 @@
-import { atom } from 'recoil'
+/**
+ * List modal state atom - re-exported from compat layer
+ * Backed by Zustand stores, not Recoil
+ */
 import { Content } from '../typings'
 
 export interface ListModalState {
@@ -6,10 +9,4 @@ export interface ListModalState {
     content: Content | null
 }
 
-export const listModalState = atom<ListModalState>({
-    key: 'listModalState_v1',
-    default: {
-        isOpen: false,
-        content: null,
-    },
-})
+export { listModalState } from './compat'

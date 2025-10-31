@@ -1,4 +1,7 @@
-import { atom } from 'recoil'
+/**
+ * User data atoms - re-exported from compat layer
+ * Backed by Zustand stores, not Recoil
+ */
 import { Content } from '../typings'
 import { UserList } from '../types/userLists'
 
@@ -35,43 +38,4 @@ export interface UserSession {
     createdAt?: number
 }
 
-// Default user session (NEW SCHEMA)
-const defaultUserSession: UserSession = {
-    isGuest: false,
-    guestId: undefined,
-    userId: undefined,
-    preferences: {
-        defaultWatchlist: [],
-        likedMovies: [],
-        hiddenMovies: [],
-        userCreatedWatchlists: [],
-        lastActive: Date.now(),
-        autoMute: false,
-        defaultVolume: 50,
-        childSafetyMode: false,
-    },
-}
-
-// Main user session state
-export const userSessionState = atom<UserSession>({
-    key: 'userSessionState_v2',
-    default: defaultUserSession,
-})
-
-// Auth mode state
-export const authModeState = atom<'login' | 'register' | 'guest'>({
-    key: 'authModeState_v2',
-    default: 'login',
-})
-
-// Demo messaging state
-export const showDemoMessageState = atom<boolean>({
-    key: 'showDemoMessageState_v2',
-    default: true,
-})
-
-// Content loading success state
-export const contentLoadedSuccessfullyState = atom<boolean>({
-    key: 'contentLoadedSuccessfullyState_v2',
-    default: false,
-})
+export { userSessionState, showDemoMessageState, contentLoadedSuccessfullyState } from './compat'

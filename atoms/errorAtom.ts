@@ -1,6 +1,5 @@
-import { atom } from 'recoil'
-
-export const loadingState = atom<boolean>({
-    key: 'loadingState_v2',
-    default: false,
-})
+/**
+ * Loading state atom - re-exported from compat layer
+ * Backed by Zustand stores, not Recoil
+ */
+export { loadingState } from './compat'
