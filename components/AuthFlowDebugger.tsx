@@ -241,10 +241,8 @@ export default function AuthFlowDebugger() {
     // Auto-run test on mount and when Firebase user changes
     useEffect(() => {
         setTimeout(runAuthFlowTest, 1000)
-        // Auto-test Firestore if user is authenticated
-        if (directFirebaseUser && !firestoreStatus) {
-            setTimeout(testFirestore, 1500)
-        }
+        // Note: Firestore connection test is now manual via "Test Firestore" button
+        // to avoid unnecessary network requests on every auth state change
     }, [directFirebaseUser])
 
     // Only show in development and if Console debug is enabled
