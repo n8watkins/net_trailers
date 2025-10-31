@@ -90,6 +90,31 @@ const Settings: React.FC<SettingsProps> = ({
     // Track original preferences to detect changes
     const [originalPreferences, setOriginalPreferences] = useState(initialPrefs)
 
+    // Track the last loaded session ID to detect session changes
+    const lastSessionIdRef = React.useRef<string | undefined>(userData.activeSessionId)
+
+    // Only update preferences when session changes (login/logout/switch user)
+    // NOT when the page refreshes with the same session
+    React.useEffect(() => {
+        const currentSessionId = userData.activeSessionId
+        const sessionChanged = lastSessionIdRef.current !== currentSessionId
+
+        // Only update if session actually changed (different user logged in)
+        if (sessionChanged && userData.userSession?.preferences) {
+            const prefs = userData.userSession.preferences
+            const loadedPrefs = {
+                childSafetyMode: prefs.childSafetyMode ?? false,
+                autoMute: prefs.autoMute ?? true,
+                defaultVolume: prefs.defaultVolume ?? 50,
+            }
+            setChildSafetyMode(loadedPrefs.childSafetyMode)
+            setAutoMute(loadedPrefs.autoMute)
+            setDefaultVolume(loadedPrefs.defaultVolume)
+            setOriginalPreferences(loadedPrefs)
+            lastSessionIdRef.current = currentSessionId
+        }
+    }, [userData.activeSessionId, userData.sessionType])
+
     // Check if preferences have changed
     const preferencesChanged =
         childSafetyMode !== originalPreferences.childSafetyMode ||
