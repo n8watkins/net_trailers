@@ -302,7 +302,8 @@ const Settings: React.FC<SettingsProps> = ({
             setAutoMute(loadedPrefs.autoMute)
             setDefaultVolume(loadedPrefs.defaultVolume)
             setOriginalPreferences(loadedPrefs)
-            console.log('📖 [Settings] Loaded preferences from store:', loadedPrefs)
+            // Removed console.log - preferences loading doesn't need debug output
+            // as it's a normal operation, not a debug-worthy event
         }
     }, [
         userData.isInitializing,

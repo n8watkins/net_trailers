@@ -4,6 +4,7 @@
  */
 
 import { firebaseTracker } from './firebaseCallTracker'
+import { authLog } from './debugLogger'
 
 interface SyncOperation {
     userId: string
@@ -27,9 +28,7 @@ class FirebaseSyncManager {
         if (activeSync && activeSync.status === 'pending') {
             const age = Date.now() - activeSync.timestamp
             if (age < this.SYNC_TIMEOUT) {
-                console.log(
-                    `⏭️ [SyncManager] Sync already in progress for ${userId} (${age}ms old)`
-                )
+                authLog(`⏭️ [SyncManager] Sync already in progress for ${userId} (${age}ms old)`)
                 return false
             }
             // Timeout reached, clear the stuck sync
@@ -42,9 +41,7 @@ class FirebaseSyncManager {
         if (lastSync) {
             const timeSinceLastSync = Date.now() - lastSync
             if (timeSinceLastSync < this.MIN_SYNC_INTERVAL) {
-                console.log(
-                    `⏭️ [SyncManager] Recently synced ${userId} (${timeSinceLastSync}ms ago)`
-                )
+                authLog(`⏭️ [SyncManager] Recently synced ${userId} (${timeSinceLastSync}ms ago)`)
                 return false
             }
         }
@@ -65,7 +62,7 @@ class FirebaseSyncManager {
             // Return existing sync promise if available
             const activeSync = this.activeSyncs.get(userId)
             if (activeSync?.promise) {
-                console.log(`♻️ [SyncManager] Reusing existing sync promise for ${userId}`)
+                authLog(`♻️ [SyncManager] Reusing existing sync promise for ${userId}`)
                 firebaseTracker.track('syncReused', `SyncManager-${source}`, userId)
                 return activeSync.promise
             }
@@ -73,7 +70,7 @@ class FirebaseSyncManager {
         }
 
         // Create new sync operation
-        console.log(`🔄 [SyncManager] Starting sync for ${userId} from ${source}`)
+        authLog(`🔄 [SyncManager] Starting sync for ${userId} from ${source}`)
         firebaseTracker.track('syncStarted', `SyncManager-${source}`, userId)
 
         const syncOp: SyncOperation = {
@@ -92,7 +89,7 @@ class FirebaseSyncManager {
                 // Mark as completed
                 this.completedSyncs.set(userId, Date.now())
                 this.activeSyncs.delete(userId)
-                console.log(`✅ [SyncManager] Sync completed for ${userId}`)
+                authLog(`✅ [SyncManager] Sync completed for ${userId}`)
                 firebaseTracker.track('syncCompleted', `SyncManager-${source}`, userId)
                 return result
             })
@@ -117,7 +114,7 @@ class FirebaseSyncManager {
     clearUserSync(userId: string) {
         this.activeSyncs.delete(userId)
         this.completedSyncs.delete(userId)
-        console.log(`🧹 [SyncManager] Cleared sync state for ${userId}`)
+        authLog(`🧹 [SyncManager] Cleared sync state for ${userId}`)
     }
 
     /**
@@ -144,7 +141,7 @@ class FirebaseSyncManager {
     reset() {
         this.activeSyncs.clear()
         this.completedSyncs.clear()
-        console.log('🔄 [SyncManager] Reset all sync state')
+        authLog('🔄 [SyncManager] Reset all sync state')
     }
 }
 
