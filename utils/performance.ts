@@ -105,11 +105,25 @@ function logWebVital(metric: WebVitalMetric) {
 }
 
 /**
- * Report web vitals to console (development only)
+ * Report web vitals to console and dispatch event for HUD (development only)
  */
 export function reportWebVitals(metric: WebVitalMetric) {
     // Log to console (only in development)
     logWebVital(metric)
+
+    // Dispatch custom event for WebVitalsHUD component
+    if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+            new CustomEvent('web-vital', {
+                detail: {
+                    name: metric.name,
+                    value: metric.value,
+                    rating: metric.rating || getRating(metric.name, metric.value),
+                    id: metric.id,
+                },
+            })
+        )
+    }
 
     // In production, you could send to analytics here
     // Example: trackWebVital(metric)

@@ -14,6 +14,7 @@ import FirebaseCallTracker from '../components/FirebaseCallTracker'
 import AuthFlowDebugger from '../components/AuthFlowDebugger'
 import FirestoreTestButton from '../components/FirestoreTestButton'
 import { SessionSyncManager } from '../components/SessionSyncManager'
+import WebVitalsHUD from '../components/WebVitalsHUD'
 import { reportWebVitals as reportWebVitalsUtil } from '../utils/performance'
 
 function MyApp({ Component, pageProps }: AppProps) {
@@ -32,6 +33,7 @@ function MyApp({ Component, pageProps }: AppProps) {
                 <FirebaseCallTracker />
                 <AuthFlowDebugger />
                 <FirestoreTestButton />
+                <WebVitalsHUD />
                 <GoogleAnalytics />
                 <Analytics />
             </ErrorBoundary>
