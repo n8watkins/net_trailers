@@ -3,8 +3,6 @@ import { createPortal } from 'react-dom'
 import { Content, getTitle } from '../typings'
 import useUserData from '../hooks/useUserData'
 import { useToast } from '../hooks/useToast'
-import { useSetRecoilState } from 'recoil'
-import { listModalState } from '../atoms/listModalAtom'
 import { useAuthStatus } from '../hooks/useAuthStatus'
 import { useAppStore } from '../stores/appStore'
 import { EyeIcon, PlusIcon, CheckIcon, MinusIcon, LockClosedIcon } from '@heroicons/react/24/solid'
@@ -38,8 +36,7 @@ function ListDropdown({
     } = useUserData()
 
     const { showSuccess, showWatchlistAdd, showWatchlistRemove } = useToast()
-    const setListModal = useSetRecoilState(listModalState)
-    const { openAuthModal } = useAppStore()
+    const { openAuthModal, openListModal } = useAppStore()
     const { isGuest } = useAuthStatus()
 
     const [showCreateInput, setShowCreateInput] = useState(false)
@@ -122,10 +119,7 @@ function ListDropdown({
 
     const handleManageAllLists = (e: React.MouseEvent) => {
         e.stopPropagation()
-        setListModal({
-            isOpen: true,
-            content: content,
-        })
+        openListModal(content)
         onClose()
     }
 

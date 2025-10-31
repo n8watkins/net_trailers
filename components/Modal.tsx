@@ -73,8 +73,6 @@ import useUserData from '../hooks/useUserData'
 import { useToast } from '../hooks/useToast'
 import { UserList } from '../types/userLists'
 import { useAuthStatus } from '../hooks/useAuthStatus'
-import { useRecoilState } from 'recoil'
-import { listModalState } from '../atoms/listModalAtom'
 import { useDebugSettings } from './DebugControls'
 import { getCachedMovieDetails } from '../utils/prefetchCache'
 
@@ -83,8 +81,15 @@ function Modal() {
     const debugSettings = useDebugSettings()
 
     // Zustand store
-    const { modal, closeModal, setAutoPlayWithSound, isLoading, setLoading, openListModal } =
-        useAppStore()
+    const {
+        modal,
+        closeModal,
+        setAutoPlayWithSound,
+        isLoading,
+        setLoading,
+        openListModal,
+        listModal,
+    } = useAppStore()
 
     // Extract modal state
     const showModal = modal.isOpen
@@ -134,7 +139,6 @@ function Modal() {
 
     // Auth status for inline dropdown (NEW SCHEMA)
     const { isGuest } = useAuthStatus()
-    const [listModal, setListModal] = useRecoilState(listModalState)
 
     // User data hooks for inline dropdown (NEW SCHEMA)
     const {
@@ -325,10 +329,7 @@ function Modal() {
     const handleOpenCreateList = () => {
         if (!currentMovie) return
         // Open list modal with current content to show create option
-        setListModal({
-            isOpen: true,
-            content: currentMovie as Content,
-        })
+        openListModal(currentMovie as Content)
         setShowInlineListDropdown(false)
     }
 

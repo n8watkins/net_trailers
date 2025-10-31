@@ -5,8 +5,7 @@ import Header from '../components/Header'
 import SearchResults from '../components/SearchResults'
 import SearchFilters from '../components/SearchFilters'
 import { useSearch } from '../hooks/useSearch'
-import { useRecoilValue } from 'recoil'
-import { modalState } from '../atoms/modalAtom'
+import { useAppStore } from '../stores/appStore'
 
 interface Props {
     onOpenAboutModal?: () => void
@@ -23,7 +22,8 @@ export default function SearchPage({
     const { updateQuery, query, isLoading, isLoadingAll, hasSearched, results } = useSearch()
     const [isInitialLoad, setIsInitialLoad] = useState(true)
     const urlUpdateTimeoutRef = useRef<NodeJS.Timeout>()
-    const showModal = useRecoilValue(modalState)
+    const { modal } = useAppStore()
+    const showModal = modal.isOpen
 
     // Loading animation states
     const [loadingCounter, setLoadingCounter] = useState(0)

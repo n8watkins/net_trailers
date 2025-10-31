@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import ToolTipMod from './ToolTipMod'
-import { useRecoilValue, useRecoilState } from 'recoil'
-import { movieState } from '../atoms/modalAtom'
-import { showDemoMessageState } from '../atoms/userDataAtom'
+import { useAppStore } from '../stores/appStore'
 import { useLikedHidden } from '../hooks/useLikedHidden'
 import { Content } from '../typings'
 import {
@@ -16,7 +14,8 @@ import {
 } from '@heroicons/react/24/solid'
 
 function LikeOptions() {
-    const currentMovie = useRecoilValue(movieState)
+    const { modal, showDemoMessage, setShowDemoMessage } = useAppStore()
+    const currentMovie = modal.content?.content || null
     const {
         isLiked,
         isHidden,
@@ -26,7 +25,6 @@ function LikeOptions() {
         removeHiddenMovie,
         likedMovies,
     } = useLikedHidden()
-    const [showDemoMessage, setShowDemoMessage] = useRecoilState(showDemoMessageState)
 
     const [showOptions, setShowOptions] = useState(false)
 

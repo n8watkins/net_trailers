@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
-import { useRecoilState } from 'recoil'
-import { searchState, SearchFilters as SearchFiltersType } from '../atoms/searchAtom'
+import { useAppStore } from '../stores/appStore'
+import { SearchFilters as SearchFiltersType } from '../atoms/searchAtom'
 import { ChevronDownIcon, XMarkIcon } from '@heroicons/react/24/outline'
 
 interface SearchFiltersProps {
@@ -10,31 +10,25 @@ interface SearchFiltersProps {
 }
 
 export default function SearchFilters({ className = '', isOpen, onClose }: SearchFiltersProps) {
-    const [search, setSearch] = useRecoilState(searchState)
+    const { search, setSearchFilters } = useAppStore()
 
     const updateFilter = useCallback(
         (key: keyof SearchFiltersType, value: any) => {
-            setSearch((prev) => ({
-                ...prev,
-                filters: {
-                    ...prev.filters,
-                    [key]: value,
-                },
-            }))
+            setSearchFilters({
+                ...search.filters,
+                [key]: value,
+            })
         },
-        [setSearch]
+        [search.filters, setSearchFilters]
     )
 
     const clearAllFilters = () => {
-        setSearch((prev) => ({
-            ...prev,
-            filters: {
-                contentType: 'all',
-                rating: 'all',
-                year: 'all',
-                sortBy: 'popularity.desc',
-            },
-        }))
+        setSearchFilters({
+            contentType: 'all',
+            rating: 'all',
+            year: 'all',
+            sortBy: 'popularity.desc',
+        })
     }
 
     const removeFilter = useCallback(

@@ -7,8 +7,7 @@ import { EyeSlashIcon, MagnifyingGlassIcon, ArrowDownTrayIcon } from '@heroicons
 import { Content, isMovie, isTVShow } from '../typings'
 import { getTitle, getYear } from '../typings'
 import ContentCard from '../components/ContentCard'
-import { useSetRecoilState, useRecoilValue } from 'recoil'
-import { modalState, movieState } from '../atoms/modalAtom'
+import { useAppStore } from '../stores/appStore'
 import { exportUserDataToCSV } from '../utils/csvExport'
 import { GuestModeNotification } from '../components/GuestModeNotification'
 import { useAuthStatus } from '../hooks/useAuthStatus'
@@ -26,9 +25,8 @@ const Hidden: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeybo
     const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
 
     const [searchQuery, setSearchQuery] = useState('')
-    const setShowModal = useSetRecoilState(modalState)
-    const setCurrentMovie = useSetRecoilState(movieState)
-    const showModal = useRecoilValue(modalState)
+    const { modal, openModal } = useAppStore()
+    const showModal = modal.isOpen
 
     // Get hidden content directly from hiddenMovies
     const hiddenContent = hiddenMovies.map((item) => ({

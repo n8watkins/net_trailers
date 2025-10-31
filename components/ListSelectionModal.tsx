@@ -1,6 +1,4 @@
 import React, { useState } from 'react'
-import { useRecoilState } from 'recoil'
-import { listModalState } from '../atoms/listModalAtom'
 import { useAppStore } from '../stores/appStore'
 import useUserData from '../hooks/useUserData'
 import { useAuthStatus } from '../hooks/useAuthStatus'
@@ -24,8 +22,7 @@ import {
 } from '@heroicons/react/24/solid'
 
 function ListSelectionModal() {
-    const [listModal, setListModal] = useRecoilState(listModalState)
-    const { openAuthModal } = useAppStore()
+    const { listModal, closeListModal, openAuthModal } = useAppStore()
     const { isGuest, isAuthenticated } = useAuthStatus()
     const { showError, showWatchlistAdd, showWatchlistRemove, showSuccess } = useToast()
     const {
@@ -80,7 +77,7 @@ function ListSelectionModal() {
     if (!listModal.isOpen) return null
 
     const onClose = () => {
-        setListModal({ isOpen: false, content: null })
+        closeListModal()
         setShowCreateList(false)
         setNewListName('')
         setSelectedEmoji('🎬')

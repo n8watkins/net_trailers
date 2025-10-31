@@ -15,9 +15,7 @@ import {
 import { Content, isMovie, isTVShow } from '../typings'
 import { getTitle, getYear } from '../typings'
 import ContentCard from '../components/ContentCard'
-import { useSetRecoilState, useRecoilValue } from 'recoil'
-import { modalState, movieState } from '../atoms/modalAtom'
-import { listModalState } from '../atoms/listModalAtom'
+import { useAppStore } from '../stores/appStore'
 import { exportUserDataToCSV } from '../utils/csvExport'
 import { UserList } from '../types/userLists'
 import { verifyUserData } from '../utils/verifyUserData'
@@ -83,9 +81,8 @@ const Watchlists: NextPage<Props> = ({
 
     const [selectedListId, setSelectedListId] = useState<string | 'all'>('all')
     const [searchQuery, setSearchQuery] = useState('')
-    const setShowModal = useSetRecoilState(modalState)
-    const setCurrentMovie = useSetRecoilState(movieState)
-    const setListModal = useSetRecoilState(listModalState)
+    const { modal, openModal, openListModal } = useAppStore()
+    const showModal = modal.isOpen
 
     // Get all available lists
     // FIXED: Use useMemo to prevent recreating allLists on every render
@@ -134,8 +131,7 @@ const Watchlists: NextPage<Props> = ({
         : baseFilteredContent
 
     const handleContentClick = (content: Content) => {
-        setCurrentMovie(content)
-        setShowModal(true)
+        openModal(content, true, false)
     }
 
     const handleExportCSV = () => {
@@ -145,10 +141,7 @@ const Watchlists: NextPage<Props> = ({
     }
 
     const handleManageAllLists = () => {
-        setListModal({
-            isOpen: true,
-            content: null, // No specific content, just manage lists
-        })
+        openListModal(null)
     }
 
     const getListIcon = (list: UserList, isSelected: boolean = false) => {

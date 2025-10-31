@@ -3,8 +3,7 @@ import { CheckIcon, PlusIcon, MinusIcon } from '@heroicons/react/24/solid'
 import { Content, getTitle } from '../typings'
 import useUserData from '../hooks/useUserData'
 import { useToast } from '../hooks/useToast'
-import { useSetRecoilState } from 'recoil'
-import { listModalState } from '../atoms/listModalAtom'
+import { useAppStore } from '../stores/appStore'
 import ToolTipMod from './ToolTipMod'
 import ListDropdown from './ListDropdown'
 import { useRouter } from 'next/router'
@@ -24,7 +23,7 @@ function WatchLaterButton({
 }: WatchLaterButtonProps) {
     const { getListsContaining, addToWatchlist, removeFromWatchlist, isInWatchlist } = useUserData()
     const { showSuccess, showError, showWatchlistAdd, showWatchlistRemove } = useToast()
-    const setListModal = useSetRecoilState(listModalState)
+    const { openListModal } = useAppStore()
     const router = useRouter()
 
     const [isHovered, setIsHovered] = useState(false)

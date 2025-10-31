@@ -8,9 +8,7 @@ import NetflixLoader from '../components/NetflixLoader'
 import NetflixError from '../components/NetflixError'
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/router'
-import { useRecoilValue, useSetRecoilState } from 'recoil'
-import { modalState } from '../atoms/modalAtom'
-import { contentLoadedSuccessfullyState } from '../atoms/userDataAtom'
+import { useAppStore } from '../stores/appStore'
 import { mainPageCache, cachedFetch } from '../utils/apiCache'
 import { useCacheStore } from '../stores/cacheStore'
 import Head from 'next/head'
@@ -44,9 +42,9 @@ const Home = ({
 }: Props) => {
     const { loading, error, user } = useAuth()
     const router = useRouter()
-    const showModal = useRecoilValue(modalState)
+    const { modal, setContentLoadedSuccessfully } = useAppStore()
+    const showModal = modal.isOpen
     const { filter } = router.query
-    const setContentLoadedSuccessfully = useSetRecoilState(contentLoadedSuccessfullyState)
     const { setMainPageData, setHasVisitedMainPage } = useCacheStore()
     const { isEnabled: childSafetyEnabled } = useChildSafety()
 

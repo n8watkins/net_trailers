@@ -1,7 +1,6 @@
 import type { AppProps } from 'next/app'
 import '../styles/globals.css'
 import { AuthProvider } from '../hooks/useAuth'
-import { RecoilRoot } from 'recoil'
 import DemoMessage from '../components/DemoMessage'
 import ErrorBoundary from '../components/ErrorBoundary'
 import GoogleAnalytics from '../components/Analytics'
@@ -19,26 +18,24 @@ import { reportWebVitals as reportWebVitalsUtil } from '../utils/performance'
 
 function MyApp({ Component, pageProps }: AppProps) {
     return (
-        <RecoilRoot>
-            <AuthProvider>
-                <ErrorBoundary>
-                    <SessionSyncManager />
-                    <Layout>
-                        <Component {...pageProps} />
-                    </Layout>
-                    <Modal />
-                    <DemoMessage />
-                    <ToastManager />
-                    <ListSelectionModal />
-                    <DebugControls />
-                    <FirebaseCallTracker />
-                    <AuthFlowDebugger />
-                    <FirestoreTestButton />
-                    <GoogleAnalytics />
-                    <Analytics />
-                </ErrorBoundary>
-            </AuthProvider>
-        </RecoilRoot>
+        <AuthProvider>
+            <ErrorBoundary>
+                <SessionSyncManager />
+                <Layout>
+                    <Component {...pageProps} />
+                </Layout>
+                <Modal />
+                <DemoMessage />
+                <ToastManager />
+                <ListSelectionModal />
+                <DebugControls />
+                <FirebaseCallTracker />
+                <AuthFlowDebugger />
+                <FirestoreTestButton />
+                <GoogleAnalytics />
+                <Analytics />
+            </ErrorBoundary>
+        </AuthProvider>
     )
 }
 

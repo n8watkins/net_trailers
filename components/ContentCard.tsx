@@ -13,8 +13,6 @@ import { prefetchMovieDetails } from '../utils/prefetchCache'
 import useUserData from '../hooks/useUserData'
 import { useToast } from '../hooks/useToast'
 import ToolTipMod from './ToolTipMod'
-import { useSetRecoilState } from 'recoil'
-import { listModalState } from '../atoms/listModalAtom'
 
 interface Props {
     content?: Content
@@ -23,7 +21,7 @@ interface Props {
 }
 function ContentCard({ content, className = '', size = 'medium' }: Props) {
     const posterImage = content?.poster_path
-    const { openModal } = useAppStore()
+    const { openModal, openListModal } = useAppStore()
     const {
         addLikedMovie,
         removeLikedMovie,
@@ -34,7 +32,6 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
         getListsContaining,
     } = useUserData()
     const { showContentHidden, showContentShown, showSuccess } = useToast()
-    const setListModal = useSetRecoilState(listModalState)
     const [imageLoaded, setImageLoaded] = useState(false)
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const [showHoverActions, setShowHoverActions] = useState(false) // Show hover menu above bookmark button
@@ -285,10 +282,7 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                         onClick={(e) => {
                                             e.stopPropagation()
                                             if (content) {
-                                                setListModal({
-                                                    isOpen: true,
-                                                    content: content,
-                                                })
+                                                openListModal(content)
                                             }
                                         }}
                                         className="group/add p-3 rounded-full border-2 border-white/40 bg-black/85 hover:bg-black hover:border-white transition-all duration-200"

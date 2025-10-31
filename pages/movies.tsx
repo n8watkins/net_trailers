@@ -7,9 +7,7 @@ import NetflixLoader from '../components/NetflixLoader'
 import NetflixError from '../components/NetflixError'
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/router'
-import { useRecoilValue, useSetRecoilState } from 'recoil'
-import { modalState } from '../atoms/modalAtom'
-import { contentLoadedSuccessfullyState } from '../atoms/userDataAtom'
+import { useAppStore } from '../stores/appStore'
 import { mainPageCache } from '../utils/apiCache'
 import { useCacheStore } from '../stores/cacheStore'
 import Head from 'next/head'
@@ -45,8 +43,8 @@ const Movies = ({
 }: Props) => {
     const { loading, error, user } = useAuth()
     const router = useRouter()
-    const showModal = useRecoilValue(modalState)
-    const setContentLoadedSuccessfully = useSetRecoilState(contentLoadedSuccessfullyState)
+    const { modal, setContentLoadedSuccessfully } = useAppStore()
+    const showModal = modal.isOpen
     const { setMainPageData, setHasVisitedMainPage } = useCacheStore()
     const { isEnabled: childSafetyEnabled } = useChildSafety()
 
@@ -108,7 +106,6 @@ const Movies = ({
 
         // Set content loaded successfully
         setContentLoadedSuccessfully(true)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
         trending,
         topRatedMovies,
@@ -117,8 +114,9 @@ const Movies = ({
         horrorMovies,
         romanceMovies,
         documentaries,
-        // Note: Zustand setters are stable and should NOT be in dependencies
-        // Including them causes infinite loops
+        setContentLoadedSuccessfully,
+        setMainPageData,
+        setHasVisitedMainPage,
     ])
 
     // Show error screen if no content is available
