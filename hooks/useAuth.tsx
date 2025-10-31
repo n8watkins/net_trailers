@@ -16,6 +16,7 @@ import { useRouter } from 'next/router'
 import { useAppStore } from '../stores/appStore'
 import { createErrorHandler } from '../utils/errorHandler'
 import { useToast } from './useToast'
+import { cacheAuthState, clearAuthCache, wasRecentlyAuthenticated } from '../utils/authCache'
 
 interface AuthProviderProps {
     children: React.ReactNode
@@ -24,6 +25,7 @@ interface AuthProviderProps {
 interface iAuth {
     user: User | null
     loading: boolean
+    wasRecentlyAuthenticated: boolean // Optimistic auth check (synchronous)
     signUp: (email: string, password: string) => Promise<void>
     signIn: (email: string, password: string) => Promise<void>
     signInWithGoogle: () => Promise<void>
@@ -38,6 +40,7 @@ interface iAuth {
 export const AuthContext = createContext<iAuth>({
     user: null,
     loading: false,
+    wasRecentlyAuthenticated: false,
     signUp: async () => {},
     signIn: async () => {},
     signInWithGoogle: async () => {},
@@ -60,6 +63,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const setGlobalLoading = useAppStore((state) => state.setLoading)
     const { showSuccess, showError } = useToast()
     const errorHandler = createErrorHandler(showError)
+
+    // Check if user was recently authenticated (optimistic check)
+    const wasRecentlyAuth = wasRecentlyAuthenticated()
 
     useEffect(() => {
         const startTime = Date.now()
@@ -98,15 +104,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                     user ? 'AUTHENTICATED' : 'NOT AUTHENTICATED'
                 )
 
-                // Session management is now handled by useSessionManager
-                // No automatic redirection or guest mode checking here
-                // Components can check session state and handle routing appropriately
-
+                // Cache auth state for optimistic loading on next visit
                 if (user) {
-                    // User authenticated - session manager will handle the transition
+                    cacheAuthState(user.uid)
                     console.log('✅ User is authenticated:', user.email)
                 } else {
-                    // User signed out - session manager will handle cleanup
+                    // Clear cache when user signs out
+                    clearAuthCache()
                     console.log('🎭 User signed out or not authenticated')
                 }
             },
@@ -191,6 +195,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setGlobalLoading(true)
         signOut(auth)
             .then(() => {
+                clearAuthCache() // Clear optimistic auth cache
                 showSuccess('Successfully signed out. See you next time!')
             })
             .catch((error) => {
@@ -221,6 +226,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         () => ({
             user,
             loading,
+            wasRecentlyAuthenticated: wasRecentlyAuth,
             signUp,
             signIn,
             signInWithGoogle,
@@ -234,6 +240,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         [
             user,
             loading,
+            wasRecentlyAuth,
             error,
             passResetSuccess,
             attemptPassReset,

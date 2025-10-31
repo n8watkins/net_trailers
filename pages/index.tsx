@@ -40,7 +40,7 @@ const Home = ({
     onOpenTutorial,
     onOpenKeyboardShortcuts,
 }: Props) => {
-    const { loading: authLoading, error, user } = useAuth()
+    const { loading: authLoading, error, user, wasRecentlyAuthenticated } = useAuth()
     const router = useRouter()
     const { modal, setContentLoadedSuccessfully } = useAppStore()
     const showModal = modal.isOpen
@@ -119,7 +119,8 @@ const Home = ({
     ])
 
     // Show loading screen during auth initialization
-    if (authLoading) {
+    // BUT: Skip loading screen if we have cached auth (optimistic loading)
+    if (authLoading && !wasRecentlyAuthenticated) {
         return <NetflixLoader message="Loading NetTrailer..." />
     }
 

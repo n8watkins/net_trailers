@@ -3,13 +3,14 @@ import { useSessionStore } from '../stores/sessionStore'
 import { useAuthStore } from '../stores/authStore'
 import { useGuestStore } from '../stores/guestStore'
 import useAuth from '../hooks/useAuth'
+import { getCachedUserId } from '../utils/authCache'
 
 /**
  * Centralized session sync manager - ensures Firebase sync happens only ONCE
  * This component should be mounted once at the app root level
  */
 export function SessionSyncManager() {
-    const { user, loading: authLoading } = useAuth()
+    const { user, loading: authLoading, wasRecentlyAuthenticated } = useAuth()
     const {
         sessionType,
         activeSessionId,
@@ -22,6 +23,21 @@ export function SessionSyncManager() {
 
     const authStore = useAuthStore()
     const guestStore = useGuestStore()
+
+    // OPTIMISTIC INITIALIZATION: If we have cached auth, initialize immediately
+    // This prevents showing loading screen when we're confident user is logged in
+    useEffect(() => {
+        if (!isInitialized && wasRecentlyAuthenticated && authLoading) {
+            const cachedUserId = getCachedUserId()
+            if (cachedUserId) {
+                console.log(
+                    '⚡ [SessionSyncManager] OPTIMISTIC: Initializing auth session from cache:',
+                    cachedUserId
+                )
+                initializeAuthSession(cachedUserId)
+            }
+        }
+    }, [isInitialized, wasRecentlyAuthenticated, authLoading, initializeAuthSession])
 
     // Initialize session on mount - BUT WAIT for auth to complete first
     useEffect(() => {
