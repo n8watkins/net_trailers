@@ -3,6 +3,7 @@ import { Content, getTitle } from '../typings'
 import { UserList } from '../types/userLists'
 import { UserListsService } from '../services/userListsService'
 import { GuestStorageService } from '../services/guestStorageService'
+import { guestLog, guestError } from '../utils/debugLogger'
 
 // NEW SCHEMA - Flat structure with liked/hidden instead of ratings
 export interface GuestState {
@@ -83,7 +84,7 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
             })
         }
 
-        console.log('📝 [GuestStore] Added to watchlist:', getTitle(content))
+        guestLog('📝 [GuestStore] Added to watchlist:', getTitle(content))
     },
 
     removeFromWatchlist: (contentId: number) => {
@@ -105,7 +106,7 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
             })
         }
 
-        console.log('🗑️ [GuestStore] Removed from watchlist:', contentId)
+        guestLog('🗑️ [GuestStore] Removed from watchlist:', contentId)
     },
 
     addLikedMovie: (content: Content) => {
@@ -131,7 +132,7 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
             })
         }
 
-        console.log('👍 [GuestStore] Added to liked:', getTitle(content))
+        guestLog('👍 [GuestStore] Added to liked:', getTitle(content))
     },
 
     removeLikedMovie: (contentId: number) => {
@@ -153,7 +154,7 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
             })
         }
 
-        console.log('🗑️ [GuestStore] Removed from liked:', contentId)
+        guestLog('🗑️ [GuestStore] Removed from liked:', contentId)
     },
 
     addHiddenMovie: (content: Content) => {
@@ -179,7 +180,7 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
             })
         }
 
-        console.log('🙈 [GuestStore] Added to hidden:', getTitle(content))
+        guestLog('🙈 [GuestStore] Added to hidden:', getTitle(content))
     },
 
     removeHiddenMovie: (contentId: number) => {
@@ -201,7 +202,7 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
             })
         }
 
-        console.log('🗑️ [GuestStore] Removed from hidden:', contentId)
+        guestLog('🗑️ [GuestStore] Removed from hidden:', contentId)
     },
 
     createList: (request: { name: string; emoji?: string; color?: string; isPublic?: boolean }) => {
@@ -227,7 +228,7 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
             })
         }
 
-        console.log('📋 [GuestStore] Created list:', request.name, newList.id)
+        guestLog('📋 [GuestStore] Created list:', request.name, newList.id)
         return newList.id
     },
 
@@ -252,7 +253,7 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
             })
         }
 
-        console.log('📝 [GuestStore] Added to list:', { listId, content: getTitle(content) })
+        guestLog('📝 [GuestStore] Added to list:', { listId, content: getTitle(content) })
     },
 
     removeFromList: (listId: string, contentId: number) => {
@@ -276,7 +277,7 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
             })
         }
 
-        console.log('🗑️ [GuestStore] Removed from list:', { listId, contentId })
+        guestLog('🗑️ [GuestStore] Removed from list:', { listId, contentId })
     },
 
     updateList: (listId: string, updates: { name?: string; emoji?: string; color?: string }) => {
@@ -301,7 +302,7 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
             })
         }
 
-        console.log('✏️ [GuestStore] Updated list:', { listId, updates })
+        guestLog('✏️ [GuestStore] Updated list:', { listId, updates })
     },
 
     deleteList: (listId: string) => {
@@ -326,7 +327,7 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
             })
         }
 
-        console.log('🗑️ [GuestStore] Deleted list:', listId)
+        guestLog('🗑️ [GuestStore] Deleted list:', listId)
     },
 
     updatePreferences: (prefs: Partial<GuestState>) => {
@@ -351,19 +352,19 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
                 defaultVolume: state.defaultVolume ?? 50,
                 childSafetyMode: state.childSafetyMode ?? false,
             })
-            console.log('🔄 [GuestStore] Updated preferences and saved to localStorage:', {
+            guestLog('🔄 [GuestStore] Updated preferences and saved to localStorage:', {
                 autoMute: state.autoMute,
                 defaultVolume: state.defaultVolume,
                 childSafetyMode: state.childSafetyMode,
             })
         } else {
-            console.warn('⚠️ [GuestStore] No guestId, cannot save to localStorage')
+            guestLog('⚠️ [GuestStore] No guestId, cannot save to localStorage')
         }
     },
 
     clearAllData: () => {
         set(getDefaultState())
-        console.log('🧹 [GuestStore] Cleared all data')
+        guestLog('🧹 [GuestStore] Cleared all data')
     },
 
     loadData: (data: GuestState) => {
@@ -371,7 +372,7 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
             ...data,
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
-        console.log('📥 [GuestStore] Loaded data:', {
+        guestLog('📥 [GuestStore] Loaded data:', {
             watchlistCount: data.defaultWatchlist.length,
             likedCount: data.likedMovies.length,
             hiddenCount: data.hiddenMovies.length,
@@ -392,7 +393,7 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
             defaultVolume: loadedData.defaultVolume ?? 50,
             childSafetyMode: loadedData.childSafetyMode ?? false,
         })
-        console.log('🔄 [GuestStore] Synced from localStorage:', {
+        guestLog('🔄 [GuestStore] Synced from localStorage:', {
             guestId,
             watchlistCount: loadedData.defaultWatchlist.length,
             likedCount: loadedData.likedMovies.length,

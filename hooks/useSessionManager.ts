@@ -1,3 +1,4 @@
+import { sessionLog, sessionError } from '../utils/debugLogger'
 import { useEffect, useCallback } from 'react'
 import { useSessionStore } from '../stores/sessionStore'
 import { useAuthStore } from '../stores/authStore'
@@ -101,7 +102,7 @@ export function useSessionManager() {
                 })
             }
 
-            console.log('[useSessionManager] setUserSession updated stores:', {
+            sessionLog('[useSessionManager] setUserSession updated stores:', {
                 isGuest: session.isGuest,
                 sessionId: session.guestId || session.userId,
             })
@@ -122,7 +123,7 @@ export function useSessionManager() {
 
         // Skip if we're already transitioning to prevent race conditions
         if (isTransitioning) {
-            console.log('⏳ [SESSION-TIMING] Already transitioning, skipping initialization')
+            sessionLog('⏳ [SESSION-TIMING] Already transitioning, skipping initialization')
             return
         }
 
@@ -136,7 +137,7 @@ export function useSessionManager() {
             setUserSession,
         }
 
-        console.log('📡 [SESSION-TIMING] Auth state change detected', {
+        sessionLog('📡 [SESSION-TIMING] Auth state change detected', {
             user: user?.uid,
             userEmail: user?.email,
             userExists: !!user,
@@ -163,7 +164,7 @@ export function useSessionManager() {
 
             if (needsSessionChange || needsInitialSetup) {
                 const initStartTime = Date.now()
-                console.log('🔄 [SESSION-TIMING] Session update required', {
+                sessionLog('🔄 [SESSION-TIMING] Session update required', {
                     needsSessionChange,
                     needsInitialSetup,
                     shouldBeAuthenticated,
@@ -177,18 +178,18 @@ export function useSessionManager() {
                         state
                     )
                     const initTime = Date.now() - initStartTime
-                    console.log(
+                    sessionLog(
                         `✅ [SESSION-TIMING] Session initialized to ${newSessionType} in ${initTime}ms`
                     )
                 } catch (error) {
-                    console.error('🚨 [SESSION-TIMING] Session initialization failed:', error)
+                    sessionError('🚨 [SESSION-TIMING] Session initialization failed:', error)
                     // On error, ensure we at least have a guest session
                     if (sessionType === 'initializing') {
                         await SessionManagerService.initializeSession(null, state)
                     }
                 }
             } else {
-                console.log('⏭️ [SESSION-TIMING] No session change needed', {
+                sessionLog('⏭️ [SESSION-TIMING] No session change needed', {
                     authLoading,
                     sessionType,
                     isSessionInitialized,
@@ -215,7 +216,7 @@ export function useSessionManager() {
     useEffect(() => {
         // If auth is done loading and we're still initializing, we know there's no user
         if (!authLoading && sessionType === 'initializing' && !isTransitioning) {
-            console.log(
+            sessionLog(
                 '🎭 [useSessionManager] Auth loaded with no user, initializing guest session'
             )
 
@@ -230,7 +231,7 @@ export function useSessionManager() {
 
             // Auth has confirmed no user, initialize guest session
             SessionManagerService.initializeSession(null, state).catch((error) => {
-                console.error('🚨 Guest session initialization failed:', error)
+                sessionError('🚨 Guest session initialization failed:', error)
             })
         }
     }, [
@@ -248,7 +249,7 @@ export function useSessionManager() {
     // Handle session type switching
     const switchToGuest = async () => {
         if (sessionType !== 'guest' && !isTransitioning) {
-            console.log('🎭 Switching to guest mode...')
+            sessionLog('🎭 Switching to guest mode...')
             const state: SessionManagerState = {
                 setSessionType,
                 setActiveSessionId,
@@ -285,7 +286,7 @@ export function useSessionManager() {
         setActiveSessionId(guestId)
         setIsSessionInitialized(true)
 
-        console.log('🎭 Guest session started:', guestId)
+        sessionLog('🎭 Guest session started:', guestId)
     }
 
     // Initialize a fresh guest session (for complete data isolation)
@@ -298,7 +299,7 @@ export function useSessionManager() {
         setActiveSessionId(guestId)
         setIsSessionInitialized(true)
 
-        console.log('🎭 Fresh guest session started:', guestId)
+        sessionLog('🎭 Fresh guest session started:', guestId)
     }
 
     // Initialize auth session
@@ -313,9 +314,9 @@ export function useSessionManager() {
             setIsSessionInitialized(true)
 
             // Note: authStore.loadUserData is called by SessionSyncManager
-            console.log('🔐 Auth session started:', user.uid)
+            sessionLog('🔐 Auth session started:', user.uid)
         } catch (error) {
-            console.error('Failed to start auth session:', error)
+            sessionError('Failed to start auth session:', error)
             // Fallback to guest session
             await startGuestSession()
         }
@@ -332,7 +333,7 @@ export function useSessionManager() {
             setUserSession,
         }
         SessionManagerService.clearAllSessionData(state)
-        console.log('🧹 All sessions cleared')
+        sessionLog('🧹 All sessions cleared')
     }
 
     // Migration helpers
@@ -360,7 +361,7 @@ export function useSessionManager() {
         const guestId = isGuest ? activeSessionId : undefined
         const userId = !isGuest ? activeSessionId : undefined
 
-        console.log('📊 Session Details:', {
+        sessionLog('📊 Session Details:', {
             session: {
                 isGuest,
                 guestId,

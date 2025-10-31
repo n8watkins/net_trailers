@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { SessionStorageService } from '../services/sessionStorageService'
 import { GuestStorageService } from '../services/guestStorageService'
+import { sessionLog } from '../utils/debugLogger'
 
 export type SessionType = 'guest' | 'authenticated' | 'initializing'
 
@@ -57,7 +58,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
         })
         // Initialize session isolation service
         SessionStorageService.initializeSession(guestId, 'guest')
-        console.log('🎯 [SessionStore] Guest session initialized:', guestId)
+        sessionLog('🎯 [SessionStore] Guest session initialized:', guestId)
     },
 
     initializeAuthSession: (userId: string) => {
@@ -70,7 +71,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
         })
         // Initialize session isolation service
         SessionStorageService.initializeSession(userId, 'auth')
-        console.log('🎯 [SessionStore] Auth session initialized:', userId)
+        sessionLog('🎯 [SessionStore] Auth session initialized:', userId)
     },
 
     switchToGuest: () => {
@@ -82,7 +83,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
             isTransitioning: false,
             migrationAvailable: false,
         })
-        console.log('🔄 [SessionStore] Switched to guest session:', guestId)
+        sessionLog('🔄 [SessionStore] Switched to guest session:', guestId)
     },
 
     switchToAuth: (userId: string) => {
@@ -92,7 +93,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
             isTransitioning: false,
             migrationAvailable: false,
         })
-        console.log('🔄 [SessionStore] Switched to auth session:', userId)
+        sessionLog('🔄 [SessionStore] Switched to auth session:', userId)
     },
 
     setMigrationAvailable: (available: boolean | ((prev: boolean) => boolean)) => {

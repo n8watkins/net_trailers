@@ -1,3 +1,4 @@
+import { sessionLog, sessionError } from '../utils/debugLogger'
 import { UserPreferences } from '../types/atoms'
 
 /**
@@ -17,23 +18,23 @@ export class SessionStorageService {
                     const session = JSON.parse(storedSession)
                     this.activeSessionId = session.sessionId
                     this.sessionType = session.type
-                    console.log(`🔄 [SessionStorage] RESTORED session state:`, {
+                    sessionLog(`🔄 [SessionStorage] RESTORED session state:`, {
                         sessionId: session.sessionId,
                         type: session.type,
                         timestamp: new Date().toISOString(),
                     })
                 } else {
-                    console.log(`📭 [SessionStorage] No stored session found on page load`)
+                    sessionLog(`📭 [SessionStorage] No stored session found on page load`)
                 }
             } catch (error) {
-                console.error(`❌ [SessionStorage] Failed to restore session state:`, error)
+                sessionError(`❌ [SessionStorage] Failed to restore session state:`, error)
             }
         }
     }
 
     // Initialize a session with complete isolation
     static initializeSession(sessionId: string, type: 'guest' | 'auth'): void {
-        console.log(`🔐 [SessionStorage] Initializing ${type} session: ${sessionId}`)
+        sessionLog(`🔐 [SessionStorage] Initializing ${type} session: ${sessionId}`)
         this.activeSessionId = sessionId
         this.sessionType = type
 
@@ -48,9 +49,9 @@ export class SessionStorageService {
                         timestamp: new Date().toISOString(),
                     })
                 )
-                console.log(`💾 [SessionStorage] PERSISTED session state for refresh survival`)
+                sessionLog(`💾 [SessionStorage] PERSISTED session state for refresh survival`)
             } catch (error) {
-                console.error(`❌ [SessionStorage] Failed to persist session state:`, error)
+                sessionError(`❌ [SessionStorage] Failed to persist session state:`, error)
             }
         }
     }
@@ -70,7 +71,7 @@ export class SessionStorageService {
         const sessionKey = `${this.getSessionPrefix()}_${key}`
         try {
             localStorage.setItem(sessionKey, JSON.stringify(data))
-            console.log(`💾 [SessionStorage] STORING DATA:`, {
+            sessionLog(`💾 [SessionStorage] STORING DATA:`, {
                 sessionKey,
                 activeSessionId: this.activeSessionId,
                 sessionType: this.sessionType,
@@ -85,7 +86,7 @@ export class SessionStorageService {
                 timestamp: new Date().toISOString(),
             })
         } catch (error) {
-            console.error(`❌ Failed to save session data for key ${sessionKey}:`, error)
+            sessionError(`❌ Failed to save session data for key ${sessionKey}:`, error)
         }
     }
 
@@ -97,7 +98,7 @@ export class SessionStorageService {
         try {
             const data = localStorage.getItem(sessionKey)
             if (data === null) {
-                console.log(`📭 [SessionStorage] NO DATA FOUND:`, {
+                sessionLog(`📭 [SessionStorage] NO DATA FOUND:`, {
                     sessionKey,
                     activeSessionId: this.activeSessionId,
                     sessionType: this.sessionType,
@@ -107,7 +108,7 @@ export class SessionStorageService {
                 return defaultValue
             }
             const parsed = JSON.parse(data)
-            console.log(`📬 [SessionStorage] LOADING DATA:`, {
+            sessionLog(`📬 [SessionStorage] LOADING DATA:`, {
                 sessionKey,
                 activeSessionId: this.activeSessionId,
                 sessionType: this.sessionType,
@@ -123,7 +124,7 @@ export class SessionStorageService {
             })
             return parsed
         } catch (error) {
-            console.error(`❌ Failed to load session data for key ${sessionKey}:`, error)
+            sessionError(`❌ Failed to load session data for key ${sessionKey}:`, error)
             return defaultValue
         }
     }
@@ -147,10 +148,10 @@ export class SessionStorageService {
         // Remove all session keys
         keysToRemove.forEach((key) => {
             localStorage.removeItem(key)
-            console.log(`🗑️ Removed session key: ${key}`)
+            sessionLog(`🗑️ Removed session key: ${key}`)
         })
 
-        console.log(
+        sessionLog(
             `🧹 Cleared ${keysToRemove.length} items from ${this.sessionType} session: ${this.activeSessionId}`
         )
     }
@@ -175,7 +176,7 @@ export class SessionStorageService {
             localStorage.removeItem(key)
         })
 
-        console.log(`🧹 Cleared ${keysToRemove.length} items from ${type} session: ${sessionId}`)
+        sessionLog(`🧹 Cleared ${keysToRemove.length} items from ${type} session: ${sessionId}`)
     }
 
     // Get current session info
@@ -242,7 +243,7 @@ export class SessionStorageService {
 
     // Force switch to a different session with cleanup
     static switchSession(newSessionId: string, newType: 'guest' | 'auth'): void {
-        console.log(
+        sessionLog(
             `🔄 Switching session from ${this.sessionType}:${this.activeSessionId} to ${newType}:${newSessionId}`
         )
 
@@ -250,7 +251,7 @@ export class SessionStorageService {
         this.activeSessionId = newSessionId
         this.sessionType = newType
 
-        console.log(`✅ Session switched to ${newType}: ${newSessionId}`)
+        sessionLog(`✅ Session switched to ${newType}: ${newSessionId}`)
     }
 
     // Debug helper to list all localStorage keys for troubleshooting

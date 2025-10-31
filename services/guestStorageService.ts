@@ -1,5 +1,6 @@
 import { Content } from '../typings'
 import { UserPreferences } from '../types/atoms'
+import { guestLog, guestError } from '../utils/debugLogger'
 
 // Type alias for backward compatibility
 export type GuestPreferences = UserPreferences
@@ -47,10 +48,10 @@ export class GuestStorageService {
 
     // Load guest data
     static loadGuestData(guestId: string): GuestPreferences {
-        console.log('🔍 [GuestStorageService] loadGuestData called:', { guestId })
+        guestLog('🔍 [GuestStorageService] loadGuestData called:', { guestId })
 
         if (typeof window === 'undefined') {
-            console.log('⚠️ [GuestStorageService] SSR environment, returning defaults')
+            guestLog('⚠️ [GuestStorageService] SSR environment, returning defaults')
             return this.getDefaultPreferences()
         }
 
@@ -61,20 +62,20 @@ export class GuestStorageService {
             const storageKey = this.getStorageKey(guestId)
             const data = localStorage.getItem(storageKey)
 
-            console.log('🔍 [GuestStorageService] Reading from localStorage:', {
+            guestLog('🔍 [GuestStorageService] Reading from localStorage:', {
                 key: storageKey,
                 hasData: !!data,
                 dataLength: data?.length || 0,
             })
 
             if (!data) {
-                console.log('⚠️ [GuestStorageService] No data found, returning defaults')
+                guestLog('⚠️ [GuestStorageService] No data found, returning defaults')
                 return this.getDefaultPreferences()
             }
 
             const parsedData = JSON.parse(data) as GuestPreferences
 
-            console.log('✅ [GuestStorageService] Successfully loaded data:', {
+            guestLog('✅ [GuestStorageService] Successfully loaded data:', {
                 watchlistCount: parsedData.defaultWatchlist?.length || 0,
                 likedCount: parsedData.likedMovies?.length || 0,
                 hiddenCount: parsedData.hiddenMovies?.length || 0,
@@ -95,10 +96,7 @@ export class GuestStorageService {
                 childSafetyMode: parsedData.childSafetyMode ?? false,
             }
         } catch (error) {
-            console.error(
-                `❌ [GuestStorageService] Failed to load guest data for ${guestId}:`,
-                error
-            )
+            guestError(`❌ [GuestStorageService] Failed to load guest data for ${guestId}:`, error)
             return this.getDefaultPreferences()
         }
     }
@@ -111,14 +109,14 @@ export class GuestStorageService {
         Object.keys(localStorage).forEach((key) => {
             if (key.startsWith('nettrailer_guest_data_') && !key.includes('_v2_')) {
                 localStorage.removeItem(key)
-                console.log('🧹 Cleared old v1 guest data:', key)
+                guestLog('🧹 Cleared old v1 guest data:', key)
             }
         })
     }
 
     // Save guest data
     static saveGuestData(guestId: string, preferences: GuestPreferences): void {
-        console.log('💾 [GuestStorageService] saveGuestData called:', {
+        guestLog('💾 [GuestStorageService] saveGuestData called:', {
             guestId,
             preferences: {
                 watchlistCount: preferences.defaultWatchlist?.length || 0,
@@ -130,7 +128,7 @@ export class GuestStorageService {
         })
 
         if (typeof window === 'undefined') {
-            console.log('⚠️ [GuestStorageService] SSR environment, cannot save')
+            guestLog('⚠️ [GuestStorageService] SSR environment, cannot save')
             return
         }
 
@@ -145,7 +143,7 @@ export class GuestStorageService {
 
             localStorage.setItem(storageKey, jsonData)
 
-            console.log('✅ [GuestStorageService] Successfully saved to localStorage:', {
+            guestLog('✅ [GuestStorageService] Successfully saved to localStorage:', {
                 key: storageKey,
                 dataSize: jsonData.length,
                 saved: {
@@ -159,21 +157,18 @@ export class GuestStorageService {
             const verification = localStorage.getItem(storageKey)
             if (verification) {
                 const parsed = JSON.parse(verification)
-                console.log('✅ [GuestStorageService] Verification - data in localStorage:', {
+                guestLog('✅ [GuestStorageService] Verification - data in localStorage:', {
                     autoMute: parsed.autoMute,
                     defaultVolume: parsed.defaultVolume,
                     childSafetyMode: parsed.childSafetyMode,
                 })
             } else {
-                console.error(
+                guestError(
                     '❌ [GuestStorageService] Verification FAILED - data not in localStorage!'
                 )
             }
         } catch (error) {
-            console.error(
-                `❌ [GuestStorageService] Failed to save guest data for ${guestId}:`,
-                error
-            )
+            guestError(`❌ [GuestStorageService] Failed to save guest data for ${guestId}:`, error)
         }
     }
 
@@ -375,7 +370,7 @@ export class GuestStorageService {
     static clearCurrentGuestData(guestId: string): GuestPreferences {
         const defaultPrefs = this.getDefaultPreferences()
         this.saveGuestData(guestId, defaultPrefs)
-        console.log(`🧹 Guest data cleared for ${guestId}`)
+        guestLog(`🧹 Guest data cleared for ${guestId}`)
         return defaultPrefs
     }
 
@@ -430,12 +425,12 @@ export class GuestStorageService {
     ): boolean {
         try {
             this.saveGuestData(guestId, exportedData.data)
-            console.log(
+            guestLog(
                 `📥 Guest data imported for ${guestId} from export dated ${exportedData.exportDate}`
             )
             return true
         } catch (error) {
-            console.error('Failed to import guest data:', error)
+            guestError('Failed to import guest data:', error)
             return false
         }
     }
