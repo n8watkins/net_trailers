@@ -290,11 +290,11 @@ export class SessionManagerService {
             // CRITICAL: Clear stored auth ID immediately to prevent stale updates
             this.clearStoredAuthId()
 
-            // CRITICAL: Clear shared Recoil state FIRST before any other operations
-            console.log('🧹 [SessionManager] STEP 1: Force clearing shared Recoil state')
+            // CRITICAL: Clear shared state FIRST before any other operations
+            console.log('🧹 [SessionManager] STEP 1: Force clearing shared state')
             this.clearSessionAtomState(state)
 
-            // Ensure Recoil state is properly cleared before proceeding
+            // Ensure state is properly cleared before proceeding
             // Using a microtask to ensure state updates are processed
             await Promise.resolve()
 
@@ -305,8 +305,8 @@ export class SessionManagerService {
             // Clear stored auth ID to prevent persistence issues
             this.clearStoredAuthId()
 
-            // CRITICAL: Clear Recoil state AGAIN to ensure isolation
-            console.log('🧹 [SessionManager] STEP 3: Double-clearing Recoil state for isolation')
+            // CRITICAL: Clear state AGAIN to ensure isolation
+            console.log('🧹 [SessionManager] STEP 3: Double-clearing state for isolation')
             this.clearSessionAtomState(state)
 
             // Initialize new guest session (force fresh for isolation)
