@@ -48,30 +48,7 @@ const Settings: React.FC<SettingsProps> = ({
     onOpenTutorial,
     onOpenKeyboardShortcuts,
 }) => {
-    const [activeSection, setActiveSection] = useState<SettingsSection>('preferences')
-    const [showClearConfirm, setShowClearConfirm] = useState(false)
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-    const [showExportLimitedModal, setShowExportLimitedModal] = useState(false)
-    const [showChildSafetyModal, setShowChildSafetyModal] = useState(false)
-
-    // Preferences state - Initialize from store values to prevent flicker
-    const [childSafetyMode, setChildSafetyMode] = useState(() => currentPreferences.childSafetyMode)
-    const [autoMute, setAutoMute] = useState(() => currentPreferences.autoMute)
-    const [defaultVolume, setDefaultVolume] = useState(() => currentPreferences.defaultVolume)
-
-    // Track original preferences to detect changes - Initialize from store
-    const [originalPreferences, setOriginalPreferences] = useState(() => ({
-        childSafetyMode: currentPreferences.childSafetyMode,
-        autoMute: currentPreferences.autoMute,
-        defaultVolume: currentPreferences.defaultVolume,
-    }))
-
-    // Check if preferences have changed
-    const preferencesChanged =
-        childSafetyMode !== originalPreferences.childSafetyMode ||
-        autoMute !== originalPreferences.autoMute ||
-        defaultVolume !== originalPreferences.defaultVolume
-
+    // Get hooks first
     const { user } = useAuth()
     const { isGuest } = useAuthStatus()
     const userData = useUserData()
@@ -96,6 +73,31 @@ const Settings: React.FC<SettingsProps> = ({
 
     // Use actual store values based on session type
     const currentPreferences = isGuest ? guestPreferences : authPreferences
+
+    // Modal states
+    const [activeSection, setActiveSection] = useState<SettingsSection>('preferences')
+    const [showClearConfirm, setShowClearConfirm] = useState(false)
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+    const [showExportLimitedModal, setShowExportLimitedModal] = useState(false)
+    const [showChildSafetyModal, setShowChildSafetyModal] = useState(false)
+
+    // Preferences state - Initialize from store values to prevent flicker
+    const [childSafetyMode, setChildSafetyMode] = useState(() => currentPreferences.childSafetyMode)
+    const [autoMute, setAutoMute] = useState(() => currentPreferences.autoMute)
+    const [defaultVolume, setDefaultVolume] = useState(() => currentPreferences.defaultVolume)
+
+    // Track original preferences to detect changes - Initialize from store
+    const [originalPreferences, setOriginalPreferences] = useState(() => ({
+        childSafetyMode: currentPreferences.childSafetyMode,
+        autoMute: currentPreferences.autoMute,
+        defaultVolume: currentPreferences.defaultVolume,
+    }))
+
+    // Check if preferences have changed
+    const preferencesChanged =
+        childSafetyMode !== originalPreferences.childSafetyMode ||
+        autoMute !== originalPreferences.autoMute ||
+        defaultVolume !== originalPreferences.defaultVolume
 
     // Define all possible sidebar items
     const allSidebarItems: SidebarItem[] = [
