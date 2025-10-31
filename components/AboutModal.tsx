@@ -111,14 +111,14 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 aria-label="Nathan's GitHub"
-                                className="w-10 h-10 rounded-full hover:bg-gray-700 transition-colors duration-200 flex items-center justify-center"
+                                className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gray-800 hover:bg-gray-700 transition-colors duration-200 flex items-center justify-center"
                             >
                                 <Image
                                     src="/icons/github.svg"
                                     alt="GitHub"
                                     width={24}
                                     height={24}
-                                    className="w-6 h-6"
+                                    className="w-6 h-6 md:w-7 md:h-7"
                                 />
                             </a>
                             <a
@@ -126,14 +126,14 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 aria-label="Nathan's LinkedIn"
-                                className="w-10 h-10 rounded-full hover:bg-gray-700 transition-colors duration-200 flex items-center justify-center"
+                                className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gray-800 hover:bg-gray-700 transition-colors duration-200 flex items-center justify-center"
                             >
                                 <Image
                                     src="/icons/linkedin.svg"
                                     alt="LinkedIn"
                                     width={24}
                                     height={24}
-                                    className="w-6 h-6"
+                                    className="w-6 h-6 md:w-7 md:h-7"
                                 />
                             </a>
                             <a
@@ -141,9 +141,12 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 aria-label="Nathan's X (Twitter)"
-                                className="w-10 h-10 rounded-full hover:bg-gray-700 transition-colors duration-200 flex items-center justify-center"
+                                className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gray-800 hover:bg-gray-700 transition-colors duration-200 flex items-center justify-center"
                             >
-                                <svg className="w-6 h-6 fill-white" viewBox="0 0 24 24">
+                                <svg
+                                    className="w-6 h-6 md:w-7 md:h-7 fill-white"
+                                    viewBox="0 0 24 24"
+                                >
                                     <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" />
                                 </svg>
                             </a>
