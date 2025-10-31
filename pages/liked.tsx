@@ -47,8 +47,7 @@ const Liked: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboa
         : likedContent
 
     const handleContentClick = (content: Content) => {
-        setCurrentMovie(content)
-        setShowModal(true)
+        openModal(content)
     }
 
     const handleExportCSV = () => {

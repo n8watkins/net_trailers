@@ -1,4 +1,4 @@
-import { UserPreferences } from '../atoms/userDataAtom'
+import { UserPreferences } from '../types/atoms'
 
 /**
  * Session-isolated storage service that ensures complete data separation

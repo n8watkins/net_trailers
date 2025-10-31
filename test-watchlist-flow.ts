@@ -9,8 +9,7 @@
  */
 
 import { UserListsService } from './services/userListsService'
-import { AuthStorageService } from './services/authStorageService'
-import { AuthPreferences } from './atoms/authSessionAtom'
+import { AuthStorageService, AuthPreferences } from './services/authStorageService'
 import { Content } from './typings'
 
 const testUserId = 'test-user-watchlist-flow-' + Date.now()

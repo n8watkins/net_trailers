@@ -1,15 +1,9 @@
-import { SetterOrUpdater } from 'recoil'
 import { User } from 'firebase/auth'
-import { UserSession, UserPreferences } from '../atoms/userDataAtom'
-import {
-    SessionType,
-    sessionTypeState,
-    activeSessionIdState,
-    isSessionInitializedState,
-    migrationAvailableState,
-    isTransitioningSessionState,
-} from '../atoms/sessionManagerAtom'
+import { UserPreferences, SessionType } from '../types/atoms'
 import { SessionStorageService } from './sessionStorageService'
+
+// Zustand-compatible setter type
+type SetterOrUpdater<T> = (value: T | ((prev: T) => T)) => void
 
 export interface SessionManagerState {
     setSessionType: SetterOrUpdater<SessionType>
@@ -17,7 +11,7 @@ export interface SessionManagerState {
     setIsSessionInitialized: SetterOrUpdater<boolean>
     setMigrationAvailable: SetterOrUpdater<boolean>
     setIsTransitioning: SetterOrUpdater<boolean>
-    setUserSession: SetterOrUpdater<UserSession>
+    setUserSession: SetterOrUpdater<any> // Updated to work with Zustand
 }
 
 export class SessionManagerService {

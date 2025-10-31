@@ -1,8 +1,11 @@
 import { Content } from '../typings'
-import { AuthPreferences } from '../atoms/authSessionAtom'
+import { UserPreferences } from '../types/atoms'
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { firebaseTracker } from '../utils/firebaseCallTracker'
+
+// Type alias for backward compatibility
+export type AuthPreferences = UserPreferences
 
 // Simple in-memory cache for user data
 const userDataCache = new Map<string, { data: AuthPreferences; timestamp: number }>()

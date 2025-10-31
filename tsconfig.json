@@ -14,10 +14,7 @@
         "isolatedModules": true,
         "jsx": "react-jsx",
         "incremental": true,
-        "baseUrl": ".",
-        "paths": {
-            "recoil": ["./atoms/compat.ts"]
-        }
+        "baseUrl": "."
     },
     "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "jest.setup.js", "types/**/*.d.ts"],
     "exclude": ["node_modules"]

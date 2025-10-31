@@ -1,5 +1,8 @@
 import { Content } from '../typings'
-import { GuestPreferences } from '../atoms/guestSessionAtom'
+import { UserPreferences } from '../types/atoms'
+
+// Type alias for backward compatibility
+export type GuestPreferences = UserPreferences
 
 // NEW SCHEMA - v2 with localStorage versioning
 const STORAGE_VERSION = 2

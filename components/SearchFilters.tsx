@@ -1,6 +1,5 @@
 import React, { useCallback } from 'react'
-import { useAppStore } from '../stores/appStore'
-import { SearchFilters as SearchFiltersType } from '../atoms/searchAtom'
+import { useAppStore, SearchFilters as SearchFiltersType } from '../stores/appStore'
 import { ChevronDownIcon, XMarkIcon } from '@heroicons/react/24/outline'
 
 interface SearchFiltersProps {

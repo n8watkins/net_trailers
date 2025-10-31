@@ -1,6 +1,5 @@
 import React from 'react'
 import { render, renderHook, act, waitFor } from '@testing-library/react'
-import { RecoilRoot } from 'recoil'
 import useAuth, { AuthProvider } from '../../hooks/useAuth'
 
 // Mock Firebase auth functions
@@ -27,11 +26,9 @@ jest.mock('firebase/auth', () => ({
     })),
 }))
 
-// Test wrapper component
+// Test wrapper component (no longer needs RecoilRoot for Zustand)
 const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <RecoilRoot>
-        <AuthProvider>{children}</AuthProvider>
-    </RecoilRoot>
+    <AuthProvider>{children}</AuthProvider>
 )
 
 describe('useAuth Hook', () => {

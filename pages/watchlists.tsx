@@ -40,7 +40,6 @@ const Watchlists: NextPage<Props> = ({
     const { getAllLists } = userData
     const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
     const debugSettings = useDebugSettings()
-    const showModal = useRecoilValue(modalState)
 
     // Debug logging and verification - FIXED: Only run when user changes
     useEffect(() => {
@@ -270,12 +269,7 @@ const Watchlists: NextPage<Props> = ({
 
                             {/* Create New List Button */}
                             <button
-                                onClick={() =>
-                                    setListModal({
-                                        isOpen: true,
-                                        content: null, // No specific content, open in create mode
-                                    })
-                                }
+                                onClick={() => openListModal(null)}
                                 className="flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 bg-gray-800/50 text-white hover:bg-gray-700/50 border border-gray-600 hover:border-gray-400"
                             >
                                 <PlusIcon className="w-5 h-5 text-white" />

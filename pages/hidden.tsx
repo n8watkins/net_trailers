@@ -47,8 +47,7 @@ const Hidden: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeybo
         : hiddenContent
 
     const handleContentClick = (content: Content) => {
-        setCurrentMovie(content)
-        setShowModal(true)
+        openModal(content)
     }
 
     const handleExportCSV = () => {

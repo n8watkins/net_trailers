@@ -3,8 +3,7 @@
  * Prevents excessive writes to Firestore by batching and debouncing saves
  */
 
-import { AuthPreferences } from '../atoms/authSessionAtom'
-import { AuthStorageService } from './authStorageService'
+import { AuthStorageService, AuthPreferences } from './authStorageService'
 import { firebaseTracker } from '../utils/firebaseCallTracker'
 
 interface PendingSave {
