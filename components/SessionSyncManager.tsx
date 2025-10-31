@@ -3,14 +3,13 @@ import { useSessionStore } from '../stores/sessionStore'
 import { useAuthStore } from '../stores/authStore'
 import { useGuestStore } from '../stores/guestStore'
 import useAuth from '../hooks/useAuth'
-import { GuestStorageService } from '../services/guestStorageService'
 
 /**
  * Centralized session sync manager - ensures Firebase sync happens only ONCE
  * This component should be mounted once at the app root level
  */
 export function SessionSyncManager() {
-    const { user } = useAuth()
+    const { user, loading: authLoading } = useAuth()
     const {
         sessionType,
         activeSessionId,
@@ -24,10 +23,16 @@ export function SessionSyncManager() {
     const authStore = useAuthStore()
     const guestStore = useGuestStore()
 
-    // Initialize session on mount
+    // Initialize session on mount - BUT WAIT for auth to complete first
     useEffect(() => {
+        // Don't initialize until auth check is complete
+        if (authLoading) {
+            console.log('⏳ [SessionSyncManager] Waiting for auth check to complete...')
+            return
+        }
+
         if (!isInitialized) {
-            console.log('🚀 [SessionSyncManager] Initializing session...')
+            console.log('🚀 [SessionSyncManager] Auth check complete, initializing session...')
             if (user) {
                 console.log('🔐 [SessionSyncManager] User authenticated, initializing auth session')
                 initializeAuthSession(user.uid)
@@ -36,7 +41,7 @@ export function SessionSyncManager() {
                 initializeGuestSession()
             }
         }
-    }, [isInitialized, user, initializeAuthSession, initializeGuestSession])
+    }, [authLoading, isInitialized, user, initializeAuthSession, initializeGuestSession])
 
     // Handle auth state changes
     useEffect(() => {

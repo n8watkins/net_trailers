@@ -40,7 +40,7 @@ const Home = ({
     onOpenTutorial,
     onOpenKeyboardShortcuts,
 }: Props) => {
-    const { loading, error, user } = useAuth()
+    const { loading: authLoading, error, user } = useAuth()
     const router = useRouter()
     const { modal, setContentLoadedSuccessfully } = useAppStore()
     const showModal = modal.isOpen
@@ -106,7 +106,6 @@ const Home = ({
 
         // Set content loaded successfully
         setContentLoadedSuccessfully(true)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
         trending,
         topRatedMovies,
@@ -118,6 +117,11 @@ const Home = ({
         // Note: Zustand setters are stable and should NOT be in dependencies
         // Including them causes infinite loops
     ])
+
+    // Show loading screen during auth initialization
+    if (authLoading) {
+        return <NetflixLoader message="Loading NetTrailer..." />
+    }
 
     // Show error screen if no content is available
     if (!hasAnyContent || hasDataError) {
