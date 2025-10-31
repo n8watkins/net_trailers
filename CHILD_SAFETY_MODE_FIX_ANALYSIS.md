@@ -138,6 +138,88 @@ Use `React.memo()` to wrap the preferences section in a memoized component that 
 - No flicker from OFF to ON
 - Clean separation of concerns
 
+## Additional Fixes (commit 62660f6)
+
+After the React.memo() implementation, we discovered additional issues:
+
+### Issue 1: Preferences Were in Wrong Location
+
+**Problem:** Code was reading from `userData.userSession.preferences.childSafetyMode`, but preferences are exposed directly on `userData` from `useSessionData()`
+**Fix:** Changed to read `userData.childSafetyMode` directly
+
+### Issue 2: SSR Hydration Mismatch
+
+**Problem:** Initializing useState with store values caused SSR/CSR mismatches
+**Solution:** Three-part fix based on best practices:
+
+1. **Stable preferences derivation using useMemo**
+    - Defined `currentPreferences` once with useMemo for stable references
+    - Eliminates phantom reference issues during initialization
+
+2. **User interaction guard to prevent phantom modal opens**
+    - Added `userInteractedRef` to track real user pointer events
+    - `onPointerDown` marks interactions, `onChange` only opens modal for real user gestures
+    - Prevents modal from opening during hydration/state changes
+
+3. **SSR-safe initialization pattern**
+    - Initialize state with static defaults (`false`, `true`, `50`)
+    - Hydrate from store in useEffect after mount
+    - Prevents SSR/CSR mismatch and hydration flips
+
+### Implementation:
+
+```typescript
+// 1) Stable preferences with useMemo
+const currentPreferences = React.useMemo(() => {
+    return {
+        childSafetyMode: userData.childSafetyMode ?? false,
+        autoMute: userData.autoMute ?? true,
+        defaultVolume: userData.defaultVolume ?? 50,
+    }
+}, [userData.childSafetyMode, userData.autoMute, userData.defaultVolume])
+
+// 2) User interaction tracking
+const userInteractedRef = React.useRef(false)
+const markInteracted = React.useCallback(() => {
+    userInteractedRef.current = true
+    setTimeout(() => (userInteractedRef.current = false), 0)
+}, [])
+
+// 3) SSR-safe initialization
+const [childSafetyMode, setChildSafetyMode] = useState<boolean>(false)
+
+// Hydrate from store after mount
+React.useEffect(() => {
+    if (!hasLoadedPrefsRef.current && currentPreferences) {
+        setChildSafetyMode(currentPreferences.childSafetyMode)
+        // ... other preferences
+        hasLoadedPrefsRef.current = true
+    }
+}, [currentPreferences])
+
+// 4) Gate modal with user intent
+<label onPointerDown={markInteracted}>
+    <input
+        onChange={(e) => {
+            if (isGuest && userInteractedRef.current) {
+                onShowChildSafetyModal()  // Only on real user click
+                return
+            }
+            onChildSafetyModeChange(e.target.checked)
+        }}
+    />
+</label>
+```
+
+### Final Result:
+
+✅ Child safety mode loads correctly from store
+✅ No phantom modal opens on page refresh/hydration
+✅ Toggle displays saved value without flicker
+✅ Guest modal only opens on real user clicks
+✅ Component properly isolated with React.memo()
+✅ No unnecessary re-renders on page refresh
+
 ## Key Learnings
 
 1. **State management ≠ Render optimization**
