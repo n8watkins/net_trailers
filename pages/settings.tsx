@@ -524,7 +524,6 @@ const Settings: React.FC<SettingsProps> = ({
             setOriginalPreferences(updatedPreferences)
 
             showSuccess('Preferences saved successfully!')
-            console.log('✅ [Settings] Preferences saved:', updatedPreferences)
         } catch (error) {
             console.error('❌ [Settings] Error saving preferences:', error)
             showError('Failed to save preferences')
