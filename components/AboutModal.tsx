@@ -239,7 +239,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
 
                     <div>
                         <h3 className="text-white text-lg font-semibold mb-3">Key Features</h3>
-                        <div className="space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="flex items-start space-x-3">
                                 <PlayIcon className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
                                 <div>
@@ -255,10 +255,10 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                 <HeartIcon className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
                                 <div>
                                     <p className="text-sm font-medium text-white">
-                                        Custom Watchlists & Content Management
+                                        Custom Watchlists & Likes
                                     </p>
                                     <p className="text-xs text-gray-400">
-                                        Create unlimited lists, like content, hide unwanted items
+                                        Create unlimited lists, like content, organize favorites
                                     </p>
                                 </div>
                             </div>
@@ -284,15 +284,38 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                         strokeLinecap="round"
                                         strokeLinejoin="round"
                                         strokeWidth={2}
+                                        d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                    />
+                                </svg>
+                                <div>
+                                    <p className="text-sm font-medium text-white">
+                                        Responsive Design
+                                    </p>
+                                    <p className="text-xs text-gray-400">
+                                        Seamless experience across desktop, tablet, and mobile
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-start space-x-3">
+                                <svg
+                                    className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
                                         d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                                     />
                                 </svg>
                                 <div>
                                     <p className="text-sm font-medium text-white">
-                                        Guest Mode & User Authentication
+                                        Guest Mode & Authentication
                                     </p>
                                     <p className="text-xs text-gray-400">
-                                        Try without signing up or create an account for cloud sync
+                                        Try without signing up or sync with cloud storage
                                     </p>
                                 </div>
                             </div>
@@ -311,11 +334,9 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                     />
                                 </svg>
                                 <div>
-                                    <p className="text-sm font-medium text-white">
-                                        Smart Features & Customization
-                                    </p>
+                                    <p className="text-sm font-medium text-white">Smart Features</p>
                                     <p className="text-xs text-gray-400">
-                                        Keyboard shortcuts, child safety mode, CSV export
+                                        Keyboard shortcuts, child safety, CSV export
                                     </p>
                                 </div>
                             </div>
