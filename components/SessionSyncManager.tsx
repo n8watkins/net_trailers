@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/authStore'
 import { useGuestStore } from '../stores/guestStore'
 import useAuth from '../hooks/useAuth'
 import { getCachedUserId } from '../utils/authCache'
+import { authLog } from '../utils/authLogger'
 
 /**
  * Centralized session sync manager - ensures Firebase sync happens only ONCE
@@ -31,7 +32,7 @@ export function SessionSyncManager() {
             // Check cache DIRECTLY (not through state which updates async)
             const cachedUserId = getCachedUserId()
             if (cachedUserId) {
-                console.log(
+                authLog(
                     '⚡ [SessionSyncManager] OPTIMISTIC: Initializing auth session from cache:',
                     cachedUserId
                 )
@@ -47,18 +48,16 @@ export function SessionSyncManager() {
         if (authLoading) {
             // Check if we already initialized optimistically
             if (isInitialized) {
-                console.log(
+                authLog(
                     '⏳ [SessionSyncManager] Already initialized, waiting for Firebase confirmation...'
                 )
             } else {
                 // Check cache again to avoid initializing guest mode prematurely
                 const cachedUserId = getCachedUserId()
                 if (cachedUserId) {
-                    console.log(
-                        '⏳ [SessionSyncManager] Cached auth detected, waiting for Firebase...'
-                    )
+                    authLog('⏳ [SessionSyncManager] Cached auth detected, waiting for Firebase...')
                 } else {
-                    console.log('⏳ [SessionSyncManager] No cache, waiting for auth check...')
+                    authLog('⏳ [SessionSyncManager] No cache, waiting for auth check...')
                 }
             }
             return
@@ -66,12 +65,12 @@ export function SessionSyncManager() {
 
         // Auth check complete, initialize based on Firebase result
         if (!isInitialized) {
-            console.log('🚀 [SessionSyncManager] Auth check complete, initializing session...')
+            authLog('🚀 [SessionSyncManager] Auth check complete, initializing session...')
             if (user) {
-                console.log('🔐 [SessionSyncManager] User authenticated, initializing auth session')
+                authLog('🔐 [SessionSyncManager] User authenticated, initializing auth session')
                 initializeAuthSession(user.uid)
             } else {
-                console.log('👤 [SessionSyncManager] No auth, initializing guest session')
+                authLog('👤 [SessionSyncManager] No auth, initializing guest session')
                 initializeGuestSession()
             }
         }
@@ -85,7 +84,7 @@ export function SessionSyncManager() {
         const currentlyAuth = sessionType === 'authenticated'
 
         if (currentlyAuth !== shouldBeAuth) {
-            console.log('🔄 [SessionSyncManager] Auth state changed, switching session...', {
+            authLog('🔄 [SessionSyncManager] Auth state changed, switching session...', {
                 currentlyAuth,
                 shouldBeAuth,
                 userId: user?.uid,
@@ -107,7 +106,7 @@ export function SessionSyncManager() {
 
     // Sync data when session changes
     useEffect(() => {
-        console.log('🔍 [SessionSyncManager] Sync effect triggered:', {
+        authLog('🔍 [SessionSyncManager] Sync effect triggered:', {
             isInitialized,
             sessionType,
             activeSessionId,
@@ -116,21 +115,21 @@ export function SessionSyncManager() {
         })
 
         if (!isInitialized) {
-            console.log('⏸️ [SessionSyncManager] Not initialized yet, skipping sync')
+            authLog('⏸️ [SessionSyncManager] Not initialized yet, skipping sync')
             return
         }
 
         if (sessionType === 'authenticated' && user) {
             // Check if we need to sync with Firebase
             if (authStore.userId !== user.uid && authStore.syncStatus === 'offline') {
-                console.log('📥 [SessionSyncManager] Syncing auth data for:', user.uid)
+                authLog('📥 [SessionSyncManager] Syncing auth data for:', user.uid)
                 authStore.syncWithFirebase(user.uid)
             }
         } else if (sessionType === 'guest') {
             // FIXED: Sync guest data from localStorage using the correct guestId
             // Check if we need to load/sync data (either no data or wrong session)
             const needsSync = !guestStore.guestId || guestStore.guestId !== activeSessionId
-            console.log('🔍 [SessionSyncManager] Guest session check:', {
+            authLog('🔍 [SessionSyncManager] Guest session check:', {
                 needsSync,
                 guestStoreId: guestStore.guestId,
                 activeSessionId,
@@ -139,13 +138,13 @@ export function SessionSyncManager() {
             })
 
             if (needsSync) {
-                console.log('📥 [SessionSyncManager] Syncing guest data from localStorage...', {
+                authLog('📥 [SessionSyncManager] Syncing guest data from localStorage...', {
                     activeSessionId,
                     currentGuestId: guestStore.guestId,
                 })
                 guestStore.syncFromLocalStorage(activeSessionId)
             } else {
-                console.log('✅ [SessionSyncManager] Guest data already synced, skipping')
+                authLog('✅ [SessionSyncManager] Guest data already synced, skipping')
             }
         }
     }, [isInitialized, sessionType, activeSessionId, user])

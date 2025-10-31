@@ -24,6 +24,7 @@ import { useAppStore } from '../stores/appStore'
 import { createErrorHandler } from '../utils/errorHandler'
 import { useToast } from './useToast'
 import { cacheAuthState, clearAuthCache, wasRecentlyAuthenticated } from '../utils/authCache'
+import { authLog, authError } from '../utils/authLogger'
 
 interface AuthProviderProps {
     children: React.ReactNode
@@ -83,12 +84,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     useEffect(() => {
         const startTime = Date.now()
-        console.log(
-            '🔥 [AUTH-TIMING] Firebase Auth Hook Initializing at:',
-            new Date().toISOString()
-        )
-        console.log('🔥 Firebase Auth Instance:', auth)
-        console.log('🔥 Firebase Config:', {
+        authLog('🔥 [AUTH-TIMING] Firebase Auth Hook Initializing at:', new Date().toISOString())
+        authLog('🔥 Firebase Auth Instance:', auth)
+        authLog('🔥 Firebase Config:', {
             apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? 'Set' : 'Missing',
             authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ? 'Set' : 'Missing',
             projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ? 'Set' : 'Missing',
@@ -98,22 +96,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             auth,
             (user) => {
                 const callbackTime = Date.now() - startTime
-                console.log(
+                authLog(
                     '🔥🔥🔥 [AUTH-TIMING] Firebase onAuthStateChanged fired after',
                     callbackTime,
                     'ms'
                 )
-                console.log('🔥 User:', user)
-                console.log('🔥 User ID:', user?.uid)
-                console.log('🔥 User Email:', user?.email)
-                console.log('🔥 Auth Initialized Before:', authInitialized)
-                console.log('🔥 Loading State Before:', loading)
+                authLog('🔥 User:', user)
+                authLog('🔥 User ID:', user?.uid)
+                authLog('🔥 User Email:', user?.email)
+                authLog('🔥 Auth Initialized Before:', authInitialized)
+                authLog('🔥 Loading State Before:', loading)
 
                 setUser(user)
                 setLoading(false)
                 setAuthInitialized(true)
 
-                console.log(
+                authLog(
                     '🔥 [AUTH-TIMING] Auth state set, user is:',
                     user ? 'AUTHENTICATED' : 'NOT AUTHENTICATED'
                 )
@@ -121,15 +119,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 // Cache auth state for optimistic loading on next visit
                 if (user) {
                     cacheAuthState(user.uid)
-                    console.log('✅ User is authenticated:', user.email)
+                    authLog('✅ User is authenticated:', user.email)
                 } else {
                     // Clear cache when user signs out
                     clearAuthCache()
-                    console.log('🎭 User signed out or not authenticated')
+                    authLog('🎭 User signed out or not authenticated')
                 }
             },
             (error) => {
-                console.error('🚨 Firebase Auth Error:', error)
+                authError('🚨 Firebase Auth Error:', error)
                 setLoading(false)
                 setAuthInitialized(true)
             }

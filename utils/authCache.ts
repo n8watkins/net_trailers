@@ -13,6 +13,8 @@
  * - Cache expires after 7 days of inactivity
  */
 
+import { authLog, authError } from './authLogger'
+
 const AUTH_CACHE_KEY = 'nettrailer_auth_cache'
 const CACHE_EXPIRY_DAYS = 7
 
@@ -47,7 +49,7 @@ export function wasRecentlyAuthenticated(): boolean {
 
         return data.wasAuthenticated
     } catch (error) {
-        console.error('[AuthCache] Error reading cache:', error)
+        authError('[AuthCache] Error reading cache:', error)
         return false
     }
 }
@@ -74,7 +76,7 @@ export function getCachedUserId(): string | null {
 
         return data.userId || null
     } catch (error) {
-        console.error('[AuthCache] Error reading cached user ID:', error)
+        authError('[AuthCache] Error reading cached user ID:', error)
         return null
     }
 }
@@ -93,9 +95,9 @@ export function cacheAuthState(userId: string): void {
             userId,
         }
         localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(cache))
-        console.log('[AuthCache] Cached auth state for user:', userId)
+        authLog('[AuthCache] Cached auth state for user:', userId)
     } catch (error) {
-        console.error('[AuthCache] Error caching auth state:', error)
+        authError('[AuthCache] Error caching auth state:', error)
     }
 }
 
@@ -107,9 +109,9 @@ export function clearAuthCache(): void {
 
     try {
         localStorage.removeItem(AUTH_CACHE_KEY)
-        console.log('[AuthCache] Cleared auth cache')
+        authLog('[AuthCache] Cleared auth cache')
     } catch (error) {
-        console.error('[AuthCache] Error clearing cache:', error)
+        authError('[AuthCache] Error clearing cache:', error)
     }
 }
 
@@ -127,6 +129,6 @@ export function touchAuthCache(): void {
         data.lastAuthTime = Date.now()
         localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(data))
     } catch (error) {
-        console.error('[AuthCache] Error updating cache timestamp:', error)
+        authError('[AuthCache] Error updating cache timestamp:', error)
     }
 }
