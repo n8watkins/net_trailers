@@ -304,7 +304,13 @@ const Settings: React.FC<SettingsProps> = ({
             setOriginalPreferences(loadedPrefs)
             console.log('📖 [Settings] Loaded preferences from store:', loadedPrefs)
         }
-    }, [userData.isInitializing, userData.sessionType, userData.userSession?.preferences])
+    }, [
+        userData.isInitializing,
+        userData.sessionType,
+        userData.userSession?.preferences?.childSafetyMode,
+        userData.userSession?.preferences?.autoMute,
+        userData.userSession?.preferences?.defaultVolume,
+    ])
 
     // Handle saving preferences
     const handleSavePreferences = async () => {
