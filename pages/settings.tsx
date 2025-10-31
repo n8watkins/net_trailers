@@ -224,6 +224,7 @@ const Settings: React.FC<SettingsProps> = ({
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [showExportLimitedModal, setShowExportLimitedModal] = useState(false)
     const [showChildSafetyModal, setShowChildSafetyModal] = useState(false)
+    const [isClearingData, setIsClearingData] = useState(false)
 
     // 1) Define currentPreferences once using useMemo for stability
     const currentPreferences = React.useMemo(() => {
@@ -420,14 +421,21 @@ const Settings: React.FC<SettingsProps> = ({
         openAuthModal('signup')
     }
 
-    const handleClearData = () => {
+    const handleClearData = async () => {
+        // Prevent double-submission
+        if (isClearingData) return
+
+        setIsClearingData(true)
         try {
-            userData.clearAccountData()
+            // clearAccountData is async for authenticated users, sync for guests
+            await userData.clearAccountData()
             setShowClearConfirm(false)
             showSuccess('All data cleared successfully!')
         } catch (error) {
             console.error('Error clearing data:', error)
-            showError('Failed to clear data')
+            showError('Failed to clear data. Please try again.')
+        } finally {
+            setIsClearingData(false)
         }
     }
 
@@ -1123,6 +1131,7 @@ const Settings: React.FC<SettingsProps> = ({
                 requireTyping={true}
                 confirmationPhrase="clear"
                 dangerLevel="warning"
+                isLoading={isClearingData}
             />
 
             <ConfirmationModal

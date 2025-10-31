@@ -13,6 +13,7 @@ interface ConfirmationModalProps {
     requireTyping?: boolean
     confirmationPhrase?: string
     dangerLevel?: 'warning' | 'danger'
+    isLoading?: boolean
 }
 
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
@@ -27,6 +28,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     requireTyping = false,
     confirmationPhrase = 'CONFIRM',
     dangerLevel = 'warning',
+    isLoading = false,
 }) => {
     const [typedText, setTypedText] = useState('')
 
@@ -49,7 +51,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         }
     }
 
-    const isConfirmDisabled = requireTyping && typedText !== confirmationPhrase
+    const isConfirmDisabled = isLoading || (requireTyping && typedText !== confirmationPhrase)
 
     const colors = {
         warning: {
@@ -136,17 +138,25 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                     <button
                         onClick={handleConfirm}
                         disabled={isConfirmDisabled}
-                        className={`flex-1 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                        className={`flex-1 px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center justify-center ${
                             isConfirmDisabled
                                 ? 'bg-gray-600 cursor-not-allowed opacity-50 text-white'
                                 : `${colorScheme.button} text-white`
                         }`}
                     >
-                        {confirmButtonText}
+                        {isLoading ? (
+                            <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                                Processing...
+                            </>
+                        ) : (
+                            confirmButtonText
+                        )}
                     </button>
                     <button
                         onClick={handleClose}
-                        className="flex-1 px-4 py-2 text-sm font-medium text-white bg-[#313131] hover:bg-[#454545] rounded-lg transition-colors"
+                        disabled={isLoading}
+                        className="flex-1 px-4 py-2 text-sm font-medium text-white bg-[#313131] hover:bg-[#454545] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {cancelButtonText}
                     </button>
