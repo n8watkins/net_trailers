@@ -22,6 +22,9 @@ interface AuthCache {
     wasAuthenticated: boolean
     lastAuthTime: number
     userId?: string
+    email?: string
+    displayName?: string
+    photoURL?: string
 }
 
 /**
@@ -82,10 +85,40 @@ export function getCachedUserId(): string | null {
 }
 
 /**
+ * Get complete cached user data for optimistic UI rendering
+ */
+export function getCachedUserData(): AuthCache | null {
+    if (typeof window === 'undefined') return null
+
+    try {
+        const cached = localStorage.getItem(AUTH_CACHE_KEY)
+        if (!cached) return null
+
+        const data: AuthCache = JSON.parse(cached)
+
+        // Check if cache is expired
+        const expiryMs = CACHE_EXPIRY_DAYS * 24 * 60 * 60 * 1000
+        const isExpired = Date.now() - data.lastAuthTime > expiryMs
+
+        if (isExpired) {
+            return null
+        }
+
+        return data
+    } catch (error) {
+        authError('[AuthCache] Error reading cached user data:', error)
+        return null
+    }
+}
+
+/**
  * Cache successful authentication
  * Called when Firebase confirms user is authenticated
  */
-export function cacheAuthState(userId: string): void {
+export function cacheAuthState(
+    userId: string,
+    userData?: { email?: string; displayName?: string; photoURL?: string }
+): void {
     if (typeof window === 'undefined') return
 
     try {
@@ -93,6 +126,9 @@ export function cacheAuthState(userId: string): void {
             wasAuthenticated: true,
             lastAuthTime: Date.now(),
             userId,
+            email: userData?.email,
+            displayName: userData?.displayName,
+            photoURL: userData?.photoURL,
         }
         localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(cache))
         authLog('[AuthCache] Cached auth state for user:', userId)

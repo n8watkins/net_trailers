@@ -118,7 +118,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
                 // Cache auth state for optimistic loading on next visit
                 if (user) {
-                    cacheAuthState(user.uid)
+                    cacheAuthState(user.uid, {
+                        email: user.email || undefined,
+                        displayName: user.displayName || undefined,
+                        photoURL: user.photoURL || undefined,
+                    })
                     authLog('✅ User is authenticated:', user.email)
                 } else {
                     // Clear cache when user signs out

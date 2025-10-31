@@ -19,6 +19,8 @@ import { useRouter } from 'next/router'
 import useUserData from '../hooks/useUserData'
 import { exportUserDataToCSV } from '../utils/csvExport'
 import { useAuthStatus } from '../hooks/useAuthStatus'
+import { getCachedUserData } from '../utils/authCache'
+import { useState as useReactState, useEffect } from 'react'
 
 interface AvatarDropdownProps {
     className?: string
@@ -40,11 +42,31 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
     const [isOpen, setIsOpen] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
     const { user, logOut } = useAuth()
-    const { isAuthenticated, isLoading } = useAuthStatus()
+    const { isAuthenticated, isLoading, hasOptimisticAuth } = useAuthStatus()
     const userData = useUserData()
     const { likedMovies, hiddenMovies, defaultWatchlist } = userData
     const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
     const router = useRouter()
+
+    // Load cached user data for optimistic UI (only on client side)
+    const [cachedUser, setCachedUser] = useReactState<{
+        email?: string
+        displayName?: string
+        photoURL?: string
+    } | null>(null)
+
+    useEffect(() => {
+        if (hasOptimisticAuth && !user) {
+            const cached = getCachedUserData()
+            if (cached) {
+                setCachedUser({
+                    email: cached.email,
+                    displayName: cached.displayName,
+                    photoURL: cached.photoURL,
+                })
+            }
+        }
+    }, [hasOptimisticAuth, user])
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -252,8 +274,11 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
         )
     }
 
-    // Authenticated but user object not loaded yet from Firebase
-    if (!user) {
+    // Use cached data for optimistic UI, fall back to Firebase user
+    const displayUser = user || cachedUser
+
+    // Authenticated but no user data available at all (shouldn't happen with cache)
+    if (!displayUser) {
         return (
             <div className={`relative ${className}`} ref={dropdownRef}>
                 {/* Avatar Button - Loading user details */}
@@ -277,9 +302,9 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                 aria-label="Profile menu"
                 aria-expanded={isOpen}
             >
-                {user.photoURL ? (
+                {displayUser.photoURL ? (
                     <Image
-                        src={user.photoURL}
+                        src={displayUser.photoURL}
                         alt="Profile"
                         width={56}
                         height={56}
@@ -287,7 +312,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                     />
                 ) : (
                     <span className="text-white text-base md:text-lg font-bold">
-                        {getInitials(user.email || 'U')}
+                        {getInitials(displayUser.email || 'U')}
                     </span>
                 )}
             </button>
@@ -300,9 +325,14 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                         <div className="flex items-center space-x-3">
                             <div className="flex-1 min-w-0">
                                 <p className="text-white font-medium text-base truncate">
-                                    {getUserName()}
+                                    {user?.displayName?.split(' ')[0] ||
+                                        displayUser.displayName?.split(' ')[0] ||
+                                        displayUser.email?.split('@')[0] ||
+                                        'User'}
                                 </p>
-                                <p className="text-gray-400 text-sm truncate">{user.email}</p>
+                                <p className="text-gray-400 text-sm truncate">
+                                    {user?.email || displayUser.email}
+                                </p>
                             </div>
                         </div>
                     </div>

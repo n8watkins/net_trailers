@@ -1,5 +1,6 @@
 import { useSessionStore } from '../stores/sessionStore'
 import useAuth from './useAuth'
+import { getCachedUserId } from '../utils/authCache'
 
 /**
  * Lightweight hook for components that only need authentication status
@@ -13,14 +14,21 @@ export const useAuthStatus = () => {
     const isInitialized = useSessionStore((state) => state.isInitialized)
     const { loading: authLoading } = useAuth()
 
+    // Check if we have optimistic auth data (cached user + session initialized as auth)
+    // This allows us to show authenticated UI immediately while Firebase confirms
+    const hasOptimisticAuth = sessionType === 'authenticated' && isInitialized
+
     // During loading, we're neither guest nor authenticated yet
-    const isLoading = !isInitialized || sessionType === 'initializing' || authLoading
+    // UNLESS we have optimistic auth data from cache
+    const isLoading =
+        !hasOptimisticAuth && (!isInitialized || sessionType === 'initializing' || authLoading)
 
     return {
         isGuest: !isLoading && sessionType === 'guest',
         isAuthenticated: !isLoading && sessionType === 'authenticated',
         isInitialized,
-        isLoading, // NEW: Explicit loading flag
+        isLoading, // Explicit loading flag (false if we have optimistic auth)
+        hasOptimisticAuth, // True if we're showing cached auth while Firebase confirms
         sessionType,
     }
 }
