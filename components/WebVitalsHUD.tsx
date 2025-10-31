@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useDebugSettings } from './DebugControls'
 
 interface WebVital {
     name: string
@@ -7,16 +8,46 @@ interface WebVital {
     timestamp: number
 }
 
+// Web Vitals thresholds
+const THRESHOLDS: Record<string, { good: number; poor: number }> = {
+    CLS: { good: 0.1, poor: 0.25 },
+    FCP: { good: 1800, poor: 3000 },
+    FID: { good: 100, poor: 300 },
+    INP: { good: 200, poor: 500 },
+    LCP: { good: 2500, poor: 4000 },
+    TTFB: { good: 800, poor: 1800 },
+}
+
+function getRating(name: string, value: number): 'good' | 'needs-improvement' | 'poor' {
+    const threshold = THRESHOLDS[name]
+    if (!threshold) return 'good'
+    if (value <= threshold.good) return 'good'
+    if (value <= threshold.poor) return 'needs-improvement'
+    return 'poor'
+}
+
 /**
  * Visual HUD for Web Vitals metrics
  * Shows real-time performance metrics in development
  *
- * Toggle with Alt+Shift+V
+ * Toggle with Alt+Shift+V or from Debug Console
  */
 export default function WebVitalsHUD() {
     const [vitals, setVitals] = useState<Record<string, WebVital>>({})
-    const [isVisible, setIsVisible] = useState(false)
+    const debugSettings = useDebugSettings()
     const isDev = process.env.NODE_ENV === 'development'
+
+    // Sync visibility with debug settings
+    const isVisible = debugSettings.showWebVitals
+
+    // Update localStorage debug settings when keyboard shortcut or close button is used
+    const toggleVisibility = () => {
+        const saved = localStorage.getItem('debugSettings')
+        const currentSettings = saved ? JSON.parse(saved) : {}
+        const newSettings = { ...currentSettings, showWebVitals: !debugSettings.showWebVitals }
+        localStorage.setItem('debugSettings', JSON.stringify(newSettings))
+        window.dispatchEvent(new CustomEvent('debugSettingsChanged', { detail: newSettings }))
+    }
 
     useEffect(() => {
         if (!isDev) return
@@ -25,13 +56,13 @@ export default function WebVitalsHUD() {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.altKey && e.shiftKey && e.key === 'V') {
                 e.preventDefault() // Prevent any default browser behavior
-                setIsVisible((prev) => !prev)
+                toggleVisibility()
             }
         }
 
         window.addEventListener('keydown', handleKeyDown)
 
-        // Listen for web vitals updates
+        // Listen for web vitals updates from reportWebVitals
         const handleWebVital = (event: CustomEvent) => {
             const metric = event.detail
             setVitals((prev) => ({
@@ -47,11 +78,43 @@ export default function WebVitalsHUD() {
 
         window.addEventListener('web-vital' as any, handleWebVital)
 
+        // DIRECT INTEGRATION: Import and use web-vitals library directly
+        // This ensures metrics are captured even if Next.js reportWebVitals isn't called
+        const loadWebVitals = async () => {
+            try {
+                const { onCLS, onFCP, onINP, onLCP, onTTFB, onFID } = await import('web-vitals')
+
+                const handleMetric = (metric: any) => {
+                    const rating = getRating(metric.name, metric.value)
+                    setVitals((prev) => ({
+                        ...prev,
+                        [metric.name]: {
+                            name: metric.name,
+                            value: metric.value,
+                            rating,
+                            timestamp: Date.now(),
+                        },
+                    }))
+                }
+
+                onCLS(handleMetric)
+                onFCP(handleMetric)
+                onINP(handleMetric)
+                onLCP(handleMetric)
+                onTTFB(handleMetric)
+                onFID(handleMetric)
+            } catch (error) {
+                console.error('[WebVitalsHUD] Error loading web-vitals:', error)
+            }
+        }
+
+        loadWebVitals()
+
         return () => {
             window.removeEventListener('keydown', handleKeyDown)
             window.removeEventListener('web-vital' as any, handleWebVital)
         }
-    }, [isDev])
+    }, [isDev, isVisible])
 
     if (!isDev) return null
 
@@ -113,11 +176,11 @@ export default function WebVitalsHUD() {
             <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/20">
                 <h3 className="text-sm font-bold">Web Vitals</h3>
                 <button
-                    onClick={() => setIsVisible(false)}
+                    onClick={toggleVisibility}
                     className="text-white/60 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-white/50 rounded"
                     aria-label="Close Web Vitals HUD"
                 >
-                    
+                    ✕
                 </button>
             </div>
 

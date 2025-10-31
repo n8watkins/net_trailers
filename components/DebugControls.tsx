@@ -14,6 +14,7 @@ interface DebugSettings {
     showCacheDebug: boolean
     showToastDebug: boolean
     showApiResults: boolean
+    showWebVitals: boolean
 }
 
 interface Position {
@@ -30,6 +31,7 @@ export default function DebugControls() {
         showCacheDebug: false,
         showToastDebug: false,
         showApiResults: false,
+        showWebVitals: false,
     })
 
     // Visibility state - hidden by default, toggled with Alt+Shift+D
@@ -252,6 +254,19 @@ export default function DebugControls() {
                         <CodeBracketIcon className="w-3 h-3" />
                         <span className="text-xs">API Results</span>
                     </button>
+
+                    {/* Web Vitals Toggle */}
+                    <button
+                        onClick={() => toggleSetting('showWebVitals')}
+                        className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                            settings.showWebVitals
+                                ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30'
+                                : 'bg-gray-800 text-gray-500 border border-gray-700'
+                        }`}
+                        title="Toggle Web Vitals HUD (Alt+Shift+V)"
+                    >
+                        <span className="text-xs">Vitals</span>
+                    </button>
                 </>
             )}
         </div>
@@ -268,6 +283,7 @@ export function useDebugSettings() {
         showCacheDebug: false,
         showToastDebug: false,
         showApiResults: false,
+        showWebVitals: false,
     })
 
     useEffect(() => {
