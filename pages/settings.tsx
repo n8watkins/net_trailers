@@ -27,6 +27,146 @@ import { UpgradeAccountBanner } from '../components/UpgradeAccountBanner'
 
 type SettingsSection = 'profile' | 'email' | 'password' | 'preferences' | 'share' | 'account'
 
+// Memoized Preferences Controls Component - Only re-renders when props actually change
+interface PreferencesControlsProps {
+    childSafetyMode: boolean
+    autoMute: boolean
+    defaultVolume: number
+    preferencesChanged: boolean
+    isGuest: boolean
+    onChildSafetyModeChange: (checked: boolean) => void
+    onAutoMuteChange: (checked: boolean) => void
+    onDefaultVolumeChange: (volume: number) => void
+    onSave: () => void
+    onShowChildSafetyModal: () => void
+}
+
+const PreferencesControls = React.memo<PreferencesControlsProps>(
+    ({
+        childSafetyMode,
+        autoMute,
+        defaultVolume,
+        preferencesChanged,
+        isGuest,
+        onChildSafetyModeChange,
+        onAutoMuteChange,
+        onDefaultVolumeChange,
+        onSave,
+        onShowChildSafetyModal,
+    }) => {
+        return (
+            <div className="space-y-8">
+                {/* Content & Privacy Section */}
+                <div>
+                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                        Content & Privacy
+                    </h3>
+                    <div className="space-y-6 bg-[#0a0a0a] rounded-lg border border-[#313131] p-6">
+                        {/* Child Safety Mode Toggle */}
+                        <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-[#e5e5e5] mb-1">
+                                    Child Safety Mode
+                                </label>
+                                <p className="text-sm text-[#b3b3b3]">
+                                    Restrict content to PG-13 and below, filter explicit material
+                                </p>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer ml-4">
+                                <input
+                                    type="checkbox"
+                                    checked={childSafetyMode}
+                                    onChange={(e) => {
+                                        if (isGuest) {
+                                            onShowChildSafetyModal()
+                                            return
+                                        }
+                                        onChildSafetyModeChange(e.target.checked)
+                                    }}
+                                    className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Playback Settings Section */}
+                <div>
+                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                        Playback Settings
+                    </h3>
+                    <div className="space-y-6 bg-[#0a0a0a] rounded-lg border border-[#313131] p-6">
+                        {/* Auto-mute Toggle */}
+                        <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-[#e5e5e5] mb-1">
+                                    Auto-mute Trailers
+                                </label>
+                                <p className="text-sm text-[#b3b3b3]">
+                                    Start trailers muted when opening details
+                                </p>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer ml-4">
+                                <input
+                                    type="checkbox"
+                                    checked={autoMute}
+                                    onChange={(e) => onAutoMuteChange(e.target.checked)}
+                                    className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                            </label>
+                        </div>
+
+                        {/* Default Volume Slider */}
+                        <div className="pt-4 border-t border-[#313131]">
+                            <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
+                                Default Volume
+                            </label>
+                            <p className="text-sm text-[#b3b3b3] mb-3">
+                                Set the initial volume level for trailers
+                            </p>
+                            <div className="flex items-center space-x-4">
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    step="5"
+                                    value={defaultVolume}
+                                    onChange={(e) =>
+                                        onDefaultVolumeChange(parseInt(e.target.value))
+                                    }
+                                    className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-red-600 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-red-600 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
+                                />
+                                <span className="text-sm text-[#e5e5e5] min-w-[3rem] text-right">
+                                    {defaultVolume}%
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Save Button */}
+                <div className="flex justify-end">
+                    <button
+                        onClick={onSave}
+                        disabled={!preferencesChanged}
+                        className={`px-6 py-2.5 rounded-md font-medium transition-all duration-200 focus:outline-none ${
+                            preferencesChanged
+                                ? 'bg-red-600 text-white hover:bg-red-700 cursor-pointer'
+                                : 'bg-[#1a1a1a] text-[#666666] cursor-not-allowed border border-[#313131]'
+                        }`}
+                    >
+                        Save Preferences
+                    </button>
+                </div>
+            </div>
+        )
+    }
+)
+
+PreferencesControls.displayName = 'PreferencesControls'
+
 interface SettingsProps {
     onOpenAboutModal?: () => void
     onOpenTutorial?: () => void
@@ -367,6 +507,23 @@ const Settings: React.FC<SettingsProps> = ({
         }
     }
 
+    // Create stable callback references for memoized component
+    const handleChildSafetyModeChange = React.useCallback((checked: boolean) => {
+        setChildSafetyMode(checked)
+    }, [])
+
+    const handleAutoMuteChange = React.useCallback((checked: boolean) => {
+        setAutoMute(checked)
+    }, [])
+
+    const handleDefaultVolumeChange = React.useCallback((volume: number) => {
+        setDefaultVolume(volume)
+    }, [])
+
+    const handleShowChildSafetyModal = React.useCallback(() => {
+        setShowChildSafetyModal(true)
+    }, [])
+
     return (
         <div className="relative min-h-screen overflow-x-clip">
             <Head>
@@ -675,128 +832,24 @@ const Settings: React.FC<SettingsProps> = ({
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <div className="space-y-8">
-                                                    {/* Content & Privacy Section */}
-                                                    <div>
-                                                        <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                                                            Content & Privacy
-                                                        </h3>
-                                                        <div className="space-y-6 bg-[#0a0a0a] rounded-lg border border-[#313131] p-6">
-                                                            {/* Child Safety Mode Toggle */}
-                                                            <div className="flex items-start justify-between">
-                                                                <div className="flex-1">
-                                                                    <label className="block text-sm font-medium text-[#e5e5e5] mb-1">
-                                                                        Child Safety Mode
-                                                                    </label>
-                                                                    <p className="text-sm text-[#b3b3b3]">
-                                                                        Restrict content to PG-13
-                                                                        and below, filter explicit
-                                                                        material
-                                                                    </p>
-                                                                </div>
-                                                                <label className="relative inline-flex items-center cursor-pointer ml-4">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        checked={childSafetyMode}
-                                                                        onChange={(e) => {
-                                                                            if (isGuest) {
-                                                                                setShowChildSafetyModal(
-                                                                                    true
-                                                                                )
-                                                                                return
-                                                                            }
-                                                                            setChildSafetyMode(
-                                                                                e.target.checked
-                                                                            )
-                                                                        }}
-                                                                        className="sr-only peer"
-                                                                    />
-                                                                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                                                                </label>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Playback Settings Section */}
-                                                    <div>
-                                                        <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                                                            Playback Settings
-                                                        </h3>
-                                                        <div className="space-y-6 bg-[#0a0a0a] rounded-lg border border-[#313131] p-6">
-                                                            {/* Auto-mute Toggle */}
-                                                            <div className="flex items-start justify-between">
-                                                                <div className="flex-1">
-                                                                    <label className="block text-sm font-medium text-[#e5e5e5] mb-1">
-                                                                        Auto-mute Trailers
-                                                                    </label>
-                                                                    <p className="text-sm text-[#b3b3b3]">
-                                                                        Start trailers muted when
-                                                                        opening details
-                                                                    </p>
-                                                                </div>
-                                                                <label className="relative inline-flex items-center cursor-pointer ml-4">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        checked={autoMute}
-                                                                        onChange={(e) =>
-                                                                            setAutoMute(
-                                                                                e.target.checked
-                                                                            )
-                                                                        }
-                                                                        className="sr-only peer"
-                                                                    />
-                                                                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                                                                </label>
-                                                            </div>
-
-                                                            {/* Default Volume Slider */}
-                                                            <div className="pt-4 border-t border-[#313131]">
-                                                                <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
-                                                                    Default Volume
-                                                                </label>
-                                                                <p className="text-sm text-[#b3b3b3] mb-3">
-                                                                    Set the initial volume level for
-                                                                    trailers
-                                                                </p>
-                                                                <div className="flex items-center space-x-4">
-                                                                    <input
-                                                                        type="range"
-                                                                        min="0"
-                                                                        max="100"
-                                                                        step="5"
-                                                                        value={defaultVolume}
-                                                                        onChange={(e) =>
-                                                                            setDefaultVolume(
-                                                                                parseInt(
-                                                                                    e.target.value
-                                                                                )
-                                                                            )
-                                                                        }
-                                                                        className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-red-600 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-red-600 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
-                                                                    />
-                                                                    <span className="text-sm text-[#e5e5e5] min-w-[3rem] text-right">
-                                                                        {defaultVolume}%
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Save Button */}
-                                                    <div className="flex justify-end">
-                                                        <button
-                                                            onClick={handleSavePreferences}
-                                                            disabled={!preferencesChanged}
-                                                            className={`px-6 py-2.5 rounded-md font-medium transition-all duration-200 focus:outline-none ${
-                                                                preferencesChanged
-                                                                    ? 'bg-red-600 text-white hover:bg-red-700 cursor-pointer'
-                                                                    : 'bg-[#1a1a1a] text-[#666666] cursor-not-allowed border border-[#313131]'
-                                                            }`}
-                                                        >
-                                                            Save Preferences
-                                                        </button>
-                                                    </div>
-                                                </div>
+                                                <PreferencesControls
+                                                    childSafetyMode={childSafetyMode}
+                                                    autoMute={autoMute}
+                                                    defaultVolume={defaultVolume}
+                                                    preferencesChanged={preferencesChanged}
+                                                    isGuest={isGuest}
+                                                    onChildSafetyModeChange={
+                                                        handleChildSafetyModeChange
+                                                    }
+                                                    onAutoMuteChange={handleAutoMuteChange}
+                                                    onDefaultVolumeChange={
+                                                        handleDefaultVolumeChange
+                                                    }
+                                                    onSave={handleSavePreferences}
+                                                    onShowChildSafetyModal={
+                                                        handleShowChildSafetyModal
+                                                    }
+                                                />
                                             )}
                                         </div>
                                     )}
