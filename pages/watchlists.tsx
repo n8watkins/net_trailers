@@ -41,10 +41,10 @@ const Watchlists: NextPage<Props> = ({
     const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
     const debugSettings = useDebugSettings()
 
-    // Debug logging and verification - FIXED: Only run when user changes
+    // Debug logging and verification - Only when debug mode is enabled
     useEffect(() => {
-        // Only log when user actually changes, not on every userData update
-        if (process.env.NODE_ENV === 'development') {
+        // Only log when debug mode is enabled AND user actually changes
+        if (process.env.NODE_ENV === 'development' && debugSettings.showFirebaseDebug) {
             console.log('🔍 Watchlists Page Debug:', {
                 sessionType: userData.sessionType,
                 isGuest: userData.isGuest,
@@ -61,7 +61,7 @@ const Watchlists: NextPage<Props> = ({
                 console.log('✅ [Watchlists Page] User data loaded for:', user.uid)
             }
         }
-    }, [user?.uid, userData.sessionType]) // Only depend on stable values
+    }, [user?.uid, userData.sessionType, debugSettings.showFirebaseDebug]) // Only depend on stable values
 
     // Add debug button to check authentication state
     const debugAuthState = () => {

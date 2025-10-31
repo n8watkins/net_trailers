@@ -48,24 +48,8 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
     const router = useRouter()
 
     // Load cached user data for optimistic UI (only on client side)
-    const [cachedUser, setCachedUser] = useState<{
-        email?: string
-        displayName?: string
-        photoURL?: string
-    } | null>(null)
-
-    useEffect(() => {
-        if (hasOptimisticAuth && !user) {
-            const cached = getCachedUserData()
-            if (cached) {
-                setCachedUser({
-                    email: cached.email,
-                    displayName: cached.displayName,
-                    photoURL: cached.photoURL,
-                })
-            }
-        }
-    }, [hasOptimisticAuth, user])
+    // This is synchronous to prevent any loading flicker
+    const cachedUser = hasOptimisticAuth && !user ? getCachedUserData() : null
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -121,9 +105,9 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
         return 'User'
     }
 
-    // Show loading state during initialization to prevent flicker
-    // Use centralized loading flag from useAuthStatus hook
-    if (isLoading) {
+    // Show loading state ONLY if we don't have cached data and auth is loading
+    // If we have cached data (hasOptimisticAuth), skip loading state entirely
+    if (isLoading && !hasOptimisticAuth) {
         return (
             <div className={`relative ${className}`} ref={dropdownRef}>
                 {/* Avatar Button - Loading */}
@@ -138,8 +122,8 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
         )
     }
 
-    // At this point, loading is complete - show guest UI
-    if (!isAuthenticated) {
+    // At this point, loading is complete OR we have cached data - show guest UI if not authenticated
+    if (!isAuthenticated && !hasOptimisticAuth) {
         return (
             <div className={`relative ${className}`} ref={dropdownRef}>
                 {/* Avatar Button - Not Logged In */}
@@ -274,10 +258,19 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
     }
 
     // Use cached data for optimistic UI, fall back to Firebase user
-    const displayUser = user || cachedUser
+    const displayUser =
+        user ||
+        (cachedUser
+            ? {
+                  email: cachedUser.email,
+                  displayName: cachedUser.displayName,
+                  photoURL: cachedUser.photoURL,
+              }
+            : null)
 
     // Authenticated but no user data available at all (shouldn't happen with cache)
-    if (!displayUser) {
+    // Only show loading if we don't have optimistic auth
+    if (!displayUser && !hasOptimisticAuth) {
         return (
             <div className={`relative ${className}`} ref={dropdownRef}>
                 {/* Avatar Button - Loading user details */}
@@ -287,6 +280,23 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                     aria-label="Loading user details"
                 >
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                </button>
+            </div>
+        )
+    }
+
+    // If we still don't have user data at this point, show guest UI
+    if (!displayUser) {
+        return (
+            <div className={`relative ${className}`} ref={dropdownRef}>
+                {/* Avatar Button - Not Logged In */}
+                <button
+                    onClick={() => setIsOpen(!isOpen)}
+                    className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-600 hover:bg-gray-500 transition-colors duration-200 focus:outline-none"
+                    aria-label="User menu"
+                    aria-expanded={isOpen}
+                >
+                    <UserIcon className="w-7 h-7 md:w-8 md:h-8 text-white" />
                 </button>
             </div>
         )
