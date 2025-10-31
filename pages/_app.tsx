@@ -16,8 +16,14 @@ import FirestoreTestButton from '../components/FirestoreTestButton'
 import { SessionSyncManager } from '../components/SessionSyncManager'
 import WebVitalsHUD from '../components/WebVitalsHUD'
 import { reportWebVitals as reportWebVitalsUtil } from '../utils/performance'
+import { suppressHMRLog } from '../utils/suppressHMRLog'
+import { useEffect } from 'react'
 
 function MyApp({ Component, pageProps }: AppProps) {
+    // Suppress HMR connected log in development
+    useEffect(() => {
+        suppressHMRLog()
+    }, [])
     return (
         <AuthProvider>
             <ErrorBoundary>
