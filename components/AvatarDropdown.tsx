@@ -122,8 +122,9 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
         )
     }
 
-    // At this point, loading is complete OR we have cached data - show guest UI if not authenticated
-    if (!isAuthenticated && !hasOptimisticAuth) {
+    // Show guest UI if not authenticated (regardless of hasOptimisticAuth)
+    // After logout, user might be null but hasOptimisticAuth could still be true briefly
+    if (!isAuthenticated) {
         return (
             <div className={`relative ${className}`} ref={dropdownRef}>
                 {/* Avatar Button - Not Logged In */}
