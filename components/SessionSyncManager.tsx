@@ -150,11 +150,19 @@ export function SessionSyncManager() {
             sessionType,
             activeSessionId,
             hasUser: !!user,
+            authLoading,
             guestStoreId: guestStore.guestId,
         })
 
         if (!isInitialized) {
             authLog('⏸️ [SessionSyncManager] Not initialized yet, skipping sync')
+            return
+        }
+
+        // CRITICAL: Don't sync anything while auth is still loading
+        // This prevents guest data from loading before we confirm no user
+        if (authLoading) {
+            authLog('⏸️ [SessionSyncManager] Auth still loading, skipping sync')
             return
         }
 
@@ -186,7 +194,7 @@ export function SessionSyncManager() {
                 authLog('✅ [SessionSyncManager] Guest data already synced, skipping')
             }
         }
-    }, [isInitialized, sessionType, activeSessionId, user])
+    }, [isInitialized, sessionType, activeSessionId, user, authLoading])
 
     // This component doesn't render anything
     return null
