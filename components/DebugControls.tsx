@@ -34,7 +34,7 @@ export default function DebugControls() {
         showWebVitals: false,
     })
 
-    // Visibility state - hidden by default, toggled with Alt+Shift+D
+    // Visibility state - load from localStorage, hidden by default
     const [isVisible, setIsVisible] = useState(false)
 
     // Drag state - default position is a bit to the left (initialized after mount)
@@ -45,6 +45,7 @@ export default function DebugControls() {
     const dragHandleRef = useRef<HTMLDivElement>(null)
     const isFirstMount = useRef(true)
     const isFirstSettingsMount = useRef(true)
+    const isFirstVisibilityMount = useRef(true)
 
     // Keyboard shortcut handler for Alt+Shift+D
     useEffect(() => {
@@ -60,11 +61,17 @@ export default function DebugControls() {
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [])
 
-    // Load settings from localStorage and initialize position
+    // Load settings from localStorage and initialize position and visibility
     useEffect(() => {
         const saved = localStorage.getItem('debugSettings')
         if (saved) {
             setSettings(JSON.parse(saved))
+        }
+
+        // Load saved visibility state
+        const savedVisibility = localStorage.getItem('debugConsoleVisible')
+        if (savedVisibility !== null) {
+            setIsVisible(JSON.parse(savedVisibility))
         }
 
         // Load saved position or set default based on window width
@@ -109,6 +116,15 @@ export default function DebugControls() {
         localStorage.setItem('debugPosition', JSON.stringify(position))
     }, [position])
 
+    // Save visibility state to localStorage (skip initial mount)
+    useEffect(() => {
+        if (isFirstVisibilityMount.current) {
+            isFirstVisibilityMount.current = false
+            return
+        }
+        localStorage.setItem('debugConsoleVisible', JSON.stringify(isVisible))
+    }, [isVisible])
+
     // Handle drag start - only from the bug icon
     const handleDragStart = (e: React.MouseEvent) => {
         e.preventDefault()
@@ -147,8 +163,11 @@ export default function DebugControls() {
         }
     }, [isDragging, dragOffset])
 
-    // Keep component expanded while dragging
-    const shouldShowControls = isHovered || isDragging
+    // Check if any setting is enabled
+    const hasAnySettingEnabled = Object.values(settings).some((value) => value === true)
+
+    // Keep component expanded while dragging, hovered, or if any setting is enabled
+    const shouldShowControls = isHovered || isDragging || hasAnySettingEnabled
 
     const toggleSetting = (key: keyof DebugSettings) => {
         setSettings((prev) => ({ ...prev, [key]: !prev[key] }))
