@@ -93,29 +93,33 @@ const Settings: React.FC<SettingsProps> = ({
     // Track the last loaded session ID to detect session changes
     const lastSessionIdRef = React.useRef<string | undefined>(userData.activeSessionId)
 
-    // Initialize as true if data is already available (prevents re-render on refresh)
+    // Initialize skeleton state based on whether data is available
     const hasInitializedRef = React.useRef(
         !userData.isInitializing && !!userData.userSession?.preferences
     )
 
-    // ONLY update preferences when session actually changes (login/logout/switch user)
-    // NOT on page refresh with the same session
+    // ONLY update preferences when session ID actually changes (login/logout/user switch)
+    // Do NOT update on page refresh (session ID stays the same)
     React.useEffect(() => {
         const currentSessionId = userData.activeSessionId
         const sessionChanged = lastSessionIdRef.current !== currentSessionId
 
-        // Only update if session changed - NOT on first load or refresh
-        if (sessionChanged && userData.userSession?.preferences) {
+        // Only update on session change, not on page refresh
+        if (sessionChanged && currentSessionId && userData.userSession?.preferences) {
             const prefs = userData.userSession.preferences
-            const loadedPrefs = {
+            setChildSafetyMode(prefs.childSafetyMode ?? false)
+            setAutoMute(prefs.autoMute ?? true)
+            setDefaultVolume(prefs.defaultVolume ?? 50)
+            setOriginalPreferences({
                 childSafetyMode: prefs.childSafetyMode ?? false,
                 autoMute: prefs.autoMute ?? true,
                 defaultVolume: prefs.defaultVolume ?? 50,
-            }
-            setChildSafetyMode(loadedPrefs.childSafetyMode)
-            setAutoMute(loadedPrefs.autoMute)
-            setDefaultVolume(loadedPrefs.defaultVolume)
-            setOriginalPreferences(loadedPrefs)
+            })
+            lastSessionIdRef.current = currentSessionId
+        }
+
+        // Update ref on first mount
+        if (!lastSessionIdRef.current) {
             lastSessionIdRef.current = currentSessionId
         }
 
