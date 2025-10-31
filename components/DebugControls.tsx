@@ -74,6 +74,18 @@ export default function DebugControls() {
             // Set default position based on window width
             setPosition({ x: window.innerWidth - 600, y: 16 })
         }
+
+        // Listen for external changes to debug settings (e.g., from keyboard shortcuts)
+        const handleExternalChange = (event: CustomEvent<DebugSettings>) => {
+            // Only update if settings actually changed to prevent loops
+            setSettings((prev) => {
+                const changed = JSON.stringify(prev) !== JSON.stringify(event.detail)
+                return changed ? event.detail : prev
+            })
+        }
+
+        window.addEventListener('debugSettingsChanged', handleExternalChange as any)
+        return () => window.removeEventListener('debugSettingsChanged', handleExternalChange as any)
     }, [])
 
     // Save settings to localStorage
