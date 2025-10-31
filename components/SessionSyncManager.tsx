@@ -27,6 +27,8 @@ export function SessionSyncManager() {
 
     // CRITICAL: Check cache directly (synchronous) to avoid guest mode flicker
     // This runs immediately on mount, before any async state updates
+    // ONLY initialize auth optimistically if we have a cached user ID
+    // DO NOT initialize guest mode until Firebase confirms no user
     useEffect(() => {
         if (!isInitialized && authLoading) {
             // Check cache DIRECTLY (not through state which updates async)
@@ -37,7 +39,11 @@ export function SessionSyncManager() {
                     cachedUserId
                 )
                 initializeAuthSession(cachedUserId)
-                return // Exit early, we've initialized
+            } else {
+                authLog(
+                    '⏸️ [SessionSyncManager] No cached user - waiting for Firebase to confirm guest mode'
+                )
+                // DO NOT initialize guest session here - wait for Firebase confirmation
             }
         }
     }, [isInitialized, authLoading, initializeAuthSession])
@@ -63,14 +69,17 @@ export function SessionSyncManager() {
             return
         }
 
-        // Auth check complete, initialize based on Firebase result
+        // CRITICAL: Auth check complete (authLoading = false)
+        // Now we can safely initialize guest mode if no user found
         if (!isInitialized) {
             authLog('🚀 [SessionSyncManager] Auth check complete, initializing session...')
             if (user) {
-                authLog('🔐 [SessionSyncManager] User authenticated, initializing auth session')
+                authLog('🔐 [SessionSyncManager] Firebase confirmed: User authenticated')
                 initializeAuthSession(user.uid)
             } else {
-                authLog('👤 [SessionSyncManager] No auth, initializing guest session')
+                authLog(
+                    '👤 [SessionSyncManager] Firebase confirmed: No user found, safe to initialize guest mode'
+                )
                 initializeGuestSession()
             }
         }
