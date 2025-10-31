@@ -221,10 +221,10 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                             </div>
                             <div className="flex items-center space-x-3">
                                 <div className="w-8 h-8 flex items-center justify-center">
-                                    <span className="text-2xl">⚛️</span>
+                                    <span className="text-2xl">🐻</span>
                                 </div>
                                 <div>
-                                    <p className="text-sm font-medium text-white">Recoil</p>
+                                    <p className="text-sm font-medium text-white">Zustand</p>
                                     <p className="text-xs text-gray-400">State management</p>
                                 </div>
                             </div>
@@ -247,10 +247,10 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                 <PlayIcon className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
                                 <div>
                                     <p className="text-sm font-medium text-white">
-                                        Real-time Search & Infinite Scroll
+                                        Movies & TV Shows Discovery
                                     </p>
                                     <p className="text-xs text-gray-400">
-                                        Advanced search with optimized performance
+                                        Browse trending content, genres, and watch trailers
                                     </p>
                                 </div>
                             </div>
@@ -258,10 +258,10 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                 <HeartIcon className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
                                 <div>
                                     <p className="text-sm font-medium text-white">
-                                        User Authentication & Favorites
+                                        Custom Watchlists & Content Management
                                     </p>
                                     <p className="text-xs text-gray-400">
-                                        Firebase-powered user management system
+                                        Create unlimited lists, like content, hide unwanted items
                                     </p>
                                 </div>
                             </div>
@@ -269,10 +269,56 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                 <StarIcon className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
                                 <div>
                                     <p className="text-sm font-medium text-white">
-                                        Responsive Design & Accessibility
+                                        Advanced Search & Filters
                                     </p>
                                     <p className="text-xs text-gray-400">
-                                        Mobile-first approach with modern UX
+                                        Real-time search with genre, year, and rating filters
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-start space-x-3">
+                                <svg
+                                    className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                    />
+                                </svg>
+                                <div>
+                                    <p className="text-sm font-medium text-white">
+                                        Guest Mode & User Authentication
+                                    </p>
+                                    <p className="text-xs text-gray-400">
+                                        Try without signing up or create an account for cloud sync
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-start space-x-3">
+                                <svg
+                                    className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+                                    />
+                                </svg>
+                                <div>
+                                    <p className="text-sm font-medium text-white">
+                                        Smart Features & Customization
+                                    </p>
+                                    <p className="text-xs text-gray-400">
+                                        Keyboard shortcuts, child safety mode, CSV export
                                     </p>
                                 </div>
                             </div>
@@ -286,20 +332,41 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                         <ul className="text-sm space-y-1">
                             <li className="flex items-start space-x-2">
                                 <span className="text-red-500">•</span>
-                                <span>Custom caching system for API optimization</span>
-                            </li>
-                            <li className="flex items-start space-x-2">
-                                <span className="text-red-500">•</span>
-                                <span>Advanced TypeScript patterns and error handling</span>
-                            </li>
-                            <li className="flex items-start space-x-2">
-                                <span className="text-red-500">•</span>
-                                <span>Responsive grid layouts with infinite scroll</span>
+                                <span>
+                                    Hybrid state management with Zustand + Recoil compatibility
+                                    layer
+                                </span>
                             </li>
                             <li className="flex items-start space-x-2">
                                 <span className="text-red-500">•</span>
                                 <span>
-                                    Real-time search with debouncing and race condition handling
+                                    Multi-storage architecture (Firestore for auth, localStorage for
+                                    guests)
+                                </span>
+                            </li>
+                            <li className="flex items-start space-x-2">
+                                <span className="text-red-500">•</span>
+                                <span>
+                                    Comprehensive Jest test suite with React Testing Library
+                                </span>
+                            </li>
+                            <li className="flex items-start space-x-2">
+                                <span className="text-red-500">•</span>
+                                <span>
+                                    Error monitoring with Sentry and analytics with GA4 integration
+                                </span>
+                            </li>
+                            <li className="flex items-start space-x-2">
+                                <span className="text-red-500">•</span>
+                                <span>
+                                    Advanced search with debouncing, race condition handling, and
+                                    URL sync
+                                </span>
+                            </li>
+                            <li className="flex items-start space-x-2">
+                                <span className="text-red-500">•</span>
+                                <span>
+                                    Custom caching system for API optimization and performance
                                 </span>
                             </li>
                         </ul>
