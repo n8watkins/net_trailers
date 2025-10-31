@@ -71,9 +71,6 @@ const Settings: React.FC<SettingsProps> = ({
         defaultVolume: state.defaultVolume,
     }))
 
-    // Use actual store values based on session type
-    const currentPreferences = isGuest ? guestPreferences : authPreferences
-
     // Modal states
     const [activeSection, setActiveSection] = useState<SettingsSection>('preferences')
     const [showClearConfirm, setShowClearConfirm] = useState(false)
@@ -81,17 +78,20 @@ const Settings: React.FC<SettingsProps> = ({
     const [showExportLimitedModal, setShowExportLimitedModal] = useState(false)
     const [showChildSafetyModal, setShowChildSafetyModal] = useState(false)
 
-    // Preferences state - Initialize from store values to prevent flicker
-    const [childSafetyMode, setChildSafetyMode] = useState(() => currentPreferences.childSafetyMode)
-    const [autoMute, setAutoMute] = useState(() => currentPreferences.autoMute)
-    const [defaultVolume, setDefaultVolume] = useState(() => currentPreferences.defaultVolume)
+    // Use actual store values based on session type
+    const currentPreferences = isGuest ? guestPreferences : authPreferences
 
-    // Track original preferences to detect changes - Initialize from store
-    const [originalPreferences, setOriginalPreferences] = useState(() => ({
+    // Preferences state - Use store values directly for display
+    const [childSafetyMode, setChildSafetyMode] = useState(currentPreferences.childSafetyMode)
+    const [autoMute, setAutoMute] = useState(currentPreferences.autoMute)
+    const [defaultVolume, setDefaultVolume] = useState(currentPreferences.defaultVolume)
+
+    // Track original preferences to detect changes
+    const [originalPreferences, setOriginalPreferences] = useState({
         childSafetyMode: currentPreferences.childSafetyMode,
         autoMute: currentPreferences.autoMute,
         defaultVolume: currentPreferences.defaultVolume,
-    }))
+    })
 
     // Check if preferences have changed
     const preferencesChanged =
@@ -300,22 +300,6 @@ const Settings: React.FC<SettingsProps> = ({
         userData.likedMovies.length,
         userData.hiddenMovies.length,
         userData.userCreatedWatchlists.length,
-    ])
-
-    // Sync local state when store values change (e.g., after save or session switch)
-    React.useEffect(() => {
-        setChildSafetyMode(currentPreferences.childSafetyMode)
-        setAutoMute(currentPreferences.autoMute)
-        setDefaultVolume(currentPreferences.defaultVolume)
-        setOriginalPreferences({
-            childSafetyMode: currentPreferences.childSafetyMode,
-            autoMute: currentPreferences.autoMute,
-            defaultVolume: currentPreferences.defaultVolume,
-        })
-    }, [
-        currentPreferences.childSafetyMode,
-        currentPreferences.autoMute,
-        currentPreferences.defaultVolume,
     ])
 
     // Handle saving preferences
