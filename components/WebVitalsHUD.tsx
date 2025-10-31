@@ -114,7 +114,7 @@ export default function WebVitalsHUD() {
             window.removeEventListener('keydown', handleKeyDown)
             window.removeEventListener('web-vital' as any, handleWebVital)
         }
-    }, [isDev, isVisible])
+    }, [isDev])
 
     if (!isDev) return null
 

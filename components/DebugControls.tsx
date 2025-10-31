@@ -44,6 +44,7 @@ export default function DebugControls() {
     const [isHovered, setIsHovered] = useState(false)
     const dragHandleRef = useRef<HTMLDivElement>(null)
     const isFirstMount = useRef(true)
+    const isFirstSettingsMount = useRef(true)
 
     // Keyboard shortcut handler for Alt+Shift+D
     useEffect(() => {
@@ -88,8 +89,12 @@ export default function DebugControls() {
         return () => window.removeEventListener('debugSettingsChanged', handleExternalChange as any)
     }, [])
 
-    // Save settings to localStorage
+    // Save settings to localStorage (skip initial mount to avoid overwriting saved settings)
     useEffect(() => {
+        if (isFirstSettingsMount.current) {
+            isFirstSettingsMount.current = false
+            return
+        }
         localStorage.setItem('debugSettings', JSON.stringify(settings))
         // Dispatch event for other components to listen to
         window.dispatchEvent(new CustomEvent('debugSettingsChanged', { detail: settings }))
