@@ -149,6 +149,15 @@ export function useSessionManager() {
         })
 
         const initializeSession = async () => {
+            // CRITICAL: Don't initialize anything while auth is loading
+            // Wait for Firebase to confirm before making any decisions
+            if (authLoading) {
+                sessionLog(
+                    '⏸️ [SESSION-TIMING] Auth still loading, skipping session initialization'
+                )
+                return
+            }
+
             // Determine what type of session we should have based on auth state
             const shouldBeAuthenticated = user !== null
             const isCurrentlyAuthenticated = sessionType === 'authenticated'
