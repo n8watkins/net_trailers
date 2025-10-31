@@ -413,8 +413,7 @@ function Modal() {
         }
 
         fetchMovie()
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentMovie, loadedMovieId, setLoading])
+    }, [currentMovie, loadedMovieId, setLoading, errorHandler])
 
     useEffect(() => {
         document.addEventListener('fullscreenchange', handleFullscreenChange)
@@ -617,7 +616,7 @@ function Modal() {
             }}
         >
             <div
-                className={`fixed inset-0 flex justify-center items-center ${
+                className={`fixed inset-0 flex flex-col justify-center items-center ${
                     fullScreen ? '' : 'p-2 sm:p-4 md:p-8'
                 }`}
                 onClick={handleClose}
@@ -1160,7 +1159,7 @@ function Modal() {
 
                 {/* Keyboard Shortcuts - Below Modal - Hidden in fullscreen */}
                 {!showJsonDebug && !fullScreen && (
-                    <div className="absolute -bottom-24 sm:-bottom-20 left-1/2 transform -translate-x-1/2 w-full max-w-4xl z-[50000]">
+                    <div className="mt-4 w-full flex justify-center px-4 pointer-events-none select-none">
                         <KeyboardShortcuts
                             shortcuts={[
                                 { key: 'ESC', description: 'Close' },
@@ -1181,7 +1180,7 @@ function Modal() {
                                 },
                                 trailer && { key: 'R', description: 'Watch on YouTube' },
                             ].filter(Boolean)}
-                            className="opacity-80 hover:opacity-100 transition-opacity"
+                            className="opacity-80"
                         />
                     </div>
                 )}

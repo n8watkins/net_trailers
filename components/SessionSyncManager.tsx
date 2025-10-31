@@ -11,7 +11,7 @@ import { authLog } from '../utils/debugLogger'
  * This component should be mounted once at the app root level
  */
 export function SessionSyncManager() {
-    const { user, loading: authLoading, wasRecentlyAuthenticated } = useAuth()
+    const { user, loading: authLoading } = useAuth()
     const {
         sessionType,
         activeSessionId,
@@ -167,10 +167,24 @@ export function SessionSyncManager() {
         }
 
         if (sessionType === 'authenticated' && user) {
-            // Check if we need to sync with Firebase
-            if (authStore.userId !== user.uid && authStore.syncStatus === 'offline') {
+            // Check if we need to sync with Firebase (mirrors guest sync logic)
+            const needsSync =
+                !authStore.userId || // Not initialized yet (initial page load)
+                authStore.userId !== user.uid // User changed (switched accounts)
+
+            authLog('🔍 [SessionSyncManager] Auth session check:', {
+                needsSync,
+                authStoreUserId: authStore.userId,
+                userUid: user.uid,
+                condition1: !authStore.userId,
+                condition2: authStore.userId !== user.uid,
+            })
+
+            if (needsSync) {
                 authLog('📥 [SessionSyncManager] Syncing auth data for:', user.uid)
                 authStore.syncWithFirebase(user.uid)
+            } else {
+                authLog('✅ [SessionSyncManager] Auth data already synced, skipping')
             }
         } else if (sessionType === 'guest') {
             // FIXED: Sync guest data from localStorage using the correct guestId
