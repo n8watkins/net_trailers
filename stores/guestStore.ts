@@ -331,11 +331,30 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
     },
 
     updatePreferences: (prefs: Partial<GuestState>) => {
-        // Update local state first
-        set({
-            ...prefs,
-            lastActive: typeof window !== 'undefined' ? Date.now() : 0,
-        })
+        // Server-side enforcement: Block child safety mode changes for guests
+        // Guests should see a modal prompting them to create an account instead
+        if ('childSafetyMode' in prefs) {
+            guestLog(
+                '⚠️ [GuestStore] Blocked childSafetyMode update - guests cannot change this setting'
+            )
+            // Remove childSafetyMode from the update
+            const { childSafetyMode, ...allowedPrefs } = prefs
+            // If there are other preferences to update, continue with those
+            if (Object.keys(allowedPrefs).length === 0) {
+                return // Nothing to update
+            }
+            // Update with allowed preferences only
+            set({
+                ...allowedPrefs,
+                lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+            })
+        } else {
+            // Update local state first (no restricted preferences)
+            set({
+                ...prefs,
+                lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+            })
+        }
 
         // Get the UPDATED state after set()
         const state = get()

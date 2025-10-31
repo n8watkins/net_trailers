@@ -40,6 +40,7 @@ interface PreferencesControlsProps {
     onSave: () => void
     onShowChildSafetyModal: () => void
     onMarkInteracted: () => void
+    onClearInteracted: () => void
     userInteractedRef: React.RefObject<boolean>
 }
 
@@ -56,6 +57,7 @@ const PreferencesControls = React.memo<PreferencesControlsProps>(
         onSave,
         onShowChildSafetyModal,
         onMarkInteracted,
+        onClearInteracted,
         userInteractedRef,
     }) => {
         return (
@@ -79,6 +81,14 @@ const PreferencesControls = React.memo<PreferencesControlsProps>(
                             <label
                                 className="relative inline-flex items-center cursor-pointer ml-4"
                                 onPointerDown={onMarkInteracted}
+                                onPointerUp={onClearInteracted}
+                                onKeyDown={(e) => {
+                                    // Only mark interaction for Space/Enter keys
+                                    if (e.key === ' ' || e.key === 'Enter') {
+                                        onMarkInteracted()
+                                    }
+                                }}
+                                onKeyUp={onClearInteracted}
                             >
                                 <input
                                     type="checkbox"
@@ -242,11 +252,14 @@ const Settings: React.FC<SettingsProps> = ({
     // 2) Track real user-initiated interaction to prevent phantom modal opens
     const userInteractedRef = React.useRef(false)
 
-    // Reset interaction flag shortly after each interaction
+    // Mark interaction when user starts interacting (mouse or keyboard)
     const markInteracted = React.useCallback(() => {
         userInteractedRef.current = true
-        // Auto-reset after a tick so it only covers the current gesture
-        setTimeout(() => (userInteractedRef.current = false), 0)
+    }, [])
+
+    // Clear interaction flag when gesture completes
+    const clearInteracted = React.useCallback(() => {
+        userInteractedRef.current = false
     }, [])
 
     // Initialize skeleton state based on whether data is available
@@ -853,6 +866,7 @@ const Settings: React.FC<SettingsProps> = ({
                                                         handleShowChildSafetyModal
                                                     }
                                                     onMarkInteracted={markInteracted}
+                                                    onClearInteracted={clearInteracted}
                                                     userInteractedRef={userInteractedRef}
                                                 />
                                             )}
