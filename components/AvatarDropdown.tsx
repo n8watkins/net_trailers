@@ -250,6 +250,22 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
         )
     }
 
+    // Authenticated but user object not loaded yet from Firebase
+    if (!user) {
+        return (
+            <div className={`relative ${className}`} ref={dropdownRef}>
+                {/* Avatar Button - Loading user details */}
+                <button
+                    disabled
+                    className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-red-600 transition-colors duration-200 focus:outline-none cursor-wait"
+                    aria-label="Loading user details"
+                >
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                </button>
+            </div>
+        )
+    }
+
     return (
         <div className={`relative ${className}`} ref={dropdownRef}>
             {/* Avatar Button */}
