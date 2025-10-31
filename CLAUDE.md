@@ -19,26 +19,26 @@ npm run test:ci      # Run tests in CI mode (no watch, with coverage)
 
 ## Architecture Overview
 
-### State Management Architecture (HYBRID - IMPORTANT)
+### State Management Architecture (Zustand)
 
-The app is **currently in transition** from Recoil to Zustand:
+The app uses **Zustand** for all state management:
 
-- **Surface level**: Components use `useRecoilState` and `useRecoilValue` from 'recoil'
-- **Under the hood**: These imports are intercepted by `atoms/compat.ts` compatibility shim
-- **Actual state**: Stored in Zustand stores (`/stores/*.ts`)
-- **Migration status**: Partial - using compatibility layer to bridge old components with new stores
+- **Direct store usage**: Components use Zustand hooks directly (e.g., `useAppStore()`, `useSessionStore()`)
+- **No provider wrapper**: Zustand stores work without a root provider component
+- **Type-safe selectors**: Use store selectors for optimal performance and type safety
 
-**Active Zustand Stores**:
+**Zustand Stores**:
 
+- `stores/appStore.ts` - App-wide state (modals, search, toasts, loading)
 - `stores/authStore.ts` - Authenticated user data with Firebase sync
 - `stores/guestStore.ts` - Guest user data with localStorage persistence
 - `stores/sessionStore.ts` - Session management and user switching
-- `stores/appStore.ts` - App-wide state (modals, search, toasts)
+- `stores/cacheStore.ts` - Content caching for improved performance
 
-**Legacy Recoil Atoms** (kept for compatibility):
+**Type Definitions**:
 
-- `atoms/modalAtom.ts`, `searchAtom.ts`, `toastAtom.ts`, etc.
-- These are mostly unused, with `atoms/compat.ts` redirecting to Zustand
+- `types/atoms.ts` - Shared type definitions (UserPreferences, UserSession, SessionType, etc.)
+- Previously in `/atoms` directory before migration from Recoil
 
 ### Content Type System
 
@@ -79,17 +79,17 @@ The app handles both movies and TV shows through a unified type system:
 - **Components**:
     - `Toast.tsx` - Individual toast with slide animations and auto-dismiss (5s)
     - `ToastContainer.tsx` - Right-aligned positioning with responsive margins
-    - `ToastManager.tsx` - Recoil state bridge component
-- **Integration**: `ErrorHandler` class now uses `showError()` from `useToast()` hook
-- **State management**: `toastAtom.ts` with single toast display (replaces complex error state)
+    - `ToastManager.tsx` - State bridge component
+- **Integration**: `ErrorHandler` class uses `showError()` from `useToast()` hook
+- **State management**: Managed by `appStore.toasts` array with MAX_TOASTS limit
 
 ### Modal System
 
-- **Centralized modal state** with content selection and auto-play preferences
+- **Centralized modal state** via `appStore.modal` with content selection and auto-play preferences
 - **Video player integration** using ReactPlayer with YouTube trailers
 - **Audio control logic**: Different behavior for "Play" vs "More Info" buttons
-    - Play button: `autoPlayWithSoundState(true)` - starts with sound
-    - More Info button: `autoPlayWithSoundState(false)` - starts muted
+    - Play button: `openModal(content, true, true)` - starts with sound
+    - More Info button: `openModal(content, true, false)` - starts muted
 
 ### Search Implementation
 
@@ -123,6 +123,30 @@ Required environment variables are documented in the file with setup instruction
 
 ## Key Development Patterns
 
+### Using Zustand Stores
+
+**Store Selection Patterns:**
+
+```typescript
+// Select entire store
+const { modal, openModal, closeModal } = useAppStore()
+
+// Select specific slices (better performance)
+const modal = useAppStore((state) => state.modal)
+const openModal = useAppStore((state) => state.openModal)
+
+// Select computed values
+const showModal = useAppStore((state) => state.modal.isOpen)
+```
+
+**Common Store Actions:**
+
+- `appStore.openModal(content, autoPlay?, autoPlayWithSound?)` - Open content modal
+- `appStore.showToast(type, title, message?)` - Show toast notification
+- `appStore.setSearch(updater)` - Update search state
+- `sessionStore.initializeAuthSession(userId)` - Initialize authenticated session
+- `sessionStore.initializeGuestSession(guestId)` - Initialize guest session
+
 ### User Data Isolation (Critical)
 
 - The `authStore` tracks `userId` to prevent data mixing between users
@@ -135,9 +159,9 @@ Required environment variables are documented in the file with setup instruction
 
 - Use `useToast()` hook for all user notifications: `showSuccess()`, `showError()`, `showWatchlistAdd()`, etc.
 - Use `createErrorHandler(showError)` from `utils/errorHandler.ts` for consistent error handling
-- All errors are now displayed as toast notifications instead of separate error state
+- All errors are displayed as toast notifications
 - API errors are automatically converted to user-friendly toast messages
-- Only `loadingState` remains in errorAtom.ts (error state moved to unified toast system)
+- Loading state managed by `appStore.isLoading` and `appStore.setLoading()`
 
 ### Content Rendering
 
@@ -159,13 +183,13 @@ Required environment variables are documented in the file with setup instruction
 
 ## Important Notes
 
-- **Zustand package**: Must be installed (`npm install zustand`) for stores to work
+- **Zustand package**: Already installed and configured for all state management
 - The project has been migrated from pnpm to npm - always use npm commands
+- **Migration completed**: All Recoil dependencies removed, app uses 100% Zustand
 - Development server may run on port 3004 if 3000 is occupied
 - TMDB API has rate limits (40 requests/second) - respect these in API calls
 - Always clear build cache (`rm -rf .next`) if experiencing build issues
-- Recoil atoms use versioned keys (e.g., `modalState_v1`) for cache busting when needed
-- When working on state: New features should use Zustand stores directly, not Recoil atoms
+- When working on state: Use Zustand stores directly (`useAppStore`, `useSessionStore`, etc.)
 
 ## Development Server Management
 
