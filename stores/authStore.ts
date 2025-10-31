@@ -6,6 +6,7 @@ import { AuthStorageService } from '../services/authStorageService'
 import { firebaseTracker } from '../utils/firebaseCallTracker'
 import { createDebouncedFunction } from '../utils/debounce'
 import { syncManager } from '../utils/firebaseSyncManager'
+import { authLog, authError, authWarn } from '../utils/debugLogger'
 
 // NEW SCHEMA - Flat structure with liked/hidden instead of ratings
 export interface AuthState {
@@ -73,7 +74,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         const state = get()
         const isAlreadyInWatchlist = state.defaultWatchlist.some((item) => item.id === content.id)
         if (isAlreadyInWatchlist) {
-            console.log('⚠️ [AuthStore] Item already in watchlist:', getTitle(content))
+            authLog('⚠️ [AuthStore] Item already in watchlist:', getTitle(content))
             return
         }
 
@@ -102,18 +103,18 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 childSafetyMode: state.childSafetyMode ?? false,
             })
                 .then(() => {
-                    console.log('✅ [AuthStore] Saved to Firestore')
+                    authLog('✅ [AuthStore] Saved to Firestore')
                     set({ syncStatus: 'synced' })
                 })
                 .catch((error) => {
-                    console.error('❌ [AuthStore] Failed to save to Firestore:', error)
+                    authError('❌ [AuthStore] Failed to save to Firestore:', error)
                     set({ syncStatus: 'offline' })
                 })
         } else {
             set({ syncStatus: 'synced' })
         }
 
-        console.log('✅ [AuthStore] Added to watchlist:', {
+        authLog('✅ [AuthStore] Added to watchlist:', {
             title: getTitle(content),
             contentId: content.id,
             newWatchlistCount: newWatchlist.length,
@@ -148,25 +149,25 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 childSafetyMode: state.childSafetyMode ?? false,
             })
                 .then(() => {
-                    console.log('✅ [AuthStore] Saved to Firestore')
+                    authLog('✅ [AuthStore] Saved to Firestore')
                     set({ syncStatus: 'synced' })
                 })
                 .catch((error) => {
-                    console.error('❌ [AuthStore] Failed to save to Firestore:', error)
+                    authError('❌ [AuthStore] Failed to save to Firestore:', error)
                     set({ syncStatus: 'offline' })
                 })
         } else {
             set({ syncStatus: 'synced' })
         }
 
-        console.log('🗑️ [AuthStore] Removed from watchlist:', contentId)
+        authLog('🗑️ [AuthStore] Removed from watchlist:', contentId)
     },
 
     addLikedMovie: async (content: Content) => {
         const state = get()
         const isAlreadyLiked = state.likedMovies.some((m) => m.id === content.id)
         if (isAlreadyLiked) {
-            console.log('⚠️ [AuthStore] Movie already liked:', getTitle(content))
+            authLog('⚠️ [AuthStore] Movie already liked:', getTitle(content))
             return
         }
 
@@ -196,18 +197,18 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 childSafetyMode: state.childSafetyMode ?? false,
             })
                 .then(() => {
-                    console.log('✅ [AuthStore] Saved to Firestore')
+                    authLog('✅ [AuthStore] Saved to Firestore')
                     set({ syncStatus: 'synced' })
                 })
                 .catch((error) => {
-                    console.error('❌ [AuthStore] Failed to save to Firestore:', error)
+                    authError('❌ [AuthStore] Failed to save to Firestore:', error)
                     set({ syncStatus: 'offline' })
                 })
         } else {
             set({ syncStatus: 'synced' })
         }
 
-        console.log('👍 [AuthStore] Added to liked:', getTitle(content))
+        authLog('👍 [AuthStore] Added to liked:', getTitle(content))
     },
 
     removeLikedMovie: async (contentId: number) => {
@@ -237,25 +238,25 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 childSafetyMode: state.childSafetyMode ?? false,
             })
                 .then(() => {
-                    console.log('✅ [AuthStore] Saved to Firestore')
+                    authLog('✅ [AuthStore] Saved to Firestore')
                     set({ syncStatus: 'synced' })
                 })
                 .catch((error) => {
-                    console.error('❌ [AuthStore] Failed to save to Firestore:', error)
+                    authError('❌ [AuthStore] Failed to save to Firestore:', error)
                     set({ syncStatus: 'offline' })
                 })
         } else {
             set({ syncStatus: 'synced' })
         }
 
-        console.log('🗑️ [AuthStore] Removed from liked:', contentId)
+        authLog('🗑️ [AuthStore] Removed from liked:', contentId)
     },
 
     addHiddenMovie: async (content: Content) => {
         const state = get()
         const isAlreadyHidden = state.hiddenMovies.some((m) => m.id === content.id)
         if (isAlreadyHidden) {
-            console.log('⚠️ [AuthStore] Movie already hidden:', getTitle(content))
+            authLog('⚠️ [AuthStore] Movie already hidden:', getTitle(content))
             return
         }
 
@@ -285,18 +286,18 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 childSafetyMode: state.childSafetyMode ?? false,
             })
                 .then(() => {
-                    console.log('✅ [AuthStore] Saved to Firestore')
+                    authLog('✅ [AuthStore] Saved to Firestore')
                     set({ syncStatus: 'synced' })
                 })
                 .catch((error) => {
-                    console.error('❌ [AuthStore] Failed to save to Firestore:', error)
+                    authError('❌ [AuthStore] Failed to save to Firestore:', error)
                     set({ syncStatus: 'offline' })
                 })
         } else {
             set({ syncStatus: 'synced' })
         }
 
-        console.log('🙈 [AuthStore] Added to hidden:', getTitle(content))
+        authLog('🙈 [AuthStore] Added to hidden:', getTitle(content))
     },
 
     removeHiddenMovie: async (contentId: number) => {
@@ -326,18 +327,18 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 childSafetyMode: state.childSafetyMode ?? false,
             })
                 .then(() => {
-                    console.log('✅ [AuthStore] Saved to Firestore')
+                    authLog('✅ [AuthStore] Saved to Firestore')
                     set({ syncStatus: 'synced' })
                 })
                 .catch((error) => {
-                    console.error('❌ [AuthStore] Failed to save to Firestore:', error)
+                    authError('❌ [AuthStore] Failed to save to Firestore:', error)
                     set({ syncStatus: 'offline' })
                 })
         } else {
             set({ syncStatus: 'synced' })
         }
 
-        console.log('🗑️ [AuthStore] Removed from hidden:', contentId)
+        authLog('🗑️ [AuthStore] Removed from hidden:', contentId)
     },
 
     createList: async (request: {
@@ -376,18 +377,18 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 childSafetyMode: state.childSafetyMode ?? false,
             })
                 .then(() => {
-                    console.log('✅ [AuthStore] Saved to Firestore')
+                    authLog('✅ [AuthStore] Saved to Firestore')
                     set({ syncStatus: 'synced' })
                 })
                 .catch((error) => {
-                    console.error('❌ [AuthStore] Failed to save to Firestore:', error)
+                    authError('❌ [AuthStore] Failed to save to Firestore:', error)
                     set({ syncStatus: 'offline' })
                 })
         } else {
             set({ syncStatus: 'synced' })
         }
 
-        console.log('📋 [AuthStore] Created list:', request.name, newList.id)
+        authLog('📋 [AuthStore] Created list:', request.name, newList.id)
         return newList.id
     },
 
@@ -421,18 +422,18 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 childSafetyMode: state.childSafetyMode ?? false,
             })
                 .then(() => {
-                    console.log('✅ [AuthStore] Saved to Firestore')
+                    authLog('✅ [AuthStore] Saved to Firestore')
                     set({ syncStatus: 'synced' })
                 })
                 .catch((error) => {
-                    console.error('❌ [AuthStore] Failed to save to Firestore:', error)
+                    authError('❌ [AuthStore] Failed to save to Firestore:', error)
                     set({ syncStatus: 'offline' })
                 })
         } else {
             set({ syncStatus: 'synced' })
         }
 
-        console.log('📝 [AuthStore] Added to list:', { listId, content: getTitle(content) })
+        authLog('📝 [AuthStore] Added to list:', { listId, content: getTitle(content) })
     },
 
     removeFromList: async (listId: string, contentId: number) => {
@@ -465,18 +466,18 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 childSafetyMode: state.childSafetyMode ?? false,
             })
                 .then(() => {
-                    console.log('✅ [AuthStore] Saved to Firestore')
+                    authLog('✅ [AuthStore] Saved to Firestore')
                     set({ syncStatus: 'synced' })
                 })
                 .catch((error) => {
-                    console.error('❌ [AuthStore] Failed to save to Firestore:', error)
+                    authError('❌ [AuthStore] Failed to save to Firestore:', error)
                     set({ syncStatus: 'offline' })
                 })
         } else {
             set({ syncStatus: 'synced' })
         }
 
-        console.log('🗑️ [AuthStore] Removed from list:', { listId, contentId })
+        authLog('🗑️ [AuthStore] Removed from list:', { listId, contentId })
     },
 
     updateList: async (
@@ -512,18 +513,18 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 childSafetyMode: state.childSafetyMode ?? false,
             })
                 .then(() => {
-                    console.log('✅ [AuthStore] Saved to Firestore')
+                    authLog('✅ [AuthStore] Saved to Firestore')
                     set({ syncStatus: 'synced' })
                 })
                 .catch((error) => {
-                    console.error('❌ [AuthStore] Failed to save to Firestore:', error)
+                    authError('❌ [AuthStore] Failed to save to Firestore:', error)
                     set({ syncStatus: 'offline' })
                 })
         } else {
             set({ syncStatus: 'synced' })
         }
 
-        console.log('✏️ [AuthStore] Updated list:', { listId, updates })
+        authLog('✏️ [AuthStore] Updated list:', { listId, updates })
     },
 
     deleteList: async (listId: string) => {
@@ -556,18 +557,18 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 childSafetyMode: state.childSafetyMode ?? false,
             })
                 .then(() => {
-                    console.log('✅ [AuthStore] Saved to Firestore')
+                    authLog('✅ [AuthStore] Saved to Firestore')
                     set({ syncStatus: 'synced' })
                 })
                 .catch((error) => {
-                    console.error('❌ [AuthStore] Failed to save to Firestore:', error)
+                    authError('❌ [AuthStore] Failed to save to Firestore:', error)
                     set({ syncStatus: 'offline' })
                 })
         } else {
             set({ syncStatus: 'synced' })
         }
 
-        console.log('🗑️ [AuthStore] Deleted list:', listId)
+        authLog('🗑️ [AuthStore] Deleted list:', listId)
     },
 
     updatePreferences: async (prefs: Partial<AuthState>) => {
@@ -602,7 +603,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 childSafetyMode: state.childSafetyMode ?? false,
             })
                 .then(() => {
-                    console.log('✅ [AuthStore] Preferences saved to Firestore:', {
+                    authLog('✅ [AuthStore] Preferences saved to Firestore:', {
                         autoMute: state.autoMute,
                         defaultVolume: state.defaultVolume,
                         childSafetyMode: state.childSafetyMode,
@@ -610,7 +611,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                     set({ syncStatus: 'synced' })
                 })
                 .catch((error) => {
-                    console.error('❌ [AuthStore] Failed to save preferences to Firestore:', error)
+                    authError('❌ [AuthStore] Failed to save preferences to Firestore:', error)
                     set({ syncStatus: 'offline' })
                 })
         } else {
@@ -623,7 +624,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
         // Clear store if switching to a different user
         if (state.userId && state.userId !== userId) {
-            console.warn(
+            authWarn(
                 `⚠️ [AuthStore] User ID mismatch! Store: ${state.userId}, Requested: ${userId}. Clearing store.`
             )
             set(getDefaultState())
@@ -635,7 +636,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             userId,
             async () => {
                 try {
-                    console.log(`🔄 [AuthStore] Executing sync for user: ${userId}`)
+                    authLog(`🔄 [AuthStore] Executing sync for user: ${userId}`)
                     firebaseTracker.track('syncWithFirebase', 'AuthStore', userId)
                     set({ syncStatus: 'syncing', userId })
 
@@ -645,7 +646,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                     // Verify we're still loading data for the correct user
                     const currentState = get()
                     if (currentState.userId !== userId) {
-                        console.warn(
+                        authWarn(
                             `⚠️ [AuthStore] User changed during sync (${currentState.userId} != ${userId}), aborting`
                         )
                         return null
@@ -664,7 +665,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                         syncStatus: 'synced',
                     })
 
-                    console.log(
+                    authLog(
                         `✅ [AuthStore] Successfully synced with Firebase for user ${userId}:`,
                         {
                             userId,
@@ -685,7 +686,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                     )
                     return firebaseData
                 } catch (error) {
-                    console.error('❌ [AuthStore] Failed to sync with Firebase:', error)
+                    authError('❌ [AuthStore] Failed to sync with Firebase:', error)
                     set({ syncStatus: 'offline' })
                     throw error
                 }
@@ -698,7 +699,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         const state = get()
         const userId = state.userId
         set(getDefaultState())
-        console.log(`🧹 [AuthStore] Cleared local cache for user ${userId}`)
+        authLog(`🧹 [AuthStore] Cleared local cache for user ${userId}`)
     },
 
     loadData: (data: AuthState) => {
@@ -706,7 +707,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
         // Verify we're loading data for the correct user if userId is provided
         if (data.userId && state.userId && data.userId !== state.userId) {
-            console.warn(
+            authWarn(
                 `⚠️ [AuthStore] Attempted to load data for wrong user! Store: ${state.userId}, Data: ${data.userId}`
             )
             return
@@ -716,7 +717,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             ...data,
             lastActive: typeof window !== 'undefined' ? Date.now() : 0,
         })
-        console.log(`📥 [AuthStore] Loaded data for user ${data.userId || 'unknown'}:`, {
+        authLog(`📥 [AuthStore] Loaded data for user ${data.userId || 'unknown'}:`, {
             watchlistCount: data.defaultWatchlist.length,
             likedCount: data.likedMovies.length,
             hiddenCount: data.hiddenMovies.length,

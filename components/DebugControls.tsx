@@ -11,6 +11,7 @@ interface DebugSettings {
     showFirebaseDebug: boolean
     showSessionDebug: boolean
     showGuestDebug: boolean
+    showCacheDebug: boolean
     showToastDebug: boolean
     showApiResults: boolean
 }
@@ -26,6 +27,7 @@ export default function DebugControls() {
         showFirebaseDebug: false,
         showSessionDebug: false,
         showGuestDebug: false,
+        showCacheDebug: false,
         showToastDebug: false,
         showApiResults: false,
     })
@@ -210,6 +212,19 @@ export default function DebugControls() {
                         <span className="text-xs">Guest</span>
                     </button>
 
+                    {/* Cache Debug Toggle */}
+                    <button
+                        onClick={() => toggleSetting('showCacheDebug')}
+                        className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                            settings.showCacheDebug
+                                ? 'bg-cyan-600/20 text-cyan-400 border border-cyan-500/30'
+                                : 'bg-gray-800 text-gray-500 border border-gray-700'
+                        }`}
+                        title="Toggle Cache Logs"
+                    >
+                        <span className="text-xs">Cache</span>
+                    </button>
+
                     {/* Toast Debug Toggle */}
                     <button
                         onClick={() => toggleSetting('showToastDebug')}
@@ -250,6 +265,7 @@ export function useDebugSettings() {
         showFirebaseDebug: false,
         showSessionDebug: false,
         showGuestDebug: false,
+        showCacheDebug: false,
         showToastDebug: false,
         showApiResults: false,
     })

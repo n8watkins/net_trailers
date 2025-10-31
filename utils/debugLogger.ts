@@ -64,3 +64,43 @@ export function guestLog(...args: any[]): void {
 export function guestError(...args: any[]): void {
     console.error('[Guest Error]', ...args)
 }
+
+/**
+ * Cache Logging (cache store operations, sessionStorage)
+ */
+export function cacheLog(...args: any[]): void {
+    if (isDebugEnabled('showCacheDebug')) {
+        console.log(...args)
+    }
+}
+
+export function cacheError(...args: any[]): void {
+    console.error('[Cache Error]', ...args)
+}
+
+/**
+ * Firebase Tracker Logging (Firebase call tracking, quota monitoring)
+ */
+export function firebaseLog(...args: any[]): void {
+    if (isDebugEnabled('showFirebaseTracker')) {
+        console.log(...args)
+    }
+}
+
+export function firebaseWarn(...args: any[]): void {
+    if (isDebugEnabled('showFirebaseTracker')) {
+        console.warn(...args)
+    }
+}
+
+export function firebaseGroup(label: string): void {
+    if (isDebugEnabled('showFirebaseTracker')) {
+        console.group(label)
+    }
+}
+
+export function firebaseGroupEnd(): void {
+    if (isDebugEnabled('showFirebaseTracker')) {
+        console.groupEnd()
+    }
+}

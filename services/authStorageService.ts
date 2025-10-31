@@ -3,6 +3,7 @@ import { UserPreferences } from '../types/atoms'
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { firebaseTracker } from '../utils/firebaseCallTracker'
+import { authLog, authError, authWarn } from '../utils/debugLogger'
 
 // Type alias for backward compatibility
 export type AuthPreferences = UserPreferences
@@ -35,7 +36,7 @@ export class AuthStorageService {
     static async loadUserData(userId: string): Promise<AuthPreferences> {
         // Validate that userId exists before attempting Firestore operations
         if (!userId || userId === 'undefined' || userId === 'null') {
-            console.warn('Invalid userId provided to loadUserData:', userId)
+            authWarn('Invalid userId provided to loadUserData:', userId)
             return {
                 likedMovies: [],
                 hiddenMovies: [],
@@ -50,7 +51,7 @@ export class AuthStorageService {
         if (cached) {
             const age = Date.now() - cached.timestamp
             if (age < CACHE_TTL) {
-                console.log(
+                authLog(
                     '💾 [AuthStorageService] Using cached data for:',
                     userId,
                     `(${Math.round(age / 1000)}s old)`
@@ -63,7 +64,7 @@ export class AuthStorageService {
         // Check if there's already a load in progress for this user
         const existingLoadPromise = loadingPromises.get(userId)
         if (existingLoadPromise) {
-            console.log('♻️ [AuthStorageService] Reusing existing load promise for:', userId)
+            authLog('♻️ [AuthStorageService] Reusing existing load promise for:', userId)
             firebaseTracker.track('loadUserData-reused', 'AuthStorageService', userId)
             return existingLoadPromise
         }
@@ -72,7 +73,7 @@ export class AuthStorageService {
         const stack = new Error().stack
         const caller = stack?.split('\n')[3]?.trim() || 'unknown'
 
-        console.log('📚 [AuthStorageService] Starting NEW load for:', userId, 'from:', caller)
+        authLog('📚 [AuthStorageService] Starting NEW load for:', userId, 'from:', caller)
         firebaseTracker.track('loadUserData', 'AuthStorageService', userId, { caller })
 
         // Create a new loading promise and store it
@@ -84,7 +85,7 @@ export class AuthStorageService {
                 )
 
                 const docRef = doc(db, 'users', userId)
-                console.log('📍 [AuthStorageService] Reading from path:', `users/${userId}`)
+                authLog('📍 [AuthStorageService] Reading from path:', `users/${userId}`)
 
                 const firestorePromise = getDoc(docRef)
 
@@ -92,7 +93,7 @@ export class AuthStorageService {
 
                 if (userDoc.exists()) {
                     const data = userDoc.data()
-                    console.log('✅ [AuthStorageService] Loaded user data from Firestore:', {
+                    authLog('✅ [AuthStorageService] Loaded user data from Firestore:', {
                         userId,
                         documentPath: `users/${userId}`,
                         hasDefaultWatchlist: !!data.defaultWatchlist,
@@ -118,7 +119,7 @@ export class AuthStorageService {
 
                     // Cache the loaded data
                     userDataCache.set(userId, { data: preferences, timestamp: Date.now() })
-                    console.log('💾 [AuthStorageService] Cached user data for:', userId)
+                    authLog('💾 [AuthStorageService] Cached user data for:', userId)
 
                     // Clear loading promise after successful load
                     loadingPromises.delete(userId)
@@ -146,12 +147,12 @@ export class AuthStorageService {
                         )
                         await this.saveUserData(userId, defaultPreferences)
                     } catch (saveError) {
-                        console.warn('Failed to create auth user document (offline?):', saveError)
+                        authWarn('Failed to create auth user document (offline?):', saveError)
                     }
 
                     // Cache the default preferences
                     userDataCache.set(userId, { data: defaultPreferences, timestamp: Date.now() })
-                    console.log('💾 [AuthStorageService] Cached default data for:', userId)
+                    authLog('💾 [AuthStorageService] Cached default data for:', userId)
 
                     // Clear loading promise
                     loadingPromises.delete(userId)
@@ -161,7 +162,7 @@ export class AuthStorageService {
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : String(error)
 
-                console.error('🚨 [AuthStorageService] Failed to load user data:', {
+                authError('🚨 [AuthStorageService] Failed to load user data:', {
                     error: errorMessage,
                     userId,
                     isTimeout: errorMessage.includes('timeout'),
@@ -174,9 +175,7 @@ export class AuthStorageService {
                     errorMessage.includes('network') ||
                     errorMessage.includes('timeout')
                 ) {
-                    console.warn(
-                        '⚠️ Firebase is offline or timed out, using default auth preferences'
-                    )
+                    authWarn('⚠️ Firebase is offline or timed out, using default auth preferences')
                 }
 
                 // Clear loading promise on error
@@ -211,7 +210,7 @@ export class AuthStorageService {
                 lastActive: Date.now(),
             })
 
-            console.log('🔥 [AuthStorageService] Saving to Firestore:', {
+            authLog('🔥 [AuthStorageService] Saving to Firestore:', {
                 userId,
                 path: `users/${userId}`,
                 likedMoviesCount: preferences.likedMovies?.length || 0,
@@ -233,21 +232,21 @@ export class AuthStorageService {
                 defaultWatchlistCount: preferences.defaultWatchlist?.length || 0,
             })
             await setDoc(doc(db, 'users', userId), dataToSave, { merge: true })
-            console.log('✅ [AuthStorageService] Successfully saved to Firestore for user:', userId)
+            authLog('✅ [AuthStorageService] Successfully saved to Firestore for user:', userId)
 
             // Invalidate cache after save
             userDataCache.delete(userId)
-            console.log('🔄 [AuthStorageService] Cleared cache for user after save:', userId)
+            authLog('🔄 [AuthStorageService] Cleared cache for user after save:', userId)
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error)
 
             // Check if error is due to offline status
             if (errorMessage.includes('offline') || errorMessage.includes('network')) {
-                console.warn('Firebase is offline, auth data will sync when online:', errorMessage)
+                authWarn('Firebase is offline, auth data will sync when online:', errorMessage)
                 // Don't throw error for offline issues to prevent app crashes
                 return
             } else {
-                console.error('Failed to save auth user data to Firebase:', error)
+                authError('Failed to save auth user data to Firebase:', error)
                 throw error
             }
         }
@@ -264,13 +263,13 @@ export class AuthStorageService {
             const errorMessage = error instanceof Error ? error.message : String(error)
 
             if (errorMessage.includes('offline') || errorMessage.includes('network')) {
-                console.warn(
+                authWarn(
                     'Firebase is offline, auth field update will sync when online:',
                     errorMessage
                 )
                 return
             } else {
-                console.error(`Failed to update auth user field ${fieldPath}:`, error)
+                authError(`Failed to update auth user field ${fieldPath}:`, error)
                 throw error
             }
         }
@@ -360,9 +359,9 @@ export class AuthStorageService {
     static async deleteUserData(userId: string): Promise<void> {
         try {
             await setDoc(doc(db, 'users', userId), {})
-            console.log(`Auth user data deleted for ${userId}`)
+            authLog(`Auth user data deleted for ${userId}`)
         } catch (error) {
-            console.error('Failed to delete auth user data:', error)
+            authError('Failed to delete auth user data:', error)
             throw error
         }
     }
@@ -373,7 +372,7 @@ export class AuthStorageService {
             const userDoc = await getDoc(doc(db, 'users', userId))
             return userDoc.exists()
         } catch (error) {
-            console.error('Failed to check if auth user exists:', error)
+            authError('Failed to check if auth user exists:', error)
             return false
         }
     }
@@ -427,7 +426,7 @@ export class AuthStorageService {
         }
 
         await this.saveUserData(userId, defaultPrefs)
-        console.log(`🧹 User data cleared for ${userId}`)
+        authLog(`🧹 User data cleared for ${userId}`)
         return defaultPrefs
     }
 
@@ -461,7 +460,7 @@ export class AuthStorageService {
                     : undefined,
             }
         } catch (error) {
-            console.error('Failed to get data summary:', error)
+            authError('Failed to get data summary:', error)
             return {
                 watchlistCount: 0,
                 likedCount: 0,
@@ -498,15 +497,15 @@ export class AuthStorageService {
             const { db } = await import('../firebase')
             await deleteDoc(doc(db, 'users', userId))
 
-            console.log(`🗑️ User account and data permanently deleted for ${userId}`)
-            console.log(
+            authLog(`🗑️ User account and data permanently deleted for ${userId}`)
+            authLog(
                 `📄 Backup created with ${backup.data.defaultWatchlist.length} watchlist items, ${backup.data.likedMovies.length} liked, ${backup.data.hiddenMovies.length} hidden`
             )
 
             // Note: This doesn't delete the Firebase Auth account, just the user data
             // The Auth account should be deleted separately using Firebase Auth SDK
         } catch (error) {
-            console.error('Failed to delete user account:', error)
+            authError('Failed to delete user account:', error)
             throw new Error(
                 `Failed to delete account: ${error instanceof Error ? error.message : 'Unknown error'}`
             )
@@ -523,9 +522,9 @@ export class AuthStorageService {
             }
 
             await setDoc(doc(db, 'users', userId), deletionData, { merge: true })
-            console.log(`🗑️ User data soft deleted for ${userId} (can be recovered for 30 days)`)
+            authLog(`🗑️ User data soft deleted for ${userId} (can be recovered for 30 days)`)
         } catch (error) {
-            console.error('Failed to soft delete user data:', error)
+            authError('Failed to soft delete user data:', error)
             throw error
         }
     }
@@ -538,13 +537,13 @@ export class AuthStorageService {
 
             if (data?.deleted && data?.originalData?.data) {
                 await this.saveUserData(userId, data.originalData.data)
-                console.log(`♻️ User data restored for ${userId}`)
+                authLog(`♻️ User data restored for ${userId}`)
                 return true
             }
 
             return false
         } catch (error) {
-            console.error('Failed to restore user data:', error)
+            authError('Failed to restore user data:', error)
             return false
         }
     }

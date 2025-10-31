@@ -3,6 +3,8 @@
  * This helps identify sources of quota exhaustion
  */
 
+import { firebaseLog, firebaseWarn, firebaseGroup, firebaseGroupEnd } from './debugLogger'
+
 interface CallInfo {
     operation: string
     source: string
@@ -39,7 +41,7 @@ class FirebaseCallTracker {
         this.callCounts.set(key, (this.callCounts.get(key) || 0) + 1)
 
         // Log the call with context
-        console.log(`🔥 [Firebase] ${operation} from ${source}`, {
+        firebaseLog(`🔥 [Firebase] ${operation} from ${source}`, {
             userId,
             totalCalls: this.calls.length,
             callsInWindow: this.getCallsInWindow(),
@@ -59,7 +61,7 @@ class FirebaseCallTracker {
         const callsInWindow = this.getCallsInWindow()
 
         if (callsInWindow > this.WARNING_THRESHOLD) {
-            console.warn(
+            firebaseWarn(
                 `⚠️ [Firebase] EXCESSIVE CALLS DETECTED: ${callsInWindow} calls in the last minute!`
             )
             this.printCallSummary()
@@ -80,7 +82,7 @@ class FirebaseCallTracker {
 
         duplicates.forEach((count, key) => {
             if (count > 2) {
-                console.warn(
+                firebaseWarn(
                     `⚠️ [Firebase] DUPLICATE CALLS: "${key}" called ${count} times in quick succession`
                 )
             }
@@ -88,9 +90,9 @@ class FirebaseCallTracker {
     }
 
     printCallSummary() {
-        console.group('📊 Firebase Call Summary')
-        console.log('Total calls tracked:', this.calls.length)
-        console.log('Calls in last minute:', this.getCallsInWindow())
+        firebaseGroup('📊 Firebase Call Summary')
+        firebaseLog('Total calls tracked:', this.calls.length)
+        firebaseLog('Calls in last minute:', this.getCallsInWindow())
 
         // Group by operation
         const byOperation = new Map<string, number>()
@@ -98,9 +100,9 @@ class FirebaseCallTracker {
             byOperation.set(call.operation, (byOperation.get(call.operation) || 0) + 1)
         })
 
-        console.log('By Operation:')
+        firebaseLog('By Operation:')
         byOperation.forEach((count, op) => {
-            console.log(`  ${op}: ${count}`)
+            firebaseLog(`  ${op}: ${count}`)
         })
 
         // Group by source
@@ -109,27 +111,27 @@ class FirebaseCallTracker {
             bySource.set(call.source, (bySource.get(call.source) || 0) + 1)
         })
 
-        console.log('By Source:')
+        firebaseLog('By Source:')
         bySource.forEach((count, src) => {
-            console.log(`  ${src}: ${count}`)
+            firebaseLog(`  ${src}: ${count}`)
         })
 
         // Show recent calls
-        console.log('Recent calls:')
+        firebaseLog('Recent calls:')
         this.calls.slice(-5).forEach((call) => {
-            console.log(
+            firebaseLog(
                 `  ${new Date(call.timestamp).toLocaleTimeString()}: ${call.operation} from ${call.source}`
             )
         })
 
-        console.groupEnd()
+        firebaseGroupEnd()
     }
 
     reset() {
         this.calls = []
         this.callCounts.clear()
         this.windowStartTime = Date.now()
-        console.log('🔄 Firebase call tracker reset')
+        firebaseLog('🔄 Firebase call tracker reset')
     }
 
     getStats() {

@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { Content } from '../typings'
+import { cacheLog, cacheError } from '../utils/debugLogger'
 
 export interface MainPageData {
     trending: Content[]
@@ -45,17 +46,17 @@ const loadMainPageData = (): MainPageData | null => {
             const parsed = JSON.parse(saved)
             // Check if data is less than 30 minutes old
             if (Date.now() - parsed.lastFetched < 30 * 60 * 1000) {
-                console.log('📦 [CacheStore] Loaded cached main page data from sessionStorage')
+                cacheLog('📦 [CacheStore] Loaded cached main page data from sessionStorage')
                 return parsed
             } else {
                 // Clear expired data
                 sessionStorage.removeItem('nettrailer-main-page-data')
-                console.log('🗑️ [CacheStore] Cleared expired cache (>30 minutes old)')
+                cacheLog('🗑️ [CacheStore] Cleared expired cache (>30 minutes old)')
                 return null
             }
         }
     } catch (error) {
-        console.error('Failed to parse cached main page data:', error)
+        cacheError('Failed to parse cached main page data:', error)
         sessionStorage.removeItem('nettrailer-main-page-data')
     }
 
@@ -69,13 +70,13 @@ const saveMainPageData = (data: MainPageData | null) => {
     try {
         if (data) {
             sessionStorage.setItem('nettrailer-main-page-data', JSON.stringify(data))
-            console.log('💾 [CacheStore] Saved main page data to sessionStorage')
+            cacheLog('💾 [CacheStore] Saved main page data to sessionStorage')
         } else {
             sessionStorage.removeItem('nettrailer-main-page-data')
-            console.log('🗑️ [CacheStore] Cleared main page data from sessionStorage')
+            cacheLog('🗑️ [CacheStore] Cleared main page data from sessionStorage')
         }
     } catch (error) {
-        console.error('Failed to save cached main page data:', error)
+        cacheError('Failed to save cached main page data:', error)
     }
 }
 
@@ -118,7 +119,7 @@ export const useCacheStore = create<CacheStore>((set, get) => ({
                 cacheHits: state.cacheStatus.cacheHits + 1,
             },
         }))
-        console.log('✅ [CacheStore] Cache hit recorded')
+        cacheLog('✅ [CacheStore] Cache hit recorded')
     },
 
     recordCacheMiss: () => {
@@ -128,7 +129,7 @@ export const useCacheStore = create<CacheStore>((set, get) => ({
                 cacheMisses: state.cacheStatus.cacheMisses + 1,
             },
         }))
-        console.log('❌ [CacheStore] Cache miss recorded')
+        cacheLog('❌ [CacheStore] Cache miss recorded')
     },
 
     clearCache: () => {
@@ -143,6 +144,6 @@ export const useCacheStore = create<CacheStore>((set, get) => ({
                 cacheMisses: 0,
             },
         })
-        console.log('🧹 [CacheStore] Cache cleared')
+        cacheLog('🧹 [CacheStore] Cache cleared')
     },
 }))
