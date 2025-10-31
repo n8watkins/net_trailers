@@ -166,8 +166,13 @@ export default function DebugControls() {
     // Check if any setting is enabled
     const hasAnySettingEnabled = Object.values(settings).some((value) => value === true)
 
-    // Keep component expanded while dragging, hovered, or if any setting is enabled
-    const shouldShowControls = isHovered || isDragging || hasAnySettingEnabled
+    // Show all controls when hovering or dragging
+    const showAllControls = isHovered || isDragging
+
+    // Helper to determine if a specific button should be shown
+    const shouldShowButton = (settingKey: keyof DebugSettings) => {
+        return showAllControls || settings[settingKey]
+    }
 
     const toggleSetting = (key: keyof DebugSettings) => {
         setSettings((prev) => ({ ...prev, [key]: !prev[key] }))
@@ -195,115 +200,127 @@ export default function DebugControls() {
                 <BugAntIcon className="w-6 h-6 text-gray-400" />
             </div>
 
-            {shouldShowControls && (
-                <>
-                    {/* Firebase Tracker Toggle */}
-                    <button
-                        onClick={() => toggleSetting('showFirebaseTracker')}
-                        className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                            settings.showFirebaseTracker
-                                ? 'bg-orange-600/20 text-orange-400 border border-orange-500/30'
-                                : 'bg-gray-800 text-gray-500 border border-gray-700'
-                        }`}
-                        title="Toggle Firebase Call Tracker"
-                    >
-                        <FireIcon className="w-3 h-3" />
-                        <span className="text-xs">Firebase</span>
-                    </button>
+            {/* Firebase Tracker Toggle */}
+            {shouldShowButton('showFirebaseTracker') && (
+                <button
+                    onClick={() => toggleSetting('showFirebaseTracker')}
+                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                        settings.showFirebaseTracker
+                            ? 'bg-orange-600/20 text-orange-400 border border-orange-500/30'
+                            : 'bg-gray-800 text-gray-500 border border-gray-700'
+                    }`}
+                    title="Toggle Firebase Call Tracker"
+                >
+                    <FireIcon className="w-3 h-3" />
+                    <span className="text-xs">Firebase</span>
+                </button>
+            )}
 
-                    {/* Firebase Debug Toggle */}
-                    <button
-                        onClick={() => toggleSetting('showFirebaseDebug')}
-                        className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                            settings.showFirebaseDebug
-                                ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
-                                : 'bg-gray-800 text-gray-500 border border-gray-700'
-                        }`}
-                        title="Toggle Auth Flow Logs"
-                    >
-                        <span className="text-xs">Auth</span>
-                    </button>
+            {/* Firebase Debug Toggle */}
+            {shouldShowButton('showFirebaseDebug') && (
+                <button
+                    onClick={() => toggleSetting('showFirebaseDebug')}
+                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                        settings.showFirebaseDebug
+                            ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
+                            : 'bg-gray-800 text-gray-500 border border-gray-700'
+                    }`}
+                    title="Toggle Auth Flow Logs"
+                >
+                    <span className="text-xs">Auth</span>
+                </button>
+            )}
 
-                    {/* Session Debug Toggle */}
-                    <button
-                        onClick={() => toggleSetting('showSessionDebug')}
-                        className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                            settings.showSessionDebug
-                                ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30'
-                                : 'bg-gray-800 text-gray-500 border border-gray-700'
-                        }`}
-                        title="Toggle Session Logs"
-                    >
-                        <span className="text-xs">Session</span>
-                    </button>
+            {/* Session Debug Toggle */}
+            {shouldShowButton('showSessionDebug') && (
+                <button
+                    onClick={() => toggleSetting('showSessionDebug')}
+                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                        settings.showSessionDebug
+                            ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30'
+                            : 'bg-gray-800 text-gray-500 border border-gray-700'
+                    }`}
+                    title="Toggle Session Logs"
+                >
+                    <span className="text-xs">Session</span>
+                </button>
+            )}
 
-                    {/* Guest Debug Toggle */}
-                    <button
-                        onClick={() => toggleSetting('showGuestDebug')}
-                        className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                            settings.showGuestDebug
-                                ? 'bg-teal-600/20 text-teal-400 border border-teal-500/30'
-                                : 'bg-gray-800 text-gray-500 border border-gray-700'
-                        }`}
-                        title="Toggle Guest Logs"
-                    >
-                        <span className="text-xs">Guest</span>
-                    </button>
+            {/* Guest Debug Toggle */}
+            {shouldShowButton('showGuestDebug') && (
+                <button
+                    onClick={() => toggleSetting('showGuestDebug')}
+                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                        settings.showGuestDebug
+                            ? 'bg-teal-600/20 text-teal-400 border border-teal-500/30'
+                            : 'bg-gray-800 text-gray-500 border border-gray-700'
+                    }`}
+                    title="Toggle Guest Logs"
+                >
+                    <span className="text-xs">Guest</span>
+                </button>
+            )}
 
-                    {/* Cache Debug Toggle */}
-                    <button
-                        onClick={() => toggleSetting('showCacheDebug')}
-                        className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                            settings.showCacheDebug
-                                ? 'bg-cyan-600/20 text-cyan-400 border border-cyan-500/30'
-                                : 'bg-gray-800 text-gray-500 border border-gray-700'
-                        }`}
-                        title="Toggle Cache Logs"
-                    >
-                        <span className="text-xs">Cache</span>
-                    </button>
+            {/* Cache Debug Toggle */}
+            {shouldShowButton('showCacheDebug') && (
+                <button
+                    onClick={() => toggleSetting('showCacheDebug')}
+                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                        settings.showCacheDebug
+                            ? 'bg-cyan-600/20 text-cyan-400 border border-cyan-500/30'
+                            : 'bg-gray-800 text-gray-500 border border-gray-700'
+                    }`}
+                    title="Toggle Cache Logs"
+                >
+                    <span className="text-xs">Cache</span>
+                </button>
+            )}
 
-                    {/* Toast Debug Toggle */}
-                    <button
-                        onClick={() => toggleSetting('showToastDebug')}
-                        className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                            settings.showToastDebug
-                                ? 'bg-green-600/20 text-green-400 border border-green-500/30'
-                                : 'bg-gray-800 text-gray-500 border border-gray-700'
-                        }`}
-                        title="Toggle Toast Debug"
-                    >
-                        <ChatBubbleBottomCenterTextIcon className="w-3 h-3" />
-                        <span className="text-xs">Toast</span>
-                    </button>
+            {/* Toast Debug Toggle */}
+            {shouldShowButton('showToastDebug') && (
+                <button
+                    onClick={() => toggleSetting('showToastDebug')}
+                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                        settings.showToastDebug
+                            ? 'bg-green-600/20 text-green-400 border border-green-500/30'
+                            : 'bg-gray-800 text-gray-500 border border-gray-700'
+                    }`}
+                    title="Toggle Toast Debug"
+                >
+                    <ChatBubbleBottomCenterTextIcon className="w-3 h-3" />
+                    <span className="text-xs">Toast</span>
+                </button>
+            )}
 
-                    {/* API Results Toggle */}
-                    <button
-                        onClick={() => toggleSetting('showApiResults')}
-                        className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                            settings.showApiResults
-                                ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30'
-                                : 'bg-gray-800 text-gray-500 border border-gray-700'
-                        }`}
-                        title="Toggle API Results Button"
-                    >
-                        <CodeBracketIcon className="w-3 h-3" />
-                        <span className="text-xs">API Results</span>
-                    </button>
+            {/* API Results Toggle */}
+            {shouldShowButton('showApiResults') && (
+                <button
+                    onClick={() => toggleSetting('showApiResults')}
+                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                        settings.showApiResults
+                            ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30'
+                            : 'bg-gray-800 text-gray-500 border border-gray-700'
+                    }`}
+                    title="Toggle API Results Button"
+                >
+                    <CodeBracketIcon className="w-3 h-3" />
+                    <span className="text-xs">API Results</span>
+                </button>
+            )}
 
-                    {/* Web Vitals Toggle */}
-                    <button
-                        onClick={() => toggleSetting('showWebVitals')}
-                        className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                            settings.showWebVitals
-                                ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30'
-                                : 'bg-gray-800 text-gray-500 border border-gray-700'
-                        }`}
-                        title="Toggle Web Vitals HUD (Alt+Shift+V)"
-                    >
-                        <span className="text-xs">Vitals</span>
-                    </button>
-                </>
+            {/* Web Vitals Toggle */}
+            {shouldShowButton('showWebVitals') && (
+                <button
+                    onClick={() => toggleSetting('showWebVitals')}
+                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                        settings.showWebVitals
+                            ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30'
+                            : 'bg-gray-800 text-gray-500 border border-gray-700'
+                    }`}
+                    title="Toggle Web Vitals HUD (Alt+Shift+V)"
+                >
+                    <span className="text-xs">Vitals</span>
+                </button>
             )}
         </div>
     )
