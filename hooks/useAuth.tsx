@@ -65,7 +65,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const errorHandler = createErrorHandler(showError)
 
     // Check if user was recently authenticated (optimistic check)
-    const wasRecentlyAuth = wasRecentlyAuthenticated()
+    // Must use state to avoid hydration mismatch (localStorage only on client)
+    const [wasRecentlyAuth, setWasRecentlyAuth] = useState(false)
+
+    // Check cache after mount (client-only)
+    useEffect(() => {
+        setWasRecentlyAuth(wasRecentlyAuthenticated())
+    }, [])
 
     useEffect(() => {
         const startTime = Date.now()
