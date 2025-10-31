@@ -39,7 +39,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
 }) => {
     const [isOpen, setIsOpen] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
-    const { user, logOut } = useAuth()
+    const { user, logOut, loading: authLoading } = useAuth()
     const { isAuthenticated, isInitialized, sessionType } = useAuthStatus()
     const userData = useUserData()
     const { likedMovies, hiddenMovies, defaultWatchlist } = userData
@@ -101,7 +101,11 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
     }
 
     // Show loading state during initialization to prevent flicker
-    if (!isInitialized || sessionType === 'initializing') {
+    // CRITICAL: Must show loading while either:
+    // 1. Session not initialized yet, OR
+    // 2. Session is initializing, OR
+    // 3. Firebase auth is still loading
+    if (!isInitialized || sessionType === 'initializing' || authLoading) {
         return (
             <div className={`relative ${className}`} ref={dropdownRef}>
                 {/* Avatar Button - Loading */}
@@ -116,6 +120,8 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
         )
     }
 
+    // At this point, loading is complete and session is initialized
+    // Now we can safely determine if user is authenticated or guest
     if (!isAuthenticated) {
         return (
             <div className={`relative ${className}`} ref={dropdownRef}>
