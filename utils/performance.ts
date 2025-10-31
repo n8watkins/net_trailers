@@ -25,6 +25,23 @@ const THRESHOLDS: Record<string, { good: number; poor: number } | undefined> = {
 }
 
 /**
+ * Check if Web Vitals debug logging is enabled
+ */
+function isWebVitalsDebugEnabled(): boolean {
+    if (typeof window === 'undefined') return false
+    if (process.env.NODE_ENV !== 'development') return false
+
+    try {
+        const settings = localStorage.getItem('debugSettings')
+        if (!settings) return false
+        const parsed = JSON.parse(settings)
+        return parsed.showWebVitals === true
+    } catch {
+        return false
+    }
+}
+
+/**
  * Get the rating for a metric value
  */
 function getRating(name: string, value: number): WebVitalMetric['rating'] {
@@ -32,7 +49,7 @@ function getRating(name: string, value: number): WebVitalMetric['rating'] {
 
     // Handle unknown metrics gracefully (React 19+ may introduce new metrics)
     if (!threshold) {
-        if (process.env.NODE_ENV === 'development') {
+        if (isWebVitalsDebugEnabled()) {
             console.warn(`[Web Vitals] Unknown metric: ${name} (value: ${value})`)
         }
         return 'good' // Default to good for unknown metrics
@@ -72,10 +89,11 @@ function getRatingEmoji(rating: string): string {
 
 /**
  * Log web vital to console with formatting (development only)
+ * Only logs when showWebVitals debug setting is enabled
  */
 function logWebVital(metric: WebVitalMetric) {
-    // Only log in development mode
-    if (process.env.NODE_ENV !== 'development') return
+    // Only log if Web Vitals debugging is enabled
+    if (!isWebVitalsDebugEnabled()) return
 
     const rating = metric.rating || getRating(metric.name, metric.value)
     const emoji = getRatingEmoji(rating)
@@ -93,7 +111,7 @@ function logWebVital(metric: WebVitalMetric) {
         styles[rating] || 'color: #888'
     )
 
-    // Detailed info table (only in development)
+    // Detailed info table (only when debugging)
     console.table({
         Metric: metric.name,
         Value: formattedValue,

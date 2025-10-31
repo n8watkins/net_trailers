@@ -4,7 +4,7 @@ import { AuthProvider } from '../hooks/useAuth'
 import DemoMessage from '../components/DemoMessage'
 import ErrorBoundary from '../components/ErrorBoundary'
 import GoogleAnalytics from '../components/Analytics'
-import { Analytics } from '@vercel/analytics/next'
+import VercelAnalyticsWrapper from '../components/VercelAnalyticsWrapper'
 import ToastManager from '../components/ToastManager'
 import Layout from '../components/Layout'
 import Modal from '../components/Modal'
@@ -35,7 +35,7 @@ function MyApp({ Component, pageProps }: AppProps) {
                 <FirestoreTestButton />
                 <WebVitalsHUD />
                 <GoogleAnalytics />
-                <Analytics />
+                <VercelAnalyticsWrapper />
             </ErrorBoundary>
         </AuthProvider>
     )

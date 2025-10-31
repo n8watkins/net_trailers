@@ -121,7 +121,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                         height={70}
                         alt="NetTrailers Logo"
                         className="cursor-pointer object-contain select-none"
-                        style={{ height: 'auto' }}
+                        style={{ width: 'auto', height: 'auto' }}
                         priority
                         onClick={() => router.push('/')}
                     />
