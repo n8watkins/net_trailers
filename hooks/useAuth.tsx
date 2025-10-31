@@ -1,4 +1,11 @@
-import React, { useState, useContext, createContext, useEffect, useMemo } from 'react'
+import React, {
+    useState,
+    useContext,
+    createContext,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+} from 'react'
 
 import {
     createUserWithEmailAndPassword,
@@ -68,8 +75,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Must use state to avoid hydration mismatch (localStorage only on client)
     const [wasRecentlyAuth, setWasRecentlyAuth] = useState(false)
 
-    // Check cache after mount (client-only)
-    useEffect(() => {
+    // Check cache BEFORE first paint using useLayoutEffect (synchronous, no flash)
+    // This runs after DOM update but before browser paint, so user never sees the flash
+    useLayoutEffect(() => {
         setWasRecentlyAuth(wasRecentlyAuthenticated())
     }, [])
 

@@ -24,10 +24,11 @@ export function SessionSyncManager() {
     const authStore = useAuthStore()
     const guestStore = useGuestStore()
 
-    // OPTIMISTIC INITIALIZATION: If we have cached auth, initialize immediately
-    // This prevents showing loading screen when we're confident user is logged in
+    // CRITICAL: Check cache directly (synchronous) to avoid guest mode flicker
+    // This runs immediately on mount, before any async state updates
     useEffect(() => {
-        if (!isInitialized && wasRecentlyAuthenticated && authLoading) {
+        if (!isInitialized && authLoading) {
+            // Check cache DIRECTLY (not through state which updates async)
             const cachedUserId = getCachedUserId()
             if (cachedUserId) {
                 console.log(
@@ -35,18 +36,35 @@ export function SessionSyncManager() {
                     cachedUserId
                 )
                 initializeAuthSession(cachedUserId)
+                return // Exit early, we've initialized
             }
         }
-    }, [isInitialized, wasRecentlyAuthenticated, authLoading, initializeAuthSession])
+    }, [isInitialized, authLoading, initializeAuthSession])
 
-    // Initialize session on mount - BUT WAIT for auth to complete first
+    // Initialize session based on Firebase auth result
     useEffect(() => {
-        // Don't initialize until auth check is complete
+        // If still loading, wait (unless we already initialized optimistically above)
         if (authLoading) {
-            console.log('⏳ [SessionSyncManager] Waiting for auth check to complete...')
+            // Check if we already initialized optimistically
+            if (isInitialized) {
+                console.log(
+                    '⏳ [SessionSyncManager] Already initialized, waiting for Firebase confirmation...'
+                )
+            } else {
+                // Check cache again to avoid initializing guest mode prematurely
+                const cachedUserId = getCachedUserId()
+                if (cachedUserId) {
+                    console.log(
+                        '⏳ [SessionSyncManager] Cached auth detected, waiting for Firebase...'
+                    )
+                } else {
+                    console.log('⏳ [SessionSyncManager] No cache, waiting for auth check...')
+                }
+            }
             return
         }
 
+        // Auth check complete, initialize based on Firebase result
         if (!isInitialized) {
             console.log('🚀 [SessionSyncManager] Auth check complete, initializing session...')
             if (user) {
