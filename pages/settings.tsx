@@ -39,6 +39,8 @@ interface PreferencesControlsProps {
     onDefaultVolumeChange: (volume: number) => void
     onSave: () => void
     onShowChildSafetyModal: () => void
+    onMarkInteracted: () => void
+    userInteractedRef: React.RefObject<boolean>
 }
 
 const PreferencesControls = React.memo<PreferencesControlsProps>(
@@ -53,6 +55,8 @@ const PreferencesControls = React.memo<PreferencesControlsProps>(
         onDefaultVolumeChange,
         onSave,
         onShowChildSafetyModal,
+        onMarkInteracted,
+        userInteractedRef,
     }) => {
         return (
             <div className="space-y-8">
@@ -72,13 +76,18 @@ const PreferencesControls = React.memo<PreferencesControlsProps>(
                                     Restrict content to PG-13 and below, filter explicit material
                                 </p>
                             </div>
-                            <label className="relative inline-flex items-center cursor-pointer ml-4">
+                            <label
+                                className="relative inline-flex items-center cursor-pointer ml-4"
+                                onPointerDown={onMarkInteracted}
+                            >
                                 <input
                                     type="checkbox"
                                     checked={childSafetyMode}
                                     onChange={(e) => {
-                                        if (isGuest) {
+                                        // Only react to guest modal when it's truly user-triggered
+                                        if (isGuest && userInteractedRef.current) {
                                             onShowChildSafetyModal()
+                                            // Do NOT flip the setting for guests
                                             return
                                         }
                                         onChildSafetyModeChange(e.target.checked)
@@ -206,68 +215,62 @@ const Settings: React.FC<SettingsProps> = ({
     const [showExportLimitedModal, setShowExportLimitedModal] = useState(false)
     const [showChildSafetyModal, setShowChildSafetyModal] = useState(false)
 
-    // Initialize preferences from userSession (which already has data from stores)
-    const initialPrefs = React.useMemo(() => {
-        if (userData.userSession?.preferences) {
-            return {
-                childSafetyMode: userData.userSession.preferences.childSafetyMode ?? false,
-                autoMute: userData.userSession.preferences.autoMute ?? true,
-                defaultVolume: userData.userSession.preferences.defaultVolume ?? 50,
-            }
-        }
+    // 1) Define currentPreferences once using useMemo for stability
+    const currentPreferences = React.useMemo(() => {
         return {
-            childSafetyMode: false,
-            autoMute: true,
-            defaultVolume: 50,
+            childSafetyMode: userData.childSafetyMode ?? false,
+            autoMute: userData.autoMute ?? true,
+            defaultVolume: userData.defaultVolume ?? 50,
         }
-    }, []) // Empty deps - only calculate once on mount
+    }, [userData.childSafetyMode, userData.autoMute, userData.defaultVolume])
 
-    // Preferences state - Initialize from userSession
-    const [childSafetyMode, setChildSafetyMode] = useState(initialPrefs.childSafetyMode)
-    const [autoMute, setAutoMute] = useState(initialPrefs.autoMute)
-    const [defaultVolume, setDefaultVolume] = useState(initialPrefs.defaultVolume)
+    // 3) Initialize with static defaults (SSR-safe) - hydrate from store in useEffect
+    const [childSafetyMode, setChildSafetyMode] = useState<boolean>(false)
+    const [autoMute, setAutoMute] = useState<boolean>(true)
+    const [defaultVolume, setDefaultVolume] = useState<number>(50)
 
     // Track original preferences to detect changes
-    const [originalPreferences, setOriginalPreferences] = useState(initialPrefs)
+    const [originalPreferences, setOriginalPreferences] = useState({
+        childSafetyMode: false,
+        autoMute: true,
+        defaultVolume: 50,
+    })
 
-    // Track the last loaded session ID to detect session changes
-    const lastSessionIdRef = React.useRef<string | undefined>(userData.activeSessionId)
+    // Track if we've initialized to prevent unnecessary updates
+    const hasLoadedPrefsRef = React.useRef(false)
+
+    // 2) Track real user-initiated interaction to prevent phantom modal opens
+    const userInteractedRef = React.useRef(false)
+
+    // Reset interaction flag shortly after each interaction
+    const markInteracted = React.useCallback(() => {
+        userInteractedRef.current = true
+        // Auto-reset after a tick so it only covers the current gesture
+        setTimeout(() => (userInteractedRef.current = false), 0)
+    }, [])
 
     // Initialize skeleton state based on whether data is available
-    const hasInitializedRef = React.useRef(
-        !userData.isInitializing && !!userData.userSession?.preferences
-    )
+    const hasInitializedRef = React.useRef(!userData.isInitializing)
 
-    // ONLY update preferences when session ID actually changes (login/logout/user switch)
-    // Do NOT update on page refresh (session ID stays the same)
+    // Load preferences from store after mount (hydration-safe)
     React.useEffect(() => {
-        const currentSessionId = userData.activeSessionId
-        const sessionChanged = lastSessionIdRef.current !== currentSessionId
-
-        // Only update on session change, not on page refresh
-        if (sessionChanged && currentSessionId && userData.userSession?.preferences) {
-            const prefs = userData.userSession.preferences
-            setChildSafetyMode(prefs.childSafetyMode ?? false)
-            setAutoMute(prefs.autoMute ?? true)
-            setDefaultVolume(prefs.defaultVolume ?? 50)
+        if (!hasLoadedPrefsRef.current && currentPreferences) {
+            setChildSafetyMode(currentPreferences.childSafetyMode)
+            setAutoMute(currentPreferences.autoMute)
+            setDefaultVolume(currentPreferences.defaultVolume)
             setOriginalPreferences({
-                childSafetyMode: prefs.childSafetyMode ?? false,
-                autoMute: prefs.autoMute ?? true,
-                defaultVolume: prefs.defaultVolume ?? 50,
+                childSafetyMode: currentPreferences.childSafetyMode,
+                autoMute: currentPreferences.autoMute,
+                defaultVolume: currentPreferences.defaultVolume,
             })
-            lastSessionIdRef.current = currentSessionId
-        }
-
-        // Update ref on first mount
-        if (!lastSessionIdRef.current) {
-            lastSessionIdRef.current = currentSessionId
+            hasLoadedPrefsRef.current = true
         }
 
         // Mark as initialized if data is now available
-        if (!userData.isInitializing && userData.userSession?.preferences) {
+        if (!userData.isInitializing) {
             hasInitializedRef.current = true
         }
-    }, [userData.activeSessionId, userData.sessionType, userData.isInitializing])
+    }, [currentPreferences, userData.isInitializing])
 
     // Check if preferences have changed
     const preferencesChanged =
@@ -849,6 +852,8 @@ const Settings: React.FC<SettingsProps> = ({
                                                     onShowChildSafetyModal={
                                                         handleShowChildSafetyModal
                                                     }
+                                                    onMarkInteracted={markInteracted}
+                                                    userInteractedRef={userInteractedRef}
                                                 />
                                             )}
                                         </div>
