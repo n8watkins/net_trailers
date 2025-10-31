@@ -1,15 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { XMarkIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
-import { useRecoilState } from 'recoil'
-import { searchState, SearchFilters } from '../atoms/searchAtom'
-import { MOVIE_GENRES as movieGenres, TV_GENRES as tvGenres, Genre } from '../constants/genres'
-
-const allGenres: Genre[] = [
-    ...movieGenres,
-    ...tvGenres.filter(
-        (tvGenre) => !movieGenres.some((movieGenre) => movieGenre.id === tvGenre.id)
-    ),
-].sort((a, b) => a.name.localeCompare(b.name))
+import { useAppStore } from '../stores/appStore'
+import type { SearchFilters } from '../stores/appStore'
 
 interface SearchFiltersDropdownProps {
     isOpen: boolean
@@ -17,13 +9,14 @@ interface SearchFiltersDropdownProps {
 }
 
 export default function SearchFiltersDropdown({ isOpen, onClose }: SearchFiltersDropdownProps) {
-    const [search, setSearch] = useRecoilState(searchState)
-    const [localFilters, setLocalFilters] = useState<SearchFilters>(search.filters)
+    const searchFilters = useAppStore((state) => state.search.filters)
+    const setSearch = useAppStore((state) => state.setSearch)
+    const [localFilters, setLocalFilters] = useState<SearchFilters>(searchFilters)
     const dropdownRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
-        setLocalFilters(search.filters)
-    }, [search.filters])
+        setLocalFilters(searchFilters)
+    }, [searchFilters])
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -67,12 +60,6 @@ export default function SearchFiltersDropdown({ isOpen, onClose }: SearchFilters
             isLoadingAll: false,
         }))
         onClose()
-    }
-
-    const getAvailableGenres = () => {
-        if (localFilters.contentType === 'movie') return movieGenres
-        if (localFilters.contentType === 'tv') return tvGenres
-        return allGenres
     }
 
     if (!isOpen) return null

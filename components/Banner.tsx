@@ -238,13 +238,13 @@ function Banner({ trending }: Props) {
 }
 //helper function to truncate string to 300 characters
 const truncateString = (str: string | undefined) => {
-    let maxStringLength = 210
+    const maxStringLength = 210
     if (str === undefined) return ''
     if (str.length <= maxStringLength) {
         return str
     } else {
-        let truncated = str.substring(0, maxStringLength)
-        let lastPeriod = truncated.lastIndexOf('.')
+        const truncated = str.substring(0, maxStringLength)
+        const lastPeriod = truncated.lastIndexOf('.')
         if (lastPeriod === -1) {
             return truncated + '...'
         } else {

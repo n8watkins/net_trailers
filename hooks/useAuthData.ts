@@ -1,285 +1,181 @@
 import React from 'react'
-import { useRecoilState } from 'recoil'
-import { authSessionState, AuthSession, defaultAuthSession } from '../atoms/authSessionAtom'
-import { AuthStorageService } from '../services/authStorageService'
-import { UserListsService } from '../services/userListsService'
-import { Content } from '../typings'
-import { UserList, CreateListRequest, UpdateListRequest } from '../types/userLists'
+import { useAuthStore } from '../stores/authStore'
+import { UserList } from '../types/userLists'
 
 export function useAuthData(userId: string) {
-    const [authSession, setAuthSession] = useRecoilState(authSessionState)
+    const authStore = useAuthStore()
 
     // Ensure session is for the correct user
     React.useEffect(() => {
-        if (authSession.userId && authSession.userId !== userId) {
+        if (authStore.userId && authStore.userId !== userId) {
             console.warn(
-                `⚠️ Auth session user mismatch! Session: ${authSession.userId}, Expected: ${userId}`
+                `⚠️ Auth store user mismatch! Store: ${authStore.userId}, Expected: ${userId}`
             )
-            // Reset session to default for new user
-            setAuthSession({
-                ...defaultAuthSession,
-                userId: userId,
-            })
+            // Sync with the correct user
+            authStore.syncWithFirebase(userId)
         }
-    }, [userId, authSession.userId])
+    }, [userId, authStore.userId])
 
-    // Save data whenever preferences change
-    const saveAuthData = async (updatedSession: AuthSession) => {
-        if (updatedSession.userId && updatedSession.preferences) {
-            try {
-                await AuthStorageService.saveUserData(
-                    updatedSession.userId,
-                    updatedSession.preferences
-                )
-            } catch (error) {
-                console.error('Failed to save auth data:', error)
-            }
-        }
-    }
-
-    // Update session helper
-    const updateSession = (updater: (session: AuthSession) => AuthSession) => {
-        setAuthSession((prev) => {
-            const updated = updater(prev)
-            // Save asynchronously without blocking UI
-            saveAuthData(updated)
-            return updated
-        })
-    }
-
-    // Liked/Hidden operations (replaces rating operations)
-    const addLikedMovie = (content: Content) => {
-        updateSession((session) => ({
-            ...session,
-            preferences: AuthStorageService.addLikedMovie(session.preferences, content),
-        }))
-    }
-
-    const removeLikedMovie = (contentId: number) => {
-        updateSession((session) => ({
-            ...session,
-            preferences: AuthStorageService.removeLikedMovie(session.preferences, contentId),
-        }))
-    }
-
-    const addHiddenMovie = (content: Content) => {
-        updateSession((session) => ({
-            ...session,
-            preferences: AuthStorageService.addHiddenMovie(session.preferences, content),
-        }))
-    }
-
-    const removeHiddenMovie = (contentId: number) => {
-        updateSession((session) => ({
-            ...session,
-            preferences: AuthStorageService.removeHiddenMovie(session.preferences, contentId),
-        }))
-    }
-
+    // Helper functions that wrap store actions
     const isLiked = (contentId: number) => {
-        return AuthStorageService.isLiked(authSession.preferences, contentId)
+        return authStore.likedMovies.some((m) => m.id === contentId)
     }
 
     const isHidden = (contentId: number) => {
-        return AuthStorageService.isHidden(authSession.preferences, contentId)
-    }
-
-    // Watchlist operations
-    const addToWatchlist = (content: Content) => {
-        updateSession((session) => ({
-            ...session,
-            preferences: AuthStorageService.addToWatchlist(session.preferences, content),
-        }))
-    }
-
-    const removeFromWatchlist = (contentId: number) => {
-        updateSession((session) => ({
-            ...session,
-            preferences: AuthStorageService.removeFromWatchlist(session.preferences, contentId),
-        }))
+        return authStore.hiddenMovies.some((m) => m.id === contentId)
     }
 
     const isInWatchlist = (contentId: number) => {
-        return AuthStorageService.isInWatchlist(authSession.preferences, contentId)
-    }
-
-    // User Lists Management
-    const createList = (request: CreateListRequest) => {
-        updateSession((session) => ({
-            ...session,
-            preferences: UserListsService.createList(session.preferences, request),
-        }))
-    }
-
-    const updateList = (request: UpdateListRequest) => {
-        updateSession((session) => ({
-            ...session,
-            preferences: UserListsService.updateList(session.preferences, request),
-        }))
-    }
-
-    const deleteList = (listId: string) => {
-        updateSession((session) => ({
-            ...session,
-            preferences: UserListsService.deleteList(session.preferences, listId),
-        }))
-    }
-
-    const addToList = (listId: string, content: Content) => {
-        updateSession((session) => ({
-            ...session,
-            preferences: UserListsService.addToList(session.preferences, { listId, content }),
-        }))
-    }
-
-    const removeFromList = (listId: string, contentId: number) => {
-        updateSession((session) => ({
-            ...session,
-            preferences: UserListsService.removeFromList(session.preferences, {
-                listId,
-                contentId,
-            }),
-        }))
+        return authStore.defaultWatchlist.some((item) => item.id === contentId)
     }
 
     const getList = (listId: string): UserList | null => {
-        return UserListsService.getList(authSession.preferences, listId)
+        return authStore.userCreatedWatchlists.find((list) => list.id === listId) || null
     }
 
     const isContentInList = (listId: string, contentId: number): boolean => {
-        return UserListsService.isContentInList(authSession.preferences, listId, contentId)
+        const list = getList(listId)
+        return list ? list.items.some((item) => item.id === contentId) : false
     }
 
     const getListsContaining = (contentId: number): UserList[] => {
-        return UserListsService.getListsContaining(authSession.preferences, contentId)
+        return authStore.userCreatedWatchlists.filter((list) =>
+            list.items.some((item) => item.id === contentId)
+        )
     }
 
     const getAllLists = (): UserList[] => {
-        return UserListsService.getAllLists(authSession.preferences)
+        return authStore.userCreatedWatchlists
     }
 
-    // Force sync with Firebase (useful for offline recovery)
-    const forceSyncData = async () => {
-        if (authSession.userId) {
-            try {
-                const freshData = await AuthStorageService.loadUserData(authSession.userId)
-                setAuthSession((prev) => ({
-                    ...prev,
-                    preferences: freshData,
-                    lastSyncedAt: Date.now(),
-                }))
-            } catch (error) {
-                console.error('Failed to force sync auth data:', error)
-            }
-        }
-    }
-
-    // Account management functions
+    // Wrapper for account management functions
     const clearAccountData = async () => {
-        if (authSession.userId) {
-            try {
-                const clearedPrefs = await AuthStorageService.clearUserData(authSession.userId)
-                setAuthSession((prev) => ({
-                    ...prev,
-                    preferences: clearedPrefs,
-                    lastSyncedAt: Date.now(),
-                }))
-            } catch (error) {
-                console.error('Failed to clear account data:', error)
-                throw error
-            }
-        }
+        // Clear all data in the store
+        await authStore.updatePreferences({
+            likedMovies: [],
+            hiddenMovies: [],
+            defaultWatchlist: [],
+            userCreatedWatchlists: [],
+        })
     }
 
     const getAccountDataSummary = async () => {
-        if (authSession.userId) {
-            return await AuthStorageService.getDataSummary(authSession.userId)
-        }
         return {
-            watchlistCount: 0,
-            ratingsCount: 0,
-            listsCount: 0,
-            totalItems: 0,
-            isEmpty: true,
+            watchlistCount: authStore.defaultWatchlist.length,
+            ratingsCount: authStore.likedMovies.length + authStore.hiddenMovies.length,
+            listsCount: authStore.userCreatedWatchlists.length,
+            totalItems:
+                authStore.defaultWatchlist.length +
+                authStore.likedMovies.length +
+                authStore.hiddenMovies.length +
+                authStore.userCreatedWatchlists.reduce((sum, list) => sum + list.items.length, 0),
+            isEmpty:
+                authStore.defaultWatchlist.length === 0 &&
+                authStore.likedMovies.length === 0 &&
+                authStore.hiddenMovies.length === 0 &&
+                authStore.userCreatedWatchlists.length === 0,
         }
     }
 
     const exportAccountData = async () => {
-        if (authSession.userId) {
-            return await AuthStorageService.exportUserData(authSession.userId)
+        if (!authStore.userId) {
+            throw new Error('No authenticated user to export data for')
         }
-        throw new Error('No authenticated user to export data for')
+        return {
+            userId: authStore.userId,
+            defaultWatchlist: authStore.defaultWatchlist,
+            likedMovies: authStore.likedMovies,
+            hiddenMovies: authStore.hiddenMovies,
+            userCreatedWatchlists: authStore.userCreatedWatchlists,
+            autoMute: authStore.autoMute,
+            defaultVolume: authStore.defaultVolume,
+            childSafetyMode: authStore.childSafetyMode,
+            lastActive: authStore.lastActive,
+        }
     }
 
+    // Note: Delete/restore account operations would need to be handled by AuthStorageService
+    // These are kept as stubs that would interact with the service layer
     const deleteAccount = async () => {
-        if (authSession.userId) {
-            await AuthStorageService.deleteUserAccount(authSession.userId)
-            // Note: This only deletes the data, not the Firebase Auth account
-            // The Auth account deletion should be handled separately
-        } else {
+        if (!authStore.userId) {
             throw new Error('No authenticated user to delete account for')
         }
+        const { AuthStorageService } = await import('../services/authStorageService')
+        await AuthStorageService.deleteUserAccount(authStore.userId)
     }
 
     const softDeleteAccount = async () => {
-        if (authSession.userId) {
-            await AuthStorageService.softDeleteUserData(authSession.userId)
-        } else {
+        if (!authStore.userId) {
             throw new Error('No authenticated user to soft delete account for')
         }
+        const { AuthStorageService } = await import('../services/authStorageService')
+        await AuthStorageService.softDeleteUserData(authStore.userId)
     }
 
     const restoreAccount = async (): Promise<boolean> => {
-        if (authSession.userId) {
-            const restored = await AuthStorageService.restoreUserData(authSession.userId)
-            if (restored) {
-                // Reload the data
-                await forceSyncData()
-            }
-            return restored
+        if (!authStore.userId) {
+            return false
         }
-        return false
+        const { AuthStorageService } = await import('../services/authStorageService')
+        const restored = await AuthStorageService.restoreUserData(authStore.userId)
+        if (restored) {
+            await authStore.syncWithFirebase(authStore.userId)
+        }
+        return restored
     }
 
     return {
         // Session info
-        authSession,
+        authSession: {
+            userId: authStore.userId,
+            preferences: {
+                defaultWatchlist: authStore.defaultWatchlist,
+                likedMovies: authStore.likedMovies,
+                hiddenMovies: authStore.hiddenMovies,
+                userCreatedWatchlists: authStore.userCreatedWatchlists,
+                lastActive: authStore.lastActive,
+                autoMute: authStore.autoMute ?? false,
+                defaultVolume: authStore.defaultVolume ?? 50,
+                childSafetyMode: authStore.childSafetyMode ?? false,
+            },
+            lastSyncedAt: authStore.lastActive,
+        },
         isGuest: false,
         isAuthenticated: true,
-        sessionId: authSession.userId,
+        sessionId: authStore.userId,
 
         // Data (NEW SCHEMA)
-        defaultWatchlist: authSession.preferences.defaultWatchlist,
-        likedMovies: authSession.preferences.likedMovies,
-        hiddenMovies: authSession.preferences.hiddenMovies,
-        userCreatedWatchlists: authSession.preferences.userCreatedWatchlists,
+        defaultWatchlist: authStore.defaultWatchlist,
+        likedMovies: authStore.likedMovies,
+        hiddenMovies: authStore.hiddenMovies,
+        userCreatedWatchlists: authStore.userCreatedWatchlists,
 
         // Liked/Hidden actions (replaces rating actions)
-        addLikedMovie,
-        removeLikedMovie,
-        addHiddenMovie,
-        removeHiddenMovie,
+        addLikedMovie: authStore.addLikedMovie,
+        removeLikedMovie: authStore.removeLikedMovie,
+        addHiddenMovie: authStore.addHiddenMovie,
+        removeHiddenMovie: authStore.removeHiddenMovie,
         isLiked,
         isHidden,
 
         // Watchlist actions
-        addToWatchlist,
-        removeFromWatchlist,
+        addToWatchlist: authStore.addToWatchlist,
+        removeFromWatchlist: authStore.removeFromWatchlist,
         isInWatchlist,
 
         // List management actions
-        createList,
-        updateList,
-        deleteList,
-        addToList,
-        removeFromList,
+        createList: authStore.createList,
+        updateList: authStore.updateList,
+        deleteList: authStore.deleteList,
+        addToList: authStore.addToList,
+        removeFromList: authStore.removeFromList,
         getList,
         isContentInList,
         getListsContaining,
         getAllLists,
 
         // Auth-specific actions
-        forceSyncData,
+        forceSyncData: () => authStore.syncWithFirebase(userId),
 
         // Account management actions (auth-specific)
         clearAccountData,

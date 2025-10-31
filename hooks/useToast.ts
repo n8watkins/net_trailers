@@ -1,5 +1,4 @@
-import { useRecoilState } from 'recoil'
-import { toastsState } from '../atoms/toastAtom'
+import { useAppStore } from '../stores/appStore'
 import { ToastMessage } from '../components/Toast'
 
 /**
@@ -13,7 +12,18 @@ import { ToastMessage } from '../components/Toast'
  *   showError('Something went wrong', 'Error details')
  */
 export const useToast = () => {
-    const [toasts, setToasts] = useRecoilState(toastsState)
+    const toasts = useAppStore((state) => state.toasts)
+    const dismissToast = useAppStore((state) => state.dismissToast)
+
+    const setToasts = (updater: ((prev: ToastMessage[]) => ToastMessage[]) | ToastMessage[]) => {
+        if (typeof updater === 'function') {
+            const currentToasts = useAppStore.getState().toasts
+            const newToasts = updater(currentToasts)
+            useAppStore.setState({ toasts: newToasts })
+        } else {
+            useAppStore.setState({ toasts: updater })
+        }
+    }
 
     const addToast = (toast: Omit<ToastMessage, 'id'>) => {
         const id = Date.now().toString()
@@ -28,7 +38,7 @@ export const useToast = () => {
     }
 
     const removeToast = (id: string) => {
-        setToasts((prev) => prev.filter((toast) => toast.id !== id))
+        dismissToast(id)
     }
 
     const showSuccess = (title: string, message?: string) => {

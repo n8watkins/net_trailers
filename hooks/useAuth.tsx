@@ -13,8 +13,7 @@ import {
 
 import { auth } from '../firebase'
 import { useRouter } from 'next/router'
-import { useRecoilState } from 'recoil'
-import { loadingState } from '../atoms/errorAtom'
+import { useAppStore } from '../stores/appStore'
 import { createErrorHandler } from '../utils/errorHandler'
 import { useToast } from './useToast'
 
@@ -58,7 +57,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const [error, setError] = useState<string | null>(null)
     const router = useRouter()
     const [attemptPassReset, setAttemptPassReset] = useState(false)
-    const [globalLoading, setGlobalLoading] = useRecoilState(loadingState)
+    const setGlobalLoading = useAppStore((state) => state.setLoading)
     const { showSuccess, showError } = useToast()
     const errorHandler = createErrorHandler(showError)
 

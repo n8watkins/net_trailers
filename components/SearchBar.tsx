@@ -1,17 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react'
-import Image from 'next/image'
-import {
-    MagnifyingGlassIcon,
-    XMarkIcon,
-    ArrowRightIcon,
-    FunnelIcon,
-} from '@heroicons/react/24/outline'
+import { MagnifyingGlassIcon, XMarkIcon, FunnelIcon } from '@heroicons/react/24/outline'
 import { useRouter } from 'next/router'
-import { useRecoilState } from 'recoil'
+import { useAppStore } from '../stores/appStore'
 import { useSearch } from '../hooks/useSearch'
 import { useTypewriter } from '../hooks/useTypewriter'
-import { modalState, movieState, autoPlayWithSoundState } from '../atoms/modalAtom'
-import { Content, getTitle, getYear, getContentType, isMovie } from '../typings'
+import { Content } from '../typings'
 import SearchFiltersDropdown from './SearchFiltersDropdown'
 import SearchSuggestionsDropdown from './SearchSuggestionsDropdown'
 
@@ -60,7 +53,6 @@ export default function SearchBar({
     const {
         query,
         suggestions,
-        searchHistory,
         results,
         isLoading,
         hasSearched,
@@ -68,12 +60,9 @@ export default function SearchBar({
         filters,
         updateQuery,
         clearSearch,
-        performSearch,
     } = useSearch()
 
-    const [showModal, setShowModal] = useRecoilState(modalState)
-    const [currentContent, setCurrentContent] = useRecoilState(movieState)
-    const [autoPlayWithSound, setAutoPlayWithSound] = useRecoilState(autoPlayWithSoundState)
+    const openModal = useAppStore((state) => state.openModal)
 
     const [isFocused, setIsFocused] = useState(false)
     const [showSuggestions, setShowSuggestions] = useState(false)
@@ -205,9 +194,7 @@ export default function SearchBar({
     const handleQuickResultClick = (content: Content) => {
         setShowSuggestions(false)
         inputRef.current?.blur()
-        setAutoPlayWithSound(false) // More info mode - starts muted
-        setShowModal(true)
-        setCurrentContent(content)
+        openModal(content, true, false) // autoPlay=true, autoPlayWithSound=false (More info mode - starts muted)
     }
 
     const handleClearSearch = (e?: React.MouseEvent) => {
@@ -328,7 +315,7 @@ export default function SearchBar({
                 className={`relative transition-all duration-300 ease-in-out ${
                     // Mobile: starts at icon width (48px), expands to full width when active
                     // Desktop: always at full width
-                    isMobileExpanded || 'md:block'
+                    isMobileExpanded
                         ? 'md:max-w-4xl md:w-full max-w-full w-full opacity-100'
                         : 'md:max-w-4xl md:w-full w-12 opacity-100'
                 }`}

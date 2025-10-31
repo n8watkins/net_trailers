@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/router'
-import { useRecoilState } from 'recoil'
-import { searchState, searchHistoryState, SearchFilters } from '../atoms/searchAtom'
+import { useAppStore } from '../stores/appStore'
+import type { SearchFilters } from '../stores/appStore'
 import { getTitle, Content, getYear } from '../typings'
 import { useChildSafety } from './useChildSafety'
 
@@ -99,8 +99,10 @@ async function applyFilters(results: Content[], filters: SearchFilters): Promise
 
 export function useSearch() {
     const router = useRouter()
-    const [search, setSearch] = useRecoilState(searchState)
-    const [searchHistory, setSearchHistory] = useRecoilState(searchHistoryState)
+    const search = useAppStore((state) => state.search)
+    const setSearch = useAppStore((state) => state.setSearch)
+    const addToSearchHistory = useAppStore((state) => state.addToSearchHistory)
+    const searchHistory = useAppStore((state) => state.search.history)
     const { isEnabled: childSafetyEnabled } = useChildSafety()
     const debouncedQuery = useDebounce(search.query, 200)
     const abortControllerRef = useRef<AbortController>()
@@ -298,13 +300,7 @@ export function useSearch() {
 
                 // Add to search history if it's a new search (page 1)
                 if (page === 1) {
-                    setSearchHistory((prev) => {
-                        const newHistory = [
-                            trimmedQuery,
-                            ...prev.filter((h) => h !== trimmedQuery),
-                        ].slice(0, 10)
-                        return newHistory
-                    })
+                    addToSearchHistory(trimmedQuery)
                 }
             } catch (error: any) {
                 if (error.name !== 'AbortError') {
@@ -317,7 +313,7 @@ export function useSearch() {
                 // AbortError is expected when cancelling requests, ignore it
             }
         },
-        [setSearch, setSearchHistory, clearResults, childSafetyEnabled]
+        [setSearch, addToSearchHistory, clearResults, childSafetyEnabled]
     )
 
     // Effect to trigger search when debounced query changes
@@ -344,10 +340,7 @@ export function useSearch() {
         if (search.hasSearched && search.query.trim().length >= 2) {
             performSearchRef.current(search.query, 1)
         }
-        // We only want to trigger when childSafetyEnabled changes
-        // search.hasSearched and search.query are checked inside the effect
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [childSafetyEnabled])
+    }, [childSafetyEnabled, search.hasSearched, search.query])
 
     // Store performSearch in a ref to avoid dependency issues
     const performSearchRef = useRef(performSearch)
@@ -373,8 +366,8 @@ export function useSearch() {
         }
 
         updateFilteredResults()
-    }, [search.results, search.filters])
-    // Note: setSearch is stable from useRecoilState, safe to omit
+    }, [search.results, search.filters, setSearch])
+    // Note: setSearch is stable from Zustand, safe to include
 
     // Auto-load all results when filters are applied (only on search page)
     // Use a ref to track if we've already triggered auto-load for current filter state

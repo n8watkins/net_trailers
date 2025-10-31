@@ -1,13 +1,13 @@
-import { useRecoilState, useRecoilValue } from 'recoil'
-import { showDemoMessageState, contentLoadedSuccessfullyState } from '../atoms/userDataAtom'
+import { useAppStore } from '../stores/appStore'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { useState, useEffect } from 'react'
 import { useAuthStatus } from '../hooks/useAuthStatus'
 import { useRouter } from 'next/router'
 
 export default function DemoMessage() {
-    const [showDemoMessage, setShowDemoMessage] = useRecoilState(showDemoMessageState)
-    const contentLoadedSuccessfully = useRecoilValue(contentLoadedSuccessfullyState)
+    const showDemoMessage = useAppStore((state) => state.showDemoMessage)
+    const setShowDemoMessage = useAppStore((state) => state.setShowDemoMessage)
+    const contentLoadedSuccessfully = useAppStore((state) => state.contentLoadedSuccessfully)
     const { isGuest, isAuthenticated } = useAuthStatus()
     const [visible, setVisible] = useState(false)
     const router = useRouter()
