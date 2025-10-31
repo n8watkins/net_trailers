@@ -236,8 +236,37 @@ export default function useUserData() {
                 exportDate: new Date(),
             }),
             deleteAccount: async () => {
-                // This would need actual Firebase auth deletion
-                console.warn('deleteAccount not fully implemented')
+                const { auth, db } = await import('../firebase')
+                const { deleteUser } = await import('firebase/auth')
+                const { doc, deleteDoc } = await import('firebase/firestore')
+
+                if (!auth.currentUser) {
+                    throw new Error('No authenticated user found')
+                }
+
+                const userId = auth.currentUser.uid
+
+                // Step 1: Delete Firestore user data
+                try {
+                    const userDocRef = doc(db, 'users', userId)
+                    await deleteDoc(userDocRef)
+                } catch (firestoreError) {
+                    console.error('Error deleting Firestore data:', firestoreError)
+                    // Continue with auth deletion even if Firestore fails
+                }
+
+                // Step 2: Delete Firebase Auth account
+                try {
+                    await deleteUser(auth.currentUser)
+                } catch (authError: any) {
+                    // Handle re-authentication requirement
+                    if (authError.code === 'auth/requires-recent-login') {
+                        throw new Error(
+                            'This operation requires recent authentication. Please sign out and sign in again before deleting your account.'
+                        )
+                    }
+                    throw authError
+                }
             },
 
             // Legacy compatibility - user session structure

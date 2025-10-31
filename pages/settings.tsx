@@ -225,6 +225,7 @@ const Settings: React.FC<SettingsProps> = ({
     const [showExportLimitedModal, setShowExportLimitedModal] = useState(false)
     const [showChildSafetyModal, setShowChildSafetyModal] = useState(false)
     const [isClearingData, setIsClearingData] = useState(false)
+    const [isDeletingAccount, setIsDeletingAccount] = useState(false)
 
     // 1) Define currentPreferences once using useMemo for stability
     const currentPreferences = React.useMemo(() => {
@@ -440,19 +441,31 @@ const Settings: React.FC<SettingsProps> = ({
     }
 
     const handleDeleteAccount = async () => {
+        // Prevent double-submission
+        if (isDeletingAccount) return
+
+        // Guard: Only allow authenticated users
+        if (isGuest || userData.sessionType !== 'authenticated' || !('deleteAccount' in userData)) {
+            showError('Only authenticated users can delete their account')
+            return
+        }
+
+        setIsDeletingAccount(true)
         try {
-            if (
-                !isGuest &&
-                userData.sessionType === 'authenticated' &&
-                'deleteAccount' in userData
-            ) {
-                await userData.deleteAccount()
-                setShowDeleteConfirm(false)
-                showSuccess('Account deleted successfully')
-            }
-        } catch (error) {
+            await userData.deleteAccount()
+            setShowDeleteConfirm(false)
+            showSuccess('Account deleted successfully. Redirecting...')
+
+            // Redirect to home page after a brief delay
+            setTimeout(() => {
+                window.location.href = '/'
+            }, 2000)
+        } catch (error: any) {
             console.error('Error deleting account:', error)
-            showError('Failed to delete account')
+            const message = error?.message || 'Failed to delete account. Please try again.'
+            showError(message)
+        } finally {
+            setIsDeletingAccount(false)
         }
     }
 
@@ -1145,6 +1158,7 @@ const Settings: React.FC<SettingsProps> = ({
                 requireTyping={true}
                 confirmationPhrase="delete"
                 dangerLevel="danger"
+                isLoading={isDeletingAccount}
             />
 
             {/* Export Limited Modal for Guest Users */}
