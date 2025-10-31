@@ -66,37 +66,29 @@ const Settings: React.FC<SettingsProps> = ({
     const [showExportLimitedModal, setShowExportLimitedModal] = useState(false)
     const [showChildSafetyModal, setShowChildSafetyModal] = useState(false)
 
-    // Preferences state - Start with defaults, will be updated by useEffect
-    const [childSafetyMode, setChildSafetyMode] = useState(false)
-    const [autoMute, setAutoMute] = useState(true)
-    const [defaultVolume, setDefaultVolume] = useState(50)
+    // Initialize preferences from userSession (which already has data from stores)
+    const initialPrefs = React.useMemo(() => {
+        if (userData.userSession?.preferences) {
+            return {
+                childSafetyMode: userData.userSession.preferences.childSafetyMode ?? false,
+                autoMute: userData.userSession.preferences.autoMute ?? true,
+                defaultVolume: userData.userSession.preferences.defaultVolume ?? 50,
+            }
+        }
+        return {
+            childSafetyMode: false,
+            autoMute: true,
+            defaultVolume: 50,
+        }
+    }, []) // Empty deps - only calculate once on mount
+
+    // Preferences state - Initialize from userSession
+    const [childSafetyMode, setChildSafetyMode] = useState(initialPrefs.childSafetyMode)
+    const [autoMute, setAutoMute] = useState(initialPrefs.autoMute)
+    const [defaultVolume, setDefaultVolume] = useState(initialPrefs.defaultVolume)
 
     // Track original preferences to detect changes
-    const [originalPreferences, setOriginalPreferences] = useState({
-        childSafetyMode: false,
-        autoMute: true,
-        defaultVolume: 50,
-    })
-
-    // Track if we've loaded preferences yet
-    const [preferencesLoaded, setPreferencesLoaded] = useState(false)
-
-    // Load preferences from userData once on mount or when session changes
-    React.useEffect(() => {
-        if (!userData.isInitializing && userData.userSession?.preferences) {
-            const prefs = userData.userSession.preferences
-            const loadedPrefs = {
-                childSafetyMode: prefs.childSafetyMode ?? false,
-                autoMute: prefs.autoMute ?? true,
-                defaultVolume: prefs.defaultVolume ?? 50,
-            }
-            setChildSafetyMode(loadedPrefs.childSafetyMode)
-            setAutoMute(loadedPrefs.autoMute)
-            setDefaultVolume(loadedPrefs.defaultVolume)
-            setOriginalPreferences(loadedPrefs)
-            setPreferencesLoaded(true)
-        }
-    }, [userData.isInitializing, userData.sessionType])
+    const [originalPreferences, setOriginalPreferences] = useState(initialPrefs)
 
     // Check if preferences have changed
     const preferencesChanged =
