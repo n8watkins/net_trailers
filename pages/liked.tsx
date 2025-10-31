@@ -11,6 +11,7 @@ import { useAppStore } from '../stores/appStore'
 import { exportUserDataToCSV } from '../utils/csvExport'
 import { GuestModeNotification } from '../components/GuestModeNotification'
 import { useAuthStatus } from '../hooks/useAuthStatus'
+import NetflixLoader from '../components/NetflixLoader'
 
 interface Props {
     onOpenAboutModal?: () => void
@@ -21,7 +22,7 @@ interface Props {
 const Liked: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }) => {
     const userData = useUserData()
     const { likedMovies } = userData
-    const { isGuest, isInitialized } = useAuthStatus()
+    const { isGuest, isInitialized, isLoading } = useAuthStatus()
     const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
 
     const [searchQuery, setSearchQuery] = useState('')
@@ -77,6 +78,11 @@ const Liked: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboa
             </div>
         </div>
     )
+
+    // Show loading state while user data is initializing
+    if (isLoading) {
+        return <NetflixLoader />
+    }
 
     return (
         <div
