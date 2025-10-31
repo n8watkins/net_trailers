@@ -413,7 +413,7 @@ function Modal() {
         }
 
         fetchMovie()
-    }, [currentMovie, loadedMovieId, setLoading, errorHandler])
+    }, [currentMovie, loadedMovieId])
 
     useEffect(() => {
         document.addEventListener('fullscreenchange', handleFullscreenChange)
