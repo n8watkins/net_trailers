@@ -32,7 +32,7 @@ export function useSessionManager() {
     // This bridges the old UserSession concept to the new Zustand store architecture
     const setUserSession = useCallback(
         (sessionInput: UserSession | ((prev: UserSession) => UserSession)) => {
-            // Handle function updates (for compatibility with Recoil-style updaters)
+            // Handle function updates for updater pattern compatibility
             let session: UserSession
             if (typeof sessionInput === 'function') {
                 // Reconstruct current UserSession from stores

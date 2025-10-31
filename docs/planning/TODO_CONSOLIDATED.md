@@ -163,7 +163,7 @@
 **Technical Approach:**
 
 - Firestore subcollections for user data
-- Recoil state management with persistence
+- Zustand state management with persistence
 - Optimistic UI updates
 - Background sync strategies
 

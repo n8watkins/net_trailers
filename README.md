@@ -84,7 +84,7 @@ A Netflix-inspired streaming platform built with modern web technologies, featur
     - Test coverage reporting
 
 - **Architecture**
-    - Zustand state management (100% Zustand, Recoil removed)
+    - Zustand state management for all application state
     - Next.js 16 with React 19 and App Router patterns
     - Firebase Firestore with optimistic updates and caching
     - API route architecture proxying TMDB API
@@ -328,7 +328,6 @@ The app uses **Zustand** for all state management:
 - **Direct store access**: Components use Zustand hooks (`useAppStore()`, `useSessionStore()`, etc.)
 - **No provider wrapper**: Zustand works without root provider components
 - **Type-safe selectors**: Optimized performance with granular subscriptions
-- **Migration completed**: Fully migrated from Recoil to Zustand (2025)
 
 ### Content Type System
 

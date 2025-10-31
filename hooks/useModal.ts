@@ -1,6 +1,5 @@
 /**
  * useModal - Direct Zustand hook for modal state
- * This replaces the Recoil modalState, movieState, and autoPlayWithSoundState
  */
 
 import { useAppStore } from '../stores/appStore'

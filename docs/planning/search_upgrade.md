@@ -184,7 +184,7 @@ _Priority: MEDIUM | Estimated Effort: 20-25 hours_
 ### 3.1 Search Categories/Tabs
 
 **Missing**: Separation of Movies, TV Shows, People results
-**Files**: `components/SearchTabs.tsx` (new), `atoms/searchAtom.ts`
+**Files**: `components/SearchTabs.tsx` (new), `stores/appStore.ts`
 
 **Features**:
 
@@ -422,7 +422,7 @@ src/
 ### Dependencies
 
 - No new external dependencies required
-- Uses existing React, Next.js, and Recoil stack
+- Uses existing React, Next.js, and Zustand stack
 - Leverages browser APIs (Web Speech, Intersection Observer)
 
 ---

@@ -1,6 +1,5 @@
 /**
  * useSearchDirect - Direct Zustand hook for search functionality
- * This will eventually replace the Recoil-based useSearch hook
  */
 
 import { useAppStore } from '../stores/appStore'

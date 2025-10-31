@@ -1,6 +1,5 @@
 /**
  * useToastDirect - Direct Zustand hook for toast notifications
- * This will eventually replace the Recoil-based useToast hook
  */
 
 import { useAppStore, ToastType } from '../stores/appStore'

@@ -38,7 +38,6 @@ The app uses **Zustand** for all state management:
 **Type Definitions**:
 
 - `types/atoms.ts` - Shared type definitions (UserPreferences, UserSession, SessionType, etc.)
-- Previously in `/atoms` directory before migration from Recoil
 
 ### Content Type System
 
@@ -185,7 +184,6 @@ const showModal = useAppStore((state) => state.modal.isOpen)
 
 - **Zustand package**: Already installed and configured for all state management
 - The project has been migrated from pnpm to npm - always use npm commands
-- **Migration completed**: All Recoil dependencies removed, app uses 100% Zustand
 - Development server may run on port 3004 if 3000 is occupied
 - TMDB API has rate limits (40 requests/second) - respect these in API calls
 - Always clear build cache (`rm -rf .next`) if experiencing build issues
