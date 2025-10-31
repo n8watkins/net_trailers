@@ -20,7 +20,6 @@ import useUserData from '../hooks/useUserData'
 import { exportUserDataToCSV } from '../utils/csvExport'
 import { useAuthStatus } from '../hooks/useAuthStatus'
 import { getCachedUserData } from '../utils/authCache'
-import { useState as useReactState, useEffect } from 'react'
 
 interface AvatarDropdownProps {
     className?: string
@@ -49,7 +48,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
     const router = useRouter()
 
     // Load cached user data for optimistic UI (only on client side)
-    const [cachedUser, setCachedUser] = useReactState<{
+    const [cachedUser, setCachedUser] = useState<{
         email?: string
         displayName?: string
         photoURL?: string
