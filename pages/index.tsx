@@ -11,6 +11,7 @@ import { useAppStore } from '../stores/appStore'
 import { useCacheStore } from '../stores/cacheStore'
 import Head from 'next/head'
 import { useHomeData } from '../hooks/useHomeData'
+import { useChildSafety } from '../hooks/useChildSafety'
 import { NextPage } from 'next'
 
 interface Props {
@@ -26,6 +27,7 @@ const Home: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboar
     const showModal = modal.isOpen
     const { filter } = router.query
     const { setMainPageData, setHasVisitedMainPage } = useCacheStore()
+    const { isEnabled: childSafetyEnabled } = useChildSafety()
 
     // ✅ FIXED: Child Safety filtering now works for BOTH movies AND TV shows
     // Data is fetched client-side from API routes that perform server-side filtering
@@ -190,11 +192,11 @@ const Home: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboar
                             content={filteredComedy}
                         />
                     )}
-                    {filteredHorror.length > 0 && (
+                    {filteredHorror.length > 0 && !(childSafetyEnabled && filter === 'movies') && (
                         <Row
                             title={
                                 filter === 'tv'
-                                    ? 'Crime TV Shows'
+                                    ? 'Sci-Fi & Fantasy TV Shows'
                                     : filter === 'movies'
                                       ? 'Horror Movies'
                                       : 'Horror Movies'
@@ -206,7 +208,7 @@ const Home: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboar
                         <Row
                             title={
                                 filter === 'tv'
-                                    ? 'Drama TV Shows'
+                                    ? 'Animation TV Shows'
                                     : filter === 'movies'
                                       ? 'Romance Movies'
                                       : 'Romance Movies'

@@ -11,6 +11,7 @@ import { useAppStore } from '../stores/appStore'
 import { useCacheStore } from '../stores/cacheStore'
 import Head from 'next/head'
 import { useHomeData } from '../hooks/useHomeData'
+import { useChildSafety } from '../hooks/useChildSafety'
 import { NextPage } from 'next'
 
 interface Props {
@@ -25,6 +26,7 @@ const Movies: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeybo
     const { modal, setContentLoadedSuccessfully } = useAppStore()
     const showModal = modal.isOpen
     const { setMainPageData, setHasVisitedMainPage } = useCacheStore()
+    const { isEnabled: childSafetyEnabled } = useChildSafety()
 
     // ✅ FIXED: Child Safety filtering now works for BOTH movies AND TV shows
     // Data is fetched client-side from API routes that perform server-side filtering
@@ -137,7 +139,7 @@ const Movies: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeybo
                     {filteredComedy.length > 0 && (
                         <Row title="Comedy Movies" content={filteredComedy} />
                     )}
-                    {filteredHorror.length > 0 && (
+                    {filteredHorror.length > 0 && !childSafetyEnabled && (
                         <Row title="Horror Movies" content={filteredHorror} />
                     )}
                     {filteredRomance.length > 0 && (
