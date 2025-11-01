@@ -52,7 +52,7 @@ export default function SearchFiltersDropdown({ isOpen, onClose }: SearchFilters
             year: 'all',
             sortBy: 'popularity.desc',
             genres: [],
-            releaseYear: undefined,
+            releaseYear: 'all',
         }
         setLocalFilters(defaultFilters)
         setSearch((prev) => ({

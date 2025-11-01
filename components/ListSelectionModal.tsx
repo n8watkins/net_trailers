@@ -298,18 +298,24 @@ function ListSelectionModal() {
                                                 ? 'Movie'
                                                 : 'TV Show'}
                                         </span>
-                                        {targetContent.release_date && (
-                                            <span className="text-gray-400 text-sm">
-                                                {new Date(targetContent.release_date).getFullYear()}
-                                            </span>
-                                        )}
-                                        {targetContent.first_air_date && (
-                                            <span className="text-gray-400 text-sm">
-                                                {new Date(
-                                                    targetContent.first_air_date
-                                                ).getFullYear()}
-                                            </span>
-                                        )}
+                                        {targetContent.media_type === 'movie' &&
+                                            'release_date' in targetContent &&
+                                            targetContent.release_date && (
+                                                <span className="text-gray-400 text-sm">
+                                                    {new Date(
+                                                        targetContent.release_date
+                                                    ).getFullYear()}
+                                                </span>
+                                            )}
+                                        {targetContent.media_type === 'tv' &&
+                                            'first_air_date' in targetContent &&
+                                            targetContent.first_air_date && (
+                                                <span className="text-gray-400 text-sm">
+                                                    {new Date(
+                                                        targetContent.first_air_date
+                                                    ).getFullYear()}
+                                                </span>
+                                            )}
                                     </div>
                                     {targetContent.overview && (
                                         <p className="text-gray-400 text-sm line-clamp-2 leading-relaxed">

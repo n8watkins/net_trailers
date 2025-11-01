@@ -34,6 +34,7 @@ export function useSearchDirect() {
             currentPage: 1,
             hasAllResults: false,
             isLoadingAll: false,
+            isTruncated: false,
             filters: {
                 genres: [],
                 contentType: 'all',
