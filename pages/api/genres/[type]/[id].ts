@@ -60,7 +60,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Build query parameters
         const params = new URLSearchParams({
             api_key: API_KEY,
-            with_genres: genreIds.join(','),
             page: pageNum.toString(),
             sort_by: Array.isArray(sort_by) ? sort_by[0] : sort_by,
         })
@@ -68,23 +67,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Add child safety filters BEFORE fetching from TMDB
         if (childSafeMode) {
             if (type === 'movie') {
-                // ✅ CURATED CONTENT STRATEGY
+                // ✅ RATING-BASED FILTERING STRATEGY
                 // Exclude adult content (pornography)
                 params.append('include_adult', 'false')
 
-                // Family-friendly genre IDs: Animation (16), Family (10751), Comedy (35), Adventure (12)
-                const familyFriendlyGenres = [16, 10751, 35, 12]
-                const isFamilyFriendlyGenre = genreIds.some((id) =>
-                    familyFriendlyGenres.includes(id)
-                )
+                // Child-safe movie genres (must match CHILD_SAFE_MOVIE_GENRES)
+                // Action (28), Adventure (12), Animation (16), Comedy (35), Documentary (99),
+                // Family (10751), Fantasy (14), Music (10402), Mystery (9648), Romance (10749), Sci-Fi (878)
+                const childSafeGenres = [28, 12, 16, 35, 99, 10751, 14, 10402, 9648, 10749, 878]
 
-                if (!isFamilyFriendlyGenre) {
-                    // For non-family genres (Action, Horror, etc.), require higher vote counts
-                    // to favor more mainstream content that's more likely to be appropriate
-                    params.append('vote_count.gte', '500')
+                // Check if requested genre is child-safe
+                const isChildSafeGenre = genreIds.every((id) => childSafeGenres.includes(id))
+
+                if (!isChildSafeGenre) {
+                    // SECURITY: Block access to non-child-safe genres
+                    // Return empty results for Horror, Crime, Thriller, War, etc.
+                    throw new Error(
+                        'This genre is not available in child safety mode. Please disable child safety mode to access all genres.'
+                    )
                 }
+
+                // CRITICAL: Filter by MPAA certification (US ratings)
+                // certification.lte=PG-13 means: include G, PG, and PG-13 rated movies
+                // This excludes R, NC-17, and unrated content
+                params.append('certification_country', 'US')
+                params.append('certification.lte', 'PG-13')
+
+                // Use requested genres as-is (now safe because of rating filter)
+                params.append('with_genres', genreIds.join(','))
+
+                // Require minimum vote count for quality/popularity
+                // Lower threshold since we now have proper rating filtering
+                params.append('vote_count.gte', '100')
+            } else {
+                // TV: use requested genres, filtering happens post-fetch via filterMatureTVShows
+                params.append('with_genres', genreIds.join(','))
             }
-            // Note: TV show filtering happens after fetch via filterMatureTVShows
+        } else {
+            // Normal mode: use requested genres as-is
+            params.append('with_genres', genreIds.join(','))
         }
 
         // Add optional filters
@@ -181,17 +202,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (childSafeMode) {
             const beforeCount = enrichedResults.length
 
-            // ✅ CURATED CONTENT STRATEGY APPLIED
-            // Movies: Filtered at query time with include_adult=false + vote_count thresholds
-            // TV Shows: No post-filtering needed - genres pre-selected to be family-friendly
-            // Family-friendly movie genres get more lenient filtering
-            // Non-family genres require higher vote counts to favor mainstream content
+            // ✅ RATING-BASED FILTERING STRATEGY APPLIED
+            // Movies: Filtered at query time with certification.lte=PG-13 (G, PG, PG-13 only)
+            // TV Shows: Filtered post-fetch by content ratings (excludes TV-MA)
+            // Both approaches exclude unrated content for safety
 
             if (type === 'movie') {
-                // Movies: already filtered by include_adult=false at query time
-                // Family-friendly genres show broader results
-                // Other genres require vote_count.gte=500 for safety
-                csDebugFilter(beforeCount, enrichedResults.length, 'Movie Curated Content')
+                // Movies: already filtered by certification.lte=PG-13 at query time
+                // This ensures only G, PG, and PG-13 rated movies are returned
+                // No post-filtering needed - TMDB has done the work
+                csDebugFilter(beforeCount, enrichedResults.length, 'Movie Certification Filter')
             } else if (type === 'tv') {
                 // TV shows: ALWAYS filter by content ratings in child safety mode
                 // Unlike movies, TV ratings API is reliable and works well
