@@ -297,23 +297,25 @@ const Settings: React.FC<SettingsProps> = ({
     }, [])
 
     // Initialize skeleton state based on whether data is available
-    const hasInitializedRef = React.useRef(!userData.isInitializing)
+    // Track the last preferences we loaded from the store to detect external changes
+    const lastLoadedPrefsRef = React.useRef(currentPreferences)
 
     // Load preferences from store after mount (hydration-safe)
-    // Compare incoming preferences with current state and update when they differ
+    // React to store changes (from hydration, Firestore sync, or other tabs)
     React.useEffect(() => {
         // Wait until session is initialized and we have real data
         if (userData.isInitializing) {
             return
         }
 
-        // Compare incoming preferences with current state
+        // Compare current store preferences with the last ones we loaded
         const prefsChanged =
-            currentPreferences.childSafetyMode !== childSafetyMode ||
-            currentPreferences.autoMute !== autoMute ||
-            currentPreferences.defaultVolume !== defaultVolume
+            currentPreferences.childSafetyMode !== lastLoadedPrefsRef.current.childSafetyMode ||
+            currentPreferences.autoMute !== lastLoadedPrefsRef.current.autoMute ||
+            currentPreferences.defaultVolume !== lastLoadedPrefsRef.current.defaultVolume
 
-        // Only update if preferences actually changed (prevents infinite loops)
+        // Only update UI state if store preferences actually changed
+        // This allows user to modify UI without being overridden
         if (prefsChanged) {
             setChildSafetyMode(currentPreferences.childSafetyMode)
             setAutoMute(currentPreferences.autoMute)
@@ -323,13 +325,10 @@ const Settings: React.FC<SettingsProps> = ({
                 autoMute: currentPreferences.autoMute,
                 defaultVolume: currentPreferences.defaultVolume,
             })
+            // Update our tracking ref
+            lastLoadedPrefsRef.current = currentPreferences
         }
-
-        // Mark as initialized if data is now available
-        if (!userData.isInitializing) {
-            hasInitializedRef.current = true
-        }
-    }, [currentPreferences, userData.isInitializing, childSafetyMode, autoMute, defaultVolume])
+    }, [currentPreferences, userData.isInitializing])
 
     // Sync displayName when user changes
     React.useEffect(() => {
