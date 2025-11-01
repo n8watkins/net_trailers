@@ -22,7 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (childSafeMode) {
             // In child safety mode, use discover with certification filtering instead of trending
             // This ensures only G/PG/PG-13 movies are returned
-            url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&page=1&sort_by=popularity.desc&certification_country=US&certification.lte=PG-13`
+            url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&page=1&sort_by=popularity.desc&certification_country=US&certification=G,PG,PG-13`
         } else {
             // Normal mode - use trending endpoint for mixed content
             url = `${BASE_URL}/trending/all/week?api_key=${API_KEY}&language=en-US&page=1`

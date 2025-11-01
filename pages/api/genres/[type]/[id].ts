@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { filterContentByAdultFlag } from '../../../../utils/contentFilter'
 import { filterMatureTVShows } from '../../../../utils/tvContentRatings'
+import { csDebugTMDB, csDebugResponse, csDebugFilter } from '../../../../utils/childSafetyDebug'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method !== 'GET') {
@@ -67,9 +68,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Add child safety certification filters BEFORE fetching from TMDB
         if (childSafeMode) {
             if (type === 'movie') {
-                // US certifications: G, PG, PG-13 (exclude R, NC-17, NR)
+                // US certifications: G, PG, PG-13 (explicitly list allowed ratings)
+                // Note: .lte doesn't work for certifications (they're strings, not ordered)
                 params.append('certification_country', 'US')
-                params.append('certification.lte', 'PG-13')
+                params.append('certification', 'G,PG,PG-13')
             }
             // Note: TV show filtering happens after fetch via filterMatureTVShows
         }
@@ -146,6 +148,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 ? `https://api.themoviedb.org/3/discover/movie?${params.toString()}`
                 : `https://api.themoviedb.org/3/discover/tv?${params.toString()}`
 
+        // Debug logging
+        csDebugTMDB(endpoint, childSafeMode)
+
         const response = await fetch(endpoint)
 
         if (!response.ok) {
@@ -169,9 +174,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             // TV shows still need post-filtering by content ratings
             if (type === 'tv') {
                 enrichedResults = await filterMatureTVShows(enrichedResults, API_KEY)
+                csDebugFilter(beforeCount, enrichedResults.length, 'TV Content Ratings')
             }
 
             const hiddenCount = beforeCount - enrichedResults.length
+
+            // Debug log the final results
+            csDebugResponse(`/api/genres/${type}/${id}`, enrichedResults, childSafeMode)
 
             return res.status(200).json({
                 ...data,
@@ -180,6 +189,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 hidden_count: hiddenCount,
             })
         }
+
+        // Debug log normal mode too
+        csDebugResponse(`/api/genres/${type}/${id}`, enrichedResults, childSafeMode)
 
         return res.status(200).json({
             ...data,
