@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
+import { filterContentByAdultFlag } from '../../../utils/contentFilter'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -12,9 +13,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(500).json({ message: 'TMDB API key not configured' })
     }
 
-    const { page = '1' } = req.query
-
     try {
+        const { page = '1', childSafetyMode } = req.query
+        const childSafeMode = childSafetyMode === 'true'
+
         const response = await fetch(
             `${BASE_URL}/movie/top_rated?api_key=${API_KEY}&language=en-US&page=${page}`
         )
@@ -26,16 +28,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const data = await response.json()
 
         // Add media_type to each item for consistency
-        const enrichedResults = data.results.map((item: any) => ({
+        let enrichedResults = data.results.map((item: any) => ({
             ...item,
-            media_type: 'movie'
+            media_type: 'movie',
         }))
+
+        // Apply child safety filtering if enabled
+        if (childSafeMode) {
+            const beforeCount = enrichedResults.length
+            enrichedResults = filterContentByAdultFlag(enrichedResults, true)
+            const hiddenCount = beforeCount - enrichedResults.length
+
+            // Cache for 15 minutes
+            res.setHeader('Cache-Control', 'public, s-maxage=900, stale-while-revalidate=1800')
+            return res.status(200).json({
+                ...data,
+                results: enrichedResults,
+                child_safety_enabled: true,
+                hidden_count: hiddenCount,
+            })
+        }
 
         // Cache for 15 minutes
         res.setHeader('Cache-Control', 'public, s-maxage=900, stale-while-revalidate=1800')
         res.status(200).json({
             ...data,
-            results: enrichedResults
+            results: enrichedResults,
         })
     } catch (error) {
         console.error('TMDB API error:', error)
