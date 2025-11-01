@@ -14,17 +14,17 @@ interface TVContentRatingsResponse {
 }
 
 // Mature TV ratings that should be filtered in child safety mode
+// TV-14 is ALLOWED (suitable for ages 14+)
 export const MATURE_TV_RATINGS = new Set([
-    'TV-MA', // TV Mature Audience (US)
-    'TV-14', // Unsuitable for children under 14 (US) - debatable, included for safety
-    'R', // Restricted (some regions use this for TV)
-    'NC-17', // No children under 17
-    '18', // Age 18+ (various regions - UK, Germany, etc.)
-    '18+', // Age 18+ variant
-    'M', // Mature (Australia)
-    'MA15+', // Mature Accompanied (Australia)
-    '16', // Age 16+ (various regions)
-    '15', // Age 15+ (UK)
+    'TV-MA', // TV Mature Audience (US) - BLOCKED
+    'R', // Restricted (some regions use this for TV) - BLOCKED
+    'NC-17', // No children under 17 - BLOCKED
+    '18', // Age 18+ (various regions - UK, Germany, etc.) - BLOCKED
+    '18+', // Age 18+ variant - BLOCKED
+    'M', // Mature (Australia) - BLOCKED
+    'MA15+', // Mature Accompanied (Australia) - BLOCKED
+    '16', // Age 16+ (various regions) - BLOCKED
+    '15', // Age 15+ (UK) - BLOCKED
 ])
 
 /**
