@@ -140,24 +140,78 @@ export function useSearch() {
 
             setSearch((prev) => ({ ...prev, isLoadingAll: true }))
 
+            // Cancel previous quick-search request
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort()
+            }
+
+            const currentController = new AbortController()
+            abortControllerRef.current = currentController
+
             try {
                 const allResults = [...search.results]
                 let currentPage = search.currentPage + 1
-                const targetPages = Math.min(maxPages, search.totalResults / 20)
+
+                // CRITICAL FIX: Use Math.ceil to handle fractional page counts
+                // Example: 25 results / 20 = 1.25 → ceil(1.25) = 2 pages needed
+                const calculatedPages = Math.max(1, Math.ceil(search.totalResults / 20))
+                const targetPages = Math.min(maxPages, calculatedPages)
+
+                // TMDB hard limit: 500 pages maximum (10,000 results)
+                const TMDB_MAX_PAGE = 500
+                const safeTargetPages = Math.min(targetPages, TMDB_MAX_PAGE)
+
+                console.log('[QuickSearch] Loading additional pages:', {
+                    totalResults: search.totalResults,
+                    calculatedPages,
+                    targetPages: safeTargetPages,
+                    startPage: currentPage,
+                })
 
                 // Load up to maxPages (default 5 pages = 100 results)
-                while (currentPage <= targetPages && currentPage <= 5) {
+                while (currentPage <= safeTargetPages && currentPage <= maxPages) {
                     const url = `/api/search?query=${encodeURIComponent(search.query.trim())}&page=${currentPage}&childSafetyMode=${childSafetyEnabled}`
-                    const response = await fetch(url)
+                    const response = await fetch(url, {
+                        signal: currentController.signal,
+                    })
 
-                    if (!response.ok) break
+                    if (!response.ok) {
+                        console.warn(
+                            '[QuickSearch] API error at page',
+                            currentPage,
+                            response.statusText
+                        )
+                        break
+                    }
 
                     const data = await response.json()
-                    if (!data.results || data.results.length === 0) break
+
+                    // Short-circuit if API returns no results or fewer than expected
+                    if (!data.results || data.results.length === 0) {
+                        console.log('[QuickSearch] No more results at page', currentPage)
+                        break
+                    }
 
                     allResults.push(...data.results)
                     currentPage++
+
+                    // Short-circuit if we got fewer than 20 results (last page)
+                    if (data.results.length < 20) {
+                        console.log(
+                            '[QuickSearch] Received partial page, stopping at page',
+                            currentPage - 1
+                        )
+                        break
+                    }
                 }
+
+                console.log(
+                    '[QuickSearch] Loaded',
+                    allResults.length,
+                    'total results across',
+                    currentPage - search.currentPage - 1,
+                    'additional pages'
+                )
 
                 const filtered = await applyFilters(allResults, search.filters)
 
@@ -169,8 +223,12 @@ export function useSearch() {
                     hasAllResults: allResults.length >= search.totalResults,
                     currentPage: currentPage - 1,
                 }))
-            } catch (_error) {
-                setSearch((prev) => ({ ...prev, isLoadingAll: false }))
+            } catch (error: any) {
+                if (error.name !== 'AbortError') {
+                    console.error('[QuickSearch] Error:', error)
+                    setSearch((prev) => ({ ...prev, isLoadingAll: false }))
+                }
+                // AbortError is expected when cancelling requests
             }
         },
         [
@@ -198,23 +256,71 @@ export function useSearch() {
 
         setSearch((prev) => ({ ...prev, isLoadingAll: true }))
 
+        // Cancel previous load-all request
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort()
+        }
+
+        const currentController = new AbortController()
+        abortControllerRef.current = currentController
+
         try {
             const allResults = [...search.results]
             let currentPage = search.currentPage + 1
 
-            // Load all remaining pages
-            while (allResults.length < search.totalResults) {
-                const url = `/api/search?query=${encodeURIComponent(search.query.trim())}&page=${currentPage}&childSafetyMode=${childSafetyEnabled}`
-                const response = await fetch(url)
+            // TMDB hard limit: 500 pages maximum (10,000 results)
+            const TMDB_MAX_PAGE = 500
+            const calculatedPages = Math.max(1, Math.ceil(search.totalResults / 20))
+            const maxAllowedPage = Math.min(calculatedPages, TMDB_MAX_PAGE)
 
-                if (!response.ok) break
+            console.log('[LoadAll] Loading all remaining pages:', {
+                totalResults: search.totalResults,
+                calculatedPages,
+                maxAllowedPage,
+                currentResultsCount: allResults.length,
+                startPage: currentPage,
+            })
+
+            // Load all remaining pages with safety limits
+            while (allResults.length < search.totalResults && currentPage <= maxAllowedPage) {
+                const url = `/api/search?query=${encodeURIComponent(search.query.trim())}&page=${currentPage}&childSafetyMode=${childSafetyEnabled}`
+                const response = await fetch(url, {
+                    signal: currentController.signal,
+                })
+
+                if (!response.ok) {
+                    console.warn('[LoadAll] API error at page', currentPage, response.statusText)
+                    break
+                }
 
                 const data = await response.json()
-                if (!data.results || data.results.length === 0) break
+
+                // Short-circuit if API returns no results
+                if (!data.results || data.results.length === 0) {
+                    console.log('[LoadAll] No more results at page', currentPage)
+                    break
+                }
 
                 allResults.push(...data.results)
                 currentPage++
+
+                // Short-circuit if we got fewer than 20 results (last page)
+                if (data.results.length < 20) {
+                    console.log(
+                        '[LoadAll] Received partial page, stopping at page',
+                        currentPage - 1
+                    )
+                    break
+                }
             }
+
+            console.log(
+                '[LoadAll] Loaded',
+                allResults.length,
+                'total results across',
+                currentPage - search.currentPage - 1,
+                'pages'
+            )
 
             const filtered = await applyFilters(allResults, search.filters)
 
@@ -226,8 +332,12 @@ export function useSearch() {
                 isLoadingAll: false,
                 currentPage: currentPage - 1,
             }))
-        } catch (_error) {
-            setSearch((prev) => ({ ...prev, isLoadingAll: false }))
+        } catch (error: any) {
+            if (error.name !== 'AbortError') {
+                console.error('[LoadAll] Error:', error)
+                setSearch((prev) => ({ ...prev, isLoadingAll: false }))
+            }
+            // AbortError is expected when cancelling requests
         }
     }, [
         search.hasAllResults,
