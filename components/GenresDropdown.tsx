@@ -1,13 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { ChevronDownIcon, FilmIcon, TvIcon } from '@heroicons/react/24/outline'
 import { useRouter } from 'next/router'
-import { MOVIE_GENRES as movieGenres, TV_GENRES as tvGenres, Genre } from '../constants/genres'
+import {
+    MOVIE_GENRES as movieGenres,
+    TV_GENRES as tvGenres,
+    CHILD_SAFE_MOVIE_GENRES as childSafeMovieGenres,
+    CHILD_SAFE_TV_GENRES as childSafeTvGenres,
+    Genre,
+} from '../constants/genres'
+import { useChildSafety } from '../hooks/useChildSafety'
 
 function GenresDropdown() {
     const [isOpen, setIsOpen] = useState(false)
     const [selectedType, setSelectedType] = useState<'movie' | 'tv'>('movie')
     const dropdownRef = useRef<HTMLDivElement>(null)
     const router = useRouter()
+    const { isEnabled: childSafetyEnabled } = useChildSafety()
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -25,7 +33,15 @@ function GenresDropdown() {
         setIsOpen(false)
     }
 
-    const currentGenres = selectedType === 'movie' ? movieGenres : tvGenres
+    // Use child-safe genre lists when child safety mode is enabled
+    const currentGenres =
+        selectedType === 'movie'
+            ? childSafetyEnabled
+                ? childSafeMovieGenres
+                : movieGenres
+            : childSafetyEnabled
+              ? childSafeTvGenres
+              : tvGenres
 
     return (
         <div className="relative" ref={dropdownRef}>
