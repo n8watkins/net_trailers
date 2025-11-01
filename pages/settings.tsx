@@ -244,6 +244,21 @@ const Settings: React.FC<SettingsProps> = ({
     const [isClearingData, setIsClearingData] = useState(false)
     const [isDeletingAccount, setIsDeletingAccount] = useState(false)
 
+    // Profile form state
+    const [displayName, setDisplayName] = useState(user?.displayName || '')
+    const [isSavingProfile, setIsSavingProfile] = useState(false)
+
+    // Email form state
+    const [newEmail, setNewEmail] = useState('')
+    const [emailPassword, setEmailPassword] = useState('')
+    const [isUpdatingEmail, setIsUpdatingEmail] = useState(false)
+
+    // Password form state
+    const [currentPassword, setCurrentPassword] = useState('')
+    const [newPassword, setNewPassword] = useState('')
+    const [confirmPassword, setConfirmPassword] = useState('')
+    const [isUpdatingPassword, setIsUpdatingPassword] = useState(false)
+
     // Ref to store delete account redirect timeout
     const deleteAccountTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -306,6 +321,11 @@ const Settings: React.FC<SettingsProps> = ({
             hasInitializedRef.current = true
         }
     }, [currentPreferences, userData.isInitializing])
+
+    // Sync displayName when user changes
+    React.useEffect(() => {
+        setDisplayName(user?.displayName || '')
+    }, [user?.displayName])
 
     // Check if preferences have changed
     const preferencesChanged =
@@ -497,6 +517,174 @@ const Settings: React.FC<SettingsProps> = ({
             }
         }
     }, [])
+
+    // Profile form handlers
+    const handleSaveProfile = async () => {
+        if (isSavingProfile) return
+        if (!user) {
+            showError('No user found')
+            return
+        }
+
+        // Check if display name changed
+        const displayNameChanged = displayName.trim() !== (user.displayName || '')
+        if (!displayNameChanged) {
+            showError('No changes to save')
+            return
+        }
+
+        setIsSavingProfile(true)
+        try {
+            const { auth } = await import('../firebase')
+            const { updateProfile } = await import('firebase/auth')
+
+            if (!auth.currentUser) {
+                throw new Error('No authenticated user found')
+            }
+
+            await updateProfile(auth.currentUser, {
+                displayName: displayName.trim(),
+            })
+
+            showSuccess('Profile updated successfully!')
+        } catch (error: any) {
+            console.error('Error updating profile:', error)
+            const message = error?.message || 'Failed to update profile. Please try again.'
+            showError(message)
+        } finally {
+            setIsSavingProfile(false)
+        }
+    }
+
+    // Email form handlers
+    const handleUpdateEmail = async () => {
+        if (isUpdatingEmail) return
+        if (!user) {
+            showError('No user found')
+            return
+        }
+
+        // Validation
+        if (!newEmail.trim()) {
+            showError('Please enter a new email address')
+            return
+        }
+        if (!emailPassword.trim()) {
+            showError('Please enter your current password to confirm')
+            return
+        }
+        if (newEmail.trim() === user.email) {
+            showError('New email must be different from current email')
+            return
+        }
+
+        setIsUpdatingEmail(true)
+        try {
+            const { auth } = await import('../firebase')
+            const { updateEmail, EmailAuthProvider, reauthenticateWithCredential } = await import(
+                'firebase/auth'
+            )
+
+            if (!auth.currentUser || !auth.currentUser.email) {
+                throw new Error('No authenticated user found')
+            }
+
+            // Re-authenticate user first (required for sensitive operations)
+            const credential = EmailAuthProvider.credential(auth.currentUser.email, emailPassword)
+            await reauthenticateWithCredential(auth.currentUser, credential)
+
+            // Update email
+            await updateEmail(auth.currentUser, newEmail.trim())
+
+            // Clear form
+            setNewEmail('')
+            setEmailPassword('')
+            showSuccess('Email updated successfully!')
+        } catch (error: any) {
+            console.error('Error updating email:', error)
+            let message = 'Failed to update email. Please try again.'
+            if (error.code === 'auth/wrong-password') {
+                message = 'Incorrect password. Please try again.'
+            } else if (error.code === 'auth/email-already-in-use') {
+                message = 'This email is already in use by another account.'
+            } else if (error.code === 'auth/invalid-email') {
+                message = 'Invalid email address format.'
+            } else if (error.code === 'auth/requires-recent-login') {
+                message = 'Please sign out and sign in again before changing your email.'
+            }
+            showError(message)
+        } finally {
+            setIsUpdatingEmail(false)
+        }
+    }
+
+    // Password form handlers
+    const handleUpdatePassword = async () => {
+        if (isUpdatingPassword) return
+        if (!user) {
+            showError('No user found')
+            return
+        }
+
+        // Validation
+        if (!currentPassword.trim()) {
+            showError('Please enter your current password')
+            return
+        }
+        if (!newPassword.trim()) {
+            showError('Please enter a new password')
+            return
+        }
+        if (newPassword.length < 6) {
+            showError('New password must be at least 6 characters')
+            return
+        }
+        if (newPassword !== confirmPassword) {
+            showError('New passwords do not match')
+            return
+        }
+        if (newPassword === currentPassword) {
+            showError('New password must be different from current password')
+            return
+        }
+
+        setIsUpdatingPassword(true)
+        try {
+            const { auth } = await import('../firebase')
+            const { updatePassword, EmailAuthProvider, reauthenticateWithCredential } =
+                await import('firebase/auth')
+
+            if (!auth.currentUser || !auth.currentUser.email) {
+                throw new Error('No authenticated user found')
+            }
+
+            // Re-authenticate user first (required for sensitive operations)
+            const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword)
+            await reauthenticateWithCredential(auth.currentUser, credential)
+
+            // Update password
+            await updatePassword(auth.currentUser, newPassword)
+
+            // Clear form
+            setCurrentPassword('')
+            setNewPassword('')
+            setConfirmPassword('')
+            showSuccess('Password updated successfully!')
+        } catch (error: any) {
+            console.error('Error updating password:', error)
+            let message = 'Failed to update password. Please try again.'
+            if (error.code === 'auth/wrong-password') {
+                message = 'Incorrect current password. Please try again.'
+            } else if (error.code === 'auth/weak-password') {
+                message = 'Password is too weak. Please choose a stronger password.'
+            } else if (error.code === 'auth/requires-recent-login') {
+                message = 'Please sign out and sign in again before changing your password.'
+            }
+            showError(message)
+        } finally {
+            setIsUpdatingPassword(false)
+        }
+    }
 
     // Handle initializing state - provide default empty data summary
     const [dataSummary, setDataSummary] = React.useState<{
@@ -718,9 +906,13 @@ const Settings: React.FC<SettingsProps> = ({
                                                     </label>
                                                     <input
                                                         type="text"
-                                                        value={user?.displayName || ''}
+                                                        value={displayName}
+                                                        onChange={(e) =>
+                                                            setDisplayName(e.target.value)
+                                                        }
                                                         placeholder="Enter your display name"
                                                         className="inputClass w-full max-w-md"
+                                                        disabled={isSavingProfile}
                                                     />
                                                 </div>
 
@@ -766,8 +958,29 @@ const Settings: React.FC<SettingsProps> = ({
                                                 </div>
 
                                                 <div className="pt-4">
-                                                    <button className="bannerButton bg-red-600 text-white hover:bg-red-700">
-                                                        Save Changes
+                                                    <button
+                                                        onClick={handleSaveProfile}
+                                                        disabled={
+                                                            isSavingProfile ||
+                                                            displayName.trim() ===
+                                                                (user?.displayName || '')
+                                                        }
+                                                        className={`bannerButton ${
+                                                            isSavingProfile ||
+                                                            displayName.trim() ===
+                                                                (user?.displayName || '')
+                                                                ? 'bg-gray-600 cursor-not-allowed opacity-50'
+                                                                : 'bg-red-600 hover:bg-red-700'
+                                                        } text-white flex items-center justify-center gap-2`}
+                                                    >
+                                                        {isSavingProfile ? (
+                                                            <>
+                                                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                                Saving...
+                                                            </>
+                                                        ) : (
+                                                            'Save Changes'
+                                                        )}
                                                     </button>
                                                 </div>
                                             </div>
@@ -846,8 +1059,13 @@ const Settings: React.FC<SettingsProps> = ({
                                                         </label>
                                                         <input
                                                             type="email"
+                                                            value={newEmail}
+                                                            onChange={(e) =>
+                                                                setNewEmail(e.target.value)
+                                                            }
                                                             placeholder="Enter new email address"
                                                             className="inputClass w-full"
+                                                            disabled={isUpdatingEmail}
                                                         />
                                                     </div>
 
@@ -857,14 +1075,40 @@ const Settings: React.FC<SettingsProps> = ({
                                                         </label>
                                                         <input
                                                             type="password"
+                                                            value={emailPassword}
+                                                            onChange={(e) =>
+                                                                setEmailPassword(e.target.value)
+                                                            }
                                                             placeholder="Enter your current password"
                                                             className="inputClass w-full"
+                                                            disabled={isUpdatingEmail}
                                                         />
                                                     </div>
 
                                                     <div className="pt-4">
-                                                        <button className="bannerButton bg-red-600 text-white hover:bg-red-700">
-                                                            Update Email
+                                                        <button
+                                                            onClick={handleUpdateEmail}
+                                                            disabled={
+                                                                isUpdatingEmail ||
+                                                                !newEmail.trim() ||
+                                                                !emailPassword.trim()
+                                                            }
+                                                            className={`bannerButton ${
+                                                                isUpdatingEmail ||
+                                                                !newEmail.trim() ||
+                                                                !emailPassword.trim()
+                                                                    ? 'bg-gray-600 cursor-not-allowed opacity-50'
+                                                                    : 'bg-red-600 hover:bg-red-700'
+                                                            } text-white flex items-center justify-center gap-2`}
+                                                        >
+                                                            {isUpdatingEmail ? (
+                                                                <>
+                                                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                                    Updating...
+                                                                </>
+                                                            ) : (
+                                                                'Update Email'
+                                                            )}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -934,8 +1178,13 @@ const Settings: React.FC<SettingsProps> = ({
                                                         </label>
                                                         <input
                                                             type="password"
+                                                            value={currentPassword}
+                                                            onChange={(e) =>
+                                                                setCurrentPassword(e.target.value)
+                                                            }
                                                             placeholder="Enter current password"
                                                             className="inputClass w-full"
+                                                            disabled={isUpdatingPassword}
                                                         />
                                                     </div>
 
@@ -945,8 +1194,13 @@ const Settings: React.FC<SettingsProps> = ({
                                                         </label>
                                                         <input
                                                             type="password"
-                                                            placeholder="Enter new password"
+                                                            value={newPassword}
+                                                            onChange={(e) =>
+                                                                setNewPassword(e.target.value)
+                                                            }
+                                                            placeholder="Enter new password (min 6 characters)"
                                                             className="inputClass w-full"
+                                                            disabled={isUpdatingPassword}
                                                         />
                                                     </div>
 
@@ -956,14 +1210,42 @@ const Settings: React.FC<SettingsProps> = ({
                                                         </label>
                                                         <input
                                                             type="password"
+                                                            value={confirmPassword}
+                                                            onChange={(e) =>
+                                                                setConfirmPassword(e.target.value)
+                                                            }
                                                             placeholder="Confirm new password"
                                                             className="inputClass w-full"
+                                                            disabled={isUpdatingPassword}
                                                         />
                                                     </div>
 
                                                     <div className="pt-4">
-                                                        <button className="bannerButton bg-red-600 text-white hover:bg-red-700">
-                                                            Update Password
+                                                        <button
+                                                            onClick={handleUpdatePassword}
+                                                            disabled={
+                                                                isUpdatingPassword ||
+                                                                !currentPassword.trim() ||
+                                                                !newPassword.trim() ||
+                                                                !confirmPassword.trim()
+                                                            }
+                                                            className={`bannerButton ${
+                                                                isUpdatingPassword ||
+                                                                !currentPassword.trim() ||
+                                                                !newPassword.trim() ||
+                                                                !confirmPassword.trim()
+                                                                    ? 'bg-gray-600 cursor-not-allowed opacity-50'
+                                                                    : 'bg-red-600 hover:bg-red-700'
+                                                            } text-white flex items-center justify-center gap-2`}
+                                                        >
+                                                            {isUpdatingPassword ? (
+                                                                <>
+                                                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                                    Updating...
+                                                                </>
+                                                            ) : (
+                                                                'Update Password'
+                                                            )}
                                                         </button>
                                                     </div>
                                                 </div>
