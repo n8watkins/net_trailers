@@ -192,7 +192,7 @@ const Home: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboar
                             content={filteredComedy}
                         />
                     )}
-                    {filteredHorror.length > 0 && !(childSafetyEnabled && filter === 'movies') && (
+                    {filteredHorror.length > 0 && !(childSafetyEnabled && filter !== 'tv') && (
                         <Row
                             title={
                                 filter === 'tv'
