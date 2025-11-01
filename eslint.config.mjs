@@ -18,7 +18,7 @@ export default [
       'public/**',
       'coverage/**',
       '.husky/**',
-      'scripts/manual-tests/**',
+      'scripts/**', // Ignore all build scripts (use CommonJS legitimately)
     ],
   },
   js.configs.recommended,

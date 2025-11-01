@@ -56,8 +56,16 @@ export class CacheManager {
             if (response.ok) {
                 const data = await response.json()
                 mainPageCache.set('main-page-content', data)
+            } else if (process.env.NODE_ENV === 'development') {
+                console.warn(`[Cache] Preload failed: HTTP ${response.status}`)
             }
-        } catch (error) {}
+        } catch (error) {
+            // Development: log cache errors for debugging
+            if (process.env.NODE_ENV === 'development') {
+                console.warn('[Cache] Preload error:', error)
+            }
+            // Production: silently continue (cache is optional)
+        }
     }
 
     // Smart cache warming for search
@@ -72,7 +80,13 @@ export class CacheManager {
                     .then((data) => {
                         searchCache.set('/api/search', data, { query, page: '1' })
                     })
-                    .catch(() => {}) // Silent fail for cache warming
+                    .catch((error) => {
+                        // Development: log cache warming errors
+                        if (process.env.NODE_ENV === 'development') {
+                            console.warn('[Cache] Search warming failed:', error)
+                        }
+                        // Production: silently continue (cache warming is optional)
+                    })
             }
         })
     }

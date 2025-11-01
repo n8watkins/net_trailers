@@ -71,7 +71,7 @@ export function isSafeRating(
         case 'DE':
             return SAFE_DE_MOVIE_RATINGS.includes(cert)
 
-        default:
+        default: {
             // Unknown country = check if it's explicitly restricted in any system
             // If not found in any restricted list, allow (permissive for unknown)
             const allRestrictedRatings = [
@@ -89,6 +89,7 @@ export function isSafeRating(
 
             // Otherwise, allow unknown ratings (permissive)
             return true
+        }
     }
 }
 
