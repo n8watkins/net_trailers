@@ -24,10 +24,12 @@ All issues have been documented with tests in `__tests__/stores/authStore.test.t
 ## Issue #1: CRITICAL - Firebase Sync Does Not Trigger on Initial Auth Load
 
 ### Location
+
 - **File:** `components/SessionSyncManager.tsx`
 - **Line:** 86
 
 ### Description
+
 The condition that determines whether to sync with Firebase uses **AND** logic that prevents sync on initial page load for authenticated users.
 
 ### The Bug
@@ -40,28 +42,33 @@ if (authStore.userId !== user.uid && authStore.syncStatus === 'offline') {
 ```
 
 **Problem:** On initial load:
+
 - `authStore.userId` is `undefined` (store not synced yet)
 - `authStore.syncStatus` is `'synced'` (default value from `stores/authStore.ts:64`)
 - Condition: `(undefined !== 'user-123') && ('synced' === 'offline')`
 - Result: `true && false = FALSE` → **Sync does NOT trigger!**
 
 ### Impact
+
 - **CRITICAL:** Authenticated users see empty watchlists/liked content on first page load
 - Data only loads if user manually refreshes or navigates away and back
 - Affects 100% of authenticated users on initial session
 
 ### Root Cause
+
 The default `syncStatus` is set to `'synced'` in `authStore.ts:64`:
+
 ```typescript
 const getDefaultState = (): AuthState => ({
     // ...
-    syncStatus: 'synced',  // ← This prevents initial sync
+    syncStatus: 'synced', // ← This prevents initial sync
 })
 ```
 
 ### Recommended Fixes
 
 **Option 1: Remove syncStatus check (Simplest)**
+
 ```typescript
 // Just check if userId doesn't match
 if (authStore.userId !== user.uid) {
@@ -70,6 +77,7 @@ if (authStore.userId !== user.uid) {
 ```
 
 **Option 2: Change to OR logic**
+
 ```typescript
 // Sync if userId mismatch OR offline
 if (authStore.userId !== user.uid || authStore.syncStatus === 'offline') {
@@ -78,12 +86,14 @@ if (authStore.userId !== user.uid || authStore.syncStatus === 'offline') {
 ```
 
 **Option 3: Change default syncStatus**
+
 ```typescript
 // In authStore.ts getDefaultState():
 syncStatus: 'offline',  // Start as offline, trigger sync immediately
 ```
 
 ### Test Coverage
+
 - Test: `__tests__/components/SessionSyncManager.test.tsx`
 - Scenario: "ISSUE: Default syncStatus prevents initial Firebase sync"
 
@@ -96,7 +106,9 @@ syncStatus: 'offline',  // Start as offline, trigger sync immediately
 **User Preference:** The system **intentionally allows** content to be in both `likedMovies` AND `hiddenMovies` arrays simultaneously.
 
 ### Historical Context
+
 Git log shows:
+
 ```
 commit: fix: remove mutual exclusion between liked and hidden content
 ```
@@ -108,28 +120,32 @@ Mutual exclusion was **intentionally removed** per user requirements.
 The following comments and docs are **outdated** and should be updated:
 
 1. **`components/LikeOptions.tsx:62`**
-   ```typescript
-   // OUTDATED: "Add to liked (automatically removes from hidden due to mutual exclusion)"
-   // SHOULD SAY: "Add to liked"
-   ```
+
+    ```typescript
+    // OUTDATED: "Add to liked (automatically removes from hidden due to mutual exclusion)"
+    // SHOULD SAY: "Add to liked"
+    ```
 
 2. **`components/LikeOptions.tsx:71`**
-   ```typescript
-   // OUTDATED: "Add to hidden (automatically removes from liked due to mutual exclusion)"
-   // SHOULD SAY: "Add to hidden"
-   ```
+
+    ```typescript
+    // OUTDATED: "Add to hidden (automatically removes from liked due to mutual exclusion)"
+    // SHOULD SAY: "Add to hidden"
+    ```
 
 3. **`CLAUDE.md`**
-   ```
-   // OUTDATED: "Mutual exclusion logic ensures content cannot be both liked AND hidden"
-   // SHOULD SAY: "Content can be marked as both liked AND hidden if desired"
-   ```
+
+    ```
+    // OUTDATED: "Mutual exclusion logic ensures content cannot be both liked AND hidden"
+    // SHOULD SAY: "Content can be marked as both liked AND hidden if desired"
+    ```
 
 4. **`services/authStorageService.ts` and `services/guestStorageService.ts`**
-   - Still contain mutual exclusion logic that's not used by stores
-   - Either remove it OR add comment explaining it's legacy code
+    - Still contain mutual exclusion logic that's not used by stores
+    - Either remove it OR add comment explaining it's legacy code
 
 ### Recommendation
+
 Update documentation and comments to match current intentional behavior.
 
 ---
@@ -137,41 +153,48 @@ Update documentation and comments to match current intentional behavior.
 ## Issue #3: CRITICAL - Silent Data Loss When UserId/GuestId Undefined
 
 ### Location
+
 - **Files:** All store actions in `stores/authStore.ts` and `stores/guestStore.ts`
 
 ### Description
+
 If users perform actions (like, hide, watchlist) before the store is initialized with `userId`/`guestId`, those actions appear to succeed locally but are **never persisted** to Firebase/localStorage.
 
 ### The Bug
 
 **authStore Example:**
+
 ```typescript
 // authStore.ts:89-114
 addToWatchlist: async (content: Content) => {
     // ... update local state ...
 
     // Save to Firebase
-    if (state.userId) {  // ← Check if userId exists
+    if (state.userId) {
+        // ← Check if userId exists
         // ... save to Firebase ...
     } else {
-        set({ syncStatus: 'synced' })  // ← Misleading! Nothing was saved
+        set({ syncStatus: 'synced' }) // ← Misleading! Nothing was saved
     }
 }
 ```
 
 **Problem:**
+
 - If `state.userId` is `undefined`, the `if` block is skipped
 - `syncStatus` is set to `'synced'` even though nothing was saved
 - User has no indication their data isn't being persisted
 - Action appears successful but data is lost on page reload
 
 ### Impact
+
 - **CRITICAL:** User data silently lost during initialization window
 - Affects users who interact with the app before auth state loads (~1-2 seconds)
 - No error thrown, no UI feedback
 - Users trust the app saved their data but it didn't
 
 ### Reproduction Scenario
+
 1. User loads app while authenticated
 2. During the ~500ms-2s while Firebase auth initializes
 3. User likes a movie / adds to watchlist
@@ -183,6 +206,7 @@ addToWatchlist: async (content: Content) => {
 ### Recommended Fixes
 
 **Option 1: Throw error if userId/guestId missing**
+
 ```typescript
 addToWatchlist: async (content: Content) => {
     const state = get()
@@ -196,6 +220,7 @@ addToWatchlist: async (content: Content) => {
 ```
 
 **Option 2: Queue actions until initialization completes**
+
 ```typescript
 // Add action queue to store
 actionQueue: []
@@ -212,23 +237,25 @@ addToWatchlist: async (content: Content) => {
 
 // Process queue after initialization
 onInitialized: () => {
-    state.actionQueue.forEach(action => {
+    state.actionQueue.forEach((action) => {
         // Execute queued actions
     })
 }
 ```
 
 **Option 3: Set syncStatus to 'offline' when save is skipped**
+
 ```typescript
 if (state.userId) {
     // ... save to Firebase ...
 } else {
-    set({ syncStatus: 'offline' })  // ← Indicate save didn't happen
+    set({ syncStatus: 'offline' }) // ← Indicate save didn't happen
     console.warn('Action not persisted: User ID not set')
 }
 ```
 
 ### Test Coverage
+
 - Test: `__tests__/stores/authStore.test.ts`
 - Scenario: "CRITICAL ISSUE: Data Loss When UserId Undefined"
 
@@ -237,9 +264,11 @@ if (state.userId) {
 ## Issue #4: HIGH RISK - Race Condition in Cross-Account Data Saving
 
 ### Location
+
 - **Files:** All async save operations in `stores/authStore.ts`
 
 ### Description
+
 When an async save is in progress and the user switches accounts, the save operation completes with the old user's data but may be attributed to the new user's account.
 
 ### The Bug
@@ -247,15 +276,14 @@ When an async save is in progress and the user switches accounts, the save opera
 ```typescript
 // authStore.ts:165-211
 addLikedMovie: async (content: Content) => {
-    const state = get()  // ← Captures userId at START of operation
+    const state = get() // ← Captures userId at START of operation
 
     // ... update local state ...
 
     if (state.userId) {
         AuthStorageService.saveUserData(state.userId, {
             // ... save data ...
-        })
-        .then(() => {
+        }).then(() => {
             // ← No validation that userId is still correct!
             set({ syncStatus: 'synced' })
         })
@@ -264,6 +292,7 @@ addLikedMovie: async (content: Content) => {
 ```
 
 ### Reproduction Scenario
+
 1. User A is logged in, likes a movie
 2. `addLikedMovie` called with `userId = 'user-a'`
 3. Firebase save promise starts (takes ~100-500ms)
@@ -274,6 +303,7 @@ addLikedMovie: async (content: Content) => {
 8. Result: User A's action may be attributed to User B's account, or vice versa
 
 ### Impact
+
 - **HIGH RISK:** Data corruption across user accounts
 - User A's preferences could be saved to User B's account
 - Rare but catastrophic when it occurs
@@ -282,23 +312,25 @@ addLikedMovie: async (content: Content) => {
 ### Recommended Fix
 
 **Add userId validation in callbacks:**
+
 ```typescript
 addLikedMovie: async (content: Content) => {
     const state = get()
-    const operationUserId = state.userId  // ← Capture userId for this operation
+    const operationUserId = state.userId // ← Capture userId for this operation
 
     if (operationUserId) {
         AuthStorageService.saveUserData(operationUserId, {
             // ... save data ...
-        })
-        .then(() => {
+        }).then(() => {
             const currentState = get()
 
             // Validate userId hasn't changed
             if (currentState.userId === operationUserId) {
                 set({ syncStatus: 'synced' })
             } else {
-                console.warn(`User switched during save: ${operationUserId} → ${currentState.userId}`)
+                console.warn(
+                    `User switched during save: ${operationUserId} → ${currentState.userId}`
+                )
                 // Don't update syncStatus - data was saved for wrong user
             }
         })
@@ -307,6 +339,7 @@ addLikedMovie: async (content: Content) => {
 ```
 
 ### Test Coverage
+
 - Test: `__tests__/stores/authStore.test.ts`
 - Scenario: "HIGH RISK: Race Conditions in User Switching"
 
@@ -315,10 +348,12 @@ addLikedMovie: async (content: Content) => {
 ## Issue #5: MEDIUM - Child Safety Mode Doesn't Filter TV Shows
 
 ### Location
+
 - **File:** `utils/contentFilter.ts`
 - **Lines:** 133-140
 
 ### Description
+
 Child Safety Mode only filters movies based on the `adult` flag. TV shows don't have this flag, so ALL TV shows pass through the filter regardless of appropriateness.
 
 ### The Bug
@@ -335,18 +370,20 @@ export function filterContentByAdultFlag(items: Content[], childSafetyMode: bool
             return item.adult !== true
         }
         // TVShows don't have adult flag, so keep them (they use content_ratings instead)
-        return true  // ← ALL TV shows are kept!
+        return true // ← ALL TV shows are kept!
     })
 }
 ```
 
 ### Impact
+
 - **MEDIUM:** Potentially inappropriate TV shows shown in Child Safety Mode
 - Inconsistent filtering (movies filtered, TV shows not)
 - Parents may think content is filtered when it isn't
 - Only affects TV show content (~50% of content)
 
 ### Context
+
 - TV shows use a different rating system (`content_ratings`)
 - Would need to fetch additional data from TMDB API
 - Could use `vote_average` as a rough proxy
@@ -354,27 +391,31 @@ export function filterContentByAdultFlag(items: Content[], childSafetyMode: bool
 ### Recommended Fixes
 
 **Option 1: Filter by vote_average (quick fix)**
+
 ```typescript
 if (item.media_type === 'movie') {
     return item.adult !== true
 }
 // For TV shows, use rating as proxy
-return item.vote_average >= 6.0  // Generally family-friendly content
+return item.vote_average >= 6.0 // Generally family-friendly content
 ```
 
 **Option 2: Fetch TV content ratings from API**
+
 ```typescript
 // Requires additional API call to get content_ratings
 // Check if any rating is TV-MA, TV-14, etc.
 ```
 
 **Option 3: Document limitation clearly**
+
 ```typescript
 // Add comment explaining TV shows aren't filtered
 // Display warning in Child Safety Mode settings
 ```
 
 ### Test Coverage
+
 - Existing tests: `__tests__/utils/contentFilter.test.ts`
 - Need to add: TV show filtering scenarios
 
@@ -383,14 +424,17 @@ return item.vote_average >= 6.0  // Generally family-friendly content
 ## Issue #6: MEDIUM - Client-Side Filtering Reduces Displayed Content
 
 ### Location
+
 - **Files:** `components/Row.tsx`, `components/SearchResults.tsx`, `pages/genres/[type]/[id].tsx`
 
 ### Description
+
 All filtering (hidden content, child safety) happens client-side AFTER fetching from API. This means the API returns X items, but fewer are displayed after filtering.
 
 ### The Issue
 
 **Flow:**
+
 1. API call: "Fetch 20 items"
 2. API returns: 20 items
 3. Filter hidden content: 3 items removed → 17 items
@@ -398,6 +442,7 @@ All filtering (hidden content, child safety) happens client-side AFTER fetching 
 5. Display: **Only 15 items shown** (user expected 20)
 
 ### Impact
+
 - **MEDIUM:** Users see fewer results than expected
 - Inconsistent content density per page
 - Some pages may appear empty after filtering
@@ -405,6 +450,7 @@ All filtering (hidden content, child safety) happens client-side AFTER fetching 
 - Poor UX especially with many hidden items
 
 ### Example
+
 ```typescript
 // components/Row.tsx:18
 const filteredContent = filterDislikedContent(content, sessionData.hiddenMovies)
@@ -415,9 +461,10 @@ const filteredContent = filterDislikedContent(content, sessionData.hiddenMovies)
 ### Recommended Fixes
 
 **Option 1: Over-fetch content (current approach with `getRequestMultiplier`)**
+
 ```typescript
 // For child safety, already doubled:
-const amount = getRequestMultiplier(childSafetyEnabled, 20)  // Returns 40
+const amount = getRequestMultiplier(childSafetyEnabled, 20) // Returns 40
 
 // Could extend to hidden content:
 const estimatedHiddenPercent = hiddenMovies.length / allViewedContent.length
@@ -425,12 +472,14 @@ const multiplier = 1 / (1 - estimatedHiddenPercent)
 ```
 
 **Option 2: Server-side filtering**
+
 - Pass `hiddenMovieIds` to API
 - Filter in database/API layer
 - Return exactly X items after filtering
 - More expensive server-side, but better UX
 
 **Option 3: Load more until target reached**
+
 ```typescript
 // Keep loading pages until we have enough non-filtered items
 while (visibleItems.length < targetCount && hasMore) {
@@ -439,6 +488,7 @@ while (visibleItems.length < targetCount && hasMore) {
 ```
 
 ### Test Coverage
+
 - Manual testing needed
 - Automated tests: Verify filtering reduces count
 - E2E tests: Verify user experience with heavy filtering
@@ -448,9 +498,11 @@ while (visibleItems.length < targetCount && hasMore) {
 ## Issue #7: LOW - Documentation Inconsistencies
 
 ### Location
+
 - **Files:** `CLAUDE.md`, `components/LikeOptions.tsx`, storage services
 
 ### Description
+
 Multiple inconsistencies between documentation, code comments, and actual implementation behavior.
 
 ### Inconsistencies Found
@@ -458,9 +510,11 @@ Multiple inconsistencies between documentation, code comments, and actual implem
 **1. Mutual Exclusion Claims**
 
 CLAUDE.md says:
+
 > "Mutual exclusion logic ensures content cannot be both liked AND hidden"
 
 Reality:
+
 - Stores DO NOT implement mutual exclusion
 - Content CAN be in both liked and hidden arrays
 - Git history shows mutual exclusion was intentionally removed
@@ -483,6 +537,7 @@ Reality:
 - Maintains its own logic without mutual exclusion
 
 ### Impact
+
 - **LOW:** Confusing for developers
 - Expectations don't match reality
 - Potential bugs from incorrect assumptions
@@ -491,21 +546,25 @@ Reality:
 ### Recommended Fixes
 
 **Option 1: Update documentation to match implementation**
+
 - Remove mutual exclusion claims from CLAUDE.md
 - Update comments in LikeOptions.tsx
 - Add note explaining why mutual exclusion was removed
 
 **Option 2: Implement mutual exclusion to match documentation**
+
 - Add mutual exclusion back to stores
 - Or use storage service functions
 - Ensures documentation is accurate
 
 **Option 3: Delete unused storage service functions**
+
 - If mutual exclusion isn't needed, remove it from storage services too
 - Simplifies codebase
 - Reduces confusion
 
 ### Test Coverage
+
 - No tests needed
 - Manual audit of documentation
 - Update comments and docs
@@ -515,37 +574,42 @@ Reality:
 ## Summary of Issues by Severity
 
 ### CRITICAL (Fix Immediately)
+
 1. ❌ **Firebase sync doesn't trigger on initial load**
-   - Users see empty data on first page load
-   - Fix: Change sync condition logic
+    - Users see empty data on first page load
+    - Fix: Change sync condition logic
 
 2. ❌ **Silent data loss when userId undefined**
-   - Actions lost if performed before initialization
-   - Fix: Validate userId before operations
+    - Actions lost if performed before initialization
+    - Fix: Validate userId before operations
 
 ### HIGH RISK (Fix Soon)
+
 3. ❌ **Race condition in account switching**
-   - Data corruption possible across accounts
-   - Fix: Validate userId in async callbacks
+    - Data corruption possible across accounts
+    - Fix: Validate userId in async callbacks
 
 ### MEDIUM (Plan to Fix)
+
 4. ❌ **Child Safety doesn't filter TV shows**
-   - Inconsistent filtering by content type
-   - Fix: Add TV show filtering logic
+    - Inconsistent filtering by content type
+    - Fix: Add TV show filtering logic
 
 5. ❌ **Client-side filtering reduces content**
-   - Users see fewer items than expected
-   - Fix: Over-fetch or server-side filtering
+    - Users see fewer items than expected
+    - Fix: Over-fetch or server-side filtering
 
 ### FIXED ✅
+
 6. ✅ **Search filter infinite loop**
-   - Browser froze when applying filters
-   - FIXED: Removed circular dependencies in useEffect
+    - Browser froze when applying filters
+    - FIXED: Removed circular dependencies in useEffect
 
 ### NOT AN ISSUE (Working as Intended)
+
 7. ⚪ **No mutual exclusion between liked/hidden**
-   - Intentional design per user preference
-   - Action: Update outdated documentation comments
+    - Intentional design per user preference
+    - Action: Update outdated documentation comments
 
 ---
 
@@ -554,6 +618,7 @@ Reality:
 ### New Test Files Created
 
 **1. `__tests__/stores/authStore.test.ts`**
+
 - Tests all basic store functionality
 - Proves mutual exclusion bug exists
 - Tests data loss when userId undefined
@@ -562,12 +627,14 @@ Reality:
 - Tests sync status behavior
 
 **2. `__tests__/components/SessionSyncManager.test.tsx`**
+
 - Proves Firebase sync bug on initial load
 - Tests session initialization sequences
 - Tests rapid user switching
 - Tests guest session persistence
 
 ### Existing Test Files
+
 - `__tests__/utils/contentFilter.test.ts` - Already comprehensive
 
 ### Running the Tests
@@ -591,6 +658,7 @@ npm test
 ### Immediate Actions (Week 1)
 
 **1. Fix Firebase Sync (Issue #1)**
+
 ```typescript
 // SessionSyncManager.tsx:86
 // Change from:
@@ -601,6 +669,7 @@ if (authStore.userId !== user.uid)
 ```
 
 **2. Validate userId in Actions (Issue #3)**
+
 ```typescript
 // Add to all store actions:
 if (!state.userId && !state.guestId) {
@@ -609,6 +678,7 @@ if (!state.userId && !state.guestId) {
 ```
 
 **3. Add userId Validation in Callbacks (Issue #4)**
+
 ```typescript
 // In all async save callbacks:
 const currentUserId = get().userId
@@ -620,21 +690,25 @@ if (currentUserId === operationUserId) {
 ### Short-term Actions (Week 2-3)
 
 **4. Decide on Mutual Exclusion (Issue #2)**
+
 - Team decision: Keep or remove?
 - If keep: Implement in stores
 - If remove: Update all documentation
 
 **5. Improve TV Show Filtering (Issue #5)**
+
 - Add vote_average threshold for TV shows
 - Or fetch content_ratings (more complex)
 
 ### Long-term Actions (Month 1)
 
 **6. Optimize Filtering Strategy (Issue #6)**
+
 - Implement over-fetching with dynamic multiplier
 - Or explore server-side filtering
 
 **7. Documentation Audit (Issue #7)**
+
 - Update CLAUDE.md
 - Update all code comments
 - Remove unused functions
@@ -644,26 +718,30 @@ if (currentUserId === operationUserId) {
 ## Authentication vs. Guest Mode Differences
 
 ### Data Storage
-| Aspect | Authenticated | Guest |
-|--------|--------------|-------|
-| Storage | Firebase Firestore | localStorage |
-| Sync | Async with promises | Synchronous |
-| Persistence | Cross-device | Single browser |
-| Recovery | Firebase account | localStorage only |
+
+| Aspect      | Authenticated       | Guest             |
+| ----------- | ------------------- | ----------------- |
+| Storage     | Firebase Firestore  | localStorage      |
+| Sync        | Async with promises | Synchronous       |
+| Persistence | Cross-device        | Single browser    |
+| Recovery    | Firebase account    | localStorage only |
 
 ### Potential Issues by Mode
 
 **Authenticated Mode:**
+
 - Issue #1: Sync doesn't trigger (CRITICAL)
 - Issue #3: Silent data loss during init (CRITICAL)
 - Issue #4: Race conditions on account switch (HIGH)
 
 **Guest Mode:**
+
 - Issue #3: Silent data loss during init (CRITICAL)
 - Less affected by sync issues (synchronous)
 - No cross-account contamination risk
 
 **Both Modes:**
+
 - Issue #2: Mutual exclusion (CRITICAL)
 - Issue #5: Child safety filtering (MEDIUM)
 - Issue #6: Client-side filtering (MEDIUM)
