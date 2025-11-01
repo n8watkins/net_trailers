@@ -72,7 +72,11 @@ export default function SearchFilters({ className = '', isOpen, onClose }: Searc
                     <select
                         value={value}
                         onChange={handleChange}
-                        className="appearance-none bg-gray-800 border border-gray-600 text-white rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 hover:border-gray-500 transition-colors min-w-[120px]"
+                        className={`appearance-none bg-gray-800 text-white rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none transition-all min-w-[120px] ${
+                            isActive
+                                ? 'border border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)] hover:shadow-[0_0_12px_rgba(239,68,68,0.8)] focus:shadow-[0_0_12px_rgba(239,68,68,0.8)]'
+                                : 'border border-gray-600 hover:border-gray-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'
+                        }`}
                     >
                         {options.map((option) => (
                             <option key={option.value} value={option.value}>

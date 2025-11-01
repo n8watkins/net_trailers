@@ -4,6 +4,7 @@ import { useAppStore } from '../stores/appStore'
 import type { SearchFilters } from '../stores/appStore'
 import { getTitle, Content, getYear } from '../typings'
 import { useChildSafety } from './useChildSafety'
+import { guestLog, guestError } from '../utils/debugLogger'
 
 // Custom debounce hook
 function useDebounce<T>(value: T, delay: number): T {
@@ -161,7 +162,7 @@ export function useSearch() {
                 const TMDB_MAX_PAGE = 500
                 const safeTargetPages = Math.min(targetPages, TMDB_MAX_PAGE)
 
-                console.log('[QuickSearch] Loading additional pages:', {
+                guestLog('[QuickSearch] Loading additional pages:', {
                     totalResults: search.totalResults,
                     calculatedPages,
                     targetPages: safeTargetPages,
@@ -176,7 +177,7 @@ export function useSearch() {
                     })
 
                     if (!response.ok) {
-                        console.warn(
+                        guestError(
                             '[QuickSearch] API error at page',
                             currentPage,
                             response.statusText
@@ -188,7 +189,7 @@ export function useSearch() {
 
                     // Short-circuit if API returns no results or fewer than expected
                     if (!data.results || data.results.length === 0) {
-                        console.log('[QuickSearch] No more results at page', currentPage)
+                        guestLog('[QuickSearch] No more results at page', currentPage)
                         break
                     }
 
@@ -197,7 +198,7 @@ export function useSearch() {
 
                     // Short-circuit if we got fewer than 20 results (last page)
                     if (data.results.length < 20) {
-                        console.log(
+                        guestLog(
                             '[QuickSearch] Received partial page, stopping at page',
                             currentPage - 1
                         )
@@ -205,7 +206,7 @@ export function useSearch() {
                     }
                 }
 
-                console.log(
+                guestLog(
                     '[QuickSearch] Loaded',
                     allResults.length,
                     'total results across',
@@ -225,7 +226,7 @@ export function useSearch() {
                 }))
             } catch (error: any) {
                 if (error.name !== 'AbortError') {
-                    console.error('[QuickSearch] Error:', error)
+                    guestError('[QuickSearch] Error:', error)
                     setSearch((prev) => ({ ...prev, isLoadingAll: false }))
                 }
                 // AbortError is expected when cancelling requests
@@ -273,7 +274,7 @@ export function useSearch() {
             const calculatedPages = Math.max(1, Math.ceil(search.totalResults / 20))
             const maxAllowedPage = Math.min(calculatedPages, TMDB_MAX_PAGE)
 
-            console.log('[LoadAll] Loading all remaining pages:', {
+            guestLog('[LoadAll] Loading all remaining pages:', {
                 totalResults: search.totalResults,
                 calculatedPages,
                 maxAllowedPage,
@@ -289,7 +290,7 @@ export function useSearch() {
                 })
 
                 if (!response.ok) {
-                    console.warn('[LoadAll] API error at page', currentPage, response.statusText)
+                    guestError('[LoadAll] API error at page', currentPage, response.statusText)
                     break
                 }
 
@@ -297,7 +298,7 @@ export function useSearch() {
 
                 // Short-circuit if API returns no results
                 if (!data.results || data.results.length === 0) {
-                    console.log('[LoadAll] No more results at page', currentPage)
+                    guestLog('[LoadAll] No more results at page', currentPage)
                     break
                 }
 
@@ -306,15 +307,12 @@ export function useSearch() {
 
                 // Short-circuit if we got fewer than 20 results (last page)
                 if (data.results.length < 20) {
-                    console.log(
-                        '[LoadAll] Received partial page, stopping at page',
-                        currentPage - 1
-                    )
+                    guestLog('[LoadAll] Received partial page, stopping at page', currentPage - 1)
                     break
                 }
             }
 
-            console.log(
+            guestLog(
                 '[LoadAll] Loaded',
                 allResults.length,
                 'total results across',
@@ -334,7 +332,7 @@ export function useSearch() {
             }))
         } catch (error: any) {
             if (error.name !== 'AbortError') {
-                console.error('[LoadAll] Error:', error)
+                guestError('[LoadAll] Error:', error)
                 setSearch((prev) => ({ ...prev, isLoadingAll: false }))
             }
             // AbortError is expected when cancelling requests
