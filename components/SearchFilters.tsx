@@ -141,7 +141,7 @@ export default function SearchFilters({ className = '', isOpen, onClose }: Searc
 
                     <FilterDropdown
                         label="Year"
-                        value={search.filters.year}
+                        value={search.filters.year || 'all'}
                         onChange={(value) => updateFilter('year', value)}
                         options={yearOptions}
                         isActive={search.filters.year !== 'all'}
@@ -149,7 +149,7 @@ export default function SearchFilters({ className = '', isOpen, onClose }: Searc
 
                     <FilterDropdown
                         label="Sort By"
-                        value={search.filters.sortBy}
+                        value={search.filters.sortBy || 'popularity.desc'}
                         onChange={(value) => updateFilter('sortBy', value)}
                         options={sortOptions}
                         isActive={search.filters.sortBy !== 'popularity.desc'}
