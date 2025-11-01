@@ -43,6 +43,9 @@ export class AuthStorageService {
                 defaultWatchlist: [],
                 userCreatedWatchlists: [],
                 lastActive: Date.now(),
+                autoMute: true,
+                defaultVolume: 50,
+                childSafetyMode: false,
             }
         }
 

@@ -22,7 +22,7 @@ export interface UserSession {
     createdAt: number
 }
 
-export type SessionType = 'guest' | 'authenticated' | undefined
+export type SessionType = 'guest' | 'authenticated' | 'initializing' | undefined
 
 // Auth session for authenticated users
 export interface AuthSession {

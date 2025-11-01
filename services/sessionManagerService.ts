@@ -1,6 +1,6 @@
 import { sessionLog, sessionError } from '../utils/debugLogger'
 import { User } from 'firebase/auth'
-import { UserPreferences, SessionType } from '../types/atoms'
+import { UserPreferences, SessionType, UserSession } from '../types/atoms'
 import { SessionStorageService } from './sessionStorageService'
 
 // Zustand-compatible setter type
@@ -444,6 +444,9 @@ export class SessionManagerService {
             hiddenMovies: [],
             userCreatedWatchlists: [],
             lastActive: Date.now(),
+            autoMute: true,
+            defaultVolume: 50,
+            childSafetyMode: false,
         }
     }
 
