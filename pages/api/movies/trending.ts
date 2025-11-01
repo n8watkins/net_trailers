@@ -17,9 +17,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const { childSafetyMode } = req.query
         const childSafeMode = childSafetyMode === 'true'
 
-        const response = await fetch(
-            `${BASE_URL}/trending/all/week?api_key=${API_KEY}&language=en-US&page=1`
-        )
+        let url: string
+
+        if (childSafeMode) {
+            // In child safety mode, use discover with certification filtering instead of trending
+            // This ensures only G/PG/PG-13 movies are returned
+            url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&page=1&sort_by=popularity.desc&certification_country=US&certification.lte=PG-13`
+        } else {
+            // Normal mode - use trending endpoint for mixed content
+            url = `${BASE_URL}/trending/all/week?api_key=${API_KEY}&language=en-US&page=1`
+        }
+
+        const response = await fetch(url)
 
         if (!response.ok) {
             throw new Error(`TMDB API error: ${response.status}`)
@@ -27,26 +36,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const data = await response.json()
 
-        // Apply child safety filtering if enabled
-        if (childSafeMode) {
-            const beforeCount = data.results.length
-            const filteredResults = filterContentByAdultFlag(data.results, true)
-            const hiddenCount = beforeCount - filteredResults.length
+        // Add media_type to results if not present (discover doesn't include it)
+        const enrichedResults = data.results.map((item: any) => ({
+            ...item,
+            media_type: item.media_type || 'movie',
+        }))
 
-            // Cache for 1 hour
-            res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400')
+        // Cache for 1 hour
+        res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400')
+
+        if (childSafeMode) {
             return res.status(200).json({
                 ...data,
-                results: filteredResults,
+                results: enrichedResults,
                 child_safety_enabled: true,
-                hidden_count: hiddenCount,
+                hidden_count: 0, // No filtering needed - certification handles it
             })
         }
 
-        // Keep original mixed data with existing media_type from TMDB
-        // Cache for 1 hour
-        res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400')
-        res.status(200).json(data)
+        res.status(200).json({
+            ...data,
+            results: enrichedResults,
+        })
     } catch (error) {
         console.error('TMDB API error:', error)
         res.status(500).json({ message: 'Failed to fetch trending movies' })

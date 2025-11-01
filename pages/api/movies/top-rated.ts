@@ -17,9 +17,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const { page = '1', childSafetyMode } = req.query
         const childSafeMode = childSafetyMode === 'true'
 
-        const response = await fetch(
-            `${BASE_URL}/movie/top_rated?api_key=${API_KEY}&language=en-US&page=${page}`
-        )
+        let url: string
+
+        if (childSafeMode) {
+            // In child safety mode, use discover with certification filtering
+            url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&page=${page}&sort_by=vote_average.desc&vote_count.gte=300&certification_country=US&certification.lte=PG-13`
+        } else {
+            // Normal mode - use top_rated endpoint
+            url = `${BASE_URL}/movie/top_rated?api_key=${API_KEY}&language=en-US&page=${page}`
+        }
+
+        const response = await fetch(url)
 
         if (!response.ok) {
             throw new Error(`TMDB API error: ${response.status}`)
@@ -28,29 +36,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const data = await response.json()
 
         // Add media_type to each item for consistency
-        let enrichedResults = data.results.map((item: any) => ({
+        const enrichedResults = data.results.map((item: any) => ({
             ...item,
             media_type: 'movie',
         }))
 
-        // Apply child safety filtering if enabled
-        if (childSafeMode) {
-            const beforeCount = enrichedResults.length
-            enrichedResults = filterContentByAdultFlag(enrichedResults, true)
-            const hiddenCount = beforeCount - enrichedResults.length
+        // Cache for 15 minutes
+        res.setHeader('Cache-Control', 'public, s-maxage=900, stale-while-revalidate=1800')
 
-            // Cache for 15 minutes
-            res.setHeader('Cache-Control', 'public, s-maxage=900, stale-while-revalidate=1800')
+        if (childSafeMode) {
             return res.status(200).json({
                 ...data,
                 results: enrichedResults,
                 child_safety_enabled: true,
-                hidden_count: hiddenCount,
+                hidden_count: 0, // No filtering needed - certification handles it
             })
         }
 
-        // Cache for 15 minutes
-        res.setHeader('Cache-Control', 'public, s-maxage=900, stale-while-revalidate=1800')
         res.status(200).json({
             ...data,
             results: enrichedResults,

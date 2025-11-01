@@ -64,6 +64,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             sort_by: Array.isArray(sort_by) ? sort_by[0] : sort_by,
         })
 
+        // Add child safety certification filters BEFORE fetching from TMDB
+        if (childSafeMode) {
+            if (type === 'movie') {
+                // US certifications: G, PG, PG-13 (exclude R, NC-17, NR)
+                params.append('certification_country', 'US')
+                params.append('certification.lte', 'PG-13')
+            }
+            // Note: TV show filtering happens after fetch via filterMatureTVShows
+        }
+
         // Add optional filters
         if (vote_average_gte)
             params.append(
@@ -155,11 +165,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (childSafeMode) {
             const beforeCount = enrichedResults.length
 
-            if (type === 'movie') {
-                // Filter movies by adult flag
-                enrichedResults = filterContentByAdultFlag(enrichedResults, true)
-            } else if (type === 'tv') {
-                // Filter TV shows by content ratings
+            // Movies are already filtered by certification at query time
+            // TV shows still need post-filtering by content ratings
+            if (type === 'tv') {
                 enrichedResults = await filterMatureTVShows(enrichedResults, API_KEY)
             }
 
