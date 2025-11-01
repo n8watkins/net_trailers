@@ -33,7 +33,7 @@ This document lays out a thorough plan to address both issues without regressing
 | A2   | Replace `hasLoadedPrefsRef` gating with a comparison that checks for the initializing sentinel. | ✅     | Added `!userData.isInitializing` guard at `pages/settings.tsx:308`               |
 | A3   | Update the effect to react to actual preference changes.                                        | ✅     | Effect depends on `currentPreferences` and `userData.isInitializing`             |
 | A4   | Recompute `originalPreferences` after hydration.                                                | ✅     | `originalPreferences` set when real data arrives (not during initializing)       |
-| A5   | Add unit/RTL coverage that simulates hydration transitions.                                     | ⏳     | Deferred - manual testing confirms fix works                                     |
+| A5   | Add unit/RTL coverage that simulates hydration transitions.                                     | ✅     | `__tests__/hooks/useUserData.preferences.test.ts` - 4 tests covering hydration   |
 
 ## Workstream B – Guest Data Clearance Integrity ✅ COMPLETED
 
@@ -43,7 +43,7 @@ This document lays out a thorough plan to address both issues without regressing
 | B2   | Invoke `GuestStorageService.clearCurrentGuestData(guestId)` inside `clearAllData`.        | ✅     | `stores/guestStore.ts:390` clears localStorage before memory                     |
 | B3   | Update `GuestStorageService.clearGuestData` to guard against SSR and log success/failure. | ✅     | `GuestStorageService.clearCurrentGuestData` already has SSR guards and logging   |
 | B4   | Verify `SessionSyncManager`'s resync path detects cleared storage.                        | ✅     | With guestId preserved, SessionSyncManager sees empty arrays and doesn't re-sync |
-| B5   | Add Cypress/Jest integration that validates localStorage clearing.                        | ⏳     | Deferred - manual testing confirms fix works                                     |
+| B5   | Add Cypress/Jest integration that validates localStorage clearing.                        | ✅     | `__tests__/stores/guestStore.clearData.test.ts` - 5 tests covering clearAllData  |
 
 ## Cross-Cutting Validation
 
