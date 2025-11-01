@@ -112,7 +112,7 @@ export default function SearchFiltersDropdown({ isOpen, onClose }: SearchFilters
                                 onChange={(e) => updateFilter('rating', e.target.value)}
                                 className={`w-full bg-[#0a0a0a] text-white rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none appearance-none transition-all duration-200 ${
                                     localFilters.rating !== 'all'
-                                        ? 'border-[0.5px] border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.7)] hover:shadow-[0_0_20px_rgba(239,68,68,0.9)] focus:shadow-[0_0_20px_rgba(239,68,68,0.9)]'
+                                        ? 'border-[0.5px] border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)] hover:shadow-[0_0_12px_rgba(239,68,68,0.5)] focus:shadow-[0_0_12px_rgba(239,68,68,0.5)]'
                                         : 'border border-gray-600/50 focus:ring-2 focus:ring-red-500 focus:border-red-500'
                                 }`}
                             >
@@ -137,7 +137,7 @@ export default function SearchFiltersDropdown({ isOpen, onClose }: SearchFilters
                                     onChange={(e) => updateFilter('year', e.target.value)}
                                     className={`w-full bg-[#0a0a0a] text-white rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none appearance-none transition-all duration-200 ${
                                         localFilters.year !== 'all'
-                                            ? 'border-[0.5px] border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.7)] hover:shadow-[0_0_20px_rgba(239,68,68,0.9)] focus:shadow-[0_0_20px_rgba(239,68,68,0.9)]'
+                                            ? 'border-[0.5px] border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)] hover:shadow-[0_0_12px_rgba(239,68,68,0.5)] focus:shadow-[0_0_12px_rgba(239,68,68,0.5)]'
                                             : 'border border-gray-600/50 focus:ring-2 focus:ring-red-500 focus:border-red-500'
                                     }`}
                                 >
@@ -161,7 +161,7 @@ export default function SearchFiltersDropdown({ isOpen, onClose }: SearchFilters
                                     onChange={(e) => updateFilter('sortBy', e.target.value)}
                                     className={`w-full bg-[#0a0a0a] text-white rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none appearance-none transition-all duration-200 ${
                                         localFilters.sortBy !== 'popularity.desc'
-                                            ? 'border-[0.5px] border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.7)] hover:shadow-[0_0_20px_rgba(239,68,68,0.9)] focus:shadow-[0_0_20px_rgba(239,68,68,0.9)]'
+                                            ? 'border-[0.5px] border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)] hover:shadow-[0_0_12px_rgba(239,68,68,0.5)] focus:shadow-[0_0_12px_rgba(239,68,68,0.5)]'
                                             : 'border border-gray-600/50 focus:ring-2 focus:ring-red-500 focus:border-red-500'
                                     }`}
                                 >
