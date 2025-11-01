@@ -1,11 +1,13 @@
 import { NextApiRequest, NextApiResponse } from 'next'
+import { fetchTVContentRatings, hasMatureRating } from '../../../utils/tvContentRatings'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method not allowed' })
     }
 
-    const { id } = req.query
+    const { id, childSafetyMode } = req.query
+    const childSafeMode = childSafetyMode === 'true'
 
     if (!id || typeof id !== 'string') {
         return res.status(400).json({ error: 'Content ID is required' })
@@ -30,10 +32,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         if (movieResponse.ok) {
             const movieData = await movieResponse.json()
+
+            // Check child safety for movies (adult flag)
+            if (childSafeMode && movieData.adult === true) {
+                return res.status(403).json({
+                    error: 'Content blocked by child safety mode',
+                    reason: 'adult_content',
+                })
+            }
+
             // Add media_type to distinguish from TV shows
             const enrichedMovieData = {
                 ...movieData,
-                media_type: 'movie'
+                media_type: 'movie',
             }
             return res.status(200).json(enrichedMovieData)
         }
@@ -45,17 +56,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         if (tvResponse.ok) {
             const tvData = await tvResponse.json()
+
+            // Check child safety for TV shows (content ratings)
+            if (childSafeMode) {
+                const ratings = await fetchTVContentRatings(contentId, API_KEY)
+                if (ratings && hasMatureRating(ratings)) {
+                    return res.status(403).json({
+                        error: 'Content blocked by child safety mode',
+                        reason: 'mature_rating',
+                    })
+                }
+            }
+
             // Add media_type and transform TV show data to match movie structure
             const enrichedTvData = {
                 ...tvData,
-                media_type: 'tv'
+                media_type: 'tv',
             }
             return res.status(200).json(enrichedTvData)
         }
 
         // If both failed, the content doesn't exist
         return res.status(404).json({ error: 'Content not found' })
-
     } catch (error) {
         console.error('Error fetching content details:', error)
         return res.status(500).json({ error: 'Failed to fetch content details' })
