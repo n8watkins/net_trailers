@@ -243,6 +243,9 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
                 defaultWatchlist: state.defaultWatchlist,
                 userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
                 lastActive: Date.now(),
+                autoMute: state.autoMute ?? true,
+                defaultVolume: state.defaultVolume ?? 50,
+                childSafetyMode: state.childSafetyMode ?? false,
             })
         }
 
@@ -268,6 +271,9 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
                 defaultWatchlist: state.defaultWatchlist,
                 userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
                 lastActive: Date.now(),
+                autoMute: state.autoMute ?? true,
+                defaultVolume: state.defaultVolume ?? 50,
+                childSafetyMode: state.childSafetyMode ?? false,
             })
         }
 
@@ -292,6 +298,9 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
                 defaultWatchlist: state.defaultWatchlist,
                 userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
                 lastActive: Date.now(),
+                autoMute: state.autoMute ?? true,
+                defaultVolume: state.defaultVolume ?? 50,
+                childSafetyMode: state.childSafetyMode ?? false,
             })
         }
 
@@ -317,6 +326,9 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
                 defaultWatchlist: state.defaultWatchlist,
                 userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
                 lastActive: Date.now(),
+                autoMute: state.autoMute ?? true,
+                defaultVolume: state.defaultVolume ?? 50,
+                childSafetyMode: state.childSafetyMode ?? false,
             })
         }
 
@@ -342,6 +354,9 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
                 defaultWatchlist: state.defaultWatchlist,
                 userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
                 lastActive: Date.now(),
+                autoMute: state.autoMute ?? true,
+                defaultVolume: state.defaultVolume ?? 50,
+                childSafetyMode: state.childSafetyMode ?? false,
             })
         }
 
