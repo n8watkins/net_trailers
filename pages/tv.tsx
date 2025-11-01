@@ -36,42 +36,42 @@ const TVShows: NextPage<Props> = ({
 
     const {
         trending,
-        topRatedMovies,
-        actionMovies,
-        comedyMovies,
-        horrorMovies,
-        romanceMovies,
+        topRated,
+        genre1: actionAdventure,
+        genre2: comedy,
+        genre3: sciFiFantasy,
+        genre4: animation,
         documentaries,
     } = data
 
     // Content is already filtered server-side, no need for client-side filtering
     const filteredTrending = trending
-    const filteredTopRated = topRatedMovies
-    const filteredAction = actionMovies
-    const filteredComedy = comedyMovies
-    const filteredHorror = horrorMovies
-    const filteredRomance = romanceMovies
+    const filteredTopRated = topRated
+    const filteredActionAdventure = actionAdventure
+    const filteredComedy = comedy
+    const filteredSciFiFantasy = sciFiFantasy
+    const filteredAnimation = animation
     const filteredDocumentaries = documentaries
 
     // Check if we have any content at all
     const hasAnyContent =
         trending.length > 0 ||
-        topRatedMovies.length > 0 ||
-        actionMovies.length > 0 ||
-        comedyMovies.length > 0 ||
-        horrorMovies.length > 0 ||
-        romanceMovies.length > 0 ||
+        topRated.length > 0 ||
+        actionAdventure.length > 0 ||
+        comedy.length > 0 ||
+        sciFiFantasy.length > 0 ||
+        animation.length > 0 ||
         documentaries.length > 0
 
     useEffect(() => {
         // Store main page data in cache for future navigations
         const currentData = {
             trending,
-            topRatedMovies,
-            actionMovies,
-            comedyMovies,
-            horrorMovies,
-            romanceMovies,
+            topRated,
+            actionAdventure,
+            comedy,
+            sciFiFantasy,
+            animation,
             documentaries,
             lastFetched: Date.now(),
         }
@@ -83,11 +83,11 @@ const TVShows: NextPage<Props> = ({
         setContentLoadedSuccessfully(true)
     }, [
         trending,
-        topRatedMovies,
-        actionMovies,
-        comedyMovies,
-        horrorMovies,
-        romanceMovies,
+        topRated,
+        actionAdventure,
+        comedy,
+        sciFiFantasy,
+        animation,
         documentaries,
         setContentLoadedSuccessfully,
         setMainPageData,
@@ -135,17 +135,20 @@ const TVShows: NextPage<Props> = ({
                     {filteredTopRated.length > 0 && (
                         <Row title="Top Rated TV Shows" content={filteredTopRated} />
                     )}
-                    {filteredAction.length > 0 && (
-                        <Row title="Action & Adventure TV Shows" content={filteredAction} />
+                    {filteredActionAdventure.length > 0 && (
+                        <Row
+                            title="Action & Adventure TV Shows"
+                            content={filteredActionAdventure}
+                        />
                     )}
                     {filteredComedy.length > 0 && (
                         <Row title="Comedy TV Shows" content={filteredComedy} />
                     )}
-                    {filteredHorror.length > 0 && (
-                        <Row title="Sci-Fi & Fantasy TV Shows" content={filteredHorror} />
+                    {filteredSciFiFantasy.length > 0 && (
+                        <Row title="Sci-Fi & Fantasy TV Shows" content={filteredSciFiFantasy} />
                     )}
-                    {filteredRomance.length > 0 && (
-                        <Row title="Animation TV Shows" content={filteredRomance} />
+                    {filteredAnimation.length > 0 && (
+                        <Row title="Animation TV Shows" content={filteredAnimation} />
                     )}
                     {filteredDocumentaries.length > 0 && (
                         <Row title="Documentary TV Shows" content={filteredDocumentaries} />

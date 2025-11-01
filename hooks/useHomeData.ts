@@ -4,11 +4,11 @@ import { useChildSafety } from './useChildSafety'
 
 interface HomeData {
     trending: Content[]
-    topRatedMovies: Content[]
-    actionMovies: Content[]
-    comedyMovies: Content[]
-    horrorMovies: Content[]
-    romanceMovies: Content[]
+    topRated: Content[]
+    genre1: Content[] // Action (movies) | Action & Adventure (TV)
+    genre2: Content[] // Comedy (both)
+    genre3: Content[] // Horror (movies) | Sci-Fi & Fantasy (TV)
+    genre4: Content[] // Romance (movies) | Animation (TV)
     documentaries: Content[]
 }
 
@@ -25,11 +25,11 @@ interface UseHomeDataReturn {
 export function useHomeData(filter?: string): UseHomeDataReturn {
     const [data, setData] = useState<HomeData>({
         trending: [],
-        topRatedMovies: [],
-        actionMovies: [],
-        comedyMovies: [],
-        horrorMovies: [],
-        romanceMovies: [],
+        topRated: [],
+        genre1: [],
+        genre2: [],
+        genre3: [],
+        genre4: [],
         documentaries: [],
     })
     const [loading, setLoading] = useState(true)
@@ -114,14 +114,14 @@ export function useHomeData(filter?: string): UseHomeDataReturn {
 
             setData({
                 trending: randomizeArray(trendingData.results || []),
-                topRatedMovies: randomizeArray([
+                topRated: randomizeArray([
                     ...(topRated1Data.results || []),
                     ...(topRated2Data.results || []),
                 ]),
-                actionMovies: randomizeArray(actionData.results || []),
-                comedyMovies: randomizeArray(comedyData.results || []),
-                horrorMovies: randomizeArray(horrorData.results || []),
-                romanceMovies: randomizeArray(romanceData.results || []),
+                genre1: randomizeArray(actionData.results || []),
+                genre2: randomizeArray(comedyData.results || []),
+                genre3: randomizeArray(horrorData.results || []),
+                genre4: randomizeArray(romanceData.results || []),
                 documentaries: randomizeArray(documentariesData.results || []),
             })
         } catch (err) {

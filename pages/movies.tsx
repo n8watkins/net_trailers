@@ -32,42 +32,42 @@ const Movies: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeybo
 
     const {
         trending,
-        topRatedMovies,
-        actionMovies,
-        comedyMovies,
-        horrorMovies,
-        romanceMovies,
+        topRated,
+        genre1: action,
+        genre2: comedy,
+        genre3: horror,
+        genre4: romance,
         documentaries,
     } = data
 
     // Content is already filtered server-side, no need for client-side filtering
     const filteredTrending = trending
-    const filteredTopRated = topRatedMovies
-    const filteredAction = actionMovies
-    const filteredComedy = comedyMovies
-    const filteredHorror = horrorMovies
-    const filteredRomance = romanceMovies
+    const filteredTopRated = topRated
+    const filteredAction = action
+    const filteredComedy = comedy
+    const filteredHorror = horror
+    const filteredRomance = romance
     const filteredDocumentaries = documentaries
 
     // Check if we have any content at all
     const hasAnyContent =
         trending.length > 0 ||
-        topRatedMovies.length > 0 ||
-        actionMovies.length > 0 ||
-        comedyMovies.length > 0 ||
-        horrorMovies.length > 0 ||
-        romanceMovies.length > 0 ||
+        topRated.length > 0 ||
+        action.length > 0 ||
+        comedy.length > 0 ||
+        horror.length > 0 ||
+        romance.length > 0 ||
         documentaries.length > 0
 
     useEffect(() => {
         // Store main page data in cache for future navigations
         const currentData = {
             trending,
-            topRatedMovies,
-            actionMovies,
-            comedyMovies,
-            horrorMovies,
-            romanceMovies,
+            topRated,
+            action,
+            comedy,
+            horror,
+            romance,
             documentaries,
             lastFetched: Date.now(),
         }
@@ -79,11 +79,11 @@ const Movies: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeybo
         setContentLoadedSuccessfully(true)
     }, [
         trending,
-        topRatedMovies,
-        actionMovies,
-        comedyMovies,
-        horrorMovies,
-        romanceMovies,
+        topRated,
+        action,
+        comedy,
+        horror,
+        romance,
         documentaries,
         setContentLoadedSuccessfully,
         setMainPageData,
