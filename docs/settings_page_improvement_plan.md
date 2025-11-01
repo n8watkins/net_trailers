@@ -4,10 +4,10 @@
 
 - ✅ Issue #1 - COMPLETED (Delete Account Flow)
 - ✅ Issue #2 - COMPLETED (Child Safety Mode Bypass)
+- ✅ Issue #3 - COMPLETED (Account Management Forms)
 - ✅ Issue #4 - COMPLETED (Clear Data + Firestore Fix)
 - ✅ Issue #5 - COMPLETED (Debug Logging)
 - ✅ Issue #6 - COMPLETED (Preferences Not Exposed) - NEW
-- ⏳ Issue #3 - PENDING (Account Management Forms - requires implementation)
 
 ## Issue 1 – Delete Account Flow Is Non-Functional (High) ✅ COMPLETED
 
@@ -31,15 +31,21 @@
     3. ✅ Added server-side enforcement in guestStore.updatePreferences() to block childSafetyMode changes
     4. ✅ Cleaned up debug console.log statements
 
-## Issue 3 – Account Management Forms Lack Submission Logic (High)
+## Issue 3 – Account Management Forms Lack Submission Logic (High) ✅ COMPLETED
 
-- **Where**: Profile (`pages/settings.tsx:680-699`), Email (`pages/settings.tsx:732-754`), Password (`pages/settings.tsx:772-808`)
+- **Where**: Profile (`pages/settings.tsx:906-987`), Email (`pages/settings.tsx:1045-1114`), Password (`pages/settings.tsx:1174-1249`)
 - **Impact**: Primary buttons perform no action, leaving core account settings unusable and confusing.
-- **Resolution Plan**:
-    1. Introduce controlled form state (React Hook Form or local state) with validation for each section.
-    2. Connect email/password updates to Firebase Auth helpers; show inline success/error feedback.
-    3. Disable submit buttons until inputs are valid and dirty; add loading indicators while awaiting responses.
-    4. Cover the flows with unit tests (form submission success/failure) and update manual QA scripts.
+- **Resolution Implemented** (commit 60e35b7):
+    1. ✅ Added controlled form state for all three forms (displayName, newEmail, emailPassword, currentPassword, newPassword, confirmPassword)
+    2. ✅ Connected forms to Firebase Auth: updateProfile(), updateEmail(), updatePassword()
+    3. ✅ Implemented comprehensive validation for each form with user-friendly error messages
+    4. ✅ Added loading states (isSavingProfile, isUpdatingEmail, isUpdatingPassword) with spinner UI
+    5. ✅ Buttons disabled when invalid or during operations
+    6. ✅ Re-authentication implemented for sensitive operations (email/password changes)
+    7. ✅ Success/error feedback via toast notifications
+    8. ✅ Forms auto-clear on successful update
+    9. ✅ useEffect to sync displayName when user changes
+    10. ✅ All forms respect OAuth provider (Google users see notices instead of forms)
 
 ## Issue 4 – Clear Data Handler Ignores Async Errors (Medium) ✅ COMPLETED (with fix)
 
