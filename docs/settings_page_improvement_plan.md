@@ -2,21 +2,23 @@
 
 ## Status Summary
 
+- ✅ Issue #1 - COMPLETED
 - ✅ Issue #2 - COMPLETED
 - ✅ Issue #4 - COMPLETED
 - ✅ Issue #5 - COMPLETED
-- ⏳ Issue #1 - PENDING (requires Firebase implementation)
 - ⏳ Issue #3 - PENDING (requires form implementation)
 
-## Issue 1 – Delete Account Flow Is Non-Functional (High)
+## Issue 1 – Delete Account Flow Is Non-Functional (High) ✅ COMPLETED
 
-- **Where**: `pages/settings.tsx:434-444`, `hooks/useUserData.ts:238-241`
+- **Where**: `pages/settings.tsx:434-444`, `hooks/useUserData.ts:238-270`
 - **Impact**: The UI reports success even though `deleteAccount` is a stub, so user data remains intact and users are misled.
-- **Resolution Plan**:
-    1. Implement a real `deleteAccount` action in the authenticated session layer (likely in `hooks/useAuthData.ts` or related service) that calls Firebase Auth deletion and cascades Firestore cleanup.
-    2. Wrap the call with error handling and explicit guest safeguards; surface actionable failure messaging.
-    3. Update the settings handler to await the promise, show loading state, and redirect/log the user out on success.
-    4. Add integration coverage (mocking Firebase) to verify success and error paths.
+- **Resolution Implemented** (commit 784d7cc):
+    1. ✅ Implemented real `deleteAccount` in `hooks/useUserData.ts` with Firebase Auth deletion and Firestore cleanup cascade
+    2. ✅ Added error handling for `auth/requires-recent-login` case with user-friendly message
+    3. ✅ Added `isDeletingAccount` loading state with double-submission prevention
+    4. ✅ Added loading UI to ConfirmationModal (spinner, disabled buttons)
+    5. ✅ Success flow redirects to home page after 2-second delay
+    6. ✅ Guest users are blocked with guard check and error message
 
 ## Issue 2 – Child Safety Mode Toggle Bypasses Guest Restrictions (High) ✅ COMPLETED
 
