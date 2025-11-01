@@ -23,7 +23,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const { genre, childSafetyMode } = req.query
-    const { page = '1' } = req.query
+    const pageParam = req.query.page
+    const page = Array.isArray(pageParam) ? pageParam[0] : pageParam || '1'
     const childSafeMode = childSafetyMode === 'true'
 
     if (typeof genre !== 'string' || !genreMap[genre.toLowerCase()]) {

@@ -5,7 +5,7 @@ import SearchResultItem from './SearchResultItem'
 
 interface SearchSuggestionsDropdownProps {
     isVisible: boolean
-    suggestionsRef: React.RefObject<HTMLDivElement>
+    suggestionsRef: React.RefObject<HTMLDivElement | null>
     query: string
     totalResults: number
     filteredCount: number
@@ -15,7 +15,7 @@ interface SearchSuggestionsDropdownProps {
     selectedResultIndex: number
     isSeeAllButtonSelected: boolean
     resultRefs: React.MutableRefObject<(HTMLDivElement | null)[]>
-    seeAllButtonRef: React.RefObject<HTMLButtonElement>
+    seeAllButtonRef: React.RefObject<HTMLButtonElement | null>
     onQuickResultClick: (item: Content) => void
     onSeeAllResults: () => void
     onMouseDown: (e: React.MouseEvent) => void
@@ -55,8 +55,8 @@ export default function SearchSuggestionsDropdown({
                         {hasActiveFilters ? (
                             <>
                                 Showing {filteredCount.toLocaleString()} filtered result
-                                {filteredCount !== 1 ? 's' : ''} (of{' '}
-                                {totalResults.toLocaleString()} total)
+                                {filteredCount !== 1 ? 's' : ''} (of {totalResults.toLocaleString()}{' '}
+                                total)
                             </>
                         ) : (
                             <>
@@ -106,9 +106,7 @@ export default function SearchSuggestionsDropdown({
                                         {filteredCount !== 1 ? 's' : ''}
                                     </>
                                 ) : (
-                                    <>
-                                        See all {totalResults.toLocaleString()} results
-                                    </>
+                                    <>See all {totalResults.toLocaleString()} results</>
                                 )}
                             </span>
                             <ArrowRightIcon className="h-4 w-4 text-gray-400 group-hover:text-red-400 transition-colors" />

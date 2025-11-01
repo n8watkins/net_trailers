@@ -10,7 +10,7 @@ export default function VolumeSlider({ volume, onChange, className = '' }: Volum
     const sliderRef = useRef<HTMLDivElement>(null)
     const [isDragging, setIsDragging] = useState(false)
     const [localVolume, setLocalVolume] = useState(volume)
-    const requestRef = useRef<number>()
+    const requestRef = useRef<number | undefined>(undefined)
 
     // Sync local volume with prop when not dragging
     useEffect(() => {

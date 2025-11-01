@@ -140,7 +140,7 @@ const Watchlists: NextPage<Props> = ({
     }
 
     const handleManageAllLists = () => {
-        openListModal(null)
+        openListModal(undefined)
     }
 
     const getListIcon = (list: UserList, isSelected: boolean = false) => {
@@ -269,7 +269,7 @@ const Watchlists: NextPage<Props> = ({
 
                             {/* Create New List Button */}
                             <button
-                                onClick={() => openListModal(null)}
+                                onClick={() => openListModal(undefined)}
                                 className="flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 bg-gray-800/50 text-white hover:bg-gray-700/50 border border-gray-600 hover:border-gray-400"
                             >
                                 <PlusIcon className="w-5 h-5 text-white" />

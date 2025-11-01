@@ -12,7 +12,7 @@ const prefetchCache: PrefetchCache = {}
 const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 
 // Track in-flight requests to avoid duplicate fetches
-const inFlightRequests = new Map<string, Promise<Content>>()
+const inFlightRequests = new Map<string, Promise<Content | null>>()
 
 /**
  * Prefetch movie/TV show details and store in cache

@@ -4,11 +4,14 @@ import { cacheLog, cacheError } from '../utils/debugLogger'
 
 export interface MainPageData {
     trending: Content[]
-    topRatedMovies: Content[]
-    actionMovies: Content[]
-    comedyMovies: Content[]
-    horrorMovies: Content[]
-    romanceMovies: Content[]
+    topRated?: Content[]
+    action?: Content[]
+    comedy?: Content[]
+    horror?: Content[]
+    romance?: Content[]
+    actionAdventure?: Content[]
+    sciFiFantasy?: Content[]
+    animation?: Content[]
     documentaries: Content[]
     lastFetched: number
 }

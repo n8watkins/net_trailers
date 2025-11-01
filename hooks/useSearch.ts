@@ -106,7 +106,7 @@ export function useSearch() {
     const searchHistory = useAppStore((state) => state.search.history)
     const { isEnabled: childSafetyEnabled } = useChildSafety()
     const debouncedQuery = useDebounce(search.query, 200)
-    const abortControllerRef = useRef<AbortController>()
+    const abortControllerRef = useRef<AbortController | undefined>(undefined)
     const lastQueryRef = useRef<string>('')
 
     // Clear search results but preserve query

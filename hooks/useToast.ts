@@ -42,27 +42,27 @@ export const useToast = () => {
     }
 
     const showSuccess = (title: string, message?: string) => {
-        addToast({ type: 'success', title, message })
+        addToast({ type: 'success', title, message, timestamp: Date.now() })
     }
 
     const showError = (title: string, message?: string) => {
-        addToast({ type: 'error', title, message })
+        addToast({ type: 'error', title, message, timestamp: Date.now() })
     }
 
     const showWatchlistAdd = (title: string, message?: string) => {
-        addToast({ type: 'watchlist-add', title, message })
+        addToast({ type: 'watchlist-add', title, message, timestamp: Date.now() })
     }
 
     const showWatchlistRemove = (title: string, message?: string) => {
-        addToast({ type: 'watchlist-remove', title, message })
+        addToast({ type: 'watchlist-remove', title, message, timestamp: Date.now() })
     }
 
     const showContentHidden = (title: string, message?: string, onUndo?: () => void) => {
-        addToast({ type: 'content-hidden', title, message, onUndo })
+        addToast({ type: 'content-hidden', title, message, onUndo, timestamp: Date.now() })
     }
 
     const showContentShown = (title: string, message?: string) => {
-        addToast({ type: 'content-shown', title, message })
+        addToast({ type: 'content-shown', title, message, timestamp: Date.now() })
     }
 
     return {

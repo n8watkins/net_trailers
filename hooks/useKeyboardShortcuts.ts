@@ -13,7 +13,7 @@ interface UseKeyboardShortcutsProps {
     onLikeContent?: () => void
     onDislikeContent?: () => void
     onAddToFavorites?: () => void
-    searchInputRef?: React.RefObject<HTMLInputElement>
+    searchInputRef?: React.RefObject<HTMLInputElement | null>
     isModalOpen?: boolean
     isShortcutsModalOpen?: boolean
     isTutorialModalOpen?: boolean

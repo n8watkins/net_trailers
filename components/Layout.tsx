@@ -95,7 +95,7 @@ function Layout({ children }: LayoutProps) {
 
     return (
         <>
-            {React.cloneElement(children as React.ReactElement, {
+            {React.cloneElement(children as React.ReactElement<any>, {
                 onOpenAboutModal: handleOpenAboutModal,
                 onOpenTutorial: handleOpenTutorial,
                 onOpenKeyboardShortcuts: handleOpenShortcuts,

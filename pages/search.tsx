@@ -23,7 +23,7 @@ export default function SearchPage({
     const { updateQuery, query, isLoading, isLoadingAll, hasSearched, results, isTruncated } =
         useSearch()
     const [isInitialLoad, setIsInitialLoad] = useState(true)
-    const urlUpdateTimeoutRef = useRef<NodeJS.Timeout>()
+    const urlUpdateTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
     const { modal } = useAppStore()
     const showModal = modal.isOpen
     const { showError } = useToast()
