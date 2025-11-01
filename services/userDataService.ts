@@ -2,6 +2,7 @@ import { Content } from '../typings'
 import { UserPreferences } from '../types/userData'
 import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { db } from '../firebase'
+import { guestError, guestLog, authError, firebaseWarn } from '../utils/debugLogger'
 
 // DEPRECATED - This service is being phased out in favor of:
 // - AuthStorageService for authenticated users
@@ -77,7 +78,7 @@ export class UserDataService {
                     parsedData.childSafetyMode ?? this.DEFAULT_PREFERENCES.childSafetyMode,
             }
         } catch (error) {
-            console.error('Failed to load guest data:', error)
+            guestError('Failed to load guest data:', error)
             return {
                 likedMovies: [],
                 hiddenMovies: [],
@@ -100,7 +101,7 @@ export class UserDataService {
             }
             localStorage.setItem(GUEST_STORAGE_KEY, JSON.stringify(dataToSave))
         } catch (error) {
-            console.error('Failed to save guest data:', error)
+            guestError('Failed to save guest data:', error)
         }
     }
 
@@ -218,7 +219,7 @@ export class UserDataService {
                 try {
                     await this.saveUserData(userId, defaultPreferences)
                 } catch (saveError) {
-                    console.warn('Failed to create user document (offline?):', saveError)
+                    firebaseWarn('Failed to create user document (offline?):', saveError)
                 }
                 return defaultPreferences
             }
@@ -227,9 +228,9 @@ export class UserDataService {
 
             // Check if error is due to offline status
             if (errorMessage.includes('offline') || errorMessage.includes('network')) {
-                console.warn('Firebase is offline, using default preferences:', errorMessage)
+                firebaseWarn('Firebase is offline, using default preferences:', errorMessage)
             } else {
-                console.error('Failed to load user data:', error)
+                authError('Failed to load user data:', error)
             }
 
             // Return default preferences if Firebase fails
@@ -257,11 +258,11 @@ export class UserDataService {
 
             // Check if error is due to offline status
             if (errorMessage.includes('offline') || errorMessage.includes('network')) {
-                console.warn('Firebase is offline, data will sync when online:', errorMessage)
+                firebaseWarn('Firebase is offline, data will sync when online:', errorMessage)
                 // Don't throw error for offline issues to prevent app crashes
                 return
             } else {
-                console.error('Failed to save user data to Firebase:', error)
+                authError('Failed to save user data to Firebase:', error)
                 throw error
             }
         }
@@ -307,7 +308,7 @@ export class UserDataService {
                 localStorage.removeItem(GUEST_ID_KEY)
             }
         } catch (error) {
-            console.error('Failed to migrate guest data:', error)
+            authError('Failed to migrate guest data:', error)
             throw error
         }
     }

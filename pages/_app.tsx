@@ -1,4 +1,5 @@
 import type { AppProps } from 'next/app'
+import dynamic from 'next/dynamic'
 import '../styles/globals.css'
 import { AuthProvider } from '../hooks/useAuth'
 import DemoMessage from '../components/DemoMessage'
@@ -11,7 +12,6 @@ import Modal from '../components/Modal'
 import ListSelectionModal from '../components/ListSelectionModal'
 import DebugControls from '../components/DebugControls'
 import FirebaseCallTracker from '../components/FirebaseCallTracker'
-import AuthFlowDebugger from '../components/AuthFlowDebugger'
 import FirestoreTestButton from '../components/FirestoreTestButton'
 import { SessionSyncManager } from '../components/SessionSyncManager'
 import WebVitalsHUD from '../components/WebVitalsHUD'
@@ -19,11 +19,21 @@ import { reportWebVitals as reportWebVitalsUtil } from '../utils/performance'
 import { suppressHMRLog } from '../utils/suppressHMRLog'
 import { useEffect } from 'react'
 
+// Dynamic import for AuthFlowDebugger - only loads in development
+// This prevents it from being included in the production bundle
+const AuthFlowDebugger = dynamic(() => import('../components/AuthFlowDebugger'), {
+    ssr: false,
+    loading: () => null,
+})
+
 function MyApp({ Component, pageProps }: AppProps) {
     // Suppress HMR connected log in development
     useEffect(() => {
         suppressHMRLog()
     }, [])
+
+    const isDevelopment = process.env.NODE_ENV === 'development'
+
     return (
         <AuthProvider>
             <ErrorBoundary>
@@ -37,7 +47,7 @@ function MyApp({ Component, pageProps }: AppProps) {
                 <ListSelectionModal />
                 <DebugControls />
                 <FirebaseCallTracker />
-                <AuthFlowDebugger />
+                {isDevelopment && <AuthFlowDebugger />}
                 <FirestoreTestButton />
                 <WebVitalsHUD />
                 <GoogleAnalytics />

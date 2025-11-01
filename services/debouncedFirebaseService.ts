@@ -5,6 +5,7 @@
 
 import { AuthStorageService, AuthPreferences } from './authStorageService'
 import { firebaseTracker } from '../utils/firebaseCallTracker'
+import { firebaseLog, firebaseWarn, authError } from '../utils/debugLogger'
 
 interface PendingSave {
     userId: string
@@ -35,7 +36,7 @@ class DebouncedFirebaseService {
         const existingTimeout = this.saveTimeouts.get(userId)
         if (existingTimeout) {
             clearTimeout(existingTimeout)
-            console.log(`⏸️ [DebouncedFirebase] Cancelled pending save for ${userId}`)
+            firebaseLog(`⏸️ [DebouncedFirebase] Cancelled pending save for ${userId}`)
         }
 
         // Store the latest data
@@ -51,7 +52,7 @@ class DebouncedFirebaseService {
         const timeSinceLastSave = Date.now() - lastSave
         const delay = Math.max(this.DEBOUNCE_DELAY, this.MIN_SAVE_INTERVAL - timeSinceLastSave)
 
-        console.log(
+        firebaseLog(
             `⏳ [DebouncedFirebase] Queued save for ${userId} from ${source}, will execute in ${delay}ms`
         )
 
@@ -69,12 +70,12 @@ class DebouncedFirebaseService {
     private async executeSave(userId: string) {
         const pendingSave = this.pendingSaves.get(userId)
         if (!pendingSave) {
-            console.warn(`⚠️ [DebouncedFirebase] No pending save found for ${userId}`)
+            firebaseWarn(`⚠️ [DebouncedFirebase] No pending save found for ${userId}`)
             return
         }
 
         try {
-            console.log(
+            firebaseLog(
                 `💾 [DebouncedFirebase] Executing save for ${userId} from ${pendingSave.source}`
             )
             firebaseTracker.track('executeSave', `DebouncedFirebase-${pendingSave.source}`, userId)
@@ -88,13 +89,13 @@ class DebouncedFirebaseService {
             this.pendingSaves.delete(userId)
             this.saveTimeouts.delete(userId)
 
-            console.log(`✅ [DebouncedFirebase] Successfully saved for ${userId}`)
+            firebaseLog(`✅ [DebouncedFirebase] Successfully saved for ${userId}`)
         } catch (error) {
-            console.error(`❌ [DebouncedFirebase] Failed to save for ${userId}:`, error)
+            authError(`❌ [DebouncedFirebase] Failed to save for ${userId}:`, error)
 
             // Retry once after a delay
             setTimeout(() => {
-                console.log(`🔄 [DebouncedFirebase] Retrying save for ${userId}`)
+                firebaseLog(`🔄 [DebouncedFirebase] Retrying save for ${userId}`)
                 this.queueSave(userId, pendingSave.preferences, `${pendingSave.source}-retry`)
             }, 5000)
         }
@@ -112,7 +113,7 @@ class DebouncedFirebaseService {
             this.pendingSaves.delete(userId)
         }
 
-        console.log(`⚡ [DebouncedFirebase] Force save for ${userId} from ${source}`)
+        firebaseLog(`⚡ [DebouncedFirebase] Force save for ${userId} from ${source}`)
         firebaseTracker.track('forceSave', `DebouncedFirebase-${source}`, userId)
 
         await AuthStorageService.saveUserData(userId, preferences)
@@ -126,7 +127,7 @@ class DebouncedFirebaseService {
         this.saveTimeouts.forEach((timeout) => clearTimeout(timeout))
         this.saveTimeouts.clear()
         this.pendingSaves.clear()
-        console.log('🛑 [DebouncedFirebase] Cancelled all pending saves')
+        firebaseLog('🛑 [DebouncedFirebase] Cancelled all pending saves')
     }
 
     /**
