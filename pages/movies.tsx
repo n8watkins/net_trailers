@@ -134,16 +134,28 @@ const Movies: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeybo
                         <Row title="Top Rated Movies" content={filteredTopRated} />
                     )}
                     {filteredAction.length > 0 && (
-                        <Row title="Action Movies" content={filteredAction} />
+                        <Row
+                            title={childSafetyEnabled ? 'Animated Movies' : 'Action Movies'}
+                            content={filteredAction}
+                        />
                     )}
                     {filteredComedy.length > 0 && (
-                        <Row title="Comedy Movies" content={filteredComedy} />
+                        <Row
+                            title={childSafetyEnabled ? 'Family Movies' : 'Comedy Movies'}
+                            content={filteredComedy}
+                        />
                     )}
-                    {filteredHorror.length > 0 && !childSafetyEnabled && (
-                        <Row title="Horror Movies" content={filteredHorror} />
+                    {filteredHorror.length > 0 && (
+                        <Row
+                            title={childSafetyEnabled ? 'Adventure Movies' : 'Horror Movies'}
+                            content={filteredHorror}
+                        />
                     )}
                     {filteredRomance.length > 0 && (
-                        <Row title="Romance Movies" content={filteredRomance} />
+                        <Row
+                            title={childSafetyEnabled ? 'Fantasy Movies' : 'Romance Movies'}
+                            content={filteredRomance}
+                        />
                     )}
                     {filteredDocumentaries.length > 0 && (
                         <Row title="Documentaries" content={filteredDocumentaries} />

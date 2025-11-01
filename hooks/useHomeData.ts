@@ -59,28 +59,56 @@ export function useHomeData(filter?: string): UseHomeDataReturn {
                 ]
             } else if (filter === 'movies') {
                 // Fetch movie-specific content
-                fetchPromises = [
-                    fetch(`/api/movies/trending?${childSafetyParam}`),
-                    fetch(`/api/movies/top-rated?page=1&${childSafetyParam}`),
-                    fetch(`/api/movies/top-rated?page=2&${childSafetyParam}`),
-                    fetch(`/api/genres/movie/28?${childSafetyParam}`), // Action
-                    fetch(`/api/genres/movie/35?${childSafetyParam}`), // Comedy
-                    fetch(`/api/genres/movie/27?${childSafetyParam}`), // Horror
-                    fetch(`/api/genres/movie/10749?${childSafetyParam}`), // Romance
-                    fetch(`/api/genres/movie/99?${childSafetyParam}`), // Documentary
-                ]
+                // In child safety mode, use family-friendly genres only
+                if (childSafetyEnabled) {
+                    fetchPromises = [
+                        fetch(`/api/movies/trending?${childSafetyParam}`),
+                        fetch(`/api/movies/top-rated?page=1&${childSafetyParam}`),
+                        fetch(`/api/movies/top-rated?page=2&${childSafetyParam}`),
+                        fetch(`/api/genres/movie/16?${childSafetyParam}`), // Animation
+                        fetch(`/api/genres/movie/10751?${childSafetyParam}`), // Family
+                        fetch(`/api/genres/movie/12?${childSafetyParam}`), // Adventure
+                        fetch(`/api/genres/movie/14?${childSafetyParam}`), // Fantasy
+                        fetch(`/api/genres/movie/99?${childSafetyParam}`), // Documentary
+                    ]
+                } else {
+                    fetchPromises = [
+                        fetch(`/api/movies/trending?${childSafetyParam}`),
+                        fetch(`/api/movies/top-rated?page=1&${childSafetyParam}`),
+                        fetch(`/api/movies/top-rated?page=2&${childSafetyParam}`),
+                        fetch(`/api/genres/movie/28?${childSafetyParam}`), // Action
+                        fetch(`/api/genres/movie/35?${childSafetyParam}`), // Comedy
+                        fetch(`/api/genres/movie/27?${childSafetyParam}`), // Horror
+                        fetch(`/api/genres/movie/10749?${childSafetyParam}`), // Romance
+                        fetch(`/api/genres/movie/99?${childSafetyParam}`), // Documentary
+                    ]
+                }
             } else {
                 // Default mixed content (movies)
-                fetchPromises = [
-                    fetch(`/api/movies/trending?${childSafetyParam}`),
-                    fetch(`/api/movies/top-rated?page=1&${childSafetyParam}`),
-                    fetch(`/api/movies/top-rated?page=2&${childSafetyParam}`),
-                    fetch(`/api/genres/movie/28?${childSafetyParam}`), // Action Movies
-                    fetch(`/api/genres/movie/35?${childSafetyParam}`), // Comedy Movies
-                    fetch(`/api/genres/movie/27?${childSafetyParam}`), // Horror Movies
-                    fetch(`/api/genres/movie/10749?${childSafetyParam}`), // Romance Movies
-                    fetch(`/api/genres/movie/99?${childSafetyParam}`), // Documentary Movies
-                ]
+                // In child safety mode, use family-friendly genres only
+                if (childSafetyEnabled) {
+                    fetchPromises = [
+                        fetch(`/api/movies/trending?${childSafetyParam}`),
+                        fetch(`/api/movies/top-rated?page=1&${childSafetyParam}`),
+                        fetch(`/api/movies/top-rated?page=2&${childSafetyParam}`),
+                        fetch(`/api/genres/movie/16?${childSafetyParam}`), // Animation
+                        fetch(`/api/genres/movie/10751?${childSafetyParam}`), // Family
+                        fetch(`/api/genres/movie/12?${childSafetyParam}`), // Adventure
+                        fetch(`/api/genres/movie/14?${childSafetyParam}`), // Fantasy
+                        fetch(`/api/genres/movie/99?${childSafetyParam}`), // Documentary
+                    ]
+                } else {
+                    fetchPromises = [
+                        fetch(`/api/movies/trending?${childSafetyParam}`),
+                        fetch(`/api/movies/top-rated?page=1&${childSafetyParam}`),
+                        fetch(`/api/movies/top-rated?page=2&${childSafetyParam}`),
+                        fetch(`/api/genres/movie/28?${childSafetyParam}`), // Action Movies
+                        fetch(`/api/genres/movie/35?${childSafetyParam}`), // Comedy Movies
+                        fetch(`/api/genres/movie/27?${childSafetyParam}`), // Horror Movies
+                        fetch(`/api/genres/movie/10749?${childSafetyParam}`), // Romance Movies
+                        fetch(`/api/genres/movie/99?${childSafetyParam}`), // Documentary Movies
+                    ]
+                }
             }
 
             const responses = await Promise.all(fetchPromises)

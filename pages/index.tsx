@@ -173,8 +173,8 @@ const Home: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboar
                             title={
                                 filter === 'tv'
                                     ? 'Action & Adventure TV Shows'
-                                    : filter === 'movies'
-                                      ? 'Action Movies'
+                                    : childSafetyEnabled
+                                      ? 'Animated Movies'
                                       : 'Action Movies'
                             }
                             content={filteredAction}
@@ -185,20 +185,20 @@ const Home: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboar
                             title={
                                 filter === 'tv'
                                     ? 'Comedy TV Shows'
-                                    : filter === 'movies'
-                                      ? 'Comedy Movies'
+                                    : childSafetyEnabled
+                                      ? 'Family Movies'
                                       : 'Comedy Movies'
                             }
                             content={filteredComedy}
                         />
                     )}
-                    {filteredHorror.length > 0 && !(childSafetyEnabled && filter !== 'tv') && (
+                    {filteredHorror.length > 0 && (
                         <Row
                             title={
                                 filter === 'tv'
                                     ? 'Sci-Fi & Fantasy TV Shows'
-                                    : filter === 'movies'
-                                      ? 'Horror Movies'
+                                    : childSafetyEnabled
+                                      ? 'Adventure Movies'
                                       : 'Horror Movies'
                             }
                             content={filteredHorror}
@@ -209,8 +209,8 @@ const Home: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboar
                             title={
                                 filter === 'tv'
                                     ? 'Animation TV Shows'
-                                    : filter === 'movies'
-                                      ? 'Romance Movies'
+                                    : childSafetyEnabled
+                                      ? 'Fantasy Movies'
                                       : 'Romance Movies'
                             }
                             content={filteredRomance}
