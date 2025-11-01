@@ -304,7 +304,8 @@ const Settings: React.FC<SettingsProps> = ({
 
     // Load preferences from store after mount (hydration-safe)
     React.useEffect(() => {
-        if (!hasLoadedPrefsRef.current && currentPreferences) {
+        // Only load preferences once session is initialized and real data is available
+        if (!hasLoadedPrefsRef.current && !userData.isInitializing && currentPreferences) {
             setChildSafetyMode(currentPreferences.childSafetyMode)
             setAutoMute(currentPreferences.autoMute)
             setDefaultVolume(currentPreferences.defaultVolume)

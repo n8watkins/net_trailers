@@ -382,8 +382,16 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
     },
 
     clearAllData: () => {
+        const state = get()
+
+        // Clear localStorage if we have a guestId
+        if (state.guestId) {
+            GuestStorageService.clearCurrentGuestData(state.guestId)
+        }
+
+        // Clear in-memory store
         set(getDefaultState())
-        guestLog('🧹 [GuestStore] Cleared all data')
+        guestLog('🧹 [GuestStore] Cleared all data (memory + localStorage)')
     },
 
     loadData: (data: GuestState) => {
