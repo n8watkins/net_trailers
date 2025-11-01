@@ -14,7 +14,8 @@ interface TVContentRatingsResponse {
 }
 
 // Mature TV ratings that should be filtered in child safety mode
-// TV-14 is ALLOWED (suitable for ages 14+)
+// Only block truly adult/mature content (18+, TV-MA)
+// Allow: TV-14, TV-PG, TV-G, and international equivalents like 15, 16
 export const MATURE_TV_RATINGS = new Set([
     'TV-MA', // TV Mature Audience (US) - BLOCKED
     'R', // Restricted (some regions use this for TV) - BLOCKED
@@ -23,8 +24,6 @@ export const MATURE_TV_RATINGS = new Set([
     '18+', // Age 18+ variant - BLOCKED
     'M', // Mature (Australia) - BLOCKED
     'MA15+', // Mature Accompanied (Australia) - BLOCKED
-    '16', // Age 16+ (various regions) - BLOCKED
-    '15', // Age 15+ (UK) - BLOCKED
 ])
 
 /**
