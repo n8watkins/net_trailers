@@ -74,8 +74,12 @@ const PreferencesControls = React.memo<PreferencesControlsProps>(
                                 <label className="block text-sm font-medium text-[#e5e5e5] mb-1">
                                     Child Safety Mode
                                 </label>
-                                <p className="text-sm text-[#b3b3b3]">
-                                    Restrict content to PG-13 and below, filter explicit material
+                                <p className="text-sm text-[#b3b3b3] mb-2">
+                                    Shows only family-friendly content from curated genres
+                                </p>
+                                <p className="text-xs text-[#999]">
+                                    Movies: Animation, Family genres • TV: Kids, Family, Comedy •
+                                    Some genres hidden in this mode
                                 </p>
                             </div>
                             <label
@@ -1610,7 +1614,7 @@ const Settings: React.FC<SettingsProps> = ({
                 onClose={() => setShowChildSafetyModal(false)}
                 onConfirm={handleCreateAccount}
                 title="Create an Account to Enable Child Safety Mode"
-                message="Child Safety Mode restricts content to PG-13 and below, filtering explicit material. This feature is only available to users with accounts to ensure consistent content restrictions across all devices."
+                message="Child Safety Mode shows only family-friendly content from curated genres (Animation, Family, Kids, Comedy). Some genre categories will be hidden. This feature is only available to users with accounts to ensure consistent content filtering across all devices."
                 confirmButtonText="Create Account"
                 cancelButtonText="Maybe Later"
                 emoji="🔒"
