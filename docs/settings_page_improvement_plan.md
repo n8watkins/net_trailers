@@ -2,11 +2,12 @@
 
 ## Status Summary
 
-- ✅ Issue #1 - COMPLETED
-- ✅ Issue #2 - COMPLETED
-- ✅ Issue #4 - COMPLETED
-- ✅ Issue #5 - COMPLETED
-- ⏳ Issue #3 - PENDING (requires form implementation)
+- ✅ Issue #1 - COMPLETED (Delete Account Flow)
+- ✅ Issue #2 - COMPLETED (Child Safety Mode Bypass)
+- ✅ Issue #4 - COMPLETED (Clear Data + Firestore Fix)
+- ✅ Issue #5 - COMPLETED (Debug Logging)
+- ✅ Issue #6 - COMPLETED (Preferences Not Exposed) - NEW
+- ⏳ Issue #3 - PENDING (Account Management Forms - requires implementation)
 
 ## Issue 1 – Delete Account Flow Is Non-Functional (High) ✅ COMPLETED
 
@@ -40,15 +41,17 @@
     3. Disable submit buttons until inputs are valid and dirty; add loading indicators while awaiting responses.
     4. Cover the flows with unit tests (form submission success/failure) and update manual QA scripts.
 
-## Issue 4 – Clear Data Handler Ignores Async Errors (Medium) ✅ COMPLETED
+## Issue 4 – Clear Data Handler Ignores Async Errors (Medium) ✅ COMPLETED (with fix)
 
-- **Where**: `pages/settings.tsx:423-431`, `hooks/useUserData.ts:228-236`
-- **Impact**: `clearAccountData` is async for authenticated users, but the handler is synchronous, so rejections slip through and the UI always confirms success.
-- **Resolution Implemented** (commit 0563282):
+- **Where**: `pages/settings.tsx:425-443`, `hooks/useUserData.ts:228-254`
+- **Impact**: `clearAccountData` was async but only cleared local Zustand cache, leaving Firestore data intact. Data would sync back on next load, contradicting UI messaging.
+- **Resolution Implemented** (commits 0563282 + 6561cdb):
     1. ✅ Made handleClearData async with proper await for clearAccountData()
     2. ✅ Added isClearingData state with double-submission prevention
     3. ✅ Added isLoading prop to ConfirmationModal with spinner and disabled states
     4. ✅ Toast and modal only update after promise settles with proper error handling
+    5. ✅ **FIX (6561cdb)**: clearAccountData now calls updateDoc() to clear Firestore arrays before clearing local cache
+    6. ✅ **FIX (6561cdb)**: Data no longer reappears after clearing - persistent across sessions
 
 ## Issue 5 – Debug Logging Leaks to Production Console (Low) ✅ COMPLETED
 
@@ -59,6 +62,21 @@
     2. ✅ Removed console.log from preferences save handler
     3. ✅ Kept console.error statements for production debugging
     4. ✅ User feedback now exclusively through toast system
+
+## Issue 6 – Preferences Not Exposed from useUserData (High) ✅ COMPLETED
+
+- **Where**: `hooks/useUserData.ts:25-135`, `pages/settings.tsx:234-240`
+- **Impact**: Settings page expected `childSafetyMode`, `autoMute`, `defaultVolume` from userData but hook didn't expose them. currentPreferences always fell back to hard-coded defaults (false, true, 50), preventing display of actual saved preferences and breaking change detection.
+- **Resolution Implemented** (commit 6561cdb):
+    1. ✅ Added autoMute, defaultVolume, childSafetyMode to guest branch return
+    2. ✅ Added autoMute, defaultVolume, childSafetyMode to authenticated branch return
+    3. ✅ Added preference defaults to initializing branch (true, 50, false)
+    4. ✅ Settings page now correctly displays actual user preferences
+    5. ✅ Change detection works properly - "Save Changes" button only enables when values differ from stored preferences
+
+**Status:** COMPLETE - Preferences now properly exposed and settings page hydrates correctly
+
+---
 
 ## Cross-Cutting Validation
 
