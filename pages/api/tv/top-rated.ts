@@ -38,20 +38,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const data = await response.json()
 
         // Add media_type to each item for consistency
-        const enrichedResults = data.results.map((item: any) => ({
+        let enrichedResults = data.results.map((item: any) => ({
             ...item,
             media_type: 'tv',
         }))
 
         // Apply child safety filtering if enabled
         if (childSafeMode) {
+            const beforeCount = enrichedResults.length
+
+            // CRITICAL: Even with genre filtering, we MUST filter TV-MA content
+            // Genres like Comedy, Sci-Fi, Animation can have TV-MA shows
+            enrichedResults = await filterMatureTVShows(enrichedResults, API_KEY!)
+
+            const hiddenCount = beforeCount - enrichedResults.length
+
             // Cache for 30 minutes
             res.setHeader('Cache-Control', 'public, s-maxage=1800, stale-while-revalidate=3600')
             return res.status(200).json({
                 ...data,
                 results: enrichedResults,
                 child_safety_enabled: true,
-                hidden_count: 0, // Curated content - using family-friendly genres
+                hidden_count: hiddenCount,
             })
         }
 

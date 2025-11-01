@@ -193,18 +193,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 // Other genres require vote_count.gte=500 for safety
                 csDebugFilter(beforeCount, enrichedResults.length, 'Movie Curated Content')
             } else if (type === 'tv') {
-                // TV shows: curated by genre selection, minimal post-filtering
-                // Only filter if it's a non-family genre for extra safety
-                const familyFriendlyTVGenres = [16, 10762, 10751, 35, 10765, 10759] // Animation, Kids, Family, Comedy, Sci-Fi & Fantasy, Action & Adventure
-                const isFamilyFriendlyGenre = genreIds.some((id) =>
-                    familyFriendlyTVGenres.includes(id)
-                )
-
-                if (!isFamilyFriendlyGenre) {
-                    // For non-family TV genres, apply light filtering
-                    enrichedResults = await filterMatureTVShows(enrichedResults, API_KEY)
-                }
-                csDebugFilter(beforeCount, enrichedResults.length, 'TV Curated Content')
+                // TV shows: ALWAYS filter by content ratings in child safety mode
+                // Unlike movies, TV ratings API is reliable and works well
+                // Even "family" genres like Comedy and Animation can have TV-MA content
+                // (e.g., Shameless, Hazbin Hotel, The Witcher, etc.)
+                enrichedResults = await filterMatureTVShows(enrichedResults, API_KEY)
+                csDebugFilter(beforeCount, enrichedResults.length, 'TV Content Ratings Filter')
             }
 
             const hiddenCount = beforeCount - enrichedResults.length
