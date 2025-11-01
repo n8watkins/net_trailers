@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { filterContentByAdultFlag } from '../../../utils/contentFilter'
+import { filterMatureMovies } from '../../../utils/movieCertifications'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -39,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const data = await response.json()
 
         // Add media_type to results if not present (discover doesn't include it)
-        const enrichedResults = data.results.map((item: any) => ({
+        let enrichedResults = data.results.map((item: any) => ({
             ...item,
             media_type: item.media_type || 'movie',
         }))
@@ -48,11 +49,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400')
 
         if (childSafeMode) {
+            // Apply post-fetch certification filtering for maximum safety
+            const beforeCount = enrichedResults.length
+            enrichedResults = await filterMatureMovies(enrichedResults, API_KEY!)
+            const hiddenCount = beforeCount - enrichedResults.length
+
             return res.status(200).json({
                 ...data,
                 results: enrichedResults,
                 child_safety_enabled: true,
-                hidden_count: 0, // Filtered by certification at query time
+                hidden_count: hiddenCount,
             })
         }
 

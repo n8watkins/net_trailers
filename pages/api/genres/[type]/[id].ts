@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { filterContentByAdultFlag } from '../../../../utils/contentFilter'
 import { filterMatureTVShows } from '../../../../utils/tvContentRatings'
+import { filterMatureMovies } from '../../../../utils/movieCertifications'
 import { csDebugTMDB, csDebugResponse, csDebugFilter } from '../../../../utils/childSafetyDebug'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -208,9 +209,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             // Both approaches exclude unrated content for safety
 
             if (type === 'movie') {
-                // Movies: already filtered by certification.lte=PG-13 at query time
-                // This ensures only G, PG, and PG-13 rated movies are returned
-                // No post-filtering needed - TMDB has done the work
+                // Movies: DOUBLE FILTER for maximum safety
+                // 1. Query-time filter with certification.lte=PG-13 (fast, but may miss some)
+                // 2. Post-fetch verification with individual API calls (accurate, catches all)
+                // This ensures ONLY G, PG, and PG-13 rated movies are returned
+                enrichedResults = await filterMatureMovies(enrichedResults, API_KEY)
                 csDebugFilter(beforeCount, enrichedResults.length, 'Movie Certification Filter')
             } else if (type === 'tv') {
                 // TV shows: ALWAYS filter by content ratings in child safety mode
