@@ -43,8 +43,8 @@ export const TV_GENRES: Genre[] = [
 ]
 
 // Child-friendly movie genres (shown when child safety mode is enabled)
-// Note: Content within these genres is filtered by include_adult=false
-// Violence/intensity exists but within family-appropriate ratings (G, PG, PG-13)
+// Note: Content within these genres is filtered by MPAA certification (G, PG, PG-13 only)
+// Double-layer filtering ensures only age-appropriate content appears
 export const CHILD_SAFE_MOVIE_GENRES: Genre[] = [
     { id: 28, name: 'Action' }, // Family action like superhero movies
     { id: 12, name: 'Adventure' },
@@ -53,10 +53,13 @@ export const CHILD_SAFE_MOVIE_GENRES: Genre[] = [
     { id: 99, name: 'Documentary' },
     { id: 10751, name: 'Family' },
     { id: 14, name: 'Fantasy' },
+    { id: 36, name: 'History' }, // Historical films can be educational
     { id: 10402, name: 'Music' },
     { id: 9648, name: 'Mystery' }, // Family mysteries like Scooby-Doo
-    { id: 10749, name: 'Romance' }, // Family-friendly romance
+    { id: 10749, name: 'Romance' }, // Family-friendly romance (G/PG/PG-13)
     { id: 878, name: 'Science Fiction' },
+    { id: 10752, name: 'War' }, // War films rated G/PG/PG-13 (historical/educational)
+    { id: 37, name: 'Western' }, // Classic westerns can be family-friendly
 ]
 
 // Child-friendly TV genres (shown when child safety mode is enabled)

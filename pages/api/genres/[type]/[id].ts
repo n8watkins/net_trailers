@@ -74,8 +74,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
                 // Child-safe movie genres (must match CHILD_SAFE_MOVIE_GENRES)
                 // Action (28), Adventure (12), Animation (16), Comedy (35), Documentary (99),
-                // Family (10751), Fantasy (14), Music (10402), Mystery (9648), Romance (10749), Sci-Fi (878)
-                const childSafeGenres = [28, 12, 16, 35, 99, 10751, 14, 10402, 9648, 10749, 878]
+                // Family (10751), Fantasy (14), History (36), Music (10402), Mystery (9648),
+                // Romance (10749), Sci-Fi (878), War (10752), Western (37)
+                const childSafeGenres = [
+                    28, 12, 16, 35, 99, 10751, 14, 36, 10402, 9648, 10749, 878, 10752, 37,
+                ]
 
                 // Check if requested genre is child-safe
                 const isChildSafeGenre = genreIds.every((id) => childSafeGenres.includes(id))
