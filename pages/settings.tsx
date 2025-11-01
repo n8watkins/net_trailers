@@ -78,8 +78,8 @@ const PreferencesControls = React.memo<PreferencesControlsProps>(
                                     Shows only family-friendly content from curated genres
                                 </p>
                                 <p className="text-xs text-[#999]">
-                                    Movies: Animation, Family genres • TV: Kids, Family, Comedy •
-                                    Some genres hidden in this mode
+                                    Movies: Animation, Family • TV: Kids, Family, Comedy, Sci-Fi &
+                                    Fantasy, Action & Adventure • Hides Crime, Drama, Horror
                                 </p>
                             </div>
                             <label
@@ -1614,7 +1614,7 @@ const Settings: React.FC<SettingsProps> = ({
                 onClose={() => setShowChildSafetyModal(false)}
                 onConfirm={handleCreateAccount}
                 title="Create an Account to Enable Child Safety Mode"
-                message="Child Safety Mode shows only family-friendly content from curated genres (Animation, Family, Kids, Comedy). Some genre categories will be hidden. This feature is only available to users with accounts to ensure consistent content filtering across all devices."
+                message="Child Safety Mode shows only family-friendly content from curated genres (Animation, Family, Kids, Comedy, Sci-Fi & Fantasy, Action & Adventure). Crime, Drama, and Horror genres are hidden. This feature is only available to users with accounts to ensure consistent content filtering across all devices."
                 confirmButtonText="Create Account"
                 cancelButtonText="Maybe Later"
                 emoji="🔒"

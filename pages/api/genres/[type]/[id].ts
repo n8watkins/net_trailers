@@ -195,7 +195,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             } else if (type === 'tv') {
                 // TV shows: curated by genre selection, minimal post-filtering
                 // Only filter if it's a non-family genre for extra safety
-                const familyFriendlyTVGenres = [16, 10762, 10751, 35] // Animation, Kids, Family, Comedy
+                const familyFriendlyTVGenres = [16, 10762, 10751, 35, 10765, 10759] // Animation, Kids, Family, Comedy, Sci-Fi & Fantasy, Action & Adventure
                 const isFamilyFriendlyGenre = genreIds.some((id) =>
                     familyFriendlyTVGenres.includes(id)
                 )

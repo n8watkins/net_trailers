@@ -142,10 +142,10 @@ const TVShows: NextPage<Props> = ({
                         <Row title="Comedy TV Shows" content={filteredComedy} />
                     )}
                     {filteredHorror.length > 0 && (
-                        <Row title="Crime TV Shows" content={filteredHorror} />
+                        <Row title="Sci-Fi & Fantasy TV Shows" content={filteredHorror} />
                     )}
                     {filteredRomance.length > 0 && (
-                        <Row title="Drama TV Shows" content={filteredRomance} />
+                        <Row title="Animation TV Shows" content={filteredRomance} />
                     )}
                     {filteredDocumentaries.length > 0 && (
                         <Row title="Documentary TV Shows" content={filteredDocumentaries} />

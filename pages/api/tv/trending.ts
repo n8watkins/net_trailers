@@ -22,9 +22,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         if (childSafeMode) {
             // ✅ CURATED CONTENT STRATEGY: Use family-friendly TV genres
-            // Animation (16), Kids (10762), Family (10751), Comedy (35)
+            // Animation (16), Kids (10762), Family (10751), Comedy (35), Sci-Fi & Fantasy (10765), Action & Adventure (10759)
             // This ensures more content availability without aggressive filtering
-            url = `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&page=1&sort_by=popularity.desc&with_genres=16,10762,10751,35&include_adult=false`
+            url = `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&page=1&sort_by=popularity.desc&with_genres=16,10762,10751,35,10765,10759&include_adult=false`
         } else {
             // Normal mode - use trending endpoint
             url = `${BASE_URL}/trending/tv/week?api_key=${API_KEY}&language=en-US&page=1`

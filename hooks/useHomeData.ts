@@ -53,8 +53,8 @@ export function useHomeData(filter?: string): UseHomeDataReturn {
                     fetch(`/api/tv/top-rated?page=2&${childSafetyParam}`),
                     fetch(`/api/genres/tv/10759?${childSafetyParam}`), // Action & Adventure
                     fetch(`/api/genres/tv/35?${childSafetyParam}`), // Comedy
-                    fetch(`/api/genres/tv/80?${childSafetyParam}`), // Crime
-                    fetch(`/api/genres/tv/18?${childSafetyParam}`), // Drama
+                    fetch(`/api/genres/tv/10765?${childSafetyParam}`), // Sci-Fi & Fantasy
+                    fetch(`/api/genres/tv/16?${childSafetyParam}`), // Animation
                     fetch(`/api/genres/tv/99?${childSafetyParam}`), // Documentary
                 ]
             } else if (filter === 'movies') {
