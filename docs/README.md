@@ -32,23 +32,8 @@ This folder contains organized project documentation split into logical categori
 - All planning documents include time estimates and implementation details
 - Implementation documents include testing results and architecture decisions
 - Development documents include priority rankings and effort estimates
-- Archive documents preserve historical context for future reference
-
-## 📦 Archive
-
-Historical documentation from completed work has been moved to `../archive/`:
-
-- **`/archive/migrations/`** - Schema migration documentation (2025-10)
-- **`/archive/critical-fixes/`** - Hydration fixes, child safety fixes, critical issues (2025-10)
-- **`/archive/testing/`** - Test analysis, credentials, and debugging (2025-10)
-- **`/archive/code-reviews/`** - Filtering system reviews, Firebase troubleshooting (2025-10)
-
-**Note**: Archive documents preserve implementation history but are not actively maintained. Refer to current documentation for up-to-date information.
-
----
 
 ## 🚀 Getting Started
 
 **For new features**: Start with `planning/TODO_CONSOLIDATED.md`
 **For current priorities**: Check `development/current-priorities.md`
-**For historical context**: Browse `../archive/` folders by topic

@@ -51,11 +51,13 @@ export default function SearchFilters({ className = '', isOpen, onClose }: Searc
         value,
         onChange,
         options,
+        isActive,
     }: {
         label: string
         value: string
         onChange: (value: string) => void
         options: { value: string; label: string }[]
+        isActive?: boolean
     }) {
         const handleChange = useCallback(
             (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -72,7 +74,11 @@ export default function SearchFilters({ className = '', isOpen, onClose }: Searc
                     <select
                         value={value}
                         onChange={handleChange}
-                        className="appearance-none bg-gray-800 border border-gray-600 text-white rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 hover:border-gray-500 transition-colors min-w-[120px]"
+                        className={`appearance-none bg-gray-800 text-white rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors min-w-[120px] ${
+                            isActive
+                                ? 'border-2 border-red-500 hover:border-red-400'
+                                : 'border border-gray-600 hover:border-gray-500'
+                        }`}
                     >
                         {options.map((option) => (
                             <option key={option.value} value={option.value}>
@@ -122,6 +128,7 @@ export default function SearchFilters({ className = '', isOpen, onClose }: Searc
                         value={search.filters.contentType}
                         onChange={(value) => updateFilter('contentType', value)}
                         options={contentTypeOptions}
+                        isActive={search.filters.contentType !== 'all'}
                     />
 
                     <FilterDropdown
@@ -129,6 +136,7 @@ export default function SearchFilters({ className = '', isOpen, onClose }: Searc
                         value={search.filters.rating}
                         onChange={(value) => updateFilter('rating', value)}
                         options={ratingOptions}
+                        isActive={search.filters.rating !== 'all'}
                     />
 
                     <FilterDropdown
@@ -136,6 +144,7 @@ export default function SearchFilters({ className = '', isOpen, onClose }: Searc
                         value={search.filters.year}
                         onChange={(value) => updateFilter('year', value)}
                         options={yearOptions}
+                        isActive={search.filters.year !== 'all'}
                     />
 
                     <FilterDropdown
@@ -143,6 +152,7 @@ export default function SearchFilters({ className = '', isOpen, onClose }: Searc
                         value={search.filters.sortBy}
                         onChange={(value) => updateFilter('sortBy', value)}
                         options={sortOptions}
+                        isActive={search.filters.sortBy !== 'popularity.desc'}
                     />
                 </div>
 
