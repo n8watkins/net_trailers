@@ -26,14 +26,6 @@ export class ErrorHandler {
         return id
     }
 
-    dismissError(errorId: string): void {
-        // No longer needed as main toast system handles dismissal
-    }
-
-    clearAllErrors(): void {
-        // No longer needed as main toast system handles clearing
-    }
-
     handleAuthError(error: AuthError): string {
         const errorMessages: Record<string, string> = {
             'auth/user-not-found': 'No account found with this email address.',

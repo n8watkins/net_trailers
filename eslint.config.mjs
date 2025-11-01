@@ -18,6 +18,7 @@ export default [
       'public/**',
       'coverage/**',
       '.husky/**',
+      'scripts/manual-tests/**',
     ],
   },
   js.configs.recommended,

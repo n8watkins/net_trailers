@@ -1,6 +1,23 @@
 import { useSessionData } from './useSessionData'
-import { UserListsService } from '../services/userListsService'
 import { authError } from '../utils/debugLogger'
+import { Content } from '../typings'
+import { UserList } from '../types/userLists'
+
+/**
+ * Creates a virtual default watchlist object
+ * @param items - Content items for the watchlist
+ * @returns Virtual UserList representing the default watchlist
+ */
+const createDefaultWatchlistVirtual = (items: Content[]): UserList => ({
+    id: 'default-watchlist',
+    name: 'Watchlist',
+    items,
+    emoji: '📺',
+    color: '#E50914',
+    isPublic: false,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+})
 
 /**
  * Main hook for user data management with complete session isolation
@@ -66,31 +83,13 @@ export default function useUserData() {
             },
             getListsContaining: (contentId: number) => {
                 // Include default watchlist + custom lists
-                const watchlistVirtual = {
-                    id: 'default-watchlist',
-                    name: 'Watchlist',
-                    items: sessionData.defaultWatchlist,
-                    emoji: '📺',
-                    color: '#E50914',
-                    isPublic: false,
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                }
+                const watchlistVirtual = createDefaultWatchlistVirtual(sessionData.defaultWatchlist)
                 const allLists = [watchlistVirtual, ...sessionData.userCreatedWatchlists]
                 return allLists.filter((list) => list.items.some((item) => item.id === contentId))
             },
             getAllLists: () => {
                 // Create virtual default watchlist + custom lists
-                const watchlistVirtual = {
-                    id: 'default-watchlist',
-                    name: 'Watchlist',
-                    items: sessionData.defaultWatchlist,
-                    emoji: '📺',
-                    color: '#E50914',
-                    isPublic: false,
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                }
+                const watchlistVirtual = createDefaultWatchlistVirtual(sessionData.defaultWatchlist)
                 return [watchlistVirtual, ...sessionData.userCreatedWatchlists]
             },
 
@@ -192,31 +191,13 @@ export default function useUserData() {
             },
             getListsContaining: (contentId: number) => {
                 // Include default watchlist + custom lists
-                const watchlistVirtual = {
-                    id: 'default-watchlist',
-                    name: 'Watchlist',
-                    items: sessionData.defaultWatchlist,
-                    emoji: '📺',
-                    color: '#E50914',
-                    isPublic: false,
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                }
+                const watchlistVirtual = createDefaultWatchlistVirtual(sessionData.defaultWatchlist)
                 const allLists = [watchlistVirtual, ...sessionData.userCreatedWatchlists]
                 return allLists.filter((list) => list.items.some((item) => item.id === contentId))
             },
             getAllLists: () => {
                 // Create virtual default watchlist + custom lists
-                const watchlistVirtual = {
-                    id: 'default-watchlist',
-                    name: 'Watchlist',
-                    items: sessionData.defaultWatchlist,
-                    emoji: '📺',
-                    color: '#E50914',
-                    isPublic: false,
-                    createdAt: Date.now(),
-                    updatedAt: Date.now(),
-                }
+                const watchlistVirtual = createDefaultWatchlistVirtual(sessionData.defaultWatchlist)
                 return [watchlistVirtual, ...sessionData.userCreatedWatchlists]
             },
 

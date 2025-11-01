@@ -83,13 +83,16 @@ const saveMainPageData = (data: MainPageData | null) => {
     }
 }
 
+// Load initial data once to avoid redundant calls
+const initialMainPageData = loadMainPageData()
+
 export const useCacheStore = create<CacheStore>((set, get) => ({
     // Initial state - load from sessionStorage
-    mainPageData: loadMainPageData(),
+    mainPageData: initialMainPageData,
     hasVisitedMainPage: false,
     cacheStatus: {
-        mainPageCached: loadMainPageData() !== null,
-        lastCacheUpdate: loadMainPageData()?.lastFetched || 0,
+        mainPageCached: initialMainPageData !== null,
+        lastCacheUpdate: initialMainPageData?.lastFetched || 0,
         cacheHits: 0,
         cacheMisses: 0,
     },
