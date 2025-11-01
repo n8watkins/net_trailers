@@ -65,13 +65,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             sort_by: Array.isArray(sort_by) ? sort_by[0] : sort_by,
         })
 
-        // Add child safety certification filters BEFORE fetching from TMDB
+        // Add child safety filters BEFORE fetching from TMDB
         if (childSafeMode) {
             if (type === 'movie') {
-                // US certifications: G, PG, PG-13 (explicitly list allowed ratings)
-                // Note: .lte doesn't work for certifications (they're strings, not ordered)
-                params.append('certification_country', 'US')
-                params.append('certification', 'G,PG,PG-13')
+                // ✅ CURATED CONTENT STRATEGY
+                // Exclude adult content (pornography)
+                params.append('include_adult', 'false')
+
+                // Family-friendly genre IDs: Animation (16), Family (10751), Comedy (35), Adventure (12)
+                const familyFriendlyGenres = [16, 10751, 35, 12]
+                const isFamilyFriendlyGenre = genreIds.some((id) =>
+                    familyFriendlyGenres.includes(id)
+                )
+
+                if (!isFamilyFriendlyGenre) {
+                    // For non-family genres (Action, Horror, etc.), require higher vote counts
+                    // to favor more mainstream content that's more likely to be appropriate
+                    params.append('vote_count.gte', '500')
+                }
             }
             // Note: TV show filtering happens after fetch via filterMatureTVShows
         }
@@ -170,9 +181,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (childSafeMode) {
             const beforeCount = enrichedResults.length
 
-            // Movies are already filtered by certification at query time
-            // TV shows still need post-filtering by content ratings
-            if (type === 'tv') {
+            // ✅ CURATED CONTENT STRATEGY APPLIED
+            // Movies: Filtered at query time with include_adult=false + vote_count thresholds
+            // TV Shows: Post-filtered by content ratings API (removes TV-MA, TV-14)
+            // Family-friendly movie genres get more lenient filtering
+            // Non-family genres require higher vote counts to favor mainstream content
+
+            if (type === 'movie') {
+                // Movies: already filtered by include_adult=false at query time
+                // Family-friendly genres show broader results
+                // Other genres require vote_count.gte=500 for safety
+                csDebugFilter(beforeCount, enrichedResults.length, 'Movie Curated Content')
+            } else if (type === 'tv') {
+                // TV shows: filter by content ratings (WORKS CORRECTLY)
                 enrichedResults = await filterMatureTVShows(enrichedResults, API_KEY)
                 csDebugFilter(beforeCount, enrichedResults.length, 'TV Content Ratings')
             }

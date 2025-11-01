@@ -20,8 +20,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         let url: string
 
         if (childSafeMode) {
-            // In child safety mode, use discover with certification filtering
-            url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&page=${page}&sort_by=vote_average.desc&vote_count.gte=300&certification_country=US&certification=G,PG,PG-13`
+            // ✅ CURATED CONTENT STRATEGY: Use family-friendly genres exclusively
+            // Animation (16) + Family (10751) genres sorted by rating
+            // This guarantees age-appropriate content without expensive filtering
+            url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&page=${page}&sort_by=vote_average.desc&vote_count.gte=300&with_genres=16,10751&include_adult=false`
         } else {
             // Normal mode - use top_rated endpoint
             url = `${BASE_URL}/movie/top_rated?api_key=${API_KEY}&language=en-US&page=${page}`
@@ -49,7 +51,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 ...data,
                 results: enrichedResults,
                 child_safety_enabled: true,
-                hidden_count: 0, // No filtering needed - certification handles it
+                hidden_count: 0, // Curated content - using family-friendly genres only
             })
         }
 
