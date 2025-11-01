@@ -55,7 +55,7 @@ async function testAuthenticatedUserPersistence() {
 
         // Step 2: Create a custom list
         console.log('\n📝 Step 2: Creating custom list via authStore...')
-        const listId = await authStore.createList('Test Auth List 🔐')
+        const listId = await authStore.createList({ name: 'Test Auth List 🔐' })
         console.log(`✅ List created with ID: ${listId}`)
 
         // Step 3: Add content to list
@@ -148,7 +148,7 @@ async function testGuestUserPersistence() {
 
         // Step 2: Create a custom list
         console.log('\n📝 Step 2: Creating custom list via guestStore...')
-        const listId = guestStore.createList('Test Guest List 👤')
+        const listId = guestStore.createList({ name: 'Test Guest List 👤' })
         console.log(`✅ List created with ID: ${listId}`)
 
         // Step 3: Add content to list

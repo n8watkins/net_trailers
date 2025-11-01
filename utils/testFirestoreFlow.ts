@@ -134,6 +134,9 @@ export async function testFirestoreFlow() {
                 },
             ],
             lastActive: Date.now(),
+            autoMute: true,
+            defaultVolume: 50,
+            childSafetyMode: false,
         }
 
         try {

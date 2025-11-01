@@ -27,6 +27,9 @@ async function testWatchlistFlow() {
             hiddenMovies: [],
             userCreatedWatchlists: [],
             lastActive: Date.now(),
+            autoMute: true,
+            defaultVolume: 50,
+            childSafetyMode: false,
         }
         console.log('✅ Default preferences created:', {
             watchlistCount: 0,
