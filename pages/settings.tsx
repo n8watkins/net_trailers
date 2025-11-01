@@ -1281,8 +1281,7 @@ const Settings: React.FC<SettingsProps> = ({
                                             </div>
 
                                             {/* Only render preferences controls after data is loaded */}
-                                            {!hasInitializedRef.current &&
-                                            userData.isInitializing ? (
+                                            {userData.isInitializing ? (
                                                 <div className="space-y-8 animate-pulse">
                                                     <div>
                                                         <div className="h-6 bg-[#313131] rounded w-48 mb-4"></div>
