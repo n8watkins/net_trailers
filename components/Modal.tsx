@@ -163,8 +163,14 @@ function Modal() {
     } = useUserData()
 
     // Get user preferences for video player (must be after useUserData hook)
-    const userAutoMute = userSession?.preferences?.autoMute ?? true
-    const userDefaultVolume = userSession?.preferences?.defaultVolume ?? 50
+    const userAutoMute =
+        'autoMute' in (userSession?.preferences || {})
+            ? (userSession?.preferences as any).autoMute
+            : true
+    const userDefaultVolume =
+        'defaultVolume' in (userSession?.preferences || {})
+            ? (userSession?.preferences as any).defaultVolume
+            : 50
 
     const {
         showSuccess,
@@ -347,21 +353,23 @@ function Modal() {
 
         async function fetchMovie() {
             try {
-                const mediaType = currentMovie?.media_type === 'tv' ? 'tv' : 'movie'
+                if (!currentMovie) return
+
+                const mediaType = currentMovie.media_type === 'tv' ? 'tv' : 'movie'
 
                 // Check prefetch cache first
                 const cachedData = getCachedMovieDetails(currentMovie.id, mediaType)
 
                 if (cachedData) {
                     // Use cached data - no loading spinner needed!
-                    if (cachedData?.videos) {
-                        const index = cachedData.videos.results.findIndex(
+                    if ('videos' in cachedData && cachedData.videos) {
+                        const index = (cachedData.videos as any).results.findIndex(
                             (element: Element) => element.type === 'Trailer'
                         )
-                        setTrailer(cachedData.videos?.results[index]?.key)
+                        setTrailer((cachedData.videos as any)?.results[index]?.key)
                     }
-                    if (cachedData?.genres) {
-                        setGenres(cachedData.genres)
+                    if ('genres' in cachedData && cachedData.genres) {
+                        setGenres(cachedData.genres as Genre[])
                     }
 
                     setEnhancedMovieData(cachedData)
@@ -373,7 +381,7 @@ function Modal() {
                 setLoading(true)
 
                 const response = await fetch(
-                    `/api/movies/details/${currentMovie?.id}?media_type=${mediaType}`
+                    `/api/movies/details/${currentMovie.id}?media_type=${mediaType}`
                 )
 
                 if (!response.ok) {
@@ -401,7 +409,7 @@ function Modal() {
                 setEnhancedMovieData(enhancedData as Content)
 
                 // Mark this movie as loaded
-                setLoadedMovieId(currentMovie?.id || 0)
+                setLoadedMovieId(currentMovie.id)
             } catch (error: any) {
                 console.error('Failed to fetch movie details:', error)
                 errorHandler.handleApiError(error, 'load movie details')
@@ -1179,7 +1187,10 @@ function Modal() {
                                     description: isHidden(currentMovie.id) ? 'Show' : 'Hide',
                                 },
                                 trailer && { key: 'R', description: 'Watch on YouTube' },
-                            ].filter(Boolean)}
+                            ].filter(
+                                (s): s is { key: string; description: string; icon?: string } =>
+                                    Boolean(s)
+                            )}
                             className="opacity-80"
                         />
                     </div>

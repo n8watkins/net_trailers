@@ -424,6 +424,9 @@ export default function useUserData() {
                     hiddenMovies: [],
                     userCreatedWatchlists: [],
                     lastActive: Date.now(),
+                    autoMute: true,
+                    defaultVolume: 50,
+                    childSafetyMode: false,
                 },
             },
         }
