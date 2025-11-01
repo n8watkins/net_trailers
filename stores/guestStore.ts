@@ -410,7 +410,8 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
             lastActive: loadedData.lastActive,
             autoMute: loadedData.autoMute ?? true,
             defaultVolume: loadedData.defaultVolume ?? 50,
-            childSafetyMode: loadedData.childSafetyMode ?? false,
+            // SECURITY: Always force childSafetyMode to false for guests, even if localStorage was manually edited
+            childSafetyMode: false,
         })
         guestLog('🔄 [GuestStore] Synced from localStorage:', {
             guestId,
@@ -420,7 +421,7 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
             listsCount: loadedData.userCreatedWatchlists.length,
             autoMute: loadedData.autoMute,
             defaultVolume: loadedData.defaultVolume,
-            childSafetyMode: loadedData.childSafetyMode,
+            childSafetyMode: false, // Always false for guests
         })
     },
 }))

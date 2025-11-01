@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import Head from 'next/head'
 import Image from 'next/image'
 import {
@@ -226,6 +226,9 @@ const Settings: React.FC<SettingsProps> = ({
     const [showChildSafetyModal, setShowChildSafetyModal] = useState(false)
     const [isClearingData, setIsClearingData] = useState(false)
     const [isDeletingAccount, setIsDeletingAccount] = useState(false)
+
+    // Ref to store delete account redirect timeout
+    const deleteAccountTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
     // 1) Define currentPreferences once using useMemo for stability
     const currentPreferences = React.useMemo(() => {
@@ -457,7 +460,7 @@ const Settings: React.FC<SettingsProps> = ({
             showSuccess('Account deleted successfully. Redirecting...')
 
             // Redirect to home page after a brief delay
-            setTimeout(() => {
+            deleteAccountTimeoutRef.current = setTimeout(() => {
                 window.location.href = '/'
             }, 2000)
         } catch (error: any) {
@@ -468,6 +471,15 @@ const Settings: React.FC<SettingsProps> = ({
             setIsDeletingAccount(false)
         }
     }
+
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (deleteAccountTimeoutRef.current) {
+                clearTimeout(deleteAccountTimeoutRef.current)
+            }
+        }
+    }, [])
 
     // Handle initializing state - provide default empty data summary
     const [dataSummary, setDataSummary] = React.useState<{
