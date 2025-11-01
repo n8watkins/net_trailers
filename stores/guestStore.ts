@@ -226,7 +226,7 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
     createList: (request: { name: string; emoji?: string; color?: string; isPublic?: boolean }) => {
         const state = get()
         // Create a new list using the UserListsService
-        const updatedPrefs = UserListsService.createList(state as any, request)
+        const updatedPrefs = UserListsService.createList(state, request)
         const newList =
             updatedPrefs.userCreatedWatchlists[updatedPrefs.userCreatedWatchlists.length - 1]
 
@@ -256,7 +256,7 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
     addToList: (listId: string, content: Content) => {
         const state = get()
         // Add content to list using the UserListsService
-        const updatedPrefs = UserListsService.addToList(state as any, { listId, content })
+        const updatedPrefs = UserListsService.addToList(state, { listId, content })
 
         set({
             userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
@@ -283,7 +283,7 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
     removeFromList: (listId: string, contentId: number) => {
         const state = get()
         // Remove content from list using the UserListsService
-        const updatedPrefs = UserListsService.removeFromList(state as any, { listId, contentId })
+        const updatedPrefs = UserListsService.removeFromList(state, { listId, contentId })
 
         set({
             userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
@@ -311,7 +311,7 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
         const state = get()
 
         // Update list using the UserListsService
-        const updatedPrefs = UserListsService.updateList(state as any, { id: listId, ...updates })
+        const updatedPrefs = UserListsService.updateList(state, { id: listId, ...updates })
 
         set({
             userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
@@ -339,7 +339,7 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
         const state = get()
 
         // Delete list using the UserListsService
-        const updatedPrefs = UserListsService.deleteList(state as any, listId)
+        const updatedPrefs = UserListsService.deleteList(state, listId)
 
         set({
             userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,

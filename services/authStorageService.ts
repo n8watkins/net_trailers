@@ -1,5 +1,5 @@
 import { Content } from '../typings'
-import { UserPreferences } from '../types/atoms'
+import { UserPreferences } from '../types/shared'
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { firebaseTracker } from '../utils/firebaseCallTracker'

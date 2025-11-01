@@ -351,7 +351,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         set({ syncStatus: 'syncing' })
 
         // Create a new list using the UserListsService
-        const updatedPrefs = UserListsService.createList(state as any, request)
+        const updatedPrefs = UserListsService.createList(state, request)
         const newList =
             updatedPrefs.userCreatedWatchlists[updatedPrefs.userCreatedWatchlists.length - 1]
 
@@ -397,7 +397,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         set({ syncStatus: 'syncing' })
 
         // Add content to list using the UserListsService
-        const updatedPrefs = UserListsService.addToList(state as any, { listId, content })
+        const updatedPrefs = UserListsService.addToList(state, { listId, content })
 
         set({
             userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
@@ -441,7 +441,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         set({ syncStatus: 'syncing' })
 
         // Remove content from list using the UserListsService
-        const updatedPrefs = UserListsService.removeFromList(state as any, { listId, contentId })
+        const updatedPrefs = UserListsService.removeFromList(state, { listId, contentId })
 
         set({
             userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
@@ -488,7 +488,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         set({ syncStatus: 'syncing' })
 
         // Update list using the UserListsService
-        const updatedPrefs = UserListsService.updateList(state as any, { id: listId, ...updates })
+        const updatedPrefs = UserListsService.updateList(state, { id: listId, ...updates })
 
         set({
             userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
@@ -532,7 +532,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         set({ syncStatus: 'syncing' })
 
         // Delete list using the UserListsService
-        const updatedPrefs = UserListsService.deleteList(state as any, listId)
+        const updatedPrefs = UserListsService.deleteList(state, listId)
 
         set({
             userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,

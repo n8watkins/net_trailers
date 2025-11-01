@@ -1,4 +1,4 @@
-import { UserPreferences } from '../types/atoms'
+import { UserPreferences } from '../types/shared'
 import { Content, getTitle, getYear, getContentType, isMovie, isTVShow } from '../typings'
 
 export interface CSVExportRow {

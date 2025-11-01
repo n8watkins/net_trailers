@@ -1,6 +1,6 @@
 import { sessionLog, sessionError } from '../utils/debugLogger'
 import { User } from 'firebase/auth'
-import { UserPreferences, SessionType, UserSession } from '../types/atoms'
+import { UserPreferences, SessionType, UserSession } from '../types/shared'
 import { SessionStorageService } from './sessionStorageService'
 
 // Zustand-compatible setter type

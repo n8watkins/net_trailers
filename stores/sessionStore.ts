@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { SessionStorageService } from '../services/sessionStorageService'
 import { GuestStorageService } from '../services/guestStorageService'
 import { sessionLog } from '../utils/debugLogger'
-import { SessionType } from '../types/atoms'
+import { SessionType } from '../types/shared'
 
 export interface SessionState {
     sessionType: SessionType

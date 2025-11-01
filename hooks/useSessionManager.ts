@@ -5,7 +5,7 @@ import { useAuthStore } from '../stores/authStore'
 import { useGuestStore } from '../stores/guestStore'
 import { SessionManagerService, SessionManagerState } from '../services/sessionManagerService'
 import { GuestStorageService } from '../services/guestStorageService'
-import { UserSession } from '../types/atoms'
+import { UserSession } from '../types/shared'
 import useAuth from './useAuth'
 
 export function useSessionManager() {

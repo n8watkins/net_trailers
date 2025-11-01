@@ -1,5 +1,5 @@
 import { Content } from '../typings'
-import { UserPreferences } from '../types/atoms'
+import { UserPreferences } from '../types/shared'
 import { guestLog, guestError } from '../utils/debugLogger'
 
 // Type alias for backward compatibility

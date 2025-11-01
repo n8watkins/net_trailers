@@ -1,11 +1,14 @@
-// Type definitions that were previously in atoms files
-// Migrated to types directory for use across the application
+// Shared type definitions for user sessions and preferences
+// Used across stores, services, and components
+
+import { Content } from '../typings'
+import { UserList } from './userLists'
 
 export interface UserPreferences {
-    defaultWatchlist: any[]
-    likedMovies: any[]
-    hiddenMovies: any[]
-    userCreatedWatchlists: any[]
+    defaultWatchlist: Content[]
+    likedMovies: Content[]
+    hiddenMovies: Content[]
+    userCreatedWatchlists: UserList[]
     lastActive: number
     autoMute: boolean
     defaultVolume: number

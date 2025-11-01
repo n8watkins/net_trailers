@@ -1,5 +1,5 @@
 import { Content } from '../typings'
-import { UserPreferences } from '../types/atoms'
+import { UserPreferences } from '../types/shared'
 
 /**
  * Content filtering utilities for hiding disliked/hidden content from recommendations

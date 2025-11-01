@@ -7,9 +7,11 @@ import {
     RemoveFromListRequest,
 } from '../types/userLists'
 import { UserPreferences } from '../types/userData'
+import { StateWithLists } from '../types/storeInterfaces'
 
 // NEW SCHEMA - No more UserListsState or defaultListIds
-// All methods now work with preferences.userCreatedWatchlists directly
+// All methods now work with userCreatedWatchlists directly
+// Generic methods accept any state that extends StateWithLists
 export class UserListsService {
     // Generate a unique ID
     private static generateId(): string {
@@ -17,7 +19,7 @@ export class UserListsService {
     }
 
     // Create a new custom list
-    static createList(preferences: UserPreferences, request: CreateListRequest): UserPreferences {
+    static createList<T extends StateWithLists>(state: T, request: CreateListRequest): T {
         const newList: UserList = {
             id: this.generateId(),
             name: request.name,
@@ -30,55 +32,51 @@ export class UserListsService {
         }
 
         return {
-            ...preferences,
-            userCreatedWatchlists: [...preferences.userCreatedWatchlists, newList],
+            ...state,
+            userCreatedWatchlists: [...state.userCreatedWatchlists, newList],
         }
     }
 
     // Update an existing list
-    static updateList(preferences: UserPreferences, request: UpdateListRequest): UserPreferences {
-        const listIndex = preferences.userCreatedWatchlists.findIndex(
-            (list) => list.id === request.id
-        )
-        if (listIndex === -1) return preferences
+    static updateList<T extends StateWithLists>(state: T, request: UpdateListRequest): T {
+        const listIndex = state.userCreatedWatchlists.findIndex((list) => list.id === request.id)
+        if (listIndex === -1) return state
 
         const updatedList = {
-            ...preferences.userCreatedWatchlists[listIndex],
+            ...state.userCreatedWatchlists[listIndex],
             ...request,
             updatedAt: Date.now(),
         }
 
-        const updatedLists = [...preferences.userCreatedWatchlists]
+        const updatedLists = [...state.userCreatedWatchlists]
         updatedLists[listIndex] = updatedList
 
         return {
-            ...preferences,
+            ...state,
             userCreatedWatchlists: updatedLists,
         }
     }
 
     // Delete a list
-    static deleteList(preferences: UserPreferences, listId: string): UserPreferences {
+    static deleteList<T extends StateWithLists>(state: T, listId: string): T {
         return {
-            ...preferences,
-            userCreatedWatchlists: preferences.userCreatedWatchlists.filter(
-                (list) => list.id !== listId
-            ),
+            ...state,
+            userCreatedWatchlists: state.userCreatedWatchlists.filter((list) => list.id !== listId),
         }
     }
 
     // Add content to a list
-    static addToList(preferences: UserPreferences, request: AddToListRequest): UserPreferences {
-        const listIndex = preferences.userCreatedWatchlists.findIndex(
+    static addToList<T extends StateWithLists>(state: T, request: AddToListRequest): T {
+        const listIndex = state.userCreatedWatchlists.findIndex(
             (list) => list.id === request.listId
         )
-        if (listIndex === -1) return preferences
+        if (listIndex === -1) return state
 
-        const currentList = preferences.userCreatedWatchlists[listIndex]
+        const currentList = state.userCreatedWatchlists[listIndex]
 
         // Check if item already exists in the list
         const itemExists = currentList.items.some((item) => item.id === request.content.id)
-        if (itemExists) return preferences
+        if (itemExists) return state
 
         const updatedList = {
             ...currentList,
@@ -86,26 +84,23 @@ export class UserListsService {
             updatedAt: Date.now(),
         }
 
-        const updatedLists = [...preferences.userCreatedWatchlists]
+        const updatedLists = [...state.userCreatedWatchlists]
         updatedLists[listIndex] = updatedList
 
         return {
-            ...preferences,
+            ...state,
             userCreatedWatchlists: updatedLists,
         }
     }
 
     // Remove content from a list
-    static removeFromList(
-        preferences: UserPreferences,
-        request: RemoveFromListRequest
-    ): UserPreferences {
-        const listIndex = preferences.userCreatedWatchlists.findIndex(
+    static removeFromList<T extends StateWithLists>(state: T, request: RemoveFromListRequest): T {
+        const listIndex = state.userCreatedWatchlists.findIndex(
             (list) => list.id === request.listId
         )
-        if (listIndex === -1) return preferences
+        if (listIndex === -1) return state
 
-        const currentList = preferences.userCreatedWatchlists[listIndex]
+        const currentList = state.userCreatedWatchlists[listIndex]
 
         const updatedList = {
             ...currentList,
@@ -113,39 +108,39 @@ export class UserListsService {
             updatedAt: Date.now(),
         }
 
-        const updatedLists = [...preferences.userCreatedWatchlists]
+        const updatedLists = [...state.userCreatedWatchlists]
         updatedLists[listIndex] = updatedList
 
         return {
-            ...preferences,
+            ...state,
             userCreatedWatchlists: updatedLists,
         }
     }
 
     // Get a specific list
-    static getList(preferences: UserPreferences, listId: string): UserList | null {
-        return preferences.userCreatedWatchlists.find((list) => list.id === listId) || null
+    static getList<T extends StateWithLists>(state: T, listId: string): UserList | null {
+        return state.userCreatedWatchlists.find((list) => list.id === listId) || null
     }
 
     // Check if content is in a specific list
-    static isContentInList(
-        preferences: UserPreferences,
+    static isContentInList<T extends StateWithLists>(
+        state: T,
         listId: string,
         contentId: number
     ): boolean {
-        const list = this.getList(preferences, listId)
+        const list = this.getList(state, listId)
         return list ? list.items.some((item) => item.id === contentId) : false
     }
 
     // Get all lists containing specific content
-    static getListsContaining(preferences: UserPreferences, contentId: number): UserList[] {
-        return preferences.userCreatedWatchlists.filter((list) =>
+    static getListsContaining<T extends StateWithLists>(state: T, contentId: number): UserList[] {
+        return state.userCreatedWatchlists.filter((list) =>
             list.items.some((item) => item.id === contentId)
         )
     }
 
     // Get all custom lists
-    static getAllLists(preferences: UserPreferences): UserList[] {
-        return preferences.userCreatedWatchlists
+    static getAllLists<T extends StateWithLists>(state: T): UserList[] {
+        return state.userCreatedWatchlists
     }
 }
