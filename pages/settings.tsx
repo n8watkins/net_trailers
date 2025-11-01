@@ -271,16 +271,18 @@ const Settings: React.FC<SettingsProps> = ({
         }
     }, [userData.childSafetyMode, userData.autoMute, userData.defaultVolume])
 
-    // 3) Initialize with static defaults (SSR-safe) - hydrate from store in useEffect
-    const [childSafetyMode, setChildSafetyMode] = useState<boolean>(false)
-    const [autoMute, setAutoMute] = useState<boolean>(true)
-    const [defaultVolume, setDefaultVolume] = useState<number>(50)
+    // 3) Initialize with store values directly (they default to false/true/50 during SSR anyway)
+    const [childSafetyMode, setChildSafetyMode] = useState<boolean>(
+        () => userData.childSafetyMode ?? false
+    )
+    const [autoMute, setAutoMute] = useState<boolean>(() => userData.autoMute ?? true)
+    const [defaultVolume, setDefaultVolume] = useState<number>(() => userData.defaultVolume ?? 50)
 
     // Track original preferences to detect changes
     const [originalPreferences, setOriginalPreferences] = useState({
-        childSafetyMode: false,
-        autoMute: true,
-        defaultVolume: 50,
+        childSafetyMode: userData.childSafetyMode ?? false,
+        autoMute: userData.autoMute ?? true,
+        defaultVolume: userData.defaultVolume ?? 50,
     })
 
     // 2) Track real user-initiated interaction to prevent phantom modal opens
