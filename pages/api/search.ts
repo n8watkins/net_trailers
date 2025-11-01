@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { filterContentByAdultFlag } from '../../utils/contentFilter'
+import { filterMatureTVShows } from '../../utils/tvContentRatings'
 
 interface SearchParams {
     query: string
@@ -52,7 +53,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Apply child safety filtering if enabled
         if (childSafeMode) {
             const beforeCount = filteredResults.length
+
+            // First filter movies by adult flag
             filteredResults = filterContentByAdultFlag(filteredResults, true)
+
+            // Separate TV shows and movies
+            const tvShows = filteredResults.filter((item: any) => item.media_type === 'tv')
+            const movies = filteredResults.filter((item: any) => item.media_type === 'movie')
+
+            // Filter TV shows by content rating (server-side)
+            const filteredTVShows =
+                tvShows.length > 0 ? await filterMatureTVShows(tvShows, apiKey!) : []
+
+            // Combine filtered movies and TV shows
+            filteredResults = [...movies, ...filteredTVShows]
+
             const hiddenCount = beforeCount - filteredResults.length
 
             return res.status(200).json({

@@ -62,6 +62,7 @@ export interface SearchState {
     currentPage: number
     hasAllResults: boolean
     isLoadingAll: boolean
+    isTruncated: boolean
     filters: SearchFilters
     history: string[]
     recentSearches: string[]
@@ -227,6 +228,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         currentPage: 1,
         hasAllResults: false,
         isLoadingAll: false,
+        isTruncated: false,
         filters: {
             genres: [],
             contentType: 'all',

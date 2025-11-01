@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { filterContentByAdultFlag } from '../../../utils/contentFilter'
+import { filterMatureTVShows } from '../../../utils/tvContentRatings'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -36,7 +37,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Apply child safety filtering if enabled
         if (childSafeMode) {
             const beforeCount = enrichedResults.length
-            enrichedResults = filterContentByAdultFlag(enrichedResults, true)
+
+            // Filter TV shows by content rating (server-side)
+            enrichedResults = await filterMatureTVShows(enrichedResults, API_KEY!)
+
             const hiddenCount = beforeCount - enrichedResults.length
 
             // Cache for 1 hour

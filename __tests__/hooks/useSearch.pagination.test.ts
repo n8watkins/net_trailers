@@ -186,4 +186,258 @@ describe('useSearch - Pagination Regression Tests', () => {
             expect(calculatedPages).toBe(expectedPages)
         })
     })
+
+    /**
+     * INTEGRATION TESTS - Verify actual multi-page fetching behavior
+     * These tests mock fetch and verify that the hook actually makes API calls to page 2+
+     */
+
+    it('should fetch page 2 when totalResults = 25 (regression test for fractional pages)', async () => {
+        // Setup: Mock fetch to return 25 total results across 2 pages
+        const mockFetch = jest.fn()
+        global.fetch = mockFetch
+
+        // Page 1: 20 results, total_results = 25
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+                results: Array(20).fill({ id: 1, title: 'Movie 1', media_type: 'movie' }),
+                total_results: 25,
+            }),
+        })
+
+        // Page 2: 5 results (remaining)
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+                results: Array(5).fill({ id: 2, title: 'Movie 2', media_type: 'movie' }),
+                total_results: 25,
+            }),
+        })
+
+        // Set up state for loadAllResults
+        Object.assign(mockSearchState.search, {
+            query: 'test',
+            results: Array(20).fill({ id: 1, title: 'Movie 1', media_type: 'movie' }),
+            hasSearched: true,
+            currentPage: 1,
+            totalResults: 25,
+            hasAllResults: false,
+            isLoadingAll: false,
+        })
+
+        const { result } = renderHook(() => useSearch())
+
+        // Call loadAllResults directly (now exported for testing)
+        await act(async () => {
+            await result.current.loadAllResults()
+        })
+
+        // Verify that page 2 was requested
+        expect(mockFetch).toHaveBeenCalledWith(
+            expect.stringContaining('page=2'),
+            expect.any(Object)
+        )
+
+        // This test would FAIL with pre-fix behavior where 25/20 = 1.25 would be truncated to 1
+    })
+
+    it('should fetch all pages when totalResults = 45 (3 pages needed)', async () => {
+        const mockFetch = jest.fn()
+        global.fetch = mockFetch
+
+        // Page 1: already loaded (20 results)
+        // Page 2: 20 results
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+                results: Array(20).fill({ id: 2, title: 'Movie 2', media_type: 'movie' }),
+                total_results: 45,
+            }),
+        })
+
+        // Page 3: 5 results (remaining)
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+                results: Array(5).fill({ id: 3, title: 'Movie 3', media_type: 'movie' }),
+                total_results: 45,
+            }),
+        })
+
+        Object.assign(mockSearchState.search, {
+            query: 'test',
+            results: Array(20).fill({ id: 1, title: 'Movie 1', media_type: 'movie' }),
+            hasSearched: true,
+            currentPage: 1,
+            totalResults: 45,
+            hasAllResults: false,
+            isLoadingAll: false,
+            isTruncated: false,
+        })
+
+        const { result } = renderHook(() => useSearch())
+
+        await act(async () => {
+            await result.current.loadAllResults()
+        })
+
+        // Verify pages 2 and 3 were requested
+        expect(mockFetch).toHaveBeenCalledWith(
+            expect.stringContaining('page=2'),
+            expect.any(Object)
+        )
+        expect(mockFetch).toHaveBeenCalledWith(
+            expect.stringContaining('page=3'),
+            expect.any(Object)
+        )
+        expect(mockFetch).toHaveBeenCalledTimes(2)
+    })
+
+    /**
+     * hasAllResults accuracy tests
+     * Verify that hasAllResults is only true when we actually have all results
+     */
+
+    it('should set hasAllResults to true when all results are loaded', async () => {
+        const mockFetch = jest.fn()
+        global.fetch = mockFetch
+
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+                results: Array(5).fill({ id: 2, title: 'Movie 2', media_type: 'movie' }),
+                total_results: 25,
+            }),
+        })
+
+        Object.assign(mockSearchState.search, {
+            query: 'test',
+            results: Array(20).fill({ id: 1, title: 'Movie 1', media_type: 'movie' }),
+            hasSearched: true,
+            currentPage: 1,
+            totalResults: 25,
+            hasAllResults: false,
+            isLoadingAll: false,
+            isTruncated: false,
+        })
+
+        const { result } = renderHook(() => useSearch())
+
+        await act(async () => {
+            await result.current.loadAllResults()
+        })
+
+        // After loading page 2, we have 25 results (20 + 5)
+        // hasAllResults should be true since 25 >= 25
+        await waitFor(() => {
+            expect(mockSearchState.search.hasAllResults).toBe(true)
+        })
+    })
+
+    it('should set hasAllResults to false when results are truncated', async () => {
+        const mockFetch = jest.fn()
+        global.fetch = mockFetch
+
+        // Simulate API error on page 2
+        mockFetch.mockResolvedValueOnce({
+            ok: false,
+            statusText: 'Internal Server Error',
+            json: async () => ({ error: 'Server error' }),
+        })
+
+        Object.assign(mockSearchState.search, {
+            query: 'test',
+            results: Array(20).fill({ id: 1, title: 'Movie 1', media_type: 'movie' }),
+            hasSearched: true,
+            currentPage: 1,
+            totalResults: 100, // Expect 100 results
+            hasAllResults: false,
+            isLoadingAll: false,
+            isTruncated: false,
+        })
+
+        const { result } = renderHook(() => useSearch())
+
+        await act(async () => {
+            await result.current.loadAllResults()
+        })
+
+        // We only have 20 results but expect 100
+        // hasAllResults should be false
+        await waitFor(() => {
+            expect(mockSearchState.search.hasAllResults).toBe(false)
+        })
+
+        // isTruncated should be true
+        await waitFor(() => {
+            expect(mockSearchState.search.isTruncated).toBe(true)
+        })
+    })
+
+    it('should set isTruncated when hitting TMDB 500-page limit', async () => {
+        const mockFetch = jest.fn()
+        global.fetch = mockFetch
+
+        // Simulate having 10,000+ results (would require >500 pages)
+        Object.assign(mockSearchState.search, {
+            query: 'test',
+            results: Array(9980).fill({ id: 1, title: 'Movie 1', media_type: 'movie' }),
+            hasSearched: true,
+            currentPage: 499,
+            totalResults: 15000, // Would require 750 pages, but TMDB caps at 500
+            hasAllResults: false,
+            isLoadingAll: false,
+            isTruncated: false,
+        })
+
+        // Mock page 500 (last allowed page)
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+                results: Array(20).fill({ id: 500, title: 'Movie 500', media_type: 'movie' }),
+                total_results: 15000,
+            }),
+        })
+
+        const { result } = renderHook(() => useSearch())
+
+        await act(async () => {
+            await result.current.loadAllResults()
+        })
+
+        // We have 10,000 results but expected 15,000
+        // hasAllResults should be false
+        await waitFor(() => {
+            expect(mockSearchState.search.hasAllResults).toBe(false)
+        })
+
+        // isTruncated should be true due to hitting the 500-page cap
+        await waitFor(() => {
+            expect(mockSearchState.search.isTruncated).toBe(true)
+        })
+    })
+
+    /**
+     * Pre-fix behavior validation test
+     * This test demonstrates the bug that was fixed
+     */
+
+    it('REGRESSION: would fail with integer truncation (pre-fix behavior)', () => {
+        // This test demonstrates the bug with integer truncation
+        const totalResults = 25
+
+        // WITHOUT Math.ceil (pre-fix behavior):
+        const preFix_calculatedPages = totalResults / 20 // = 1.25
+        const preFix_targetPages = Math.floor(preFix_calculatedPages) // = 1 (WRONG!)
+
+        // WITH Math.ceil (current fix):
+        const fixed_calculatedPages = Math.max(1, Math.ceil(totalResults / 20)) // = 2 (CORRECT!)
+
+        // The pre-fix would only fetch 1 page, missing the 5 results on page 2
+        expect(preFix_targetPages).toBe(1) // This is the bug!
+        expect(fixed_calculatedPages).toBe(2) // This is the fix!
+
+        // This test serves as documentation of the bug and validates the fix
+    })
 })

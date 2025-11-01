@@ -121,6 +121,7 @@ export function useSearch() {
             currentPage: 1,
             hasAllResults: false,
             isLoadingAll: false,
+            isTruncated: false,
         }))
     }, [setSearch])
 
@@ -152,6 +153,7 @@ export function useSearch() {
             try {
                 const allResults = [...search.results]
                 let currentPage = search.currentPage + 1
+                let wasTruncated = false
 
                 // CRITICAL FIX: Use Math.ceil to handle fractional page counts
                 // Example: 25 results / 20 = 1.25 → ceil(1.25) = 2 pages needed
@@ -182,6 +184,7 @@ export function useSearch() {
                             currentPage,
                             response.statusText
                         )
+                        wasTruncated = true
                         break
                     }
 
@@ -206,12 +209,19 @@ export function useSearch() {
                     }
                 }
 
+                // Check if we stopped early due to maxPages limit
+                if (currentPage > maxPages && allResults.length < search.totalResults) {
+                    wasTruncated = true
+                    guestLog('[QuickSearch] Truncated: Reached maxPages limit')
+                }
+
                 guestLog(
                     '[QuickSearch] Loaded',
                     allResults.length,
                     'total results across',
                     currentPage - search.currentPage - 1,
-                    'additional pages'
+                    'additional pages',
+                    wasTruncated ? '(TRUNCATED)' : ''
                 )
 
                 const filtered = await applyFilters(allResults, search.filters)
@@ -222,14 +232,25 @@ export function useSearch() {
                     filteredResults: filtered,
                     isLoadingAll: false,
                     hasAllResults: allResults.length >= search.totalResults,
+                    isTruncated: wasTruncated,
                     currentPage: currentPage - 1,
                 }))
             } catch (error: any) {
                 if (error.name !== 'AbortError') {
                     guestError('[QuickSearch] Error:', error)
-                    setSearch((prev) => ({ ...prev, isLoadingAll: false }))
+                    setSearch((prev) => ({
+                        ...prev,
+                        isLoadingAll: false,
+                        isTruncated: true,
+                    }))
+                } else {
+                    // AbortError is expected when cancelling requests
+                    setSearch((prev) => ({
+                        ...prev,
+                        isLoadingAll: false,
+                        isTruncated: true,
+                    }))
                 }
-                // AbortError is expected when cancelling requests
             }
         },
         [
@@ -268,6 +289,7 @@ export function useSearch() {
         try {
             const allResults = [...search.results]
             let currentPage = search.currentPage + 1
+            let wasTruncated = false
 
             // TMDB hard limit: 500 pages maximum (10,000 results)
             const TMDB_MAX_PAGE = 500
@@ -291,6 +313,7 @@ export function useSearch() {
 
                 if (!response.ok) {
                     guestError('[LoadAll] API error at page', currentPage, response.statusText)
+                    wasTruncated = true
                     break
                 }
 
@@ -312,12 +335,19 @@ export function useSearch() {
                 }
             }
 
+            // Check if we hit the TMDB page limit
+            if (currentPage > TMDB_MAX_PAGE && allResults.length < search.totalResults) {
+                wasTruncated = true
+                guestLog('[LoadAll] Truncated: Hit TMDB 500-page limit')
+            }
+
             guestLog(
                 '[LoadAll] Loaded',
                 allResults.length,
                 'total results across',
                 currentPage - search.currentPage - 1,
-                'pages'
+                'pages',
+                wasTruncated ? '(TRUNCATED)' : ''
             )
 
             const filtered = await applyFilters(allResults, search.filters)
@@ -326,16 +356,27 @@ export function useSearch() {
                 ...prev,
                 results: allResults,
                 filteredResults: filtered,
-                hasAllResults: true,
+                hasAllResults: allResults.length >= search.totalResults,
+                isTruncated: wasTruncated,
                 isLoadingAll: false,
                 currentPage: currentPage - 1,
             }))
         } catch (error: any) {
             if (error.name !== 'AbortError') {
                 guestError('[LoadAll] Error:', error)
-                setSearch((prev) => ({ ...prev, isLoadingAll: false }))
+                setSearch((prev) => ({
+                    ...prev,
+                    isLoadingAll: false,
+                    isTruncated: true,
+                }))
+            } else {
+                // AbortError is expected when cancelling requests
+                setSearch((prev) => ({
+                    ...prev,
+                    isLoadingAll: false,
+                    isTruncated: true,
+                }))
             }
-            // AbortError is expected when cancelling requests
         }
     }, [
         search.hasAllResults,
@@ -376,6 +417,7 @@ export function useSearch() {
                 currentPage: page,
                 hasAllResults: false,
                 isLoadingAll: false,
+                isTruncated: false,
             }))
 
             try {
@@ -568,6 +610,7 @@ export function useSearch() {
             currentPage: 1,
             hasAllResults: false,
             isLoadingAll: false,
+            isTruncated: false,
         }))
     }, [setSearch])
 
@@ -621,6 +664,7 @@ export function useSearch() {
         filters: search.filters,
         hasAllResults: search.hasAllResults,
         isLoadingAll: search.isLoadingAll,
+        isTruncated: search.isTruncated,
 
         // Actions
         updateQuery,
@@ -628,6 +672,8 @@ export function useSearch() {
         loadMore,
         clearSearch,
         clearResults,
+        loadQuickSearchResults, // Exported for testing
+        loadAllResults, // Exported for testing
 
         // Computed
         hasMore: !hasActiveFilters(search.filters) && search.results.length < search.totalResults,

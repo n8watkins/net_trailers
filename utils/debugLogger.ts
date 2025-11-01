@@ -26,7 +26,7 @@ function isDebugEnabled(setting: string): boolean {
  * Auth Logging (Firebase auth, session initialization)
  */
 export function authLog(...args: any[]): void {
-    if (isDebugEnabled('showFirebaseDebug')) {
+    if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showFirebaseDebug')) {
         console.log(...args)
     }
 }
@@ -43,7 +43,7 @@ export function authWarn(...args: any[]): void {
  * Session Logging (session management, switching, sync)
  */
 export function sessionLog(...args: any[]): void {
-    if (isDebugEnabled('showSessionDebug')) {
+    if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showSessionDebug')) {
         console.log(...args)
     }
 }
@@ -56,7 +56,7 @@ export function sessionError(...args: any[]): void {
  * Guest Logging (guest storage, guest store operations)
  */
 export function guestLog(...args: any[]): void {
-    if (isDebugEnabled('showGuestDebug')) {
+    if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showGuestDebug')) {
         console.log(...args)
     }
 }
@@ -69,7 +69,7 @@ export function guestError(...args: any[]): void {
  * Cache Logging (cache store operations, sessionStorage)
  */
 export function cacheLog(...args: any[]): void {
-    if (isDebugEnabled('showCacheDebug')) {
+    if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showCacheDebug')) {
         console.log(...args)
     }
 }
@@ -82,25 +82,25 @@ export function cacheError(...args: any[]): void {
  * Firebase Tracker Logging (Firebase call tracking, quota monitoring)
  */
 export function firebaseLog(...args: any[]): void {
-    if (isDebugEnabled('showFirebaseTracker')) {
+    if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showFirebaseTracker')) {
         console.log(...args)
     }
 }
 
 export function firebaseWarn(...args: any[]): void {
-    if (isDebugEnabled('showFirebaseTracker')) {
+    if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showFirebaseTracker')) {
         console.warn(...args)
     }
 }
 
 export function firebaseGroup(label: string): void {
-    if (isDebugEnabled('showFirebaseTracker')) {
+    if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showFirebaseTracker')) {
         console.group(label)
     }
 }
 
 export function firebaseGroupEnd(): void {
-    if (isDebugEnabled('showFirebaseTracker')) {
+    if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showFirebaseTracker')) {
         console.groupEnd()
     }
 }

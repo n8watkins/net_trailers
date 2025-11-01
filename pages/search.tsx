@@ -6,6 +6,7 @@ import SearchResults from '../components/SearchResults'
 import SearchFilters from '../components/SearchFilters'
 import { useSearch } from '../hooks/useSearch'
 import { useAppStore } from '../stores/appStore'
+import { useToast } from '../hooks/useToast'
 
 interface Props {
     onOpenAboutModal?: () => void
@@ -19,15 +20,18 @@ export default function SearchPage({
     onOpenKeyboardShortcuts,
 }: Props) {
     const router = useRouter()
-    const { updateQuery, query, isLoading, isLoadingAll, hasSearched, results } = useSearch()
+    const { updateQuery, query, isLoading, isLoadingAll, hasSearched, results, isTruncated } =
+        useSearch()
     const [isInitialLoad, setIsInitialLoad] = useState(true)
     const urlUpdateTimeoutRef = useRef<NodeJS.Timeout>()
     const { modal } = useAppStore()
     const showModal = modal.isOpen
+    const { showError } = useToast()
 
     // Loading animation states
     const [loadingCounter, setLoadingCounter] = useState(0)
     const [loadingMessage, setLoadingMessage] = useState('')
+    const hasShownTruncationToast = useRef(false)
 
     // Update search query from URL parameter (only on initial load)
     useEffect(() => {
@@ -115,6 +119,22 @@ export default function SearchPage({
         }
     }, [query, router, isInitialLoad])
 
+    // Show toast notification when results are truncated
+    useEffect(() => {
+        if (isTruncated && !hasShownTruncationToast.current) {
+            hasShownTruncationToast.current = true
+            showError(
+                'Search Results Incomplete',
+                'Some results could not be loaded due to API limits or errors. Try narrowing your search.'
+            )
+        }
+
+        // Reset flag when query changes
+        if (!isTruncated) {
+            hasShownTruncationToast.current = false
+        }
+    }, [isTruncated, showError])
+
     // Show fancy loading animation on initial load or when loading with no results
     const showFancyLoading = (isLoading || isLoadingAll) && (!hasSearched || results.length === 0)
 
@@ -122,7 +142,9 @@ export default function SearchPage({
         return (
             <div className="relative min-h-screen bg-gradient-to-b from-gray-900/10 to-[#010511]">
                 <Head>
-                    <title>{query ? `Searching: ${query} - NetTrailer` : 'Searching - NetTrailer'}</title>
+                    <title>
+                        {query ? `Searching: ${query} - NetTrailer` : 'Searching - NetTrailer'}
+                    </title>
                 </Head>
                 <Header
                     onOpenAboutModal={onOpenAboutModal}

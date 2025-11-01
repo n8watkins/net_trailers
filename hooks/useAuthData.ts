@@ -1,6 +1,7 @@
 import React from 'react'
 import { useAuthStore } from '../stores/authStore'
 import { UserList } from '../types/userLists'
+import { authWarn } from '../utils/debugLogger'
 
 export function useAuthData(userId: string) {
     const authStore = useAuthStore()
@@ -8,9 +9,7 @@ export function useAuthData(userId: string) {
     // Ensure session is for the correct user
     React.useEffect(() => {
         if (authStore.userId && authStore.userId !== userId) {
-            console.warn(
-                `⚠️ Auth store user mismatch! Store: ${authStore.userId}, Expected: ${userId}`
-            )
+            authWarn(`⚠️ Auth store user mismatch! Store: ${authStore.userId}, Expected: ${userId}`)
             // Sync with the correct user
             authStore.syncWithFirebase(userId)
         }

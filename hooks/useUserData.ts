@@ -1,5 +1,6 @@
 import { useSessionData } from './useSessionData'
 import { UserListsService } from '../services/userListsService'
+import { authError } from '../utils/debugLogger'
 
 /**
  * Main hook for user data management with complete session isolation
@@ -255,7 +256,7 @@ export default function useUserData() {
                         userCreatedWatchlists: [],
                     })
                 } catch (firestoreError) {
-                    console.error('Error clearing Firestore data:', firestoreError)
+                    authError('Error clearing Firestore data:', firestoreError)
                     throw new Error('Failed to clear data from server. Please try again.')
                 }
 
@@ -285,7 +286,7 @@ export default function useUserData() {
                     const userDocRef = doc(db, 'users', userId)
                     await deleteDoc(userDocRef)
                 } catch (firestoreError) {
-                    console.error('Error deleting Firestore data:', firestoreError)
+                    authError('Error deleting Firestore data:', firestoreError)
                     // Continue with auth deletion even if Firestore fails
                 }
 
