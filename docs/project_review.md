@@ -16,6 +16,8 @@ This pass focused on verifying the recent `/settings` remediation, the broader s
     - ✅ Normalize the loop bounds (ceiling, current page cap) - commit 4be175f
     - ✅ Short-circuit when the API returns fewer than 20 items - commit 4be175f
     - ✅ Surface unexpected early exits via debug logger - commit 4be175f
+    - ✅ Replace console logging with debug logger - commit 38dc2d5
+    - ✅ Improve regression tests to properly verify Math.ceil logic - commit 38dc2d5
 
 2. **API Resilience** ⏳ **FUTURE ENHANCEMENT**
     - Centralize TMDB fetch + retry (e.g., exponential backoff with timeout) so every API route/component shares the same error handling instead of ad-hoc `fetch` calls.
