@@ -20,6 +20,12 @@ const defaultState: AppStore = {
         mode: undefined,
     },
 
+    // Auth modal state
+    authModal: {
+        isOpen: false,
+        mode: 'signin',
+    },
+
     // Toast notifications
     toasts: [],
 
@@ -78,6 +84,9 @@ const defaultState: AppStore = {
     setAuthMode: () => {},
     setShowDemoMessage: () => {},
     setContentLoadedSuccessfully: () => {},
+    openAuthModal: () => {},
+    closeAuthModal: () => {},
+    setAuthModalMode: () => {},
 }
 
 /**

@@ -27,6 +27,7 @@ export interface ToastMessage {
     message?: string // Optional additional details
     onUndo?: () => void // Optional undo callback
     contentId?: number // Optional content ID for undo operations
+    timestamp: number // When the toast was created
 }
 
 interface ToastProps {
