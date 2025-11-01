@@ -53,14 +53,15 @@ export async function fetchTVContentRatings(
 }
 
 /**
- * Check if a TV show has a mature content rating
+ * Check if a TV show has a mature content rating OR lacks rating data
  * @param ratings - Array of content ratings from TMDB
- * @returns true if the show has a mature rating
+ * @returns true if the show has a mature rating OR no ratings available
  */
 export function hasMatureRating(ratings: ContentRating[]): boolean {
     if (!ratings || ratings.length === 0) {
-        // No ratings available - default to allowing it (fail open)
-        return false
+        // SECURITY: No ratings available - exclude from child safety mode (fail closed)
+        // We cannot verify content is appropriate without rating data
+        return true
     }
 
     // Check US rating first (most reliable and standardized)
@@ -89,12 +90,13 @@ export async function filterMatureTVShows(tvShows: any[], apiKey: string): Promi
 
     const ratingsResults = await Promise.all(ratingsPromises)
 
-    // Filter out shows with mature ratings
+    // Filter out shows with mature ratings OR missing rating data
     return tvShows.filter((show, index) => {
         const ratings = ratingsResults[index]
         if (!ratings) {
-            // If we couldn't fetch ratings, keep the show (fail open for better UX)
-            return true
+            // SECURITY: If we couldn't fetch ratings, exclude the show (fail closed)
+            // Cannot verify content is appropriate without rating data
+            return false
         }
         return !hasMatureRating(ratings)
     })
