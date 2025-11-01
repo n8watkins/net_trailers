@@ -383,15 +383,20 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
 
     clearAllData: () => {
         const state = get()
+        const preservedGuestId = state.guestId
 
         // Clear localStorage if we have a guestId
-        if (state.guestId) {
-            GuestStorageService.clearCurrentGuestData(state.guestId)
+        if (preservedGuestId) {
+            GuestStorageService.clearCurrentGuestData(preservedGuestId)
         }
 
-        // Clear in-memory store
-        set(getDefaultState())
-        guestLog('🧹 [GuestStore] Cleared all data (memory + localStorage)')
+        // Clear in-memory store BUT preserve the guestId to prevent SessionSyncManager re-sync
+        set({
+            ...getDefaultState(),
+            guestId: preservedGuestId, // Keep the same guestId
+            lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+        })
+        guestLog('🧹 [GuestStore] Cleared all data (memory + localStorage), preserved guestId')
     },
 
     loadData: (data: GuestState) => {
