@@ -9,7 +9,7 @@ import ContentCard from '../../../components/ContentCard'
 import { Content } from '../../../typings'
 import { movieCache } from '../../../utils/apiCache'
 import { useSessionData } from '../../../hooks/useSessionData'
-import { filterDislikedContent, filterContentByAdultFlag } from '../../../utils/contentFilter'
+import { filterDislikedContent } from '../../../utils/contentFilter'
 import { useChildSafety } from '../../../hooks/useChildSafety'
 
 interface GenrePageProps {
@@ -53,14 +53,12 @@ const GenrePage: NextPage<GenrePageProps> = ({
     const { isEnabled: childSafetyEnabled } = useChildSafety()
 
     const contentToRender = useMemo(() => {
-        // First filter out disliked content
-        let filtered = filterDislikedContent(content, sessionData.hiddenMovies)
-
-        // Then apply Child Safety Mode filtering if enabled
-        filtered = filterContentByAdultFlag(filtered, childSafetyEnabled)
+        // Filter out disliked content
+        // Note: Child safety filtering is now handled server-side via API parameter
+        const filtered = filterDislikedContent(content, sessionData.hiddenMovies)
 
         return filtered
-    }, [content, sessionData.hiddenMovies, childSafetyEnabled])
+    }, [content, sessionData.hiddenMovies])
 
     // Load genre content with traditional infinite scroll
     const loadGenreContent = useCallback(
@@ -99,6 +97,9 @@ const GenrePage: NextPage<GenrePageProps> = ({
                         filterParams.append(yearParam, filters.year)
                     }
                 }
+
+                // Add child safety mode parameter
+                filterParams.append('childSafetyMode', childSafetyEnabled.toString())
 
                 const response = await fetch(
                     `/api/genres/${mediaType}/${genreId}?${filterParams.toString()}`
@@ -148,7 +149,7 @@ const GenrePage: NextPage<GenrePageProps> = ({
                 setLoadingMore(false)
             }
         },
-        [genreId, mediaType, maxPages, filters]
+        [genreId, mediaType, maxPages, filters, childSafetyEnabled]
     )
 
     useEffect(() => {

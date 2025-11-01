@@ -5,78 +5,53 @@ import Row from '../components/Row'
 import useAuth from '../hooks/useAuth'
 import NetflixLoader from '../components/NetflixLoader'
 import NetflixError from '../components/NetflixError'
-import { useState, useEffect, useMemo } from 'react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { useAppStore } from '../stores/appStore'
-import { mainPageCache } from '../utils/apiCache'
 import { useCacheStore } from '../stores/cacheStore'
 import Head from 'next/head'
-import { useChildSafety } from '../hooks/useChildSafety'
-import { filterContentByAdultFlag } from '../utils/contentFilter'
+import { useHomeData } from '../hooks/useHomeData'
+import { NextPage } from 'next'
 
 interface Props {
-    trending: Content[]
-    topRatedMovies: Content[]
-    actionMovies: Content[]
-    comedyMovies: Content[]
-    horrorMovies: Content[]
-    romanceMovies: Content[]
-    documentaries: Content[]
-    hasDataError?: boolean
     onOpenAboutModal?: () => void
     onOpenTutorial?: () => void
     onOpenKeyboardShortcuts?: () => void
 }
 
-const TVShows = ({
-    trending,
-    topRatedMovies,
-    actionMovies,
-    comedyMovies,
-    horrorMovies,
-    romanceMovies,
-    documentaries,
-    hasDataError = false,
+const TVShows: NextPage<Props> = ({
     onOpenAboutModal,
     onOpenTutorial,
     onOpenKeyboardShortcuts,
-}: Props) => {
-    const { loading, error, user } = useAuth()
+}) => {
+    const { loading: authLoading, error: authError, user } = useAuth()
     const router = useRouter()
     const { modal, setContentLoadedSuccessfully } = useAppStore()
     const showModal = modal.isOpen
     const { setMainPageData, setHasVisitedMainPage } = useCacheStore()
-    const { isEnabled: childSafetyEnabled } = useChildSafety()
 
-    // Apply client-side Child Safety filtering to all content
-    const filteredTrending = useMemo(
-        () => filterContentByAdultFlag(trending, childSafetyEnabled),
-        [trending, childSafetyEnabled]
-    )
-    const filteredTopRated = useMemo(
-        () => filterContentByAdultFlag(topRatedMovies, childSafetyEnabled),
-        [topRatedMovies, childSafetyEnabled]
-    )
-    const filteredAction = useMemo(
-        () => filterContentByAdultFlag(actionMovies, childSafetyEnabled),
-        [actionMovies, childSafetyEnabled]
-    )
-    const filteredComedy = useMemo(
-        () => filterContentByAdultFlag(comedyMovies, childSafetyEnabled),
-        [comedyMovies, childSafetyEnabled]
-    )
-    const filteredHorror = useMemo(
-        () => filterContentByAdultFlag(horrorMovies, childSafetyEnabled),
-        [horrorMovies, childSafetyEnabled]
-    )
-    const filteredRomance = useMemo(
-        () => filterContentByAdultFlag(romanceMovies, childSafetyEnabled),
-        [romanceMovies, childSafetyEnabled]
-    )
-    const filteredDocumentaries = useMemo(
-        () => filterContentByAdultFlag(documentaries, childSafetyEnabled),
-        [documentaries, childSafetyEnabled]
-    )
+    // ✅ FIXED: Child Safety filtering now works for BOTH movies AND TV shows
+    // Data is fetched client-side from API routes that perform server-side filtering
+    const { data, loading: dataLoading, error: dataError } = useHomeData('tv')
+
+    const {
+        trending,
+        topRatedMovies,
+        actionMovies,
+        comedyMovies,
+        horrorMovies,
+        romanceMovies,
+        documentaries,
+    } = data
+
+    // Content is already filtered server-side, no need for client-side filtering
+    const filteredTrending = trending
+    const filteredTopRated = topRatedMovies
+    const filteredAction = actionMovies
+    const filteredComedy = comedyMovies
+    const filteredHorror = horrorMovies
+    const filteredRomance = romanceMovies
+    const filteredDocumentaries = documentaries
 
     // Check if we have any content at all
     const hasAnyContent =
@@ -119,8 +94,13 @@ const TVShows = ({
         setHasVisitedMainPage,
     ])
 
-    // Show error screen if no content is available
-    if (!hasAnyContent || hasDataError) {
+    // Show loading screen during data fetch or auth initialization
+    if (dataLoading || authLoading) {
+        return <NetflixLoader message="Loading TV Shows..." />
+    }
+
+    // Show error screen if no content is available or there was an error
+    if (dataError || !hasAnyContent) {
         return <NetflixError />
     }
 
@@ -178,119 +158,5 @@ const TVShows = ({
 
 export default TVShows
 
-export const getServerSideProps = async () => {
-    const API_KEY = process.env.TMDB_API_KEY
-    const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
-
-    if (!API_KEY) {
-        console.error('TMDB API key not configured')
-        return {
-            props: {
-                trending: [],
-                topRatedMovies: [],
-                actionMovies: [],
-                comedyMovies: [],
-                horrorMovies: [],
-                romanceMovies: [],
-                documentaries: [],
-            },
-        }
-    }
-
-    try {
-        const cacheKey = 'main-page-content-tv'
-        const cached = mainPageCache.get(cacheKey)
-
-        if (cached) {
-            return { props: cached }
-        }
-
-        // Fetch TV-specific content directly from TMDB
-        const fetchPromises = [
-            fetch(
-                `${TMDB_BASE_URL}/trending/tv/week?api_key=${API_KEY}&language=en-US&page=1`
-            ).then((res) => res.json()),
-            fetch(`${TMDB_BASE_URL}/tv/top_rated?api_key=${API_KEY}&language=en-US&page=1`).then(
-                (res) => res.json()
-            ),
-            fetch(`${TMDB_BASE_URL}/tv/top_rated?api_key=${API_KEY}&language=en-US&page=2`).then(
-                (res) => res.json()
-            ),
-            fetch(
-                `${TMDB_BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&with_genres=10759&page=1`
-            ).then((res) => res.json()), // Action & Adventure
-            fetch(
-                `${TMDB_BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&with_genres=35&page=1`
-            ).then((res) => res.json()), // Comedy
-            fetch(
-                `${TMDB_BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&with_genres=80&page=1`
-            ).then((res) => res.json()), // Crime
-            fetch(
-                `${TMDB_BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&with_genres=18&page=1`
-            ).then((res) => res.json()), // Drama
-            fetch(
-                `${TMDB_BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&with_genres=99&page=1`
-            ).then((res) => res.json()), // Documentary
-        ]
-
-        const [
-            trending,
-            topRatedMovies1,
-            topRatedMovies2,
-            actionMovies,
-            comedyMovies,
-            horrorMovies,
-            romanceMovies,
-            documentaries,
-        ] = await Promise.all(fetchPromises)
-
-        // Proper Fisher-Yates shuffle algorithm
-        const randomizeArray = (arr: Content[]) => {
-            const shuffled = [...arr]
-            for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1))
-                ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-            }
-            return shuffled
-        }
-
-        // Helper function to add media_type to content items
-        const addMediaType = (items: any[], mediaType: 'movie' | 'tv') =>
-            items.map((item) => ({ ...item, media_type: mediaType }))
-
-        const props = {
-            trending: randomizeArray(addMediaType(trending.results || [], 'tv')),
-            topRatedMovies: randomizeArray(
-                addMediaType(
-                    [...(topRatedMovies1.results || []), ...(topRatedMovies2.results || [])],
-                    'tv'
-                )
-            ),
-            actionMovies: randomizeArray(addMediaType(actionMovies.results || [], 'tv')),
-            comedyMovies: randomizeArray(addMediaType(comedyMovies.results || [], 'tv')),
-            horrorMovies: randomizeArray(addMediaType(horrorMovies.results || [], 'tv')),
-            romanceMovies: randomizeArray(addMediaType(romanceMovies.results || [], 'tv')),
-            documentaries: randomizeArray(addMediaType(documentaries.results || [], 'tv')),
-        }
-
-        // Cache the processed props
-        mainPageCache.set(cacheKey, props)
-
-        return { props }
-    } catch (error) {
-        console.error('Failed to fetch TV data:', error)
-
-        return {
-            props: {
-                trending: [],
-                topRatedMovies: [],
-                actionMovies: [],
-                comedyMovies: [],
-                horrorMovies: [],
-                romanceMovies: [],
-                documentaries: [],
-                hasDataError: true,
-            },
-        }
-    }
-}
+// getServerSideProps removed - page now uses client-side data fetching with useHomeData hook
+// This allows passing childSafetyMode parameter to API routes for proper server-side filtering
