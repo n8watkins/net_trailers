@@ -43,17 +43,24 @@ export const TV_GENRES: Genre[] = [
 ]
 
 // Child-friendly movie genres (shown when child safety mode is enabled)
+// Note: Content within these genres is filtered by include_adult=false
+// Violence/intensity exists but within family-appropriate ratings (G, PG, PG-13)
 export const CHILD_SAFE_MOVIE_GENRES: Genre[] = [
+    { id: 28, name: 'Action' }, // Family action like superhero movies
     { id: 12, name: 'Adventure' },
     { id: 16, name: 'Animation' },
+    { id: 35, name: 'Comedy' },
     { id: 99, name: 'Documentary' },
     { id: 10751, name: 'Family' },
     { id: 14, name: 'Fantasy' },
     { id: 10402, name: 'Music' },
+    { id: 9648, name: 'Mystery' }, // Family mysteries like Scooby-Doo
+    { id: 10749, name: 'Romance' }, // Family-friendly romance
     { id: 878, name: 'Science Fiction' },
 ]
 
 // Child-friendly TV genres (shown when child safety mode is enabled)
+// Note: Content is filtered by TV content ratings (blocks TV-MA)
 export const CHILD_SAFE_TV_GENRES: Genre[] = [
     { id: 10759, name: 'Action & Adventure' },
     { id: 16, name: 'Animation' },
@@ -61,5 +68,6 @@ export const CHILD_SAFE_TV_GENRES: Genre[] = [
     { id: 99, name: 'Documentary' },
     { id: 10751, name: 'Family' },
     { id: 10762, name: 'Kids' },
+    { id: 9648, name: 'Mystery' },
     { id: 10765, name: 'Sci-Fi & Fantasy' },
 ]
