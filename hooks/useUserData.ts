@@ -28,6 +28,11 @@ export default function useUserData() {
             hiddenMovies: sessionData.hiddenMovies,
             userCreatedWatchlists: sessionData.userCreatedWatchlists,
 
+            // Preferences
+            autoMute: sessionData.autoMute,
+            defaultVolume: sessionData.defaultVolume,
+            childSafetyMode: sessionData.childSafetyMode,
+
             // Actions from Zustand store (NEW SCHEMA)
             addLikedMovie: sessionData.addLikedMovie,
             removeLikedMovie: sessionData.removeLikedMovie,
@@ -149,6 +154,11 @@ export default function useUserData() {
             hiddenMovies: sessionData.hiddenMovies,
             userCreatedWatchlists: sessionData.userCreatedWatchlists,
 
+            // Preferences
+            autoMute: sessionData.autoMute,
+            defaultVolume: sessionData.defaultVolume,
+            childSafetyMode: sessionData.childSafetyMode,
+
             // Actions from Zustand store (NEW SCHEMA)
             addLikedMovie: sessionData.addLikedMovie,
             removeLikedMovie: sessionData.removeLikedMovie,
@@ -226,6 +236,30 @@ export default function useUserData() {
                 accountCreated: new Date(), // This would come from Firebase auth
             }),
             clearAccountData: async () => {
+                const { auth, db } = await import('../firebase')
+                const { doc, updateDoc } = await import('firebase/firestore')
+
+                if (!auth.currentUser) {
+                    throw new Error('No authenticated user found')
+                }
+
+                const userId = auth.currentUser.uid
+
+                // Clear Firestore data first
+                try {
+                    const userDocRef = doc(db, 'users', userId)
+                    await updateDoc(userDocRef, {
+                        defaultWatchlist: [],
+                        likedMovies: [],
+                        hiddenMovies: [],
+                        userCreatedWatchlists: [],
+                    })
+                } catch (firestoreError) {
+                    console.error('Error clearing Firestore data:', firestoreError)
+                    throw new Error('Failed to clear data from server. Please try again.')
+                }
+
+                // Then clear local cache
                 sessionData.clearLocalCache()
             },
             exportAccountData: async () => ({
@@ -319,6 +353,11 @@ export default function useUserData() {
             likedMovies: [],
             hiddenMovies: [],
             userCreatedWatchlists: [],
+
+            // Preferences - defaults during initialization
+            autoMute: true,
+            defaultVolume: 50,
+            childSafetyMode: false,
 
             // Placeholder functions (will throw errors if called during initialization)
             addLikedMovie: () => {
