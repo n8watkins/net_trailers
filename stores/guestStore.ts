@@ -81,6 +81,9 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
                 defaultWatchlist: newWatchlist,
                 userCreatedWatchlists: state.userCreatedWatchlists,
                 lastActive: Date.now(),
+                autoMute: state.autoMute ?? true,
+                defaultVolume: state.defaultVolume ?? 50,
+                childSafetyMode: state.childSafetyMode ?? false,
             })
         }
 
@@ -103,6 +106,9 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
                 defaultWatchlist: newWatchlist,
                 userCreatedWatchlists: state.userCreatedWatchlists,
                 lastActive: Date.now(),
+                autoMute: state.autoMute ?? true,
+                defaultVolume: state.defaultVolume ?? 50,
+                childSafetyMode: state.childSafetyMode ?? false,
             })
         }
 
@@ -129,6 +135,9 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
                 defaultWatchlist: state.defaultWatchlist,
                 userCreatedWatchlists: state.userCreatedWatchlists,
                 lastActive: Date.now(),
+                autoMute: state.autoMute ?? true,
+                defaultVolume: state.defaultVolume ?? 50,
+                childSafetyMode: state.childSafetyMode ?? false,
             })
         }
 
@@ -151,6 +160,9 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
                 defaultWatchlist: state.defaultWatchlist,
                 userCreatedWatchlists: state.userCreatedWatchlists,
                 lastActive: Date.now(),
+                autoMute: state.autoMute ?? true,
+                defaultVolume: state.defaultVolume ?? 50,
+                childSafetyMode: state.childSafetyMode ?? false,
             })
         }
 
@@ -177,6 +189,9 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
                 defaultWatchlist: state.defaultWatchlist,
                 userCreatedWatchlists: state.userCreatedWatchlists,
                 lastActive: Date.now(),
+                autoMute: state.autoMute ?? true,
+                defaultVolume: state.defaultVolume ?? 50,
+                childSafetyMode: state.childSafetyMode ?? false,
             })
         }
 
@@ -199,6 +214,9 @@ export const useGuestStore = create<GuestStore>((set, get) => ({
                 defaultWatchlist: state.defaultWatchlist,
                 userCreatedWatchlists: state.userCreatedWatchlists,
                 lastActive: Date.now(),
+                autoMute: state.autoMute ?? true,
+                defaultVolume: state.defaultVolume ?? 50,
+                childSafetyMode: state.childSafetyMode ?? false,
             })
         }
 
