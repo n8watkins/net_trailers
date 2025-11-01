@@ -182,7 +182,7 @@ export function SessionSyncManager() {
 
             if (needsSync) {
                 authLog('📥 [SessionSyncManager] Syncing auth data for:', user.uid)
-                authStore.syncWithFirebase(user.uid)
+                authStore.syncWithFirebase!(user.uid)
             } else {
                 authLog('✅ [SessionSyncManager] Auth data already synced, skipping')
             }
@@ -203,7 +203,7 @@ export function SessionSyncManager() {
                     activeSessionId,
                     currentGuestId: guestStore.guestId,
                 })
-                guestStore.syncFromLocalStorage(activeSessionId)
+                guestStore.syncFromLocalStorage!(activeSessionId)
             } else {
                 authLog('✅ [SessionSyncManager] Guest data already synced, skipping')
             }

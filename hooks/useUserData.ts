@@ -109,7 +109,7 @@ export default function useUserData() {
                     sessionData.hiddenMovies.length === 0,
             }),
             clearAccountData: () => {
-                sessionData.clearAllData()
+                sessionData.clearAllData!()
             },
             exportAccountData: () => ({
                 defaultWatchlist: sessionData.defaultWatchlist,

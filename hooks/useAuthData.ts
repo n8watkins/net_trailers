@@ -11,7 +11,7 @@ export function useAuthData(userId: string) {
         if (authStore.userId && authStore.userId !== userId) {
             authWarn(`⚠️ Auth store user mismatch! Store: ${authStore.userId}, Expected: ${userId}`)
             // Sync with the correct user
-            authStore.syncWithFirebase(userId)
+            authStore.syncWithFirebase!(userId)
         }
     }, [userId, authStore.userId])
 
@@ -118,7 +118,7 @@ export function useAuthData(userId: string) {
         const { AuthStorageService } = await import('../services/authStorageService')
         const restored = await AuthStorageService.restoreUserData(authStore.userId)
         if (restored) {
-            await authStore.syncWithFirebase(authStore.userId)
+            await authStore.syncWithFirebase!(authStore.userId)
         }
         return restored
     }
@@ -174,7 +174,7 @@ export function useAuthData(userId: string) {
         getAllLists,
 
         // Auth-specific actions
-        forceSyncData: () => authStore.syncWithFirebase(userId),
+        forceSyncData: () => authStore.syncWithFirebase!(userId),
 
         // Account management actions (auth-specific)
         clearAccountData,
