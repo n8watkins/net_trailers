@@ -110,6 +110,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 // Lower threshold since we now have proper rating filtering
                 params.append('vote_count.gte', '100')
             } else {
+                // ✅ TV GENRE BLOCKING STRATEGY (matching movie behavior)
+                // Child-safe TV genres (must match CHILD_SAFE_TV_GENRES)
+                // Action & Adventure (10759), Animation (16), Comedy (35), Documentary (99),
+                // Family (10751), Kids (10762), Mystery (9648), Sci-Fi & Fantasy (10765)
+                const childSafeTvGenres = [10759, 16, 35, 99, 10751, 10762, 9648, 10765]
+
+                // Check if requested genre is child-safe
+                const isChildSafeGenre = genreIds.every((id) => childSafeTvGenres.includes(id))
+
+                if (!isChildSafeGenre) {
+                    // SECURITY: Block access to non-child-safe TV genres
+                    // Return empty results for News, Reality, Soap, Talk, War & Politics, Western, etc.
+                    return res.status(200).json({
+                        page: 1,
+                        results: [],
+                        total_pages: 0,
+                        total_results: 0,
+                        child_safety_enabled: true,
+                        genre_blocked: true,
+                        message:
+                            'This genre is not available in child safety mode. Please disable child safety mode to access all genres.',
+                    })
+                }
+
                 // TV: use requested genres, filtering happens post-fetch via filterMatureTVShows
                 params.append('with_genres', genreIds.join(','))
             }

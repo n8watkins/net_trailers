@@ -34,7 +34,7 @@ export function useHomeData(filter?: string): UseHomeDataReturn {
     })
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    const { isEnabled: childSafetyEnabled } = useChildSafety()
+    const { isEnabled: childSafetyEnabled, isLoading: childSafetyLoading } = useChildSafety()
 
     const fetchHomeData = useCallback(async () => {
         setLoading(true)
@@ -242,8 +242,18 @@ export function useHomeData(filter?: string): UseHomeDataReturn {
     }, [filter, childSafetyEnabled])
 
     useEffect(() => {
+        // ✅ CRITICAL: Wait for child safety preference to load before fetching
+        // This prevents a race condition where the first fetch would use childSafetyEnabled=false
+        // while the preference is still loading, causing adult content to be cached
+        if (childSafetyLoading) {
+            return // Don't fetch until we know the child safety preference
+        }
         fetchHomeData()
-    }, [fetchHomeData])
+    }, [fetchHomeData, childSafetyLoading])
 
-    return { data, loading, error }
+    // Keep loading state true while child safety preference is loading
+    // This ensures we don't briefly show empty state during initialization
+    const isLoading = loading || childSafetyLoading
+
+    return { data, loading: isLoading, error }
 }
