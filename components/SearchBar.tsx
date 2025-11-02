@@ -329,8 +329,10 @@ export default function SearchBar({
                     <button
                         onClick={handleMobileSearchClick}
                         className="w-12 h-12 flex items-center justify-center bg-[#0a0a0a] border border-gray-600/50 rounded-lg hover:border-red-500/50 transition-colors"
+                        type="button"
+                        aria-label="Open search"
                     >
-                        <MagnifyingGlassIcon className="h-6 w-6 text-gray-400" />
+                        <MagnifyingGlassIcon className="h-6 w-6 text-gray-400" aria-hidden="true" />
                     </button>
                 </div>
                 {/* Search Input Container (visible when expanded on mobile, always on desktop) */}
@@ -366,7 +368,7 @@ export default function SearchBar({
                     <input
                         ref={inputRef}
                         id="main-search-input"
-                        type="text"
+                        type="search"
                         value={query}
                         onChange={handleInputChange}
                         onFocus={handleInputFocus}
@@ -374,6 +376,14 @@ export default function SearchBar({
                         onKeyDown={handleKeyDown}
                         placeholder={!isFocused && !query ? typewriterText : placeholder}
                         autoComplete="off"
+                        aria-label="Search for movies and TV shows"
+                        aria-autocomplete="list"
+                        aria-controls={
+                            showSuggestions && quickResults.length > 0
+                                ? 'search-suggestions'
+                                : undefined
+                        }
+                        aria-expanded={showSuggestions && quickResults.length > 0}
                         className={`
                             block w-full pl-10 pr-12 py-4
                             bg-[#0a0a0a] border border-gray-600/50 rounded-lg
@@ -400,8 +410,11 @@ export default function SearchBar({
                             }`}
                             type="button"
                             title={hasActiveFilters ? 'Active Filters' : 'Search Filters'}
+                            aria-label={
+                                hasActiveFilters ? 'Active search filters' : 'Search filters'
+                            }
                         >
-                            <FunnelIcon className="h-5 w-5" />
+                            <FunnelIcon className="h-5 w-5" aria-hidden="true" />
                         </button>
 
                         {/* Clear Button */}
@@ -410,8 +423,9 @@ export default function SearchBar({
                                 onClick={handleClearSearch}
                                 className="pr-3 py-2 text-gray-400 hover:text-white transition-colors"
                                 type="button"
+                                aria-label="Clear search"
                             >
-                                <XMarkIcon className="h-5 w-5" />
+                                <XMarkIcon className="h-5 w-5" aria-hidden="true" />
                             </button>
                         )}
                     </div>
@@ -428,8 +442,9 @@ export default function SearchBar({
                                 }}
                                 className="absolute inset-y-0 right-20 pr-3 flex items-center text-gray-400 hover:text-white transition-colors"
                                 type="button"
+                                aria-label="Close search"
                             >
-                                <XMarkIcon className="h-5 w-5" />
+                                <XMarkIcon className="h-5 w-5" aria-hidden="true" />
                             </button>
                         )}
                     </div>

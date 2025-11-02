@@ -295,6 +295,7 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
 
                             {/* Bookmark Icon - Visual trigger for hover menu */}
                             <button
+                                type="button"
                                 onClick={(e) => {
                                     e.stopPropagation()
                                 }}
@@ -303,12 +304,14 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                         ? 'bg-red-600 border-red-500 text-black'
                                         : 'bg-black border-white/30 text-white hover:bg-red-600 hover:border-red-500 hover:text-black'
                                 }`}
+                                aria-label="Show content actions menu"
                             >
                                 <svg
                                     className="w-5 h-5"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
                                     fill="none"
+                                    aria-hidden="true"
                                 >
                                     <path
                                         strokeLinecap="round"
