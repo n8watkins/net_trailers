@@ -15,14 +15,9 @@ import {
     EyeIcon,
 } from '@heroicons/react/24/solid'
 
-import dynamic from 'next/dynamic'
 import type ReactPlayerType from 'react-player'
 import ContentMetadata from '../common/ContentMetadata'
-
-// Dynamically import ReactPlayer to avoid SSR issues
-const ReactPlayer = dynamic(() => import('react-player'), { ssr: false })
 import KeyboardShortcuts from '../utility/KeyboardShortcuts'
-import Image from 'next/image'
 import { Element, Genre } from '../../typings'
 import ToolTipMod from '../common/ToolTipMod'
 import SimpleLikeButton from '../content/SimpleLikeButton'
@@ -32,6 +27,7 @@ import { useDebugSettings } from '../debug/DebugControls'
 import { getCachedMovieDetails } from '../../utils/prefetchCache'
 import InlineWatchlistDropdown from './modal-sections/InlineWatchlistDropdown'
 import VideoControls from './modal-sections/VideoControls'
+import ModalVideoPlayer from './modal-sections/ModalVideoPlayer'
 
 function Modal() {
     // Debug settings
@@ -578,63 +574,32 @@ function Modal() {
                         )}
 
                         {/* Video Player or Static Image */}
-                        <div
-                            className="absolute inset-0 pointer-events-auto z-0"
-                            onClick={(e) => {
-                                handleSingleOrDoubleClick(e)
+                        <ModalVideoPlayer
+                            trailer={trailer}
+                            trailerEnded={trailerEnded}
+                            playing={playing}
+                            volume={volume}
+                            muted={muted}
+                            fullScreen={fullScreen}
+                            currentMovie={currentMovie}
+                            onSingleOrDoubleClick={handleSingleOrDoubleClick}
+                            onEnded={() => {
+                                setTrailerEnded(true)
+                                setPlaying(false)
+                                setFullScreen(false)
+                                setSecondsPlayed(0)
                             }}
-                        >
-                            {(trailer && !trailerEnded) || playing || fullScreen ? (
-                                <ReactPlayer
-                                    config={{
-                                        youtube: {
-                                            playerVars: {
-                                                cc_load_policy: 1,
-                                                autoplay: 0,
-                                                controls: 0,
-                                                iv_load_policy: 3,
-                                                modestbranding: 1,
-                                            },
-                                            embedOptions: {},
-                                        },
-                                    }}
-                                    url={`https://www.youtube.com/watch?v=${trailer}`}
-                                    width="100%"
-                                    height="100%"
-                                    className={`absolute inset-0 ${fullScreen ? '' : 'rounded-md'}`}
-                                    playing={playing}
-                                    volume={volume}
-                                    muted={muted}
-                                    onEnded={() => {
-                                        setTrailerEnded(true)
-                                        setPlaying(false)
-                                        setFullScreen(false)
-                                        setSecondsPlayed(0)
-                                    }}
-                                    onPause={() => {
-                                        setPlaying(false)
-                                        setTrailerEnded(true)
-                                    }}
-                                    onPlay={() => {
-                                        setPlaying(true)
-                                        setTrailerEnded(false)
-                                    }}
-                                    onReady={handlePlayerReady}
-                                    ref={handlePlayerRef}
-                                />
-                            ) : (
-                                <Image
-                                    src={`https://image.tmdb.org/t/p/original/${currentMovie?.backdrop_path}`}
-                                    alt="movie_backdrop"
-                                    fill
-                                    quality={100}
-                                    priority
-                                    style={{ objectFit: 'cover' }}
-                                    className={fullScreen ? '' : 'rounded-md'}
-                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
-                                />
-                            )}
-                        </div>
+                            onPause={() => {
+                                setPlaying(false)
+                                setTrailerEnded(true)
+                            }}
+                            onPlay={() => {
+                                setPlaying(true)
+                                setTrailerEnded(false)
+                            }}
+                            onReady={handlePlayerReady}
+                            onPlayerRef={handlePlayerRef}
+                        />
 
                         {/* Gradient Overlay - Hidden in fullscreen */}
                         {!fullScreen && (
