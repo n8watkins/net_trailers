@@ -6,7 +6,7 @@ import Row from '../components/content/Row'
 import useAuth from '../hooks/useAuth'
 import NetflixLoader from '../components/common/NetflixLoader'
 import NetflixError from '../components/common/NetflixError'
-import { useEffect } from 'react'
+import { useEffect, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSearchParams } from 'next/navigation'
 import { useAppStore } from '../stores/appStore'
@@ -14,7 +14,7 @@ import { useCacheStore } from '../stores/cacheStore'
 import { useHomeData } from '../hooks/useHomeData'
 import { useChildSafety } from '../hooks/useChildSafety'
 
-export default function Home() {
+function HomeContent() {
     const { loading: authLoading, wasRecentlyAuthenticated } = useAuth()
     const router = useRouter()
     const searchParams = useSearchParams()
@@ -225,5 +225,13 @@ export default function Home() {
                 </section>
             </main>
         </div>
+    )
+}
+
+export default function Home() {
+    return (
+        <Suspense fallback={<NetflixLoader message="Loading NetTrailer..." />}>
+            <HomeContent />
+        </Suspense>
     )
 }

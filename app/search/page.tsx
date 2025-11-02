@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Header from '../../components/layout/Header'
 import SearchResults from '../../components/search/SearchResults'
@@ -8,8 +8,9 @@ import SearchFilters from '../../components/search/SearchFilters'
 import { useSearch } from '../../hooks/useSearch'
 import { useAppStore } from '../../stores/appStore'
 import { useToast } from '../../hooks/useToast'
+import NetflixLoader from '../../components/common/NetflixLoader'
 
-export default function SearchPage() {
+function SearchPageContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const { updateQuery, query, isLoading, isLoadingAll, hasSearched, results, isTruncated } =
@@ -179,5 +180,13 @@ export default function SearchPage() {
                 </div>
             </main>
         </div>
+    )
+}
+
+export default function SearchPage() {
+    return (
+        <Suspense fallback={<NetflixLoader message="Loading search..." />}>
+            <SearchPageContent />
+        </Suspense>
     )
 }

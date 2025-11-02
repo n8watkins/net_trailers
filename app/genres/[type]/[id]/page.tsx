@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Header from '../../../../components/layout/Header'
 import Modal from '../../../../components/modals/Modal'
@@ -18,7 +18,7 @@ interface GenrePageProps {
     }>
 }
 
-export default function GenrePage({ params }: GenrePageProps) {
+function GenrePageContent({ params }: GenrePageProps) {
     const router = useRouter()
     const searchParams = useSearchParams()
     const [resolvedParams, setResolvedParams] = useState<{ type: string; id: string } | null>(null)
@@ -338,5 +338,13 @@ export default function GenrePage({ params }: GenrePageProps) {
 
             <Modal />
         </div>
+    )
+}
+
+export default function GenrePage({ params }: GenrePageProps) {
+    return (
+        <Suspense fallback={<NetflixLoader message="Loading genre..." />}>
+            <GenrePageContent params={params} />
+        </Suspense>
     )
 }

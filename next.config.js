@@ -9,6 +9,8 @@ const nextConfig = {
     typescript: {
         ignoreBuildErrors: false,
     },
+    // Exclude packages from server bundling optimization
+    serverExternalPackages: ['isomorphic-dompurify'],
     compiler: {
         // Remove console.log in production builds (keep error and warn)
         removeConsole:
