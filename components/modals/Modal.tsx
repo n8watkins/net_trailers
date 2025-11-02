@@ -34,8 +34,12 @@ import {
     EyeIcon,
 } from '@heroicons/react/24/solid'
 
-import ReactPlayer from 'react-player'
+import dynamic from 'next/dynamic'
+import type ReactPlayerType from 'react-player'
 import ContentMetadata from '../common/ContentMetadata'
+
+// Dynamically import ReactPlayer to avoid SSR issues
+const ReactPlayer = dynamic(() => import('react-player'), { ssr: false })
 import KeyboardShortcuts from '../utility/KeyboardShortcuts'
 import VolumeSlider from '../common/VolumeSlider'
 import Image from 'next/image'
@@ -68,16 +72,16 @@ function Modal() {
     const [playing, setPlaying] = useState(true)
     const [trailerEnded, setTrailerEnded] = useState(true)
     const [fullScreen, setFullScreen] = useState(false)
-    const [player, setPlayer] = useState<ReactPlayer | null>(null)
+    const [player, setPlayer] = useState<ReactPlayerType | null>(null)
     const [secondsPlayed, setSecondsPlayed] = useState(0)
     const divRef = useRef<HTMLDivElement>(null)
 
-    const handlePlayerRef = useCallback((ref: ReactPlayer | null) => {
+    const handlePlayerRef = useCallback((ref: ReactPlayerType | null) => {
         setPlayer(ref)
     }, [])
 
     const handlePlayerReady = useCallback(
-        (player: ReactPlayer) => {
+        (player: ReactPlayerType) => {
             setTimeout(() => {
                 if (player && typeof player.seekTo === 'function' && secondsPlayed > 0) {
                     player.seekTo(secondsPlayed, 'seconds')
