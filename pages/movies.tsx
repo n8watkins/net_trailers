@@ -6,7 +6,6 @@ import useAuth from '../hooks/useAuth'
 import NetflixLoader from '../components/NetflixLoader'
 import NetflixError from '../components/NetflixError'
 import { useEffect } from 'react'
-import { useRouter } from 'next/router'
 import { useAppStore } from '../stores/appStore'
 import { useCacheStore } from '../stores/cacheStore'
 import Head from 'next/head'
@@ -21,8 +20,7 @@ interface Props {
 }
 
 const Movies: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }) => {
-    const { loading: authLoading, error: authError, user } = useAuth()
-    const router = useRouter()
+    const { loading: authLoading } = useAuth()
     const { modal, setContentLoadedSuccessfully } = useAppStore()
     const showModal = modal.isOpen
     const { setMainPageData, setHasVisitedMainPage } = useCacheStore()

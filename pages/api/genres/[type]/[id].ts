@@ -1,5 +1,4 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { filterContentByAdultFlag } from '../../../../utils/contentFilter'
 import { filterMatureTVShows } from '../../../../utils/tvContentRatings'
 import { filterMatureMovies } from '../../../../utils/movieCertifications'
 import { csDebugTMDB, csDebugResponse, csDebugFilter } from '../../../../utils/childSafetyDebug'

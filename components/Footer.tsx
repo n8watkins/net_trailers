@@ -29,9 +29,9 @@ const tvGenres = [
 ]
 
 function Footer({
-    showAboutModal,
+    showAboutModal: _showAboutModal,
     onOpenAboutModal,
-    onCloseAboutModal,
+    onCloseAboutModal: _onCloseAboutModal,
     onOpenKeyboardShortcuts,
 }: FooterProps) {
     useEffect(() => {
@@ -40,11 +40,6 @@ function Footer({
             onOpenAboutModal()
         }
     }, [onOpenAboutModal])
-
-    const handleCloseModal = () => {
-        onCloseAboutModal()
-        markAsVisited()
-    }
 
     return (
         <>

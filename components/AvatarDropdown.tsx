@@ -9,10 +9,6 @@ import {
     CommandLineIcon,
     AcademicCapIcon,
     ArrowDownTrayIcon,
-    EnvelopeIcon,
-    KeyIcon,
-    ArrowUpTrayIcon,
-    ShareIcon,
 } from '@heroicons/react/24/outline'
 import useAuth from '../hooks/useAuth'
 import { useRouter } from 'next/router'
@@ -92,17 +88,6 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
 
     const getInitials = (email: string) => {
         return email.charAt(0).toUpperCase()
-    }
-
-    const getUserName = () => {
-        if (user?.displayName) {
-            // Extract first name from display name
-            return user.displayName.split(' ')[0]
-        }
-        if (user?.email) {
-            return user.email.split('@')[0]
-        }
-        return 'User'
     }
 
     // Show loading state ONLY if we don't have cached data and auth is loading

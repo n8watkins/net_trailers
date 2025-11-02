@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { NextPage } from 'next'
 import Head from 'next/head'
 import Header from '../components/Header'
 import useUserData from '../hooks/useUserData'
 import { EyeSlashIcon, MagnifyingGlassIcon, ArrowDownTrayIcon } from '@heroicons/react/24/solid'
 import { Content, isMovie, isTVShow } from '../typings'
-import { getTitle, getYear } from '../typings'
+import { getTitle } from '../typings'
 import ContentCard from '../components/ContentCard'
 import { useAppStore } from '../stores/appStore'
 import { exportUserDataToCSV } from '../utils/csvExport'
@@ -45,10 +45,6 @@ const Hidden: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeybo
               return title.includes(query)
           })
         : hiddenContent
-
-    const handleContentClick = (content: Content) => {
-        openModal(content)
-    }
 
     const handleExportCSV = () => {
         if (userSession?.preferences) {

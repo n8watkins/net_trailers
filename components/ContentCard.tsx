@@ -40,8 +40,6 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
     // Check if content is liked, hidden, or in any lists
     const liked = content ? isLiked(content.id) : false
     const hidden = content ? isHidden(content.id) : false
-    const listsContaining = content ? getListsContaining(content.id) : []
-    const isInAnyList = listsContaining.length > 0
 
     const handleImageClick = () => {
         if (content) {
@@ -165,7 +163,9 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                         className={`absolute bottom-4 left-4 right-4
                               transition-all duration-300 ease-out
                               transform flex gap-3 ${
-                                  isCardHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                                  isCardHovered
+                                      ? 'opacity-100 translate-y-0'
+                                      : 'opacity-0 translate-y-4'
                               }`}
                     >
                         <button
@@ -234,7 +234,9 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                     >
                                         <HandThumbUpIcon
                                             className={`h-5 w-5 transition-colors duration-200 ${
-                                                liked ? 'text-white' : 'text-white/60 group-hover/like:text-white'
+                                                liked
+                                                    ? 'text-white'
+                                                    : 'text-white/60 group-hover/like:text-white'
                                             }`}
                                         />
                                     </button>
@@ -327,7 +329,9 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                 <div
                     className={`absolute top-2 left-2 bg-black/80 backdrop-blur-sm rounded-full px-2 py-1 md:px-3 md:py-1.5 z-20
                           opacity-100 transition-all duration-300 ease-out ${
-                              isCardHovered ? '-translate-x-3 -translate-y-4' : 'translate-x-0 translate-y-0'
+                              isCardHovered
+                                  ? '-translate-x-3 -translate-y-4'
+                                  : 'translate-x-0 translate-y-0'
                           }`}
                 >
                     <div className="flex items-center gap-1">
@@ -344,7 +348,9 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                 <div
                     className={`absolute top-3 right-3 z-20
                           opacity-100 transition-all duration-300 ease-out ${
-                              isCardHovered ? 'translate-x-3 -translate-y-4' : 'translate-x-0 translate-y-0'
+                              isCardHovered
+                                  ? 'translate-x-3 -translate-y-4'
+                                  : 'translate-x-0 translate-y-0'
                           }`}
                 >
                     <span

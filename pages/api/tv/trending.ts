@@ -1,5 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { filterContentByAdultFlag } from '../../../utils/contentFilter'
 import { filterMatureTVShows } from '../../../utils/tvContentRatings'
 
 const API_KEY = process.env.TMDB_API_KEY

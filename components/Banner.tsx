@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import Link from 'next/link'
 import { Content, getTitle, getYear, getContentType } from '../typings'
 import Image from 'next/image'
 import { BASE_URL } from '../constants/movie'

@@ -30,8 +30,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 's
         loading,
         resetPass,
         passResetSuccess,
-        attemptPassReset,
-        setAttemptPassReset,
     } = useAuth()
 
     const {

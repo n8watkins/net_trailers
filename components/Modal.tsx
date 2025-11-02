@@ -1,29 +1,8 @@
-import React, {
-    useEffect,
-    useState,
-    useRef,
-    useCallback,
-    useMemo,
-    MouseEventHandler,
-    MouseEvent,
-} from 'react'
+import React, { useEffect, useState, useRef, useCallback, useMemo, MouseEvent } from 'react'
 import MuiModal from '@mui/material/Modal'
 import { useAppStore } from '../stores/appStore'
 import { createErrorHandler } from '../utils/errorHandler'
-import {
-    getTitle,
-    getYear,
-    getContentType,
-    getDirector,
-    getMainCast,
-    getGenreNames,
-    getRating,
-    getRuntime,
-    getIMDbRating,
-    getProductionCompanyNames,
-    Content,
-    isMovie,
-} from '../typings'
+import { getTitle, getContentType, Content } from '../typings'
 
 // Helper function to convert hex color to rgba with opacity
 const hexToRgba = (hex: string, opacity: number): string => {
@@ -37,7 +16,6 @@ const hexToRgba = (hex: string, opacity: number): string => {
     return `rgba(107, 114, 128, ${opacity})` // Fallback to gray
 }
 import {
-    HandThumbDownIcon as HandThumbDownIconFilled,
     HandThumbUpIcon,
     HandThumbDownIcon,
     PlayIcon,
@@ -46,21 +24,15 @@ import {
     SpeakerWaveIcon,
     SpeakerXMarkIcon,
     XMarkIcon,
-    HeartIcon as HeartIconFilled,
     ArrowsPointingOutIcon,
     ArrowsPointingInIcon,
     CheckIcon,
-    CodeBracketIcon,
-    LinkIcon,
     ArrowTopRightOnSquareIcon,
-    EyeIcon,
-    MinusIcon,
     EyeSlashIcon,
-    LockClosedIcon,
+    EyeIcon,
 } from '@heroicons/react/24/solid'
 
 import ReactPlayer from 'react-player'
-import VideoPlayerControls from './VideoPlayerControls'
 import ContentMetadata from './ContentMetadata'
 import KeyboardShortcuts from './KeyboardShortcuts'
 import VolumeSlider from './VolumeSlider'
@@ -68,10 +40,8 @@ import Image from 'next/image'
 import { Element, Genre } from '../typings'
 import ToolTipMod from '../components/ToolTipMod'
 import SimpleLikeButton from './SimpleLikeButton'
-import WatchLaterButton from './WatchLaterButton'
 import useUserData from '../hooks/useUserData'
 import { useToast } from '../hooks/useToast'
-import { UserList } from '../types/userLists'
 import { useAuthStatus } from '../hooks/useAuthStatus'
 import { useDebugSettings } from './DebugControls'
 import { getCachedMovieDetails } from '../utils/prefetchCache'
@@ -96,7 +66,7 @@ function Modal() {
     const currentMovie = modal.content?.content || null
     const autoPlayWithSound = modal.content?.autoPlayWithSound || false
     const [trailer, setTrailer] = useState('')
-    const [genres, setGenres] = useState<Genre[]>([])
+    const [_genres, setGenres] = useState<Genre[]>([])
     const [enhancedMovieData, setEnhancedMovieData] = useState<Content | null>(null)
     const [muted, setMuted] = useState(true)
     const [volume, setVolume] = useState(0.5) // ReactPlayer uses 0-1 range, default 50%
@@ -137,16 +107,11 @@ function Modal() {
     const volumeSliderRef = useRef<HTMLDivElement>(null)
     const volumeButtonRef = useRef<HTMLDivElement>(null)
 
-    // Auth status for inline dropdown (NEW SCHEMA)
-    const { isGuest } = useAuthStatus()
-
     // User data hooks for inline dropdown (NEW SCHEMA)
     const {
         getListsContaining,
         addToList,
         removeFromList,
-        createList,
-        getAllLists,
         isLiked,
         isHidden,
         addLikedMovie,
@@ -201,7 +166,7 @@ function Modal() {
         return !!document.fullscreenElement
     }
 
-    function handleSingleOrDoubleClick(event: MouseEvent) {
+    function handleSingleOrDoubleClick(_event: MouseEvent) {
         if (player && typeof player.getCurrentTime === 'function') {
             setSecondsPlayed(player.getCurrentTime())
         }
@@ -308,29 +273,6 @@ function Modal() {
     }
 
     // Inline dropdown helper functions (NEW SCHEMA)
-    const handleWatchlistToggle = () => {
-        console.log('🎬 Modal handleWatchlistToggle called')
-        if (!currentMovie) {
-            console.log('🎬 No currentMovie, returning')
-            return
-        }
-        console.log('🎬 Current movie:', getTitle(currentMovie as Content))
-        const inWatchlist = isInWatchlist(currentMovie.id)
-
-        console.log('🎬 isInWatchlist:', inWatchlist)
-
-        if (inWatchlist) {
-            console.log('🎬 Removing from watchlist...')
-            removeFromWatchlist(currentMovie.id)
-            console.log('🎬 Calling showWatchlistRemove')
-            showWatchlistRemove(`Removed ${getTitle(currentMovie as Content)} from My List`)
-        } else {
-            console.log('🎬 Adding to watchlist...')
-            addToWatchlist(currentMovie as Content)
-            console.log('🎬 Calling showWatchlistAdd')
-            showWatchlistAdd(`Added ${getTitle(currentMovie as Content)} to My List`)
-        }
-    }
 
     const handleOpenCreateList = () => {
         if (!currentMovie) return
