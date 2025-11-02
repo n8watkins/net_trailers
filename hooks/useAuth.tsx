@@ -286,6 +286,27 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return <AuthContext.Provider value={memoedValue}>{children}</AuthContext.Provider>
 }
 
+/**
+ * Hook for accessing Firebase authentication context
+ *
+ * Provides access to the current user, authentication methods, and auth state.
+ * Must be used within an AuthProvider component tree.
+ *
+ * @returns Authentication context with user, loading state, and auth methods
+ *
+ * @example
+ * ```tsx
+ * const { user, loading, signIn, logOut } = useAuth()
+ *
+ * if (loading) return <div>Loading...</div>
+ *
+ * if (user) {
+ *   return <button onClick={logOut}>Sign Out</button>
+ * }
+ *
+ * return <button onClick={() => signIn(email, password)}>Sign In</button>
+ * ```
+ */
 export default function useAuth() {
     return useContext(AuthContext)
 }

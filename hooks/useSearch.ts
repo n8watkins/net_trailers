@@ -99,6 +99,43 @@ async function applyFilters(results: Content[], filters: SearchFilters): Promise
     return filteredResults
 }
 
+/**
+ * Hook for managing search functionality with filtering, pagination, and real-time updates
+ *
+ * Provides comprehensive search capabilities including:
+ * - Real-time search with 200ms debounce
+ * - Advanced filtering (content type, rating, year, sorting)
+ * - Pagination with load more functionality
+ * - Search history tracking
+ * - Child Safety Mode integration
+ * - URL synchronization
+ *
+ * @returns Object containing search state, results, filters, and search actions
+ *
+ * @example
+ * ```tsx
+ * const {
+ *   query,
+ *   results,
+ *   isLoading,
+ *   updateQuery,
+ *   performSearch,
+ *   loadMore,
+ *   clearSearch
+ * } = useSearch()
+ *
+ * // Update search query (triggers debounced search)
+ * updateQuery('action movies')
+ *
+ * // Load more results
+ * if (hasMore && !isLoading) {
+ *   loadMore()
+ * }
+ *
+ * // Clear search results
+ * clearSearch()
+ * ```
+ */
 export function useSearch() {
     const router = useRouter()
     // Use granular selectors to prevent unnecessary re-renders

@@ -78,11 +78,37 @@ export class ErrorHandler {
 
 /**
  * Factory function to create error handler with toast integration
- * Use this instead of constructing ErrorHandler directly
  *
- * Usage:
- *   const { showError } = useToast()
- *   const errorHandler = createErrorHandler(showError)
+ * Creates an ErrorHandler instance that automatically converts errors into user-friendly
+ * toast notifications. Use this instead of constructing ErrorHandler directly.
+ *
+ * @param showError - Toast notification function from useToast hook
+ * @returns ErrorHandler instance for handling various error types
+ *
+ * @example
+ * ```tsx
+ * const { showError } = useToast()
+ * const errorHandler = createErrorHandler(showError)
+ *
+ * // Handle authentication errors
+ * try {
+ *   await signIn(email, password)
+ * } catch (error) {
+ *   errorHandler.handleAuthError(error)
+ * }
+ *
+ * // Handle API errors
+ * try {
+ *   const data = await fetch('/api/movies')
+ * } catch (error) {
+ *   errorHandler.handleApiError(error, 'load movies')
+ * }
+ *
+ * // Handle network errors
+ * if (!navigator.onLine) {
+ *   errorHandler.handleNetworkError('save watchlist')
+ * }
+ * ```
  */
 export function createErrorHandler(
     showError: (title: string, message?: string) => void

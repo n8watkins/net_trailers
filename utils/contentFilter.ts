@@ -7,9 +7,17 @@ import { UserPreferences } from '../types/shared'
 
 /**
  * Filter content array to exclude hidden items
- * @param content Array of content to filter
- * @param hiddenMovies User's hidden movies array
+ *
+ * Uses a Set-based lookup for O(1) performance when checking if content is hidden.
+ *
+ * @param content - Array of content to filter
+ * @param hiddenMovies - User's hidden movies array
  * @returns Filtered content array without hidden items
+ *
+ * @example
+ * ```tsx
+ * const filteredContent = filterDislikedContent(allMovies, user.hiddenMovies)
+ * ```
  */
 export function filterDislikedContent(content: Content[], hiddenMovies: Content[]): Content[] {
     if (!hiddenMovies || hiddenMovies.length === 0) {
@@ -25,9 +33,17 @@ export function filterDislikedContent(content: Content[], hiddenMovies: Content[
 
 /**
  * Enhanced filter function that works with UserPreferences
- * @param content Array of content to filter
- * @param userPreferences User's full preferences object
+ *
+ * Convenience wrapper around filterDislikedContent that accepts UserPreferences object.
+ *
+ * @param content - Array of content to filter
+ * @param userPreferences - User's full preferences object
  * @returns Filtered content array without hidden items
+ *
+ * @example
+ * ```tsx
+ * const filtered = filterHiddenContent(trending, userPreferences)
+ * ```
  */
 export function filterHiddenContent(
     content: Content[],
@@ -118,11 +134,19 @@ export function filterSearchResults(
 
 /**
  * Filter content array based on adult flag (Child Safety Mode)
- * This is a quick first-pass filter that doesn't require certification data
+ *
+ * This is a quick first-pass filter that doesn't require certification data.
+ * Filters out movies marked with adult=true. TV shows use content_ratings instead.
  *
  * @param items - Array of content items
  * @param childSafetyMode - Whether child safety mode is enabled
  * @returns Filtered array of content
+ *
+ * @example
+ * ```tsx
+ * const { childSafetyMode } = useUserData()
+ * const safeContent = filterContentByAdultFlag(movies, childSafetyMode)
+ * ```
  */
 export function filterContentByAdultFlag(items: Content[], childSafetyMode: boolean): Content[] {
     if (!childSafetyMode) {

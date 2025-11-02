@@ -91,7 +91,26 @@ export class TMDBApiClient {
     }
 }
 
-// Utility function to handle API responses with consistent caching
+/**
+ * Set HTTP cache headers for API responses
+ *
+ * Configures Cache-Control headers for optimal CDN caching and stale-while-revalidate behavior.
+ * Use this for all TMDB proxy API routes to reduce API calls and improve performance.
+ *
+ * @param res - Next.js API response object
+ * @param maxAge - Maximum age in seconds for fresh cache
+ * @param staleWhileRevalidate - Time in seconds to serve stale content while revalidating (defaults to maxAge * 2)
+ *
+ * @example
+ * ```tsx
+ * // In API route handler
+ * export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+ *   const data = await fetchFromTMDB()
+ *   setCacheHeaders(res, 3600) // Cache for 1 hour
+ *   res.status(200).json(data)
+ * }
+ * ```
+ */
 export function setCacheHeaders(
     res: NextApiResponse,
     maxAge: number,
@@ -103,7 +122,26 @@ export function setCacheHeaders(
     )
 }
 
-// Error response utility
+/**
+ * Handle TMDB API errors with consistent error responses
+ *
+ * Converts TMDB API errors into appropriate HTTP responses with user-friendly messages.
+ * Handles common error cases like 404, 429 (rate limiting), and 5xx server errors.
+ *
+ * @param res - Next.js API response object
+ * @param error - The error object from TMDB API call
+ * @param context - Description of the operation for error messages (e.g., "fetch movies")
+ *
+ * @example
+ * ```tsx
+ * try {
+ *   const data = await tmdbClient.fetch('/movie/popular')
+ *   res.status(200).json(data)
+ * } catch (error) {
+ *   handleApiError(res, error, 'fetch popular movies')
+ * }
+ * ```
+ */
 export function handleApiError(res: NextApiResponse, error: unknown, context: string) {
     console.error(`TMDB API error (${context}):`, error)
 

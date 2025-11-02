@@ -36,6 +36,18 @@ export const useSessionStore = create<SessionStore>((set) => ({
     migrationAvailable: false,
 
     // Actions
+    /**
+     * Initialize a new guest session
+     *
+     * Gets or creates a guest ID from localStorage and initializes the session.
+     * Used when the app starts without authentication.
+     *
+     * @example
+     * ```tsx
+     * const { initializeGuestSession } = useSessionStore()
+     * initializeGuestSession()
+     * ```
+     */
     initializeGuestSession: () => {
         // FIXED: Get or create guest ID from localStorage (was always creating new ID)
         const guestId = GuestStorageService.getGuestId()
@@ -51,6 +63,20 @@ export const useSessionStore = create<SessionStore>((set) => ({
         sessionLog('🎯 [SessionStore] Guest session initialized:', guestId)
     },
 
+    /**
+     * Initialize an authenticated session
+     *
+     * Sets up session state for a logged-in user with the given Firebase user ID.
+     * Called when Firebase authentication state changes to authenticated.
+     *
+     * @param userId - Firebase user ID
+     *
+     * @example
+     * ```tsx
+     * const { initializeAuthSession } = useSessionStore()
+     * initializeAuthSession(user.uid)
+     * ```
+     */
     initializeAuthSession: (userId: string) => {
         set({
             sessionType: 'authenticated',

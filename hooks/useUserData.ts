@@ -55,7 +55,40 @@ const createListManagementOps = (sessionData: ReturnType<typeof useSessionData>)
  * Main hook for user data management with complete session isolation
  *
  * Routes to appropriate session (guest or authenticated) based on current session type.
- * No automatic data migration - sessions are completely isolated.
+ * Provides a unified interface for managing user preferences, watchlists, and content interactions.
+ * Sessions are completely isolated with no automatic data migration between guest and authenticated modes.
+ *
+ * @returns Object containing user data, preferences, and management actions
+ *
+ * @example
+ * ```tsx
+ * const {
+ *   isGuest,
+ *   isAuthenticated,
+ *   defaultWatchlist,
+ *   likedMovies,
+ *   userCreatedWatchlists,
+ *   addToWatchlist,
+ *   createList,
+ *   isInWatchlist,
+ *   getAccountDataSummary
+ * } = useUserData()
+ *
+ * // Add content to default watchlist
+ * addToWatchlist(movie)
+ *
+ * // Create a custom list
+ * createList({ name: 'My Favorites', emoji: '⭐', color: '#FFD700' })
+ *
+ * // Check if content is in watchlist
+ * if (isInWatchlist(movieId)) {
+ *   // Already in watchlist
+ * }
+ *
+ * // Get account summary
+ * const summary = await getAccountDataSummary()
+ * console.log(`Total items: ${summary.totalItems}`)
+ * ```
  */
 export default function useUserData() {
     const sessionData = useSessionData()

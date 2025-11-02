@@ -156,6 +156,24 @@ export const useAppStore = create<AppStore>((set, get) => ({
     contentLoadedSuccessfully: false,
 
     // Modal actions
+    /**
+     * Open the content modal with video player
+     *
+     * @param content - The movie or TV show to display
+     * @param autoPlay - Whether to start playing the trailer automatically (default: false)
+     * @param autoPlayWithSound - Whether to play with sound initially (default: false)
+     *
+     * @example
+     * ```tsx
+     * const { openModal } = useAppStore()
+     *
+     * // Open modal with autoplay muted (More Info button)
+     * openModal(movie, true, false)
+     *
+     * // Open modal with autoplay and sound (Play button)
+     * openModal(movie, true, true)
+     * ```
+     */
     openModal: (content: Content, autoPlay = false, autoPlayWithSound = false) => {
         startTransition(() => {
             set({
@@ -172,6 +190,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
         })
     },
 
+    /**
+     * Close the content modal
+     *
+     * @example
+     * ```tsx
+     * const { closeModal } = useAppStore()
+     * closeModal()
+     * ```
+     */
     closeModal: () => {
         startTransition(() => {
             set({
@@ -288,6 +315,27 @@ export const useAppStore = create<AppStore>((set, get) => ({
     },
 
     // Toast actions
+    /**
+     * Show a toast notification
+     *
+     * Displays a toast message with auto-dismiss after 3 seconds.
+     * Maximum of 2 toasts shown at once - oldest dismissed when limit reached.
+     *
+     * @param type - Type of toast (success, error, watchlist-add, etc.)
+     * @param title - Main toast message
+     * @param message - Optional secondary message
+     *
+     * @example
+     * ```tsx
+     * const { showToast } = useAppStore()
+     *
+     * // Show success toast
+     * showToast('success', 'Saved successfully')
+     *
+     * // Show error with details
+     * showToast('error', 'Failed to save', 'Please try again')
+     * ```
+     */
     showToast: (type: ToastType, title: string, message?: string) => {
         const toast: ToastMessage = {
             id: generateToastId(),

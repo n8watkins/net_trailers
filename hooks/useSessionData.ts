@@ -2,6 +2,36 @@ import { useSessionStore } from '../stores/sessionStore'
 import { useGuestStore } from '../stores/guestStore'
 import { useAuthStore } from '../stores/authStore'
 
+/**
+ * Hook for accessing current session data (guest or authenticated)
+ *
+ * Provides a unified interface for accessing user data regardless of session type.
+ * Automatically routes to the appropriate store (guestStore or authStore) based on
+ * the current session type from sessionStore.
+ *
+ * @returns Object containing session data, preferences, and data management actions
+ *
+ * @example
+ * ```tsx
+ * const {
+ *   sessionType,
+ *   defaultWatchlist,
+ *   likedMovies,
+ *   addToWatchlist,
+ *   removeFromWatchlist,
+ *   isInWatchlist
+ * } = useSessionData()
+ *
+ * // Check if content is in watchlist
+ * const inWatchlist = isInWatchlist(movieId)
+ *
+ * // Add content to watchlist
+ * addToWatchlist(movie)
+ *
+ * // Remove from watchlist
+ * removeFromWatchlist(movieId)
+ * ```
+ */
 export const useSessionData = () => {
     // Use granular selectors for session store
     const sessionType = useSessionStore((state) => state.sessionType)
