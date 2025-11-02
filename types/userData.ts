@@ -1,23 +1,14 @@
-import { Content } from '../typings'
-import { UserList } from './userLists'
+/**
+ * DEPRECATED: This file is being phased out.
+ *
+ * UserPreferences and UserSession have been consolidated into types/shared.ts
+ * to maintain a single source of truth.
+ *
+ * Please import from '../types/shared' instead:
+ * - import { UserPreferences, UserSession } from '../types/shared'
+ *
+ * This file is kept temporarily for reference but should not be used.
+ */
 
-// NEW SCHEMA - No more ratings, no more userLists structure
-export interface UserPreferences {
-    likedMovies: Content[]
-    hiddenMovies: Content[]
-    defaultWatchlist: Content[]
-    userCreatedWatchlists: UserList[]
-    lastActive: number
-    // Playback preferences
-    autoMute: boolean
-    defaultVolume: number // 0-100
-    // Content filtering preferences
-    childSafetyMode: boolean // Restricts to PG-13 and below
-}
-
-export interface UserSession {
-    isGuest: boolean
-    guestId?: string
-    userId?: string
-    preferences: UserPreferences
-}
+// Re-export from shared types for backwards compatibility
+export type { UserPreferences, UserSession } from './shared'
