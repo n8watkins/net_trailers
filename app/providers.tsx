@@ -3,6 +3,7 @@
 import { AuthProvider } from '../hooks/useAuth'
 import ToastManager from '../components/common/ToastManager'
 import Modal from '../components/modals/Modal'
+import { SessionSyncManager } from '../components/utility/SessionSyncManager'
 
 /**
  * Providers component wraps the entire app with necessary context providers
@@ -15,6 +16,8 @@ import Modal from '../components/modals/Modal'
 export function Providers({ children }: { children: React.ReactNode }) {
     return (
         <AuthProvider>
+            {/* Session initialization - CRITICAL for app to work */}
+            <SessionSyncManager />
             {children}
             {/* Global UI components that should always be mounted */}
             <ToastManager />
