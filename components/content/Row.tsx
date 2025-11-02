@@ -55,21 +55,19 @@ function Row({ title, content }: Props) {
             <div className="relative row-container h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] group">
                 {/* Left Arrow - Hidden on mobile, visible on larger screens */}
                 <div
-                    className={`hidden md:flex absolute top-0 z-50 items-center justify-center ${
-                        isMoved ? '' : 'opacity-0'
-                    } transition-all duration-300 cursor-pointer pointer-events-auto`}
+                    className={`hidden md:flex absolute top-0 left-[-1rem] z-50 rounded-lg w-32 h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] items-center justify-center ${
+                        isMoved ? 'opacity-0 group-hover:opacity-100' : 'opacity-0'
+                    } transition-all duration-300 cursor-pointer pointer-events-auto border border-transparent hover:shadow-[0_0_20px_rgba(107,114,128,0.5)] hover:backdrop-blur-sm group/chevron`}
                     onClick={() => handleClick('left')}
-                    style={{
-                        background:
-                            'linear-gradient(to right, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)',
-                        width: '100px',
-                        height: '100%',
-                        left: '-2rem',
-                    }}
                 >
-                    <div className="ml-8 bg-transparent group-hover:bg-black/50 rounded-lg w-14 h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] flex items-center justify-center hover:backdrop-blur-md hover:bg-black/70 transition-all duration-300 shadow-2xl border border-transparent group-hover:border-white/20 opacity-70 group-hover:opacity-100">
-                        <ChevronLeftIcon className="h-14 w-14 text-white drop-shadow-2xl hover:scale-125 transition-transform duration-300" />
-                    </div>
+                    <div
+                        className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-80 group-hover/chevron:opacity-100 transition-opacity duration-300"
+                        style={{
+                            background:
+                                'radial-gradient(circle, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.55) 35%, rgba(0,0,0,0.75) 55%, rgba(0,0,0,0.9) 75%, rgba(0,0,0,1) 100%)',
+                        }}
+                    ></div>
+                    <ChevronLeftIcon className="h-14 w-14 text-white drop-shadow-2xl transition-transform duration-300 relative z-10 group-hover/chevron:scale-110" />
                 </div>
 
                 {/* Scrollable Container */}
@@ -92,19 +90,17 @@ function Row({ title, content }: Props) {
 
                 {/* Right Arrow - Hidden on mobile, visible on larger screens */}
                 <div
-                    className="hidden md:flex absolute top-0 z-50 items-center justify-center transition-all duration-300 cursor-pointer pointer-events-auto"
+                    className="hidden md:flex absolute top-0 right-[-1rem] z-50 rounded-lg w-32 h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer pointer-events-auto border border-transparent hover:shadow-[0_0_20px_rgba(107,114,128,0.5)] hover:backdrop-blur-sm group/chevron"
                     onClick={() => handleClick('right')}
-                    style={{
-                        background:
-                            'linear-gradient(to left, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)',
-                        width: '100px',
-                        height: '100%',
-                        right: '-2rem',
-                    }}
                 >
-                    <div className="mr-8 bg-transparent group-hover:bg-black/50 rounded-lg w-14 h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] flex items-center justify-center hover:backdrop-blur-md hover:bg-black/70 transition-all duration-300 shadow-2xl border border-transparent group-hover:border-white/20 opacity-70 group-hover:opacity-100">
-                        <ChevronRightIcon className="h-14 w-14 text-white drop-shadow-2xl hover:scale-125 transition-transform duration-300" />
-                    </div>
+                    <div
+                        className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-80 group-hover/chevron:opacity-100 transition-opacity duration-300"
+                        style={{
+                            background:
+                                'radial-gradient(circle, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.55) 35%, rgba(0,0,0,0.75) 55%, rgba(0,0,0,0.9) 75%, rgba(0,0,0,1) 100%)',
+                        }}
+                    ></div>
+                    <ChevronRightIcon className="h-14 w-14 text-white drop-shadow-2xl transition-transform duration-300 relative z-10 group-hover/chevron:scale-110" />
                 </div>
             </div>
         </div>
