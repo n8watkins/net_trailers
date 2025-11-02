@@ -82,10 +82,10 @@ const nextConfig = {
                         key: 'Content-Security-Policy',
                         value: [
                             "default-src 'self'",
-                            "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com",
-                            "style-src 'self' 'unsafe-inline'",
+                            "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://www.youtube.com https://www.gstatic.com",
+                            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
                             "img-src 'self' data: https: blob:",
-                            "font-src 'self' data:",
+                            "font-src 'self' data: https://fonts.gstatic.com",
                             "connect-src 'self' https://api.themoviedb.org https://www.google-analytics.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com",
                             "frame-src 'self' https://www.youtube.com",
                             "media-src 'self' https:",
