@@ -84,29 +84,55 @@ export function useHomeData(filter?: string): UseHomeDataReturn {
                     ]
                 }
             } else {
-                // Default mixed content (movies)
+                // Default mixed content (both movies and TV shows)
                 // In child safety mode, use family-friendly genres only
                 if (childSafetyEnabled) {
                     fetchPromises = [
+                        // Fetch both movie and TV trending
                         fetch(`/api/movies/trending?${childSafetyParam}`),
+                        fetch(`/api/tv/trending?${childSafetyParam}`),
+                        // Fetch both movie and TV top rated
                         fetch(`/api/movies/top-rated?page=1&${childSafetyParam}`),
-                        fetch(`/api/movies/top-rated?page=2&${childSafetyParam}`),
-                        fetch(`/api/genres/movie/16?${childSafetyParam}`), // Animation
-                        fetch(`/api/genres/movie/10751?${childSafetyParam}`), // Family
-                        fetch(`/api/genres/movie/12?${childSafetyParam}`), // Adventure
-                        fetch(`/api/genres/movie/14?${childSafetyParam}`), // Fantasy
-                        fetch(`/api/genres/movie/99?${childSafetyParam}`), // Documentary
+                        fetch(`/api/tv/top-rated?page=1&${childSafetyParam}`),
+                        // Mixed genres - Animation (movies + TV)
+                        fetch(`/api/genres/movie/16?${childSafetyParam}`),
+                        fetch(`/api/genres/tv/16?${childSafetyParam}`),
+                        // Mixed genres - Family/Comedy (movies + TV)
+                        fetch(`/api/genres/movie/10751?${childSafetyParam}`),
+                        fetch(`/api/genres/tv/35?${childSafetyParam}`),
+                        // Mixed genres - Adventure (movies + TV Action & Adventure)
+                        fetch(`/api/genres/movie/12?${childSafetyParam}`),
+                        fetch(`/api/genres/tv/10759?${childSafetyParam}`),
+                        // Mixed genres - Fantasy (movies + TV Sci-Fi & Fantasy)
+                        fetch(`/api/genres/movie/14?${childSafetyParam}`),
+                        fetch(`/api/genres/tv/10765?${childSafetyParam}`),
+                        // Documentary (both)
+                        fetch(`/api/genres/movie/99?${childSafetyParam}`),
+                        fetch(`/api/genres/tv/99?${childSafetyParam}`),
                     ]
                 } else {
                     fetchPromises = [
+                        // Fetch both movie and TV trending
                         fetch(`/api/movies/trending?${childSafetyParam}`),
+                        fetch(`/api/tv/trending?${childSafetyParam}`),
+                        // Fetch both movie and TV top rated
                         fetch(`/api/movies/top-rated?page=1&${childSafetyParam}`),
-                        fetch(`/api/movies/top-rated?page=2&${childSafetyParam}`),
-                        fetch(`/api/genres/movie/28?${childSafetyParam}`), // Action Movies
-                        fetch(`/api/genres/movie/35?${childSafetyParam}`), // Comedy Movies
-                        fetch(`/api/genres/movie/27?${childSafetyParam}`), // Horror Movies
-                        fetch(`/api/genres/movie/10749?${childSafetyParam}`), // Romance Movies
-                        fetch(`/api/genres/movie/99?${childSafetyParam}`), // Documentary Movies
+                        fetch(`/api/tv/top-rated?page=1&${childSafetyParam}`),
+                        // Mixed genres - Action (movies + TV Action & Adventure)
+                        fetch(`/api/genres/movie/28?${childSafetyParam}`),
+                        fetch(`/api/genres/tv/10759?${childSafetyParam}`),
+                        // Mixed genres - Comedy (both)
+                        fetch(`/api/genres/movie/35?${childSafetyParam}`),
+                        fetch(`/api/genres/tv/35?${childSafetyParam}`),
+                        // Mixed genres - Horror (movies) + Sci-Fi & Fantasy (TV)
+                        fetch(`/api/genres/movie/27?${childSafetyParam}`),
+                        fetch(`/api/genres/tv/10765?${childSafetyParam}`),
+                        // Mixed genres - Romance (movies) + Animation (TV)
+                        fetch(`/api/genres/movie/10749?${childSafetyParam}`),
+                        fetch(`/api/genres/tv/16?${childSafetyParam}`),
+                        // Documentary (both)
+                        fetch(`/api/genres/movie/99?${childSafetyParam}`),
+                        fetch(`/api/genres/tv/99?${childSafetyParam}`),
                     ]
                 }
             }
@@ -119,17 +145,6 @@ export function useHomeData(filter?: string): UseHomeDataReturn {
                 throw new Error(`Failed to fetch content: ${failedResponse.status}`)
             }
 
-            const [
-                trendingData,
-                topRated1Data,
-                topRated2Data,
-                actionData,
-                comedyData,
-                horrorData,
-                romanceData,
-                documentariesData,
-            ] = await Promise.all(responses.map((r) => r.json()))
-
             // Helper to randomize array (Fisher-Yates shuffle)
             const randomizeArray = (arr: Content[]) => {
                 const shuffled = [...arr]
@@ -140,18 +155,84 @@ export function useHomeData(filter?: string): UseHomeDataReturn {
                 return shuffled
             }
 
-            setData({
-                trending: randomizeArray(trendingData.results || []),
-                topRated: randomizeArray([
-                    ...(topRated1Data.results || []),
-                    ...(topRated2Data.results || []),
-                ]),
-                genre1: randomizeArray(actionData.results || []),
-                genre2: randomizeArray(comedyData.results || []),
-                genre3: randomizeArray(horrorData.results || []),
-                genre4: randomizeArray(romanceData.results || []),
-                documentaries: randomizeArray(documentariesData.results || []),
-            })
+            const jsonData = await Promise.all(responses.map((r) => r.json()))
+
+            // Process data based on filter type
+            if (filter === 'tv' || filter === 'movies') {
+                // Single content type (existing behavior)
+                const [
+                    trendingData,
+                    topRated1Data,
+                    topRated2Data,
+                    actionData,
+                    comedyData,
+                    horrorData,
+                    romanceData,
+                    documentariesData,
+                ] = jsonData
+
+                setData({
+                    trending: randomizeArray(trendingData.results || []),
+                    topRated: randomizeArray([
+                        ...(topRated1Data.results || []),
+                        ...(topRated2Data.results || []),
+                    ]),
+                    genre1: randomizeArray(actionData.results || []),
+                    genre2: randomizeArray(comedyData.results || []),
+                    genre3: randomizeArray(horrorData.results || []),
+                    genre4: randomizeArray(romanceData.results || []),
+                    documentaries: randomizeArray(documentariesData.results || []),
+                })
+            } else {
+                // Mixed content (movies + TV) - pairs of results
+                const [
+                    movieTrendingData,
+                    tvTrendingData,
+                    movieTopRatedData,
+                    tvTopRatedData,
+                    genre1MovieData,
+                    genre1TvData,
+                    genre2MovieData,
+                    genre2TvData,
+                    genre3MovieData,
+                    genre3TvData,
+                    genre4MovieData,
+                    genre4TvData,
+                    movieDocData,
+                    tvDocData,
+                ] = jsonData
+
+                setData({
+                    trending: randomizeArray([
+                        ...(movieTrendingData.results || []),
+                        ...(tvTrendingData.results || []),
+                    ]),
+                    topRated: randomizeArray([
+                        ...(movieTopRatedData.results || []),
+                        ...(tvTopRatedData.results || []),
+                    ]),
+                    genre1: randomizeArray([
+                        ...(genre1MovieData.results || []),
+                        ...(genre1TvData.results || []),
+                    ]),
+                    genre2: randomizeArray([
+                        ...(genre2MovieData.results || []),
+                        ...(genre2TvData.results || []),
+                    ]),
+                    genre3: randomizeArray([
+                        ...(genre3MovieData.results || []),
+                        ...(genre3TvData.results || []),
+                    ]),
+                    genre4: randomizeArray([
+                        ...(genre4MovieData.results || []),
+                        ...(genre4TvData.results || []),
+                    ]),
+                    documentaries: randomizeArray([
+                        ...(movieDocData.results || []),
+                        ...(tvDocData.results || []),
+                    ]),
+                })
+            }
         } catch (err) {
             console.error('Error fetching home data:', err)
             setError(err instanceof Error ? err.message : 'Failed to load content')

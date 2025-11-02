@@ -174,7 +174,7 @@ const Home: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboar
                                     ? 'Top Rated TV Shows'
                                     : filter === 'movies'
                                       ? 'Top Rated Movies'
-                                      : 'Top Rated Movies'
+                                      : 'Top Rated'
                             }
                             content={filteredTopRated}
                         />
@@ -184,9 +184,13 @@ const Home: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboar
                             title={
                                 filter === 'tv'
                                     ? 'Action & Adventure TV Shows'
-                                    : childSafetyEnabled
-                                      ? 'Animated Movies'
-                                      : 'Action Movies'
+                                    : filter === 'movies'
+                                      ? childSafetyEnabled
+                                          ? 'Animated Movies'
+                                          : 'Action Movies'
+                                      : childSafetyEnabled
+                                        ? 'Animation'
+                                        : 'Action & Adventure'
                             }
                             content={filteredAction}
                         />
@@ -196,9 +200,13 @@ const Home: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboar
                             title={
                                 filter === 'tv'
                                     ? 'Comedy TV Shows'
-                                    : childSafetyEnabled
-                                      ? 'Family Movies'
-                                      : 'Comedy Movies'
+                                    : filter === 'movies'
+                                      ? childSafetyEnabled
+                                          ? 'Family Movies'
+                                          : 'Comedy Movies'
+                                      : childSafetyEnabled
+                                        ? 'Family & Comedy'
+                                        : 'Comedy'
                             }
                             content={filteredComedy}
                         />
@@ -208,9 +216,13 @@ const Home: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboar
                             title={
                                 filter === 'tv'
                                     ? 'Sci-Fi & Fantasy TV Shows'
-                                    : childSafetyEnabled
-                                      ? 'Adventure Movies'
-                                      : 'Horror Movies'
+                                    : filter === 'movies'
+                                      ? childSafetyEnabled
+                                          ? 'Adventure Movies'
+                                          : 'Horror Movies'
+                                      : childSafetyEnabled
+                                        ? 'Adventure'
+                                        : 'Horror & Sci-Fi'
                             }
                             content={filteredHorror}
                         />
@@ -220,9 +232,13 @@ const Home: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboar
                             title={
                                 filter === 'tv'
                                     ? 'Animation TV Shows'
-                                    : childSafetyEnabled
-                                      ? 'Fantasy Movies'
-                                      : 'Romance Movies'
+                                    : filter === 'movies'
+                                      ? childSafetyEnabled
+                                          ? 'Fantasy Movies'
+                                          : 'Romance Movies'
+                                      : childSafetyEnabled
+                                        ? 'Fantasy'
+                                        : 'Romance & Animation'
                             }
                             content={filteredRomance}
                         />
@@ -233,7 +249,7 @@ const Home: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboar
                                 filter === 'tv'
                                     ? 'Documentary TV Shows'
                                     : filter === 'movies'
-                                      ? 'Documentaries'
+                                      ? 'Documentary Movies'
                                       : 'Documentaries'
                             }
                             content={filteredDocumentaries}
