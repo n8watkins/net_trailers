@@ -24,6 +24,7 @@ function Row({ title, content, apiEndpoint }: Props) {
     const isLoadingRef = useRef(false)
     const hasMoreRef = useRef(true)
     const retryCountRef = useRef(0)
+    const consecutiveDuplicatesRef = useRef(0)
     const [isMoved, setIsMoved] = useState(false)
     const [allContent, setAllContent] = useState<Content[]>(content)
     const [currentPage, setCurrentPage] = useState(1)
@@ -164,15 +165,46 @@ function Row({ title, content, apiEndpoint }: Props) {
                     totalCount: allContent.length + filtered.length,
                 })
 
-            // FIX: If all items were duplicates, stop loading to prevent infinite spinner
+            // Handle duplicate-only pages intelligently
             if (filtered.length === 0) {
-                if (DEBUG_INFINITE_SCROLL)
-                    console.log(
-                        '⚠️ [Infinite Row Loading] All items were duplicates, stopping load:',
-                        title
-                    )
-                setHasMore(false)
-                return // Exit early - don't update state or increment page
+                consecutiveDuplicatesRef.current += 1
+
+                debugLog(
+                    '⚠️',
+                    `Page ${currentPage + 1} all duplicates (${consecutiveDuplicatesRef.current}/3)`,
+                    { title, pageReturned: newContent.length }
+                )
+
+                // Stop after 3 consecutive duplicate pages OR if we've reached the end
+                if (
+                    consecutiveDuplicatesRef.current >= 3 ||
+                    currentPage + 1 >= (data.total_pages || 1)
+                ) {
+                    debugLog('🏁', 'Stopping: Multiple duplicate pages or reached end', {
+                        title,
+                        consecutiveDuplicates: consecutiveDuplicatesRef.current,
+                        currentPage: currentPage + 1,
+                        totalPages: data.total_pages,
+                    })
+                    setHasMore(false)
+                    return
+                }
+
+                // Skip this duplicate page and increment to try the next one
+                debugLog('⏭️', `Skipping duplicate page, will try page ${currentPage + 2}`, {
+                    title,
+                })
+                setCurrentPage((prev) => prev + 1)
+                return // Intersection Observer will trigger loadMoreContent again
+            }
+
+            // Reset counter on successful page with unique content
+            if (consecutiveDuplicatesRef.current > 0) {
+                debugLog('🔄', 'Resetting duplicate counter after finding unique content', {
+                    title,
+                    previousCount: consecutiveDuplicatesRef.current,
+                })
+                consecutiveDuplicatesRef.current = 0
             }
 
             // Preload images for new content in the background
