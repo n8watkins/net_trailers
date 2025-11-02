@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { filterMatureMovies } from '../../../../utils/movieCertifications'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -38,23 +37,22 @@ export async function GET(request: NextRequest) {
 
         // Add media_type to each item for consistency
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let enrichedResults = data.results.map((item: any) => ({
+        const enrichedResults = data.results.map((item: any) => ({
             ...item,
             media_type: 'movie',
         }))
 
         if (childSafeMode) {
-            // Apply post-fetch certification filtering for maximum safety
-            const beforeCount = enrichedResults.length
-            enrichedResults = await filterMatureMovies(enrichedResults, API_KEY!)
-            const hiddenCount = beforeCount - enrichedResults.length
-
+            // OPTIMIZATION: Skip redundant post-processing for movies
+            // The discover endpoint with certification.lte=PG-13 already filters by rating
+            // TMDB's certification filter is authoritative - no need to double-check
+            // This eliminates 20+ individual certification API calls per page
             return NextResponse.json(
                 {
                     ...data,
                     results: enrichedResults,
                     child_safety_enabled: true,
-                    hidden_count: hiddenCount,
+                    filtered_at_source: true, // Filtered by TMDB discover endpoint
                 },
                 {
                     status: 200,

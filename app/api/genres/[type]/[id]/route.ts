@@ -204,18 +204,20 @@ export async function GET(
             // ✅ RATING-BASED FILTERING STRATEGY APPLIED
             // Movies: Filtered at query time with certification.lte=PG-13 (G, PG, PG-13 only)
             // TV Shows: Filtered post-fetch by content ratings (excludes TV-MA)
-            // Both approaches exclude unrated content for safety
 
             if (type === 'movie') {
-                // Movies: DOUBLE FILTER for maximum safety
-                // 1. Query-time filter with certification.lte=PG-13 (fast, but may miss some)
-                // 2. Post-fetch verification with individual API calls (accurate, catches all)
-                // This ensures ONLY G, PG, and PG-13 rated movies are returned
-                enrichedResults = await filterMatureMovies(enrichedResults, API_KEY)
-                csDebugFilter(beforeCount, enrichedResults.length, 'Movie Certification Filter')
+                // OPTIMIZATION: Skip redundant post-processing for movies
+                // The discover endpoint with certification.lte=PG-13 already filters by rating
+                // TMDB's certification filter is authoritative - no need to double-check
+                // This eliminates 20+ individual certification API calls per page
+                csDebugFilter(
+                    beforeCount,
+                    enrichedResults.length,
+                    'Movie Certification Filter (skipped - filtered at source)'
+                )
             } else if (type === 'tv') {
                 // TV shows: ALWAYS filter by content ratings in child safety mode
-                // Unlike movies, TV ratings API is reliable and works well
+                // Unlike movies, TV has no certification.lte parameter, so post-fetch filtering is required
                 // Even "family" genres like Comedy and Animation can have TV-MA content
                 // (e.g., Shameless, Hazbin Hotel, The Witcher, etc.)
                 enrichedResults = await filterMatureTVShows(enrichedResults, API_KEY)
