@@ -67,7 +67,7 @@ function Row({ title, content }: Props) {
                         left: '-2rem',
                     }}
                 >
-                    <div className="ml-8 bg-transparent group-hover:bg-black/50 rounded-lg w-14 h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] flex items-center justify-center backdrop-blur-md hover:bg-black/70 transition-colors duration-300 shadow-2xl border border-transparent group-hover:border-white/20 opacity-70 group-hover:opacity-100 transition-opacity">
+                    <div className="ml-8 bg-transparent group-hover:bg-black/50 rounded-lg w-14 h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] flex items-center justify-center hover:backdrop-blur-md hover:bg-black/70 transition-all duration-300 shadow-2xl border border-transparent group-hover:border-white/20 opacity-70 group-hover:opacity-100">
                         <ChevronLeftIcon className="h-14 w-14 text-white drop-shadow-2xl hover:scale-125 transition-transform duration-300" />
                     </div>
                 </div>
@@ -102,7 +102,7 @@ function Row({ title, content }: Props) {
                         right: '-2rem',
                     }}
                 >
-                    <div className="mr-8 bg-transparent group-hover:bg-black/50 rounded-lg w-14 h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] flex items-center justify-center backdrop-blur-md hover:bg-black/70 transition-colors duration-300 shadow-2xl border border-transparent group-hover:border-white/20 opacity-70 group-hover:opacity-100 transition-opacity">
+                    <div className="mr-8 bg-transparent group-hover:bg-black/50 rounded-lg w-14 h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] flex items-center justify-center hover:backdrop-blur-md hover:bg-black/70 transition-all duration-300 shadow-2xl border border-transparent group-hover:border-white/20 opacity-70 group-hover:opacity-100">
                         <ChevronRightIcon className="h-14 w-14 text-white drop-shadow-2xl hover:scale-125 transition-transform duration-300" />
                     </div>
                 </div>
