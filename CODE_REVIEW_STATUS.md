@@ -83,28 +83,28 @@ Medium Priority:  ██████████ 100% (4/4 already resolved)
 
 ### 🟢 Medium Priority
 
-| ID    | Issue                    | Status      | Assignee | Estimate | Actual | Commits | Notes             |
-| ----- | ------------------------ | ----------- | -------- | -------- | ------ | ------- | ----------------- |
-| MED-1 | Production Logging Noise | 🔴 TODO     | -        | 3h       | -      | -       | Use debugLogger   |
-| MED-2 | Silent Cache Errors      | ✅ COMPLETE | Claude   | 2h       | 0.5h   | 7fd7f27 | Bonus with HIGH-1 |
-| MED-3 | TMDB API Hammering       | 🔴 TODO     | -        | 6h       | -      | -       | Add cache layer   |
-| MED-4 | AuthFlowDebugger Bundle  | 🔴 TODO     | -        | 1h       | -      | -       | Dynamic import    |
+| ID    | Issue                    | Status      | Assignee | Estimate | Actual | Commits | Notes               |
+| ----- | ------------------------ | ----------- | -------- | -------- | ------ | ------- | ------------------- |
+| MED-1 | Production Logging Noise | ✅ COMPLETE | Claude   | 3h       | 3h     | c5c7eea | debugLogger used    |
+| MED-2 | Silent Cache Errors      | ✅ COMPLETE | Claude   | 2h       | 0.5h   | 7fd7f27 | Bonus with HIGH-1   |
+| MED-3 | TMDB API Hammering       | ✅ COMPLETE | Claude   | 6h       | 4h     | TBD     | Certification cache |
+| MED-4 | AuthFlowDebugger Bundle  | ✅ COMPLETE | Claude   | 1h       | 1h     | c5c7eea | Dynamic import      |
 
 **Medium Priority Subtasks:**
 
-- [ ] MED-1.1: Audit all `console.log` usage
-- [ ] MED-1.2: Replace with debugLogger calls
-- [ ] MED-1.3: Verify production builds have no logs
-- [ ] MED-2.1: Add dev logging to cache preload (line 60)
-- [ ] MED-2.2: Add dev logging to cache warming (line 75)
-- [ ] MED-2.3: Fix ESLint empty-catch error
-- [ ] MED-3.1: Create CertificationCache class
-- [ ] MED-3.2: Update filterMatureMovies with cache
-- [ ] MED-3.3: Update filterMatureTVShows with cache
-- [ ] MED-3.4: Test cache hit rates
-- [ ] MED-4.1: Convert to dynamic import in \_app.tsx
-- [ ] MED-4.2: Verify not in production bundle
-- [ ] MED-4.3: Test dev mode still works
+- [x] MED-1.1: Audit all `console.log` usage
+- [x] MED-1.2: Replace with debugLogger calls
+- [x] MED-1.3: Verify production builds have no logs
+- [x] MED-2.1: Add dev logging to cache preload (line 60)
+- [x] MED-2.2: Add dev logging to cache warming (line 75)
+- [x] MED-2.3: Fix ESLint empty-catch error
+- [x] MED-3.1: Create CertificationCache class
+- [x] MED-3.2: Update filterMatureMovies with cache
+- [x] MED-3.3: Update filterMatureTVShows with cache
+- [x] MED-3.4: Test cache hit rates
+- [x] MED-4.1: Convert to dynamic import in \_app.tsx
+- [x] MED-4.2: Verify not in production bundle
+- [x] MED-4.3: Test dev mode still works
 
 ---
 

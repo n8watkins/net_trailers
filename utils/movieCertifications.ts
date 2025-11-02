@@ -1,7 +1,10 @@
 /**
  * Movie Certification Utilities for Child Safety Mode
  * Handles server-side fetching and filtering of movie certifications from TMDB
+ * Uses in-memory cache to reduce API calls
  */
+
+import { certificationCache } from './certificationCache'
 
 export interface MovieCertification {
     iso_3166_1: string
@@ -35,7 +38,7 @@ export const MATURE_CERTIFICATIONS = new Set([
 ])
 
 /**
- * Fetch certification data for a movie from TMDB
+ * Fetch certification data for a movie from TMDB (with caching)
  * @param movieId - The TMDB ID of the movie
  * @param apiKey - TMDB API key
  * @returns Promise with certifications or null if failed
@@ -44,11 +47,19 @@ export async function fetchMovieCertification(
     movieId: number,
     apiKey: string
 ): Promise<string | null> {
+    // Check cache first
+    const cached = certificationCache.getMovie(movieId)
+    if (cached !== undefined) {
+        return cached
+    }
+
+    // Cache miss - fetch from API
     try {
         const url = `https://api.themoviedb.org/3/movie/${movieId}/release_dates?api_key=${apiKey}`
         const response = await fetch(url)
 
         if (!response.ok) {
+            certificationCache.setMovie(movieId, null)
             return null
         }
 
@@ -56,14 +67,19 @@ export async function fetchMovieCertification(
 
         // Find US certification (most reliable and standardized)
         const usRelease = data.results.find((r) => r.iso_3166_1 === 'US')
+        let certification: string | null = null
+
         if (usRelease && usRelease.release_dates.length > 0) {
             // Get the first certification (usually theatrical release)
-            return usRelease.release_dates[0].certification || null
+            certification = usRelease.release_dates[0].certification || null
         }
 
-        return null
+        // Cache the result (even if null)
+        certificationCache.setMovie(movieId, certification)
+        return certification
     } catch (error) {
         console.error(`Failed to fetch certification for movie ${movieId}:`, error)
+        certificationCache.setMovie(movieId, null)
         return null
     }
 }

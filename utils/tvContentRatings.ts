@@ -1,7 +1,10 @@
 /**
  * TV Content Rating Utilities for Child Safety Mode
  * Handles server-side fetching and filtering of TV show content ratings from TMDB
+ * Uses in-memory cache to reduce API calls
  */
+
+import { certificationCache } from './certificationCache'
 
 export interface ContentRating {
     iso_3166_1: string
@@ -27,7 +30,7 @@ export const MATURE_TV_RATINGS = new Set([
 ])
 
 /**
- * Fetch content ratings for a TV show from TMDB
+ * Fetch content ratings for a TV show from TMDB (with caching)
  * @param tvId - The TMDB ID of the TV show
  * @param apiKey - TMDB API key
  * @returns Promise with content ratings or null if failed
@@ -36,18 +39,31 @@ export async function fetchTVContentRatings(
     tvId: number,
     apiKey: string
 ): Promise<ContentRating[] | null> {
+    // Check cache first
+    const cached = certificationCache.getTV(tvId)
+    if (cached !== undefined) {
+        return cached
+    }
+
+    // Cache miss - fetch from API
     try {
         const url = `https://api.themoviedb.org/3/tv/${tvId}/content_ratings?api_key=${apiKey}`
         const response = await fetch(url)
 
         if (!response.ok) {
+            certificationCache.setTV(tvId, null)
             return null
         }
 
         const data: TVContentRatingsResponse = await response.json()
-        return data.results || []
+        const ratings = data.results || []
+
+        // Cache the result
+        certificationCache.setTV(tvId, ratings)
+        return ratings
     } catch (error) {
         console.error(`Failed to fetch content ratings for TV show ${tvId}:`, error)
+        certificationCache.setTV(tvId, null)
         return null
     }
 }
