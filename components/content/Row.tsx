@@ -12,6 +12,7 @@ interface Props {
 }
 function Row({ title, content, apiEndpoint }: Props) {
     const rowRef = useRef<HTMLDivElement>(null)
+    const sentinelRef = useRef<HTMLDivElement>(null)
     const [isMoved, setIsMoved] = useState(false)
     const [allContent, setAllContent] = useState<Content[]>(content)
     const [currentPage, setCurrentPage] = useState(1)
@@ -175,6 +176,62 @@ function Row({ title, content, apiEndpoint }: Props) {
         }
     }, [handleScroll, title])
 
+    // Intersection Observer for sentinel element (primary detection method)
+    useEffect(() => {
+        if (!apiEndpoint) {
+            console.log(
+                '⚠️ [Infinite Row Loading] No API endpoint for Intersection Observer:',
+                title
+            )
+            return
+        }
+
+        const sentinel = sentinelRef.current
+        const row = rowRef.current
+
+        if (!sentinel || !row) {
+            console.log('⚠️ [Infinite Row Loading] Missing sentinel or row element:', title)
+            return
+        }
+
+        console.log('🔭 [Infinite Row Loading] Setting up Intersection Observer for:', title)
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    console.log('👁️ [Infinite Row Loading] Observer callback triggered:', {
+                        title,
+                        isIntersecting: entry.isIntersecting,
+                        intersectionRatio: entry.intersectionRatio,
+                        isLoading,
+                        hasMore,
+                    })
+
+                    if (entry.isIntersecting && !isLoading && hasMore) {
+                        console.log(
+                            '🎯 [Infinite Row Loading] Observer detected sentinel! Loading more:',
+                            title
+                        )
+                        loadMoreContent()
+                    }
+                })
+            },
+            {
+                root: row, // Observe within the scrollable row
+                rootMargin: '500px', // Start loading 500px before sentinel becomes visible
+                threshold: 0,
+            }
+        )
+
+        observer.observe(sentinel)
+        console.log('✅ [Infinite Row Loading] Observer attached to sentinel for:', title)
+
+        return () => {
+            console.log('🔇 [Infinite Row Loading] Removing Intersection Observer for:', title)
+            observer.disconnect()
+        }
+    }, [apiEndpoint, loadMoreContent, isLoading, hasMore, title])
+
     // Don't render if no content after filtering
     if (!filteredContent || filteredContent.length === 0) {
         return null
@@ -281,6 +338,16 @@ function Row({ title, content, apiEndpoint }: Props) {
                             <ContentCard content={item} />
                         </div>
                     ))}
+
+                    {/* Sentinel element for Intersection Observer - invisible marker near end */}
+                    {apiEndpoint && hasMore && (
+                        <div
+                            ref={sentinelRef}
+                            className="flex-shrink-0 w-1 h-1"
+                            aria-hidden="true"
+                            style={{ visibility: 'hidden' }}
+                        />
+                    )}
 
                     {/* Loading indicator */}
                     {isLoading && apiEndpoint && (
