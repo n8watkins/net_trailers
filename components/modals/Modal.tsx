@@ -1,3 +1,5 @@
+'use client'
+
 import React, { useEffect, useState, useRef, useCallback, useMemo, MouseEvent } from 'react'
 import MuiModal from '@mui/material/Modal'
 import { useAppStore } from '../../stores/appStore'
