@@ -79,6 +79,30 @@ const nextConfig = {
                         key: 'Permissions-Policy',
                         value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
                     },
+                    // Content Security Policy
+                    {
+                        key: 'Content-Security-Policy',
+                        value: [
+                            "default-src 'self'",
+                            "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com",
+                            "style-src 'self' 'unsafe-inline'",
+                            "img-src 'self' data: https: blob:",
+                            "font-src 'self' data:",
+                            "connect-src 'self' https://api.themoviedb.org https://www.google-analytics.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com",
+                            "frame-src 'self' https://www.youtube.com",
+                            "media-src 'self' https:",
+                            "object-src 'none'",
+                            "base-uri 'self'",
+                            "form-action 'self'",
+                            "frame-ancestors 'none'",
+                            'upgrade-insecure-requests',
+                        ].join('; '),
+                    },
+                    // HTTP Strict Transport Security
+                    {
+                        key: 'Strict-Transport-Security',
+                        value: 'max-age=31536000; includeSubDomains',
+                    },
                 ],
             },
         ]
