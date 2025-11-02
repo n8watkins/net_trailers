@@ -22,7 +22,6 @@ import InfoModal from '../components/InfoModal'
 import { useAppStore } from '../stores/appStore'
 import { useAuthStore } from '../stores/authStore'
 import { useGuestStore } from '../stores/guestStore'
-import { GuestModeNotification } from '../components/GuestModeNotification'
 import { UpgradeAccountBanner } from '../components/UpgradeAccountBanner'
 
 type SettingsSection = 'profile' | 'email' | 'password' | 'preferences' | 'share' | 'account'

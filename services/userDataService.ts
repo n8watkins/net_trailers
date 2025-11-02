@@ -2,7 +2,7 @@ import { Content } from '../typings'
 import { UserPreferences } from '../types/userData'
 import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { db } from '../firebase'
-import { guestError, guestLog, authError, firebaseWarn } from '../utils/debugLogger'
+import { guestError, authError, firebaseWarn } from '../utils/debugLogger'
 
 // DEPRECATED - This service is being phased out in favor of:
 // - AuthStorageService for authenticated users

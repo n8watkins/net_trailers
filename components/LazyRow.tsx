@@ -16,7 +16,7 @@ type ContentWithVideo = Content & {
     isChecking?: boolean
 }
 
-function StreamingRow({ title, content, hideTitles = false, batchSize = 6 }: Props) {
+function StreamingRow({ title, content, hideTitles: _hideTitles = false, batchSize = 6 }: Props) {
     const rowRef = useRef<HTMLDivElement>(null)
     const [isMoved, setIsMoved] = useState(false)
     const [streamingContent, setStreamingContent] = useState<ContentWithVideo[]>([])
@@ -41,7 +41,7 @@ function StreamingRow({ title, content, hideTitles = false, batchSize = 6 }: Pro
         setStreamingContent((prev) => [...prev, ...itemsWithChecking])
 
         // Check each item for videos in parallel, but update UI progressively
-        const checkPromises = batch.map(async (item, index) => {
+        const checkPromises = batch.map(async (item, _index) => {
             try {
                 const mediaType = item.media_type === 'tv' ? 'tv' : 'movie'
                 const response = await fetch(

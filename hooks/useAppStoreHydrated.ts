@@ -1,6 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { useAppStore, AppStore } from '../stores/appStore'
-import { startTransition } from 'react'
 
 /**
  * Default state values that match server-side rendering

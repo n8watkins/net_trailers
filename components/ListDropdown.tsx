@@ -5,7 +5,7 @@ import useUserData from '../hooks/useUserData'
 import { useToast } from '../hooks/useToast'
 import { useAuthStatus } from '../hooks/useAuthStatus'
 import { useAppStore } from '../stores/appStore'
-import { EyeIcon, PlusIcon, CheckIcon, MinusIcon, LockClosedIcon } from '@heroicons/react/24/solid'
+import { EyeIcon, PlusIcon, CheckIcon, LockClosedIcon } from '@heroicons/react/24/solid'
 
 interface ListDropdownProps {
     content: Content
@@ -39,7 +39,7 @@ function ListDropdown({
     const { openAuthModal, openListModal } = useAppStore()
     const { isGuest } = useAuthStatus()
 
-    const [showCreateInput, setShowCreateInput] = useState(false)
+    const [_showCreateInput, setShowCreateInput] = useState(false)
     const [newListName, setNewListName] = useState('')
     const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -123,7 +123,7 @@ function ListDropdown({
         onClose()
     }
 
-    const handleKeyPress = (e: React.KeyboardEvent) => {
+    const _handleKeyPress = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
             handleCreateList()
         } else if (e.key === 'Escape') {

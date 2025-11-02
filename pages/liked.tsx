@@ -4,7 +4,7 @@ import Head from 'next/head'
 import Header from '../components/Header'
 import useUserData from '../hooks/useUserData'
 import { CheckCircleIcon, MagnifyingGlassIcon, ArrowDownTrayIcon } from '@heroicons/react/24/solid'
-import { Content, isMovie, isTVShow } from '../typings'
+import { isMovie, isTVShow } from '../typings'
 import { getTitle } from '../typings'
 import ContentCard from '../components/ContentCard'
 import { useAppStore } from '../stores/appStore'
@@ -26,7 +26,7 @@ const Liked: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboa
     const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
 
     const [searchQuery, setSearchQuery] = useState('')
-    const { modal, openModal } = useAppStore()
+    const { modal, openModal: _openModal } = useAppStore()
     const showModal = modal.isOpen
 
     // Get liked content directly from likedMovies

@@ -1,8 +1,6 @@
 import { create } from 'zustand'
 import { Content, getTitle } from '../typings'
 import { startTransition } from 'react'
-import { hydrationDebug } from '../utils/hydrationDebug'
-import { debugSetter } from '../utils/debugStore'
 
 // Toast configuration constants
 export const MAX_TOASTS = 2 // Maximum 2 toasts displayed at once

@@ -1,5 +1,5 @@
 import { UserPreferences } from '../types/shared'
-import { Content, getTitle, getYear, getContentType, isMovie, isTVShow } from '../typings'
+import { getTitle, getYear, getContentType } from '../typings'
 
 export interface CSVExportRow {
     title: string

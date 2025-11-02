@@ -1,4 +1,4 @@
-import { SparklesIcon, RocketLaunchIcon } from '@heroicons/react/24/solid'
+import { SparklesIcon } from '@heroicons/react/24/solid'
 import { useAppStore } from '../stores/appStore'
 
 interface UpgradeAccountBannerProps {

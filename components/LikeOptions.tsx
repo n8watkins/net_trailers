@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import ToolTipMod from './ToolTipMod'
 import { useAppStore } from '../stores/appStore'
 import { useLikedHidden } from '../hooks/useLikedHidden'

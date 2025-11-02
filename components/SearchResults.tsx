@@ -17,7 +17,6 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
 
     const {
         results,
-        allResults,
         isLoading,
         error,
         hasSearched,

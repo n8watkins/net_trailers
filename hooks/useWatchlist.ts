@@ -1,7 +1,6 @@
 import { useSessionStore } from '../stores/sessionStore'
 import { useAuthStore } from '../stores/authStore'
 import { useGuestStore } from '../stores/guestStore'
-import { Content } from '../typings'
 
 /**
  * Lightweight hook for components that only need watchlist operations

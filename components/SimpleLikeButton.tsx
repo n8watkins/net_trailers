@@ -15,7 +15,7 @@ function SimpleLikeButton() {
     // Use new schema hooks
     const { isLiked: checkIsLiked, addLikedMovie, removeLikedMovie } = useUserData()
     const { showSuccess } = useToast()
-    const [isAnimating, setIsAnimating] = useState(false)
+    const [_isAnimating, setIsAnimating] = useState(false)
 
     // Get current liked status
     const isLiked = currentMovie ? checkIsLiked(currentMovie.id) : false

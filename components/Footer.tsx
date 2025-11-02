@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import Link from 'next/link'
 import { CommandLineIcon } from '@heroicons/react/24/outline'
-import { getFirstVisitStatus, markAsVisited } from '../utils/firstVisitTracker'
+import { getFirstVisitStatus } from '../utils/firstVisitTracker'
 
 interface FooterProps {
     showAboutModal: boolean

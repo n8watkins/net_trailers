@@ -1,5 +1,4 @@
 import Header from '../components/Header'
-import { Content } from '../typings'
 import Banner from '../components/Banner'
 import Row from '../components/Row'
 import useAuth from '../hooks/useAuth'

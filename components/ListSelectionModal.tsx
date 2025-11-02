@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useAppStore } from '../stores/appStore'
 import useUserData from '../hooks/useUserData'
 import { useAuthStatus } from '../hooks/useAuthStatus'
-import { Content, getTitle } from '../typings'
+import { getTitle } from '../typings'
 import { UserList } from '../types/userLists'
 import Image from 'next/image'
 import IconPickerModal from './IconPickerModal'
@@ -17,13 +17,12 @@ import {
     EyeIcon,
     PencilIcon,
     TrashIcon,
-    Cog6ToothIcon,
     LockClosedIcon,
 } from '@heroicons/react/24/solid'
 
 function ListSelectionModal() {
     const { listModal, closeListModal, openAuthModal } = useAppStore()
-    const { isGuest, isAuthenticated } = useAuthStatus()
+    const { isGuest } = useAuthStatus()
     const { showError, showWatchlistAdd, showWatchlistRemove, showSuccess } = useToast()
     const {
         getAllLists,

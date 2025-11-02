@@ -1,4 +1,3 @@
-import { Content } from '../typings'
 import {
     UserList,
     CreateListRequest,
@@ -6,7 +5,6 @@ import {
     AddToListRequest,
     RemoveFromListRequest,
 } from '../types/userLists'
-import { UserPreferences } from '../types/userData'
 import { StateWithLists } from '../types/storeInterfaces'
 
 // NEW SCHEMA - No more UserListsState or defaultListIds

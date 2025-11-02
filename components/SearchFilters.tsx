@@ -8,7 +8,11 @@ interface SearchFiltersProps {
     onClose?: () => void
 }
 
-export default function SearchFilters({ className = '', isOpen, onClose }: SearchFiltersProps) {
+export default function SearchFilters({
+    className = '',
+    isOpen: _isOpen,
+    onClose: _onClose,
+}: SearchFiltersProps) {
     const { search, setSearchFilters } = useAppStore()
 
     const updateFilter = useCallback(

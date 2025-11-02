@@ -5,8 +5,6 @@ import {
     ArrowsPointingOutIcon,
     ArrowsPointingInIcon,
     ArrowTopRightOnSquareIcon,
-    EyeIcon,
-    EyeSlashIcon,
 } from '@heroicons/react/24/solid'
 import ToolTipMod from './ToolTipMod'
 
@@ -25,11 +23,11 @@ export default function VideoPlayerControls({
     trailer,
     muted,
     fullScreen,
-    isHidden = false,
+    isHidden: _isHidden = false,
     onMuteToggle,
     onFullscreenClick,
-    onVisibilityToggle,
-    currentMovieTitle = '',
+    onVisibilityToggle: _onVisibilityToggle,
+    currentMovieTitle: _currentMovieTitle = '',
 }: VideoPlayerControlsProps) {
     if (!trailer) return null
 

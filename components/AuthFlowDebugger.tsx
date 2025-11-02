@@ -6,7 +6,6 @@ import { useSessionStore } from '../stores/sessionStore'
 import { useSessionManager } from '../hooks/useSessionManager'
 import { auth } from '../firebase'
 import { onAuthStateChanged } from 'firebase/auth'
-import { UserList } from '../types/userLists'
 import {
     testFirestoreConnection,
     checkFirestoreProvisioning,

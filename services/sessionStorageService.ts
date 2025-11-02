@@ -1,5 +1,4 @@
 import { sessionLog, sessionError } from '../utils/debugLogger'
-import { UserPreferences } from '../types/shared'
 
 /**
  * Session-isolated storage service that ensures complete data separation

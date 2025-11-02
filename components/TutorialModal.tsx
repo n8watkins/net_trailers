@@ -15,7 +15,7 @@ interface TutorialModalProps {
 }
 
 const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
-    const { isGuest, isAuthenticated } = useAuthStatus()
+    const { isGuest } = useAuthStatus()
     const { openAuthModal } = useAppStore()
 
     const handleSignUp = () => {

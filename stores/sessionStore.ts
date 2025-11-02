@@ -27,16 +27,7 @@ export interface SessionActions {
 
 export type SessionStore = SessionState & SessionActions
 
-const generateGuestId = (): string => {
-    // Generate empty string during SSR, actual ID only on client
-    // This prevents hydration mismatches while still providing unique IDs after hydration
-    if (typeof window === 'undefined') {
-        return '' // Empty string during SSR
-    }
-    return `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-}
-
-export const useSessionStore = create<SessionStore>((set, get) => ({
+export const useSessionStore = create<SessionStore>((set) => ({
     // Initial state
     sessionType: 'initializing',
     activeSessionId: '',

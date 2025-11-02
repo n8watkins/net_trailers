@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useCallback, useMemo, MouseEvent } 
 import MuiModal from '@mui/material/Modal'
 import { useAppStore } from '../stores/appStore'
 import { createErrorHandler } from '../utils/errorHandler'
-import { getTitle, getContentType, Content } from '../typings'
+import { getTitle, Content } from '../typings'
 
 // Helper function to convert hex color to rgba with opacity
 const hexToRgba = (hex: string, opacity: number): string => {
@@ -42,7 +42,6 @@ import ToolTipMod from '../components/ToolTipMod'
 import SimpleLikeButton from './SimpleLikeButton'
 import useUserData from '../hooks/useUserData'
 import { useToast } from '../hooks/useToast'
-import { useAuthStatus } from '../hooks/useAuthStatus'
 import { useDebugSettings } from './DebugControls'
 import { getCachedMovieDetails } from '../utils/prefetchCache'
 
@@ -51,15 +50,8 @@ function Modal() {
     const debugSettings = useDebugSettings()
 
     // Zustand store
-    const {
-        modal,
-        closeModal,
-        setAutoPlayWithSound,
-        isLoading,
-        setLoading,
-        openListModal,
-        listModal,
-    } = useAppStore()
+    const { modal, closeModal, setAutoPlayWithSound, setLoading, openListModal, listModal } =
+        useAppStore()
 
     // Extract modal state
     const showModal = modal.isOpen

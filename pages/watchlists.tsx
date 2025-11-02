@@ -6,19 +6,16 @@ import useUserData from '../hooks/useUserData'
 import useAuth from '../hooks/useAuth'
 import {
     EyeIcon,
-    EyeSlashIcon,
     MagnifyingGlassIcon,
     ArrowDownTrayIcon,
     PlusIcon,
-    Cog6ToothIcon,
 } from '@heroicons/react/24/solid'
 import { Content, isMovie, isTVShow } from '../typings'
-import { getTitle, getYear } from '../typings'
+import { getTitle } from '../typings'
 import ContentCard from '../components/ContentCard'
 import { useAppStore } from '../stores/appStore'
 import { exportUserDataToCSV } from '../utils/csvExport'
 import { UserList } from '../types/userLists'
-import { verifyUserData } from '../utils/verifyUserData'
 import { useDebugSettings } from '../components/DebugControls'
 import { GuestModeNotification } from '../components/GuestModeNotification'
 import { useAuthStatus } from '../hooks/useAuthStatus'

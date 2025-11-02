@@ -29,7 +29,6 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
         addHiddenMovie,
         removeHiddenMovie,
         isHidden,
-        getListsContaining,
     } = useUserData()
     const { showContentHidden, showContentShown, showSuccess } = useToast()
     const [imageLoaded, setImageLoaded] = useState(false)

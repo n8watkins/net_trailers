@@ -1,6 +1,5 @@
 import { useSessionStore } from '../stores/sessionStore'
 import useAuth from './useAuth'
-import { getCachedUserId } from '../utils/authCache'
 
 /**
  * Lightweight hook for components that only need authentication status

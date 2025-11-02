@@ -1,9 +1,8 @@
 import React, { useState, useRef } from 'react'
-import { CheckIcon, PlusIcon, MinusIcon } from '@heroicons/react/24/solid'
+import { CheckIcon, PlusIcon } from '@heroicons/react/24/solid'
 import { Content, getTitle } from '../typings'
 import useUserData from '../hooks/useUserData'
 import { useToast } from '../hooks/useToast'
-import { useAppStore } from '../stores/appStore'
 import ToolTipMod from './ToolTipMod'
 import ListDropdown from './ListDropdown'
 import { useRouter } from 'next/router'
@@ -21,12 +20,11 @@ function WatchLaterButton({
     className = '',
     onDropdownStateChange,
 }: WatchLaterButtonProps) {
-    const { getListsContaining, addToWatchlist, removeFromWatchlist, isInWatchlist } = useUserData()
-    const { showSuccess, showError, showWatchlistAdd, showWatchlistRemove } = useToast()
-    const { openListModal } = useAppStore()
+    const { addToWatchlist, removeFromWatchlist, isInWatchlist, getListsContaining } = useUserData()
+    const { showWatchlistAdd, showWatchlistRemove, showError } = useToast()
     const router = useRouter()
 
-    const [isHovered, setIsHovered] = useState(false)
+    const [_isHovered, setIsHovered] = useState(false)
     const [showDropdown, setShowDropdown] = useState(false)
     const [dropdownPosition, setDropdownPosition] = useState({ x: 0, y: 0 })
     const [isButtonOrDropdownHovered, setIsButtonOrDropdownHovered] = useState(false)
@@ -52,12 +50,12 @@ function WatchLaterButton({
         setShowDropdown(!showDropdown)
     }
 
-    const handleNavigateToWatchlists = (e: React.MouseEvent) => {
+    const _handleNavigateToWatchlists = (e: React.MouseEvent) => {
         e.stopPropagation()
         router.push('/watchlists')
     }
 
-    const handleQuickWatchlist = (e: React.MouseEvent) => {
+    const _handleQuickWatchlist = (e: React.MouseEvent) => {
         e.stopPropagation()
         try {
             if (inWatchlist) {

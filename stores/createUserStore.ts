@@ -155,7 +155,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
             try {
                 await saveToStorage({ ...state, defaultWatchlist: newWatchlist }, 'addToWatchlist')
                 if (adapter.isAsync) set({ syncStatus: 'synced' })
-            } catch (error) {
+            } catch (_error) {
                 if (adapter.isAsync) set({ syncStatus: 'offline' })
             }
 
@@ -182,7 +182,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                     'removeFromWatchlist'
                 )
                 if (adapter.isAsync) set({ syncStatus: 'synced' })
-            } catch (error) {
+            } catch (_error) {
                 if (adapter.isAsync) set({ syncStatus: 'offline' })
             }
 
@@ -215,7 +215,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                     'addLiked'
                 )
                 if (adapter.isAsync) set({ syncStatus: 'synced' })
-            } catch (error) {
+            } catch (_error) {
                 if (adapter.isAsync) set({ syncStatus: 'offline' })
             }
 
@@ -235,7 +235,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
             try {
                 await saveToStorage({ ...state, likedMovies: newLikedMovies }, 'removeLiked')
                 if (adapter.isAsync) set({ syncStatus: 'synced' })
-            } catch (error) {
+            } catch (_error) {
                 if (adapter.isAsync) set({ syncStatus: 'offline' })
             }
 
@@ -268,7 +268,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                     'addHidden'
                 )
                 if (adapter.isAsync) set({ syncStatus: 'synced' })
-            } catch (error) {
+            } catch (_error) {
                 if (adapter.isAsync) set({ syncStatus: 'offline' })
             }
 
@@ -288,7 +288,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
             try {
                 await saveToStorage({ ...state, hiddenMovies: newHiddenMovies }, 'removeHidden')
                 if (adapter.isAsync) set({ syncStatus: 'synced' })
-            } catch (error) {
+            } catch (_error) {
                 if (adapter.isAsync) set({ syncStatus: 'offline' })
             }
 
@@ -319,7 +319,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                     'createList'
                 )
                 if (adapter.isAsync) set({ syncStatus: 'synced' })
-            } catch (error) {
+            } catch (_error) {
                 if (adapter.isAsync) set({ syncStatus: 'offline' })
             }
 
@@ -344,7 +344,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                     'addToList'
                 )
                 if (adapter.isAsync) set({ syncStatus: 'synced' })
-            } catch (error) {
+            } catch (_error) {
                 if (adapter.isAsync) set({ syncStatus: 'offline' })
             }
 
@@ -371,7 +371,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                     'removeFromList'
                 )
                 if (adapter.isAsync) set({ syncStatus: 'synced' })
-            } catch (error) {
+            } catch (_error) {
                 if (adapter.isAsync) set({ syncStatus: 'offline' })
             }
 
@@ -398,7 +398,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                     'updateList'
                 )
                 if (adapter.isAsync) set({ syncStatus: 'synced' })
-            } catch (error) {
+            } catch (_error) {
                 if (adapter.isAsync) set({ syncStatus: 'offline' })
             }
 
@@ -422,7 +422,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                     'deleteList'
                 )
                 if (adapter.isAsync) set({ syncStatus: 'synced' })
-            } catch (error) {
+            } catch (_error) {
                 if (adapter.isAsync) set({ syncStatus: 'offline' })
             }
 
@@ -435,7 +435,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                 logger.log(
                     `⚠️ [${trackingContext}] Blocked childSafetyMode update - guests cannot change this setting`
                 )
-                const { childSafetyMode, ...allowedPrefs } = prefs
+                const { childSafetyMode: _childSafetyMode, ...allowedPrefs } = prefs
                 if (Object.keys(allowedPrefs).length === 0) return
                 prefs = allowedPrefs
             }
@@ -457,9 +457,9 @@ export function createUserStore(options: CreateUserStoreOptions) {
                     defaultVolume: state.defaultVolume,
                     childSafetyMode: state.childSafetyMode,
                 })
-            } catch (error) {
+            } catch (_error) {
                 if (adapter.isAsync) set({ syncStatus: 'offline' })
-                logger.error(`❌ [${trackingContext}] Failed to save preferences:`, error)
+                logger.error(`❌ [${trackingContext}] Failed to save preferences:`, _error)
             }
         },
 

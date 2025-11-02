@@ -1,5 +1,4 @@
 import Header from '../components/Header'
-import { Content } from '../typings'
 import Banner from '../components/Banner'
 import Row from '../components/Row'
 import useAuth from '../hooks/useAuth'
@@ -21,7 +20,7 @@ interface Props {
 }
 
 const Home: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }) => {
-    const { loading: authLoading, error: authError, user, wasRecentlyAuthenticated } = useAuth()
+    const { loading: authLoading, wasRecentlyAuthenticated } = useAuth()
     const router = useRouter()
     const { modal, setContentLoadedSuccessfully } = useAppStore()
     const showModal = modal.isOpen

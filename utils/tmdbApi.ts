@@ -40,14 +40,19 @@ export class TMDBApiClient {
         return url.toString()
     }
 
-    public async fetch<T>(endpoint: string, params: Record<string, string | number> = {}): Promise<T> {
+    public async fetch<T>(
+        endpoint: string,
+        params: Record<string, string | number> = {}
+    ): Promise<T> {
         const url = this.buildUrl(endpoint, params)
 
         try {
             const response = await fetch(url)
 
             if (!response.ok) {
-                const error: TMDBError = new Error(`TMDB API error: ${response.status} ${response.statusText}`)
+                const error: TMDBError = new Error(
+                    `TMDB API error: ${response.status} ${response.statusText}`
+                )
                 error.status = response.status
                 throw error
             }
@@ -58,7 +63,9 @@ export class TMDBApiClient {
                 throw error
             }
 
-            const tmdbError: TMDBError = new Error('Network error occurred while fetching from TMDB API')
+            const tmdbError: TMDBError = new Error(
+                'Network error occurred while fetching from TMDB API'
+            )
             tmdbError.code = 'NETWORK_ERROR'
             throw tmdbError
         }
@@ -67,11 +74,11 @@ export class TMDBApiClient {
     // Specific API methods
     public async getMovieDetails(id: string | number, mediaType: 'movie' | 'tv' = 'movie') {
         return this.fetch(`/${mediaType}/${id}`, {
-            append_to_response: 'videos,credits,external_ids,release_dates,content_ratings'
+            append_to_response: 'videos,credits,external_ids,release_dates,content_ratings',
         })
     }
 
-    public async getTrending(timeWindow: 'day' | 'week' = 'week', page: number = 1) {
+    public async getTrending(_timeWindow: 'day' | 'week' = 'week', page: number = 1) {
         return this.fetch('/trending/all/week', { page })
     }
 
@@ -85,8 +92,15 @@ export class TMDBApiClient {
 }
 
 // Utility function to handle API responses with consistent caching
-export function setCacheHeaders(res: NextApiResponse, maxAge: number, staleWhileRevalidate: number = maxAge * 2) {
-    res.setHeader('Cache-Control', `public, s-maxage=${maxAge}, stale-while-revalidate=${staleWhileRevalidate}`)
+export function setCacheHeaders(
+    res: NextApiResponse,
+    maxAge: number,
+    staleWhileRevalidate: number = maxAge * 2
+) {
+    res.setHeader(
+        'Cache-Control',
+        `public, s-maxage=${maxAge}, stale-while-revalidate=${staleWhileRevalidate}`
+    )
 }
 
 // Error response utility
@@ -100,11 +114,15 @@ export function handleApiError(res: NextApiResponse, error: unknown, context: st
             case 404:
                 return res.status(404).json({ message: 'Resource not found' })
             case 429:
-                return res.status(429).json({ message: 'Too many requests. Please try again later.' })
+                return res
+                    .status(429)
+                    .json({ message: 'Too many requests. Please try again later.' })
             case 500:
             case 502:
             case 503:
-                return res.status(503).json({ message: 'Service temporarily unavailable. Please try again later.' })
+                return res
+                    .status(503)
+                    .json({ message: 'Service temporarily unavailable. Please try again later.' })
             default:
                 return res.status(500).json({ message: `Failed to ${context}` })
         }

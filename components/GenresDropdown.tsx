@@ -6,7 +6,6 @@ import {
     TV_GENRES as tvGenres,
     CHILD_SAFE_MOVIE_GENRES as childSafeMovieGenres,
     CHILD_SAFE_TV_GENRES as childSafeTvGenres,
-    Genre,
 } from '../constants/genres'
 import { useChildSafety } from '../hooks/useChildSafety'
 
