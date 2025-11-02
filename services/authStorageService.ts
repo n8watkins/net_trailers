@@ -14,13 +14,13 @@ const loadingPromises = new Map<string, Promise<AuthPreferences>>() // Cache ong
 const CACHE_TTL = 300000 // 5 minutes cache (increased from 30 seconds)
 
 // Helper function to remove undefined values from objects (Firestore doesn't accept undefined)
-function removeUndefinedValues(obj: any): any {
+function removeUndefinedValues(obj: unknown): unknown {
     if (obj === null || obj === undefined) return null
     if (Array.isArray(obj)) {
         return obj.map(removeUndefinedValues).filter((v) => v !== undefined)
     }
-    if (typeof obj === 'object' && obj.constructor === Object) {
-        const cleaned: any = {}
+    if (typeof obj === 'object' && obj !== null && obj.constructor === Object) {
+        const cleaned: Record<string, unknown> = {}
         for (const [key, value] of Object.entries(obj)) {
             if (value !== undefined) {
                 cleaned[key] = removeUndefinedValues(value)
@@ -92,7 +92,9 @@ export class AuthStorageService {
 
                 const firestorePromise = getDoc(docRef)
 
-                const userDoc = (await Promise.race([firestorePromise, timeoutPromise])) as any
+                const userDoc = (await Promise.race([firestorePromise, timeoutPromise])) as Awaited<
+                    typeof firestorePromise
+                >
 
                 if (userDoc.exists()) {
                     const data = userDoc.data()
@@ -234,7 +236,9 @@ export class AuthStorageService {
                 hiddenMoviesCount: preferences.hiddenMovies?.length || 0,
                 defaultWatchlistCount: preferences.defaultWatchlist?.length || 0,
             })
-            await setDoc(doc(db, 'users', userId), dataToSave, { merge: true })
+            await setDoc(doc(db, 'users', userId), dataToSave as Record<string, unknown>, {
+                merge: true,
+            })
             authLog('✅ [AuthStorageService] Successfully saved to Firestore for user:', userId)
 
             // Invalidate cache after save
@@ -256,7 +260,11 @@ export class AuthStorageService {
     }
 
     // Update specific field in user data
-    static async updateUserDataField(userId: string, fieldPath: string, value: any): Promise<void> {
+    static async updateUserDataField(
+        userId: string,
+        fieldPath: string,
+        value: unknown
+    ): Promise<void> {
         try {
             await updateDoc(doc(db, 'users', userId), {
                 [fieldPath]: value,

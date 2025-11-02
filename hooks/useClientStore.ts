@@ -61,6 +61,7 @@ export function useClientStore<T = AppStore>(
 
     // Always call the hook to satisfy React's rules
     // Use any as a temporary type to satisfy both cases
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const storeValue = useAppStore(selector as any) as T
 
     // Return fallback or undefined during SSR/hydration

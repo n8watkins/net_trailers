@@ -96,6 +96,7 @@ export function hasMatureRating(ratings: ContentRating[]): boolean {
  * @param apiKey - TMDB API key
  * @returns Promise with filtered TV shows (mature content removed)
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function filterMatureTVShows(tvShows: any[], apiKey: string): Promise<any[]> {
     if (!tvShows || tvShows.length === 0) {
         return []
@@ -124,6 +125,7 @@ export async function filterMatureTVShows(tvShows: any[], apiKey: string): Promi
  * @param filteredTVShows - Filtered array of TV shows
  * @returns Object with filtering statistics
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getTVFilterStats(tvShows: any[], filteredTVShows: any[]) {
     return {
         total: tvShows.length,

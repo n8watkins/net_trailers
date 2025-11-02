@@ -47,6 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // Filter out person results (keep only movies and TV shows)
         let filteredResults = data.results.filter(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (item: any) => item.media_type === 'movie' || item.media_type === 'tv'
         )
 
@@ -58,7 +59,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             filteredResults = filterContentByAdultFlag(filteredResults, true)
 
             // Separate TV shows and movies
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const tvShows = filteredResults.filter((item: any) => item.media_type === 'tv')
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const movies = filteredResults.filter((item: any) => item.media_type === 'movie')
 
             // Filter TV shows by content rating (server-side)

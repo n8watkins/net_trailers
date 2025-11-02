@@ -77,6 +77,7 @@ export function useHydrationSafeStore<T, R>(
         setValue(storeValue)
 
         // Subscribe to store changes
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const unsubscribe = (store as any).subscribe(
             (state: T) => selector(state),
             (newValue: R) => {

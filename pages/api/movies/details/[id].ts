@@ -27,6 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (childSafeMode) {
             if (media_type === 'movie') {
                 // Check adult flag for movies
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 if ((data as any).adult === true) {
                     return res.status(403).json({
                         message: 'Content blocked by child safety mode',

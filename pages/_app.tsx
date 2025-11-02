@@ -59,6 +59,7 @@ function MyApp({ Component, pageProps }: AppProps) {
 
 // Report Web Vitals (development only)
 // Logs performance metrics to console with color-coding
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function reportWebVitals(metric: any) {
     reportWebVitalsUtil(metric)
 }

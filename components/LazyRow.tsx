@@ -55,9 +55,11 @@ function StreamingRow({ title, content, hideTitles: _hideTitles = false, batchSi
                 }
 
                 const data = await response.json()
+
                 const hasTrailer = data?.videos?.results?.some(
                     (video: any) => video.type === 'Trailer' && video.site === 'YouTube'
                 )
+
                 const trailerKey = data?.videos?.results?.find(
                     (video: any) => video.type === 'Trailer' && video.site === 'YouTube'
                 )?.key

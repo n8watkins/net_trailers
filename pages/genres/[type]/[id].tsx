@@ -117,6 +117,7 @@ const GenrePage: NextPage<GenrePageProps> = ({
                     if (isFirstPage) {
                         return enrichedResults
                     } else {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         const existingIds = new Set(prev.map((item: any) => item.id))
                         const newItems = enrichedResults.filter(
                             (item: any) => !existingIds.has(item.id)

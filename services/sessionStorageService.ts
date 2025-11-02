@@ -64,7 +64,7 @@ export class SessionStorageService {
     }
 
     // Store data with session isolation
-    static setSessionData(key: string, data: any): void {
+    static setSessionData(key: string, data: unknown): void {
         if (typeof window === 'undefined') return
 
         const sessionKey = `${this.getSessionPrefix()}_${key}`
@@ -75,11 +75,21 @@ export class SessionStorageService {
                 activeSessionId: this.activeSessionId,
                 sessionType: this.sessionType,
                 dataPreview:
-                    key === 'preferences'
+                    key === 'preferences' && typeof data === 'object' && data !== null
                         ? {
-                              watchlistCount: data?.watchlist?.length || 0,
-                              ratingsCount: data?.ratings?.length || 0,
-                              listsCount: data?.userLists?.lists?.length || 0,
+                              watchlistCount: (data as Record<string, unknown>)?.watchlist
+                                  ? ((data as Record<string, unknown>).watchlist as unknown[])
+                                        .length
+                                  : 0,
+                              ratingsCount: (data as Record<string, unknown>)?.ratings
+                                  ? ((data as Record<string, unknown>).ratings as unknown[]).length
+                                  : 0,
+                              listsCount: (data as Record<string, unknown>)?.userLists
+                                  ? (
+                                        (data as Record<string, Record<string, unknown>>).userLists
+                                            .lists as unknown[]
+                                    ).length
+                                  : 0,
                           }
                         : 'non-preferences',
                 timestamp: new Date().toISOString(),
@@ -112,11 +122,22 @@ export class SessionStorageService {
                 activeSessionId: this.activeSessionId,
                 sessionType: this.sessionType,
                 dataPreview:
-                    key === 'preferences'
+                    key === 'preferences' && typeof parsed === 'object' && parsed !== null
                         ? {
-                              watchlistCount: parsed?.watchlist?.length || 0,
-                              ratingsCount: parsed?.ratings?.length || 0,
-                              listsCount: parsed?.userLists?.lists?.length || 0,
+                              watchlistCount: (parsed as Record<string, unknown>)?.watchlist
+                                  ? ((parsed as Record<string, unknown>).watchlist as unknown[])
+                                        .length
+                                  : 0,
+                              ratingsCount: (parsed as Record<string, unknown>)?.ratings
+                                  ? ((parsed as Record<string, unknown>).ratings as unknown[])
+                                        .length
+                                  : 0,
+                              listsCount: (parsed as Record<string, unknown>)?.userLists
+                                  ? (
+                                        (parsed as Record<string, Record<string, unknown>>)
+                                            .userLists.lists as unknown[]
+                                    ).length
+                                  : 0,
                           }
                         : 'non-preferences',
                 timestamp: new Date().toISOString(),

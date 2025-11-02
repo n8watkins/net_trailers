@@ -25,7 +25,8 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp()
 
 // Initialize Firestore with persistence - safe for hot module replacement
 // Use global variable to persist across hot reloads (works in both Node.js and browser)
-const globalThis = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : {}
+const globalThis =
+    typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : {}
 
 declare global {
     var firestore: ReturnType<typeof getFirestore> | undefined
@@ -33,25 +34,31 @@ declare global {
 
 function getDb() {
     // Return cached global instance if it exists
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((globalThis as any).firestore) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return (globalThis as any).firestore
     }
 
     // Try to initialize with custom options
     try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ;(globalThis as any).firestore = initializeFirestore(app, {
             localCache: persistentLocalCache({
                 // Optional: Configure cache size (default is 40MB)
                 // cacheSizeBytes: 40 * 1024 * 1024,
             }),
         })
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return (globalThis as any).firestore
-    } catch (error: any) {
+    } catch (error: unknown) {
         // If initialization fails because it's already initialized,
         // just use getFirestore() to get the existing instance
-        if (error.code === 'failed-precondition') {
+        if (error instanceof Error && 'code' in error && error.code === 'failed-precondition') {
             // Silently use the existing instance - this can happen during hot reloads
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             ;(globalThis as any).firestore = getFirestore(app)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return (globalThis as any).firestore
         }
         // Re-throw if it's a different error

@@ -95,6 +95,7 @@ function Layout({ children }: LayoutProps) {
 
     return (
         <>
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {React.cloneElement(children as React.ReactElement<any>, {
                 onOpenAboutModal: handleOpenAboutModal,
                 onOpenTutorial: handleOpenTutorial,

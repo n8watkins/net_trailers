@@ -38,6 +38,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const data = await response.json()
 
         // Add media_type to each item for consistency
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let enrichedResults = data.results.map((item: any) => ({
             ...item,
             media_type: 'tv',

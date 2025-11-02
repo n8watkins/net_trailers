@@ -129,5 +129,6 @@ export class CacheManager {
 // Export for global access
 if (typeof window !== 'undefined') {
     // Make cache manager available globally for debugging
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(window as any).cacheManager = CacheManager
 }

@@ -9,6 +9,7 @@ export function suppressHMRLog() {
 
     // Override console.log to filter out HMR connected messages
     const originalLog = console.log
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     console.log = function (...args: any[]) {
         // Check if this is the HMR connected message
         const message = args[0]

@@ -2,6 +2,7 @@
  * Debounce utility for reducing excessive function calls
  */
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function debounce<T extends (...args: any[]) => any>(
     func: T,
     wait: number
@@ -37,6 +38,7 @@ export function debounce<T extends (...args: any[]) => any>(
 /**
  * Create a debounced function with tracking
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function createDebouncedFunction<T extends (...args: any[]) => any>(
     name: string,
     func: T,

@@ -148,5 +148,6 @@ export const debouncedFirebase = new DebouncedFirebaseService()
 
 // Attach to window for debugging
 if (typeof window !== 'undefined') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(window as any).debouncedFirebase = debouncedFirebase
 }

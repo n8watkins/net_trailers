@@ -112,6 +112,7 @@ export function hasMatureCertification(certification: string | null): boolean {
  * @param apiKey - TMDB API key
  * @returns Promise with filtered movies (mature content removed)
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function filterMatureMovies(movies: any[], apiKey: string): Promise<any[]> {
     if (!movies || movies.length === 0) {
         return []
@@ -140,6 +141,7 @@ export async function filterMatureMovies(movies: any[], apiKey: string): Promise
  * @param filteredMovies - Filtered array of movies
  * @returns Object with filtering statistics
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getMovieFilterStats(movies: any[], filteredMovies: any[]) {
     return {
         total: movies.length,

@@ -21,6 +21,7 @@ interface CacheStats {
  */
 class CertificationCache {
     private movieCache = new Map<number, CacheEntry<string | null>>()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private tvCache = new Map<number, CacheEntry<any[] | null>>()
     private readonly TTL: number = 1000 * 60 * 60 // 1 hour in milliseconds
     private stats = {
@@ -71,6 +72,7 @@ class CertificationCache {
      * @param tvId - TMDB TV show ID
      * @returns Array of ratings or null, or undefined if not in cache
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getTV(tvId: number): any[] | null | undefined {
         const entry = this.tvCache.get(tvId)
         if (!entry) {
@@ -94,6 +96,7 @@ class CertificationCache {
      * @param tvId - TMDB TV show ID
      * @param ratings - Array of ratings or null
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setTV(tvId: number, ratings: any[] | null): void {
         this.tvCache.set(tvId, {
             data: ratings,
@@ -203,5 +206,6 @@ if (typeof setInterval !== 'undefined') {
 
 // Attach to window for debugging (development only)
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(window as any).certificationCache = certificationCache
 }

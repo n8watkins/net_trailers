@@ -10,6 +10,7 @@ interface CacheOptions {
 }
 
 class ApiCache {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private cache = new Map<string, CacheEntry<any>>()
     private defaultTTL = 5 * 60 * 1000 // 5 minutes
     private maxSize = 100
@@ -19,11 +20,13 @@ class ApiCache {
         if (options?.maxSize) this.maxSize = options.maxSize
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private generateKey(url: string, params?: Record<string, any>): string {
         const paramStr = params ? JSON.stringify(params, Object.keys(params).sort()) : ''
         return `${url}:${paramStr}`
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private isExpired(entry: CacheEntry<any>): boolean {
         return Date.now() > entry.expiresAt
     }
@@ -47,6 +50,7 @@ class ApiCache {
         }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     get<T>(url: string, params?: Record<string, any>): T | null {
         const key = this.generateKey(url, params)
         const entry = this.cache.get(key)
@@ -59,6 +63,7 @@ class ApiCache {
         return entry.data as T
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     set<T>(url: string, data: T, params?: Record<string, any>, customTTL?: number): void {
         this.evictOldEntries()
 
@@ -67,12 +72,13 @@ class ApiCache {
         const entry: CacheEntry<T> = {
             data,
             timestamp: Date.now(),
-            expiresAt: Date.now() + ttl
+            expiresAt: Date.now() + ttl,
         }
 
         this.cache.set(key, entry)
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     invalidate(url: string, params?: Record<string, any>): void {
         const key = this.generateKey(url, params)
         this.cache.delete(key)
@@ -91,15 +97,19 @@ class ApiCache {
         this.cache.clear()
     }
 
-    getStats(): { size: number; maxSize: number; entries: Array<{ key: string; timestamp: number; expiresAt: number }> } {
+    getStats(): {
+        size: number
+        maxSize: number
+        entries: Array<{ key: string; timestamp: number; expiresAt: number }>
+    } {
         return {
             size: this.cache.size,
             maxSize: this.maxSize,
             entries: Array.from(this.cache.entries()).map(([key, entry]) => ({
                 key,
                 timestamp: entry.timestamp,
-                expiresAt: entry.expiresAt
-            }))
+                expiresAt: entry.expiresAt,
+            })),
         }
     }
 }
@@ -110,6 +120,7 @@ export const movieCache = new ApiCache({ ttl: 30 * 60 * 1000, maxSize: 200 }) //
 export const mainPageCache = new ApiCache({ ttl: 60 * 60 * 1000, maxSize: 20 }) // 1 hour for main page content
 
 // Cached fetch wrapper
+
 export async function cachedFetch<T>(
     url: string,
     cache: ApiCache,
@@ -132,9 +143,7 @@ export async function cachedFetch<T>(
         })
     }
 
-    const fullUrl = params && searchParams.toString()
-        ? `${url}?${searchParams.toString()}`
-        : url
+    const fullUrl = params && searchParams.toString() ? `${url}?${searchParams.toString()}` : url
 
     // Fetch from API
     const response = await fetch(fullUrl)

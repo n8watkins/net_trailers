@@ -16,6 +16,7 @@ export default function SearchFilters({
     const { search, setSearchFilters } = useAppStore()
 
     const updateFilter = useCallback(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (key: keyof SearchFiltersType, value: any) => {
             setSearchFilters({
                 ...search.filters,

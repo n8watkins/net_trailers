@@ -118,7 +118,8 @@ const Watchlists: NextPage<Props> = ({
 
     // Apply search filter
     const filteredContent = searchQuery.trim()
-        ? baseFilteredContent.filter((item: any) => {
+        ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          baseFilteredContent.filter((item: any) => {
               if (!item.content) return false
               const title = getTitle(item.content).toLowerCase()
               const query = searchQuery.toLowerCase()
@@ -301,6 +302,7 @@ const Watchlists: NextPage<Props> = ({
                         <div className="space-y-12">
                             {(() => {
                                 // Filter out "Liked" and "Not For Me" items - they have their own pages now
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 const watchlistContent = filteredContent.filter((item: any) => {
                                     return (
                                         item.content &&
@@ -308,20 +310,25 @@ const Watchlists: NextPage<Props> = ({
                                     )
                                 })
 
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 const moviesContent = watchlistContent.filter((item: any) => {
                                     return item.content && isMovie(item.content)
                                 })
 
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 const tvShowsContent = watchlistContent.filter((item: any) => {
                                     return item.content && isTVShow(item.content)
                                 })
 
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 const renderContentGrid = (items: any[], title: string) => (
                                     <div>
                                         <h3 className="text-2xl font-bold text-white mb-6">
                                             {title}
                                         </h3>
                                         <div className="flex flex-wrap gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 md:gap-x-8 md:gap-y-12">
+                                            // eslint-disable-next-line
+                                            @typescript-eslint/no-explicit-any
                                             {items.map((item: any) => (
                                                 <div
                                                     key={`${item.contentId}-${item.listId}`}

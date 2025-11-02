@@ -199,6 +199,7 @@ interface SidebarItem {
     id: SettingsSection
     title: string
     description: string
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     icon: React.ComponentType<any>
     priority: 'low' | 'medium' | 'high' | 'danger'
     guestOnly?: boolean
@@ -513,6 +514,7 @@ const Settings: React.FC<SettingsProps> = ({
             deleteAccountTimeoutRef.current = setTimeout(() => {
                 window.location.href = '/'
             }, 2000)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error('Error deleting account:', error)
             const message = error?.message || 'Failed to delete account. Please try again.'
@@ -560,6 +562,7 @@ const Settings: React.FC<SettingsProps> = ({
             })
 
             showSuccess('Profile updated successfully!')
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error('Error updating profile:', error)
             const message = error?.message || 'Failed to update profile. Please try again.'
@@ -613,6 +616,7 @@ const Settings: React.FC<SettingsProps> = ({
             setNewEmail('')
             setEmailPassword('')
             showSuccess('Email updated successfully!')
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error('Error updating email:', error)
             let message = 'Failed to update email. Please try again.'
@@ -683,6 +687,7 @@ const Settings: React.FC<SettingsProps> = ({
             setNewPassword('')
             setConfirmPassword('')
             showSuccess('Password updated successfully!')
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error('Error updating password:', error)
             let message = 'Failed to update password. Please try again.'

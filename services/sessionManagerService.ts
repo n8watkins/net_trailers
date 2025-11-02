@@ -13,7 +13,7 @@ export interface SessionManagerState {
     setIsSessionInitialized: SetterOrUpdater<boolean>
     setMigrationAvailable: SetterOrUpdater<boolean>
     setIsTransitioning: SetterOrUpdater<boolean>
-    setUserSession: SetterOrUpdater<any> // Updated to work with Zustand
+    setUserSession: SetterOrUpdater<UserSession>
 }
 
 export class SessionManagerService {

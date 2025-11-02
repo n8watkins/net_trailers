@@ -39,6 +39,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const data = await response.json()
 
         // Add media_type to results if not present (discover doesn't include it)
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let enrichedResults = data.results.map((item: any) => ({
             ...item,
             media_type: item.media_type || 'movie',

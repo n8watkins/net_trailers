@@ -1,6 +1,7 @@
 import Document, { Html, Head, Main, NextScript } from 'next/document'
 
 class MyDocument extends Document {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     static async getInitialProps(ctx: any) {
         const initialProps = await Document.getInitialProps(ctx)
         return { ...initialProps }
@@ -53,23 +54,23 @@ class MyDocument extends Document {
                         type="application/ld+json"
                         dangerouslySetInnerHTML={{
                             __html: JSON.stringify({
-                                "@context": "https://schema.org",
-                                "@type": "WebApplication",
-                                "name": "Net Trailer",
-                                "description": "Discover and explore movie and TV show trailers",
-                                "url": "https://yoursite.com",
-                                "applicationCategory": "Entertainment",
-                                "operatingSystem": "Web Browser",
-                                "offers": {
-                                    "@type": "Offer",
-                                    "price": "0",
-                                    "priceCurrency": "USD"
+                                '@context': 'https://schema.org',
+                                '@type': 'WebApplication',
+                                name: 'Net Trailer',
+                                description: 'Discover and explore movie and TV show trailers',
+                                url: 'https://yoursite.com',
+                                applicationCategory: 'Entertainment',
+                                operatingSystem: 'Web Browser',
+                                offers: {
+                                    '@type': 'Offer',
+                                    price: '0',
+                                    priceCurrency: 'USD',
                                 },
-                                "author": {
-                                    "@type": "Organization",
-                                    "name": "Net Trailer"
-                                }
-                            })
+                                author: {
+                                    '@type': 'Organization',
+                                    name: 'Net Trailer',
+                                },
+                            }),
                         }}
                     />
                 </Head>

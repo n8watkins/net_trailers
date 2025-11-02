@@ -120,10 +120,12 @@ function Modal() {
     } = useUserData()
 
     // Get user preferences for video player (must be after useUserData hook)
+
     const userAutoMute =
         'autoMute' in (userSession?.preferences || {})
             ? (userSession?.preferences as any).autoMute
             : true
+
     const userDefaultVolume =
         'defaultVolume' in (userSession?.preferences || {})
             ? (userSession?.preferences as any).defaultVolume
@@ -196,7 +198,9 @@ function Modal() {
             // Try video container first, then modal content, then divRef
             const targetElement = videoContainer || modalContent || divRef.current
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             if (targetElement && typeof (targetElement as any).requestFullscreen === 'function') {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 ;(targetElement as any).requestFullscreen().catch((err: Error) => {
                     console.warn('Fullscreen request failed:', err)
                 })
@@ -297,9 +301,11 @@ function Modal() {
                 if (cachedData) {
                     // Use cached data - no loading spinner needed!
                     if ('videos' in cachedData && cachedData.videos) {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         const index = (cachedData.videos as any).results.findIndex(
                             (element: Element) => element.type === 'Trailer'
                         )
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         setTrailer((cachedData.videos as any)?.results[index]?.key)
                     }
                     if ('genres' in cachedData && cachedData.genres) {

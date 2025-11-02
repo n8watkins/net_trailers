@@ -134,6 +134,7 @@ export function getSafeCertifications(mediaType: 'movie' | 'tv', country: string
  * @param country - The country code to extract certification for (default: "US")
  * @returns The certification rating or null if not found
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getMovieCertification(movieData: any, country: string = 'US'): string | null {
     if (!movieData?.release_dates?.results) {
         return null
@@ -159,6 +160,7 @@ export function getMovieCertification(movieData: any, country: string = 'US'): s
  * @param country - The country code to extract certification for (default: "US")
  * @returns The certification rating or null if not found
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getTVCertification(tvData: any, country: string = 'US'): string | null {
     if (!tvData?.content_ratings?.results) {
         return null
@@ -179,6 +181,7 @@ export function getTVCertification(tvData: any, country: string = 'US'): string 
  * @param country - The country code (default: "US")
  * @returns 'safe', 'restricted', or 'unknown'
  */
+
 export function classifyContent(
     content: any,
     mediaType: 'movie' | 'tv',
