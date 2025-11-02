@@ -128,8 +128,11 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                         className={`relative w-full h-full
                                   transition-all duration-300 ease-out
                                   rounded-md overflow-hidden
-                                  group-hover:shadow-[0_0_15px_rgba(220,38,38,0.4),0_0_30px_rgba(220,38,38,0.2)]
-                                  group-hover:ring-1 group-hover:ring-red-500/50
+                                  ${
+                                      isCardHovered
+                                          ? 'shadow-[0_0_15px_rgba(220,38,38,0.4),0_0_30px_rgba(220,38,38,0.2)] ring-1 ring-red-500/50'
+                                          : ''
+                                  }
                                   ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
                     >
                         <Image
@@ -149,9 +152,9 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
 
                         {/* Additional red glow overlay */}
                         <div
-                            className="absolute inset-0 rounded-md
+                            className={`absolute inset-0 rounded-md
                                   transition-all duration-300 ease-out
-                                  group-hover:shadow-[inset_0_0_10px_rgba(220,38,38,0.1)]"
+                                  ${isCardHovered ? 'shadow-[inset_0_0_10px_rgba(220,38,38,0.1)]' : ''}`}
                         ></div>
                     </div>
                 )}
