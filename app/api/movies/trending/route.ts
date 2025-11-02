@@ -12,7 +12,11 @@ export async function GET(request: NextRequest) {
         const searchParams = request.nextUrl.searchParams
         const childSafetyMode = searchParams.get('childSafetyMode')
         const childSafeMode = childSafetyMode === 'true'
-        const page = searchParams.get('page') || '1'
+
+        // Validate and sanitize page parameter (1-500 as per TMDB limits)
+        const rawPage = searchParams.get('page') || '1'
+        const parsedPage = parseInt(rawPage, 10)
+        const page = Math.max(1, Math.min(500, isNaN(parsedPage) ? 1 : parsedPage)).toString()
 
         let url: string
 

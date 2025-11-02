@@ -180,15 +180,22 @@ function Row({ title, content, apiEndpoint }: Props) {
             filtered.forEach((item: Content) => {
                 if (item.poster_path) {
                     const img = new Image()
+                    img.onload = () => {
+                        debugLog('✅', `Image loaded successfully`, {
+                            id: item.id,
+                            title: getTitle(item),
+                        })
+                    }
+                    img.onerror = () => {
+                        debugLog('⚠️', `Image failed to load`, {
+                            id: item.id,
+                            title: getTitle(item),
+                        })
+                    }
                     img.src = `https://image.tmdb.org/t/p/w500${item.poster_path}`
                 }
             })
-            if (DEBUG_INFINITE_SCROLL)
-                console.log(
-                    '🖼️ [Infinite Row Loading] Preloading images for:',
-                    filtered.length,
-                    'items'
-                )
+            debugLog('🖼️', `Preloading images for ${filtered.length} items`)
 
             // Update content and increment page only if we have unique items
             setAllContent((prev) => [...prev, ...filtered])
@@ -233,7 +240,7 @@ function Row({ title, content, apiEndpoint }: Props) {
             return
         }
 
-        if (isLoading) {
+        if (isLoadingRef.current) {
             if (DEBUG_INFINITE_SCROLL)
                 console.log(
                     '⏳ [Infinite Row Loading] Loading in progress, skipping scroll check:',
@@ -242,7 +249,7 @@ function Row({ title, content, apiEndpoint }: Props) {
             return
         }
 
-        if (!hasMore) {
+        if (!hasMoreRef.current) {
             if (DEBUG_INFINITE_SCROLL)
                 console.log(
                     '✅ [Infinite Row Loading] No more content, skipping scroll check:',
@@ -332,7 +339,7 @@ function Row({ title, content, apiEndpoint }: Props) {
                             hasMore,
                         })
 
-                    if (entry.isIntersecting && !isLoading && hasMore) {
+                    if (entry.isIntersecting && !isLoadingRef.current && hasMoreRef.current) {
                         if (DEBUG_INFINITE_SCROLL)
                             console.log(
                                 '🎯 [Infinite Row Loading] Observer detected sentinel! Loading more:',
