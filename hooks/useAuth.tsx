@@ -5,6 +5,7 @@ import React, {
     useEffect,
     useLayoutEffect,
     useMemo,
+    useRef,
 } from 'react'
 
 import {
@@ -80,6 +81,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Must use state to avoid hydration mismatch (localStorage only on client)
     const [wasRecentlyAuth, setWasRecentlyAuth] = useState(false)
 
+    // Track component mount state to prevent memory leaks from state updates after unmount
+    const isMountedRef = useRef(true)
+
     // Check cache BEFORE first paint using useLayoutEffect (synchronous, no flash)
     // This runs after DOM update but before browser paint, so user never sees the flash
     useLayoutEffect(() => {
@@ -99,6 +103,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         const unsubscribe = onAuthStateChanged(
             auth,
             (user) => {
+                // Prevent state updates after component unmount (memory leak prevention)
+                if (!isMountedRef.current) return
+
                 const callbackTime = Date.now() - startTime
                 authLog(
                     '🔥🔥🔥 [AUTH-TIMING] Firebase onAuthStateChanged fired after',
@@ -135,13 +142,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 }
             },
             (error) => {
+                // Prevent state updates after component unmount (memory leak prevention)
+                if (!isMountedRef.current) return
+
                 authError('🚨 Firebase Auth Error:', error)
                 setLoading(false)
                 setAuthInitialized(true)
             }
         )
 
-        return unsubscribe
+        return () => {
+            // Mark component as unmounted to prevent state updates after cleanup
+            isMountedRef.current = false
+            unsubscribe()
+        }
     }, [])
 
     const signUp = async (email: string, password: string) => {

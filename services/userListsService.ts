@@ -1,3 +1,4 @@
+import DOMPurify from 'isomorphic-dompurify'
 import {
     UserList,
     CreateListRequest,
@@ -16,17 +17,75 @@ export class UserListsService {
         return `list_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     }
 
+    /**
+     * Sanitize user-generated text input to prevent XSS attacks
+     * Strips all HTML tags and attributes from the input
+     * @param text - The text to sanitize
+     * @returns Sanitized text with no HTML tags
+     */
+    private static sanitizeText(text: string): string {
+        return DOMPurify.sanitize(text.trim(), {
+            ALLOWED_TAGS: [], // No HTML tags allowed
+            ALLOWED_ATTR: [], // No HTML attributes allowed
+        })
+    }
+
+    /**
+     * Validate that emoji input is actually emoji characters
+     * Prevents injection of arbitrary text/code as emoji
+     * @param emoji - The emoji string to validate
+     * @returns True if the input is valid emoji characters
+     */
+    private static isValidEmoji(emoji: string): boolean {
+        // Limit length to prevent abuse (max 10 characters for combined emoji with modifiers)
+        if (emoji.length > 10) return false
+
+        // Reject strings that contain dangerous characters
+        // Disallow: < > " ' / \ { } ( ) ; = & | $ `
+        const dangerousCharsRegex = /[<>"'/\\{}();=&|$`]/
+        if (dangerousCharsRegex.test(emoji)) return false
+
+        // Reject control characters (0-31 and 127)
+        // Split into separate check to avoid ESLint no-control-regex warning
+        for (let i = 0; i < emoji.length; i++) {
+            const charCode = emoji.charCodeAt(i)
+            if ((charCode >= 0 && charCode <= 31) || charCode === 127) {
+                return false
+            }
+        }
+
+        // Reject alphanumeric characters (a-z, A-Z, 0-9)
+        // Emoji shouldn't contain regular letters or numbers
+        const alphanumericRegex = /[a-zA-Z0-9]/
+        if (alphanumericRegex.test(emoji)) return false
+
+        // If it passes all checks, accept it
+        // This allows emoji while preventing XSS injection
+        return true
+    }
+
     // Create a new custom list
     static createList<T extends StateWithLists>(state: T, request: CreateListRequest): T {
+        // Sanitize user inputs to prevent XSS attacks
+        const sanitizedName = this.sanitizeText(request.name)
+
+        // Validate and sanitize emoji if provided
+        const sanitizedEmoji =
+            request.emoji && this.isValidEmoji(request.emoji) ? request.emoji : undefined
+
+        // Sanitize color if provided (only allow hex color format)
+        const sanitizedColor =
+            request.color && /^#[0-9A-Fa-f]{6}$/.test(request.color) ? request.color : undefined
+
         const newList: UserList = {
             id: this.generateId(),
-            name: request.name,
+            name: sanitizedName,
             items: [],
             isPublic: request.isPublic || false,
             createdAt: Date.now(),
             updatedAt: Date.now(),
-            color: request.color,
-            emoji: request.emoji,
+            color: sanitizedColor,
+            emoji: sanitizedEmoji,
         }
 
         return {
@@ -40,10 +99,36 @@ export class UserListsService {
         const listIndex = state.userCreatedWatchlists.findIndex((list) => list.id === request.id)
         if (listIndex === -1) return state
 
+        // Sanitize user inputs to prevent XSS attacks
+        const sanitizedUpdates: Partial<UserList> = {
+            updatedAt: Date.now(),
+        }
+
+        // Sanitize name if provided
+        if (request.name !== undefined) {
+            sanitizedUpdates.name = this.sanitizeText(request.name)
+        }
+
+        // Validate and sanitize emoji if provided
+        if (request.emoji !== undefined) {
+            sanitizedUpdates.emoji =
+                request.emoji && this.isValidEmoji(request.emoji) ? request.emoji : undefined
+        }
+
+        // Sanitize color if provided (only allow hex color format)
+        if (request.color !== undefined) {
+            sanitizedUpdates.color =
+                request.color && /^#[0-9A-Fa-f]{6}$/.test(request.color) ? request.color : undefined
+        }
+
+        // Include isPublic if provided
+        if (request.isPublic !== undefined) {
+            sanitizedUpdates.isPublic = request.isPublic
+        }
+
         const updatedList = {
             ...state.userCreatedWatchlists[listIndex],
-            ...request,
-            updatedAt: Date.now(),
+            ...sanitizedUpdates,
         }
 
         const updatedLists = [...state.userCreatedWatchlists]
