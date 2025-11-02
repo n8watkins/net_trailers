@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react'
-import { Content } from '../../typings'
+import { Content, getTitle } from '../../typings'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 import ContentCard from '../common/ContentCard'
 import { useSessionData } from '../../hooks/useSessionData'
@@ -7,10 +7,9 @@ import { filterDislikedContent } from '../../utils/contentFilter'
 
 // Debug logging - only in development
 const DEBUG_INFINITE_SCROLL = process.env.NODE_ENV === 'development'
-const debugLog = (emoji: string, message: string, data?: any) => {
+const debugLog = (emoji: string, message: string, data?: any): void => {
     if (DEBUG_INFINITE_SCROLL) {
-        if (DEBUG_INFINITE_SCROLL)
-            console.log(`${emoji} [Infinite Row Loading] ${message}`, data || '')
+        console.log(`${emoji} [Infinite Row Loading] ${message}`, data || '')
     }
 }
 
