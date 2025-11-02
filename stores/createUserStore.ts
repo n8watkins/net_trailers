@@ -440,6 +440,24 @@ export function createUserStore(options: CreateUserStoreOptions) {
                 prefs = allowedPrefs
             }
 
+            // ✅ CRITICAL: Clear cache when child safety mode changes
+            // This prevents serving cached adult content when switching to child safety mode
+            // or vice versa
+            if ('childSafetyMode' in prefs && typeof window !== 'undefined') {
+                const currentChildSafetyMode = get().childSafetyMode
+                const newChildSafetyMode = prefs.childSafetyMode
+
+                if (currentChildSafetyMode !== newChildSafetyMode) {
+                    // Import cache store dynamically to avoid circular dependency
+                    import('./cacheStore').then(({ useCacheStore }) => {
+                        useCacheStore.getState().clearCache()
+                        logger.log(
+                            `🧹 [${trackingContext}] Cache cleared due to childSafetyMode change: ${currentChildSafetyMode} → ${newChildSafetyMode}`
+                        )
+                    })
+                }
+            }
+
             if (adapter.isAsync) set({ syncStatus: 'syncing' })
 
             set({
