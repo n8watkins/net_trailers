@@ -10,18 +10,30 @@ import ToastManager from '../components/ToastManager'
 import Layout from '../components/Layout'
 import Modal from '../components/Modal'
 import ListSelectionModal from '../components/ListSelectionModal'
-import DebugControls from '../components/DebugControls'
-import FirebaseCallTracker from '../components/FirebaseCallTracker'
-import FirestoreTestButton from '../components/FirestoreTestButton'
 import { SessionSyncManager } from '../components/SessionSyncManager'
-import WebVitalsHUD from '../components/WebVitalsHUD'
 import { reportWebVitals as reportWebVitalsUtil } from '../utils/performance'
 import { suppressHMRLog } from '../utils/suppressHMRLog'
 import { useEffect } from 'react'
 
-// Dynamic import for AuthFlowDebugger - only loads in development
-// This prevents it from being included in the production bundle
+// Dynamic imports for debug components - only loads in development
+// This prevents them from being included in the production bundle
 const AuthFlowDebugger = dynamic(() => import('../components/AuthFlowDebugger'), {
+    ssr: false,
+    loading: () => null,
+})
+const DebugControls = dynamic(() => import('../components/DebugControls'), {
+    ssr: false,
+    loading: () => null,
+})
+const FirebaseCallTracker = dynamic(() => import('../components/FirebaseCallTracker'), {
+    ssr: false,
+    loading: () => null,
+})
+const FirestoreTestButton = dynamic(() => import('../components/FirestoreTestButton'), {
+    ssr: false,
+    loading: () => null,
+})
+const WebVitalsHUD = dynamic(() => import('../components/WebVitalsHUD'), {
     ssr: false,
     loading: () => null,
 })
@@ -45,11 +57,16 @@ function MyApp({ Component, pageProps }: AppProps) {
                 <DemoMessage />
                 <ToastManager />
                 <ListSelectionModal />
-                <DebugControls />
-                <FirebaseCallTracker />
-                {isDevelopment && <AuthFlowDebugger />}
-                <FirestoreTestButton />
-                <WebVitalsHUD />
+                {/* Debug components - only loaded in development */}
+                {isDevelopment && (
+                    <>
+                        <DebugControls />
+                        <FirebaseCallTracker />
+                        <AuthFlowDebugger />
+                        <FirestoreTestButton />
+                        <WebVitalsHUD />
+                    </>
+                )}
                 <GoogleAnalytics />
                 <VercelAnalyticsWrapper />
             </ErrorBoundary>

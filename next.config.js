@@ -9,6 +9,11 @@ const nextConfig = {
     typescript: {
         ignoreBuildErrors: true,
     },
+    compiler: {
+        // Remove console.log in production builds (keep error and warn)
+        removeConsole:
+            process.env.NODE_ENV === 'production' ? { exclude: ['error', 'warn'] } : false,
+    },
     images: {
         remotePatterns: [
             {
