@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
         const searchParams = request.nextUrl.searchParams
         const childSafetyMode = searchParams.get('childSafetyMode')
         const childSafeMode = childSafetyMode === 'true'
+        const page = searchParams.get('page') || '1'
 
         let url: string
 
@@ -20,10 +21,10 @@ export async function GET(request: NextRequest) {
             // Use discover endpoint with certification filter for all movies
             // certification.lte=PG-13 ensures only G, PG, and PG-13 rated movies
             // Sorted by popularity for trending content
-            url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&page=1&sort_by=popularity.desc&certification_country=US&certification.lte=PG-13&include_adult=false&vote_count.gte=100`
+            url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&page=${page}&sort_by=popularity.desc&certification_country=US&certification.lte=PG-13&include_adult=false&vote_count.gte=100`
         } else {
             // Normal mode - use trending endpoint for mixed content
-            url = `${BASE_URL}/trending/all/week?api_key=${API_KEY}&language=en-US&page=1`
+            url = `${BASE_URL}/trending/all/week?api_key=${API_KEY}&language=en-US&page=${page}`
         }
 
         const response = await fetch(url)
