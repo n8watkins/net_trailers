@@ -190,7 +190,10 @@ function StreamingRow({ title, content, hideTitles: _hideTitles = false, batchSi
                 >
                     {/* Render streaming content */}
                     {streamingContent.map((item) => (
-                        <div key={item.id} className="flex-shrink-0">
+                        <div
+                            key={`${item.media_type || 'unknown'}-${item.id}`}
+                            className="flex-shrink-0"
+                        >
                             {item.isChecking ? (
                                 // Placeholder while checking for trailer
                                 <div

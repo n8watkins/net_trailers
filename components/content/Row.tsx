@@ -78,7 +78,10 @@ function Row({ title, content }: Props) {
                     style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                 >
                     {filteredContent.map((item) => (
-                        <div key={item.id} className="flex-shrink-0">
+                        <div
+                            key={`${item.media_type || 'unknown'}-${item.id}`}
+                            className="flex-shrink-0"
+                        >
                             <ContentCard content={item} />
                         </div>
                     ))}

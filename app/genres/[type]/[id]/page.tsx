@@ -264,7 +264,10 @@ function GenrePageContent() {
                             {/* Flex Layout */}
                             <div className="flex flex-wrap gap-x-4 gap-y-20 sm:gap-x-6 sm:gap-y-24 md:gap-x-8 md:gap-y-28 overflow-visible">
                                 {contentToRender.map((item) => (
-                                    <div key={item.id} className="overflow-visible">
+                                    <div
+                                        key={`${item.media_type || 'unknown'}-${item.id}`}
+                                        className="overflow-visible"
+                                    >
                                         <ContentCard content={item} />
                                     </div>
                                 ))}
