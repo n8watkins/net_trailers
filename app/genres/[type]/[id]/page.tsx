@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef, useMemo, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams, useParams } from 'next/navigation'
 import Header from '../../../../components/layout/Header'
 import Modal from '../../../../components/modals/Modal'
 import ContentCard from '../../../../components/common/ContentCard'
@@ -11,17 +11,10 @@ import { useSessionData } from '../../../../hooks/useSessionData'
 import { filterDislikedContent } from '../../../../utils/contentFilter'
 import { useChildSafety } from '../../../../hooks/useChildSafety'
 
-interface GenrePageProps {
-    params: Promise<{
-        type: string
-        id: string
-    }>
-}
-
-function GenrePageContent({ params }: GenrePageProps) {
+function GenrePageContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const [resolvedParams, setResolvedParams] = useState<{ type: string; id: string } | null>(null)
+    const params = useParams<{ type: string; id: string }>()
     const name = searchParams.get('name')
     const title = searchParams.get('title')
     const sessionData = useSessionData()
@@ -42,13 +35,8 @@ function GenrePageContent({ params }: GenrePageProps) {
         year: 'all',
     })
 
-    // Resolve params promise
-    useEffect(() => {
-        params.then(setResolvedParams)
-    }, [params])
-
-    const genreId = resolvedParams?.id
-    const mediaType = resolvedParams?.type
+    const genreId = params.id
+    const mediaType = params.type
     const genreName = name
     const pageTitle = title
     const { isEnabled: childSafetyEnabled } = useChildSafety()
@@ -341,10 +329,10 @@ function GenrePageContent({ params }: GenrePageProps) {
     )
 }
 
-export default function GenrePage({ params }: GenrePageProps) {
+export default function GenrePage() {
     return (
         <Suspense fallback={<NetflixLoader message="Loading genre..." />}>
-            <GenrePageContent params={params} />
+            <GenrePageContent />
         </Suspense>
     )
 }

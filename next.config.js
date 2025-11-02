@@ -51,10 +51,6 @@ const nextConfig = {
     experimental: {
         // optimizePackageImports: ['@heroicons/react'],
     },
-    // Aggressive caching for auth pages
-    generateBuildId: async () => {
-        return 'net-trailers-v1'
-    },
     // Security headers
     async headers() {
         return [
