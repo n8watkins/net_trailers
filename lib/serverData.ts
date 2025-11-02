@@ -61,7 +61,7 @@ function randomizeArray<T>(arr: T[]): T[] {
  * Helper to deduplicate and randomize content
  */
 function dedupeAndRandomize(content: Content[]): Content[] {
-    return dedupeAndRandomize(deduplicateContent(content))
+    return randomizeArray(deduplicateContent(content))
 }
 
 /**
