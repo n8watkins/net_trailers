@@ -1,5 +1,5 @@
 import { useAppStore } from '../stores/appStore'
-import { ToastMessage } from '../components/Toast'
+import { ToastMessage } from '../components/common/Toast'
 
 /**
  * Unified toast notification hook

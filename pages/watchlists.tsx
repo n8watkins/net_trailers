@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { NextPage } from 'next'
 import Head from 'next/head'
-import Header from '../components/Header'
+import Header from '../components/layout/Header'
 import useUserData from '../hooks/useUserData'
 import useAuth from '../hooks/useAuth'
 import {
@@ -12,12 +12,12 @@ import {
 } from '@heroicons/react/24/solid'
 import { isMovie, isTVShow } from '../typings'
 import { getTitle } from '../typings'
-import ContentCard from '../components/ContentCard'
+import ContentCard from '../components/common/ContentCard'
 import { useAppStore } from '../stores/appStore'
 import { exportUserDataToCSV } from '../utils/csvExport'
 import { UserList } from '../types/userLists'
-import { useDebugSettings } from '../components/DebugControls'
-import { GuestModeNotification } from '../components/GuestModeNotification'
+import { useDebugSettings } from '../components/debug/DebugControls'
+import { GuestModeNotification } from '../components/auth/GuestModeNotification'
 import { useAuthStatus } from '../hooks/useAuthStatus'
 
 interface Props {

@@ -1,6 +1,6 @@
 import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
-import Header from '../../components/Header'
+import Header from '../../components/layout/Header'
 
 // Mock Next.js Image component
 jest.mock('next/image', () => ({
