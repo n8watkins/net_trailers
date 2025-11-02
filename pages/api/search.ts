@@ -2,11 +2,29 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { filterContentByAdultFlag } from '../../utils/contentFilter'
 import { filterMatureTVShows } from '../../utils/tvContentRatings'
 import { searchCache } from '../../utils/apiCache'
+import type { Content } from '../../typings'
 
 interface SearchParams {
     query: string
     page?: string
     childSafetyMode?: string
+}
+
+interface TMDBSearchResult {
+    id: number
+    media_type: 'movie' | 'tv' | 'person'
+    adult?: boolean
+    title?: string
+    name?: string
+    poster_path?: string
+    backdrop_path?: string
+}
+
+interface TMDBSearchResponse {
+    results: TMDBSearchResult[]
+    total_results: number
+    total_pages: number
+    page: number
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -53,32 +71,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             throw new Error(`TMDB API error: ${response.status} ${response.statusText}`)
         }
 
-        const data = await response.json()
+        const data: TMDBSearchResponse = await response.json()
 
         // Filter out person results (keep only movies and TV shows)
         let filteredResults = data.results.filter(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (item: any) => item.media_type === 'movie' || item.media_type === 'tv'
+            (item: TMDBSearchResult) => item.media_type === 'movie' || item.media_type === 'tv'
         )
 
         // Apply child safety filtering if enabled
         if (childSafeMode) {
             const beforeCount = filteredResults.length
 
-            // First filter movies by adult flag
-            filteredResults = filterContentByAdultFlag(filteredResults, true)
+            // First filter movies by adult flag (cast to Content[] for filter function)
+            filteredResults = filterContentByAdultFlag(
+                filteredResults as unknown as Content[],
+                true
+            ) as unknown as TMDBSearchResult[]
 
             // Separate TV shows and movies
-
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const tvShows = filteredResults.filter((item: any) => item.media_type === 'tv')
-
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const movies = filteredResults.filter((item: any) => item.media_type === 'movie')
+            const tvShows = filteredResults.filter((item) => item.media_type === 'tv')
+            const movies = filteredResults.filter((item) => item.media_type === 'movie')
 
             // Filter TV shows by content rating (server-side)
             const filteredTVShows =
-                tvShows.length > 0 ? await filterMatureTVShows(tvShows, apiKey!) : []
+                tvShows.length > 0
+                    ? await filterMatureTVShows(tvShows as unknown as Content[], apiKey!)
+                    : []
 
             // Combine filtered movies and TV shows
             filteredResults = [...movies, ...filteredTVShows]
