@@ -3,23 +3,91 @@ import { useGuestStore } from '../stores/guestStore'
 import { useAuthStore } from '../stores/authStore'
 
 export const useSessionData = () => {
-    const { sessionType, activeSessionId, isInitialized, isTransitioning } = useSessionStore()
+    // Use granular selectors for session store
+    const sessionType = useSessionStore((state) => state.sessionType)
+    const activeSessionId = useSessionStore((state) => state.activeSessionId)
+    const isInitialized = useSessionStore((state) => state.isInitialized)
+    const isTransitioning = useSessionStore((state) => state.isTransitioning)
 
-    const guestStore = useGuestStore()
-    const authStoreData = useAuthStore()
+    // Select data from guest store with granular selectors
+    const guestWatchlist = useGuestStore((state) => state.defaultWatchlist)
+    const guestLikedMovies = useGuestStore((state) => state.likedMovies)
+    const guestHiddenMovies = useGuestStore((state) => state.hiddenMovies)
+    const guestUserCreatedWatchlists = useGuestStore((state) => state.userCreatedWatchlists)
+    const guestLastActive = useGuestStore((state) => state.lastActive)
+    const guestAutoMute = useGuestStore((state) => state.autoMute)
+    const guestDefaultVolume = useGuestStore((state) => state.defaultVolume)
+    const guestChildSafetyMode = useGuestStore((state) => state.childSafetyMode)
+
+    // Select actions from guest store
+    const guestAddToWatchlist = useGuestStore((state) => state.addToWatchlist)
+    const guestRemoveFromWatchlist = useGuestStore((state) => state.removeFromWatchlist)
+    const guestAddLikedMovie = useGuestStore((state) => state.addLikedMovie)
+    const guestRemoveLikedMovie = useGuestStore((state) => state.removeLikedMovie)
+    const guestAddHiddenMovie = useGuestStore((state) => state.addHiddenMovie)
+    const guestRemoveHiddenMovie = useGuestStore((state) => state.removeHiddenMovie)
+    const guestCreateList = useGuestStore((state) => state.createList)
+    const guestUpdateList = useGuestStore((state) => state.updateList)
+    const guestDeleteList = useGuestStore((state) => state.deleteList)
+    const guestAddToList = useGuestStore((state) => state.addToList)
+    const guestRemoveFromList = useGuestStore((state) => state.removeFromList)
+    const guestClearAllData = useGuestStore((state) => state.clearAllData)
+
+    // Select data from auth store with granular selectors
+    const authWatchlist = useAuthStore((state) => state.defaultWatchlist)
+    const authLikedMovies = useAuthStore((state) => state.likedMovies)
+    const authHiddenMovies = useAuthStore((state) => state.hiddenMovies)
+    const authUserCreatedWatchlists = useAuthStore((state) => state.userCreatedWatchlists)
+    const authLastActive = useAuthStore((state) => state.lastActive)
+    const authAutoMute = useAuthStore((state) => state.autoMute)
+    const authDefaultVolume = useAuthStore((state) => state.defaultVolume)
+    const authChildSafetyMode = useAuthStore((state) => state.childSafetyMode)
+
+    // Select actions from auth store
+    const authAddToWatchlist = useAuthStore((state) => state.addToWatchlist)
+    const authRemoveFromWatchlist = useAuthStore((state) => state.removeFromWatchlist)
+    const authAddLikedMovie = useAuthStore((state) => state.addLikedMovie)
+    const authRemoveLikedMovie = useAuthStore((state) => state.removeLikedMovie)
+    const authAddHiddenMovie = useAuthStore((state) => state.addHiddenMovie)
+    const authRemoveHiddenMovie = useAuthStore((state) => state.removeHiddenMovie)
+    const authCreateList = useAuthStore((state) => state.createList)
+    const authUpdateList = useAuthStore((state) => state.updateList)
+    const authDeleteList = useAuthStore((state) => state.deleteList)
+    const authAddToList = useAuthStore((state) => state.addToList)
+    const authRemoveFromList = useAuthStore((state) => state.removeFromList)
+    const authClearLocalCache = useAuthStore((state) => state.clearLocalCache)
 
     // Session initialization is now handled by SessionSyncManager component
-
     // Auth state changes are now handled by SessionSyncManager component
-
     // Data loading is now handled by SessionSyncManager component
 
     // AUTO-SAVE DISABLED - Saving happens directly in store actions to prevent infinite loops
     // The previous auto-save was causing excessive Firestore writes (20k+ per day)
     // because it triggered on every data change, including lastActive updates
 
-    // Return the appropriate store data based on session type
-    const currentStore = sessionType === 'authenticated' ? authStoreData : guestStore
+    // Select appropriate data and actions based on session type
+    const isAuth = sessionType === 'authenticated'
+
+    const defaultWatchlist = isAuth ? authWatchlist : guestWatchlist
+    const likedMovies = isAuth ? authLikedMovies : guestLikedMovies
+    const hiddenMovies = isAuth ? authHiddenMovies : guestHiddenMovies
+    const userCreatedWatchlists = isAuth ? authUserCreatedWatchlists : guestUserCreatedWatchlists
+    const lastActive = isAuth ? authLastActive : guestLastActive
+    const autoMute = (isAuth ? authAutoMute : guestAutoMute) ?? true
+    const defaultVolume = (isAuth ? authDefaultVolume : guestDefaultVolume) ?? 50
+    const childSafetyMode = (isAuth ? authChildSafetyMode : guestChildSafetyMode) ?? false
+
+    const addToWatchlist = isAuth ? authAddToWatchlist : guestAddToWatchlist
+    const removeFromWatchlist = isAuth ? authRemoveFromWatchlist : guestRemoveFromWatchlist
+    const addLikedMovie = isAuth ? authAddLikedMovie : guestAddLikedMovie
+    const removeLikedMovie = isAuth ? authRemoveLikedMovie : guestRemoveLikedMovie
+    const addHiddenMovie = isAuth ? authAddHiddenMovie : guestAddHiddenMovie
+    const removeHiddenMovie = isAuth ? authRemoveHiddenMovie : guestRemoveHiddenMovie
+    const createList = isAuth ? authCreateList : guestCreateList
+    const updateList = isAuth ? authUpdateList : guestUpdateList
+    const deleteList = isAuth ? authDeleteList : guestDeleteList
+    const addToList = isAuth ? authAddToList : guestAddToList
+    const removeFromList = isAuth ? authRemoveFromList : guestRemoveFromList
 
     return {
         // Session info
@@ -29,42 +97,38 @@ export const useSessionData = () => {
         isTransitioning,
 
         // Current store data (NEW SCHEMA)
-        defaultWatchlist: currentStore.defaultWatchlist,
-        likedMovies: currentStore.likedMovies,
-        hiddenMovies: currentStore.hiddenMovies,
-        userCreatedWatchlists: currentStore.userCreatedWatchlists,
-        lastActive: currentStore.lastActive,
+        defaultWatchlist,
+        likedMovies,
+        hiddenMovies,
+        userCreatedWatchlists,
+        lastActive,
 
         // Preferences
-        autoMute: currentStore.autoMute ?? true,
-        defaultVolume: currentStore.defaultVolume ?? 50,
-        childSafetyMode: currentStore.childSafetyMode ?? false,
+        autoMute,
+        defaultVolume,
+        childSafetyMode,
 
         // Actions (unified interface - NEW SCHEMA)
-        addToWatchlist: currentStore.addToWatchlist,
-        removeFromWatchlist: currentStore.removeFromWatchlist,
-        addLikedMovie: currentStore.addLikedMovie,
-        removeLikedMovie: currentStore.removeLikedMovie,
-        addHiddenMovie: currentStore.addHiddenMovie,
-        removeHiddenMovie: currentStore.removeHiddenMovie,
-        createList: currentStore.createList,
-        updateList: currentStore.updateList,
-        deleteList: currentStore.deleteList,
-        addToList: currentStore.addToList,
-        removeFromList: currentStore.removeFromList,
+        addToWatchlist,
+        removeFromWatchlist,
+        addLikedMovie,
+        removeLikedMovie,
+        addHiddenMovie,
+        removeHiddenMovie,
+        createList,
+        updateList,
+        deleteList,
+        addToList,
+        removeFromList,
 
         // Store-specific actions
-        guestActions: guestStore,
-        authActions: authStoreData,
-        clearAllData: guestStore.clearAllData,
-        clearLocalCache: authStoreData.clearLocalCache,
+        clearAllData: guestClearAllData,
+        clearLocalCache: authClearLocalCache,
 
         // Utilities (NEW SCHEMA)
         isInWatchlist: (contentId: number) =>
-            currentStore.defaultWatchlist.some((item) => item.id === contentId),
-        isLiked: (contentId: number) =>
-            currentStore.likedMovies.some((item) => item.id === contentId),
-        isHidden: (contentId: number) =>
-            currentStore.hiddenMovies.some((item) => item.id === contentId),
+            defaultWatchlist.some((item) => item.id === contentId),
+        isLiked: (contentId: number) => likedMovies.some((item) => item.id === contentId),
+        isHidden: (contentId: number) => hiddenMovies.some((item) => item.id === contentId),
     }
 }

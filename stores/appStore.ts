@@ -38,34 +38,6 @@ export interface ToastMessage {
     contentId?: number // Optional content ID for undo operations
 }
 
-// Search types
-// Search filters type
-export interface SearchFilters {
-    genres: string[]
-    contentType: 'all' | 'movie' | 'tv'
-    releaseYear: string
-    rating: string
-    sortBy?: string
-    year?: string
-}
-
-export interface SearchState {
-    query: string
-    results: Content[]
-    filteredResults: Content[]
-    isLoading: boolean
-    error: string | null
-    hasSearched: boolean
-    totalResults: number
-    currentPage: number
-    hasAllResults: boolean
-    isLoadingAll: boolean
-    isTruncated: boolean
-    filters: SearchFilters
-    history: string[]
-    recentSearches: string[]
-}
-
 // List modal state
 export interface ListModalState {
     isOpen: boolean
@@ -96,9 +68,6 @@ export interface AppState {
     // Global loading state
     isLoading: boolean
     loadingMessage?: string
-
-    // Search state
-    search: SearchState
 
     // Auth mode
     authMode: 'login' | 'register' | 'guest'
@@ -135,15 +104,6 @@ export interface AppActions {
     // Loading actions
     setLoading: (loading: boolean, message?: string) => void
 
-    // Search actions
-    setSearch: (updater: (prev: SearchState) => SearchState) => void
-    setSearchQuery: (query: string) => void
-    setSearchResults: (results: Content[]) => void
-    setSearchLoading: (loading: boolean) => void
-    setSearchFilters: (filters: Partial<SearchFilters>) => void
-    addToSearchHistory: (query: string) => void
-    clearSearchHistory: () => void
-
     // Auth mode actions
     setAuthMode: (mode: 'login' | 'register' | 'guest') => void
 
@@ -168,30 +128,6 @@ const generateToastId = (): string => {
     return `toast_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 }
 
-// Helper to load search history from localStorage
-const loadSearchHistory = (): string[] => {
-    if (typeof window === 'undefined') return []
-    try {
-        const saved = localStorage.getItem('nettrailer-search-history')
-        if (saved) {
-            return JSON.parse(saved)
-        }
-    } catch (error) {
-        console.error('Failed to load search history:', error)
-    }
-    return []
-}
-
-// Helper to save search history to localStorage
-const saveSearchHistory = (history: string[]) => {
-    if (typeof window === 'undefined') return
-    try {
-        localStorage.setItem('nettrailer-search-history', JSON.stringify(history))
-    } catch (error) {
-        console.error('Failed to save search history:', error)
-    }
-}
-
 export const useAppStore = create<AppStore>((set, get) => ({
     // Initial state
     modal: {
@@ -214,30 +150,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     isLoading: false,
     loadingMessage: undefined,
-
-    search: {
-        query: '',
-        results: [],
-        filteredResults: [],
-        isLoading: false,
-        error: null,
-        hasSearched: false,
-        totalResults: 0,
-        currentPage: 1,
-        hasAllResults: false,
-        isLoadingAll: false,
-        isTruncated: false,
-        filters: {
-            genres: [],
-            contentType: 'all',
-            releaseYear: 'all',
-            rating: 'all',
-            sortBy: 'popularity.desc',
-            year: 'all',
-        },
-        history: loadSearchHistory(),
-        recentSearches: [],
-    },
 
     authMode: 'login',
     showDemoMessage: true,
@@ -420,89 +332,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
                 loadingMessage: message,
             })
         })
-    },
-
-    // Search actions
-    setSearch: (updater: (prev: SearchState) => SearchState) => {
-        set((state) => ({
-            search: updater(state.search),
-        }))
-    },
-
-    setSearchQuery: (query: string) => {
-        set((state) => ({
-            search: {
-                ...state.search,
-                query,
-            },
-        }))
-    },
-
-    setSearchResults: (results: Content[]) => {
-        set((state) => ({
-            search: {
-                ...state.search,
-                results,
-            },
-        }))
-    },
-
-    setSearchLoading: (loading: boolean) => {
-        set((state) => ({
-            search: {
-                ...state.search,
-                isLoading: loading,
-            },
-        }))
-    },
-
-    setSearchFilters: (filters: Partial<SearchFilters>) => {
-        set((state) => ({
-            search: {
-                ...state.search,
-                filters: {
-                    ...state.search.filters,
-                    ...filters,
-                },
-            },
-        }))
-    },
-
-    addToSearchHistory: (query: string) => {
-        const state = get()
-        const trimmedQuery = query.trim()
-
-        if (trimmedQuery && !state.search.history.includes(trimmedQuery)) {
-            const newHistory = [trimmedQuery, ...state.search.history].slice(0, 10) // Keep last 10
-            const newRecent = [
-                trimmedQuery,
-                ...state.search.recentSearches.filter((q) => q !== trimmedQuery),
-            ].slice(0, 5) // Keep last 5
-
-            // Persist to localStorage
-            saveSearchHistory(newHistory)
-
-            set((state) => ({
-                search: {
-                    ...state.search,
-                    history: newHistory,
-                    recentSearches: newRecent,
-                },
-            }))
-        }
-    },
-
-    clearSearchHistory: () => {
-        // Clear from localStorage
-        saveSearchHistory([])
-
-        set((state) => ({
-            search: {
-                ...state.search,
-                history: [],
-                recentSearches: [],
-            },
-        }))
     },
 
     // Auth mode actions

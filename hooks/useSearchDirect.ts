@@ -2,28 +2,19 @@
  * useSearchDirect - Direct Zustand hook for search functionality
  */
 
-import { useAppStore } from '../stores/appStore'
+import { useSearchStore } from '../stores/searchStore'
 import { Content } from '../typings'
 
 export function useSearchDirect() {
-    const {
-        search,
-        setSearch,
-        setSearchQuery,
-        setSearchResults,
-        setSearchLoading,
-        setSearchFilters,
-        addToSearchHistory,
-        clearSearchHistory,
-    } = useAppStore()
+    const search = useSearchStore()
 
     // Convenience methods
     const updateFilters = (filters: Partial<typeof search.filters>) => {
-        setSearchFilters(filters)
+        search.setSearchFilters(filters)
     }
 
     const resetSearch = () => {
-        setSearch(() => ({
+        search.setSearch(() => ({
             query: '',
             results: [],
             filteredResults: [],
@@ -49,44 +40,57 @@ export function useSearchDirect() {
     }
 
     const setError = (error: string | null) => {
-        setSearch((prev) => ({ ...prev, error }))
+        search.setSearch((prev) => ({ ...prev, error }))
     }
 
     const setHasSearched = (hasSearched: boolean) => {
-        setSearch((prev) => ({ ...prev, hasSearched }))
+        search.setSearch((prev) => ({ ...prev, hasSearched }))
     }
 
     const setFilteredResults = (filteredResults: Content[]) => {
-        setSearch((prev) => ({ ...prev, filteredResults }))
+        search.setSearch((prev) => ({ ...prev, filteredResults }))
     }
 
     const setTotalResults = (totalResults: number) => {
-        setSearch((prev) => ({ ...prev, totalResults }))
+        search.setSearch((prev) => ({ ...prev, totalResults }))
     }
 
     const setCurrentPage = (currentPage: number) => {
-        setSearch((prev) => ({ ...prev, currentPage }))
+        search.setSearch((prev) => ({ ...prev, currentPage }))
     }
 
     const setHasAllResults = (hasAllResults: boolean) => {
-        setSearch((prev) => ({ ...prev, hasAllResults }))
+        search.setSearch((prev) => ({ ...prev, hasAllResults }))
     }
 
     const setIsLoadingAll = (isLoadingAll: boolean) => {
-        setSearch((prev) => ({ ...prev, isLoadingAll }))
+        search.setSearch((prev) => ({ ...prev, isLoadingAll }))
     }
 
     return {
         // State
-        ...search,
+        query: search.query,
+        results: search.results,
+        filteredResults: search.filteredResults,
+        isLoading: search.isLoading,
+        error: search.error,
+        hasSearched: search.hasSearched,
+        totalResults: search.totalResults,
+        currentPage: search.currentPage,
+        hasAllResults: search.hasAllResults,
+        isLoadingAll: search.isLoadingAll,
+        isTruncated: search.isTruncated,
+        filters: search.filters,
+        history: search.history,
+        recentSearches: search.recentSearches,
 
         // Core actions (from store)
-        setSearchQuery,
-        setSearchResults,
-        setSearchLoading,
-        setSearchFilters,
-        addToSearchHistory,
-        clearSearchHistory,
+        setSearchQuery: search.setSearchQuery,
+        setSearchResults: search.setSearchResults,
+        setSearchLoading: search.setSearchLoading,
+        setSearchFilters: search.setSearchFilters,
+        addToSearchHistory: search.addToSearchHistory,
+        clearSearchHistory: search.clearSearchHistory,
 
         // Additional actions
         updateFilters,

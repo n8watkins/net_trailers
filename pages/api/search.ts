@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { filterContentByAdultFlag } from '../../utils/contentFilter'
 import { filterMatureTVShows } from '../../utils/tvContentRatings'
+import { searchCache } from '../../utils/apiCache'
 
 interface SearchParams {
     query: string
@@ -28,6 +29,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const apiKey = process.env.TMDB_API_KEY
         if (!apiKey) {
             return res.status(500).json({ message: 'API key not configured' })
+        }
+
+        // Create cache key including all relevant parameters
+        const cacheKey = `search-${query.trim()}-page-${page}-childSafe-${childSafeMode}`
+
+        // Check cache first
+        const cachedData = searchCache.get(cacheKey)
+        if (cachedData) {
+            return res.status(200).json(cachedData)
         }
 
         // Build the TMDB search URL
@@ -75,23 +85,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
             const hiddenCount = beforeCount - filteredResults.length
 
-            return res.status(200).json({
+            const childSafeResponse = {
                 results: filteredResults,
                 total_results: data.total_results,
                 total_pages: data.total_pages,
                 page: parseInt(page),
                 child_safety_enabled: true,
                 hidden_count: hiddenCount,
-            })
+            }
+
+            // Cache the result (10 minutes TTL from searchCache settings)
+            searchCache.set(cacheKey, childSafeResponse)
+
+            return res.status(200).json(childSafeResponse)
         }
 
         // Return normal results if child safety is off
-        return res.status(200).json({
+        const normalResponse = {
             results: filteredResults,
             total_results: data.total_results,
             total_pages: data.total_pages,
             page: parseInt(page),
-        })
+        }
+
+        // Cache the result (10 minutes TTL from searchCache settings)
+        searchCache.set(cacheKey, normalResponse)
+
+        return res.status(200).json(normalResponse)
     } catch (error) {
         console.error('Search API error:', error)
         return res.status(500).json({

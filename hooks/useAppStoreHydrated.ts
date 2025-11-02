@@ -32,31 +32,6 @@ const defaultState: AppStore = {
     isLoading: false,
     loadingMessage: undefined,
 
-    // Search state
-    search: {
-        query: '',
-        results: [],
-        filteredResults: [],
-        isLoading: false,
-        error: null,
-        hasSearched: false,
-        totalResults: 0,
-        currentPage: 1,
-        hasAllResults: false,
-        isLoadingAll: false,
-        isTruncated: false,
-        filters: {
-            genres: [],
-            contentType: 'all',
-            releaseYear: 'all',
-            rating: 'all',
-            sortBy: 'popularity.desc',
-            year: 'all',
-        },
-        history: [],
-        recentSearches: [],
-    },
-
     // Auth mode
     authMode: 'login',
     showDemoMessage: true,
@@ -83,20 +58,6 @@ const defaultState: AppStore = {
     dismissToast: () => {},
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     setLoading: () => {},
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    setSearch: () => {},
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    setSearchQuery: () => {},
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    setSearchResults: () => {},
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    setSearchLoading: () => {},
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    setSearchFilters: () => {},
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    addToSearchHistory: () => {},
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    clearSearchHistory: () => {},
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     setAuthMode: () => {},
     // eslint-disable-next-line @typescript-eslint/no-empty-function

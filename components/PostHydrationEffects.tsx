@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { startTransition } from 'react'
 import { useAppStoreHydrated } from '../hooks/useAppStoreHydrated'
+import { useSearchStore } from '../stores/searchStore'
 import { useSessionData } from '../hooks/useSessionData'
 import { useRouter } from 'next/router'
 import { useHydrationDebug } from '../utils/hydrationDebug'
@@ -16,6 +17,7 @@ import { useHydrationDebug } from '../utils/hydrationDebug'
 export default function PostHydrationEffects() {
     const debug = useHydrationDebug('PostHydrationEffects')
     const store = useAppStoreHydrated()
+    const searchStore = useSearchStore()
     const session = useSessionData()
     const router = useRouter()
 
@@ -39,14 +41,12 @@ export default function PostHydrationEffects() {
                                     action: 'Restoring search history',
                                     count: history.length,
                                 })
-                                // Note: Only restore if store has the method
-                                if (store.setSearch) {
-                                    store.setSearch((prev) => ({
-                                        ...prev,
-                                        history: history.slice(0, 10),
-                                        recentSearches: history.slice(0, 5),
-                                    }))
-                                }
+                                // Restore to searchStore
+                                searchStore.setSearch((prev) => ({
+                                    ...prev,
+                                    history: history.slice(0, 10),
+                                    recentSearches: history.slice(0, 5),
+                                }))
                             }
                         }
 
@@ -73,12 +73,12 @@ export default function PostHydrationEffects() {
                     const { query } = router
 
                     // Restore search query from URL
-                    if (query.q && typeof query.q === 'string' && store.setSearchQuery) {
+                    if (query.q && typeof query.q === 'string') {
                         debug.logEffect({
                             action: 'Restoring search query from URL',
                             query: query.q,
                         })
-                        store.setSearchQuery(query.q)
+                        searchStore.setSearchQuery(query.q)
                     }
 
                     // Handle auth redirects if needed

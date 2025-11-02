@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { fetchTVContentRatings, hasMatureRating } from '../../../utils/tvContentRatings'
+import { tmdbContentCache } from '../../../utils/apiCache'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method !== 'GET') {
@@ -24,7 +25,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(500).json({ error: 'API configuration error' })
     }
 
+    // Create cache key including child safety mode since filtered data differs
+    const cacheKey = `content-${contentId}-childSafe-${childSafeMode}`
+
     try {
+        // Check cache first
+        const cachedData = tmdbContentCache.get(cacheKey)
+        if (cachedData) {
+            return res.status(200).json(cachedData)
+        }
+
         // Try to fetch as a movie first
         const movieResponse = await fetch(
             `https://api.themoviedb.org/3/movie/${contentId}?api_key=${API_KEY}&language=en-US`
@@ -46,6 +56,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 ...movieData,
                 media_type: 'movie',
             }
+
+            // Cache the result (30 minutes TTL)
+            tmdbContentCache.set(cacheKey, enrichedMovieData)
+
             return res.status(200).json(enrichedMovieData)
         }
 
@@ -73,6 +87,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 ...tvData,
                 media_type: 'tv',
             }
+
+            // Cache the result (30 minutes TTL)
+            tmdbContentCache.set(cacheKey, enrichedTvData)
+
             return res.status(200).json(enrichedTvData)
         }
 

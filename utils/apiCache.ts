@@ -118,6 +118,7 @@ class ApiCache {
 export const searchCache = new ApiCache({ ttl: 10 * 60 * 1000, maxSize: 50 }) // 10 minutes for search results
 export const movieCache = new ApiCache({ ttl: 30 * 60 * 1000, maxSize: 200 }) // 30 minutes for movie data
 export const mainPageCache = new ApiCache({ ttl: 60 * 60 * 1000, maxSize: 20 }) // 1 hour for main page content
+export const tmdbContentCache = new ApiCache({ ttl: 30 * 60 * 1000, maxSize: 300 }) // 30 minutes for TMDB content details (movies/TV shows)
 
 // Cached fetch wrapper
 

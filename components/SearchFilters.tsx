@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react'
-import { useAppStore, SearchFilters as SearchFiltersType } from '../stores/appStore'
+import { useSearchStore, SearchFilters as SearchFiltersType } from '../stores/searchStore'
 import { ChevronDownIcon, XMarkIcon } from '@heroicons/react/24/outline'
 
 interface SearchFiltersProps {
@@ -13,17 +13,18 @@ export default function SearchFilters({
     isOpen: _isOpen,
     onClose: _onClose,
 }: SearchFiltersProps) {
-    const { search, setSearchFilters } = useAppStore()
+    const filters = useSearchStore((state) => state.filters)
+    const setSearchFilters = useSearchStore((state) => state.setSearchFilters)
 
     const updateFilter = useCallback(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (key: keyof SearchFiltersType, value: any) => {
             setSearchFilters({
-                ...search.filters,
+                ...filters,
                 [key]: value,
             })
         },
-        [search.filters, setSearchFilters]
+        [filters, setSearchFilters]
     )
 
     const clearAllFilters = () => {
@@ -46,7 +47,7 @@ export default function SearchFilters({
         [updateFilter]
     )
 
-    const hasActiveFilters = Object.entries(search.filters).some(([key, value]) => {
+    const hasActiveFilters = Object.entries(filters).some(([key, value]) => {
         if (key === 'sortBy') return value !== 'popularity.desc'
         return value !== 'all'
     })
@@ -130,34 +131,34 @@ export default function SearchFilters({
                 <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0">
                     <FilterDropdown
                         label="Content Type"
-                        value={search.filters.contentType}
+                        value={filters.contentType}
                         onChange={(value) => updateFilter('contentType', value)}
                         options={contentTypeOptions}
-                        isActive={search.filters.contentType !== 'all'}
+                        isActive={filters.contentType !== 'all'}
                     />
 
                     <FilterDropdown
                         label="Rating"
-                        value={search.filters.rating}
+                        value={filters.rating}
                         onChange={(value) => updateFilter('rating', value)}
                         options={ratingOptions}
-                        isActive={search.filters.rating !== 'all'}
+                        isActive={filters.rating !== 'all'}
                     />
 
                     <FilterDropdown
                         label="Year"
-                        value={search.filters.year || 'all'}
+                        value={filters.year || 'all'}
                         onChange={(value) => updateFilter('year', value)}
                         options={yearOptions}
-                        isActive={search.filters.year !== 'all'}
+                        isActive={filters.year !== 'all'}
                     />
 
                     <FilterDropdown
                         label="Sort By"
-                        value={search.filters.sortBy || 'popularity.desc'}
+                        value={filters.sortBy || 'popularity.desc'}
                         onChange={(value) => updateFilter('sortBy', value)}
                         options={sortOptions}
-                        isActive={search.filters.sortBy !== 'popularity.desc'}
+                        isActive={filters.sortBy !== 'popularity.desc'}
                     />
                 </div>
 
@@ -173,7 +174,7 @@ export default function SearchFilters({
 
             {hasActiveFilters && (
                 <div className="mt-4 flex flex-wrap gap-2">
-                    {search.filters.contentType !== 'all' && (
+                    {filters.contentType !== 'all' && (
                         <button
                             onClick={() => removeFilter('contentType')}
                             className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors cursor-pointer group"
@@ -182,54 +183,45 @@ export default function SearchFilters({
                             <span>
                                 {
                                     contentTypeOptions.find(
-                                        (opt) => opt.value === search.filters.contentType
+                                        (opt) => opt.value === filters.contentType
                                     )?.label
                                 }
                             </span>
                             <XMarkIcon className="ml-1 w-3 h-3 group-hover:text-gray-200" />
                         </button>
                     )}
-                    {search.filters.rating !== 'all' && (
+                    {filters.rating !== 'all' && (
                         <button
                             onClick={() => removeFilter('rating')}
                             className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-600 hover:bg-yellow-700 text-white transition-colors cursor-pointer group"
                             title="Click to remove Rating filter"
                         >
                             <span>
-                                {
-                                    ratingOptions.find((opt) => opt.value === search.filters.rating)
-                                        ?.label
-                                }
+                                {ratingOptions.find((opt) => opt.value === filters.rating)?.label}
                             </span>
                             <XMarkIcon className="ml-1 w-3 h-3 group-hover:text-gray-200" />
                         </button>
                     )}
-                    {search.filters.year !== 'all' && (
+                    {filters.year !== 'all' && (
                         <button
                             onClick={() => removeFilter('year')}
                             className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-600 hover:bg-green-700 text-white transition-colors cursor-pointer group"
                             title="Click to remove Year filter"
                         >
                             <span>
-                                {
-                                    yearOptions.find((opt) => opt.value === search.filters.year)
-                                        ?.label
-                                }
+                                {yearOptions.find((opt) => opt.value === filters.year)?.label}
                             </span>
                             <XMarkIcon className="ml-1 w-3 h-3 group-hover:text-gray-200" />
                         </button>
                     )}
-                    {search.filters.sortBy !== 'popularity.desc' && (
+                    {filters.sortBy !== 'popularity.desc' && (
                         <button
                             onClick={() => removeFilter('sortBy')}
                             className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-600 hover:bg-orange-700 text-white transition-colors cursor-pointer group"
                             title="Click to remove Sort filter"
                         >
                             <span>
-                                {
-                                    sortOptions.find((opt) => opt.value === search.filters.sortBy)
-                                        ?.label
-                                }
+                                {sortOptions.find((opt) => opt.value === filters.sortBy)?.label}
                             </span>
                             <XMarkIcon className="ml-1 w-3 h-3 group-hover:text-gray-200" />
                         </button>

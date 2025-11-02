@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { XMarkIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
-import { useAppStore } from '../stores/appStore'
-import type { SearchFilters } from '../stores/appStore'
+import { useSearchStore } from '../stores/searchStore'
+import type { SearchFilters } from '../stores/searchStore'
 
 interface SearchFiltersDropdownProps {
     isOpen: boolean
@@ -9,8 +9,8 @@ interface SearchFiltersDropdownProps {
 }
 
 export default function SearchFiltersDropdown({ isOpen, onClose }: SearchFiltersDropdownProps) {
-    const searchFilters = useAppStore((state) => state.search.filters)
-    const setSearch = useAppStore((state) => state.setSearch)
+    const searchFilters = useSearchStore((state) => state.filters)
+    const setSearch = useSearchStore((state) => state.setSearch)
     const [localFilters, setLocalFilters] = useState<SearchFilters>(searchFilters)
     const dropdownRef = useRef<HTMLDivElement>(null)
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/router'
-import { useAppStore } from '../stores/appStore'
-import type { SearchFilters } from '../stores/appStore'
+import { useSearchStore } from '../stores/searchStore'
+import type { SearchFilters } from '../stores/searchStore'
 import { getTitle, Content, getYear, isMovie } from '../typings'
 import { useChildSafety } from './useChildSafety'
 import { guestLog, guestError } from '../utils/debugLogger'
@@ -101,12 +101,27 @@ async function applyFilters(results: Content[], filters: SearchFilters): Promise
 
 export function useSearch() {
     const router = useRouter()
-    const search = useAppStore((state) => state.search)
-    const setSearch = useAppStore((state) => state.setSearch)
-    const addToSearchHistory = useAppStore((state) => state.addToSearchHistory)
-    const searchHistory = useAppStore((state) => state.search.history)
+    // Use granular selectors to prevent unnecessary re-renders
+    const query = useSearchStore((state) => state.query)
+    const results = useSearchStore((state) => state.results)
+    const filteredResults = useSearchStore((state) => state.filteredResults)
+    const isLoading = useSearchStore((state) => state.isLoading)
+    const error = useSearchStore((state) => state.error)
+    const hasSearched = useSearchStore((state) => state.hasSearched)
+    const totalResults = useSearchStore((state) => state.totalResults)
+    const currentPage = useSearchStore((state) => state.currentPage)
+    const hasAllResults = useSearchStore((state) => state.hasAllResults)
+    const isLoadingAll = useSearchStore((state) => state.isLoadingAll)
+    const isTruncated = useSearchStore((state) => state.isTruncated)
+    const filters = useSearchStore((state) => state.filters)
+    const searchHistory = useSearchStore((state) => state.history)
+
+    // Get actions separately
+    const setSearch = useSearchStore((state) => state.setSearch)
+    const addToSearchHistory = useSearchStore((state) => state.addToSearchHistory)
+
     const { isEnabled: childSafetyEnabled } = useChildSafety()
-    const debouncedQuery = useDebounce(search.query, 200)
+    const debouncedQuery = useDebounce(query, 200)
     const abortControllerRef = useRef<AbortController | undefined>(undefined)
     const lastQueryRef = useRef<string>('')
 
@@ -137,7 +152,7 @@ export function useSearch() {
     // Load first N pages for quick search filtering (lighter than loading all)
     const loadQuickSearchResults = useCallback(
         async (maxPages: number = 5) => {
-            if (search.isLoadingAll || !search.hasSearched || !search.query.trim()) {
+            if (isLoadingAll || !hasSearched || !query.trim()) {
                 return
             }
 
@@ -152,13 +167,13 @@ export function useSearch() {
             abortControllerRef.current = currentController
 
             try {
-                const allResults = [...search.results]
-                let currentPage = search.currentPage + 1
+                const allResults = [...results]
+                let currentPageNum = currentPage + 1
                 let wasTruncated = false
 
                 // CRITICAL FIX: Use Math.ceil to handle fractional page counts
                 // Example: 25 results / 20 = 1.25 → ceil(1.25) = 2 pages needed
-                const calculatedPages = Math.max(1, Math.ceil(search.totalResults / 20))
+                const calculatedPages = Math.max(1, Math.ceil(totalResults / 20))
                 const targetPages = Math.min(maxPages, calculatedPages)
 
                 // TMDB hard limit: 500 pages maximum (10,000 results)
@@ -166,15 +181,15 @@ export function useSearch() {
                 const safeTargetPages = Math.min(targetPages, TMDB_MAX_PAGE)
 
                 guestLog('[QuickSearch] Loading additional pages:', {
-                    totalResults: search.totalResults,
+                    totalResults,
                     calculatedPages,
                     targetPages: safeTargetPages,
-                    startPage: currentPage,
+                    startPage: currentPageNum,
                 })
 
                 // Load up to maxPages (default 5 pages = 100 results)
-                while (currentPage <= safeTargetPages && currentPage <= maxPages) {
-                    const url = `/api/search?query=${encodeURIComponent(search.query.trim())}&page=${currentPage}&childSafetyMode=${childSafetyEnabled}`
+                while (currentPageNum <= safeTargetPages && currentPageNum <= maxPages) {
+                    const url = `/api/search?query=${encodeURIComponent(query.trim())}&page=${currentPageNum}&childSafetyMode=${childSafetyEnabled}`
                     const response = await fetch(url, {
                         signal: currentController.signal,
                     })
@@ -182,7 +197,7 @@ export function useSearch() {
                     if (!response.ok) {
                         guestError(
                             '[QuickSearch] API error at page',
-                            currentPage,
+                            currentPageNum,
                             response.statusText
                         )
                         wasTruncated = true
@@ -193,25 +208,25 @@ export function useSearch() {
 
                     // Short-circuit if API returns no results or fewer than expected
                     if (!data.results || data.results.length === 0) {
-                        guestLog('[QuickSearch] No more results at page', currentPage)
+                        guestLog('[QuickSearch] No more results at page', currentPageNum)
                         break
                     }
 
                     allResults.push(...data.results)
-                    currentPage++
+                    currentPageNum++
 
                     // Short-circuit if we got fewer than 20 results (last page)
                     if (data.results.length < 20) {
                         guestLog(
                             '[QuickSearch] Received partial page, stopping at page',
-                            currentPage - 1
+                            currentPageNum - 1
                         )
                         break
                     }
                 }
 
                 // Check if we stopped early due to maxPages limit
-                if (currentPage > maxPages && allResults.length < search.totalResults) {
+                if (currentPageNum > maxPages && allResults.length < totalResults) {
                     wasTruncated = true
                     guestLog('[QuickSearch] Truncated: Reached maxPages limit')
                 }
@@ -220,21 +235,21 @@ export function useSearch() {
                     '[QuickSearch] Loaded',
                     allResults.length,
                     'total results across',
-                    currentPage - search.currentPage - 1,
+                    currentPageNum - currentPage - 1,
                     'additional pages',
                     wasTruncated ? '(TRUNCATED)' : ''
                 )
 
-                const filtered = await applyFilters(allResults, search.filters)
+                const filtered = await applyFilters(allResults, filters)
 
                 setSearch((prev) => ({
                     ...prev,
                     results: allResults,
                     filteredResults: filtered,
                     isLoadingAll: false,
-                    hasAllResults: allResults.length >= search.totalResults,
+                    hasAllResults: allResults.length >= totalResults,
                     isTruncated: wasTruncated,
-                    currentPage: currentPage - 1,
+                    currentPage: currentPageNum - 1,
                 }))
             } catch (error) {
                 if ((error as { name?: string }).name !== 'AbortError') {
@@ -255,12 +270,13 @@ export function useSearch() {
             }
         },
         [
-            search.isLoadingAll,
-            search.hasSearched,
-            search.query,
-            search.results,
-            search.currentPage,
-            search.totalResults,
+            isLoadingAll,
+            hasSearched,
+            query,
+            results,
+            currentPage,
+            totalResults,
+            filters,
             setSearch,
             childSafetyEnabled,
         ]
@@ -268,12 +284,7 @@ export function useSearch() {
 
     // Load all remaining results (for /search page)
     const loadAllResults = useCallback(async () => {
-        if (
-            search.hasAllResults ||
-            search.isLoadingAll ||
-            !search.hasSearched ||
-            !search.query.trim()
-        ) {
+        if (hasAllResults || isLoadingAll || !hasSearched || !query.trim()) {
             return
         }
 
@@ -288,32 +299,32 @@ export function useSearch() {
         abortControllerRef.current = currentController
 
         try {
-            const allResults = [...search.results]
-            let currentPage = search.currentPage + 1
+            const allResults = [...results]
+            let currentPageNum = currentPage + 1
             let wasTruncated = false
 
             // TMDB hard limit: 500 pages maximum (10,000 results)
             const TMDB_MAX_PAGE = 500
-            const calculatedPages = Math.max(1, Math.ceil(search.totalResults / 20))
+            const calculatedPages = Math.max(1, Math.ceil(totalResults / 20))
             const maxAllowedPage = Math.min(calculatedPages, TMDB_MAX_PAGE)
 
             guestLog('[LoadAll] Loading all remaining pages:', {
-                totalResults: search.totalResults,
+                totalResults,
                 calculatedPages,
                 maxAllowedPage,
                 currentResultsCount: allResults.length,
-                startPage: currentPage,
+                startPage: currentPageNum,
             })
 
             // Load all remaining pages with safety limits
-            while (allResults.length < search.totalResults && currentPage <= maxAllowedPage) {
-                const url = `/api/search?query=${encodeURIComponent(search.query.trim())}&page=${currentPage}&childSafetyMode=${childSafetyEnabled}`
+            while (allResults.length < totalResults && currentPageNum <= maxAllowedPage) {
+                const url = `/api/search?query=${encodeURIComponent(query.trim())}&page=${currentPageNum}&childSafetyMode=${childSafetyEnabled}`
                 const response = await fetch(url, {
                     signal: currentController.signal,
                 })
 
                 if (!response.ok) {
-                    guestError('[LoadAll] API error at page', currentPage, response.statusText)
+                    guestError('[LoadAll] API error at page', currentPageNum, response.statusText)
                     wasTruncated = true
                     break
                 }
@@ -322,22 +333,25 @@ export function useSearch() {
 
                 // Short-circuit if API returns no results
                 if (!data.results || data.results.length === 0) {
-                    guestLog('[LoadAll] No more results at page', currentPage)
+                    guestLog('[LoadAll] No more results at page', currentPageNum)
                     break
                 }
 
                 allResults.push(...data.results)
-                currentPage++
+                currentPageNum++
 
                 // Short-circuit if we got fewer than 20 results (last page)
                 if (data.results.length < 20) {
-                    guestLog('[LoadAll] Received partial page, stopping at page', currentPage - 1)
+                    guestLog(
+                        '[LoadAll] Received partial page, stopping at page',
+                        currentPageNum - 1
+                    )
                     break
                 }
             }
 
             // Check if we hit the TMDB page limit
-            if (currentPage > TMDB_MAX_PAGE && allResults.length < search.totalResults) {
+            if (currentPageNum > TMDB_MAX_PAGE && allResults.length < totalResults) {
                 wasTruncated = true
                 guestLog('[LoadAll] Truncated: Hit TMDB 500-page limit')
             }
@@ -346,21 +360,21 @@ export function useSearch() {
                 '[LoadAll] Loaded',
                 allResults.length,
                 'total results across',
-                currentPage - search.currentPage - 1,
+                currentPageNum - currentPage - 1,
                 'pages',
                 wasTruncated ? '(TRUNCATED)' : ''
             )
 
-            const filtered = await applyFilters(allResults, search.filters)
+            const filtered = await applyFilters(allResults, filters)
 
             setSearch((prev) => ({
                 ...prev,
                 results: allResults,
                 filteredResults: filtered,
-                hasAllResults: allResults.length >= search.totalResults,
+                hasAllResults: allResults.length >= totalResults,
                 isTruncated: wasTruncated,
                 isLoadingAll: false,
-                currentPage: currentPage - 1,
+                currentPage: currentPageNum - 1,
             }))
         } catch (error) {
             if ((error as { name?: string }).name !== 'AbortError') {
@@ -380,13 +394,14 @@ export function useSearch() {
             }
         }
     }, [
-        search.hasAllResults,
-        search.isLoadingAll,
-        search.hasSearched,
-        search.query,
-        search.results,
-        search.currentPage,
-        search.totalResults,
+        hasAllResults,
+        isLoadingAll,
+        hasSearched,
+        query,
+        results,
+        currentPage,
+        totalResults,
+        filters,
         setSearch,
         childSafetyEnabled,
     ])
@@ -481,18 +496,18 @@ export function useSearch() {
 
         if (trimmedQuery.length >= 2) {
             performSearchRef.current(trimmedQuery, 1)
-        } else if (trimmedQuery.length === 0 && search.hasSearched) {
+        } else if (trimmedQuery.length === 0 && hasSearched) {
             clearResults()
         }
-    }, [debouncedQuery, clearResults, search.hasSearched])
+    }, [debouncedQuery, clearResults, hasSearched])
 
     // Effect to re-fetch search results when Child Safety Mode is toggled
     useEffect(() => {
         // Only refetch if we have an active search
-        if (search.hasSearched && search.query.trim().length >= 2) {
-            performSearchRef.current(search.query, 1)
+        if (hasSearched && query.trim().length >= 2) {
+            performSearchRef.current(query, 1)
         }
-    }, [childSafetyEnabled, search.hasSearched, search.query])
+    }, [childSafetyEnabled, hasSearched, query])
 
     // Store performSearch in a ref to avoid dependency issues
     const performSearchRef = useRef(performSearch)
@@ -501,9 +516,9 @@ export function useSearch() {
     // Update filteredResults when filters change
     useEffect(() => {
         const updateFilteredResults = async () => {
-            if (search.results.length === 0) return
+            if (results.length === 0) return
 
-            const filtered = await applyFilters(search.results, search.filters)
+            const filtered = await applyFilters(results, filters)
 
             setSearch((prev) => {
                 // Only update if results have actually changed
@@ -518,7 +533,7 @@ export function useSearch() {
         }
 
         updateFilteredResults()
-    }, [search.results, search.filters, setSearch])
+    }, [results, filters, setSearch])
     // Note: setSearch is stable from Zustand, safe to include
 
     // Auto-load all results when filters are applied (only on search page)
@@ -535,16 +550,16 @@ export function useSearch() {
         const isOnSearchPage = router.pathname === '/search'
 
         // Create a unique key for current filter state
-        const filterStateKey = JSON.stringify(search.filters)
+        const filterStateKey = JSON.stringify(filters)
 
         // Only trigger if filters actually changed (not just state updates)
         if (
             isOnSearchPage &&
-            hasActiveFilters(search.filters) &&
-            search.hasSearched &&
-            search.results.length > 0 &&
-            !search.hasAllResults &&
-            !search.isLoadingAll &&
+            hasActiveFilters(filters) &&
+            hasSearched &&
+            results.length > 0 &&
+            !hasAllResults &&
+            !isLoadingAll &&
             filterStateKey !== lastFilterStateRef.current
         ) {
             lastFilterStateRef.current = filterStateKey
@@ -552,26 +567,35 @@ export function useSearch() {
         }
 
         // Reset ref when filters are cleared
-        if (!hasActiveFilters(search.filters)) {
+        if (!hasActiveFilters(filters)) {
             lastFilterStateRef.current = ''
         }
-    }, [router.pathname, search.filters, hasActiveFilters, loadAllResults])
+    }, [
+        router.pathname,
+        filters,
+        hasSearched,
+        results.length,
+        hasAllResults,
+        isLoadingAll,
+        hasActiveFilters,
+        loadAllResults,
+    ])
 
     // Auto-load first 100 results for quick search when filters are applied (NOT on search page)
     const lastQuickSearchFilterStateRef = useRef<string>('')
 
     useEffect(() => {
         const isOnSearchPage = router.pathname === '/search'
-        const filterStateKey = JSON.stringify(search.filters)
+        const filterStateKey = JSON.stringify(filters)
 
         // Only auto-load for quick search (NOT on /search page) when filters are applied
         if (
             !isOnSearchPage &&
-            hasActiveFilters(search.filters) &&
-            search.hasSearched &&
-            search.results.length > 0 &&
-            search.results.length < 100 && // Only load if we have less than 100 results
-            !search.isLoadingAll &&
+            hasActiveFilters(filters) &&
+            hasSearched &&
+            results.length > 0 &&
+            results.length < 100 && // Only load if we have less than 100 results
+            !isLoadingAll &&
             filterStateKey !== lastQuickSearchFilterStateRef.current
         ) {
             lastQuickSearchFilterStateRef.current = filterStateKey
@@ -579,10 +603,18 @@ export function useSearch() {
         }
 
         // Reset ref when filters are cleared
-        if (!hasActiveFilters(search.filters)) {
+        if (!hasActiveFilters(filters)) {
             lastQuickSearchFilterStateRef.current = ''
         }
-    }, [router.pathname, search.filters, hasActiveFilters, loadQuickSearchResults])
+    }, [
+        router.pathname,
+        filters,
+        hasSearched,
+        results.length,
+        isLoadingAll,
+        hasActiveFilters,
+        loadQuickSearchResults,
+    ])
 
     // Update search query
     const updateQuery = useCallback(
@@ -594,10 +626,10 @@ export function useSearch() {
 
     // Load more results (pagination)
     const loadMore = useCallback(() => {
-        if (!search.isLoading && search.hasSearched && search.query.trim()) {
-            performSearch(search.query, search.currentPage + 1)
+        if (!isLoading && hasSearched && query.trim()) {
+            performSearch(query, currentPage + 1)
         }
-    }, [search.isLoading, search.hasSearched, search.query, search.currentPage, performSearch])
+    }, [isLoading, hasSearched, query, currentPage, performSearch])
 
     // Clear search
     const clearSearch = useCallback(() => {
@@ -633,40 +665,40 @@ export function useSearch() {
 
     // Get search suggestions based on current search results
     const getSuggestions = useCallback(
-        (query: string) => {
-            if (!query.trim() || !search.filteredResults.length) return []
+        (queryStr: string) => {
+            if (!queryStr.trim() || !filteredResults.length) return []
 
-            const queryLower = query.toLowerCase()
-            return search.filteredResults
+            const queryLower = queryStr.toLowerCase()
+            return filteredResults
                 .map((result) => getTitle(result))
                 .filter(
                     (title) =>
                         title &&
                         title.toLowerCase().includes(queryLower) &&
-                        title.toLowerCase() !== query.toLowerCase()
+                        title.toLowerCase() !== queryStr.toLowerCase()
                 )
                 .slice(0, 5)
         },
-        [search.filteredResults]
+        [filteredResults]
     )
 
     return {
         // State
-        query: search.query,
-        results: search.filteredResults,
-        allResults: search.results,
-        suggestions: getSuggestions(search.query),
-        isLoading: search.isLoading,
-        error: search.error,
-        hasSearched: search.hasSearched,
-        totalResults: search.totalResults,
-        filteredTotalResults: search.filteredResults.length,
-        currentPage: search.currentPage,
+        query,
+        results: filteredResults,
+        allResults: results,
+        suggestions: getSuggestions(query),
+        isLoading,
+        error,
+        hasSearched,
+        totalResults,
+        filteredTotalResults: filteredResults.length,
+        currentPage,
         searchHistory,
-        filters: search.filters,
-        hasAllResults: search.hasAllResults,
-        isLoadingAll: search.isLoadingAll,
-        isTruncated: search.isTruncated,
+        filters,
+        hasAllResults,
+        isLoadingAll,
+        isTruncated,
 
         // Actions
         updateQuery,
@@ -678,11 +710,7 @@ export function useSearch() {
         loadAllResults, // Exported for testing
 
         // Computed
-        hasMore: !hasActiveFilters(search.filters) && search.results.length < search.totalResults,
-        isEmpty:
-            search.hasSearched &&
-            search.filteredResults.length === 0 &&
-            !search.isLoading &&
-            !search.isLoadingAll,
+        hasMore: !hasActiveFilters(filters) && results.length < totalResults,
+        isEmpty: hasSearched && filteredResults.length === 0 && !isLoading && !isLoadingAll,
     }
 }
