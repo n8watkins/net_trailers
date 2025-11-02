@@ -158,11 +158,16 @@ describe('useUserData - Preference Hydration', () => {
 
     it('should expose real preferences from guest store after hydration', async () => {
         // Mock guest session with custom preferences
-        ;(useSessionStore as unknown as jest.Mock).mockReturnValue({
+        const sessionState = {
             sessionType: 'guest',
             activeSessionId: 'guest-123',
             isInitializing: false,
-        })
+            isInitialized: true,
+            isTransitioning: false,
+        }
+        ;(useSessionStore as unknown as jest.Mock).mockImplementation((selector: any) =>
+            selector ? selector(sessionState) : sessionState
+        )
 
         // Mock auth store (not used for guest, but needs to be defined)
         ;(useAuthStore as unknown as jest.Mock).mockReturnValue({
@@ -193,7 +198,7 @@ describe('useUserData - Preference Hydration', () => {
             clearLocalCache: jest.fn(),
             syncFromFirestore: jest.fn(),
         })
-        ;(useGuestStore as unknown as jest.Mock).mockReturnValue({
+        const guestState = {
             guestId: 'guest-123',
             likedMovies: [],
             hiddenMovies: [],
@@ -221,7 +226,10 @@ describe('useUserData - Preference Hydration', () => {
             clearAllData: jest.fn(),
             loadData: jest.fn(),
             syncFromLocalStorage: jest.fn(),
-        })
+        }
+        ;(useGuestStore as unknown as jest.Mock).mockImplementation((selector: any) =>
+            selector ? selector(guestState) : guestState
+        )
 
         const { result } = renderHook(() => useUserData())
 
@@ -235,12 +243,17 @@ describe('useUserData - Preference Hydration', () => {
 
     it('should expose real preferences from auth store after hydration', async () => {
         // Mock authenticated session with custom preferences
-        ;(useSessionStore as unknown as jest.Mock).mockReturnValue({
+        const sessionState = {
             sessionType: 'authenticated',
             activeSessionId: 'user-123',
             isInitializing: false,
-        })
-        ;(useAuthStore as unknown as jest.Mock).mockReturnValue({
+            isInitialized: true,
+            isTransitioning: false,
+        }
+        ;(useSessionStore as unknown as jest.Mock).mockImplementation((selector: any) =>
+            selector ? selector(sessionState) : sessionState
+        )
+        const authState = {
             userId: 'user-123',
             likedMovies: [],
             hiddenMovies: [],
@@ -267,7 +280,10 @@ describe('useUserData - Preference Hydration', () => {
             updatePreferences: jest.fn(),
             clearLocalCache: jest.fn(),
             syncFromFirestore: jest.fn(),
-        })
+        }
+        ;(useAuthStore as unknown as jest.Mock).mockImplementation((selector: any) =>
+            selector ? selector(authState) : authState
+        )
 
         const { result } = renderHook(() => useUserData())
 
@@ -285,8 +301,12 @@ describe('useUserData - Preference Hydration', () => {
             sessionType: 'initializing' as const,
             activeSessionId: '',
             isInitializing: true,
+            isInitialized: false,
+            isTransitioning: false,
         }
-        ;(useSessionStore as unknown as jest.Mock).mockReturnValue(sessionStoreMock)
+        ;(useSessionStore as unknown as jest.Mock).mockImplementation((selector: any) =>
+            selector ? selector(sessionStoreMock) : sessionStoreMock
+        )
 
         const { result, rerender } = renderHook(() => useUserData())
 
@@ -299,7 +319,9 @@ describe('useUserData - Preference Hydration', () => {
         sessionStoreMock.sessionType = 'guest'
         sessionStoreMock.activeSessionId = 'guest-123'
         sessionStoreMock.isInitializing = false
-        ;(useGuestStore as unknown as jest.Mock).mockReturnValue({
+        sessionStoreMock.isInitialized = true
+
+        const guestStateUpdated = {
             guestId: 'guest-123',
             likedMovies: [],
             hiddenMovies: [],
@@ -327,7 +349,10 @@ describe('useUserData - Preference Hydration', () => {
             clearAllData: jest.fn(),
             loadData: jest.fn(),
             syncFromLocalStorage: jest.fn(),
-        })
+        }
+        ;(useGuestStore as unknown as jest.Mock).mockImplementation((selector: any) =>
+            selector ? selector(guestStateUpdated) : guestStateUpdated
+        )
 
         rerender()
 

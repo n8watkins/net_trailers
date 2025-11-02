@@ -166,15 +166,5 @@ describe('ErrorHandler', () => {
         })
     })
 
-    describe('dismissError and clearAllErrors', () => {
-        it('dismissError should do nothing (handled by toast system)', () => {
-            errorHandler.dismissError('test-id')
-            expect(mockShowError).not.toHaveBeenCalled()
-        })
-
-        it('clearAllErrors should do nothing (handled by toast system)', () => {
-            errorHandler.clearAllErrors()
-            expect(mockShowError).not.toHaveBeenCalled()
-        })
-    })
+    // dismissError and clearAllErrors methods removed - error dismissal now handled by toast system
 })

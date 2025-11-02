@@ -12,6 +12,7 @@ import {
     filterMatureTVShows,
     ContentRating,
 } from '../../utils/tvContentRatings'
+import { certificationCache } from '../../utils/certificationCache'
 
 // Mock global fetch
 global.fetch = jest.fn()
@@ -21,21 +22,21 @@ describe('tvContentRatings - MATURE_TV_RATINGS Set', () => {
         expect(MATURE_TV_RATINGS.has('TV-MA')).toBe(true)
     })
 
-    it('should include TV-14 in mature ratings', () => {
-        expect(MATURE_TV_RATINGS.has('TV-14')).toBe(true)
-    })
-
     it('should include R in mature ratings', () => {
         expect(MATURE_TV_RATINGS.has('R')).toBe(true)
     })
 
-    it('should include regional mature ratings (18, 18+, M, MA15+, 16, 15)', () => {
+    it('should include regional mature ratings (18, 18+, M, MA15+)', () => {
         expect(MATURE_TV_RATINGS.has('18')).toBe(true)
         expect(MATURE_TV_RATINGS.has('18+')).toBe(true)
         expect(MATURE_TV_RATINGS.has('M')).toBe(true)
         expect(MATURE_TV_RATINGS.has('MA15+')).toBe(true)
-        expect(MATURE_TV_RATINGS.has('16')).toBe(true)
-        expect(MATURE_TV_RATINGS.has('15')).toBe(true)
+    })
+
+    it('should NOT include teen ratings (TV-14, 15, 16) - these are allowed', () => {
+        expect(MATURE_TV_RATINGS.has('TV-14')).toBe(false)
+        expect(MATURE_TV_RATINGS.has('15')).toBe(false)
+        expect(MATURE_TV_RATINGS.has('16')).toBe(false)
     })
 
     it('should NOT include child-safe ratings (TV-G, TV-PG, TV-Y)', () => {
@@ -47,16 +48,16 @@ describe('tvContentRatings - MATURE_TV_RATINGS Set', () => {
 })
 
 describe('tvContentRatings - hasMatureRating()', () => {
-    it('should return false for empty ratings array', () => {
-        expect(hasMatureRating([])).toBe(false)
+    it('should return true for empty ratings array (fail closed security)', () => {
+        expect(hasMatureRating([])).toBe(true)
     })
 
-    it('should return false for null ratings', () => {
-        expect(hasMatureRating(null as any)).toBe(false)
+    it('should return true for null ratings (fail closed security)', () => {
+        expect(hasMatureRating(null as any)).toBe(true)
     })
 
-    it('should return false for undefined ratings', () => {
-        expect(hasMatureRating(undefined as any)).toBe(false)
+    it('should return true for undefined ratings (fail closed security)', () => {
+        expect(hasMatureRating(undefined as any)).toBe(true)
     })
 
     it('should return true for TV-MA rating (US)', () => {
@@ -64,9 +65,9 @@ describe('tvContentRatings - hasMatureRating()', () => {
         expect(hasMatureRating(ratings)).toBe(true)
     })
 
-    it('should return true for TV-14 rating (US)', () => {
+    it('should return false for TV-14 rating (US) - teen content allowed', () => {
         const ratings: ContentRating[] = [{ iso_3166_1: 'US', rating: 'TV-14' }]
-        expect(hasMatureRating(ratings)).toBe(true)
+        expect(hasMatureRating(ratings)).toBe(false)
     })
 
     it('should return false for TV-PG rating (US)', () => {
@@ -118,6 +119,7 @@ describe('tvContentRatings - fetchTVContentRatings()', () => {
 
     beforeEach(() => {
         jest.clearAllMocks()
+        certificationCache.clear()
     })
 
     it('should fetch content ratings from TMDB API', async () => {
@@ -178,6 +180,7 @@ describe('tvContentRatings - filterMatureTVShows()', () => {
 
     beforeEach(() => {
         jest.clearAllMocks()
+        certificationCache.clear()
     })
 
     it('should return empty array if input is empty', async () => {
@@ -190,7 +193,7 @@ describe('tvContentRatings - filterMatureTVShows()', () => {
         expect(result).toEqual([])
     })
 
-    it('should filter out TV shows with TV-MA rating', async () => {
+    it('should filter out TV shows with TV-MA rating but keep TV-14', async () => {
         const tvShows = [
             { id: 1, name: 'Breaking Bad', media_type: 'tv' },
             { id: 2, name: 'Stranger Things', media_type: 'tv' },
@@ -213,8 +216,8 @@ describe('tvContentRatings - filterMatureTVShows()', () => {
 
         const result = await filterMatureTVShows(tvShows, mockApiKey)
 
-        // Both shows should be filtered (TV-MA and TV-14 are both in MATURE_TV_RATINGS)
-        expect(result).toEqual([])
+        // Only TV-MA show should be filtered, TV-14 is allowed
+        expect(result).toEqual([{ id: 2, name: 'Stranger Things', media_type: 'tv' }])
     })
 
     it('should keep TV shows with child-safe ratings', async () => {
@@ -242,7 +245,7 @@ describe('tvContentRatings - filterMatureTVShows()', () => {
         expect(result).toEqual(tvShows)
     })
 
-    it('should keep shows when ratings cannot be fetched (fail open)', async () => {
+    it('should filter shows when ratings cannot be fetched (fail closed security)', async () => {
         const tvShows = [{ id: 1, name: 'Unknown Show', media_type: 'tv' }]
 
         ;(global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -252,7 +255,8 @@ describe('tvContentRatings - filterMatureTVShows()', () => {
 
         const result = await filterMatureTVShows(tvShows, mockApiKey)
 
-        expect(result).toEqual(tvShows)
+        // SECURITY: fail closed - if we can't verify it's safe, exclude it
+        expect(result).toEqual([])
     })
 
     it('should handle mixed ratings - filter mature, keep safe', async () => {
@@ -319,8 +323,8 @@ describe('tvContentRatings - filterMatureTVShows()', () => {
 
         const result = await filterMatureTVShows(tvShows, mockApiKey)
 
-        // Should keep show with no ratings (fail open)
-        expect(result).toEqual(tvShows)
+        // SECURITY: fail closed - no ratings means we can't verify it's safe, so exclude it
+        expect(result).toEqual([])
     })
 })
 
@@ -376,10 +380,12 @@ describe('tvContentRatings - Integration Tests', () => {
 
         const result = await filterMatureTVShows(tvShows, mockApiKey)
 
-        // Should only keep The Flash (TV-PG)
-        // Breaking Bad, Rick and Morty, Game of Thrones, and Friends (TV-14) should be filtered
-        expect(result.length).toBe(1)
-        expect(result[0].name).toBe('The Flash')
+        // Should keep: Rick and Morty (TV-14), The Flash (TV-PG), Friends (TV-14)
+        // Should filter: Breaking Bad (TV-MA), Game of Thrones (TV-MA)
+        // TV-14 is now allowed (not considered mature)
+        expect(result.length).toBe(3)
+        const names = result.map((s) => s.name).sort()
+        expect(names).toEqual(['Friends', 'Rick and Morty', 'The Flash'])
     })
 
     it('should handle API failures gracefully in real scenario', async () => {
@@ -409,10 +415,9 @@ describe('tvContentRatings - Integration Tests', () => {
 
         const result = await filterMatureTVShows(tvShows, mockApiKey)
 
-        // Should keep shows 1 and 2 (safe + failed API)
-        // Should filter show 3 (TV-MA)
-        expect(result.length).toBe(2)
+        // SECURITY: fail closed - keep only show 1 (TV-G safe rating)
+        // Filter show 2 (broken API - can't verify safety) and show 3 (TV-MA)
+        expect(result.length).toBe(1)
         expect(result[0].name).toBe('Show with working API')
-        expect(result[1].name).toBe('Show with broken API')
     })
 })
