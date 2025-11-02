@@ -39,13 +39,15 @@ const Liked: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboa
 
     // Apply search filter
     const filteredContent = searchQuery.trim()
-        ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          likedContent.filter((item: any) => {
-              if (!item.content) return false
-              const title = getTitle(item.content).toLowerCase()
-              const query = searchQuery.toLowerCase()
-              return title.includes(query)
-          })
+        ? likedContent.filter(
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (item: any) => {
+                  if (!item.content) return false
+                  const title = getTitle(item.content).toLowerCase()
+                  const query = searchQuery.toLowerCase()
+                  return title.includes(query)
+              }
+          )
         : likedContent
 
     const handleExportCSV = () => {
@@ -55,27 +57,33 @@ const Liked: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboa
     }
 
     // Separate content by media type
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const moviesContent = filteredContent.filter((item: any) => {
-        return item.content && isMovie(item.content)
-    })
+    const moviesContent = filteredContent.filter(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (item: any) => {
+            return item.content && isMovie(item.content)
+        }
+    )
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const tvShowsContent = filteredContent.filter((item: any) => {
-        return item.content && isTVShow(item.content)
-    })
+    const tvShowsContent = filteredContent.filter(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (item: any) => {
+            return item.content && isTVShow(item.content)
+        }
+    )
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const renderContentGrid = (items: any[], title: string) => (
         <div>
             <h3 className="text-2xl font-bold text-white mb-6">{title}</h3>
             <div className="flex flex-wrap gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 md:gap-x-8 md:gap-y-12">
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                {items.map((item: any) => (
-                    <div key={item.contentId} className="relative mb-12 sm:mb-16 md:mb-20">
-                        <ContentCard content={item.content} className="" />
-                    </div>
-                ))}
+                {items.map(
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (item: any) => (
+                        <div key={item.contentId} className="relative mb-12 sm:mb-16 md:mb-20">
+                            <ContentCard content={item.content} className="" />
+                        </div>
+                    )
+                )}
             </div>
         </div>
     )

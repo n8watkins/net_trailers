@@ -123,12 +123,14 @@ function Modal() {
 
     const userAutoMute =
         'autoMute' in (userSession?.preferences || {})
-            ? (userSession?.preferences as any).autoMute
+            ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (userSession?.preferences as any).autoMute
             : true
 
     const userDefaultVolume =
         'defaultVolume' in (userSession?.preferences || {})
-            ? (userSession?.preferences as any).defaultVolume
+            ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (userSession?.preferences as any).defaultVolume
             : 50
 
     const {
@@ -350,6 +352,7 @@ function Modal() {
 
                 // Mark this movie as loaded
                 setLoadedMovieId(currentMovie.id)
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } catch (error: any) {
                 console.error('Failed to fetch movie details:', error)
                 errorHandler.handleApiError(error, 'load movie details')

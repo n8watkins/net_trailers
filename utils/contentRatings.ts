@@ -141,6 +141,7 @@ export function getMovieCertification(movieData: any, country: string = 'US'): s
     }
 
     const countryData = movieData.release_dates.results.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (r: any) => r.iso_3166_1 === country.toUpperCase()
     )
 
@@ -167,6 +168,7 @@ export function getTVCertification(tvData: any, country: string = 'US'): string 
     }
 
     const countryData = tvData.content_ratings.results.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (r: any) => r.iso_3166_1 === country.toUpperCase()
     )
 

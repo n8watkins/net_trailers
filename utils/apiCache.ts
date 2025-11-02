@@ -124,6 +124,7 @@ export const mainPageCache = new ApiCache({ ttl: 60 * 60 * 1000, maxSize: 20 }) 
 export async function cachedFetch<T>(
     url: string,
     cache: ApiCache,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     params?: Record<string, any>,
     customTTL?: number
 ): Promise<T> {
