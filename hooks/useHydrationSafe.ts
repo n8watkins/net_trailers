@@ -113,6 +113,7 @@ export const useHydrationSafe = () => {
             }, delay)
             return () => clearTimeout(timeoutId)
         }
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
         return () => {}
     }
 

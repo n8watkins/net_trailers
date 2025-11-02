@@ -49,14 +49,20 @@ export const AuthContext = createContext<iAuth>({
     user: null,
     loading: false,
     wasRecentlyAuthenticated: false,
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     signUp: async () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     signIn: async () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     signInWithGoogle: async () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     logOut: async () => {},
     error: null,
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     resetPass: async () => {},
     passResetSuccess: false,
     attemptPassReset: false,
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     setAttemptPassReset: () => {},
 })
 
@@ -66,7 +72,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const [authInitialized, setAuthInitialized] = useState(false)
     const [passResetSuccess, setPassResetSuccess] = useState(false)
     const [error, setError] = useState<string | null>(null)
-    const router = useRouter()
     const [attemptPassReset, setAttemptPassReset] = useState(false)
     const setGlobalLoading = useAppStore((state) => state.setLoading)
     const { showSuccess, showError } = useToast()
@@ -189,8 +194,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         const provider = new GoogleAuthProvider()
         await signInWithPopup(auth, provider)
             .then((result) => {
-                const credential = GoogleAuthProvider.credentialFromResult(result)
-                const token = credential!.accessToken
                 const user = result.user
                 const displayName = user.displayName || user.email?.split('@')[0] || 'there'
                 showSuccess(`Welcome ${displayName}!`)
@@ -235,7 +238,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 setError(error.message)
                 setPassResetSuccess(false)
             })
-            .finally(() => {})
     }
 
     const memoedValue = useMemo(

@@ -63,28 +63,51 @@ const defaultState: AppStore = {
     contentLoadedSuccessfully: false,
 
     // Actions - return no-op functions during SSR
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     openModal: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     closeModal: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     setAutoPlay: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     setAutoPlayWithSound: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     openListModal: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     closeListModal: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     setListModalMode: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     showToast: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     dismissToast: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     setLoading: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     setSearch: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     setSearchQuery: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     setSearchResults: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     setSearchLoading: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     setSearchFilters: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     addToSearchHistory: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     clearSearchHistory: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     setAuthMode: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     setShowDemoMessage: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     setContentLoadedSuccessfully: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     openAuthModal: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     closeAuthModal: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     setAuthModalMode: () => {},
 }
 
