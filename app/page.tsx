@@ -1,18 +1,18 @@
 'use client'
 
-import Header from './components/layout/Header'
-import Banner from './components/layout/Banner'
-import Row from './components/content/Row'
-import useAuth from './hooks/useAuth'
-import NetflixLoader from './components/common/NetflixLoader'
-import NetflixError from './components/common/NetflixError'
+import Header from '../components/layout/Header'
+import Banner from '../components/layout/Banner'
+import Row from '../components/content/Row'
+import useAuth from '../hooks/useAuth'
+import NetflixLoader from '../components/common/NetflixLoader'
+import NetflixError from '../components/common/NetflixError'
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSearchParams } from 'next/navigation'
-import { useAppStore } from './stores/appStore'
-import { useCacheStore } from './stores/cacheStore'
-import { useHomeData } from './hooks/useHomeData'
-import { useChildSafety } from './hooks/useChildSafety'
+import { useAppStore } from '../stores/appStore'
+import { useCacheStore } from '../stores/cacheStore'
+import { useHomeData } from '../hooks/useHomeData'
+import { useChildSafety } from '../hooks/useChildSafety'
 
 export default function Home() {
     const { loading: authLoading, wasRecentlyAuthenticated } = useAuth()
