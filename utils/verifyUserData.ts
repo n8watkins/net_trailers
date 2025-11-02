@@ -1,24 +1,32 @@
 /**
  * Utility to verify user data is correctly isolated per user
+ * Note: This uses a legacy data format for debugging purposes
  */
 
-export function verifyUserData(userId: string | undefined, data: any) {
+export function verifyUserData(userId: string | undefined, data: unknown) {
+    // Type guard for legacy data format
+    const typedData = data as {
+        watchlist?: Array<{ id: number; title?: string; name?: string }>
+        ratings?: unknown[]
+        userLists?: { lists?: Array<{ id: string; name: string; items?: unknown[] }> }
+    }
+
     console.log('🔍 [Data Verification] Checking user data isolation:', {
         currentUserId: userId,
         dataCheck: {
-            hasWatchlist: !!data?.watchlist,
-            watchlistCount: data?.watchlist?.length || 0,
+            hasWatchlist: !!typedData?.watchlist,
+            watchlistCount: typedData?.watchlist?.length || 0,
             watchlistSample:
-                data?.watchlist?.slice(0, 3).map((w: any) => ({
+                typedData?.watchlist?.slice(0, 3).map((w) => ({
                     id: w.id,
                     title: w.title || w.name,
                 })) || [],
-            hasRatings: !!data?.ratings,
-            ratingsCount: data?.ratings?.length || 0,
-            hasLists: !!data?.userLists,
-            listsCount: data?.userLists?.lists?.length || 0,
+            hasRatings: !!typedData?.ratings,
+            ratingsCount: typedData?.ratings?.length || 0,
+            hasLists: !!typedData?.userLists,
+            listsCount: typedData?.userLists?.lists?.length || 0,
             customLists:
-                data?.userLists?.lists?.map((l: any) => ({
+                typedData?.userLists?.lists?.map((l) => ({
                     id: l.id,
                     name: l.name,
                     items: l.items?.length || 0,
@@ -32,15 +40,15 @@ export function verifyUserData(userId: string | undefined, data: any) {
         userId,
         isAuthenticated: !!userId,
         hasData: !!(
-            data?.watchlist?.length ||
-            data?.ratings?.length ||
-            data?.userLists?.lists?.length
+            typedData?.watchlist?.length ||
+            typedData?.ratings?.length ||
+            typedData?.userLists?.lists?.length
         ),
         summary: {
-            watchlist: data?.watchlist?.length || 0,
-            ratings: data?.ratings?.length || 0,
-            lists: data?.userLists?.lists?.length || 0,
-            totalItems: (data?.watchlist?.length || 0) + (data?.ratings?.length || 0),
+            watchlist: typedData?.watchlist?.length || 0,
+            ratings: typedData?.ratings?.length || 0,
+            lists: typedData?.userLists?.lists?.length || 0,
+            totalItems: (typedData?.watchlist?.length || 0) + (typedData?.ratings?.length || 0),
         },
     }
 }
@@ -48,12 +56,22 @@ export function verifyUserData(userId: string | undefined, data: any) {
 /**
  * Compare two users' data to ensure they're different
  */
-export function compareUserData(user1Data: any, user2Data: any) {
-    const user1Watchlist = new Set(user1Data?.watchlist?.map((w: any) => w.id) || [])
-    const user2Watchlist = new Set(user2Data?.watchlist?.map((w: any) => w.id) || [])
+export function compareUserData(user1Data: unknown, user2Data: unknown) {
+    // Type guard for legacy data format
+    const typed1 = user1Data as {
+        watchlist?: Array<{ id: number }>
+        userLists?: { lists?: Array<{ id: string }> }
+    }
+    const typed2 = user2Data as {
+        watchlist?: Array<{ id: number }>
+        userLists?: { lists?: Array<{ id: string }> }
+    }
 
-    const user1Lists = new Set(user1Data?.userLists?.lists?.map((l: any) => l.id) || [])
-    const user2Lists = new Set(user2Data?.userLists?.lists?.map((l: any) => l.id) || [])
+    const user1Watchlist = new Set(typed1?.watchlist?.map((w) => w.id) || [])
+    const user2Watchlist = new Set(typed2?.watchlist?.map((w) => w.id) || [])
+
+    const user1Lists = new Set(typed1?.userLists?.lists?.map((l) => l.id) || [])
+    const user2Lists = new Set(typed2?.userLists?.lists?.map((l) => l.id) || [])
 
     const sharedWatchlist = Array.from(user1Watchlist).filter((id) => user2Watchlist.has(id))
     const sharedLists = Array.from(user1Lists).filter((id) => user2Lists.has(id))

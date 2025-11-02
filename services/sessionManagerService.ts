@@ -420,7 +420,7 @@ export class SessionManagerService {
 
         const guestId = this.getStoredGuestId()
         if (guestId) {
-            localStorage.removeItem(this.getGuestStorageKey(guestId))
+            GuestStorageService.clearGuestData(guestId)
             localStorage.removeItem('nettrailer_guest_id')
         }
 

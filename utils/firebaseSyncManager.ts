@@ -6,15 +6,15 @@
 import { firebaseTracker } from './firebaseCallTracker'
 import { authLog } from './debugLogger'
 
-interface SyncOperation {
+interface SyncOperation<T = unknown> {
     userId: string
     timestamp: number
     status: 'pending' | 'completed' | 'failed'
-    promise?: Promise<any>
+    promise?: Promise<T>
 }
 
 class FirebaseSyncManager {
-    private activeSyncs = new Map<string, SyncOperation>()
+    private activeSyncs = new Map<string, SyncOperation<unknown>>()
     private completedSyncs = new Map<string, number>() // userId -> last completion time
     private readonly MIN_SYNC_INTERVAL = 5000 // 5 seconds minimum between syncs
     private readonly SYNC_TIMEOUT = 10000 // 10 second timeout for sync operations
@@ -64,7 +64,7 @@ class FirebaseSyncManager {
             if (activeSync?.promise) {
                 authLog(`♻️ [SyncManager] Reusing existing sync promise for ${userId}`)
                 firebaseTracker.track('syncReused', `SyncManager-${source}`, userId)
-                return activeSync.promise
+                return activeSync.promise as Promise<T>
             }
             return null
         }
@@ -73,7 +73,7 @@ class FirebaseSyncManager {
         authLog(`🔄 [SyncManager] Starting sync for ${userId} from ${source}`)
         firebaseTracker.track('syncStarted', `SyncManager-${source}`, userId)
 
-        const syncOp: SyncOperation = {
+        const syncOp: SyncOperation<T> = {
             userId,
             timestamp: Date.now(),
             status: 'pending',

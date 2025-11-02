@@ -10,7 +10,7 @@ interface CallInfo {
     source: string
     timestamp: number
     userId?: string
-    data?: any
+    data?: Record<string, unknown>
 }
 
 class FirebaseCallTracker {
@@ -20,7 +20,7 @@ class FirebaseCallTracker {
     private readonly WINDOW_SIZE = 60000 // 1 minute window
     private readonly WARNING_THRESHOLD = 10 // Warn if more than 10 calls in a minute
 
-    track(operation: string, source: string, userId?: string, data?: any) {
+    track(operation: string, source: string, userId?: string, data?: Record<string, unknown>) {
         const now = Date.now()
 
         // Clean up old calls outside the window

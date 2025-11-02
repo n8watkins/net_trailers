@@ -1,7 +1,7 @@
 import { useSessionData } from './useSessionData'
 import { authError } from '../utils/debugLogger'
 import { Content } from '../typings'
-import { UserList } from '../types/userLists'
+import { UserList, CreateListRequest } from '../types/userLists'
 
 /**
  * Creates a virtual default watchlist object
@@ -17,6 +17,38 @@ const createDefaultWatchlistVirtual = (items: Content[]): UserList => ({
     isPublic: false,
     createdAt: Date.now(),
     updatedAt: Date.now(),
+})
+
+/**
+ * Shared list management operations for both guest and authenticated sessions
+ * @param sessionData - The session data from useSessionData hook
+ * @returns Object containing common list management functions
+ */
+const createListManagementOps = (sessionData: ReturnType<typeof useSessionData>) => ({
+    createList: (request: CreateListRequest) => sessionData.createList(request),
+    updateList: (listId: string, updates: { name?: string; emoji?: string; color?: string }) => {
+        sessionData.updateList(listId, updates)
+    },
+    deleteList: (listId: string) => {
+        sessionData.deleteList(listId)
+    },
+    addToList: sessionData.addToList,
+    removeFromList: sessionData.removeFromList,
+    getList: (listId: string) =>
+        sessionData.userCreatedWatchlists.find((l) => l.id === listId) || null,
+    isContentInList: (listId: string, contentId: number) => {
+        const list = sessionData.userCreatedWatchlists.find((l) => l.id === listId)
+        return list ? list.items.some((item) => item.id === contentId) : false
+    },
+    getListsContaining: (contentId: number) => {
+        const watchlistVirtual = createDefaultWatchlistVirtual(sessionData.defaultWatchlist)
+        const allLists = [watchlistVirtual, ...sessionData.userCreatedWatchlists]
+        return allLists.filter((list) => list.items.some((item) => item.id === contentId))
+    },
+    getAllLists: () => {
+        const watchlistVirtual = createDefaultWatchlistVirtual(sessionData.defaultWatchlist)
+        return [watchlistVirtual, ...sessionData.userCreatedWatchlists]
+    },
 })
 
 /**
@@ -62,36 +94,8 @@ export default function useUserData() {
             isHidden: sessionData.isHidden,
             isInWatchlist: sessionData.isInWatchlist,
 
-            // List management (NEW SCHEMA)
-            createList: (request: any) => sessionData.createList(request),
-            updateList: (
-                listId: string,
-                updates: { name?: string; emoji?: string; color?: string }
-            ) => {
-                sessionData.updateList(listId, updates)
-            },
-            deleteList: (listId: string) => {
-                sessionData.deleteList(listId)
-            },
-            addToList: sessionData.addToList,
-            removeFromList: sessionData.removeFromList,
-            getList: (listId: string) =>
-                sessionData.userCreatedWatchlists.find((l) => l.id === listId) || null,
-            isContentInList: (listId: string, contentId: number) => {
-                const list = sessionData.userCreatedWatchlists.find((l) => l.id === listId)
-                return list ? list.items.some((item) => item.id === contentId) : false
-            },
-            getListsContaining: (contentId: number) => {
-                // Include default watchlist + custom lists
-                const watchlistVirtual = createDefaultWatchlistVirtual(sessionData.defaultWatchlist)
-                const allLists = [watchlistVirtual, ...sessionData.userCreatedWatchlists]
-                return allLists.filter((list) => list.items.some((item) => item.id === contentId))
-            },
-            getAllLists: () => {
-                // Create virtual default watchlist + custom lists
-                const watchlistVirtual = createDefaultWatchlistVirtual(sessionData.defaultWatchlist)
-                return [watchlistVirtual, ...sessionData.userCreatedWatchlists]
-            },
+            // List management (NEW SCHEMA) - using shared helper
+            ...createListManagementOps(sessionData),
 
             // Account management (guest has limited functionality)
             getAccountDataSummary: () => ({
@@ -170,36 +174,8 @@ export default function useUserData() {
             isHidden: sessionData.isHidden,
             isInWatchlist: sessionData.isInWatchlist,
 
-            // List management (NEW SCHEMA)
-            createList: (request: any) => sessionData.createList(request),
-            updateList: (
-                listId: string,
-                updates: { name?: string; emoji?: string; color?: string }
-            ) => {
-                sessionData.updateList(listId, updates)
-            },
-            deleteList: (listId: string) => {
-                sessionData.deleteList(listId)
-            },
-            addToList: sessionData.addToList,
-            removeFromList: sessionData.removeFromList,
-            getList: (listId: string) =>
-                sessionData.userCreatedWatchlists.find((l) => l.id === listId) || null,
-            isContentInList: (listId: string, contentId: number) => {
-                const list = sessionData.userCreatedWatchlists.find((l) => l.id === listId)
-                return list ? list.items.some((item) => item.id === contentId) : false
-            },
-            getListsContaining: (contentId: number) => {
-                // Include default watchlist + custom lists
-                const watchlistVirtual = createDefaultWatchlistVirtual(sessionData.defaultWatchlist)
-                const allLists = [watchlistVirtual, ...sessionData.userCreatedWatchlists]
-                return allLists.filter((list) => list.items.some((item) => item.id === contentId))
-            },
-            getAllLists: () => {
-                // Create virtual default watchlist + custom lists
-                const watchlistVirtual = createDefaultWatchlistVirtual(sessionData.defaultWatchlist)
-                return [watchlistVirtual, ...sessionData.userCreatedWatchlists]
-            },
+            // List management (NEW SCHEMA) - using shared helper
+            ...createListManagementOps(sessionData),
 
             // Account management (authenticated has full functionality)
             getAccountDataSummary: async () => ({
@@ -274,14 +250,14 @@ export default function useUserData() {
                 // Step 2: Delete Firebase Auth account
                 try {
                     await deleteUser(auth.currentUser)
-                } catch (authError: any) {
+                } catch (deleteError) {
                     // Handle re-authentication requirement
-                    if (authError.code === 'auth/requires-recent-login') {
+                    if ((deleteError as { code?: string }).code === 'auth/requires-recent-login') {
                         throw new Error(
                             'This operation requires recent authentication. Please sign out and sign in again before deleting your account.'
                         )
                     }
-                    throw authError
+                    throw deleteError
                 }
             },
 

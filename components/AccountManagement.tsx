@@ -65,7 +65,7 @@ export default function AccountManagement() {
                 setDataSummary(summary)
             } catch (error) {
                 console.error('Failed to load data summary:', error)
-                errorHandler.handleApiError(error as any, 'load account data')
+                errorHandler.handleApiError(error as Error, 'load account data')
                 // Set empty summary on error
                 setDataSummary({
                     watchlistCount: 0,
@@ -122,7 +122,7 @@ export default function AccountManagement() {
             }
         } catch (error) {
             console.error('Failed to clear account data:', error)
-            errorHandler.handleApiError(error as any, 'clear account data')
+            errorHandler.handleApiError(error as Error, 'clear account data')
         } finally {
             setIsLoading(false)
         }
@@ -155,7 +155,7 @@ export default function AccountManagement() {
             }
         } catch (error) {
             console.error('Failed to export account data:', error)
-            errorHandler.handleApiError(error as any, 'export account data')
+            errorHandler.handleApiError(error as Error, 'export account data')
         } finally {
             setIsLoading(false)
         }
@@ -182,7 +182,7 @@ export default function AccountManagement() {
             // Note: User should be redirected or signed out after this
         } catch (error) {
             console.error('Failed to delete account:', error)
-            errorHandler.handleApiError(error as any, 'delete account')
+            errorHandler.handleApiError(error as Error, 'delete account')
         } finally {
             setIsLoading(false)
         }
