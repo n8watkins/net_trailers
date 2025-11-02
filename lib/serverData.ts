@@ -30,6 +30,22 @@ export interface HomeData {
 }
 
 /**
+ * Helper to deduplicate content by media_type and id
+ * Prevents duplicate keys in React rendering
+ */
+function deduplicateContent(content: Content[]): Content[] {
+    const seen = new Set<string>()
+    return content.filter((item) => {
+        const key = `${item.media_type || 'unknown'}-${item.id}`
+        if (seen.has(key)) {
+            return false
+        }
+        seen.add(key)
+        return true
+    })
+}
+
+/**
  * Helper to randomize array (Fisher-Yates shuffle)
  */
 function randomizeArray<T>(arr: T[]): T[] {
@@ -39,6 +55,13 @@ function randomizeArray<T>(arr: T[]): T[] {
         ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
     }
     return shuffled
+}
+
+/**
+ * Helper to deduplicate and randomize content
+ */
+function dedupeAndRandomize(content: Content[]): Content[] {
+    return dedupeAndRandomize(deduplicateContent(content))
 }
 
 /**
@@ -226,16 +249,16 @@ export async function fetchHomeData(filter?: string): Promise<HomeData> {
         ] = jsonData
 
         return {
-            trending: randomizeArray(trendingData.results || []),
-            topRated: randomizeArray([
+            trending: dedupeAndRandomize(trendingData.results || []),
+            topRated: dedupeAndRandomize([
                 ...(topRated1Data.results || []),
                 ...(topRated2Data.results || []),
             ]),
-            genre1: randomizeArray(actionData.results || []),
-            genre2: randomizeArray(comedyData.results || []),
-            genre3: randomizeArray(horrorData.results || []),
-            genre4: randomizeArray(romanceData.results || []),
-            documentaries: randomizeArray(documentariesData.results || []),
+            genre1: dedupeAndRandomize(actionData.results || []),
+            genre2: dedupeAndRandomize(comedyData.results || []),
+            genre3: dedupeAndRandomize(horrorData.results || []),
+            genre4: dedupeAndRandomize(romanceData.results || []),
+            documentaries: dedupeAndRandomize(documentariesData.results || []),
         }
     } else {
         // Mixed content (movies + TV) - pairs of results
@@ -257,31 +280,31 @@ export async function fetchHomeData(filter?: string): Promise<HomeData> {
         ] = jsonData
 
         return {
-            trending: randomizeArray([
+            trending: dedupeAndRandomize([
                 ...(movieTrendingData.results || []),
                 ...(tvTrendingData.results || []),
             ]),
-            topRated: randomizeArray([
+            topRated: dedupeAndRandomize([
                 ...(movieTopRatedData.results || []),
                 ...(tvTopRatedData.results || []),
             ]),
-            genre1: randomizeArray([
+            genre1: dedupeAndRandomize([
                 ...(genre1MovieData.results || []),
                 ...(genre1TvData.results || []),
             ]),
-            genre2: randomizeArray([
+            genre2: dedupeAndRandomize([
                 ...(genre2MovieData.results || []),
                 ...(genre2TvData.results || []),
             ]),
-            genre3: randomizeArray([
+            genre3: dedupeAndRandomize([
                 ...(genre3MovieData.results || []),
                 ...(genre3TvData.results || []),
             ]),
-            genre4: randomizeArray([
+            genre4: dedupeAndRandomize([
                 ...(genre4MovieData.results || []),
                 ...(genre4TvData.results || []),
             ]),
-            documentaries: randomizeArray([
+            documentaries: dedupeAndRandomize([
                 ...(movieDocData.results || []),
                 ...(tvDocData.results || []),
             ]),
