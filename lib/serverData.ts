@@ -13,6 +13,12 @@ const API_KEY = process.env.TMDB_API_KEY
  * Uses Vercel URL in production, localhost in development
  */
 function getBaseUrl(): string {
+    // In production on Vercel, use the deployment URL
+    // VERCEL_PROJECT_PRODUCTION_URL is more stable for production deployments
+    // VERCEL_URL works for both production and preview deployments
+    if (process.env.VERCEL_ENV === 'production' && process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+        return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    }
     if (process.env.VERCEL_URL) {
         return `https://${process.env.VERCEL_URL}`
     }
@@ -226,10 +232,16 @@ export async function fetchHomeData(filter?: string): Promise<HomeData> {
 
     const responses = await Promise.all(fetchPromises)
 
-    // Check if all responses are ok
-    const failedResponse = responses.find((r) => !r.ok)
-    if (failedResponse) {
-        throw new Error(`Failed to fetch content: ${failedResponse.status}`)
+    // Check if all responses are ok and log which endpoint failed
+    for (let i = 0; i < responses.length; i++) {
+        if (!responses[i].ok) {
+            const failedUrl = responses[i].url
+            const status = responses[i].status
+            console.error(`Failed to fetch from ${failedUrl}: ${status}`)
+            throw new Error(
+                `Failed to fetch content from ${failedUrl}: ${status} ${responses[i].statusText}`
+            )
+        }
     }
 
     const jsonData = await Promise.all(responses.map((r) => r.json()))
