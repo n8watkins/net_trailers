@@ -7,7 +7,7 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 const nextConfig = {
     reactStrictMode: true,
     typescript: {
-        ignoreBuildErrors: true,
+        ignoreBuildErrors: false,
     },
     compiler: {
         // Remove console.log in production builds (keep error and warn)
