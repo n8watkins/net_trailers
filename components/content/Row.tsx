@@ -52,21 +52,21 @@ function Row({ title, content }: Props) {
             </h2>
 
             {/* Content Row */}
-            <div className="relative row-container h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem]">
+            <div className="relative row-container h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] group">
                 {/* Left Arrow - Hidden on mobile, visible on larger screens */}
                 <div
                     className={`hidden md:flex absolute left-0 top-0 z-30 h-full items-center pl-2 ${
-                        isMoved ? 'row-container:hover:opacity-100' : 'opacity-0'
-                    } transition-opacity cursor-pointer pointer-events-auto`}
+                        isMoved ? 'opacity-60 group-hover:opacity-100' : 'opacity-0'
+                    } transition-all duration-300 cursor-pointer pointer-events-auto`}
                     onClick={() => handleClick('left')}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'transparent'
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'transparent'
+                    style={{
+                        background:
+                            'linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)',
                     }}
                 >
-                    <ChevronLeftIcon className="h-8 w-8 text-white hover:scale-110 transition-transform" />
+                    <div className="bg-black/50 rounded-full p-2 backdrop-blur-sm hover:bg-black/70 transition-all">
+                        <ChevronLeftIcon className="h-10 w-10 text-white drop-shadow-lg hover:scale-110 transition-transform" />
+                    </div>
                 </div>
 
                 {/* Scrollable Container */}
@@ -89,16 +89,16 @@ function Row({ title, content }: Props) {
 
                 {/* Right Arrow - Hidden on mobile, visible on larger screens */}
                 <div
-                    className="hidden md:flex absolute right-0 top-0 z-30 h-full items-center pr-2 row-container:hover:opacity-100 opacity-0 transition-opacity cursor-pointer pointer-events-auto"
+                    className="hidden md:flex absolute right-0 top-0 z-30 h-full items-center pr-2 opacity-60 group-hover:opacity-100 transition-all duration-300 cursor-pointer pointer-events-auto"
                     onClick={() => handleClick('right')}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'transparent'
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'transparent'
+                    style={{
+                        background:
+                            'linear-gradient(to left, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)',
                     }}
                 >
-                    <ChevronRightIcon className="h-8 w-8 text-white hover:scale-110 transition-transform" />
+                    <div className="bg-black/50 rounded-full p-2 backdrop-blur-sm hover:bg-black/70 transition-all">
+                        <ChevronRightIcon className="h-10 w-10 text-white drop-shadow-lg hover:scale-110 transition-transform" />
+                    </div>
                 </div>
             </div>
         </div>
