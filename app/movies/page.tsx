@@ -1,8 +1,23 @@
 import { Suspense } from 'react'
+import type { Metadata } from 'next'
 import { fetchHomeData } from '../../lib/serverData'
 import MoviesClient from '../../components/pages/MoviesClient'
 import NetflixLoader from '../../components/common/NetflixLoader'
 import NetflixError from '../../components/common/NetflixError'
+
+export const metadata: Metadata = {
+    title: 'Movies - NetTrailer | Stream Trending Movies & Classics',
+    description:
+        'Discover trending movies, top-rated classics, action, comedy, horror, romance, and documentaries. Watch trailers and find your next favorite film.',
+    keywords:
+        'movies, trending movies, top rated movies, action movies, comedy movies, horror movies, romance movies, documentaries, movie trailers, netflix clone',
+    openGraph: {
+        title: 'Movies - NetTrailer',
+        description:
+            'Discover trending movies, top-rated classics, and watch trailers for thousands of films.',
+        type: 'website',
+    },
+}
 
 async function MoviesContent() {
     try {

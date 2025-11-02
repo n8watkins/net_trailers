@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { TMDBApiClient, setCacheHeaders, handleApiError } from '../../../../../utils/tmdbApi'
+import {
+    TMDBApiClient,
+    setCacheHeaders as _setCacheHeaders,
+    handleApiError as _handleApiError,
+} from '../../../../../utils/tmdbApi'
 import { fetchTVContentRatings, hasMatureRating } from '../../../../../utils/tvContentRatings'
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {

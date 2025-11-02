@@ -86,7 +86,7 @@ const nextConfig = {
                             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com",
                             "img-src 'self' data: https: blob:",
                             "font-src 'self' data: https://fonts.gstatic.com",
-                            "connect-src 'self' https://api.themoviedb.org https://www.google-analytics.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://firebaseinstallations.googleapis.com https://accounts.google.com https://*.firebaseapp.com",
+                            "connect-src 'self' https://api.themoviedb.org https://www.google-analytics.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://firebaseinstallations.googleapis.com https://accounts.google.com https://*.firebaseapp.com https://*.sentry.io",
                             "frame-src 'self' https://www.youtube.com https://accounts.google.com https://*.firebaseapp.com",
                             "media-src 'self' https:",
                             "object-src 'none'",

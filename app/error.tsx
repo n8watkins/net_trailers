@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 export default function Error({
-    error,
+    error: _error,
     reset,
 }: {
     error: Error & { digest?: string }

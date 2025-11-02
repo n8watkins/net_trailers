@@ -1,8 +1,23 @@
 import { Suspense } from 'react'
+import type { Metadata } from 'next'
 import { fetchHomeData } from '../../lib/serverData'
 import TVClient from '../../components/pages/TVClient'
 import NetflixLoader from '../../components/common/NetflixLoader'
 import NetflixError from '../../components/common/NetflixError'
+
+export const metadata: Metadata = {
+    title: 'TV Shows - NetTrailer | Stream Trending Series & Top Rated Shows',
+    description:
+        'Explore trending TV shows, top-rated series, action & adventure, comedy, sci-fi & fantasy, animation, and documentary shows. Watch trailers and discover your next binge-worthy series.',
+    keywords:
+        'tv shows, trending tv shows, top rated series, action tv shows, comedy series, sci-fi shows, fantasy shows, animation, documentaries, tv trailers, netflix clone',
+    openGraph: {
+        title: 'TV Shows - NetTrailer',
+        description:
+            'Explore trending TV shows, top-rated series, and watch trailers for thousands of shows.',
+        type: 'website',
+    },
+}
 
 async function TVContent() {
     try {

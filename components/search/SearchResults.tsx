@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { useSearch } from '../../hooks/useSearch'
 import { Content, isMovie, getTitle, getYear, getContentType } from '../../typings'
@@ -12,7 +12,6 @@ interface SearchResultsProps {
 }
 
 export default function SearchResults({ className = '' }: SearchResultsProps) {
-    const router = useRouter()
     const pathname = usePathname()
     const isOnSearchPage = pathname === '/search'
 

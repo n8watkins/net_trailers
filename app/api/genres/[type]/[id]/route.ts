@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { filterMatureTVShows } from '../../../../../utils/tvContentRatings'
-import { filterMatureMovies } from '../../../../../utils/movieCertifications'
+import { filterMatureMovies as _filterMatureMovies } from '../../../../../utils/movieCertifications'
 import { csDebugTMDB, csDebugResponse, csDebugFilter } from '../../../../../utils/childSafetyDebug'
 
 export async function GET(
