@@ -53,6 +53,8 @@ process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID = 'test-project'
 process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET = 'test.appspot.com'
 process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID = '123456789'
 process.env.NEXT_PUBLIC_FIREBASE_APP_ID = 'test-app-id'
+process.env.TMDB_API_KEY = 'test-tmdb-api-key'
+process.env.NEXT_PUBLIC_BASE_URL = 'http://localhost:3000'
 
 // Global test utilities
 global.ResizeObserver = jest.fn().mockImplementation(() => ({
