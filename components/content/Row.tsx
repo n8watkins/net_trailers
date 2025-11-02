@@ -24,21 +24,15 @@ function Row({ title, content }: Props) {
 
     const handleClick = (direction: string) => {
         setIsMoved(true)
-        if (rowRef.current) {
-            const { scrollLeft } = rowRef.current
-            const thumbnailLength = rowRef.current.children[0].clientWidth
+        if (rowRef.current && rowRef.current.children.length > 0) {
+            const { scrollLeft, clientWidth } = rowRef.current
 
-            const thumbnailspacing =
-                rowRef.current.children[1].getBoundingClientRect().left -
-                rowRef.current.children[0].getBoundingClientRect().right
-
-            const thumbnailsOnPage = Math.floor(window.innerWidth / thumbnailLength)
-
-            const scrollDistance = thumbnailLength * 6 + thumbnailspacing * thumbnailsOnPage - 1
+            // Use clientWidth for better performance instead of getBoundingClientRect
+            const scrollDistance = clientWidth * 0.8 // Scroll 80% of visible width
             const scrollTo =
                 direction === 'left' ? scrollLeft - scrollDistance : scrollLeft + scrollDistance
 
-            rowRef.current?.scrollTo({
+            rowRef.current.scrollTo({
                 left: scrollTo,
                 behavior: 'smooth',
             })
@@ -76,7 +70,12 @@ function Row({ title, content }: Props) {
                     className="flex gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-8 overflow-x-scroll overflow-y-hidden scrollbar-hide scroll-smooth
                               px-4 sm:px-6 md:px-8 lg:px-16
                               py-10"
-                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                    style={{
+                        scrollbarWidth: 'none',
+                        msOverflowStyle: 'none',
+                        willChange: 'scroll-position',
+                        WebkitOverflowScrolling: 'touch',
+                    }}
                 >
                     {filteredContent.map((item) => (
                         <div
