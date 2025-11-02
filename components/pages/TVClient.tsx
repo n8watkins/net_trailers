@@ -28,20 +28,54 @@ export default function TVClient({ data }: TVClientProps) {
                 <section className="relative -mt-[55vh] z-10 pb-52 space-y-8">
                     {trending.length > 0 && (
                         <div className="pt-8 sm:pt-12 md:pt-16">
-                            <Row title="Trending TV Shows" content={trending} />
+                            <Row
+                                title="Trending TV Shows"
+                                content={trending}
+                                apiEndpoint="/api/tv/trending"
+                            />
                         </div>
                     )}
-                    {topRated.length > 0 && <Row title="Top Rated TV Shows" content={topRated} />}
+                    {topRated.length > 0 && (
+                        <Row
+                            title="Top Rated TV Shows"
+                            content={topRated}
+                            apiEndpoint="/api/tv/top-rated"
+                        />
+                    )}
                     {genre1.length > 0 && (
-                        <Row title="Action & Adventure TV Shows" content={genre1} />
+                        <Row
+                            title="Action & Adventure TV Shows"
+                            content={genre1}
+                            apiEndpoint="/api/genres/tv/10759"
+                        />
                     )}
-                    {genre2.length > 0 && <Row title="Comedy TV Shows" content={genre2} />}
+                    {genre2.length > 0 && (
+                        <Row
+                            title="Comedy TV Shows"
+                            content={genre2}
+                            apiEndpoint="/api/genres/tv/35"
+                        />
+                    )}
                     {genre3.length > 0 && (
-                        <Row title="Sci-Fi & Fantasy TV Shows" content={genre3} />
+                        <Row
+                            title="Sci-Fi & Fantasy TV Shows"
+                            content={genre3}
+                            apiEndpoint="/api/genres/tv/10765"
+                        />
                     )}
-                    {genre4.length > 0 && <Row title="Animation TV Shows" content={genre4} />}
+                    {genre4.length > 0 && (
+                        <Row
+                            title="Animation TV Shows"
+                            content={genre4}
+                            apiEndpoint="/api/genres/tv/16"
+                        />
+                    )}
                     {documentaries.length > 0 && (
-                        <Row title="Documentary TV Shows" content={documentaries} />
+                        <Row
+                            title="Documentary TV Shows"
+                            content={documentaries}
+                            apiEndpoint="/api/genres/tv/99"
+                        />
                     )}
                 </section>
             </main>

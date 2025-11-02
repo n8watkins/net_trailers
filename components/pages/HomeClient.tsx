@@ -19,6 +19,74 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
 
     const { trending, topRated, genre1, genre2, genre3, genre4, documentaries } = data
 
+    // Build API endpoints with child safety mode parameter
+    const childSafetyParam = childSafetyEnabled ? '?childSafetyMode=true' : ''
+
+    // Determine API endpoints based on filter
+    const getTrendingEndpoint = () => {
+        if (filter === 'tv') return `/api/tv/trending${childSafetyParam}`
+        if (filter === 'movies') return `/api/movies/trending${childSafetyParam}`
+        return `/api/movies/trending${childSafetyParam}` // Mixed mode uses movies trending
+    }
+
+    const getTopRatedEndpoint = () => {
+        if (filter === 'tv') return `/api/tv/top-rated${childSafetyParam}`
+        if (filter === 'movies') return `/api/movies/top-rated${childSafetyParam}`
+        return `/api/movies/top-rated${childSafetyParam}` // Mixed mode uses movies top rated
+    }
+
+    const getGenre1Endpoint = () => {
+        if (filter === 'tv') return `/api/genres/tv/10759${childSafetyParam}` // Action & Adventure
+        if (filter === 'movies') {
+            return childSafetyEnabled
+                ? `/api/genres/movie/16${childSafetyParam}` // Animation
+                : `/api/genres/movie/28${childSafetyParam}` // Action
+        }
+        return childSafetyEnabled
+            ? `/api/genres/movie/16${childSafetyParam}` // Animation
+            : `/api/genres/movie/28${childSafetyParam}` // Action
+    }
+
+    const getGenre2Endpoint = () => {
+        if (filter === 'tv') return `/api/genres/tv/35${childSafetyParam}` // Comedy
+        if (filter === 'movies') {
+            return childSafetyEnabled
+                ? `/api/genres/movie/10751${childSafetyParam}` // Family
+                : `/api/genres/movie/35${childSafetyParam}` // Comedy
+        }
+        return childSafetyEnabled
+            ? `/api/genres/movie/10751${childSafetyParam}` // Family
+            : `/api/genres/movie/35${childSafetyParam}` // Comedy
+    }
+
+    const getGenre3Endpoint = () => {
+        if (filter === 'tv') return `/api/genres/tv/10765${childSafetyParam}` // Sci-Fi & Fantasy
+        if (filter === 'movies') {
+            return childSafetyEnabled
+                ? `/api/genres/movie/12${childSafetyParam}` // Adventure
+                : `/api/genres/movie/27${childSafetyParam}` // Horror
+        }
+        return childSafetyEnabled
+            ? `/api/genres/movie/12${childSafetyParam}` // Adventure
+            : `/api/genres/movie/27${childSafetyParam}` // Horror
+    }
+
+    const getGenre4Endpoint = () => {
+        if (filter === 'tv') return `/api/genres/tv/16${childSafetyParam}` // Animation
+        if (filter === 'movies') {
+            return childSafetyEnabled
+                ? `/api/genres/movie/14${childSafetyParam}` // Fantasy
+                : `/api/genres/movie/10749${childSafetyParam}` // Romance
+        }
+        return `/api/genres/movie/16${childSafetyParam}` // Animation
+    }
+
+    const getDocumentariesEndpoint = () => {
+        if (filter === 'tv') return `/api/genres/tv/99${childSafetyParam}`
+        if (filter === 'movies') return `/api/genres/movie/99${childSafetyParam}`
+        return `/api/genres/movie/99${childSafetyParam}`
+    }
+
     return (
         <div
             className={`relative min-h-screen overflow-x-clip ${showModal && `overflow-y-hidden`} `}
@@ -39,6 +107,7 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
                                       : 'Trending'
                             }
                             content={trending}
+                            apiEndpoint={getTrendingEndpoint()}
                         />
                     )}
                     {topRated.length > 0 && (
@@ -51,6 +120,7 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
                                       : 'Top Rated'
                             }
                             content={topRated}
+                            apiEndpoint={getTopRatedEndpoint()}
                         />
                     )}
                     {genre1.length > 0 && (
@@ -67,6 +137,7 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
                                         : 'Action & Adventure'
                             }
                             content={genre1}
+                            apiEndpoint={getGenre1Endpoint()}
                         />
                     )}
                     {genre2.length > 0 && (
@@ -83,6 +154,7 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
                                         : 'Comedy'
                             }
                             content={genre2}
+                            apiEndpoint={getGenre2Endpoint()}
                         />
                     )}
                     {genre3.length > 0 && (
@@ -99,6 +171,7 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
                                         : 'Horror & Sci-Fi'
                             }
                             content={genre3}
+                            apiEndpoint={getGenre3Endpoint()}
                         />
                     )}
                     {genre4.length > 0 && (
@@ -115,6 +188,7 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
                                         : 'Animation'
                             }
                             content={genre4}
+                            apiEndpoint={getGenre4Endpoint()}
                         />
                     )}
                     {documentaries.length > 0 && (
@@ -127,6 +201,7 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
                                       : 'Documentaries'
                             }
                             content={documentaries}
+                            apiEndpoint={getDocumentariesEndpoint()}
                         />
                     )}
                 </section>
