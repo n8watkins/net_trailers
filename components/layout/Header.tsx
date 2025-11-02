@@ -22,6 +22,7 @@ import { useDebugSettings } from '../debug/DebugControls'
 import { useAppStore } from '../../stores/appStore'
 import { ChildSafetyIndicator } from '../content/ChildSafetyIndicator'
 import { GuestModeIndicator } from '../auth/GuestModeIndicator'
+import { useLayoutContext } from '../../contexts/LayoutContext'
 
 interface HeaderProps {
     onOpenAboutModal?: () => void
@@ -30,6 +31,12 @@ interface HeaderProps {
 }
 
 function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: HeaderProps = {}) {
+    // Get handlers from context, fallback to props for backwards compatibility
+    const layoutContext = useLayoutContext()
+    const handleOpenAboutModal = onOpenAboutModal || layoutContext.onOpenAboutModal
+    const handleOpenTutorial = onOpenTutorial || layoutContext.onOpenTutorial
+    const handleOpenKeyboardShortcuts =
+        onOpenKeyboardShortcuts || layoutContext.onOpenKeyboardShortcuts
     const [isScrolled, setIsScrolled] = useState(false)
     const [showSearch, setShowSearch] = useState(false)
     const [showMobileMenu, setShowMobileMenu] = useState(false)
@@ -211,9 +218,9 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                     <AvatarDropdown
                         onOpenAuthModal={() => openAuthModal('signin')}
                         onOpenSignUpModal={() => openAuthModal('signup')}
-                        onOpenAboutModal={onOpenAboutModal}
-                        onOpenTutorial={onOpenTutorial}
-                        onOpenKeyboardShortcuts={onOpenKeyboardShortcuts}
+                        onOpenAboutModal={handleOpenAboutModal}
+                        onOpenTutorial={handleOpenTutorial}
+                        onOpenKeyboardShortcuts={handleOpenKeyboardShortcuts}
                     />
                 </div>
 

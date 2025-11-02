@@ -12,11 +12,13 @@
 
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { useSearch } from '../../hooks/useSearch'
-import { useRouter } from 'next/router'
+import { useRouter, usePathname } from 'next/navigation'
 
-// Mock Next.js router
-jest.mock('next/router', () => ({
+// Mock Next.js navigation (App Router)
+jest.mock('next/navigation', () => ({
     useRouter: jest.fn(),
+    usePathname: jest.fn(),
+    useSearchParams: jest.fn(),
 }))
 
 // Create a shared mock state that persists across hook calls
@@ -96,15 +98,16 @@ describe('useSearch - Pagination Regression Tests', () => {
             history: [],
         })
 
-        // Mock router
+        // Mock navigation hooks (App Router)
         ;(useRouter as jest.Mock).mockReturnValue({
-            pathname: '/',
-            query: {},
-            events: {
-                on: jest.fn(),
-                off: jest.fn(),
-            },
+            push: jest.fn(),
+            replace: jest.fn(),
+            prefetch: jest.fn(),
+            back: jest.fn(),
+            forward: jest.fn(),
+            refresh: jest.fn(),
         })
+        ;(usePathname as jest.Mock).mockReturnValue('/')
 
         // Clear fetch mocks
         global.fetch = jest.fn()

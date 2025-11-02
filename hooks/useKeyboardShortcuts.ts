@@ -174,6 +174,7 @@ export function useKeyboardShortcuts({
         },
         [
             router,
+            pathname, // Add pathname to dependencies so callback updates when route changes
             onOpenShortcuts,
             onOpenTutorial,
             onOpenAbout,

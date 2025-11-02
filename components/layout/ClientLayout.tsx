@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef, useCallback, useEffect } from 'react'
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
 import KeyboardShortcutsModal from '../modals/KeyboardShortcutsModal'
 import TutorialModal from '../modals/TutorialModal'
@@ -10,6 +10,7 @@ import ScrollToTopButton from '../common/ScrollToTopButton'
 import { markAsVisited } from '../../utils/firstVisitTracker'
 import { useAppStore } from '../../stores/appStore'
 import { shouldShowAboutModal, markAboutModalShown } from '../../utils/aboutModalTimer'
+import { LayoutProvider } from '../../contexts/LayoutContext'
 
 interface ClientLayoutProps {
     children: React.ReactNode
@@ -105,8 +106,18 @@ function ClientLayout({ children }: ClientLayoutProps) {
         isAboutModalOpen: showAboutModal,
     })
 
+    // Memoize context value to prevent unnecessary re-renders
+    const layoutContextValue = useMemo(
+        () => ({
+            onOpenAboutModal: handleOpenAboutModal,
+            onOpenTutorial: handleOpenTutorial,
+            onOpenKeyboardShortcuts: handleOpenShortcuts,
+        }),
+        [handleOpenAboutModal, handleOpenTutorial, handleOpenShortcuts]
+    )
+
     return (
-        <>
+        <LayoutProvider value={layoutContextValue}>
             {children}
             <Footer
                 showAboutModal={showAboutModal}
@@ -121,7 +132,7 @@ function ClientLayout({ children }: ClientLayoutProps) {
                 onClose={() => setShowKeyboardShortcuts(false)}
             />
             <ScrollToTopButton />
-        </>
+        </LayoutProvider>
     )
 }
 
