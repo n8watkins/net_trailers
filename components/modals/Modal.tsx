@@ -9,13 +9,8 @@ import {
     PlayIcon,
     PauseIcon,
     PlusIcon,
-    SpeakerWaveIcon,
-    SpeakerXMarkIcon,
     XMarkIcon,
-    ArrowsPointingOutIcon,
-    ArrowsPointingInIcon,
     CheckIcon,
-    ArrowTopRightOnSquareIcon,
     EyeSlashIcon,
     EyeIcon,
 } from '@heroicons/react/24/solid'
@@ -27,7 +22,6 @@ import ContentMetadata from '../common/ContentMetadata'
 // Dynamically import ReactPlayer to avoid SSR issues
 const ReactPlayer = dynamic(() => import('react-player'), { ssr: false })
 import KeyboardShortcuts from '../utility/KeyboardShortcuts'
-import VolumeSlider from '../common/VolumeSlider'
 import Image from 'next/image'
 import { Element, Genre } from '../../typings'
 import ToolTipMod from '../common/ToolTipMod'
@@ -37,6 +31,7 @@ import { useToast } from '../../hooks/useToast'
 import { useDebugSettings } from '../debug/DebugControls'
 import { getCachedMovieDetails } from '../../utils/prefetchCache'
 import InlineWatchlistDropdown from './modal-sections/InlineWatchlistDropdown'
+import VideoControls from './modal-sections/VideoControls'
 
 function Modal() {
     // Debug settings
@@ -199,6 +194,24 @@ function Modal() {
             setPreviousVolume(volume)
             setMuted(true)
             setVolume(0)
+        }
+    }
+
+    const handleVolumeChange = (newVolume: number) => {
+        setVolume(newVolume)
+
+        // Update previous volume if not zero (so we can restore it later)
+        if (newVolume > 0) {
+            setPreviousVolume(newVolume)
+        }
+
+        // Unmute if volume is increased from 0
+        if (newVolume > 0 && muted) {
+            setMuted(false)
+        }
+        // Mute if volume is set to 0
+        if (newVolume === 0) {
+            setMuted(true)
         }
     }
 
@@ -792,125 +805,19 @@ function Modal() {
 
                                         {/* Right side buttons - Video Controls */}
                                         {trailer && (
-                                            <div className="flex gap-2 sm:gap-4 items-center">
-                                                {/* Volume/Mute Button with Slider */}
-                                                <div
-                                                    ref={volumeButtonRef}
-                                                    className="relative z-10"
-                                                    onMouseEnter={() => setShowVolumeSlider(true)}
-                                                    onMouseLeave={() => setShowVolumeSlider(false)}
-                                                >
-                                                    {/* Custom Vertical Volume Slider - Behind button at bottom */}
-                                                    {showVolumeSlider && (
-                                                        <div
-                                                            ref={volumeSliderRef}
-                                                            className="absolute bottom-full left-1/2 transform -translate-x-1/2 z-0"
-                                                            style={{ marginBottom: '-26px' }}
-                                                            onMouseEnter={() =>
-                                                                setShowVolumeSlider(true)
-                                                            }
-                                                            onMouseLeave={() =>
-                                                                setShowVolumeSlider(false)
-                                                            }
-                                                        >
-                                                            {/* Larger transparent hover area - extends down behind button */}
-                                                            <div className="flex flex-col items-center px-8 pt-4 pb-6">
-                                                                <VolumeSlider
-                                                                    volume={volume}
-                                                                    onChange={(newVolume) => {
-                                                                        setVolume(newVolume)
-
-                                                                        // Update previous volume if not zero (so we can restore it later)
-                                                                        if (newVolume > 0) {
-                                                                            setPreviousVolume(
-                                                                                newVolume
-                                                                            )
-                                                                        }
-
-                                                                        // Unmute if volume is increased from 0
-                                                                        if (
-                                                                            newVolume > 0 &&
-                                                                            muted
-                                                                        ) {
-                                                                            setMuted(false)
-                                                                        }
-                                                                        // Mute if volume is set to 0
-                                                                        if (newVolume === 0) {
-                                                                            setMuted(true)
-                                                                        }
-                                                                    }}
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    )}
-
-                                                    <ToolTipMod
-                                                        title={
-                                                            showVolumeSlider
-                                                                ? ''
-                                                                : muted
-                                                                  ? 'Unmute'
-                                                                  : 'Mute'
-                                                        }
-                                                    >
-                                                        <button
-                                                            className={`group relative z-20 p-2 sm:p-3 rounded-full border-2 text-white transition-colors ${
-                                                                showVolumeSlider
-                                                                    ? 'border-white bg-[#1a1a1a]'
-                                                                    : 'border-white/30 bg-[#141414] hover:bg-[#1a1a1a] hover:border-white'
-                                                            }`}
-                                                            onClick={handleMuteToggle}
-                                                            onMouseEnter={() =>
-                                                                setShowVolumeSlider(true)
-                                                            }
-                                                            onMouseLeave={() =>
-                                                                setShowVolumeSlider(false)
-                                                            }
-                                                        >
-                                                            {muted ? (
-                                                                <SpeakerXMarkIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
-                                                            ) : (
-                                                                <SpeakerWaveIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
-                                                            )}
-                                                        </button>
-                                                    </ToolTipMod>
-                                                </div>
-
-                                                {/* YouTube Link Button */}
-                                                <ToolTipMod title="Watch on YouTube">
-                                                    <button
-                                                        className="group p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-colors"
-                                                        onClick={() =>
-                                                            window.open(
-                                                                `https://www.youtube.com/watch?v=${trailer}`,
-                                                                '_blank'
-                                                            )
-                                                        }
-                                                    >
-                                                        <ArrowTopRightOnSquareIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
-                                                    </button>
-                                                </ToolTipMod>
-
-                                                {/* Fullscreen Button */}
-                                                <ToolTipMod
-                                                    title={
-                                                        fullScreen
-                                                            ? 'Exit Fullscreen'
-                                                            : 'Fullscreen'
-                                                    }
-                                                >
-                                                    <button
-                                                        className="group p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-colors"
-                                                        onClick={handleFullscreenButtonClick}
-                                                    >
-                                                        {fullScreen ? (
-                                                            <ArrowsPointingInIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
-                                                        ) : (
-                                                            <ArrowsPointingOutIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
-                                                        )}
-                                                    </button>
-                                                </ToolTipMod>
-                                            </div>
+                                            <VideoControls
+                                                trailer={trailer}
+                                                muted={muted}
+                                                volume={volume}
+                                                fullScreen={fullScreen}
+                                                showVolumeSlider={showVolumeSlider}
+                                                onToggleMute={handleMuteToggle}
+                                                onVolumeChange={handleVolumeChange}
+                                                onToggleFullscreen={handleFullscreenButtonClick}
+                                                onShowVolumeSlider={setShowVolumeSlider}
+                                                volumeButtonRef={volumeButtonRef}
+                                                volumeSliderRef={volumeSliderRef}
+                                            />
                                         )}
                                     </div>
                                 </div>
