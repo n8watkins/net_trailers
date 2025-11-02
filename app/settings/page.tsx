@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import Image from 'next/image'
 import {
     EnvelopeIcon,
     KeyIcon,
@@ -23,172 +22,14 @@ import InfoModal from '../../components/modals/InfoModal'
 import { useAppStore } from '../../stores/appStore'
 import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
-import { UpgradeAccountBanner } from '../../components/auth/UpgradeAccountBanner'
+import ProfileSection from '../../components/settings/ProfileSection'
+import EmailSection from '../../components/settings/EmailSection'
+import PasswordSection from '../../components/settings/PasswordSection'
+import PreferencesSection from '../../components/settings/PreferencesSection'
+import ShareSection from '../../components/settings/ShareSection'
+import AccountSection from '../../components/settings/AccountSection'
 
 type SettingsSection = 'profile' | 'email' | 'password' | 'preferences' | 'share' | 'account'
-
-// Memoized Preferences Controls Component - Only re-renders when props actually change
-interface PreferencesControlsProps {
-    childSafetyMode: boolean
-    autoMute: boolean
-    defaultVolume: number
-    preferencesChanged: boolean
-    isGuest: boolean
-    onChildSafetyModeChange: (checked: boolean) => void
-    onAutoMuteChange: (checked: boolean) => void
-    onDefaultVolumeChange: (volume: number) => void
-    onSave: () => void
-    onShowChildSafetyModal: () => void
-    onMarkInteracted: () => void
-    onClearInteracted: () => void
-    userInteractedRef: React.RefObject<boolean>
-}
-
-const PreferencesControls = React.memo<PreferencesControlsProps>(
-    ({
-        childSafetyMode,
-        autoMute,
-        defaultVolume,
-        preferencesChanged,
-        isGuest,
-        onChildSafetyModeChange,
-        onAutoMuteChange,
-        onDefaultVolumeChange,
-        onSave,
-        onShowChildSafetyModal,
-        onMarkInteracted,
-        onClearInteracted,
-        userInteractedRef,
-    }) => {
-        return (
-            <div className="space-y-8">
-                {/* Content & Privacy Section */}
-                <div>
-                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                        Content & Privacy
-                    </h3>
-                    <div className="space-y-6 bg-[#0a0a0a] rounded-lg border border-[#313131] p-6">
-                        {/* Child Safety Mode Toggle */}
-                        <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                                <label className="block text-sm font-medium text-[#e5e5e5] mb-1">
-                                    Child Safety Mode
-                                </label>
-                                <p className="text-sm text-[#b3b3b3] mb-2">
-                                    Shows only family-friendly content from curated genres
-                                </p>
-                                <p className="text-xs text-[#999]">
-                                    Movies: Animation, Family • TV: Kids, Family, Comedy, Sci-Fi &
-                                    Fantasy, Action & Adventure • Hides Crime, Drama, Horror
-                                </p>
-                            </div>
-                            <label
-                                className="relative inline-flex items-center cursor-pointer ml-4"
-                                onPointerDown={onMarkInteracted}
-                                onPointerUp={onClearInteracted}
-                                onKeyDown={(e) => {
-                                    // Only mark interaction for Space/Enter keys
-                                    if (e.key === ' ' || e.key === 'Enter') {
-                                        onMarkInteracted()
-                                    }
-                                }}
-                                onKeyUp={onClearInteracted}
-                            >
-                                <input
-                                    type="checkbox"
-                                    checked={childSafetyMode}
-                                    onChange={(e) => {
-                                        // Only react to guest modal when it's truly user-triggered
-                                        if (isGuest && userInteractedRef.current) {
-                                            onShowChildSafetyModal()
-                                            // Do NOT flip the setting for guests
-                                            return
-                                        }
-                                        onChildSafetyModeChange(e.target.checked)
-                                    }}
-                                    className="sr-only peer"
-                                />
-                                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Playback Settings Section */}
-                <div>
-                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                        Playback Settings
-                    </h3>
-                    <div className="space-y-6 bg-[#0a0a0a] rounded-lg border border-[#313131] p-6">
-                        {/* Auto-mute Toggle */}
-                        <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                                <label className="block text-sm font-medium text-[#e5e5e5] mb-1">
-                                    Auto-mute Trailers
-                                </label>
-                                <p className="text-sm text-[#b3b3b3]">
-                                    Start trailers muted when opening details
-                                </p>
-                            </div>
-                            <label className="relative inline-flex items-center cursor-pointer ml-4">
-                                <input
-                                    type="checkbox"
-                                    checked={autoMute}
-                                    onChange={(e) => onAutoMuteChange(e.target.checked)}
-                                    className="sr-only peer"
-                                />
-                                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                            </label>
-                        </div>
-
-                        {/* Default Volume Slider */}
-                        <div className="pt-4 border-t border-[#313131]">
-                            <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
-                                Default Volume
-                            </label>
-                            <p className="text-sm text-[#b3b3b3] mb-3">
-                                Set the initial volume level for trailers
-                            </p>
-                            <div className="flex items-center space-x-4">
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="100"
-                                    step="5"
-                                    value={defaultVolume}
-                                    onChange={(e) =>
-                                        onDefaultVolumeChange(parseInt(e.target.value))
-                                    }
-                                    className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-red-600 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-red-600 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
-                                />
-                                <span className="text-sm text-[#e5e5e5] min-w-[3rem] text-right">
-                                    {defaultVolume}%
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Save Button */}
-                <div className="flex justify-end">
-                    <button
-                        onClick={onSave}
-                        disabled={!preferencesChanged}
-                        className={`px-6 py-2.5 rounded-md font-medium transition-all duration-200 focus:outline-none ${
-                            preferencesChanged
-                                ? 'bg-red-600 text-white hover:bg-red-700 cursor-pointer'
-                                : 'bg-[#1a1a1a] text-[#666666] cursor-not-allowed border border-[#313131]'
-                        }`}
-                    >
-                        Save Preferences
-                    </button>
-                </div>
-            </div>
-        )
-    }
-)
-
-PreferencesControls.displayName = 'PreferencesControls'
 
 interface SidebarItem {
     id: SettingsSection
@@ -852,689 +693,80 @@ const Settings: React.FC = () => {
                                 {/* Main Content */}
                                 <div className="flex-1">
                                     {activeSection === 'profile' && !isGuest && (
-                                        <div className="p-8">
-                                            <div className="mb-6">
-                                                <h2 className="text-2xl font-bold text-white mb-2">
-                                                    Profile Information
-                                                </h2>
-                                                <p className="text-[#b3b3b3]">
-                                                    Manage your profile and account information.
-                                                </p>
-                                            </div>
-
-                                            <div className="space-y-6">
-                                                {/* Profile Picture */}
-                                                <div className="flex items-center space-x-6">
-                                                    {user?.photoURL ? (
-                                                        <Image
-                                                            src={user.photoURL}
-                                                            alt="Profile"
-                                                            width={96}
-                                                            height={96}
-                                                            className="rounded-full object-cover border-4 border-[#313131]"
-                                                        />
-                                                    ) : (
-                                                        <div className="w-24 h-24 bg-red-600 rounded-full flex items-center justify-center border-4 border-[#313131]">
-                                                            <span className="text-white font-bold text-2xl">
-                                                                {getUserName()
-                                                                    .charAt(0)
-                                                                    .toUpperCase()}
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                    <div>
-                                                        <h3 className="text-xl font-semibold text-white">
-                                                            {getUserName()}
-                                                        </h3>
-                                                        <p className="text-[#b3b3b3]">
-                                                            {user?.email || 'No email'}
-                                                        </p>
-                                                        <p className="text-[#777] text-sm mt-1">
-                                                            Member since{' '}
-                                                            {new Date(
-                                                                user?.metadata?.creationTime ||
-                                                                    Date.now()
-                                                            ).toLocaleDateString()}
-                                                        </p>
-                                                    </div>
-                                                </div>
-
-                                                {/* Display Name */}
-                                                <div>
-                                                    <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
-                                                        Display Name
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        value={displayName}
-                                                        onChange={(e) =>
-                                                            setDisplayName(e.target.value)
-                                                        }
-                                                        placeholder="Enter your display name"
-                                                        className="inputClass w-full max-w-md"
-                                                        disabled={isSavingProfile}
-                                                    />
-                                                </div>
-
-                                                {/* Email (read-only) */}
-                                                <div>
-                                                    <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
-                                                        Email Address
-                                                    </label>
-                                                    <input
-                                                        type="email"
-                                                        value={user?.email || ''}
-                                                        disabled
-                                                        className="inputClass w-full max-w-md opacity-50 cursor-not-allowed"
-                                                    />
-                                                    <div className="flex items-center gap-2 mt-2">
-                                                        {isGoogleAuth && (
-                                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-900/30 border border-blue-600/40 rounded-full text-xs text-blue-300">
-                                                                <svg
-                                                                    className="w-3.5 h-3.5"
-                                                                    fill="currentColor"
-                                                                    viewBox="0 0 24 24"
-                                                                >
-                                                                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                                                                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                                                                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                                                                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                                                                </svg>
-                                                                Google Account
-                                                            </span>
-                                                        )}
-                                                        {isEmailAuth && (
-                                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-800/60 border border-gray-600/40 rounded-full text-xs text-gray-300">
-                                                                <EnvelopeIcon className="w-3.5 h-3.5" />
-                                                                Email/Password
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <p className="text-[#777] text-sm mt-1">
-                                                        {isGoogleAuth
-                                                            ? 'Managed by Google'
-                                                            : 'To change your email, use the Email Settings section'}
-                                                    </p>
-                                                </div>
-
-                                                <div className="pt-4">
-                                                    <button
-                                                        onClick={handleSaveProfile}
-                                                        disabled={
-                                                            isSavingProfile ||
-                                                            displayName.trim() ===
-                                                                (user?.displayName || '')
-                                                        }
-                                                        className={`bannerButton ${
-                                                            isSavingProfile ||
-                                                            displayName.trim() ===
-                                                                (user?.displayName || '')
-                                                                ? 'bg-gray-600 cursor-not-allowed opacity-50'
-                                                                : 'bg-red-600 hover:bg-red-700'
-                                                        } text-white flex items-center justify-center gap-2`}
-                                                    >
-                                                        {isSavingProfile ? (
-                                                            <>
-                                                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                                                Saving...
-                                                            </>
-                                                        ) : (
-                                                            'Save Changes'
-                                                        )}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <ProfileSection
+                                            user={user}
+                                            isGoogleAuth={isGoogleAuth}
+                                            isEmailAuth={isEmailAuth}
+                                            displayName={displayName}
+                                            setDisplayName={setDisplayName}
+                                            isSavingProfile={isSavingProfile}
+                                            onSaveProfile={handleSaveProfile}
+                                        />
                                     )}
 
                                     {activeSection === 'email' && !isGuest && (
-                                        <div className="p-8">
-                                            <div className="mb-6">
-                                                <h2 className="text-2xl font-bold text-white mb-2">
-                                                    Email Settings
-                                                </h2>
-                                                <p className="text-[#b3b3b3]">
-                                                    Update your email address for your account.
-                                                </p>
-                                            </div>
-
-                                            {isGoogleAuth ? (
-                                                <div className="max-w-2xl">
-                                                    <div className="bg-blue-900/20 border border-blue-600/30 rounded-lg p-6">
-                                                        <div className="flex items-start gap-4">
-                                                            <div className="flex-shrink-0">
-                                                                <svg
-                                                                    className="w-6 h-6 text-blue-400"
-                                                                    fill="currentColor"
-                                                                    viewBox="0 0 24 24"
-                                                                >
-                                                                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                                                                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                                                                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                                                                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                                                                </svg>
-                                                            </div>
-                                                            <div className="flex-1">
-                                                                <h3 className="text-white font-semibold mb-2">
-                                                                    Signed in with Google
-                                                                </h3>
-                                                                <p className="text-[#b3b3b3] text-sm mb-3">
-                                                                    Your email address is managed by
-                                                                    Google. Changing your email
-                                                                    requires updating your Google
-                                                                    account.
-                                                                </p>
-                                                                <p className="text-[#b3b3b3] text-sm">
-                                                                    To change your email, visit{' '}
-                                                                    <a
-                                                                        href="https://myaccount.google.com/"
-                                                                        target="_blank"
-                                                                        rel="noopener noreferrer"
-                                                                        className="text-blue-400 hover:text-blue-300 underline"
-                                                                    >
-                                                                        Google Account Settings
-                                                                    </a>
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="space-y-6 max-w-md">
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
-                                                            Current Email
-                                                        </label>
-                                                        <input
-                                                            type="email"
-                                                            value={user?.email || ''}
-                                                            disabled
-                                                            className="inputClass w-full opacity-50 cursor-not-allowed"
-                                                        />
-                                                    </div>
-
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
-                                                            New Email Address
-                                                        </label>
-                                                        <input
-                                                            type="email"
-                                                            value={newEmail}
-                                                            onChange={(e) =>
-                                                                setNewEmail(e.target.value)
-                                                            }
-                                                            placeholder="Enter new email address"
-                                                            className="inputClass w-full"
-                                                            disabled={isUpdatingEmail}
-                                                        />
-                                                    </div>
-
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
-                                                            Confirm Password
-                                                        </label>
-                                                        <input
-                                                            type="password"
-                                                            value={emailPassword}
-                                                            onChange={(e) =>
-                                                                setEmailPassword(e.target.value)
-                                                            }
-                                                            placeholder="Enter your current password"
-                                                            className="inputClass w-full"
-                                                            disabled={isUpdatingEmail}
-                                                        />
-                                                    </div>
-
-                                                    <div className="pt-4">
-                                                        <button
-                                                            onClick={handleUpdateEmail}
-                                                            disabled={
-                                                                isUpdatingEmail ||
-                                                                !newEmail.trim() ||
-                                                                !emailPassword.trim()
-                                                            }
-                                                            className={`bannerButton ${
-                                                                isUpdatingEmail ||
-                                                                !newEmail.trim() ||
-                                                                !emailPassword.trim()
-                                                                    ? 'bg-gray-600 cursor-not-allowed opacity-50'
-                                                                    : 'bg-red-600 hover:bg-red-700'
-                                                            } text-white flex items-center justify-center gap-2`}
-                                                        >
-                                                            {isUpdatingEmail ? (
-                                                                <>
-                                                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                                                    Updating...
-                                                                </>
-                                                            ) : (
-                                                                'Update Email'
-                                                            )}
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
+                                        <EmailSection
+                                            user={user}
+                                            isGoogleAuth={isGoogleAuth}
+                                            newEmail={newEmail}
+                                            setNewEmail={setNewEmail}
+                                            emailPassword={emailPassword}
+                                            setEmailPassword={setEmailPassword}
+                                            isUpdatingEmail={isUpdatingEmail}
+                                            onUpdateEmail={handleUpdateEmail}
+                                        />
                                     )}
 
                                     {activeSection === 'password' && !isGuest && (
-                                        <div className="p-8">
-                                            <div className="mb-6">
-                                                <h2 className="text-2xl font-bold text-white mb-2">
-                                                    Password Settings
-                                                </h2>
-                                                <p className="text-[#b3b3b3]">
-                                                    Change your account password for better
-                                                    security.
-                                                </p>
-                                            </div>
-
-                                            {isGoogleAuth ? (
-                                                <div className="max-w-2xl">
-                                                    <div className="bg-blue-900/20 border border-blue-600/30 rounded-lg p-6">
-                                                        <div className="flex items-start gap-4">
-                                                            <div className="flex-shrink-0">
-                                                                <svg
-                                                                    className="w-6 h-6 text-blue-400"
-                                                                    fill="currentColor"
-                                                                    viewBox="0 0 24 24"
-                                                                >
-                                                                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                                                                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                                                                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                                                                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                                                                </svg>
-                                                            </div>
-                                                            <div className="flex-1">
-                                                                <h3 className="text-white font-semibold mb-2">
-                                                                    Signed in with Google
-                                                                </h3>
-                                                                <p className="text-[#b3b3b3] text-sm mb-3">
-                                                                    You're using Google to sign in.
-                                                                    Your password is managed by
-                                                                    Google and cannot be changed
-                                                                    here.
-                                                                </p>
-                                                                <p className="text-[#b3b3b3] text-sm">
-                                                                    To change your Google account
-                                                                    password, visit{' '}
-                                                                    <a
-                                                                        href="https://myaccount.google.com/security"
-                                                                        target="_blank"
-                                                                        rel="noopener noreferrer"
-                                                                        className="text-blue-400 hover:text-blue-300 underline"
-                                                                    >
-                                                                        Google Account Security
-                                                                    </a>
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="space-y-6 max-w-md">
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
-                                                            Current Password
-                                                        </label>
-                                                        <input
-                                                            type="password"
-                                                            value={currentPassword}
-                                                            onChange={(e) =>
-                                                                setCurrentPassword(e.target.value)
-                                                            }
-                                                            placeholder="Enter current password"
-                                                            className="inputClass w-full"
-                                                            disabled={isUpdatingPassword}
-                                                        />
-                                                    </div>
-
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
-                                                            New Password
-                                                        </label>
-                                                        <input
-                                                            type="password"
-                                                            value={newPassword}
-                                                            onChange={(e) =>
-                                                                setNewPassword(e.target.value)
-                                                            }
-                                                            placeholder="Enter new password (min 6 characters)"
-                                                            className="inputClass w-full"
-                                                            disabled={isUpdatingPassword}
-                                                        />
-                                                    </div>
-
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-[#e5e5e5] mb-2">
-                                                            Confirm New Password
-                                                        </label>
-                                                        <input
-                                                            type="password"
-                                                            value={confirmPassword}
-                                                            onChange={(e) =>
-                                                                setConfirmPassword(e.target.value)
-                                                            }
-                                                            placeholder="Confirm new password"
-                                                            className="inputClass w-full"
-                                                            disabled={isUpdatingPassword}
-                                                        />
-                                                    </div>
-
-                                                    <div className="pt-4">
-                                                        <button
-                                                            onClick={handleUpdatePassword}
-                                                            disabled={
-                                                                isUpdatingPassword ||
-                                                                !currentPassword.trim() ||
-                                                                !newPassword.trim() ||
-                                                                !confirmPassword.trim()
-                                                            }
-                                                            className={`bannerButton ${
-                                                                isUpdatingPassword ||
-                                                                !currentPassword.trim() ||
-                                                                !newPassword.trim() ||
-                                                                !confirmPassword.trim()
-                                                                    ? 'bg-gray-600 cursor-not-allowed opacity-50'
-                                                                    : 'bg-red-600 hover:bg-red-700'
-                                                            } text-white flex items-center justify-center gap-2`}
-                                                        >
-                                                            {isUpdatingPassword ? (
-                                                                <>
-                                                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                                                    Updating...
-                                                                </>
-                                                            ) : (
-                                                                'Update Password'
-                                                            )}
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
+                                        <PasswordSection
+                                            user={user}
+                                            isGoogleAuth={isGoogleAuth}
+                                            currentPassword={currentPassword}
+                                            setCurrentPassword={setCurrentPassword}
+                                            newPassword={newPassword}
+                                            setNewPassword={setNewPassword}
+                                            confirmPassword={confirmPassword}
+                                            setConfirmPassword={setConfirmPassword}
+                                            isUpdatingPassword={isUpdatingPassword}
+                                            onUpdatePassword={handleUpdatePassword}
+                                        />
                                     )}
 
                                     {activeSection === 'preferences' && (
-                                        <div className="p-8">
-                                            {/* Upgrade Banner for Guests */}
-                                            {isGuest && <UpgradeAccountBanner />}
-
-                                            <div className="mb-6">
-                                                <h2 className="text-2xl font-bold text-white mb-2">
-                                                    Preferences
-                                                </h2>
-                                                <p className="text-[#b3b3b3]">
-                                                    Customize your content filtering and playback
-                                                    experience
-                                                </p>
-                                            </div>
-
-                                            {/* Only render preferences controls after data is loaded */}
-                                            {userData.isInitializing ? (
-                                                <div className="space-y-8 animate-pulse">
-                                                    <div>
-                                                        <div className="h-6 bg-[#313131] rounded w-48 mb-4"></div>
-                                                        <div className="bg-[#0a0a0a] rounded-lg border border-[#313131] p-6">
-                                                            <div className="flex items-start justify-between">
-                                                                <div className="flex-1">
-                                                                    <div className="h-4 bg-[#313131] rounded w-40 mb-2"></div>
-                                                                    <div className="h-3 bg-[#313131] rounded w-64"></div>
-                                                                </div>
-                                                                <div className="w-11 h-6 bg-[#313131] rounded-full ml-4"></div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <PreferencesControls
-                                                    childSafetyMode={childSafetyMode}
-                                                    autoMute={autoMute}
-                                                    defaultVolume={defaultVolume}
-                                                    preferencesChanged={preferencesChanged}
-                                                    isGuest={isGuest}
-                                                    onChildSafetyModeChange={
-                                                        handleChildSafetyModeChange
-                                                    }
-                                                    onAutoMuteChange={handleAutoMuteChange}
-                                                    onDefaultVolumeChange={
-                                                        handleDefaultVolumeChange
-                                                    }
-                                                    onSave={handleSavePreferences}
-                                                    onShowChildSafetyModal={
-                                                        handleShowChildSafetyModal
-                                                    }
-                                                    onMarkInteracted={markInteracted}
-                                                    onClearInteracted={clearInteracted}
-                                                    userInteractedRef={userInteractedRef}
-                                                />
-                                            )}
-                                        </div>
+                                        <PreferencesSection
+                                            isGuest={isGuest}
+                                            isInitializing={userData.isInitializing}
+                                            childSafetyMode={childSafetyMode}
+                                            autoMute={autoMute}
+                                            defaultVolume={defaultVolume}
+                                            preferencesChanged={preferencesChanged}
+                                            onChildSafetyModeChange={handleChildSafetyModeChange}
+                                            onAutoMuteChange={handleAutoMuteChange}
+                                            onDefaultVolumeChange={handleDefaultVolumeChange}
+                                            onSave={handleSavePreferences}
+                                            onShowChildSafetyModal={handleShowChildSafetyModal}
+                                            onMarkInteracted={markInteracted}
+                                            onClearInteracted={clearInteracted}
+                                            userInteractedRef={userInteractedRef}
+                                        />
                                     )}
 
                                     {activeSection === 'share' && (
-                                        <div className="p-8">
-                                            <div className="mb-6">
-                                                <h2 className="text-2xl font-bold text-white mb-2">
-                                                    Share & Export
-                                                </h2>
-                                                <p className="text-[#b3b3b3]">
-                                                    {isGuest
-                                                        ? 'Export your data to keep a backup of your watchlists and preferences.'
-                                                        : 'Share your watchlists with others or export your data.'}
-                                                </p>
-                                            </div>
-
-                                            <div className="space-y-6">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    {!isGuest && (
-                                                        <div className="bg-[#0a0a0a] rounded-xl p-6 border border-[#313131]">
-                                                            <ShareIcon className="w-8 h-8 text-blue-500 mb-4" />
-                                                            <h3 className="text-lg font-semibold text-white mb-2">
-                                                                Share Watchlists
-                                                            </h3>
-                                                            <p className="text-[#b3b3b3] mb-4">
-                                                                Generate shareable links for your
-                                                                watchlists and custom lists.
-                                                            </p>
-                                                            <button className="bannerButton bg-blue-600 text-white hover:bg-blue-700">
-                                                                Manage Sharing
-                                                            </button>
-                                                        </div>
-                                                    )}
-
-                                                    <div
-                                                        className={`bg-[#0a0a0a] rounded-xl p-6 border border-[#313131] ${isGuest ? 'md:col-span-2' : ''}`}
-                                                    >
-                                                        <ArrowDownTrayIcon className="w-8 h-8 text-green-500 mb-4" />
-                                                        <h3 className="text-lg font-semibold text-white mb-2">
-                                                            Export Data
-                                                        </h3>
-                                                        <p className="text-[#b3b3b3] mb-4">
-                                                            Download your watchlists, liked items,
-                                                            and hidden content as CSV file.
-                                                        </p>
-
-                                                        {/* Data Summary */}
-                                                        <div className="mb-4 p-4 bg-[#141414] rounded-lg border border-[#313131]">
-                                                            <p className="text-[#e5e5e5] text-sm mb-2">
-                                                                Your data includes:
-                                                            </p>
-                                                            <ul className="text-[#b3b3b3] text-sm space-y-1">
-                                                                <li>
-                                                                    • {dataSummary.watchlistCount}{' '}
-                                                                    watchlist items
-                                                                </li>
-                                                                <li>
-                                                                    • {dataSummary.likedCount} liked
-                                                                    items
-                                                                </li>
-                                                                <li>
-                                                                    • {dataSummary.hiddenCount}{' '}
-                                                                    hidden items
-                                                                </li>
-                                                                {!isGuest && (
-                                                                    <li>
-                                                                        • {dataSummary.listsCount}{' '}
-                                                                        custom lists
-                                                                    </li>
-                                                                )}
-                                                            </ul>
-                                                        </div>
-
-                                                        <button
-                                                            onClick={handleExportData}
-                                                            disabled={dataSummary.isEmpty}
-                                                            className={`bannerButton ${
-                                                                dataSummary.isEmpty
-                                                                    ? 'bg-gray-600 cursor-not-allowed'
-                                                                    : 'bg-green-600 hover:bg-green-700'
-                                                            } text-white`}
-                                                        >
-                                                            {dataSummary.isEmpty
-                                                                ? 'No Data to Export'
-                                                                : 'Export Data (CSV)'}
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <ShareSection
+                                            isGuest={isGuest}
+                                            dataSummary={dataSummary}
+                                            onExportData={handleExportData}
+                                        />
                                     )}
 
                                     {activeSection === 'account' && (
-                                        <div className="p-8">
-                                            {/* Upgrade Banner for Guests */}
-                                            {isGuest && <UpgradeAccountBanner />}
-
-                                            <div className="mb-6">
-                                                <h2 className="text-2xl font-bold text-white mb-2">
-                                                    Data Management
-                                                </h2>
-                                                <p className="text-[#b3b3b3]">
-                                                    {isGuest
-                                                        ? 'Export, clear, or manage your local session data.'
-                                                        : 'Export, clear, or manage your account data.'}
-                                                </p>
-                                            </div>
-
-                                            <div className="space-y-6">
-                                                {/* Data Summary Card */}
-                                                <div className="bg-[#0a0a0a] rounded-lg border border-[#313131] p-6">
-                                                    <h3 className="text-lg font-semibold text-white mb-4">
-                                                        {isGuest ? 'Session Data' : 'Account Data'}
-                                                    </h3>
-                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                                                        <div className="bg-[#141414] rounded-lg p-4 border border-[#313131]">
-                                                            <p className="text-[#b3b3b3] text-sm">
-                                                                Watchlist
-                                                            </p>
-                                                            <p className="text-white text-2xl font-bold mt-1">
-                                                                {dataSummary.watchlistCount}
-                                                            </p>
-                                                        </div>
-                                                        <div className="bg-[#141414] rounded-lg p-4 border border-[#313131]">
-                                                            <p className="text-[#b3b3b3] text-sm">
-                                                                Liked
-                                                            </p>
-                                                            <p className="text-white text-2xl font-bold mt-1">
-                                                                {dataSummary.likedCount}
-                                                            </p>
-                                                        </div>
-                                                        <div className="bg-[#141414] rounded-lg p-4 border border-[#313131]">
-                                                            <p className="text-[#b3b3b3] text-sm">
-                                                                Hidden
-                                                            </p>
-                                                            <p className="text-white text-2xl font-bold mt-1">
-                                                                {dataSummary.hiddenCount}
-                                                            </p>
-                                                        </div>
-                                                        {!isGuest && (
-                                                            <div className="bg-[#141414] rounded-lg p-4 border border-[#313131]">
-                                                                <p className="text-[#b3b3b3] text-sm">
-                                                                    Lists
-                                                                </p>
-                                                                <p className="text-white text-2xl font-bold mt-1">
-                                                                    {dataSummary.listsCount}
-                                                                </p>
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    <div className="space-y-3">
-                                                        {/* Export Data Button */}
-                                                        <button
-                                                            onClick={handleExportData}
-                                                            disabled={dataSummary.isEmpty}
-                                                            className={`w-full text-left p-4 rounded-lg border transition-colors ${
-                                                                dataSummary.isEmpty
-                                                                    ? 'bg-[#141414] border-[#313131] cursor-not-allowed opacity-50'
-                                                                    : 'bg-[#141414] hover:bg-[#1a1a1a] border-[#313131]'
-                                                            }`}
-                                                        >
-                                                            <div className="flex items-center justify-between">
-                                                                <div className="flex-1">
-                                                                    <span className="text-[#e5e5e5] font-medium flex items-center gap-2">
-                                                                        <ArrowDownTrayIcon className="w-5 h-5" />
-                                                                        Export Data
-                                                                    </span>
-                                                                    <p className="text-[#b3b3b3] text-sm mt-1">
-                                                                        Download your watchlists and
-                                                                        preferences as CSV
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                        </button>
-
-                                                        {/* Clear Data Button */}
-                                                        <button
-                                                            onClick={() =>
-                                                                setShowClearConfirm(true)
-                                                            }
-                                                            disabled={dataSummary.isEmpty}
-                                                            className={`w-full text-left p-4 rounded-lg border transition-colors ${
-                                                                dataSummary.isEmpty
-                                                                    ? 'bg-[#141414] border-[#313131] cursor-not-allowed opacity-50'
-                                                                    : 'bg-[#141414] hover:bg-orange-900/20 border-orange-600/30'
-                                                            }`}
-                                                        >
-                                                            <div className="flex items-center justify-between">
-                                                                <div className="flex-1">
-                                                                    <span className="text-orange-400 font-medium flex items-center gap-2">
-                                                                        <TrashIcon className="w-5 h-5" />
-                                                                        Clear Data
-                                                                    </span>
-                                                                    <p className="text-[#b3b3b3] text-sm mt-1">
-                                                                        Remove all saved watchlists,
-                                                                        likes, and preferences
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                        </button>
-
-                                                        {/* Delete Account Button (Authenticated Only) */}
-                                                        {!isGuest && (
-                                                            <button
-                                                                onClick={() =>
-                                                                    setShowDeleteConfirm(true)
-                                                                }
-                                                                className="w-full text-left p-4 bg-[#141414] hover:bg-red-900/20 rounded-lg border border-red-600/30 transition-colors"
-                                                            >
-                                                                <div className="flex items-center justify-between">
-                                                                    <div className="flex-1">
-                                                                        <span className="text-red-400 font-medium flex items-center gap-2">
-                                                                            <TrashIcon className="w-5 h-5" />
-                                                                            Delete Account
-                                                                        </span>
-                                                                        <p className="text-[#b3b3b3] text-sm mt-1">
-                                                                            Permanently delete your
-                                                                            account and all data
-                                                                        </p>
-                                                                    </div>
-                                                                </div>
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <AccountSection
+                                            isGuest={isGuest}
+                                            dataSummary={dataSummary}
+                                            onExportData={handleExportData}
+                                            onShowClearConfirm={() => setShowClearConfirm(true)}
+                                            onShowDeleteConfirm={() => setShowDeleteConfirm(true)}
+                                        />
                                     )}
                                 </div>
                             </div>

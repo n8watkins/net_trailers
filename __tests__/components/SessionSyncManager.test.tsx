@@ -10,6 +10,7 @@
 import { renderHook, act } from '@testing-library/react'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useAuthStore } from '../../stores/authStore'
+import { AuthStorageService } from '../../services/authStorageService'
 
 // Mock Firebase auth
 const mockUser = {
@@ -78,6 +79,8 @@ describe('SessionSyncManager - CRITICAL ISSUE: Initial Sync May Not Trigger', ()
     beforeEach(() => {
         // Reset stores
         jest.clearAllMocks()
+        useAuthStore.getState().clearLocalCache()
+        useSessionStore.getState().setTransitioning(false)
     })
 
     test('ISSUE: Default syncStatus prevents initial Firebase sync', async () => {
@@ -149,9 +152,31 @@ describe('SessionSyncManager - CRITICAL ISSUE: Initial Sync May Not Trigger', ()
     test('SCENARIO: User with offline syncStatus would sync (rare edge case)', async () => {
         const { result: authResult } = renderHook(() => useAuthStore())
 
-        // Artificially set syncStatus to offline (e.g., after a failed save)
+        // First, load some initial data so authStore has a userId (but DIFFERENT from test-user-123)
         await act(async () => {
-            await authResult.current.updatePreferences({ syncStatus: 'offline' } as any)
+            authResult.current.loadData({
+                userId: 'old-user-456',
+                likedMovies: [],
+                hiddenMovies: [],
+                defaultWatchlist: [],
+                userCreatedWatchlists: [],
+                lastActive: Date.now(),
+                syncStatus: 'synced',
+            })
+        })
+
+        // Make the save fail to trigger offline status
+        jest.mocked(AuthStorageService.saveUserData).mockRejectedValueOnce(
+            new Error('Storage failure')
+        )
+
+        // Artificially set syncStatus to offline by failing a save operation
+        await act(async () => {
+            try {
+                await authResult.current.updatePreferences({ autoMute: false })
+            } catch {
+                // Expected to fail, which sets syncStatus to 'offline'
+            }
         })
 
         const authUserId = authResult.current.userId
@@ -160,7 +185,9 @@ describe('SessionSyncManager - CRITICAL ISSUE: Initial Sync May Not Trigger', ()
 
         const shouldSyncWithCurrentLogic = authUserId !== userUid && authSyncStatus === 'offline'
 
-        // In this rare case, sync WOULD trigger because both conditions are met
+        // In this rare case, sync WOULD trigger because both conditions are met:
+        // - userId mismatch: 'old-user-456' !== 'test-user-123'
+        // - syncStatus is 'offline' from the failed save
         // But this scenario is uncommon - the normal case (initial load) fails
         expect(shouldSyncWithCurrentLogic).toBe(true)
     })
@@ -169,6 +196,8 @@ describe('SessionSyncManager - CRITICAL ISSUE: Initial Sync May Not Trigger', ()
 describe('SessionSyncManager - Session Initialization', () => {
     beforeEach(() => {
         jest.clearAllMocks()
+        useAuthStore.getState().clearLocalCache()
+        useSessionStore.getState().setTransitioning(false)
     })
 
     test('should initialize guest session when no user present', () => {
@@ -229,6 +258,8 @@ describe('SessionSyncManager - Session Initialization', () => {
 describe('SessionSyncManager - User Switching Race Conditions', () => {
     beforeEach(() => {
         jest.clearAllMocks()
+        useAuthStore.getState().clearLocalCache()
+        useSessionStore.getState().setTransitioning(false)
     })
 
     test('should handle rapid user switching', () => {
@@ -275,6 +306,8 @@ describe('SessionSyncManager - User Switching Race Conditions', () => {
 describe('SessionSyncManager - Guest Session Persistence', () => {
     beforeEach(() => {
         jest.clearAllMocks()
+        useAuthStore.getState().clearLocalCache()
+        useSessionStore.getState().setTransitioning(false)
     })
 
     test('should maintain same guest ID across initializations', () => {

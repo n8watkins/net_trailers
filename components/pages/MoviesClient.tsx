@@ -25,9 +25,9 @@ export default function MoviesClient({ data }: MoviesClientProps) {
             <Header />
             <main id="content" className="relative">
                 <div className="relative h-screen w-full">
-                    <Banner trending={trending} />
+                    <Banner trending={trending} variant="compact" />
                 </div>
-                <section className="relative -mt-48 z-10 pb-52 space-y-8">
+                <section className="relative -mt-[55vh] z-10 pb-52 space-y-8">
                     {trending.length > 0 && (
                         <div className="pt-8 sm:pt-12 md:pt-16">
                             <Row title="Trending Movies" content={trending} />

@@ -25,7 +25,7 @@ export interface HomeData {
     genre1: Content[] // Action (movies) | Action & Adventure (TV)
     genre2: Content[] // Comedy (both)
     genre3: Content[] // Horror (movies) | Sci-Fi & Fantasy (TV)
-    genre4: Content[] // Romance (movies) | Animation (TV)
+    genre4: Content[] // Animation (both)
     documentaries: Content[]
 }
 
@@ -208,8 +208,8 @@ export async function fetchHomeData(filter?: string): Promise<HomeData> {
                 // Mixed genres - Horror (movies) + Sci-Fi & Fantasy (TV)
                 fetch(`${baseUrl}/api/genres/movie/27?${childSafetyParam}`, { cache: 'no-store' }),
                 fetch(`${baseUrl}/api/genres/tv/10765?${childSafetyParam}`, { cache: 'no-store' }),
-                // Mixed genres - Romance (movies) + Animation (TV)
-                fetch(`${baseUrl}/api/genres/movie/10749?${childSafetyParam}`, {
+                // Mixed genres - Animation (movies + TV)
+                fetch(`${baseUrl}/api/genres/movie/16?${childSafetyParam}`, {
                     cache: 'no-store',
                 }),
                 fetch(`${baseUrl}/api/genres/tv/16?${childSafetyParam}`, {

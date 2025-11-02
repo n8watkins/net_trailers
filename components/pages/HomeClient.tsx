@@ -28,20 +28,18 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
                 <div className="relative h-screen w-full">
                     <Banner trending={trending} />
                 </div>
-                <section className="relative -mt-48 z-10 pb-52 space-y-8">
+                <section className="relative z-10 pb-52 space-y-8">
                     {trending.length > 0 && (
-                        <div className="pt-8 sm:pt-12 md:pt-16">
-                            <Row
-                                title={
-                                    filter === 'tv'
-                                        ? 'Trending TV Shows'
-                                        : filter === 'movies'
-                                          ? 'Trending Movies'
-                                          : 'Trending'
-                                }
-                                content={trending}
-                            />
-                        </div>
+                        <Row
+                            title={
+                                filter === 'tv'
+                                    ? 'Trending TV Shows'
+                                    : filter === 'movies'
+                                      ? 'Trending Movies'
+                                      : 'Trending'
+                            }
+                            content={trending}
+                        />
                     )}
                     {topRated.length > 0 && (
                         <Row
@@ -114,7 +112,7 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
                                           : 'Romance Movies'
                                       : childSafetyEnabled
                                         ? 'Fantasy'
-                                        : 'Romance & Animation'
+                                        : 'Animation'
                             }
                             content={genre4}
                         />

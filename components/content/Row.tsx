@@ -52,21 +52,24 @@ function Row({ title, content }: Props) {
             </h2>
 
             {/* Content Row */}
-            <div className="relative row-container h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem]">
+            <div className="relative row-container h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] group">
                 {/* Left Arrow - Hidden on mobile, visible on larger screens */}
                 <div
-                    className={`hidden md:flex absolute left-0 top-0 z-30 h-full items-center pl-2 ${
-                        isMoved ? 'row-container:hover:opacity-100' : 'opacity-0'
-                    } transition-opacity cursor-pointer pointer-events-auto`}
+                    className={`hidden md:flex absolute top-0 z-50 items-center justify-center ${
+                        isMoved ? '' : 'opacity-0'
+                    } transition-all duration-300 cursor-pointer pointer-events-auto`}
                     onClick={() => handleClick('left')}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'transparent'
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'transparent'
+                    style={{
+                        background:
+                            'linear-gradient(to right, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)',
+                        width: '100px',
+                        height: '100%',
+                        left: '-2rem',
                     }}
                 >
-                    <ChevronLeftIcon className="h-8 w-8 text-white hover:scale-110 transition-transform" />
+                    <div className="ml-8 bg-transparent group-hover:bg-black/50 rounded-lg w-14 h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] flex items-center justify-center hover:backdrop-blur-md hover:bg-black/70 transition-all duration-300 shadow-2xl border border-transparent group-hover:border-white/20 opacity-70 group-hover:opacity-100">
+                        <ChevronLeftIcon className="h-14 w-14 text-white drop-shadow-2xl hover:scale-125 transition-transform duration-300" />
+                    </div>
                 </div>
 
                 {/* Scrollable Container */}
@@ -89,16 +92,19 @@ function Row({ title, content }: Props) {
 
                 {/* Right Arrow - Hidden on mobile, visible on larger screens */}
                 <div
-                    className="hidden md:flex absolute right-0 top-0 z-30 h-full items-center pr-2 row-container:hover:opacity-100 opacity-0 transition-opacity cursor-pointer pointer-events-auto"
+                    className="hidden md:flex absolute top-0 z-50 items-center justify-center transition-all duration-300 cursor-pointer pointer-events-auto"
                     onClick={() => handleClick('right')}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'transparent'
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'transparent'
+                    style={{
+                        background:
+                            'linear-gradient(to left, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)',
+                        width: '100px',
+                        height: '100%',
+                        right: '-2rem',
                     }}
                 >
-                    <ChevronRightIcon className="h-8 w-8 text-white hover:scale-110 transition-transform" />
+                    <div className="mr-8 bg-transparent group-hover:bg-black/50 rounded-lg w-14 h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] flex items-center justify-center hover:backdrop-blur-md hover:bg-black/70 transition-all duration-300 shadow-2xl border border-transparent group-hover:border-white/20 opacity-70 group-hover:opacity-100">
+                        <ChevronRightIcon className="h-14 w-14 text-white drop-shadow-2xl hover:scale-125 transition-transform duration-300" />
+                    </div>
                 </div>
             </div>
         </div>
