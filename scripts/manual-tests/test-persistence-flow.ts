@@ -143,7 +143,7 @@ async function testGuestUserPersistence() {
 
         // Step 1: Initialize guest session
         console.log('\n📝 Step 1: Initializing guest session...')
-        guestStore.syncFromLocalStorage(testGuestId)
+        await guestStore.syncFromLocalStorage(testGuestId)
         console.log('✅ Guest session initialized')
 
         // Step 2: Create a custom list

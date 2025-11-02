@@ -4,7 +4,7 @@ import { useAuthStore } from '../stores/authStore'
 import { useGuestStore } from '../stores/guestStore'
 import useAuth from '../hooks/useAuth'
 import { getCachedUserId } from '../utils/authCache'
-import { authLog } from '../utils/debugLogger'
+import { authLog, authError } from '../utils/debugLogger'
 
 /**
  * Centralized session sync manager - ensures Firebase sync happens only ONCE
@@ -203,7 +203,9 @@ export function SessionSyncManager() {
                     activeSessionId,
                     currentGuestId: guestStore.guestId,
                 })
-                guestStore.syncFromLocalStorage!(activeSessionId)
+                guestStore.syncFromLocalStorage!(activeSessionId).catch((error) => {
+                    authError('[SessionSyncManager] Failed to sync guest data:', error)
+                })
             } else {
                 authLog('✅ [SessionSyncManager] Guest data already synced, skipping')
             }

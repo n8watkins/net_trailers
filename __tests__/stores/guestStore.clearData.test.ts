@@ -88,12 +88,12 @@ describe('GuestStore - clearAllData', () => {
         })
     })
 
-    it('should clear in-memory store data', () => {
+    it('should clear in-memory store data', async () => {
         const { result } = renderHook(() => useGuestStore())
 
         // Populate the store
-        act(() => {
-            result.current.syncFromLocalStorage('test-guest-id')
+        await act(async () => {
+            await result.current.syncFromLocalStorage('test-guest-id')
             result.current.addLikedMovie(createMockContent(1, 'Test Movie 1'))
             result.current.addToWatchlist(createMockContent(2, 'Test Movie 2'))
             result.current.addHiddenMovie(createMockContent(3, 'Test Movie 3'))
@@ -116,12 +116,12 @@ describe('GuestStore - clearAllData', () => {
         expect(result.current.userCreatedWatchlists).toHaveLength(0)
     })
 
-    it('should call GuestStorageService.clearCurrentGuestData to clear localStorage', () => {
+    it('should call GuestStorageService.clearCurrentGuestData to clear localStorage', async () => {
         const { result } = renderHook(() => useGuestStore())
 
         // Set up guest ID
-        act(() => {
-            result.current.syncFromLocalStorage('test-guest-id')
+        await act(async () => {
+            await result.current.syncFromLocalStorage('test-guest-id')
         })
 
         // Clear all data
@@ -133,12 +133,12 @@ describe('GuestStore - clearAllData', () => {
         expect(GuestStorageService.clearCurrentGuestData).toHaveBeenCalledWith('test-guest-id')
     })
 
-    it('should preserve guestId to prevent SessionSyncManager re-sync', () => {
+    it('should preserve guestId to prevent SessionSyncManager re-sync', async () => {
         const { result } = renderHook(() => useGuestStore())
 
         // Set up guest ID
-        act(() => {
-            result.current.syncFromLocalStorage('test-guest-id')
+        await act(async () => {
+            await result.current.syncFromLocalStorage('test-guest-id')
         })
 
         const originalGuestId = result.current.guestId
@@ -187,12 +187,12 @@ describe('GuestStore - clearAllData', () => {
         expect(GuestStorageService.clearCurrentGuestData).not.toHaveBeenCalled()
     })
 
-    it('should reset preferences to defaults when clearing', () => {
+    it('should reset preferences to defaults when clearing', async () => {
         const { result } = renderHook(() => useGuestStore())
 
         // Set up guest ID and modify preferences
-        act(() => {
-            result.current.syncFromLocalStorage('test-guest-id')
+        await act(async () => {
+            await result.current.syncFromLocalStorage('test-guest-id')
             result.current.updatePreferences({
                 autoMute: false,
                 defaultVolume: 75,
