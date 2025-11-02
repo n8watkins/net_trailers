@@ -4,7 +4,7 @@
  */
 
 import { Content } from '../typings'
-import { getChildSafetyMode } from './childSafetyCookie'
+import { getChildSafetyMode } from './childSafetyCookieServer'
 
 const API_KEY = process.env.TMDB_API_KEY
 

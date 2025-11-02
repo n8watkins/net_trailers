@@ -4,7 +4,7 @@
  * Server actions for managing Child Safety Mode
  */
 
-import { setChildSafetyModeCookie } from '../childSafetyCookie'
+import { setChildSafetyModeCookie } from '../childSafetyCookieServer'
 
 /**
  * Toggle child safety mode

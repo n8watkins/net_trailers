@@ -5,7 +5,7 @@ import Banner from '../layout/Banner'
 import Row from '../content/Row'
 import { HomeData } from '../../lib/serverData'
 import { useAppStore } from '../../stores/appStore'
-import { getChildSafetyModeClient } from '../../lib/childSafetyCookie'
+import { getChildSafetyModeClient } from '../../lib/childSafetyCookieClient'
 
 interface HomeClientProps {
     data: HomeData
