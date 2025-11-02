@@ -7,7 +7,7 @@
  * - Don't get stuck on default values
  */
 
-import { renderHook, act, waitFor } from '@testing-library/react'
+import { renderHook, waitFor } from '@testing-library/react'
 import useUserData from '../../hooks/useUserData'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useGuestStore } from '../../stores/guestStore'

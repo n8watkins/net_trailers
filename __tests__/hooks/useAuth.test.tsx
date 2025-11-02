@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, renderHook, act, waitFor } from '@testing-library/react'
+import { renderHook, act } from '@testing-library/react'
 import useAuth, { AuthProvider } from '../../hooks/useAuth'
 
 // Mock Firebase auth functions

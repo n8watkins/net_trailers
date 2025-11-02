@@ -5,7 +5,6 @@
  * when child safety mode is enabled at the UI layer
  */
 
-import { render, screen, waitFor } from '@testing-library/react'
 import { filterContentByAdultFlag } from '../../utils/contentFilter'
 import { Movie, TVShow } from '../../typings'
 

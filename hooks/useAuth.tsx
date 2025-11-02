@@ -19,7 +19,6 @@ import {
 } from 'firebase/auth'
 
 import { auth } from '../firebase'
-import { useRouter } from 'next/router'
 import { useAppStore } from '../stores/appStore'
 import { createErrorHandler } from '../utils/errorHandler'
 import { useToast } from './useToast'

@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import Header from '../../components/Header'
 
 // Mock Next.js Image component
@@ -190,7 +190,7 @@ describe('Header Component', () => {
     })
 
     it('should handle scroll events correctly', () => {
-        const { rerender } = render(
+        render(
             <TestWrapper>
                 <Header />
             </TestWrapper>

@@ -7,10 +7,9 @@
  * - Race conditions during session switching
  */
 
-import { renderHook, act, waitFor } from '@testing-library/react'
+import { renderHook, act } from '@testing-library/react'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useAuthStore } from '../../stores/authStore'
-import { useGuestStore } from '../../stores/guestStore'
 
 // Mock Firebase auth
 const mockUser = {
@@ -159,8 +158,7 @@ describe('SessionSyncManager - CRITICAL ISSUE: Initial Sync May Not Trigger', ()
         const authSyncStatus = authResult.current.syncStatus
         const userUid = 'test-user-123'
 
-        const shouldSyncWithCurrentLogic =
-            authUserId !== userUid && authSyncStatus === 'offline'
+        const shouldSyncWithCurrentLogic = authUserId !== userUid && authSyncStatus === 'offline'
 
         // In this rare case, sync WOULD trigger because both conditions are met
         // But this scenario is uncommon - the normal case (initial load) fails
@@ -285,8 +283,6 @@ describe('SessionSyncManager - Guest Session Persistence', () => {
         act(() => {
             sessionResult1.current.initializeGuestSession()
         })
-
-        const firstGuestId = sessionResult1.current.activeSessionId
 
         // Simulate app reload - new hook instance
         const { result: sessionResult2 } = renderHook(() => useSessionStore())

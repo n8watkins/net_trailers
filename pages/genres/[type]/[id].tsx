@@ -169,24 +169,6 @@ const GenrePage: NextPage<GenrePageProps> = ({
         setContent([])
     }, [genreId, mediaType])
 
-    const handleFilterChange = (key: string, value: string) => {
-        setFilters((prev) => ({ ...prev, [key]: value }))
-        setPage(1)
-        setContent([])
-    }
-
-    const clearFilters = () => {
-        setFilters({
-            sort_by: 'popularity.desc',
-            rating: 'all',
-            year: 'all',
-        })
-        setPage(1)
-        setContent([])
-    }
-
-    const hasActiveFilters = filters.rating !== 'all' || filters.year !== 'all'
-
     const loadMore = useCallback(() => {
         if (hasMore && !loading && !loadingMore) {
             setLoadingMore(true)

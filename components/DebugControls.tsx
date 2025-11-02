@@ -163,9 +163,6 @@ export default function DebugControls() {
         }
     }, [isDragging, dragOffset])
 
-    // Check if any setting is enabled
-    const hasAnySettingEnabled = Object.values(settings).some((value) => value === true)
-
     // Show all controls when hovering or dragging
     const showAllControls = isHovered || isDragging
 

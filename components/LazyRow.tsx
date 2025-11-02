@@ -139,7 +139,6 @@ function StreamingRow({ title, content, hideTitles: _hideTitles = false, batchSi
         if (rowRef.current) {
             const { scrollLeft } = rowRef.current
             const thumbnailLength = rowRef.current.children[0]?.clientWidth || 220
-            const thumbnailsOnPage = Math.floor(window.innerWidth / thumbnailLength)
             const scrollDistance = thumbnailLength * 6
 
             const scrollTo =

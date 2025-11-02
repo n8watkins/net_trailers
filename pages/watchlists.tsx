@@ -10,7 +10,7 @@ import {
     ArrowDownTrayIcon,
     PlusIcon,
 } from '@heroicons/react/24/solid'
-import { Content, isMovie, isTVShow } from '../typings'
+import { isMovie, isTVShow } from '../typings'
 import { getTitle } from '../typings'
 import ContentCard from '../components/ContentCard'
 import { useAppStore } from '../stores/appStore'
@@ -77,7 +77,7 @@ const Watchlists: NextPage<Props> = ({
 
     const [selectedListId, setSelectedListId] = useState<string | 'all'>('all')
     const [searchQuery, setSearchQuery] = useState('')
-    const { modal, openModal, openListModal } = useAppStore()
+    const { modal, openListModal } = useAppStore()
     const showModal = modal.isOpen
 
     // Get all available lists
@@ -126,18 +126,10 @@ const Watchlists: NextPage<Props> = ({
           })
         : baseFilteredContent
 
-    const handleContentClick = (content: Content) => {
-        openModal(content, true, false)
-    }
-
     const handleExportCSV = () => {
         if (userSession?.preferences) {
             exportUserDataToCSV(userSession.preferences)
         }
-    }
-
-    const handleManageAllLists = () => {
-        openListModal(undefined)
     }
 
     const getListIcon = (list: UserList, isSelected: boolean = false) => {

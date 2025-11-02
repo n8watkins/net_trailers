@@ -403,7 +403,7 @@ export class AuthStorageService {
                 listsCount: preferences.userCreatedWatchlists.length,
                 lastActive: preferences.lastActive,
             }
-        } catch (error) {
+        } catch (_error) {
             return {
                 userId,
                 exists: false,

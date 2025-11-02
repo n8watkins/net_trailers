@@ -39,7 +39,7 @@ jest.mock('../../utils/tmdbApi', () => ({
         }),
     },
     setCacheHeaders: jest.fn(),
-    handleApiError: (res: any, error: any) => {
+    handleApiError: (res: any, _error: any) => {
         return res.status(500).json({ error: 'API Error' })
     },
 }))
