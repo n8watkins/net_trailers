@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/router'
 import { useAppStore } from '../stores/appStore'
 import type { SearchFilters } from '../stores/appStore'
-import { getTitle, Content, getYear } from '../typings'
+import { getTitle, Content, getYear, isMovie } from '../typings'
 import { useChildSafety } from './useChildSafety'
 import { guestLog, guestError } from '../utils/debugLogger'
 
@@ -79,8 +79,9 @@ async function applyFilters(results: Content[], filters: SearchFilters): Promise
         filteredResults.sort((a, b) => {
             switch (filters.sortBy) {
                 case 'revenue.desc': {
-                    const revenueA = (a as any).revenue || 0
-                    const revenueB = (b as any).revenue || 0
+                    // Only movies have revenue; TV shows default to 0
+                    const revenueA = isMovie(a) ? a.revenue || 0 : 0
+                    const revenueB = isMovie(b) ? b.revenue || 0 : 0
                     return revenueB - revenueA
                 }
                 case 'vote_average.desc': {
@@ -235,8 +236,8 @@ export function useSearch() {
                     isTruncated: wasTruncated,
                     currentPage: currentPage - 1,
                 }))
-            } catch (error: any) {
-                if (error.name !== 'AbortError') {
+            } catch (error) {
+                if ((error as { name?: string }).name !== 'AbortError') {
                     guestError('[QuickSearch] Error:', error)
                     setSearch((prev) => ({
                         ...prev,
@@ -361,8 +362,8 @@ export function useSearch() {
                 isLoadingAll: false,
                 currentPage: currentPage - 1,
             }))
-        } catch (error: any) {
-            if (error.name !== 'AbortError') {
+        } catch (error) {
+            if ((error as { name?: string }).name !== 'AbortError') {
                 guestError('[LoadAll] Error:', error)
                 setSearch((prev) => ({
                     ...prev,
@@ -452,12 +453,13 @@ export function useSearch() {
                 if (page === 1) {
                     addToSearchHistory(trimmedQuery)
                 }
-            } catch (error: any) {
-                if (error.name !== 'AbortError') {
+            } catch (error) {
+                if ((error as { name?: string }).name !== 'AbortError') {
+                    const errorMessage = (error as { message?: string }).message || 'Search failed'
                     setSearch((prev) => ({
                         ...prev,
                         isLoading: false,
-                        error: error.message || 'Search failed',
+                        error: errorMessage,
                     }))
                 }
                 // AbortError is expected when cancelling requests, ignore it

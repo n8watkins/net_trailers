@@ -13,7 +13,7 @@ interface CallInfo {
     data?: Record<string, unknown>
 }
 
-class FirebaseCallTracker {
+export class FirebaseCallTracker {
     private calls: CallInfo[] = []
     private callCounts: Map<string, number> = new Map()
     private windowStartTime: number = Date.now()
@@ -152,5 +152,5 @@ export const firebaseTracker = new FirebaseCallTracker()
 
 // Attach to window for console debugging
 if (typeof window !== 'undefined') {
-    ;(window as any).firebaseTracker = firebaseTracker
+    window.firebaseTracker = firebaseTracker
 }

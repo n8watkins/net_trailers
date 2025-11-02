@@ -13,7 +13,7 @@ interface SyncOperation<T = unknown> {
     promise?: Promise<T>
 }
 
-class FirebaseSyncManager {
+export class FirebaseSyncManager {
     private activeSyncs = new Map<string, SyncOperation<unknown>>()
     private completedSyncs = new Map<string, number>() // userId -> last completion time
     private readonly MIN_SYNC_INTERVAL = 5000 // 5 seconds minimum between syncs
@@ -150,5 +150,5 @@ export const syncManager = new FirebaseSyncManager()
 
 // Attach to window for debugging
 if (typeof window !== 'undefined') {
-    ;(window as any).syncManager = syncManager
+    window.syncManager = syncManager
 }

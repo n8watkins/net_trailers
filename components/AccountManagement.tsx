@@ -46,11 +46,12 @@ export default function AccountManagement() {
                         totalItems: 0,
                         isEmpty: true,
                     }
-                } else if ('getAccountDataSummary' in userData) {
-                    // Both authenticated and guest sessions return DataSummary
-                    // Authenticated returns Promise<DataSummary>, guest returns DataSummary
-                    const result = userData.getAccountDataSummary()
-                    summary = result instanceof Promise ? await result : result
+                } else if (userData.sessionType === 'authenticated') {
+                    // Authenticated returns Promise<DataSummary>
+                    summary = await userData.getAccountDataSummary()
+                } else if (userData.sessionType === 'guest') {
+                    // Guest returns DataSummary synchronously
+                    summary = userData.getAccountDataSummary()
                 } else {
                     // Fallback empty summary
                     summary = {
@@ -93,24 +94,22 @@ export default function AccountManagement() {
         try {
             setIsLoading(true)
 
-            if ('clearAccountData' in userData) {
-                if (userData.isAuthenticated) {
-                    await userData.clearAccountData()
-                } else {
-                    userData.clearAccountData()
-                }
+            if (userData.sessionType === 'authenticated') {
+                await userData.clearAccountData()
+            } else if (userData.sessionType === 'guest') {
+                userData.clearAccountData()
             }
 
             showSuccess('Account data cleared successfully')
             setShowClearConfirm(false)
 
-            // Reload summary with proper type checking
-            if ('getAccountDataSummary' in userData) {
-                const result = userData.getAccountDataSummary()
-                const summary = result instanceof Promise ? await result : result
-                setDataSummary(summary)
+            // Reload summary
+            if (userData.sessionType === 'authenticated') {
+                setDataSummary(await userData.getAccountDataSummary())
+            } else if (userData.sessionType === 'guest') {
+                setDataSummary(userData.getAccountDataSummary())
             } else {
-                // Fallback empty summary for session types without this method
+                // Fallback empty summary for initializing state
                 setDataSummary({
                     watchlistCount: 0,
                     likedCount: 0,
@@ -133,26 +132,34 @@ export default function AccountManagement() {
         try {
             setIsLoading(true)
 
-            if ('exportAccountData' in userData) {
-                const exportData = userData.isAuthenticated
-                    ? await userData.exportAccountData()
-                    : userData.exportAccountData()
+            let exportData
+            let sessionLabel = 'unknown'
 
-                // Create and download file
-                const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-                    type: 'application/json',
-                })
-                const url = URL.createObjectURL(blob)
-                const link = document.createElement('a')
-                link.href = url
-                link.download = `nettrailer-data-${userData.isAuthenticated ? 'user' : 'guest'}-${new Date().toISOString().split('T')[0]}.json`
-                document.body.appendChild(link)
-                link.click()
-                document.body.removeChild(link)
-                URL.revokeObjectURL(url)
-
-                showSuccess('Account data exported successfully')
+            if (userData.sessionType === 'authenticated') {
+                exportData = await userData.exportAccountData()
+                sessionLabel = 'user'
+            } else if (userData.sessionType === 'guest') {
+                exportData = userData.exportAccountData()
+                sessionLabel = 'guest'
+            } else {
+                // Can't export during initialization
+                return
             }
+
+            // Create and download file
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+                type: 'application/json',
+            })
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = `nettrailer-data-${sessionLabel}-${new Date().toISOString().split('T')[0]}.json`
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            URL.revokeObjectURL(url)
+
+            showSuccess('Account data exported successfully')
         } catch (error) {
             console.error('Failed to export account data:', error)
             errorHandler.handleApiError(error as Error, 'export account data')
@@ -163,7 +170,7 @@ export default function AccountManagement() {
 
     // Handle delete account (authenticated users only)
     const handleDeleteAccount = async () => {
-        if (!userData.isAuthenticated || !('deleteAccount' in userData)) return
+        if (userData.sessionType !== 'authenticated') return
 
         if (!showDeleteConfirm) {
             setShowDeleteConfirm(true)
@@ -331,7 +338,7 @@ export default function AccountManagement() {
                 )}
 
                 {/* Delete Account (Authenticated Users Only) */}
-                {userData.isAuthenticated && 'deleteAccount' in userData && (
+                {userData.sessionType === 'authenticated' && (
                     <>
                         <button
                             onClick={handleDeleteAccount}
