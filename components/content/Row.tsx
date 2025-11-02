@@ -5,6 +5,14 @@ import ContentCard from '../common/ContentCard'
 import { useSessionData } from '../../hooks/useSessionData'
 import { filterDislikedContent } from '../../utils/contentFilter'
 
+// Debug logging - only in development
+const DEBUG_INFINITE_SCROLL = process.env.NODE_ENV === 'development'
+const debugLog = (emoji: string, message: string, data?: any) => {
+    if (DEBUG_INFINITE_SCROLL) {
+        console.log(`${emoji} [Infinite Row Loading] ${message}`, data || '')
+    }
+}
+
 interface Props {
     title: string
     content: Content[]
@@ -13,6 +21,9 @@ interface Props {
 function Row({ title, content, apiEndpoint }: Props) {
     const rowRef = useRef<HTMLDivElement>(null)
     const sentinelRef = useRef<HTMLDivElement>(null)
+    const isLoadingRef = useRef(false)
+    const hasMoreRef = useRef(true)
+    const retryCountRef = useRef(0)
     const [isMoved, setIsMoved] = useState(false)
     const [allContent, setAllContent] = useState<Content[]>(content)
     const [currentPage, setCurrentPage] = useState(1)
@@ -20,10 +31,15 @@ function Row({ title, content, apiEndpoint }: Props) {
     const [hasMore, setHasMore] = useState(true)
     const sessionData = useSessionData()
 
+    // Keep refs in sync with state for Intersection Observer
+    useEffect(() => {
+        isLoadingRef.current = isLoading
+        hasMoreRef.current = hasMore
+    }, [isLoading, hasMore])
+
     // Update allContent when initial content changes
     useEffect(() => {
-        console.log('🔄 [Infinite Row Loading] Content initialized:', {
-            title,
+        debugLog('🔄', `Content initialized: ${title}`, {
             initialContentCount: content.length,
             hasApiEndpoint: !!apiEndpoint,
             apiEndpoint,
@@ -69,10 +85,47 @@ function Row({ title, content, apiEndpoint }: Props) {
             const response = await fetch(url)
 
             if (!response.ok) {
-                console.error('❌ [Infinite Row Loading] Failed to fetch:', response.status)
+                // FIX: Differentiate between permanent and transient errors
+                const isPermanentError = response.status === 404 || response.status === 410
+                const isTransientError =
+                    response.status >= 500 || // 5xx server errors
+                    response.status === 429 || // Rate limiting
+                    response.status === 408 // Request timeout
+
+                if (isPermanentError) {
+                    console.error(
+                        '❌ [Infinite Row Loading] Permanent error, stopping load:',
+                        response.status
+                    )
+                    setHasMore(false)
+                    return
+                }
+
+                if (isTransientError && retryCountRef.current < 3) {
+                    retryCountRef.current += 1
+                    const backoffDelay = Math.min(
+                        1000 * Math.pow(2, retryCountRef.current - 1),
+                        5000
+                    )
+                    console.warn(
+                        `⚠️ [Infinite Row Loading] Transient error (${response.status}), retry ${retryCountRef.current}/3 after ${backoffDelay}ms:`,
+                        title
+                    )
+                    setTimeout(() => loadMoreContent(), backoffDelay)
+                    return
+                }
+
+                // After 3 retries or other errors, stop
+                console.error(
+                    '❌ [Infinite Row Loading] Failed to fetch after retries:',
+                    response.status
+                )
                 setHasMore(false)
                 return
             }
+
+            // Reset retry count on successful fetch
+            retryCountRef.current = 0
 
             const data = await response.json()
             const newContent = data.results || []
@@ -90,37 +143,60 @@ function Row({ title, content, apiEndpoint }: Props) {
             }
 
             // Deduplicate by id and media_type to prevent duplicate items
-            setAllContent((prev) => {
-                const existing = new Set(prev.map((item) => `${item.media_type}-${item.id}`))
-                const filtered = newContent.filter(
-                    (item: Content) => !existing.has(`${item.media_type}-${item.id}`)
-                )
-                console.log('✨ [Infinite Row Loading] Adding new content:', {
-                    title,
-                    previousCount: prev.length,
-                    newUniqueItems: filtered.length,
-                    totalCount: prev.length + filtered.length,
-                })
+            const existing = new Set(allContent.map((item) => `${item.media_type}-${item.id}`))
+            const filtered = newContent.filter(
+                (item: Content) => !existing.has(`${item.media_type}-${item.id}`)
+            )
 
-                // Preload images for new content in the background
-                filtered.forEach((item: Content) => {
-                    if (item.poster_path) {
-                        const img = new Image()
-                        img.src = `https://image.tmdb.org/t/p/w500${item.poster_path}`
-                    }
-                })
-                console.log(
-                    '🖼️ [Infinite Row Loading] Preloading images for:',
-                    filtered.length,
-                    'items'
-                )
-
-                return [...prev, ...filtered]
+            console.log('✨ [Infinite Row Loading] Processing new content:', {
+                title,
+                previousCount: allContent.length,
+                newUniqueItems: filtered.length,
+                totalCount: allContent.length + filtered.length,
             })
 
+            // FIX: If all items were duplicates, stop loading to prevent infinite spinner
+            if (filtered.length === 0) {
+                console.log(
+                    '⚠️ [Infinite Row Loading] All items were duplicates, stopping load:',
+                    title
+                )
+                setHasMore(false)
+                return // Exit early - don't update state or increment page
+            }
+
+            // Preload images for new content in the background
+            filtered.forEach((item: Content) => {
+                if (item.poster_path) {
+                    const img = new Image()
+                    img.src = `https://image.tmdb.org/t/p/w500${item.poster_path}`
+                }
+            })
+            console.log(
+                '🖼️ [Infinite Row Loading] Preloading images for:',
+                filtered.length,
+                'items'
+            )
+
+            // Update content and increment page only if we have unique items
+            setAllContent((prev) => [...prev, ...filtered])
             setCurrentPage((prev) => prev + 1)
         } catch (error) {
-            console.error('💥 [Infinite Row Loading] Error:', title, error)
+            // FIX: Network errors are transient - retry up to 3 times
+            if (retryCountRef.current < 3) {
+                retryCountRef.current += 1
+                const backoffDelay = Math.min(1000 * Math.pow(2, retryCountRef.current - 1), 5000)
+                console.warn(
+                    `⚠️ [Infinite Row Loading] Network error, retry ${retryCountRef.current}/3 after ${backoffDelay}ms:`,
+                    title,
+                    error
+                )
+                setTimeout(() => loadMoreContent(), backoffDelay)
+                return
+            }
+
+            // After 3 retries, stop
+            console.error('💥 [Infinite Row Loading] Error after retries:', title, error)
             setHasMore(false)
         } finally {
             setIsLoading(false)
