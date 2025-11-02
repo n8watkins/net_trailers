@@ -9,7 +9,8 @@ import { filterDislikedContent } from '../../utils/contentFilter'
 const DEBUG_INFINITE_SCROLL = process.env.NODE_ENV === 'development'
 const debugLog = (emoji: string, message: string, data?: any) => {
     if (DEBUG_INFINITE_SCROLL) {
-        console.log(`${emoji} [Infinite Row Loading] ${message}`, data || '')
+        if (DEBUG_INFINITE_SCROLL)
+            console.log(`${emoji} [Infinite Row Loading] ${message}`, data || '')
     }
 }
 
@@ -55,32 +56,36 @@ function Row({ title, content, apiEndpoint }: Props) {
     // Load next page of content
     const loadMoreContent = useCallback(async () => {
         if (!apiEndpoint) {
-            console.log('⚠️ [Infinite Row Loading] No API endpoint configured for:', title)
+            if (DEBUG_INFINITE_SCROLL)
+                console.log('⚠️ [Infinite Row Loading] No API endpoint configured for:', title)
             return
         }
 
         if (isLoading) {
-            console.log('⏳ [Infinite Row Loading] Already loading, skipping:', title)
+            if (DEBUG_INFINITE_SCROLL)
+                console.log('⏳ [Infinite Row Loading] Already loading, skipping:', title)
             return
         }
 
         if (!hasMore) {
-            console.log('✅ [Infinite Row Loading] No more content available for:', title)
+            if (DEBUG_INFINITE_SCROLL)
+                console.log('✅ [Infinite Row Loading] No more content available for:', title)
             return
         }
 
-        console.log('🚀 [Infinite Row Loading] Loading next page:', {
-            title,
-            currentPage,
-            nextPage: currentPage + 1,
-            apiEndpoint,
-        })
+        if (DEBUG_INFINITE_SCROLL)
+            console.log('🚀 [Infinite Row Loading] Loading next page:', {
+                title,
+                currentPage,
+                nextPage: currentPage + 1,
+                apiEndpoint,
+            })
 
         setIsLoading(true)
         try {
             const separator = apiEndpoint.includes('?') ? '&' : '?'
             const url = `${apiEndpoint}${separator}page=${currentPage + 1}`
-            console.log('📡 [Infinite Row Loading] Fetching:', url)
+            if (DEBUG_INFINITE_SCROLL) console.log('📡 [Infinite Row Loading] Fetching:', url)
 
             const response = await fetch(url)
 
@@ -93,10 +98,11 @@ function Row({ title, content, apiEndpoint }: Props) {
                     response.status === 408 // Request timeout
 
                 if (isPermanentError) {
-                    console.error(
-                        '❌ [Infinite Row Loading] Permanent error, stopping load:',
-                        response.status
-                    )
+                    if (DEBUG_INFINITE_SCROLL)
+                        console.error(
+                            '❌ [Infinite Row Loading] Permanent error, stopping load:',
+                            response.status
+                        )
                     setHasMore(false)
                     return
                 }
@@ -116,10 +122,11 @@ function Row({ title, content, apiEndpoint }: Props) {
                 }
 
                 // After 3 retries or other errors, stop
-                console.error(
-                    '❌ [Infinite Row Loading] Failed to fetch after retries:',
-                    response.status
-                )
+                if (DEBUG_INFINITE_SCROLL)
+                    console.error(
+                        '❌ [Infinite Row Loading] Failed to fetch after retries:',
+                        response.status
+                    )
                 setHasMore(false)
                 return
             }
@@ -130,15 +137,17 @@ function Row({ title, content, apiEndpoint }: Props) {
             const data = await response.json()
             const newContent = data.results || []
 
-            console.log('📦 [Infinite Row Loading] Received data:', {
-                title,
-                newContentCount: newContent.length,
-                totalPages: data.total_pages,
-                currentPage: data.page,
-            })
+            if (DEBUG_INFINITE_SCROLL)
+                console.log('📦 [Infinite Row Loading] Received data:', {
+                    title,
+                    newContentCount: newContent.length,
+                    totalPages: data.total_pages,
+                    currentPage: data.page,
+                })
 
             if (newContent.length === 0 || currentPage + 1 >= (data.total_pages || 1)) {
-                console.log('🏁 [Infinite Row Loading] Reached end of content for:', title)
+                if (DEBUG_INFINITE_SCROLL)
+                    console.log('🏁 [Infinite Row Loading] Reached end of content for:', title)
                 setHasMore(false)
             }
 
@@ -148,19 +157,21 @@ function Row({ title, content, apiEndpoint }: Props) {
                 (item: Content) => !existing.has(`${item.media_type}-${item.id}`)
             )
 
-            console.log('✨ [Infinite Row Loading] Processing new content:', {
-                title,
-                previousCount: allContent.length,
-                newUniqueItems: filtered.length,
-                totalCount: allContent.length + filtered.length,
-            })
+            if (DEBUG_INFINITE_SCROLL)
+                console.log('✨ [Infinite Row Loading] Processing new content:', {
+                    title,
+                    previousCount: allContent.length,
+                    newUniqueItems: filtered.length,
+                    totalCount: allContent.length + filtered.length,
+                })
 
             // FIX: If all items were duplicates, stop loading to prevent infinite spinner
             if (filtered.length === 0) {
-                console.log(
-                    '⚠️ [Infinite Row Loading] All items were duplicates, stopping load:',
-                    title
-                )
+                if (DEBUG_INFINITE_SCROLL)
+                    console.log(
+                        '⚠️ [Infinite Row Loading] All items were duplicates, stopping load:',
+                        title
+                    )
                 setHasMore(false)
                 return // Exit early - don't update state or increment page
             }
@@ -172,11 +183,12 @@ function Row({ title, content, apiEndpoint }: Props) {
                     img.src = `https://image.tmdb.org/t/p/w500${item.poster_path}`
                 }
             })
-            console.log(
-                '🖼️ [Infinite Row Loading] Preloading images for:',
-                filtered.length,
-                'items'
-            )
+            if (DEBUG_INFINITE_SCROLL)
+                console.log(
+                    '🖼️ [Infinite Row Loading] Preloading images for:',
+                    filtered.length,
+                    'items'
+                )
 
             // Update content and increment page only if we have unique items
             setAllContent((prev) => [...prev, ...filtered])
@@ -196,7 +208,8 @@ function Row({ title, content, apiEndpoint }: Props) {
             }
 
             // After 3 retries, stop
-            console.error('💥 [Infinite Row Loading] Error after retries:', title, error)
+            if (DEBUG_INFINITE_SCROLL)
+                console.error('💥 [Infinite Row Loading] Error after retries:', title, error)
             setHasMore(false)
         } finally {
             setIsLoading(false)
@@ -206,25 +219,35 @@ function Row({ title, content, apiEndpoint }: Props) {
     // Detect when user scrolls near the end
     const handleScroll = useCallback(() => {
         if (!rowRef.current) {
-            console.log('⚠️ [Infinite Row Loading] No rowRef for:', title)
+            if (DEBUG_INFINITE_SCROLL)
+                console.log('⚠️ [Infinite Row Loading] No rowRef for:', title)
             return
         }
 
         if (!apiEndpoint) {
-            console.log('⚠️ [Infinite Row Loading] No API endpoint for scroll detection:', title)
+            if (DEBUG_INFINITE_SCROLL)
+                console.log(
+                    '⚠️ [Infinite Row Loading] No API endpoint for scroll detection:',
+                    title
+                )
             return
         }
 
         if (isLoading) {
-            console.log(
-                '⏳ [Infinite Row Loading] Loading in progress, skipping scroll check:',
-                title
-            )
+            if (DEBUG_INFINITE_SCROLL)
+                console.log(
+                    '⏳ [Infinite Row Loading] Loading in progress, skipping scroll check:',
+                    title
+                )
             return
         }
 
         if (!hasMore) {
-            console.log('✅ [Infinite Row Loading] No more content, skipping scroll check:', title)
+            if (DEBUG_INFINITE_SCROLL)
+                console.log(
+                    '✅ [Infinite Row Loading] No more content, skipping scroll check:',
+                    title
+                )
             return
         }
 
@@ -232,21 +255,26 @@ function Row({ title, content, apiEndpoint }: Props) {
         const scrollPercentage = (scrollLeft + clientWidth) / scrollWidth
         const remainingScroll = scrollWidth - (scrollLeft + clientWidth)
 
-        console.log('👁️ [Infinite Row Loading] Scroll detected:', {
-            title,
-            scrollLeft,
-            scrollWidth,
-            clientWidth,
-            scrollPercentage: (scrollPercentage * 100).toFixed(1) + '%',
-            remainingScroll: remainingScroll + 'px',
-            threshold: '60% or < 500px remaining',
-            willLoad: scrollPercentage > 0.6 || remainingScroll < 500,
-        })
+        if (DEBUG_INFINITE_SCROLL)
+            console.log('👁️ [Infinite Row Loading] Scroll detected:', {
+                title,
+                scrollLeft,
+                scrollWidth,
+                clientWidth,
+                scrollPercentage: (scrollPercentage * 100).toFixed(1) + '%',
+                remainingScroll: remainingScroll + 'px',
+                threshold: '60% or < 500px remaining',
+                willLoad: scrollPercentage > 0.6 || remainingScroll < 500,
+            })
 
         // Load more when 60% scrolled OR less than 500px remaining
         // This ensures loading even with small amounts of content
         if (scrollPercentage > 0.6 || remainingScroll < 500) {
-            console.log('🎯 [Infinite Row Loading] Threshold reached! Triggering load for:', title)
+            if (DEBUG_INFINITE_SCROLL)
+                console.log(
+                    '🎯 [Infinite Row Loading] Threshold reached! Triggering load for:',
+                    title
+                )
             loadMoreContent()
         }
     }, [apiEndpoint, isLoading, hasMore, loadMoreContent, title])
@@ -255,24 +283,28 @@ function Row({ title, content, apiEndpoint }: Props) {
     useEffect(() => {
         const currentRow = rowRef.current
         if (currentRow) {
-            console.log('👂 [Infinite Row Loading] Attaching scroll listener for:', title)
+            if (DEBUG_INFINITE_SCROLL)
+                console.log('👂 [Infinite Row Loading] Attaching scroll listener for:', title)
             currentRow.addEventListener('scroll', handleScroll)
             return () => {
-                console.log('🔇 [Infinite Row Loading] Removing scroll listener for:', title)
+                if (DEBUG_INFINITE_SCROLL)
+                    console.log('🔇 [Infinite Row Loading] Removing scroll listener for:', title)
                 currentRow.removeEventListener('scroll', handleScroll)
             }
         } else {
-            console.log('⚠️ [Infinite Row Loading] No row element to attach listener:', title)
+            if (DEBUG_INFINITE_SCROLL)
+                console.log('⚠️ [Infinite Row Loading] No row element to attach listener:', title)
         }
     }, [handleScroll, title])
 
     // Intersection Observer for sentinel element (primary detection method)
     useEffect(() => {
         if (!apiEndpoint) {
-            console.log(
-                '⚠️ [Infinite Row Loading] No API endpoint for Intersection Observer:',
-                title
-            )
+            if (DEBUG_INFINITE_SCROLL)
+                console.log(
+                    '⚠️ [Infinite Row Loading] No API endpoint for Intersection Observer:',
+                    title
+                )
             return
         }
 
@@ -280,28 +312,32 @@ function Row({ title, content, apiEndpoint }: Props) {
         const row = rowRef.current
 
         if (!sentinel || !row) {
-            console.log('⚠️ [Infinite Row Loading] Missing sentinel or row element:', title)
+            if (DEBUG_INFINITE_SCROLL)
+                console.log('⚠️ [Infinite Row Loading] Missing sentinel or row element:', title)
             return
         }
 
-        console.log('🔭 [Infinite Row Loading] Setting up Intersection Observer for:', title)
+        if (DEBUG_INFINITE_SCROLL)
+            console.log('🔭 [Infinite Row Loading] Setting up Intersection Observer for:', title)
 
         const observer = new IntersectionObserver(
             (entries) => {
                 entries.forEach((entry) => {
-                    console.log('👁️ [Infinite Row Loading] Observer callback triggered:', {
-                        title,
-                        isIntersecting: entry.isIntersecting,
-                        intersectionRatio: entry.intersectionRatio,
-                        isLoading,
-                        hasMore,
-                    })
+                    if (DEBUG_INFINITE_SCROLL)
+                        console.log('👁️ [Infinite Row Loading] Observer callback triggered:', {
+                            title,
+                            isIntersecting: entry.isIntersecting,
+                            intersectionRatio: entry.intersectionRatio,
+                            isLoading,
+                            hasMore,
+                        })
 
                     if (entry.isIntersecting && !isLoading && hasMore) {
-                        console.log(
-                            '🎯 [Infinite Row Loading] Observer detected sentinel! Loading more:',
-                            title
-                        )
+                        if (DEBUG_INFINITE_SCROLL)
+                            console.log(
+                                '🎯 [Infinite Row Loading] Observer detected sentinel! Loading more:',
+                                title
+                            )
                         loadMoreContent()
                     }
                 })
@@ -314,10 +350,12 @@ function Row({ title, content, apiEndpoint }: Props) {
         )
 
         observer.observe(sentinel)
-        console.log('✅ [Infinite Row Loading] Observer attached to sentinel for:', title)
+        if (DEBUG_INFINITE_SCROLL)
+            console.log('✅ [Infinite Row Loading] Observer attached to sentinel for:', title)
 
         return () => {
-            console.log('🔇 [Infinite Row Loading] Removing Intersection Observer for:', title)
+            if (DEBUG_INFINITE_SCROLL)
+                console.log('🔇 [Infinite Row Loading] Removing Intersection Observer for:', title)
             observer.disconnect()
         }
     }, [apiEndpoint, loadMoreContent, isLoading, hasMore, title])
@@ -328,10 +366,11 @@ function Row({ title, content, apiEndpoint }: Props) {
     }
 
     const handleClick = (direction: string) => {
-        console.log('🖱️ [Infinite Row Loading] Chevron clicked:', {
-            title,
-            direction,
-        })
+        if (DEBUG_INFINITE_SCROLL)
+            console.log('🖱️ [Infinite Row Loading] Chevron clicked:', {
+                title,
+                direction,
+            })
 
         setIsMoved(true)
         if (rowRef.current && rowRef.current.children.length > 0) {
@@ -342,14 +381,15 @@ function Row({ title, content, apiEndpoint }: Props) {
             const scrollTo =
                 direction === 'left' ? scrollLeft - scrollDistance : scrollLeft + scrollDistance
 
-            console.log('📐 [Infinite Row Loading] Chevron scroll calculation:', {
-                title,
-                direction,
-                scrollLeft,
-                clientWidth,
-                scrollDistance,
-                scrollTo,
-            })
+            if (DEBUG_INFINITE_SCROLL)
+                console.log('📐 [Infinite Row Loading] Chevron scroll calculation:', {
+                    title,
+                    direction,
+                    scrollLeft,
+                    clientWidth,
+                    scrollDistance,
+                    scrollTo,
+                })
 
             rowRef.current.scrollTo({
                 left: scrollTo,
@@ -359,23 +399,26 @@ function Row({ title, content, apiEndpoint }: Props) {
             // Check if we need to load more after scrolling right
             // We check multiple times to catch the scroll position after animation
             if (direction === 'right') {
-                console.log(
-                    '⏰ [Infinite Row Loading] Scheduling scroll checks after right chevron click:',
-                    title
-                )
-                // Check at different intervals to catch when scroll animation completes
-                setTimeout(() => {
+                if (DEBUG_INFINITE_SCROLL)
                     console.log(
-                        '⏰ [Infinite Row Loading] Running scheduled check #1 (500ms):',
+                        '⏰ [Infinite Row Loading] Scheduling scroll checks after right chevron click:',
                         title
                     )
+                // Check at different intervals to catch when scroll animation completes
+                setTimeout(() => {
+                    if (DEBUG_INFINITE_SCROLL)
+                        console.log(
+                            '⏰ [Infinite Row Loading] Running scheduled check #1 (500ms):',
+                            title
+                        )
                     handleScroll()
                 }, 500)
                 setTimeout(() => {
-                    console.log(
-                        '⏰ [Infinite Row Loading] Running scheduled check #2 (1000ms):',
-                        title
-                    )
+                    if (DEBUG_INFINITE_SCROLL)
+                        console.log(
+                            '⏰ [Infinite Row Loading] Running scheduled check #2 (1000ms):',
+                            title
+                        )
                     handleScroll()
                 }, 1000)
             }
