@@ -5,6 +5,9 @@ import MoviesClient from '../../components/pages/MoviesClient'
 import NetflixLoader from '../../components/common/NetflixLoader'
 import NetflixError from '../../components/common/NetflixError'
 
+// Mark as dynamic since we use cookies for child safety mode
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
     title: 'Movies - NetTrailer | Stream Trending Movies & Classics',
     description:

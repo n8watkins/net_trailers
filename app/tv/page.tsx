@@ -5,6 +5,9 @@ import TVClient from '../../components/pages/TVClient'
 import NetflixLoader from '../../components/common/NetflixLoader'
 import NetflixError from '../../components/common/NetflixError'
 
+// Mark as dynamic since we use cookies for child safety mode
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
     title: 'TV Shows - NetTrailer | Stream Trending Series & Top Rated Shows',
     description:
