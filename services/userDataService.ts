@@ -1,5 +1,5 @@
 import { Content } from '../typings'
-import { UserPreferences } from '../types/userData'
+import { UserPreferences } from '../types/shared'
 import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { guestError, authError, firebaseWarn } from '../utils/debugLogger'

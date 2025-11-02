@@ -3,6 +3,40 @@
  * Determines if content is safe for children based on MPAA/TV Parental Guidelines
  */
 
+// TMDB API type interfaces
+interface ReleaseDateEntry {
+    certification: string
+    iso_639_1?: string
+    release_date?: string
+    type?: number
+}
+
+interface ReleaseDatesResult {
+    iso_3166_1: string
+    release_dates: ReleaseDateEntry[]
+}
+
+interface TMDBMovieDetails {
+    adult?: boolean
+    release_dates?: {
+        results: ReleaseDatesResult[]
+    }
+}
+
+interface ContentRatingResult {
+    iso_3166_1: string
+    rating: string
+}
+
+interface TMDBTVDetails {
+    adult?: boolean
+    content_ratings?: {
+        results: ContentRatingResult[]
+    }
+}
+
+type TMDBContentDetails = TMDBMovieDetails | TMDBTVDetails
+
 // US Movie Ratings (MPAA)
 export const SAFE_US_MOVIE_RATINGS = ['G', 'PG', 'PG-13']
 export const RESTRICTED_US_MOVIE_RATINGS = ['R', 'NC-17', 'NR', 'UR']
@@ -134,15 +168,16 @@ export function getSafeCertifications(mediaType: 'movie' | 'tv', country: string
  * @param country - The country code to extract certification for (default: "US")
  * @returns The certification rating or null if not found
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function getMovieCertification(movieData: any, country: string = 'US'): string | null {
+export function getMovieCertification(
+    movieData: TMDBMovieDetails,
+    country: string = 'US'
+): string | null {
     if (!movieData?.release_dates?.results) {
         return null
     }
 
     const countryData = movieData.release_dates.results.find(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (r: any) => r.iso_3166_1 === country.toUpperCase()
+        (r) => r.iso_3166_1 === country.toUpperCase()
     )
 
     if (!countryData?.release_dates?.length) {
@@ -161,15 +196,13 @@ export function getMovieCertification(movieData: any, country: string = 'US'): s
  * @param country - The country code to extract certification for (default: "US")
  * @returns The certification rating or null if not found
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function getTVCertification(tvData: any, country: string = 'US'): string | null {
+export function getTVCertification(tvData: TMDBTVDetails, country: string = 'US'): string | null {
     if (!tvData?.content_ratings?.results) {
         return null
     }
 
     const countryData = tvData.content_ratings.results.find(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (r: any) => r.iso_3166_1 === country.toUpperCase()
+        (r) => r.iso_3166_1 === country.toUpperCase()
     )
 
     return countryData?.rating || null
@@ -183,9 +216,8 @@ export function getTVCertification(tvData: any, country: string = 'US'): string 
  * @param country - The country code (default: "US")
  * @returns 'safe', 'restricted', or 'unknown'
  */
-
 export function classifyContent(
-    content: any,
+    content: TMDBContentDetails,
     mediaType: 'movie' | 'tv',
     country: string = 'US'
 ): 'safe' | 'restricted' | 'unknown' {
@@ -197,8 +229,8 @@ export function classifyContent(
     // Extract certification
     const certification =
         mediaType === 'movie'
-            ? getMovieCertification(content, country)
-            : getTVCertification(content, country)
+            ? getMovieCertification(content as TMDBMovieDetails, country)
+            : getTVCertification(content as TMDBTVDetails, country)
 
     // If no certification, classify as unknown (will be shown with permissive default)
     if (!certification) {

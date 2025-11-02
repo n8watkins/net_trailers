@@ -17,7 +17,12 @@ const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onRemoveToast }
     }
 
     return (
-        <div className="fixed top-20 right-0 z-[99999] space-y-4 pointer-events-none max-w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-4rem)] md:max-w-md lg:max-w-lg mr-12 sm:mr-16 md:mr-20 lg:mr-24 xl:mr-32">
+        <div
+            className="fixed top-20 right-0 z-[99999] space-y-4 pointer-events-none max-w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-4rem)] md:max-w-md lg:max-w-lg mr-12 sm:mr-16 md:mr-20 lg:mr-24 xl:mr-32"
+            aria-live="polite"
+            aria-atomic="true"
+            role="status"
+        >
             {toasts.map((toast) => (
                 <div
                     key={toast.id}

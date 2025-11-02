@@ -589,10 +589,15 @@ function Modal() {
                         {/* Close Button - Hidden in fullscreen */}
                         {!fullScreen && (
                             <button
+                                type="button"
                                 className="absolute top-2 right-2 sm:top-4 sm:right-4 z-30 rounded-full bg-black/80 p-1 sm:p-2"
                                 onClick={handleClose}
+                                aria-label="Close modal"
                             >
-                                <XMarkIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
+                                <XMarkIcon
+                                    className="h-4 w-4 sm:h-6 sm:w-6 text-white"
+                                    aria-hidden="true"
+                                />
                             </button>
                         )}
 
@@ -1154,10 +1159,12 @@ function Modal() {
                                     API Response JSON
                                 </h3>
                                 <button
+                                    type="button"
                                     onClick={() => setShowJsonDebug(false)}
                                     className="text-gray-400 hover:text-white"
+                                    aria-label="Close debug panel"
                                 >
-                                    <XMarkIcon className="h-6 w-6" />
+                                    <XMarkIcon className="h-6 w-6" aria-hidden="true" />
                                 </button>
                             </div>
                             <div className="p-4 flex-1 overflow-auto">
