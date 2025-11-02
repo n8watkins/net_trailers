@@ -289,7 +289,7 @@ export function useSessionManager() {
     const startGuestSession = async () => {
         const guestId = GuestStorageService.getGuestId()
         // Use guest store's syncFromLocalStorage which handles everything
-        guestStore.syncFromLocalStorage!(guestId)
+        await guestStore.syncFromLocalStorage!(guestId)
 
         setSessionType('guest')
         setActiveSessionId(guestId)
@@ -302,7 +302,7 @@ export function useSessionManager() {
     const startFreshGuestSession = async () => {
         const guestId = GuestStorageService.createFreshGuestSession()
         // Use guest store's syncFromLocalStorage to load the fresh session
-        guestStore.syncFromLocalStorage!(guestId)
+        await guestStore.syncFromLocalStorage!(guestId)
 
         setSessionType('guest')
         setActiveSessionId(guestId)

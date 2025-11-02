@@ -51,7 +51,7 @@ export interface UserActions {
     syncWithFirebase?: (userId: string) => Promise<void> // Alias for syncWithStorage (auth store)
     clearLocalCache: () => void
     loadData: (data: UserState) => void
-    syncFromLocalStorage?: (guestId: string) => void // Only for localStorage adapter
+    syncFromLocalStorage?: (guestId: string) => Promise<void> // Only for localStorage adapter
     clearAllData?: () => void // Only for guest store
 }
 
@@ -199,14 +199,21 @@ export function createUserStore(options: CreateUserStoreOptions) {
 
             if (adapter.isAsync) set({ syncStatus: 'syncing' })
 
+            // Mutual exclusion: Remove from hidden if exists
+            const newHiddenMovies = state.hiddenMovies.filter((m) => m.id !== content.id)
             const newLikedMovies = [...state.likedMovies, content]
+
             set({
                 likedMovies: newLikedMovies,
+                hiddenMovies: newHiddenMovies,
                 lastActive: typeof window !== 'undefined' ? Date.now() : 0,
             })
 
             try {
-                await saveToStorage({ ...state, likedMovies: newLikedMovies }, 'addLiked')
+                await saveToStorage(
+                    { ...state, likedMovies: newLikedMovies, hiddenMovies: newHiddenMovies },
+                    'addLiked'
+                )
                 if (adapter.isAsync) set({ syncStatus: 'synced' })
             } catch (error) {
                 if (adapter.isAsync) set({ syncStatus: 'offline' })
@@ -245,14 +252,21 @@ export function createUserStore(options: CreateUserStoreOptions) {
 
             if (adapter.isAsync) set({ syncStatus: 'syncing' })
 
+            // Mutual exclusion: Remove from liked if exists
+            const newLikedMovies = state.likedMovies.filter((m) => m.id !== content.id)
             const newHiddenMovies = [...state.hiddenMovies, content]
+
             set({
                 hiddenMovies: newHiddenMovies,
+                likedMovies: newLikedMovies,
                 lastActive: typeof window !== 'undefined' ? Date.now() : 0,
             })
 
             try {
-                await saveToStorage({ ...state, hiddenMovies: newHiddenMovies }, 'addHidden')
+                await saveToStorage(
+                    { ...state, hiddenMovies: newHiddenMovies, likedMovies: newLikedMovies },
+                    'addHidden'
+                )
                 if (adapter.isAsync) set({ syncStatus: 'synced' })
             } catch (error) {
                 if (adapter.isAsync) set({ syncStatus: 'offline' })
@@ -515,8 +529,8 @@ export function createUserStore(options: CreateUserStoreOptions) {
         }),
 
         ...(enableGuestFeatures && {
-            syncFromLocalStorage: (guestId: string) => {
-                const loadedData = (adapter as any).load(guestId)
+            syncFromLocalStorage: async (guestId: string) => {
+                const loadedData = await adapter.load(guestId)
                 set({
                     [idField]: guestId,
                     likedMovies: loadedData.likedMovies,

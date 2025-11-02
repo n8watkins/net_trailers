@@ -140,7 +140,7 @@ describe('AuthStore - CRITICAL ISSUE: Missing Mutual Exclusion', () => {
         })
     })
 
-    test('ISSUE: Content CAN be in both liked AND hidden arrays', async () => {
+    test('FIXED: Mutual exclusion - content removed from liked when added to hidden', async () => {
         const { result } = renderHook(() => useAuthStore())
         const mockContent = createMockContent(1, 'Test Movie')
 
@@ -165,20 +165,20 @@ describe('AuthStore - CRITICAL ISSUE: Missing Mutual Exclusion', () => {
         expect(result.current.likedMovies).toHaveLength(1)
         expect(result.current.hiddenMovies).toHaveLength(0)
 
-        // Now add to hidden - should remove from liked but DOESN'T
+        // Now add to hidden - should remove from liked
         await act(async () => {
             await result.current.addHiddenMovie(mockContent)
         })
 
-        // BUG: Content is now in BOTH arrays!
-        expect(result.current.likedMovies).toHaveLength(1)
+        // FIXED: Mutual exclusion enforced - removed from liked when added to hidden
+        expect(result.current.likedMovies).toHaveLength(0)
         expect(result.current.hiddenMovies).toHaveLength(1)
 
-        // This should be TRUE (mutual exclusion) but is FALSE
-        const hasConflict = result.current.likedMovies.some(m =>
-            result.current.hiddenMovies.some(h => h.id === m.id)
+        // Verify no conflict - content only in hidden, not in both
+        const hasConflict = result.current.likedMovies.some((m) =>
+            result.current.hiddenMovies.some((h) => h.id === m.id)
         )
-        expect(hasConflict).toBe(true) // This proves the bug exists
+        expect(hasConflict).toBe(false) // Mutual exclusion working!
     })
 
     test('EXPECTED BEHAVIOR: Adding to hidden should remove from liked', async () => {
@@ -206,13 +206,12 @@ describe('AuthStore - CRITICAL ISSUE: Missing Mutual Exclusion', () => {
         })
 
         // EXPECTED: Content should ONLY be in hidden, not liked
-        // ACTUAL: Content is in BOTH (bug)
+        // FIXED: Now works correctly with mutual exclusion
         const isOnlyInHidden =
-            result.current.hiddenMovies.length === 1 &&
-            result.current.likedMovies.length === 0
+            result.current.hiddenMovies.length === 1 && result.current.likedMovies.length === 0
 
-        // This test FAILS, proving the bug
-        expect(isOnlyInHidden).toBe(false) // Should be true, but isn't
+        // This test now PASSES - mutual exclusion working!
+        expect(isOnlyInHidden).toBe(true) // Now correctly true
     })
 })
 
@@ -248,13 +247,15 @@ describe('AuthStore - CRITICAL ISSUE: Data Loss When UserId Undefined', () => {
 
     test('ISSUE: No validation prevents actions before initialization', async () => {
         const { result } = renderHook(() => useAuthStore())
-        const mockContent = createMockContent(1, 'Test Movie')
+        const mockContent1 = createMockContent(1, 'Test Movie 1')
+        const mockContent2 = createMockContent(2, 'Test Movie 2')
+        const mockContent3 = createMockContent(3, 'Test Movie 3')
 
         // Store allows operations even though it's not properly initialized
         await act(async () => {
-            await result.current.addLikedMovie(mockContent)
-            await result.current.addHiddenMovie(mockContent)
-            await result.current.addToWatchlist(mockContent)
+            await result.current.addLikedMovie(mockContent1)
+            await result.current.addHiddenMovie(mockContent2)
+            await result.current.addToWatchlist(mockContent3)
         })
 
         // All operations "succeed" locally but nothing is persisted

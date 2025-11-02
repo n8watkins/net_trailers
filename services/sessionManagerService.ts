@@ -2,6 +2,7 @@ import { sessionLog, sessionError } from '../utils/debugLogger'
 import { User } from 'firebase/auth'
 import { UserPreferences, SessionType, UserSession } from '../types/shared'
 import { SessionStorageService } from './sessionStorageService'
+import { GuestStorageService } from './guestStorageService'
 
 // Zustand-compatible setter type
 type SetterOrUpdater<T> = (value: T | ((prev: T) => T)) => void
@@ -386,14 +387,10 @@ export class SessionManagerService {
         localStorage.removeItem('nettrailer_auth_id')
     }
 
-    private static getGuestStorageKey(guestId: string): string {
-        return `nettrailer_guest_data_${guestId}`
-    }
-
     private static hasGuestData(guestId: string): boolean {
         if (typeof window === 'undefined') return false
-        const data = localStorage.getItem(this.getGuestStorageKey(guestId))
-        return data !== null && data !== 'undefined'
+        // Use GuestStorageService to check for guest data with correct v2 storage key
+        return GuestStorageService.hasGuestData(guestId)
     }
 
     private static async loadGuestPreferences(guestId: string): Promise<UserPreferences> {

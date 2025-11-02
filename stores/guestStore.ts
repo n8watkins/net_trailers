@@ -8,7 +8,7 @@ export interface GuestState extends Omit<UserState, 'syncStatus' | 'userId'> {
 }
 
 export interface GuestActions extends Omit<UserActions, 'syncWithStorage'> {
-    syncFromLocalStorage: (guestId: string) => void
+    syncFromLocalStorage: (guestId: string) => Promise<void>
     clearAllData: () => void
 }
 
