@@ -101,6 +101,20 @@ function Row({ title, content, apiEndpoint }: Props) {
                     newUniqueItems: filtered.length,
                     totalCount: prev.length + filtered.length,
                 })
+
+                // Preload images for new content in the background
+                filtered.forEach((item: Content) => {
+                    if (item.poster_path) {
+                        const img = new Image()
+                        img.src = `https://image.tmdb.org/t/p/w500${item.poster_path}`
+                    }
+                })
+                console.log(
+                    '🖼️ [Infinite Row Loading] Preloading images for:',
+                    filtered.length,
+                    'items'
+                )
+
                 return [...prev, ...filtered]
             })
 
