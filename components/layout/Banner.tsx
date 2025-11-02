@@ -10,10 +10,11 @@ import { filterDislikedContent } from '../../utils/contentFilter'
 
 interface Props {
     trending: Content[]
+    variant?: 'default' | 'compact'
 }
 
 //pass props to Banner component
-function Banner({ trending }: Props) {
+function Banner({ trending, variant = 'default' }: Props) {
     const { openModal } = useAppStore()
     const { hiddenMovies } = useUserData()
 
@@ -116,12 +117,24 @@ function Banner({ trending }: Props) {
                         />
                     </div>
                 )}
-                {/* Bottom gradient for pagination visibility */}
-                <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#141414]/90 via-[#141414]/30 to-transparent pointer-events-none"></div>
+                {/* Bottom gradient - VARIANT SPECIFIC */}
+                <div
+                    className={`absolute bottom-0 left-0 right-0 pointer-events-none ${
+                        variant === 'compact'
+                            ? 'h-[85vh] bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a] 30% via-[#0a0a0a]/90 50% via-[#0a0a0a]/50 60% to-transparent 75%'
+                            : 'h-[32rem] bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/80 50% via-[#0a0a0a]/60 70% to-transparent'
+                    }`}
+                ></div>
             </div>
 
             {/* movie info background gradient */}
-            <div className="absolute inset-0 flex flex-col justify-center px-4 sm:px-6 md:px-10 lg:px-16 xl:px-20 bg-gradient-to-r from-[#141414]/90 to-transparent">
+            <div
+                className={`absolute inset-0 flex flex-col px-4 sm:px-6 md:px-10 lg:px-16 xl:px-20 ${
+                    variant === 'compact'
+                        ? 'justify-start pt-32 sm:pt-36 md:pt-40 lg:pt-44 xl:pt-48 bg-gradient-to-r from-[#0a0a0a]/90 to-transparent'
+                        : 'justify-center bg-gradient-to-r from-[#0a0a0a]/90 to-transparent'
+                }`}
+            >
                 <div
                     className={`max-w-xl lg:max-w-2xl space-y-3 sm:space-y-4 md:space-y-6 transition-all duration-300 ease-in-out ${
                         isTransitioning
@@ -194,14 +207,20 @@ function Banner({ trending }: Props) {
 
                 {/* Image-based pagination - hidden on mobile/tablet, higher on desktop */}
                 {carouselContent.length > 1 && (
-                    <div className="hidden lg:flex absolute bottom-24 xl:bottom-32 right-4 sm:right-6 md:right-8 lg:right-12 space-x-4 z-20">
+                    <div
+                        className={`hidden lg:flex absolute right-4 sm:right-6 md:right-8 lg:right-12 space-x-4 z-20 ${
+                            variant === 'compact'
+                                ? 'bottom-[45vh] xl:bottom-[47vh]'
+                                : 'bottom-24 xl:bottom-32'
+                        }`}
+                    >
                         {carouselContent.map((content, index) => (
                             <button
                                 key={index}
                                 onClick={() => goToSlide(index)}
                                 className={`relative transition-all duration-300 rounded-md overflow-hidden ${
                                     index === currentIndex
-                                        ? 'w-16 h-24 sm:w-20 sm:h-30 md:w-24 md:h-36 border-2 border-red-500 shadow-[0_0_12px_rgba(220,38,38,0.4)]'
+                                        ? 'w-16 h-24 sm:w-20 sm:h-30 md:w-24 md:h-36 ring-1 ring-red-500/50 shadow-[0_0_15px_rgba(220,38,38,0.4),0_0_30px_rgba(220,38,38,0.2)]'
                                         : 'w-12 h-18 sm:w-14 sm:h-21 md:w-16 md:h-24 hover:scale-105 shadow-[0_0_8px_rgba(0,0,0,0.3)]'
                                 }`}
                                 style={{
@@ -219,8 +238,9 @@ function Banner({ trending }: Props) {
                                     src={`${BASE_URL}/${content.poster_path || content.backdrop_path}`}
                                     alt={`${getTitle(content)} poster`}
                                     fill
+                                    quality={100}
                                     className="object-cover select-none"
-                                    sizes="(max-width: 640px) 48px, (max-width: 768px) 56px, 64px"
+                                    sizes="(max-width: 640px) 200px, (max-width: 768px) 200px, 200px"
                                 />
 
                                 {/* Overlay for non-selected items */}

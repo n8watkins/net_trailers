@@ -56,7 +56,7 @@ function Row({ title, content }: Props) {
                 {/* Left Arrow - Hidden on mobile, visible on larger screens */}
                 <div
                     className={`hidden md:flex absolute top-0 z-50 items-center justify-center ${
-                        isMoved ? 'opacity-70 group-hover:opacity-100' : 'opacity-0'
+                        isMoved ? '' : 'opacity-0'
                     } transition-all duration-300 cursor-pointer pointer-events-auto`}
                     onClick={() => handleClick('left')}
                     style={{
@@ -67,7 +67,7 @@ function Row({ title, content }: Props) {
                         left: '-2rem',
                     }}
                 >
-                    <div className="ml-8 bg-black/50 rounded-lg w-14 h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] flex items-center justify-center backdrop-blur-md hover:bg-black/70 transition-colors duration-300 shadow-2xl border border-white/20">
+                    <div className="ml-8 bg-transparent group-hover:bg-black/50 rounded-lg w-14 h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] flex items-center justify-center backdrop-blur-md hover:bg-black/70 transition-colors duration-300 shadow-2xl border border-transparent group-hover:border-white/20 opacity-70 group-hover:opacity-100 transition-opacity">
                         <ChevronLeftIcon className="h-14 w-14 text-white drop-shadow-2xl hover:scale-125 transition-transform duration-300" />
                     </div>
                 </div>
@@ -92,7 +92,7 @@ function Row({ title, content }: Props) {
 
                 {/* Right Arrow - Hidden on mobile, visible on larger screens */}
                 <div
-                    className="hidden md:flex absolute top-0 z-50 items-center justify-center opacity-70 group-hover:opacity-100 transition-all duration-300 cursor-pointer pointer-events-auto"
+                    className="hidden md:flex absolute top-0 z-50 items-center justify-center transition-all duration-300 cursor-pointer pointer-events-auto"
                     onClick={() => handleClick('right')}
                     style={{
                         background:
@@ -102,7 +102,7 @@ function Row({ title, content }: Props) {
                         right: '-2rem',
                     }}
                 >
-                    <div className="mr-8 bg-black/50 rounded-lg w-14 h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] flex items-center justify-center backdrop-blur-md hover:bg-black/70 transition-colors duration-300 shadow-2xl border border-white/20">
+                    <div className="mr-8 bg-transparent group-hover:bg-black/50 rounded-lg w-14 h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] flex items-center justify-center backdrop-blur-md hover:bg-black/70 transition-colors duration-300 shadow-2xl border border-transparent group-hover:border-white/20 opacity-70 group-hover:opacity-100 transition-opacity">
                         <ChevronRightIcon className="h-14 w-14 text-white drop-shadow-2xl hover:scale-125 transition-transform duration-300" />
                     </div>
                 </div>
