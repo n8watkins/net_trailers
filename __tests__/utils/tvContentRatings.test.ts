@@ -333,6 +333,7 @@ describe('tvContentRatings - Integration Tests', () => {
 
     beforeEach(() => {
         jest.clearAllMocks()
+        certificationCache.clear()
     })
 
     it('should correctly filter real-world TV show scenario', async () => {
