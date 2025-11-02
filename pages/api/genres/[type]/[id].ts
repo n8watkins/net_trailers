@@ -85,9 +85,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 if (!isChildSafeGenre) {
                     // SECURITY: Block access to non-child-safe genres
                     // Return empty results for Horror, Crime, Thriller, War, etc.
-                    throw new Error(
-                        'This genre is not available in child safety mode. Please disable child safety mode to access all genres.'
-                    )
+                    return res.status(200).json({
+                        page: 1,
+                        results: [],
+                        total_pages: 0,
+                        total_results: 0,
+                        child_safety_enabled: true,
+                        genre_blocked: true,
+                        message:
+                            'This genre is not available in child safety mode. Please disable child safety mode to access all genres.',
+                    })
                 }
 
                 // CRITICAL: Filter by MPAA certification (US ratings)

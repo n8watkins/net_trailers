@@ -67,6 +67,12 @@ const Home: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboar
         documentaries.length > 0
 
     useEffect(() => {
+        // Guard: Only cache when data has actually loaded
+        // Prevent caching empty arrays from initial state or failed fetches
+        if (dataLoading || dataError || !hasAnyContent) {
+            return // Don't cache empty/loading/error states
+        }
+
         // Store main page data in cache for future navigations
         const currentData = {
             trending,
@@ -92,6 +98,12 @@ const Home: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeyboar
         horror,
         romance,
         documentaries,
+        dataLoading,
+        dataError,
+        hasAnyContent,
+        setMainPageData,
+        setHasVisitedMainPage,
+        setContentLoadedSuccessfully,
         // Note: Zustand setters are stable and should NOT be in dependencies
         // Including them causes infinite loops
     ])

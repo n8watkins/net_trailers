@@ -59,6 +59,12 @@ const Movies: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeybo
         documentaries.length > 0
 
     useEffect(() => {
+        // Guard: Only cache when data has actually loaded
+        // Prevent caching empty arrays from initial state or failed fetches
+        if (dataLoading || dataError || !hasAnyContent) {
+            return // Don't cache empty/loading/error states
+        }
+
         // Store main page data in cache for future navigations
         const currentData = {
             trending,
@@ -84,6 +90,9 @@ const Movies: NextPage<Props> = ({ onOpenAboutModal, onOpenTutorial, onOpenKeybo
         horror,
         romance,
         documentaries,
+        dataLoading,
+        dataError,
+        hasAnyContent,
         setContentLoadedSuccessfully,
         setMainPageData,
         setHasVisitedMainPage,
