@@ -2,7 +2,7 @@ import { useAppStore } from '../../stores/appStore'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { useState, useEffect } from 'react'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
-import { useRouter } from 'next/router'
+import { usePathname } from 'next/navigation'
 
 export default function DemoMessage() {
     const showDemoMessage = useAppStore((state) => state.showDemoMessage)
@@ -10,7 +10,7 @@ export default function DemoMessage() {
     const contentLoadedSuccessfully = useAppStore((state) => state.contentLoadedSuccessfully)
     const { isGuest, isAuthenticated } = useAuthStatus()
     const [visible, setVisible] = useState(false)
-    const router = useRouter()
+    const pathname = usePathname()
 
     useEffect(() => {
         // Auto-loading disabled - DemoMessage now only shows via Tutorial in dropdown
@@ -21,11 +21,11 @@ export default function DemoMessage() {
         isGuest,
         isAuthenticated,
         setShowDemoMessage,
-        router.pathname,
+        pathname,
         contentLoadedSuccessfully,
     ])
 
-    const isOnAuthPage = router.pathname === '/auth' || router.pathname === '/reset'
+    const isOnAuthPage = pathname === '/auth' || pathname === '/reset'
 
     if (
         !showDemoMessage ||

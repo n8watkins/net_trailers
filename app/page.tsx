@@ -227,6 +227,3 @@ export default function Home() {
         </div>
     )
 }
-
-// getServerSideProps removed - page now uses client-side data fetching with useHomeData hook
-// This allows passing childSafetyMode parameter to API routes for proper server-side filtering

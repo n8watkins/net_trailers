@@ -1,5 +1,5 @@
 import { useEffect, useCallback } from 'react'
-import { useRouter } from 'next/router'
+import { useRouter, usePathname } from 'next/navigation'
 
 interface UseKeyboardShortcutsProps {
     onOpenShortcuts?: () => void
@@ -39,6 +39,7 @@ export function useKeyboardShortcuts({
     isAboutModalOpen = false,
 }: UseKeyboardShortcutsProps = {}) {
     const router = useRouter()
+    const pathname = usePathname()
 
     const handleKeyDown = useCallback(
         (event: KeyboardEvent) => {
@@ -95,7 +96,7 @@ export function useKeyboardShortcuts({
                     if (event.altKey && !isModalOpen) {
                         event.preventDefault()
                         // Only navigate if not already on home page
-                        if (router.pathname !== '/') {
+                        if (pathname !== '/') {
                             router.push('/')
                         }
                     }
@@ -107,7 +108,7 @@ export function useKeyboardShortcuts({
                     if (event.altKey && !isModalOpen) {
                         event.preventDefault()
                         // Only navigate if not already on liked page
-                        if (router.pathname !== '/liked') {
+                        if (pathname !== '/liked') {
                             router.push('/liked')
                         }
                     }
@@ -122,7 +123,7 @@ export function useKeyboardShortcuts({
                         onOpenShortcuts?.()
                     } else {
                         // Clear search if on search page
-                        if (router.pathname === '/search' && searchInputRef?.current) {
+                        if (pathname === '/search' && searchInputRef?.current) {
                             searchInputRef.current.value = ''
                             searchInputRef.current.dispatchEvent(
                                 new Event('input', { bubbles: true })

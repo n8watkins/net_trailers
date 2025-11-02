@@ -3,7 +3,7 @@ import { startTransition } from 'react'
 import { useAppStoreHydrated } from '../../hooks/useAppStoreHydrated'
 import { useSearchStore } from '../../stores/searchStore'
 import { useSessionData } from '../../hooks/useSessionData'
-import { useRouter } from 'next/router'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useHydrationDebug } from '../../utils/hydrationDebug'
 
 /**
@@ -20,6 +20,7 @@ export default function PostHydrationEffects() {
     const searchStore = useSearchStore()
     const session = useSessionData()
     const router = useRouter()
+    const searchParams = useSearchParams()
 
     useEffect(() => {
         debug.logEffect('Scheduling post-hydration effects')
@@ -69,25 +70,25 @@ export default function PostHydrationEffects() {
                 }
 
                 // Handle any route-based state updates
-                if (router.isReady) {
-                    const { query } = router
+                // Note: In App Router, router is always ready, no need to check isReady
+                const queryQ = searchParams.get('q')
+                const queryRedirect = searchParams.get('redirect')
 
-                    // Restore search query from URL
-                    if (query.q && typeof query.q === 'string') {
-                        debug.logEffect({
-                            action: 'Restoring search query from URL',
-                            query: query.q,
-                        })
-                        searchStore.setSearchQuery(query.q)
-                    }
+                // Restore search query from URL
+                if (queryQ && typeof queryQ === 'string') {
+                    debug.logEffect({
+                        action: 'Restoring search query from URL',
+                        query: queryQ,
+                    })
+                    searchStore.setSearchQuery(queryQ)
+                }
 
-                    // Handle auth redirects if needed
-                    if (query.redirect && typeof query.redirect === 'string') {
-                        debug.logEffect({ action: 'Processing redirect', redirect: query.redirect })
-                        // Only redirect if user is authenticated
-                        if (session.sessionType === 'authenticated') {
-                            router.replace(query.redirect as string)
-                        }
+                // Handle auth redirects if needed
+                if (queryRedirect && typeof queryRedirect === 'string') {
+                    debug.logEffect({ action: 'Processing redirect', redirect: queryRedirect })
+                    // Only redirect if user is authenticated
+                    if (session.sessionType === 'authenticated') {
+                        router.replace(queryRedirect)
                     }
                 }
 

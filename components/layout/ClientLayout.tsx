@@ -1,3 +1,5 @@
+'use client'
+
 import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
 import KeyboardShortcutsModal from '../modals/KeyboardShortcutsModal'
@@ -9,11 +11,21 @@ import { markAsVisited } from '../../utils/firstVisitTracker'
 import { useAppStore } from '../../stores/appStore'
 import { shouldShowAboutModal, markAboutModalShown } from '../../utils/aboutModalTimer'
 
-interface LayoutProps {
+interface ClientLayoutProps {
     children: React.ReactNode
 }
 
-function Layout({ children }: LayoutProps) {
+/**
+ * ClientLayout provides the shell around all pages in the App Router.
+ * It manages:
+ * - Footer
+ * - Global modals (About, Tutorial, Keyboard Shortcuts)
+ * - Scroll to top button
+ * - Global keyboard shortcuts
+ *
+ * This component runs on the client and wraps all page content.
+ */
+function ClientLayout({ children }: ClientLayoutProps) {
     const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
     const [showAboutModal, setShowAboutModal] = useState(false)
     const [showTutorial, setShowTutorial] = useState(false)
@@ -95,12 +107,7 @@ function Layout({ children }: LayoutProps) {
 
     return (
         <>
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            {React.cloneElement(children as React.ReactElement<any>, {
-                onOpenAboutModal: handleOpenAboutModal,
-                onOpenTutorial: handleOpenTutorial,
-                onOpenKeyboardShortcuts: handleOpenShortcuts,
-            })}
+            {children}
             <Footer
                 showAboutModal={showAboutModal}
                 onOpenAboutModal={handleOpenAboutModal}
@@ -118,4 +125,4 @@ function Layout({ children }: LayoutProps) {
     )
 }
 
-export default Layout
+export default ClientLayout

@@ -11,7 +11,7 @@ import {
     ArrowDownTrayIcon,
 } from '@heroicons/react/24/outline'
 import useAuth from '../../hooks/useAuth'
-import { useRouter } from 'next/router'
+import { useRouter } from 'next/navigation'
 import useUserData from '../../hooks/useUserData'
 import { exportUserDataToCSV } from '../../utils/csvExport'
 import { useAuthStatus } from '../../hooks/useAuthStatus'

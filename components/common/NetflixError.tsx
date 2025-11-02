@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { ExclamationTriangleIcon, ArrowPathIcon, HomeIcon } from '@heroicons/react/24/outline'
-import { useRouter } from 'next/router'
+import { useRouter } from 'next/navigation'
 
 interface Props {
     onRetry?: () => void

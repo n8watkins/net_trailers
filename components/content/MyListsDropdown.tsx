@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/router'
+import { usePathname } from 'next/navigation'
 import {
     HeartIcon,
     ChevronDownIcon,
@@ -12,7 +12,7 @@ import {
 function MyListsDropdown() {
     const [isOpen, setIsOpen] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
-    const router = useRouter()
+    const pathname = usePathname()
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -27,11 +27,11 @@ function MyListsDropdown() {
     }, [])
 
     const isCurrentPath = (path: string) => {
-        return router.pathname === path
+        return pathname === path
     }
 
     const isAnyListPath = () => {
-        return ['/watchlists', '/liked', '/hidden'].includes(router.pathname)
+        return ['/watchlists', '/liked', '/hidden'].includes(pathname)
     }
 
     const handleLinkClick = () => {

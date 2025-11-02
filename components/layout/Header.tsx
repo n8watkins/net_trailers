@@ -9,7 +9,7 @@ import {
     EyeSlashIcon,
     CheckCircleIcon,
 } from '@heroicons/react/24/outline'
-import { useRouter } from 'next/router'
+import { useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
 import SearchBar from '../search/SearchBar'
 import useAuth from '../../hooks/useAuth'
@@ -36,6 +36,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
     const [isSearchExpanded, setIsSearchExpanded] = useState(false)
     const { authModal, openAuthModal, closeAuthModal } = useAppStore()
     const router = useRouter()
+    const pathname = usePathname()
     const { user } = useAuth()
     const { showSuccess, showError, showWatchlistAdd, showWatchlistRemove } = useToast()
     const debugSettings = useDebugSettings()
@@ -126,14 +127,14 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                     <div className="hidden lg:flex items-center space-x-6 flex-1">
                         <ul className="flex space-x-4 items-center">
                             <li
-                                className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${router.pathname === '/tv' ? 'text-white hover:text-white font-semibold' : ''}`}
+                                className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${pathname === '/tv' ? 'text-white hover:text-white font-semibold' : ''}`}
                                 onClick={() => router.push('/tv')}
                             >
                                 <TvIcon className="h-4 w-4" />
                                 <span>TV Shows</span>
                             </li>
                             <li
-                                className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${router.pathname === '/movies' ? 'text-white hover:text-white font-semibold' : ''}`}
+                                className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${pathname === '/movies' ? 'text-white hover:text-white font-semibold' : ''}`}
                                 onClick={() => router.push('/movies')}
                             >
                                 <FilmIcon className="h-4 w-4" />
@@ -252,7 +253,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                         <li>
                                             <button
                                                 className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
-                                                    router.pathname === '/'
+                                                    pathname === '/'
                                                         ? 'text-white font-semibold bg-red-600/20'
                                                         : 'hover:bg-white/10'
                                                 }`}
@@ -280,7 +281,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                         <li>
                                             <button
                                                 className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
-                                                    router.pathname === '/tv'
+                                                    pathname === '/tv'
                                                         ? 'text-white font-semibold bg-red-600/20'
                                                         : 'hover:bg-white/10'
                                                 }`}
@@ -296,7 +297,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                         <li>
                                             <button
                                                 className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
-                                                    router.pathname === '/movies'
+                                                    pathname === '/movies'
                                                         ? 'text-white font-semibold bg-red-600/20'
                                                         : 'hover:bg-white/10'
                                                 }`}
@@ -312,7 +313,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                         <li>
                                             <button
                                                 className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
-                                                    router.pathname === '/watchlists'
+                                                    pathname === '/watchlists'
                                                         ? 'text-white font-semibold bg-red-600/20'
                                                         : 'hover:bg-white/10'
                                                 }`}
@@ -328,7 +329,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                         <li>
                                             <button
                                                 className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
-                                                    router.pathname === '/liked'
+                                                    pathname === '/liked'
                                                         ? 'text-white font-semibold bg-red-600/20'
                                                         : 'hover:bg-white/10'
                                                 }`}
@@ -344,7 +345,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                         <li>
                                             <button
                                                 className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
-                                                    router.pathname === '/hidden'
+                                                    pathname === '/hidden'
                                                         ? 'text-white font-semibold bg-red-600/20'
                                                         : 'hover:bg-white/10'
                                                 }`}
@@ -360,7 +361,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                         <li>
                                             <button
                                                 className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
-                                                    router.pathname === '/search'
+                                                    pathname === '/search'
                                                         ? 'text-white font-semibold bg-red-600/20'
                                                         : 'hover:bg-white/10'
                                                 }`}

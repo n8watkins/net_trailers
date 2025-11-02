@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { ChevronDownIcon, FilmIcon, TvIcon } from '@heroicons/react/24/outline'
-import { useRouter } from 'next/router'
+import { useRouter } from 'next/navigation'
 import {
     MOVIE_GENRES as movieGenres,
     TV_GENRES as tvGenres,

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { MagnifyingGlassIcon, XMarkIcon, FunnelIcon } from '@heroicons/react/24/outline'
-import { useRouter } from 'next/router'
+import { useRouter, usePathname } from 'next/navigation'
 import { useAppStore } from '../../stores/appStore'
 import { useSearch } from '../../hooks/useSearch'
 import { useTypewriter } from '../../hooks/useTypewriter'
@@ -49,7 +49,8 @@ export default function SearchBar({
         maxLength: 20, // Limit for cleaner display on larger devices
     })
     const router = useRouter()
-    const isOnSearchPage = router.pathname === '/search'
+    const pathname = usePathname()
+    const isOnSearchPage = pathname === '/search'
     const {
         query,
         suggestions,

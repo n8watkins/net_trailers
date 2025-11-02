@@ -5,7 +5,7 @@ import useUserData from '../../hooks/useUserData'
 import { useToast } from '../../hooks/useToast'
 import ToolTipMod from '../common/ToolTipMod'
 import ListDropdown from './ListDropdown'
-import { useRouter } from 'next/router'
+import { useRouter } from 'next/navigation'
 
 interface WatchLaterButtonProps {
     content: Content

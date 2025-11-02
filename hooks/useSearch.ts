@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useRouter } from 'next/router'
+import { usePathname } from 'next/navigation'
 import { useSearchStore } from '../stores/searchStore'
 import type { SearchFilters } from '../stores/searchStore'
 import { getTitle, Content, getYear, isMovie } from '../typings'
@@ -137,7 +137,7 @@ async function applyFilters(results: Content[], filters: SearchFilters): Promise
  * ```
  */
 export function useSearch() {
-    const router = useRouter()
+    const pathname = usePathname()
     // Use granular selectors to prevent unnecessary re-renders
     const query = useSearchStore((state) => state.query)
     const results = useSearchStore((state) => state.results)
@@ -584,7 +584,7 @@ export function useSearch() {
         // 3. We have search results
         // 4. We don't have all results yet
         // 5. We're not already loading all results
-        const isOnSearchPage = router.pathname === '/search'
+        const isOnSearchPage = pathname === '/search'
 
         // Create a unique key for current filter state
         const filterStateKey = JSON.stringify(filters)
@@ -608,7 +608,7 @@ export function useSearch() {
             lastFilterStateRef.current = ''
         }
     }, [
-        router.pathname,
+        pathname,
         filters,
         hasSearched,
         results.length,
@@ -622,7 +622,7 @@ export function useSearch() {
     const lastQuickSearchFilterStateRef = useRef<string>('')
 
     useEffect(() => {
-        const isOnSearchPage = router.pathname === '/search'
+        const isOnSearchPage = pathname === '/search'
         const filterStateKey = JSON.stringify(filters)
 
         // Only auto-load for quick search (NOT on /search page) when filters are applied
@@ -644,7 +644,7 @@ export function useSearch() {
             lastQuickSearchFilterStateRef.current = ''
         }
     }, [
-        router.pathname,
+        pathname,
         filters,
         hasSearched,
         results.length,
@@ -686,19 +686,15 @@ export function useSearch() {
     }, [setSearch])
 
     // Clear search when navigating away from search page
+    // In App Router, we watch pathname changes instead of router.events
+    const prevPathnameRef = useRef(pathname)
     useEffect(() => {
-        const handleRouteChange = (url: string) => {
-            // Clear search if navigating to any page other than search
-            if (!url.startsWith('/search')) {
-                clearSearch()
-            }
+        // Only clear if we've navigated away from /search
+        if (prevPathnameRef.current === '/search' && pathname !== '/search') {
+            clearSearch()
         }
-
-        router.events.on('routeChangeStart', handleRouteChange)
-        return () => {
-            router.events.off('routeChangeStart', handleRouteChange)
-        }
-    }, [router.events, clearSearch])
+        prevPathnameRef.current = pathname
+    }, [pathname, clearSearch])
 
     // Get search suggestions based on current search results
     const getSuggestions = useCallback(
