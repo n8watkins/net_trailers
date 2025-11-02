@@ -10,6 +10,28 @@ const NetflixLoader: React.FC<Props> = ({ message = 'Loading your movies...' }) 
     const [loadingCounter, setLoadingCounter] = useState(0)
     const [loadingMessage, setLoadingMessage] = useState('🎬 Finding your favorite movies...')
 
+    // Prevent scrolling while loading
+    useEffect(() => {
+        // Save original overflow style
+        const originalOverflow = document.body.style.overflow
+        const originalPosition = document.body.style.position
+
+        // Prevent scrolling
+        document.body.style.overflow = 'hidden'
+        document.body.style.position = 'fixed'
+        document.body.style.width = '100%'
+
+        // Cleanup: restore scrolling when component unmounts
+        return () => {
+            document.body.style.overflow = originalOverflow
+            document.body.style.position = originalPosition
+            document.body.style.width = ''
+
+            // Scroll to top after loading completes
+            window.scrollTo({ top: 0, behavior: 'instant' })
+        }
+    }, [])
+
     // Counter animation for loading
     useEffect(() => {
         setLoadingCounter(0)
@@ -53,7 +75,7 @@ const NetflixLoader: React.FC<Props> = ({ message = 'Loading your movies...' }) 
     }, [])
 
     return (
-        <div className="min-h-screen bg-[#141414] flex items-center justify-center">
+        <div className="fixed inset-0 z-[9999] bg-[#141414] flex items-center justify-center">
             <div className="text-center max-w-md px-6">
                 <div className="flex space-x-3 justify-center mb-6">
                     <div className="w-6 h-6 bg-red-600 rounded-full animate-bounce"></div>
