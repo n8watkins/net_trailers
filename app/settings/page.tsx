@@ -22,6 +22,7 @@ import InfoModal from '../../components/modals/InfoModal'
 import { useAppStore } from '../../stores/appStore'
 import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
+import { toggleChildSafetyAction } from '../../lib/actions/childSafety'
 import ProfileSection from '../../components/settings/ProfileSection'
 import EmailSection from '../../components/settings/EmailSection'
 import PasswordSection from '../../components/settings/PasswordSection'
@@ -120,19 +121,6 @@ const Settings: React.FC = () => {
         autoMute: userData.autoMute ?? true,
         defaultVolume: userData.defaultVolume ?? 50,
     })
-
-    // 2) Track real user-initiated interaction to prevent phantom modal opens
-    const userInteractedRef = React.useRef(false)
-
-    // Mark interaction when user starts interacting (mouse or keyboard)
-    const markInteracted = React.useCallback(() => {
-        userInteractedRef.current = true
-    }, [])
-
-    // Clear interaction flag when gesture completes
-    const clearInteracted = React.useCallback(() => {
-        userInteractedRef.current = false
-    }, [])
 
     // Initialize skeleton state based on whether data is available
     // Track the last preferences we loaded from the store to detect external changes
@@ -594,10 +582,15 @@ const Settings: React.FC = () => {
 
             if (isGuest) {
                 // For guest, update the guest store
+                // Note: Guest store blocks childSafetyMode changes (always false)
                 guestStoreUpdatePrefs(updatedPreferences)
             } else {
                 // For authenticated, update auth store
                 await authStoreUpdatePrefs(updatedPreferences)
+
+                // CRITICAL: Sync child safety mode to cookie for server-side rendering
+                // This ensures server-rendered pages respect the user's preference
+                await toggleChildSafetyAction(childSafetyMode)
             }
 
             // Update original preferences to reflect saved state
@@ -611,9 +604,18 @@ const Settings: React.FC = () => {
     }
 
     // Create stable callback references for memoized component
-    const handleChildSafetyModeChange = React.useCallback((checked: boolean) => {
-        setChildSafetyMode(checked)
-    }, [])
+    const handleChildSafetyModeChange = React.useCallback(
+        (checked: boolean) => {
+            // CRITICAL: Block guests from changing child safety mode
+            // Guests must create an account to use this feature
+            if (isGuest) {
+                setShowChildSafetyModal(true)
+                return // Don't change local state for guests
+            }
+            setChildSafetyMode(checked)
+        },
+        [isGuest]
+    )
 
     const handleAutoMuteChange = React.useCallback((checked: boolean) => {
         setAutoMute(checked)
@@ -745,9 +747,6 @@ const Settings: React.FC = () => {
                                             onDefaultVolumeChange={handleDefaultVolumeChange}
                                             onSave={handleSavePreferences}
                                             onShowChildSafetyModal={handleShowChildSafetyModal}
-                                            onMarkInteracted={markInteracted}
-                                            onClearInteracted={clearInteracted}
-                                            userInteractedRef={userInteractedRef}
                                         />
                                     )}
 

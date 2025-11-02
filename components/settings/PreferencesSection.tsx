@@ -15,9 +15,6 @@ interface PreferencesControlsProps {
     onDefaultVolumeChange: (volume: number) => void
     onSave: () => void
     onShowChildSafetyModal: () => void
-    onMarkInteracted: () => void
-    onClearInteracted: () => void
-    userInteractedRef: React.RefObject<boolean>
 }
 
 const PreferencesControls = React.memo<PreferencesControlsProps>(
@@ -32,9 +29,6 @@ const PreferencesControls = React.memo<PreferencesControlsProps>(
         onDefaultVolumeChange,
         onSave,
         onShowChildSafetyModal,
-        onMarkInteracted,
-        onClearInteracted,
-        userInteractedRef,
     }) => {
         return (
             <div className="space-y-8">
@@ -58,30 +52,11 @@ const PreferencesControls = React.memo<PreferencesControlsProps>(
                                     Fantasy, Action & Adventure • Hides Crime, Drama, Horror
                                 </p>
                             </div>
-                            <label
-                                className="relative inline-flex items-center cursor-pointer ml-4"
-                                onPointerDown={onMarkInteracted}
-                                onPointerUp={onClearInteracted}
-                                onKeyDown={(e) => {
-                                    // Only mark interaction for Space/Enter keys
-                                    if (e.key === ' ' || e.key === 'Enter') {
-                                        onMarkInteracted()
-                                    }
-                                }}
-                                onKeyUp={onClearInteracted}
-                            >
+                            <label className="relative inline-flex items-center cursor-pointer ml-4">
                                 <input
                                     type="checkbox"
                                     checked={childSafetyMode}
-                                    onChange={(e) => {
-                                        // Only react to guest modal when it's truly user-triggered
-                                        if (isGuest && userInteractedRef.current) {
-                                            onShowChildSafetyModal()
-                                            // Do NOT flip the setting for guests
-                                            return
-                                        }
-                                        onChildSafetyModeChange(e.target.checked)
-                                    }}
+                                    onChange={(e) => onChildSafetyModeChange(e.target.checked)}
                                     className="sr-only peer"
                                 />
                                 <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
@@ -178,9 +153,6 @@ interface PreferencesSectionProps {
     onDefaultVolumeChange: (volume: number) => void
     onSave: () => void
     onShowChildSafetyModal: () => void
-    onMarkInteracted: () => void
-    onClearInteracted: () => void
-    userInteractedRef: React.RefObject<boolean>
 }
 
 const PreferencesSection: React.FC<PreferencesSectionProps> = ({
@@ -195,9 +167,6 @@ const PreferencesSection: React.FC<PreferencesSectionProps> = ({
     onDefaultVolumeChange,
     onSave,
     onShowChildSafetyModal,
-    onMarkInteracted,
-    onClearInteracted,
-    userInteractedRef,
 }) => {
     return (
         <div className="p-8">
@@ -239,9 +208,6 @@ const PreferencesSection: React.FC<PreferencesSectionProps> = ({
                     onDefaultVolumeChange={onDefaultVolumeChange}
                     onSave={onSave}
                     onShowChildSafetyModal={onShowChildSafetyModal}
-                    onMarkInteracted={onMarkInteracted}
-                    onClearInteracted={onClearInteracted}
-                    userInteractedRef={userInteractedRef}
                 />
             )}
         </div>
