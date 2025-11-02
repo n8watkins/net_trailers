@@ -114,7 +114,7 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
                                           : 'Romance Movies'
                                       : childSafetyEnabled
                                         ? 'Fantasy'
-                                        : 'Romance & Animation'
+                                        : 'Animation'
                             }
                             content={genre4}
                         />
