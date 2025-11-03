@@ -1,16 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import Header from '../layout/Header'
 import Banner from '../layout/Banner'
-import Row from '../content/Row'
 import { HomeData } from '../../lib/serverData'
 import { useAppStore } from '../../stores/appStore'
 import { getChildSafetyModeClient } from '../../lib/childSafetyCookieClient'
 import { useSessionStore } from '../../stores/sessionStore'
 import { CustomRowLoader } from '../customRows/CustomRowLoader'
-import { CustomRow } from '../../types/customRows'
 import { CustomRowsFirestore } from '../../utils/firestore/customRows'
+import { useCustomRowsStore } from '../../stores/customRowsStore'
 
 interface MoviesClientProps {
     data: HomeData
@@ -21,37 +20,37 @@ export default function MoviesClient({ data }: MoviesClientProps) {
     const showModal = modal.isOpen
     const childSafetyEnabled = getChildSafetyModeClient()
     const getUserId = useSessionStore((state) => state.getUserId)
+    const isInitialized = useSessionStore((state) => state.isInitialized)
     const userId = getUserId()
 
-    const [customRows, setCustomRows] = useState<CustomRow[]>([])
-    const [isLoadingCustomRows, setIsLoadingCustomRows] = useState(false)
+    // Get display rows from store (includes both system and custom rows)
+    const { getDisplayRowsForPage, setRows, setSystemRowPreferences } = useCustomRowsStore()
 
     const { trending, topRated, genre1, genre2, genre3, genre4, documentaries } = data
 
-    // Load custom rows on mount (client-side Firestore)
+    // Load custom rows and system preferences on mount (client-side Firestore)
     useEffect(() => {
-        if (!userId) return
+        if (!userId || !isInitialized) return
 
-        const loadCustomRows = async () => {
-            setIsLoadingCustomRows(true)
+        const loadRows = async () => {
             try {
-                const rows = await CustomRowsFirestore.getUserCustomRows(userId)
-                // Filter enabled rows for movies page
-                // Show movie-only rows and "both" rows
-                const moviesPageRows = rows.filter(
-                    (row: CustomRow) =>
-                        row.enabled && (row.mediaType === 'movie' || row.mediaType === 'both')
-                )
-                setCustomRows(moviesPageRows)
+                const [customRows, systemPrefs] = await Promise.all([
+                    CustomRowsFirestore.getUserCustomRows(userId),
+                    CustomRowsFirestore.getSystemRowPreferences(userId),
+                ])
+                setRows(userId, customRows)
+                setSystemRowPreferences(userId, systemPrefs)
             } catch (error) {
-                console.error('Error loading custom rows:', error)
-            } finally {
-                setIsLoadingCustomRows(false)
+                console.error('Error loading rows:', error)
             }
         }
 
-        loadCustomRows()
-    }, [userId])
+        loadRows()
+    }, [userId, isInitialized, setRows, setSystemRowPreferences])
+
+    // Get display rows for movies page (includes 'movie' media type)
+    const displayRows = userId ? getDisplayRowsForPage(userId, 'movies') : []
+    const enabledRows = displayRows.filter((row) => row.enabled)
 
     // Build API endpoints with child safety mode parameter
     const childSafetyParam = childSafetyEnabled ? '?childSafetyMode=true' : ''
@@ -82,61 +81,11 @@ export default function MoviesClient({ data }: MoviesClientProps) {
                             apiEndpoint={`/api/movies/top-rated${childSafetyParam}`}
                         />
                     )}
-                    {genre1.length > 0 && (
-                        <Row
-                            title={childSafetyEnabled ? 'Animated Movies' : 'Action Movies'}
-                            content={genre1}
-                            apiEndpoint={
-                                childSafetyEnabled
-                                    ? `/api/genres/movie/16${childSafetyParam}`
-                                    : `/api/genres/movie/28${childSafetyParam}`
-                            }
-                        />
-                    )}
-                    {genre2.length > 0 && (
-                        <Row
-                            title={childSafetyEnabled ? 'Family Movies' : 'Comedy Movies'}
-                            content={genre2}
-                            apiEndpoint={
-                                childSafetyEnabled
-                                    ? `/api/genres/movie/10751${childSafetyParam}`
-                                    : `/api/genres/movie/35${childSafetyParam}`
-                            }
-                        />
-                    )}
-                    {genre3.length > 0 && (
-                        <Row
-                            title={childSafetyEnabled ? 'Adventure Movies' : 'Horror Movies'}
-                            content={genre3}
-                            apiEndpoint={
-                                childSafetyEnabled
-                                    ? `/api/genres/movie/12${childSafetyParam}`
-                                    : `/api/genres/movie/27${childSafetyParam}`
-                            }
-                        />
-                    )}
-                    {genre4.length > 0 && (
-                        <Row
-                            title={childSafetyEnabled ? 'Fantasy Movies' : 'Romance Movies'}
-                            content={genre4}
-                            apiEndpoint={
-                                childSafetyEnabled
-                                    ? `/api/genres/movie/14${childSafetyParam}`
-                                    : `/api/genres/movie/10749${childSafetyParam}`
-                            }
-                        />
-                    )}
-                    {documentaries.length > 0 && (
-                        <Row
-                            title="Documentaries"
-                            content={documentaries}
-                            apiEndpoint={`/api/genres/movie/99${childSafetyParam}`}
-                        />
-                    )}
 
-                    {/* Custom Rows */}
-                    {!isLoadingCustomRows &&
-                        customRows.map((row) => <CustomRowLoader key={row.id} row={row} />)}
+                    {/* Dynamic rows (system + custom) sorted by user preferences */}
+                    {enabledRows.map((row) => (
+                        <CustomRowLoader key={row.id} row={row} />
+                    ))}
                 </section>
             </main>
         </div>

@@ -62,6 +62,7 @@ export interface CustomRowsActions {
     getEnabledRowsForPage: (userId: string, page: 'main' | 'movies' | 'tvShows') => CustomRow[]
     getAllDisplayRows: (userId: string) => DisplayRow[] // Combines system + custom
     getDisplayRowsByMediaType: (userId: string, mediaType: 'movie' | 'tv' | 'both') => DisplayRow[] // Filter by media type
+    getDisplayRowsForPage: (userId: string, page: 'home' | 'movies' | 'tv') => DisplayRow[] // Get rows for specific page
 }
 
 export type CustomRowsStore = CustomRowsState & CustomRowsActions
@@ -313,5 +314,21 @@ export const useCustomRowsStore = create<CustomRowsStore>((set, get) => ({
     ): DisplayRow[] => {
         const allRows = get().getAllDisplayRows(userId)
         return allRows.filter((row) => row.mediaType === mediaType)
+    },
+
+    /**
+     * Get display rows for a specific page (includes 'both' rows for movies/tv pages)
+     */
+    getDisplayRowsForPage: (userId: string, page: 'home' | 'movies' | 'tv'): DisplayRow[] => {
+        const allRows = get().getAllDisplayRows(userId)
+
+        if (page === 'home') {
+            return allRows.filter((row) => row.mediaType === 'both')
+        } else if (page === 'movies') {
+            return allRows.filter((row) => row.mediaType === 'movie')
+        } else {
+            // tv page
+            return allRows.filter((row) => row.mediaType === 'tv')
+        }
     },
 }))

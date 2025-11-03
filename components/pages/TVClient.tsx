@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import Header from '../layout/Header'
 import Banner from '../layout/Banner'
 import Row from '../content/Row'
@@ -8,8 +8,8 @@ import { HomeData } from '../../lib/serverData'
 import { useAppStore } from '../../stores/appStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { CustomRowLoader } from '../customRows/CustomRowLoader'
-import { CustomRow } from '../../types/customRows'
 import { CustomRowsFirestore } from '../../utils/firestore/customRows'
+import { useCustomRowsStore } from '../../stores/customRowsStore'
 
 interface TVClientProps {
     data: HomeData
@@ -19,37 +19,37 @@ export default function TVClient({ data }: TVClientProps) {
     const { modal } = useAppStore()
     const showModal = modal.isOpen
     const getUserId = useSessionStore((state) => state.getUserId)
+    const isInitialized = useSessionStore((state) => state.isInitialized)
     const userId = getUserId()
 
-    const [customRows, setCustomRows] = useState<CustomRow[]>([])
-    const [isLoadingCustomRows, setIsLoadingCustomRows] = useState(false)
+    // Get display rows from store (includes both system and custom rows)
+    const { getDisplayRowsForPage, setRows, setSystemRowPreferences } = useCustomRowsStore()
 
     const { trending, topRated, genre1, genre2, genre3, genre4, documentaries } = data
 
-    // Load custom rows on mount (client-side Firestore)
+    // Load custom rows and system preferences on mount (client-side Firestore)
     useEffect(() => {
-        if (!userId) return
+        if (!userId || !isInitialized) return
 
-        const loadCustomRows = async () => {
-            setIsLoadingCustomRows(true)
+        const loadRows = async () => {
             try {
-                const rows = await CustomRowsFirestore.getUserCustomRows(userId)
-                // Filter enabled rows for TV page
-                // Show TV-only rows and "both" rows
-                const tvPageRows = rows.filter(
-                    (row: CustomRow) =>
-                        row.enabled && (row.mediaType === 'tv' || row.mediaType === 'both')
-                )
-                setCustomRows(tvPageRows)
+                const [customRows, systemPrefs] = await Promise.all([
+                    CustomRowsFirestore.getUserCustomRows(userId),
+                    CustomRowsFirestore.getSystemRowPreferences(userId),
+                ])
+                setRows(userId, customRows)
+                setSystemRowPreferences(userId, systemPrefs)
             } catch (error) {
-                console.error('Error loading custom rows:', error)
-            } finally {
-                setIsLoadingCustomRows(false)
+                console.error('Error loading rows:', error)
             }
         }
 
-        loadCustomRows()
-    }, [userId])
+        loadRows()
+    }, [userId, isInitialized, setRows, setSystemRowPreferences])
+
+    // Get display rows for TV page (includes 'tv' media type)
+    const displayRows = userId ? getDisplayRowsForPage(userId, 'tv') : []
+    const enabledRows = displayRows.filter((row) => row.enabled)
 
     return (
         <div
@@ -77,45 +77,11 @@ export default function TVClient({ data }: TVClientProps) {
                             apiEndpoint="/api/tv/top-rated"
                         />
                     )}
-                    {genre1.length > 0 && (
-                        <Row
-                            title="Action & Adventure TV Shows"
-                            content={genre1}
-                            apiEndpoint="/api/genres/tv/10759"
-                        />
-                    )}
-                    {genre2.length > 0 && (
-                        <Row
-                            title="Comedy TV Shows"
-                            content={genre2}
-                            apiEndpoint="/api/genres/tv/35"
-                        />
-                    )}
-                    {genre3.length > 0 && (
-                        <Row
-                            title="Sci-Fi & Fantasy TV Shows"
-                            content={genre3}
-                            apiEndpoint="/api/genres/tv/10765"
-                        />
-                    )}
-                    {genre4.length > 0 && (
-                        <Row
-                            title="Animation TV Shows"
-                            content={genre4}
-                            apiEndpoint="/api/genres/tv/16"
-                        />
-                    )}
-                    {documentaries.length > 0 && (
-                        <Row
-                            title="Documentary TV Shows"
-                            content={documentaries}
-                            apiEndpoint="/api/genres/tv/99"
-                        />
-                    )}
 
-                    {/* Custom Rows */}
-                    {!isLoadingCustomRows &&
-                        customRows.map((row) => <CustomRowLoader key={row.id} row={row} />)}
+                    {/* Dynamic rows (system + custom) sorted by user preferences */}
+                    {enabledRows.map((row) => (
+                        <CustomRowLoader key={row.id} row={row} />
+                    ))}
                 </section>
             </main>
         </div>
