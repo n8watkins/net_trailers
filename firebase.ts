@@ -40,42 +40,20 @@ function getDb() {
         return (globalThis as any).firestore
     }
 
-    // Determine if we're on the server or client
-    const isServer = typeof window === 'undefined'
-
-    // Try to initialize with custom options
+    // Try persistent cache first (client-side), fallback to basic (server-side)
     try {
-        // Only use persistent cache on client side
-        // Server-side (API routes) doesn't support persistentLocalCache
-        if (isServer) {
-            // Server-side: use simple getFirestore
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            ;(globalThis as any).firestore = getFirestore(app)
-        } else {
-            // Client-side: use persistent cache for better performance
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            ;(globalThis as any).firestore = initializeFirestore(app, {
-                localCache: persistentLocalCache({
-                    // Optional: Configure cache size (default is 40MB)
-                    // cacheSizeBytes: 40 * 1024 * 1024,
-                }),
-            })
-        }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (globalThis as any).firestore
-    } catch (error: unknown) {
-        // If initialization fails because it's already initialized,
-        // just use getFirestore() to get the existing instance
-        if (error instanceof Error && 'code' in error && error.code === 'failed-precondition') {
-            // Silently use the existing instance - this can happen during hot reloads
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            ;(globalThis as any).firestore = getFirestore(app)
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return (globalThis as any).firestore
-        }
-        // Re-throw if it's a different error
-        throw error
+        ;(globalThis as any).firestore = initializeFirestore(app, {
+            localCache: persistentLocalCache(),
+        })
+    } catch (_error) {
+        // Fallback to basic getFirestore (server-side or already initialized)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ;(globalThis as any).firestore = getFirestore(app)
     }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (globalThis as any).firestore
 }
 
 // Export getDb function for lazy initialization
@@ -83,8 +61,16 @@ export function getFirestoreDb() {
     return getDb()
 }
 
-// Initialize immediately for backward compatibility
-const db = getDb()
+// Lazy initialization - only call getDb() when db is first accessed
+let _db: ReturnType<typeof getFirestore> | null = null
+const db = new Proxy({} as ReturnType<typeof getFirestore>, {
+    get(_target, prop) {
+        if (!_db) {
+            _db = getDb()
+        }
+        return (_db as any)[prop]
+    },
+})
 
 const auth = getAuth(app)
 
