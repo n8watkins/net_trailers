@@ -145,7 +145,7 @@ export function CustomRowLoader({ row }: CustomRowLoaderProps) {
         }
 
         loadContent()
-    }, [row.id, row.genres, row.genreLogic, row.mediaType, userId, childSafetyMode])
+    }, [row.id, row.genres.join(','), row.genreLogic, row.mediaType, userId, childSafetyMode])
 
     // Don't render if no user
     if (!userId) {
