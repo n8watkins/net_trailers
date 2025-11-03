@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { GenreMultiSelect } from './GenreMultiSelect'
 import { CustomRowFormData, CUSTOM_ROW_CONSTRAINTS, CustomRow } from '../../types/customRows'
-import { FilmIcon, TvIcon } from '@heroicons/react/24/outline'
+import { FilmIcon, TvIcon, SparklesIcon } from '@heroicons/react/24/outline'
 
 interface CustomRowFormProps {
     initialData?: CustomRow
@@ -28,6 +28,7 @@ export function CustomRowForm({ initialData, onSubmit, onCancel, isLoading }: Cu
     })
 
     const [errors, setErrors] = useState<Record<string, string>>({})
+    const [isGeneratingName, setIsGeneratingName] = useState(false)
 
     const validate = (): boolean => {
         const newErrors: Record<string, string> = {}
@@ -49,6 +50,46 @@ export function CustomRowForm({ initialData, onSubmit, onCancel, isLoading }: Cu
         return Object.keys(newErrors).length === 0
     }
 
+    const handleGenerateName = async () => {
+        // Need at least 1 genre selected
+        if (formData.genres.length === 0) {
+            setErrors({ ...errors, genres: 'Please select at least 1 genre first' })
+            return
+        }
+
+        setIsGeneratingName(true)
+        setErrors({})
+
+        try {
+            const response = await fetch('/api/generate-row-name', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    genres: formData.genres,
+                    genreLogic: formData.genreLogic,
+                    mediaType: formData.mediaType,
+                }),
+            })
+
+            if (!response.ok) {
+                throw new Error('Failed to generate name')
+            }
+
+            const data = await response.json()
+            setFormData({ ...formData, name: data.name })
+        } catch (error) {
+            console.error('Error generating name:', error)
+            setErrors({
+                ...errors,
+                name: 'Failed to generate name. Try manually entering one.',
+            })
+        } finally {
+            setIsGeneratingName(false)
+        }
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
@@ -67,9 +108,25 @@ export function CustomRowForm({ initialData, onSubmit, onCancel, isLoading }: Cu
         <form onSubmit={handleSubmit} className="space-y-6">
             {/* Row Name */}
             <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-200 mb-2">
-                    Row Name *
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-200">
+                        Row Name *
+                    </label>
+                    <button
+                        type="button"
+                        onClick={handleGenerateName}
+                        disabled={isGeneratingName || formData.genres.length === 0}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-purple-400 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={
+                            formData.genres.length === 0
+                                ? 'Select genres first'
+                                : 'Generate a funny AI name'
+                        }
+                    >
+                        <SparklesIcon className="w-4 h-4" />
+                        {isGeneratingName ? 'Generating...' : 'AI Generate'}
+                    </button>
+                </div>
                 <input
                     type="text"
                     id="name"
@@ -78,6 +135,7 @@ export function CustomRowForm({ initialData, onSubmit, onCancel, isLoading }: Cu
                     placeholder="e.g., Musical Anime, Action Comedies"
                     className="w-full px-4 py-2 bg-[#1a1a1a] border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-red-600 focus:outline-none focus:ring-1 focus:ring-red-600"
                     maxLength={CUSTOM_ROW_CONSTRAINTS.MAX_NAME_LENGTH}
+                    disabled={isGeneratingName}
                 />
                 <div className="flex justify-between mt-1">
                     {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
@@ -85,6 +143,11 @@ export function CustomRowForm({ initialData, onSubmit, onCancel, isLoading }: Cu
                         {formData.name.length}/{CUSTOM_ROW_CONSTRAINTS.MAX_NAME_LENGTH}
                     </p>
                 </div>
+                {formData.genres.length === 0 && (
+                    <p className="text-xs text-gray-500 mt-1">
+                        💡 Select genres below to unlock AI name generation
+                    </p>
+                )}
             </div>
 
             {/* Media Type */}
