@@ -1,4 +1,4 @@
-import { doc, getDoc, updateDoc } from 'firebase/firestore'
+import { doc, getDoc, updateDoc, setDoc } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { CustomRow, CustomRowFormData, CUSTOM_ROW_CONSTRAINTS } from '../../types/customRows'
 import { v4 as uuidv4 } from 'uuid'
@@ -77,21 +77,30 @@ export class CustomRowsFirestore {
         const userDoc = await getDoc(userDocRef)
 
         if (!userDoc.exists()) {
-            throw new Error('User document not found')
+            // Create new user document with the custom row
+            await setDoc(userDocRef, {
+                watchlist: [],
+                ratings: [],
+                userLists: {},
+                customRows: {
+                    [rowId]: customRow,
+                },
+                lastActive: now,
+            })
+        } else {
+            // Get existing customRows map
+            const userData = userDoc.data()
+            const customRows = userData.customRows || {}
+
+            // Add new row to the map
+            customRows[rowId] = customRow
+
+            // Update user document
+            await updateDoc(userDocRef, {
+                customRows,
+                lastActive: now,
+            })
         }
-
-        // Get existing customRows map
-        const userData = userDoc.data()
-        const customRows = userData.customRows || {}
-
-        // Add new row to the map
-        customRows[rowId] = customRow
-
-        // Update user document
-        await updateDoc(userDocRef, {
-            customRows,
-            lastActive: now,
-        })
 
         return customRow
     }
