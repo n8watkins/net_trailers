@@ -59,6 +59,25 @@ export interface SystemRowPreferences {
 }
 
 /**
+ * Advanced filter options for custom rows
+ */
+export interface AdvancedFilters {
+    // Year filters
+    yearMin?: number // e.g., 1990
+    yearMax?: number // e.g., 2024
+
+    // Rating filters (0-10 scale)
+    ratingMin?: number // e.g., 3.0 (for "bad" movies)
+    ratingMax?: number // e.g., 6.0 (max rating for "bad" movies)
+
+    // Popularity filters
+    popularityMin?: number // e.g., 10 (minimum popularity score)
+
+    // Vote count filters (to find popular but bad movies)
+    voteCountMin?: number // e.g., 1000 (ensure enough votes for credibility)
+}
+
+/**
  * Form data for creating/updating custom rows
  * Excludes auto-generated fields (id, timestamps)
  */
@@ -68,6 +87,7 @@ export interface CustomRowFormData {
     genreLogic: 'AND' | 'OR'
     mediaType: 'movie' | 'tv' | 'both'
     enabled: boolean
+    advancedFilters?: AdvancedFilters
 }
 
 /**

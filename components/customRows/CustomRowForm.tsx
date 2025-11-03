@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useState } from 'react'
-import { GenreMultiSelect } from './GenreMultiSelect'
+import { GenrePills } from './GenrePills'
+import { AdvancedFiltersSection } from './AdvancedFiltersSection'
 import { CustomRowFormData, CUSTOM_ROW_CONSTRAINTS, CustomRow } from '../../types/customRows'
 import { FilmIcon, TvIcon, SparklesIcon } from '@heroicons/react/24/outline'
 
@@ -25,6 +26,7 @@ export function CustomRowForm({ initialData, onSubmit, onCancel, isLoading }: Cu
         genreLogic: initialData?.genreLogic || 'AND',
         mediaType: initialData?.mediaType || 'movie',
         enabled: initialData?.enabled ?? true,
+        advancedFilters: initialData?.advancedFilters || {},
     })
 
     const [errors, setErrors] = useState<Record<string, string>>({})
@@ -198,15 +200,15 @@ export function CustomRowForm({ initialData, onSubmit, onCancel, isLoading }: Cu
 
             {/* Genres */}
             <div>
-                <label className="block text-sm font-medium text-gray-200 mb-2">
-                    Genres * (1-{CUSTOM_ROW_CONSTRAINTS.MAX_GENRES_PER_ROW})
+                <label className="block text-sm font-medium text-gray-200 mb-3">
+                    Genres * (Select 1-{CUSTOM_ROW_CONSTRAINTS.MAX_GENRES_PER_ROW})
                 </label>
-                <GenreMultiSelect
+                <GenrePills
                     selectedGenres={formData.genres}
                     onChange={(genres) => setFormData({ ...formData, genres })}
                     mediaType={formData.mediaType}
                 />
-                {errors.genres && <p className="text-sm text-red-500 mt-1">{errors.genres}</p>}
+                {errors.genres && <p className="text-sm text-red-500 mt-2">{errors.genres}</p>}
             </div>
 
             {/* Genre Logic */}
@@ -247,6 +249,12 @@ export function CustomRowForm({ initialData, onSubmit, onCancel, isLoading }: Cu
                     </div>
                 </div>
             )}
+
+            {/* Advanced Filters */}
+            <AdvancedFiltersSection
+                filters={formData.advancedFilters || {}}
+                onChange={(advancedFilters) => setFormData({ ...formData, advancedFilters })}
+            />
 
             {/* Form Actions */}
             <div className="flex gap-3 pt-4">
