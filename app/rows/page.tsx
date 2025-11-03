@@ -3,29 +3,23 @@
 import { useState, useEffect } from 'react'
 import Header from '../../components/layout/Header'
 import { Squares2X2Icon, PlusIcon, MagnifyingGlassIcon } from '@heroicons/react/24/solid'
-import { CustomRowForm } from '../../components/customRows/CustomRowForm'
 import { CustomRowCard } from '../../components/customRows/CustomRowCard'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useCustomRowsStore } from '../../stores/customRowsStore'
 import { useAppStore } from '../../stores/appStore'
-import { CustomRow, CustomRowFormData, CUSTOM_ROW_CONSTRAINTS } from '../../types/customRows'
+import { CustomRow, CUSTOM_ROW_CONSTRAINTS } from '../../types/customRows'
 import { GuestModeNotification } from '../../components/auth/GuestModeNotification'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import { CustomRowsFirestore } from '../../utils/firestore/customRows'
 
-type ViewMode = 'list' | 'create' | 'edit'
-
 const RowsPage = () => {
     const { isGuest, isInitialized } = useAuthStatus()
-    const [viewMode, setViewMode] = useState<ViewMode>('list')
-    const [editingRow, setEditingRow] = useState<CustomRow | null>(null)
     const [searchQuery, setSearchQuery] = useState('')
 
     // Stores
     const getUserId = useSessionStore((state) => state.getUserId)
-    const { getRows, setRows, addRow, updateRow, removeRow, setLoading, setError } =
-        useCustomRowsStore()
-    const { modal, showToast } = useAppStore()
+    const { getRows, setRows, removeRow, updateRow, setLoading, setError } = useCustomRowsStore()
+    const { modal, showToast, openCustomRowModal } = useAppStore()
     const showModal = modal.isOpen
 
     const userId = getUserId()
@@ -63,41 +57,6 @@ const RowsPage = () => {
         loadRows()
     }, [userId, isGuest, isInitialized, setRows, setLoading, setError, showToast])
 
-    // Create row
-    const handleCreate = async (formData: CustomRowFormData) => {
-        if (!userId) return
-
-        try {
-            const row = await CustomRowsFirestore.createCustomRow(userId, formData)
-            addRow(userId, row)
-            showToast('success', 'Row created successfully')
-            setViewMode('list')
-        } catch (error) {
-            console.error('Error creating row:', error)
-            showToast('error', (error as Error).message)
-        }
-    }
-
-    // Update row
-    const handleUpdate = async (formData: CustomRowFormData) => {
-        if (!userId || !editingRow) return
-
-        try {
-            const updatedRow = await CustomRowsFirestore.updateCustomRow(
-                userId,
-                editingRow.id,
-                formData
-            )
-            updateRow(userId, editingRow.id, updatedRow)
-            showToast('success', 'Row updated successfully')
-            setViewMode('list')
-            setEditingRow(null)
-        } catch (error) {
-            console.error('Error updating row:', error)
-            showToast('error', (error as Error).message)
-        }
-    }
-
     // Delete row
     const handleDelete = async (row: CustomRow) => {
         if (!userId) return
@@ -126,16 +85,14 @@ const RowsPage = () => {
         }
     }
 
-    // Edit row
+    // Edit row - opens modal
     const handleEdit = (row: CustomRow) => {
-        setEditingRow(row)
-        setViewMode('edit')
+        openCustomRowModal('edit', row.id)
     }
 
-    // Cancel form
-    const handleCancel = () => {
-        setViewMode('list')
-        setEditingRow(null)
+    // Create row - opens modal
+    const handleCreate = () => {
+        openCustomRowModal('create')
     }
 
     // No user ID
@@ -186,7 +143,7 @@ const RowsPage = () => {
                         {isInitialized && isGuest && <GuestModeNotification align="left" />}
 
                         {/* Action Buttons Row */}
-                        {viewMode === 'list' && rows.length > 0 && !isGuest && (
+                        {rows.length > 0 && !isGuest && (
                             <div className="flex items-center space-x-4 py-3 mb-4 border-b border-gray-700/30">
                                 {/* Stats */}
                                 <div className="text-lg font-semibold text-white">
@@ -196,7 +153,7 @@ const RowsPage = () => {
 
                                 {/* Create Button */}
                                 <button
-                                    onClick={() => setViewMode('create')}
+                                    onClick={handleCreate}
                                     disabled={atMaxRows}
                                     className="flex items-center space-x-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-full text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
@@ -206,7 +163,7 @@ const RowsPage = () => {
                             </div>
                         )}
 
-                        {atMaxRows && viewMode === 'list' && (
+                        {atMaxRows && (
                             <div className="p-4 bg-yellow-600/20 border border-yellow-600/50 rounded-lg">
                                 <p className="text-yellow-400">
                                     You&apos;ve reached the maximum of{' '}
@@ -216,8 +173,8 @@ const RowsPage = () => {
                             </div>
                         )}
 
-                        {/* Search Bar - Only show in list view */}
-                        {viewMode === 'list' && rows.length > 0 && (
+                        {/* Search Bar */}
+                        {rows.length > 0 && (
                             <div className="max-w-md">
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -235,73 +192,45 @@ const RowsPage = () => {
                         )}
                     </div>
 
-                    {/* Content Sections */}
-                    {viewMode === 'list' && (
-                        <>
-                            {filteredRows.length === 0 ? (
-                                <div className="text-center py-16">
-                                    <div className="text-6xl mb-4">{isGuest ? '🔒' : '📊'}</div>
-                                    <h2 className="text-2xl font-semibold text-white mb-2">
-                                        {isGuest
-                                            ? 'Sign In Required'
-                                            : searchQuery.trim()
-                                              ? 'No rows found'
-                                              : 'No Custom Rows Yet'}
-                                    </h2>
-                                    <p className="text-gray-400 mb-8">
-                                        {isGuest
-                                            ? 'Custom rows require a Firebase account. Please sign in with Google or email to create custom rows.'
-                                            : searchQuery.trim()
-                                              ? 'Try a different search term'
-                                              : 'Create your first custom row to get started!'}
-                                    </p>
-                                    {!searchQuery.trim() && !isGuest && (
-                                        <button
-                                            onClick={() => setViewMode('create')}
-                                            className="inline-flex items-center gap-2 bg-red-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 transition-colors"
-                                        >
-                                            <PlusIcon className="w-5 h-5" />
-                                            Create Your First Row
-                                        </button>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="space-y-4 max-w-5xl">
-                                    {filteredRows.map((row) => (
-                                        <CustomRowCard
-                                            key={row.id}
-                                            row={row}
-                                            onEdit={handleEdit}
-                                            onDelete={handleDelete}
-                                            onToggleEnabled={handleToggleEnabled}
-                                        />
-                                    ))}
-                                </div>
-                            )}
-                        </>
-                    )}
-
-                    {viewMode === 'create' && (
-                        <div className="max-w-2xl">
-                            <h2 className="text-2xl font-bold text-white mb-6">
-                                Create Custom Row
+                    {/* Content Section */}
+                    {filteredRows.length === 0 ? (
+                        <div className="text-center py-16">
+                            <div className="text-6xl mb-4">{isGuest ? '🔒' : '📊'}</div>
+                            <h2 className="text-2xl font-semibold text-white mb-2">
+                                {isGuest
+                                    ? 'Sign In Required'
+                                    : searchQuery.trim()
+                                      ? 'No rows found'
+                                      : 'No Custom Rows Yet'}
                             </h2>
-                            <div className="bg-[#1a1a1a] border border-gray-700 rounded-lg p-6">
-                                <CustomRowForm onSubmit={handleCreate} onCancel={handleCancel} />
-                            </div>
+                            <p className="text-gray-400 mb-8">
+                                {isGuest
+                                    ? 'Custom rows require a Firebase account. Please sign in with Google or email to create custom rows.'
+                                    : searchQuery.trim()
+                                      ? 'Try a different search term'
+                                      : 'Create your first custom row to get started!'}
+                            </p>
+                            {!searchQuery.trim() && !isGuest && (
+                                <button
+                                    onClick={handleCreate}
+                                    className="inline-flex items-center gap-2 bg-red-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 transition-colors"
+                                >
+                                    <PlusIcon className="w-5 h-5" />
+                                    Create Your First Row
+                                </button>
+                            )}
                         </div>
-                    )}
-
-                    {viewMode === 'edit' && editingRow && (
-                        <div className="max-w-2xl">
-                            <h2 className="text-2xl font-bold text-white mb-6">Edit Custom Row</h2>
-                            <div className="bg-[#1a1a1a] border border-gray-700 rounded-lg p-6">
-                                <CustomRowForm
-                                    initialData={editingRow}
-                                    onSubmit={handleUpdate}
-                                    onCancel={handleCancel}
+                    ) : (
+                        <div className="space-y-4 max-w-5xl">
+                            {filteredRows.map((row) => (
+                                <CustomRowCard
+                                    key={row.id}
+                                    row={row}
+                                    onEdit={handleEdit}
+                                    onDelete={handleDelete}
+                                    onToggleEnabled={handleToggleEnabled}
                                 />
-                            </div>
+                            ))}
                         </div>
                     )}
                 </div>

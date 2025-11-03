@@ -3,6 +3,8 @@
 import { AuthProvider } from '../hooks/useAuth'
 import ToastManager from '../components/common/ToastManager'
 import Modal from '../components/modals/Modal'
+import ListSelectionModal from '../components/modals/ListSelectionModal'
+import CustomRowModal from '../components/modals/CustomRowModal'
 import { SessionSyncManager } from '../components/utility/SessionSyncManager'
 
 /**
@@ -11,7 +13,7 @@ import { SessionSyncManager } from '../components/utility/SessionSyncManager'
  *
  * This replaces the old Pages Router _app.tsx pattern.
  *
- * Note: AuthModal is managed by appStore and doesn't need to be mounted here.
+ * Note: AuthModal is managed by appStore and mounted in Header.tsx
  */
 export function Providers({ children }: { children: React.ReactNode }) {
     return (
@@ -22,6 +24,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
             {/* Global UI components that should always be mounted */}
             <ToastManager />
             <Modal />
+            <ListSelectionModal />
+            <CustomRowModal />
         </AuthProvider>
     )
 }

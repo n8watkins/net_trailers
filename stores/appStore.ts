@@ -45,6 +45,13 @@ export interface ListModalState {
     mode?: 'manage' | 'create' | 'add'
 }
 
+// Custom row modal state
+export interface CustomRowModalState {
+    isOpen: boolean
+    editingRowId: string | null
+    mode: 'create' | 'edit'
+}
+
 // Auth modal state
 export interface AuthModalState {
     isOpen: boolean
@@ -58,6 +65,9 @@ export interface AppState {
 
     // List modal state
     listModal: ListModalState
+
+    // Custom row modal state
+    customRowModal: CustomRowModalState
 
     // Auth modal state
     authModal: AuthModalState
@@ -91,6 +101,10 @@ export interface AppActions {
     openListModal: (content?: Content, mode?: 'manage' | 'create' | 'add') => void
     closeListModal: () => void
     setListModalMode: (mode: 'manage' | 'create' | 'add') => void
+
+    // Custom row modal actions
+    openCustomRowModal: (mode: 'create' | 'edit', editingRowId?: string) => void
+    closeCustomRowModal: () => void
 
     // Auth modal actions
     openAuthModal: (mode?: 'signin' | 'signup') => void
@@ -144,6 +158,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
         isOpen: false,
         content: null,
         mode: undefined,
+    },
+
+    customRowModal: {
+        isOpen: false,
+        editingRowId: null,
+        mode: 'create',
     },
 
     authModal: {
@@ -283,6 +303,36 @@ export const useAppStore = create<AppStore>((set, get) => ({
                 mode,
             },
         }))
+    },
+
+    // Custom row modal actions
+    openCustomRowModal: (mode: 'create' | 'edit' = 'create', editingRowId?: string) => {
+        startTransition(() => {
+            set({
+                customRowModal: {
+                    isOpen: true,
+                    mode,
+                    editingRowId: editingRowId || null,
+                },
+            })
+            console.log('📊 [AppStore] Custom row modal opened:', {
+                mode,
+                editingRowId: editingRowId || 'none',
+            })
+        })
+    },
+
+    closeCustomRowModal: () => {
+        startTransition(() => {
+            set({
+                customRowModal: {
+                    isOpen: false,
+                    mode: 'create',
+                    editingRowId: null,
+                },
+            })
+            console.log('❌ [AppStore] Custom row modal closed')
+        })
     },
 
     // Auth modal actions
