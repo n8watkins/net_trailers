@@ -43,10 +43,11 @@ export default function TVClient({ data }: TVClientProps) {
                 }
 
                 const data = await response.json()
-                // Filter rows that should display on TV page, are enabled, and are TV type
+                // Filter enabled rows for TV page
+                // Show TV-only rows and "both" rows
                 const tvPageRows = data.rows.filter(
                     (row: CustomRow) =>
-                        row.enabled && row.displayOn.tvShows && row.mediaType === 'tv'
+                        row.enabled && (row.mediaType === 'tv' || row.mediaType === 'both')
                 )
                 setCustomRows(tvPageRows)
             } catch (error) {

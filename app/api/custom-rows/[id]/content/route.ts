@@ -65,15 +65,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             )
         }
 
-        // Build TMDB discover URL based on row configuration
-        const discoverEndpoint = row.mediaType === 'movie' ? 'discover/movie' : 'discover/tv'
-        const url = new URL(`${BASE_URL}/${discoverEndpoint}`)
-        url.searchParams.append('api_key', API_KEY)
-        url.searchParams.append('language', 'en-US')
-        url.searchParams.append('page', page)
-        url.searchParams.append('sort_by', 'popularity.desc')
-
-        // Apply genre logic
+        // Apply genre logic parameter
         // AND logic: with_genres=16,10402 (comma-separated)
         // OR logic: with_genres=35|53 (pipe-separated)
         const genreParam =
@@ -81,33 +73,99 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                 ? row.genres.join(',') // AND: comma-separated
                 : row.genres.join('|') // OR: pipe-separated
 
-        url.searchParams.append('with_genres', genreParam)
+        let enrichedResults: any[] = []
+        let totalPages = 0
+        let totalResults = 0
 
-        // Apply child safety filtering
-        if (childSafeMode) {
-            if (row.mediaType === 'movie') {
-                // For movies: filter by certification
+        // Handle "both" media type by fetching from both endpoints
+        if (row.mediaType === 'both') {
+            // Fetch movies
+            const movieUrl = new URL(`${BASE_URL}/discover/movie`)
+            movieUrl.searchParams.append('api_key', API_KEY)
+            movieUrl.searchParams.append('language', 'en-US')
+            movieUrl.searchParams.append('page', page)
+            movieUrl.searchParams.append('sort_by', 'popularity.desc')
+            movieUrl.searchParams.append('with_genres', genreParam)
+            if (childSafeMode) {
+                movieUrl.searchParams.append('certification_country', 'US')
+                movieUrl.searchParams.append('certification.lte', 'PG-13')
+            }
+
+            // Fetch TV shows
+            const tvUrl = new URL(`${BASE_URL}/discover/tv`)
+            tvUrl.searchParams.append('api_key', API_KEY)
+            tvUrl.searchParams.append('language', 'en-US')
+            tvUrl.searchParams.append('page', page)
+            tvUrl.searchParams.append('sort_by', 'popularity.desc')
+            tvUrl.searchParams.append('with_genres', genreParam)
+
+            // Fetch both in parallel
+            const [movieResponse, tvResponse] = await Promise.all([
+                fetch(movieUrl.toString()),
+                fetch(tvUrl.toString()),
+            ])
+
+            if (!movieResponse.ok || !tvResponse.ok) {
+                throw new Error('TMDB API error while fetching both media types')
+            }
+
+            const [movieData, tvData] = await Promise.all([movieResponse.json(), tvResponse.json()])
+
+            // Merge and enrich results
+            const movieResults = movieData.results.map((item: any) => ({
+                ...item,
+                media_type: 'movie',
+            }))
+            const tvResults = tvData.results.map((item: any) => ({
+                ...item,
+                media_type: 'tv',
+            }))
+
+            // Interleave results for better variety
+            enrichedResults = []
+            const maxLength = Math.max(movieResults.length, tvResults.length)
+            for (let i = 0; i < maxLength; i++) {
+                if (i < movieResults.length) enrichedResults.push(movieResults[i])
+                if (i < tvResults.length) enrichedResults.push(tvResults[i])
+            }
+
+            // Combine totals
+            totalPages = Math.max(movieData.total_pages, tvData.total_pages)
+            totalResults = movieData.total_results + tvData.total_results
+        } else {
+            // Single media type (movie or tv)
+            const discoverEndpoint = row.mediaType === 'movie' ? 'discover/movie' : 'discover/tv'
+            const url = new URL(`${BASE_URL}/${discoverEndpoint}`)
+            url.searchParams.append('api_key', API_KEY)
+            url.searchParams.append('language', 'en-US')
+            url.searchParams.append('page', page)
+            url.searchParams.append('sort_by', 'popularity.desc')
+            url.searchParams.append('with_genres', genreParam)
+
+            // Apply child safety filtering
+            if (childSafeMode && row.mediaType === 'movie') {
                 url.searchParams.append('certification_country', 'US')
                 url.searchParams.append('certification.lte', 'PG-13')
             }
-            // For TV shows: we'll filter after fetching using filterMatureTVShows
+
+            // Fetch from TMDB
+            const response = await fetch(url.toString())
+
+            if (!response.ok) {
+                throw new Error(`TMDB API error: ${response.status} ${response.statusText}`)
+            }
+
+            const data = await response.json()
+
+            // Enrich results with media_type
+            enrichedResults = data.results.map((item: any) => ({
+                ...item,
+                media_type: row.mediaType,
+            }))
+
+            totalPages = data.total_pages
+            totalResults = data.total_results
         }
-
-        // Fetch from TMDB
-        const response = await fetch(url.toString())
-
-        if (!response.ok) {
-            throw new Error(`TMDB API error: ${response.status} ${response.statusText}`)
-        }
-
-        const data = await response.json()
-
-        // Enrich results with media_type
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let enrichedResults = data.results.map((item: any) => ({
-            ...item,
-            media_type: row.mediaType,
-        }))
 
         // Apply child safety filtering
         if (childSafeMode) {
@@ -116,8 +174,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             // Filter by adult flag
             enrichedResults = filterContentByAdultFlag(enrichedResults, true)
 
-            // For TV shows, apply content rating filter
-            if (row.mediaType === 'tv' && enrichedResults.length > 0) {
+            // For TV shows or mixed content, apply content rating filter
+            const hasTV = enrichedResults.some((item: any) => item.media_type === 'tv')
+            if (hasTV && enrichedResults.length > 0) {
                 enrichedResults = await filterMatureTVShows(enrichedResults, API_KEY)
             }
 
@@ -127,8 +186,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                 {
                     results: enrichedResults,
                     page: parseInt(page),
-                    total_pages: data.total_pages,
-                    total_results: data.total_results,
+                    total_pages: totalPages,
+                    total_results: totalResults,
                     child_safety_enabled: true,
                     hidden_count: hiddenCount,
                 },
@@ -146,8 +205,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             {
                 results: enrichedResults,
                 page: parseInt(page),
-                total_pages: data.total_pages,
-                total_results: data.total_results,
+                total_pages: totalPages,
+                total_results: totalResults,
             },
             {
                 status: 200,

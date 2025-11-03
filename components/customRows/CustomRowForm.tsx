@@ -24,11 +24,6 @@ export function CustomRowForm({ initialData, onSubmit, onCancel, isLoading }: Cu
         genres: initialData?.genres || [],
         genreLogic: initialData?.genreLogic || 'AND',
         mediaType: initialData?.mediaType || 'movie',
-        displayOn: initialData?.displayOn || {
-            main: true,
-            movies: false,
-            tvShows: false,
-        },
         enabled: initialData?.enabled ?? true,
     })
 
@@ -48,11 +43,6 @@ export function CustomRowForm({ initialData, onSubmit, onCancel, isLoading }: Cu
         // Genres validation
         if (formData.genres.length < CUSTOM_ROW_CONSTRAINTS.MIN_GENRES_PER_ROW) {
             newErrors.genres = `Select at least ${CUSTOM_ROW_CONSTRAINTS.MIN_GENRES_PER_ROW} genre`
-        }
-
-        // Display pages validation
-        if (!formData.displayOn.main && !formData.displayOn.movies && !formData.displayOn.tvShows) {
-            newErrors.displayOn = 'Select at least one page to display this row'
         }
 
         setErrors(newErrors)
@@ -100,30 +90,45 @@ export function CustomRowForm({ initialData, onSubmit, onCancel, isLoading }: Cu
             {/* Media Type */}
             <div>
                 <label className="block text-sm font-medium text-gray-200 mb-2">Media Type *</label>
-                <div className="flex gap-4">
+                <div className="grid grid-cols-3 gap-3">
                     <button
                         type="button"
                         onClick={() => setFormData({ ...formData, mediaType: 'movie', genres: [] })}
-                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${
+                        className={`flex flex-col items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${
                             formData.mediaType === 'movie'
                                 ? 'border-red-600 bg-red-600/20 text-white'
                                 : 'border-gray-700 bg-[#1a1a1a] text-gray-400 hover:border-gray-600'
                         }`}
                     >
                         <FilmIcon className="w-5 h-5" />
-                        <span>Movies</span>
+                        <span className="text-sm">Movies</span>
                     </button>
                     <button
                         type="button"
                         onClick={() => setFormData({ ...formData, mediaType: 'tv', genres: [] })}
-                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${
+                        className={`flex flex-col items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${
                             formData.mediaType === 'tv'
                                 ? 'border-red-600 bg-red-600/20 text-white'
                                 : 'border-gray-700 bg-[#1a1a1a] text-gray-400 hover:border-gray-600'
                         }`}
                     >
                         <TvIcon className="w-5 h-5" />
-                        <span>TV Shows</span>
+                        <span className="text-sm">TV Shows</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, mediaType: 'both', genres: [] })}
+                        className={`flex flex-col items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${
+                            formData.mediaType === 'both'
+                                ? 'border-red-600 bg-red-600/20 text-white'
+                                : 'border-gray-700 bg-[#1a1a1a] text-gray-400 hover:border-gray-600'
+                        }`}
+                    >
+                        <div className="flex gap-1">
+                            <FilmIcon className="w-4 h-4" />
+                            <TvIcon className="w-4 h-4" />
+                        </div>
+                        <span className="text-sm">Both</span>
                     </button>
                 </div>
             </div>
@@ -179,58 +184,6 @@ export function CustomRowForm({ initialData, onSubmit, onCancel, isLoading }: Cu
                     </div>
                 </div>
             )}
-
-            {/* Display On */}
-            <div>
-                <label className="block text-sm font-medium text-gray-200 mb-2">Display On *</label>
-                <div className="space-y-2">
-                    <label className="flex items-center gap-3 px-4 py-3 bg-[#1a1a1a] rounded-lg border border-gray-700 cursor-pointer hover:border-gray-600 transition-colors">
-                        <input
-                            type="checkbox"
-                            checked={formData.displayOn.main}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    displayOn: { ...formData.displayOn, main: e.target.checked },
-                                })
-                            }
-                            className="w-4 h-4 text-red-600 bg-gray-700 border-gray-600 rounded focus:ring-red-600"
-                        />
-                        <span className="text-white">Main Page (/)</span>
-                    </label>
-                    <label className="flex items-center gap-3 px-4 py-3 bg-[#1a1a1a] rounded-lg border border-gray-700 cursor-pointer hover:border-gray-600 transition-colors">
-                        <input
-                            type="checkbox"
-                            checked={formData.displayOn.movies}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    displayOn: { ...formData.displayOn, movies: e.target.checked },
-                                })
-                            }
-                            className="w-4 h-4 text-red-600 bg-gray-700 border-gray-600 rounded focus:ring-red-600"
-                        />
-                        <span className="text-white">Movies Page (/movies)</span>
-                    </label>
-                    <label className="flex items-center gap-3 px-4 py-3 bg-[#1a1a1a] rounded-lg border border-gray-700 cursor-pointer hover:border-gray-600 transition-colors">
-                        <input
-                            type="checkbox"
-                            checked={formData.displayOn.tvShows}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    displayOn: { ...formData.displayOn, tvShows: e.target.checked },
-                                })
-                            }
-                            className="w-4 h-4 text-red-600 bg-gray-700 border-gray-600 rounded focus:ring-red-600"
-                        />
-                        <span className="text-white">TV Shows Page (/tv)</span>
-                    </label>
-                </div>
-                {errors.displayOn && (
-                    <p className="text-sm text-red-500 mt-1">{errors.displayOn}</p>
-                )}
-            </div>
 
             {/* Form Actions */}
             <div className="flex gap-3 pt-4">

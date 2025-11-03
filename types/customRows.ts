@@ -12,14 +12,7 @@ export interface CustomRow {
     name: string // User-facing title (3-50 chars)
     genres: number[] // TMDB genre IDs (1-5 genres)
     genreLogic: 'AND' | 'OR' // How to combine genres
-    mediaType: 'movie' | 'tv' // V1: Only one type per row
-
-    // Display Configuration
-    displayOn: {
-        main: boolean // Show on homepage (/)
-        movies: boolean // Show on /movies
-        tvShows: boolean // Show on /tv
-    }
+    mediaType: 'movie' | 'tv' | 'both' // Content type(s) to show
 
     // Organization
     order: number // Display order (0-based, lower = higher)
@@ -38,8 +31,7 @@ export interface CustomRowFormData {
     name: string
     genres: number[]
     genreLogic: 'AND' | 'OR'
-    mediaType: 'movie' | 'tv'
-    displayOn: CustomRow['displayOn']
+    mediaType: 'movie' | 'tv' | 'both'
     enabled: boolean
 }
 
@@ -63,7 +55,6 @@ export type CustomRowValidationError =
     | 'MIN_GENRES_REQUIRED'
     | 'NAME_TOO_SHORT'
     | 'NAME_TOO_LONG'
-    | 'NO_DISPLAY_PAGES'
     | 'INVALID_GENRE_LOGIC'
     | 'INVALID_MEDIA_TYPE'
 

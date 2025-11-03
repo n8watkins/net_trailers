@@ -45,10 +45,11 @@ export default function MoviesClient({ data }: MoviesClientProps) {
                 }
 
                 const data = await response.json()
-                // Filter rows that should display on movies page, are enabled, and are movie type
+                // Filter enabled rows for movies page
+                // Show movie-only rows and "both" rows
                 const moviesPageRows = data.rows.filter(
                     (row: CustomRow) =>
-                        row.enabled && row.displayOn.movies && row.mediaType === 'movie'
+                        row.enabled && (row.mediaType === 'movie' || row.mediaType === 'both')
                 )
                 setCustomRows(moviesPageRows)
             } catch (error) {

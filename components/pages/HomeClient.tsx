@@ -46,10 +46,8 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
                 }
 
                 const data = await response.json()
-                // Filter rows that should display on main page and are enabled
-                const mainPageRows = data.rows.filter(
-                    (row: CustomRow) => row.enabled && row.displayOn.main
-                )
+                // Show all enabled rows on main page
+                const mainPageRows = data.rows.filter((row: CustomRow) => row.enabled)
                 setCustomRows(mainPageRows)
             } catch (error) {
                 console.error('Error loading custom rows:', error)

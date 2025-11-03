@@ -8,7 +8,7 @@ import { CUSTOM_ROW_CONSTRAINTS } from '../../types/customRows'
 interface GenreMultiSelectProps {
     selectedGenres: number[]
     onChange: (genres: number[]) => void
-    mediaType: 'movie' | 'tv'
+    mediaType: 'movie' | 'tv' | 'both'
     maxGenres?: number
 }
 
@@ -18,6 +18,7 @@ interface GenreMultiSelectProps {
  * Allows users to select multiple genres for custom rows.
  * Displays selected genres as chips that can be removed.
  * Enforces max genre limit from constraints.
+ * For "both" media type, shows genres that exist in both movies and TV.
  */
 export function GenreMultiSelect({
     selectedGenres,
@@ -25,7 +26,13 @@ export function GenreMultiSelect({
     mediaType,
     maxGenres = CUSTOM_ROW_CONSTRAINTS.MAX_GENRES_PER_ROW,
 }: GenreMultiSelectProps) {
-    const availableGenres = mediaType === 'movie' ? MOVIE_GENRES : TV_GENRES
+    // For "both", use genres that exist in both movie and TV genre lists
+    const availableGenres =
+        mediaType === 'both'
+            ? MOVIE_GENRES.filter((mg) => TV_GENRES.some((tg) => tg.id === mg.id))
+            : mediaType === 'movie'
+              ? MOVIE_GENRES
+              : TV_GENRES
 
     // Filter out already selected genres
     const unselectedGenres = availableGenres.filter((g) => !selectedGenres.includes(g.id))

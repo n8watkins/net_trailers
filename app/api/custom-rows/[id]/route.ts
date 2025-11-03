@@ -66,22 +66,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
             }
         }
 
-        if (updates.displayOn !== undefined) {
-            if (
-                !updates.displayOn.main &&
-                !updates.displayOn.movies &&
-                !updates.displayOn.tvShows
-            ) {
-                return NextResponse.json(
-                    {
-                        error: 'Validation failed',
-                        message: 'At least one display page must be selected',
-                    },
-                    { status: 400 }
-                )
-            }
-        }
-
         // Update the row
         const updatedRow = await CustomRowsFirestore.updateCustomRow(userId, rowId, updates)
 

@@ -25,8 +25,7 @@ import { v4 as uuidv4 } from 'uuid'
  *   - name: string
  *   - genres: number[]
  *   - genreLogic: 'AND' | 'OR'
- *   - mediaType: 'movie' | 'tv'
- *   - displayOn: { main: boolean, movies: boolean, tvShows: boolean }
+ *   - mediaType: 'movie' | 'tv' | 'both'
  *   - order: number
  *   - enabled: boolean
  *   - createdAt: number (Unix timestamp)
@@ -254,42 +253,6 @@ export class CustomRowsFirestore {
         })
 
         await Promise.all(updatePromises)
-    }
-
-    /**
-     * Get custom rows to display on a specific page
-     *
-     * @param userId - Firebase Auth UID or Guest ID
-     * @param page - Page identifier ('main', 'movies', 'tvShows')
-     * @returns Array of enabled CustomRow objects for the page, sorted by order
-     */
-    static async getRowsForPage(
-        userId: string,
-        page: 'main' | 'movies' | 'tvShows'
-    ): Promise<CustomRow[]> {
-        // Validate userId
-        if (!userId || userId === 'undefined' || userId === 'null') {
-            console.warn('[CustomRowsFirestore] Invalid userId provided to getRowsForPage:', userId)
-            return []
-        }
-
-        const allRows = await this.getUserCustomRows(userId)
-
-        // Filter by enabled status and page
-        return allRows.filter((row) => {
-            if (!row.enabled) return false
-
-            switch (page) {
-                case 'main':
-                    return row.displayOn.main
-                case 'movies':
-                    return row.displayOn.movies
-                case 'tvShows':
-                    return row.displayOn.tvShows
-                default:
-                    return false
-            }
-        })
     }
 
     /**

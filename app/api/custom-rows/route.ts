@@ -46,13 +46,8 @@ function validateCustomRowData(data: CustomRowFormData): CustomRowValidationErro
     }
 
     // Validate mediaType
-    if (data.mediaType !== 'movie' && data.mediaType !== 'tv') {
+    if (data.mediaType !== 'movie' && data.mediaType !== 'tv' && data.mediaType !== 'both') {
         return 'INVALID_MEDIA_TYPE'
-    }
-
-    // Validate at least one display page is selected
-    if (!data.displayOn.main && !data.displayOn.movies && !data.displayOn.tvShows) {
-        return 'NO_DISPLAY_PAGES'
     }
 
     return null
@@ -191,12 +186,10 @@ function getValidationErrorMessage(error: CustomRowValidationError): string {
             return `Name must be at least ${CUSTOM_ROW_CONSTRAINTS.MIN_NAME_LENGTH} characters`
         case 'NAME_TOO_LONG':
             return `Name must be at most ${CUSTOM_ROW_CONSTRAINTS.MAX_NAME_LENGTH} characters`
-        case 'NO_DISPLAY_PAGES':
-            return 'At least one display page must be selected'
         case 'INVALID_GENRE_LOGIC':
             return 'Genre logic must be AND or OR'
         case 'INVALID_MEDIA_TYPE':
-            return 'Media type must be movie or tv'
+            return 'Media type must be movie, tv, or both'
         default:
             return 'Validation failed'
     }
