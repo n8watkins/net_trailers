@@ -1,29 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { CustomRowsFirestore } from '../../../../../utils/firestore/customRows'
 import { filterContentByAdultFlag } from '../../../../../utils/contentFilter'
 import { filterMatureTVShows } from '../../../../../utils/tvContentRatings'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
 
-/**
- * Helper to extract userId from request headers
- */
-function getUserIdFromRequest(request: NextRequest): string | null {
-    return request.headers.get('X-User-ID') || null
-}
+type MediaType = 'movie' | 'tv' | 'both'
+type GenreLogic = 'AND' | 'OR'
 
 /**
  * GET /api/custom-rows/[id]/content
  *
  * Fetch TMDB content for a custom row based on its genre configuration.
  *
- * Headers:
- *   X-User-ID: string (required) - Firebase UID or Guest ID
+ * Query Parameters (required):
+ *   - genres: string (comma-separated genre IDs, e.g., "28,12")
+ *   - genreLogic: 'AND' | 'OR'
+ *   - mediaType: 'movie' | 'tv' | 'both'
  *
- * Query Parameters:
- *   - page: number (optional, default: 1)
- *   - childSafetyMode: boolean (optional, default: false)
+ * Query Parameters (optional):
+ *   - page: number (default: 1)
+ *   - childSafetyMode: boolean (default: false)
  *
  * Response: {
  *   results: Content[],
@@ -36,15 +33,7 @@ function getUserIdFromRequest(request: NextRequest): string | null {
  */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const { id: rowId } = await params
-        const userId = getUserIdFromRequest(request)
-
-        if (!userId) {
-            return NextResponse.json(
-                { error: 'Unauthorized', message: 'User ID is required' },
-                { status: 401 }
-            )
-        }
+        await params // Consume params to satisfy Next.js requirements
 
         if (!API_KEY) {
             return NextResponse.json({ error: 'TMDB API key not configured' }, { status: 500 })
@@ -55,30 +44,35 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         const childSafetyMode = searchParams.get('childSafetyMode')
         const childSafeMode = childSafetyMode === 'true'
 
-        // Get the custom row configuration
-        const row = await CustomRowsFirestore.getCustomRow(userId, rowId)
+        // Get row configuration from query params
+        const genresParam = searchParams.get('genres')
+        const genreLogic = (searchParams.get('genreLogic') || 'OR') as GenreLogic
+        const mediaType = (searchParams.get('mediaType') || 'movie') as MediaType
 
-        if (!row) {
+        // Validate required parameters
+        if (!genresParam) {
             return NextResponse.json(
-                { error: 'Not found', message: 'Custom row not found' },
-                { status: 404 }
+                { error: 'Bad Request', message: 'genres parameter is required' },
+                { status: 400 }
             )
         }
+
+        const genres = genresParam.split(',').map((g) => parseInt(g.trim(), 10))
 
         // Apply genre logic parameter
         // AND logic: with_genres=16,10402 (comma-separated)
         // OR logic: with_genres=35|53 (pipe-separated)
         const genreParam =
-            row.genreLogic === 'AND'
-                ? row.genres.join(',') // AND: comma-separated
-                : row.genres.join('|') // OR: pipe-separated
+            genreLogic === 'AND'
+                ? genres.join(',') // AND: comma-separated
+                : genres.join('|') // OR: pipe-separated
 
         let enrichedResults: any[] = []
         let totalPages = 0
         let totalResults = 0
 
         // Handle "both" media type by fetching from both endpoints
-        if (row.mediaType === 'both') {
+        if (mediaType === 'both') {
             // Fetch movies
             const movieUrl = new URL(`${BASE_URL}/discover/movie`)
             movieUrl.searchParams.append('api_key', API_KEY)
@@ -134,7 +128,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             totalResults = movieData.total_results + tvData.total_results
         } else {
             // Single media type (movie or tv)
-            const discoverEndpoint = row.mediaType === 'movie' ? 'discover/movie' : 'discover/tv'
+            const discoverEndpoint = mediaType === 'movie' ? 'discover/movie' : 'discover/tv'
             const url = new URL(`${BASE_URL}/${discoverEndpoint}`)
             url.searchParams.append('api_key', API_KEY)
             url.searchParams.append('language', 'en-US')
@@ -143,7 +137,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             url.searchParams.append('with_genres', genreParam)
 
             // Apply child safety filtering
-            if (childSafeMode && row.mediaType === 'movie') {
+            if (childSafeMode && mediaType === 'movie') {
                 url.searchParams.append('certification_country', 'US')
                 url.searchParams.append('certification.lte', 'PG-13')
             }
@@ -160,7 +154,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             // Enrich results with media_type
             enrichedResults = data.results.map((item: any) => ({
                 ...item,
-                media_type: row.mediaType,
+                media_type: mediaType,
             }))
 
             totalPages = data.total_pages

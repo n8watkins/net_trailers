@@ -5,10 +5,10 @@ import Row from '../content/Row'
 import { Content } from '../../types/content'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useChildSafety } from '../../hooks/useChildSafety'
+import { CustomRow } from '../../types/customRows'
 
 interface CustomRowLoaderProps {
-    rowId: string
-    rowName: string
+    row: CustomRow
 }
 
 /**
@@ -18,7 +18,7 @@ interface CustomRowLoaderProps {
  * Handles initial content fetch and provides API endpoint for infinite scroll.
  * Integrates with child safety mode and user session.
  */
-export function CustomRowLoader({ rowId, rowName }: CustomRowLoaderProps) {
+export function CustomRowLoader({ row }: CustomRowLoaderProps) {
     const [content, setContent] = useState<Content[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -39,8 +39,12 @@ export function CustomRowLoader({ rowId, rowName }: CustomRowLoaderProps) {
             setError(null)
 
             try {
-                const url = new URL(`/api/custom-rows/${rowId}/content`, window.location.origin)
+                // Build URL with row configuration as query params
+                const url = new URL(`/api/custom-rows/${row.id}/content`, window.location.origin)
                 url.searchParams.append('page', '1')
+                url.searchParams.append('genres', row.genres.join(','))
+                url.searchParams.append('genreLogic', row.genreLogic)
+                url.searchParams.append('mediaType', row.mediaType)
                 if (childSafetyMode) {
                     url.searchParams.append('childSafetyMode', 'true')
                 }
@@ -74,7 +78,7 @@ export function CustomRowLoader({ rowId, rowName }: CustomRowLoaderProps) {
         }
 
         loadContent()
-    }, [rowId, userId, childSafetyMode])
+    }, [row.id, row.genres, row.genreLogic, row.mediaType, userId, childSafetyMode])
 
     // Don't render if no user
     if (!userId) {
@@ -83,7 +87,7 @@ export function CustomRowLoader({ rowId, rowName }: CustomRowLoaderProps) {
 
     // Don't render if error
     if (error) {
-        console.error(`CustomRowLoader error for row ${rowId}:`, error)
+        console.error(`CustomRowLoader error for row ${row.id}:`, error)
         return null
     }
 
@@ -97,10 +101,15 @@ export function CustomRowLoader({ rowId, rowName }: CustomRowLoaderProps) {
         return null
     }
 
-    // Build API endpoint for infinite scroll
-    const apiEndpoint = `/api/custom-rows/${rowId}/content${
-        childSafetyMode ? '?childSafetyMode=true' : ''
-    }`
+    // Build API endpoint for infinite scroll with row configuration
+    const apiEndpointUrl = new URL(`/api/custom-rows/${row.id}/content`, window.location.origin)
+    apiEndpointUrl.searchParams.append('genres', row.genres.join(','))
+    apiEndpointUrl.searchParams.append('genreLogic', row.genreLogic)
+    apiEndpointUrl.searchParams.append('mediaType', row.mediaType)
+    if (childSafetyMode) {
+        apiEndpointUrl.searchParams.append('childSafetyMode', 'true')
+    }
+    const apiEndpoint = apiEndpointUrl.pathname + apiEndpointUrl.search
 
-    return <Row title={rowName} content={content} apiEndpoint={apiEndpoint} />
+    return <Row title={row.name} content={content} apiEndpoint={apiEndpoint} />
 }

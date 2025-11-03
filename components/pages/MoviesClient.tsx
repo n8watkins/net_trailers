@@ -136,9 +136,7 @@ export default function MoviesClient({ data }: MoviesClientProps) {
 
                     {/* Custom Rows */}
                     {!isLoadingCustomRows &&
-                        customRows.map((row) => (
-                            <CustomRowLoader key={row.id} rowId={row.id} rowName={row.name} />
-                        ))}
+                        customRows.map((row) => <CustomRowLoader key={row.id} row={row} />)}
                 </section>
             </main>
         </div>
