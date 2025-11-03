@@ -1,11 +1,15 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Header from '../layout/Header'
 import Banner from '../layout/Banner'
 import Row from '../content/Row'
 import { HomeData } from '../../lib/serverData'
 import { useAppStore } from '../../stores/appStore'
 import { getChildSafetyModeClient } from '../../lib/childSafetyCookieClient'
+import { useSessionStore } from '../../stores/sessionStore'
+import { CustomRowLoader } from '../customRows/CustomRowLoader'
+import { CustomRow } from '../../types/customRows'
 
 interface HomeClientProps {
     data: HomeData
@@ -16,8 +20,46 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
     const { modal } = useAppStore()
     const showModal = modal.isOpen
     const childSafetyEnabled = getChildSafetyModeClient()
+    const getUserId = useSessionStore((state) => state.getUserId)
+    const userId = getUserId()
+
+    const [customRows, setCustomRows] = useState<CustomRow[]>([])
+    const [isLoadingCustomRows, setIsLoadingCustomRows] = useState(false)
 
     const { trending, topRated, genre1, genre2, genre3, genre4, documentaries } = data
+
+    // Load custom rows on mount
+    useEffect(() => {
+        if (!userId) return
+
+        const loadCustomRows = async () => {
+            setIsLoadingCustomRows(true)
+            try {
+                const response = await fetch('/api/custom-rows', {
+                    headers: {
+                        'X-User-ID': userId,
+                    },
+                })
+
+                if (!response.ok) {
+                    throw new Error('Failed to load custom rows')
+                }
+
+                const data = await response.json()
+                // Filter rows that should display on main page and are enabled
+                const mainPageRows = data.rows.filter(
+                    (row: CustomRow) => row.enabled && row.displayOn.main
+                )
+                setCustomRows(mainPageRows)
+            } catch (error) {
+                console.error('Error loading custom rows:', error)
+            } finally {
+                setIsLoadingCustomRows(false)
+            }
+        }
+
+        loadCustomRows()
+    }, [userId])
 
     // Build API endpoints with child safety mode parameter
     const childSafetyParam = childSafetyEnabled ? '?childSafetyMode=true' : ''
@@ -204,6 +246,12 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
                             apiEndpoint={getDocumentariesEndpoint()}
                         />
                     )}
+
+                    {/* Custom Rows */}
+                    {!isLoadingCustomRows &&
+                        customRows.map((row) => (
+                            <CustomRowLoader key={row.id} rowId={row.id} rowName={row.name} />
+                        ))}
                 </section>
             </main>
         </div>
