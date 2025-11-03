@@ -9,6 +9,7 @@ import { useAppStore } from '../../stores/appStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { CustomRowLoader } from '../customRows/CustomRowLoader'
 import { CustomRow } from '../../types/customRows'
+import { CustomRowsFirestore } from '../../utils/firestore/customRows'
 
 interface TVClientProps {
     data: HomeData
@@ -25,27 +26,17 @@ export default function TVClient({ data }: TVClientProps) {
 
     const { trending, topRated, genre1, genre2, genre3, genre4, documentaries } = data
 
-    // Load custom rows on mount
+    // Load custom rows on mount (client-side Firestore)
     useEffect(() => {
         if (!userId) return
 
         const loadCustomRows = async () => {
             setIsLoadingCustomRows(true)
             try {
-                const response = await fetch('/api/custom-rows', {
-                    headers: {
-                        'X-User-ID': userId,
-                    },
-                })
-
-                if (!response.ok) {
-                    throw new Error('Failed to load custom rows')
-                }
-
-                const data = await response.json()
+                const rows = await CustomRowsFirestore.getUserCustomRows(userId)
                 // Filter enabled rows for TV page
                 // Show TV-only rows and "both" rows
-                const tvPageRows = data.rows.filter(
+                const tvPageRows = rows.filter(
                     (row: CustomRow) =>
                         row.enabled && (row.mediaType === 'tv' || row.mediaType === 'both')
                 )
