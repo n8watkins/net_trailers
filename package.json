@@ -41,6 +41,7 @@
         "tailwind-scrollbar-hide": "^1.1.7",
         "tailwindcss-autofill": "^1.0.2",
         "tailwindcss-shadow-fill": "^1.0.1",
+        "uuid": "^13.0.0",
         "zod": "^3.25.76",
         "zustand": "^5.0.8"
     },
@@ -54,6 +55,7 @@
         "@types/node": "18.11.3",
         "@types/react": "^19.2.2",
         "@types/react-dom": "^19.2.2",
+        "@types/uuid": "^10.0.0",
         "autoprefixer": "^10.4.12",
         "eslint": "^9.38.0",
         "eslint-config-next": "^16.0.0",

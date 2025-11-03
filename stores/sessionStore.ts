@@ -23,6 +23,8 @@ export interface SessionActions {
     setSessionType: (type: SessionType | ((prev: SessionType) => SessionType)) => void
     setActiveSessionId: (id: string | ((prev: string) => string)) => void
     setIsInitialized: (initialized: boolean | ((prev: boolean) => boolean)) => void
+    // Helper to get effective user ID (auth user ID or guest ID)
+    getUserId: () => string | null
 }
 
 export type SessionStore = SessionState & SessionActions
@@ -146,5 +148,32 @@ export const useSessionStore = create<SessionStore>((set) => ({
             isInitialized:
                 typeof initialized === 'function' ? initialized(state.isInitialized) : initialized,
         }))
+    },
+
+    /**
+     * Get the current user ID (auth user ID or guest ID)
+     *
+     * Returns the active session ID which represents either:
+     * - Firebase user ID for authenticated users
+     * - Guest ID from localStorage for guest users
+     * - null if session is not initialized
+     *
+     * @returns The current user/guest ID, or null if not initialized
+     *
+     * @example
+     * ```tsx
+     * const getUserId = useSessionStore(state => state.getUserId)
+     * const userId = getUserId()
+     * if (userId) {
+     *   // Use userId for API calls
+     * }
+     * ```
+     */
+    getUserId: () => {
+        const state = useSessionStore.getState()
+        if (!state.isInitialized || state.sessionType === 'initializing') {
+            return null
+        }
+        return state.activeSessionId || null
     },
 }))
