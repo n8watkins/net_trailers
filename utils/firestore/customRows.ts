@@ -5,6 +5,7 @@ import {
     CustomRowFormData,
     CUSTOM_ROW_CONSTRAINTS,
     SystemRowPreferences,
+    getMaxRowsForUser,
 } from '../../types/customRows'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -43,10 +44,15 @@ export class CustomRowsFirestore {
      *
      * @param userId - Firebase Auth UID or Guest ID
      * @param formData - Row configuration data
+     * @param isGuest - Whether user is a guest (for max row limits)
      * @returns Created CustomRow with generated ID
-     * @throws Error if user already has MAX_ROWS_PER_USER rows
+     * @throws Error if user already has reached max rows
      */
-    static async createCustomRow(userId: string, formData: CustomRowFormData): Promise<CustomRow> {
+    static async createCustomRow(
+        userId: string,
+        formData: CustomRowFormData,
+        isGuest: boolean = false
+    ): Promise<CustomRow> {
         // Validate userId
         if (!userId || userId === 'undefined' || userId === 'null') {
             console.error('[CustomRowsFirestore] Invalid userId:', userId)
@@ -55,10 +61,9 @@ export class CustomRowsFirestore {
 
         // Check if user has reached max rows
         const existingRows = await this.getUserCustomRows(userId)
-        if (existingRows.length >= CUSTOM_ROW_CONSTRAINTS.MAX_ROWS_PER_USER) {
-            throw new Error(
-                `Cannot create more than ${CUSTOM_ROW_CONSTRAINTS.MAX_ROWS_PER_USER} custom rows`
-            )
+        const maxRows = getMaxRowsForUser(isGuest)
+        if (existingRows.length >= maxRows) {
+            throw new Error(`Cannot create more than ${maxRows} custom rows`)
         }
 
         // Generate unique row ID

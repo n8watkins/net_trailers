@@ -68,12 +68,22 @@ export interface CustomRowFormData {
  * Validation constraints
  */
 export const CUSTOM_ROW_CONSTRAINTS = {
-    MAX_ROWS_PER_USER: 10,
+    MAX_ROWS_PER_AUTH_USER: 10, // Authenticated users can create up to 10 custom rows
+    MAX_ROWS_PER_GUEST_USER: 1, // Guest users can create 1 custom row
     MAX_GENRES_PER_ROW: 5,
     MIN_GENRES_PER_ROW: 1,
     MIN_NAME_LENGTH: 3,
     MAX_NAME_LENGTH: 50,
 } as const
+
+/**
+ * Helper to get max rows based on user type
+ */
+export function getMaxRowsForUser(isGuest: boolean): number {
+    return isGuest
+        ? CUSTOM_ROW_CONSTRAINTS.MAX_ROWS_PER_GUEST_USER
+        : CUSTOM_ROW_CONSTRAINTS.MAX_ROWS_PER_AUTH_USER
+}
 
 /**
  * Validation errors

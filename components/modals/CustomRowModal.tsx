@@ -9,6 +9,7 @@ import { CustomRowsFirestore } from '../../utils/firestore/customRows'
 import { CustomRowForm } from '../customRows/CustomRowForm'
 import { CustomRowFormData } from '../../types/customRows'
 import { useToast } from '../../hooks/useToast'
+import { useAuthStatus } from '../../hooks/useAuthStatus'
 
 /**
  * CustomRowModal Component
@@ -18,9 +19,10 @@ import { useToast } from '../../hooks/useToast'
  */
 function CustomRowModal() {
     const { customRowModal, closeCustomRowModal } = useAppStore()
-    const getUserId = useSessionStore((state) => state.getUserId)
+    const getUserId = useSessionStore((state: any) => state.getUserId)
     const { getRow, addRow, updateRow } = useCustomRowsStore()
     const { showSuccess, showError } = useToast()
+    const { isGuest } = useAuthStatus()
 
     const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -52,8 +54,8 @@ function CustomRowModal() {
 
         try {
             if (mode === 'create') {
-                // Create new row
-                const newRow = await CustomRowsFirestore.createCustomRow(userId, formData)
+                // Create new row (pass isGuest for max row validation)
+                const newRow = await CustomRowsFirestore.createCustomRow(userId, formData, isGuest)
                 addRow(userId, newRow)
                 showSuccess('Custom row created!')
                 closeCustomRowModal()

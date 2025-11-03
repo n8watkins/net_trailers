@@ -9,14 +9,29 @@ import {
     FilmIcon,
     TvIcon,
 } from '@heroicons/react/24/solid'
-import { CustomRowCard } from '../../components/customRows/CustomRowCard'
+import { SortableCustomRowCard } from '../../components/customRows/SortableCustomRowCard'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useCustomRowsStore } from '../../stores/customRowsStore'
 import { useAppStore } from '../../stores/appStore'
-import { CustomRow, CUSTOM_ROW_CONSTRAINTS, DisplayRow } from '../../types/customRows'
+import { CustomRow, DisplayRow, getMaxRowsForUser } from '../../types/customRows'
 import { GuestModeNotification } from '../../components/auth/GuestModeNotification'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import { CustomRowsFirestore } from '../../utils/firestore/customRows'
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from '@dnd-kit/core'
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
 
 const RowsPage = () => {
     const { isGuest, isInitialized } = useAuthStatus()
@@ -40,12 +55,21 @@ const RowsPage = () => {
 
     const userId = getUserId()
     const customRows = userId ? getRows(userId) : []
-    const atMaxRows = customRows.length >= CUSTOM_ROW_CONSTRAINTS.MAX_ROWS_PER_USER
+    const maxRows = getMaxRowsForUser(isGuest)
+    const atMaxRows = customRows.length >= maxRows
 
     // Get rows by media type (includes both system and custom)
     const movieRows = userId ? getDisplayRowsByMediaType(userId, 'movie') : []
     const tvRows = userId ? getDisplayRowsByMediaType(userId, 'tv') : []
     const homeRows = userId ? getDisplayRowsByMediaType(userId, 'both') : []
+
+    // Drag and drop sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    )
 
     // Filter rows based on search query
     const filterRows = (rows: DisplayRow[]) =>
@@ -60,14 +84,9 @@ const RowsPage = () => {
     const totalRows = movieRows.length + tvRows.length + homeRows.length
     const hasAnyRows = totalRows > 0
 
-    // Load rows and preferences on mount (only for authenticated users, not guests)
+    // Load rows and preferences on mount (guests can now create custom rows too)
     useEffect(() => {
         if (!userId || !isInitialized) return
-        if (isGuest) {
-            // Guest users can't use custom rows (requires Firebase Auth)
-            setLoading(false)
-            return
-        }
 
         const loadData = async () => {
             setLoading(true)
@@ -89,16 +108,51 @@ const RowsPage = () => {
         }
 
         loadData()
-    }, [
-        userId,
-        isGuest,
-        isInitialized,
-        setRows,
-        setSystemRowPreferences,
-        setLoading,
-        setError,
-        showToast,
-    ])
+    }, [userId, isInitialized, setRows, setSystemRowPreferences, setLoading, setError, showToast])
+
+    // Handle drag end for reordering rows within same column
+    const handleDragEnd = async (event: DragEndEvent, mediaType: 'movie' | 'tv' | 'both') => {
+        const { active, over } = event
+
+        if (!over || active.id === over.id || !userId) return
+
+        // Get the rows for this specific media type
+        const rows = mediaType === 'movie' ? movieRows : mediaType === 'tv' ? tvRows : homeRows
+
+        const oldIndex = rows.findIndex((r) => r.id === active.id)
+        const newIndex = rows.findIndex((r) => r.id === over.id)
+
+        if (oldIndex === -1 || newIndex === -1) return
+
+        // Only allow reordering custom rows
+        const draggedRow = rows[oldIndex]
+        if (draggedRow.isSystemRow) {
+            showToast('error', 'Cannot reorder system rows')
+            return
+        }
+
+        // Create new order array
+        const newOrder = arrayMove(rows, oldIndex, newIndex)
+
+        // Update order in store optimistically
+        newOrder.forEach((row, index) => {
+            if (!row.isSystemRow) {
+                updateRow(userId, row.id, { order: index } as Partial<CustomRow>)
+            }
+        })
+
+        // Persist to Firestore
+        try {
+            const customRowIds = newOrder.filter((r) => !r.isSystemRow).map((r) => r.id)
+            await CustomRowsFirestore.reorderCustomRows(userId, customRowIds)
+        } catch (error) {
+            console.error('Error reordering rows:', error)
+            showToast('error', 'Failed to save row order')
+            // Reload to get correct order
+            const rows = await CustomRowsFirestore.getUserCustomRows(userId)
+            setRows(userId, rows)
+        }
+    }
 
     // Delete custom row
     const handleDelete = async (row: DisplayRow) => {
@@ -221,9 +275,9 @@ const RowsPage = () => {
                         {atMaxRows && (
                             <div className="p-4 bg-yellow-600/20 border border-yellow-600/50 rounded-lg">
                                 <p className="text-yellow-400">
-                                    You&apos;ve reached the maximum of{' '}
-                                    {CUSTOM_ROW_CONSTRAINTS.MAX_ROWS_PER_USER} custom rows. Delete a
-                                    row to create a new one.
+                                    You&apos;ve reached the maximum of {maxRows} custom row
+                                    {maxRows !== 1 ? 's' : ''}
+                                    {isGuest && ' (guest limit)'}. Delete a row to create a new one.
                                 </p>
                             </div>
                         )}
@@ -250,109 +304,144 @@ const RowsPage = () => {
                     {/* Content Section */}
                     {!hasAnyRows ? (
                         <div className="text-center py-16">
-                            <div className="text-6xl mb-4">{isGuest ? '🔒' : '📊'}</div>
-                            <h2 className="text-2xl font-semibold text-white mb-2">
-                                {isGuest ? 'Sign In Required' : 'No Rows Yet'}
-                            </h2>
+                            <div className="text-6xl mb-4">📊</div>
+                            <h2 className="text-2xl font-semibold text-white mb-2">No Rows Yet</h2>
                             <p className="text-gray-400 mb-8">
-                                {isGuest
-                                    ? 'Custom rows require a Firebase account. Please sign in with Google or email to create custom rows.'
-                                    : 'Create your first custom row to get started!'}
+                                Create your first custom row to get started!
                             </p>
-                            {!isGuest && (
-                                <button
-                                    onClick={handleCreate}
-                                    className="inline-flex items-center gap-2 bg-red-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 transition-colors"
-                                >
-                                    <PlusIcon className="w-5 h-5" />
-                                    Create Your First Row
-                                </button>
-                            )}
+                            <button
+                                onClick={handleCreate}
+                                className="inline-flex items-center gap-2 bg-red-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 transition-colors"
+                            >
+                                <PlusIcon className="w-5 h-5" />
+                                Create Your First Row
+                            </button>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl">
-                            {/* Movies Column */}
-                            <div className="space-y-4">
-                                <div className="flex items-center space-x-2 mb-4 pb-2 border-b border-gray-700/50">
-                                    <FilmIcon className="w-5 h-5 text-red-500" />
-                                    <h2 className="text-xl font-bold text-white">Movies</h2>
-                                    <span className="text-sm text-gray-400">
-                                        ({filteredMovieRows.length})
-                                    </span>
-                                </div>
-                                {filteredMovieRows.length === 0 ? (
-                                    <div className="text-center py-8">
-                                        <p className="text-gray-400 text-sm">
-                                            {searchQuery.trim() ? 'No matches' : 'No movie rows'}
-                                        </p>
+                        <div className="flex justify-center w-full px-4">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 w-full max-w-[1600px]">
+                                {/* Movies Column */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center space-x-2 mb-4 pb-2 border-b border-gray-700/50">
+                                        <FilmIcon className="w-5 h-5 text-red-500" />
+                                        <h2 className="text-xl font-bold text-white">Movies</h2>
+                                        <span className="text-sm text-gray-400">
+                                            ({filteredMovieRows.length})
+                                        </span>
                                     </div>
-                                ) : (
-                                    filteredMovieRows.map((row) => (
-                                        <CustomRowCard
-                                            key={row.id}
-                                            row={row}
-                                            onEdit={handleEdit}
-                                            onDelete={handleDelete}
-                                            onToggleEnabled={handleToggleEnabled}
-                                        />
-                                    ))
-                                )}
-                            </div>
+                                    {filteredMovieRows.length === 0 ? (
+                                        <div className="text-center py-8">
+                                            <p className="text-gray-400 text-sm">
+                                                {searchQuery.trim()
+                                                    ? 'No matches'
+                                                    : 'No movie rows'}
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <DndContext
+                                            sensors={sensors}
+                                            collisionDetection={closestCenter}
+                                            onDragEnd={(e) => handleDragEnd(e, 'movie')}
+                                        >
+                                            <SortableContext
+                                                items={filteredMovieRows.map((r) => r.id)}
+                                                strategy={verticalListSortingStrategy}
+                                            >
+                                                {filteredMovieRows.map((row) => (
+                                                    <SortableCustomRowCard
+                                                        key={row.id}
+                                                        row={row}
+                                                        onEdit={handleEdit}
+                                                        onDelete={handleDelete}
+                                                        onToggleEnabled={handleToggleEnabled}
+                                                    />
+                                                ))}
+                                            </SortableContext>
+                                        </DndContext>
+                                    )}
+                                </div>
 
-                            {/* TV Shows Column */}
-                            <div className="space-y-4">
-                                <div className="flex items-center space-x-2 mb-4 pb-2 border-b border-gray-700/50">
-                                    <TvIcon className="w-5 h-5 text-red-500" />
-                                    <h2 className="text-xl font-bold text-white">TV Shows</h2>
-                                    <span className="text-sm text-gray-400">
-                                        ({filteredTvRows.length})
-                                    </span>
-                                </div>
-                                {filteredTvRows.length === 0 ? (
-                                    <div className="text-center py-8">
-                                        <p className="text-gray-400 text-sm">
-                                            {searchQuery.trim() ? 'No matches' : 'No TV show rows'}
-                                        </p>
+                                {/* TV Shows Column */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center space-x-2 mb-4 pb-2 border-b border-gray-700/50">
+                                        <TvIcon className="w-5 h-5 text-red-500" />
+                                        <h2 className="text-xl font-bold text-white">TV Shows</h2>
+                                        <span className="text-sm text-gray-400">
+                                            ({filteredTvRows.length})
+                                        </span>
                                     </div>
-                                ) : (
-                                    filteredTvRows.map((row) => (
-                                        <CustomRowCard
-                                            key={row.id}
-                                            row={row}
-                                            onEdit={handleEdit}
-                                            onDelete={handleDelete}
-                                            onToggleEnabled={handleToggleEnabled}
-                                        />
-                                    ))
-                                )}
-                            </div>
+                                    {filteredTvRows.length === 0 ? (
+                                        <div className="text-center py-8">
+                                            <p className="text-gray-400 text-sm">
+                                                {searchQuery.trim()
+                                                    ? 'No matches'
+                                                    : 'No TV show rows'}
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <DndContext
+                                            sensors={sensors}
+                                            collisionDetection={closestCenter}
+                                            onDragEnd={(e) => handleDragEnd(e, 'tv')}
+                                        >
+                                            <SortableContext
+                                                items={filteredTvRows.map((r) => r.id)}
+                                                strategy={verticalListSortingStrategy}
+                                            >
+                                                {filteredTvRows.map((row) => (
+                                                    <SortableCustomRowCard
+                                                        key={row.id}
+                                                        row={row}
+                                                        onEdit={handleEdit}
+                                                        onDelete={handleDelete}
+                                                        onToggleEnabled={handleToggleEnabled}
+                                                    />
+                                                ))}
+                                            </SortableContext>
+                                        </DndContext>
+                                    )}
+                                </div>
 
-                            {/* Home (Both) Column */}
-                            <div className="space-y-4">
-                                <div className="flex items-center space-x-2 mb-4 pb-2 border-b border-gray-700/50">
-                                    <Squares2X2Icon className="w-5 h-5 text-red-500" />
-                                    <h2 className="text-xl font-bold text-white">Home (Both)</h2>
-                                    <span className="text-sm text-gray-400">
-                                        ({filteredHomeRows.length})
-                                    </span>
-                                </div>
-                                {filteredHomeRows.length === 0 ? (
-                                    <div className="text-center py-8">
-                                        <p className="text-gray-400 text-sm">
-                                            {searchQuery.trim() ? 'No matches' : 'No home rows'}
-                                        </p>
+                                {/* Home (Both) Column */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center space-x-2 mb-4 pb-2 border-b border-gray-700/50">
+                                        <Squares2X2Icon className="w-5 h-5 text-red-500" />
+                                        <h2 className="text-xl font-bold text-white">
+                                            Home (Both)
+                                        </h2>
+                                        <span className="text-sm text-gray-400">
+                                            ({filteredHomeRows.length})
+                                        </span>
                                     </div>
-                                ) : (
-                                    filteredHomeRows.map((row) => (
-                                        <CustomRowCard
-                                            key={row.id}
-                                            row={row}
-                                            onEdit={handleEdit}
-                                            onDelete={handleDelete}
-                                            onToggleEnabled={handleToggleEnabled}
-                                        />
-                                    ))
-                                )}
+                                    {filteredHomeRows.length === 0 ? (
+                                        <div className="text-center py-8">
+                                            <p className="text-gray-400 text-sm">
+                                                {searchQuery.trim() ? 'No matches' : 'No home rows'}
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <DndContext
+                                            sensors={sensors}
+                                            collisionDetection={closestCenter}
+                                            onDragEnd={(e) => handleDragEnd(e, 'both')}
+                                        >
+                                            <SortableContext
+                                                items={filteredHomeRows.map((r) => r.id)}
+                                                strategy={verticalListSortingStrategy}
+                                            >
+                                                {filteredHomeRows.map((row) => (
+                                                    <SortableCustomRowCard
+                                                        key={row.id}
+                                                        row={row}
+                                                        onEdit={handleEdit}
+                                                        onDelete={handleDelete}
+                                                        onToggleEnabled={handleToggleEnabled}
+                                                    />
+                                                ))}
+                                            </SortableContext>
+                                        </DndContext>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     )}
