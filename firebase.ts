@@ -32,45 +32,24 @@ declare global {
     var firestore: ReturnType<typeof getFirestore> | undefined
 }
 
-function getDb() {
-    // Return cached global instance if it exists
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((globalThis as any).firestore) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (globalThis as any).firestore
-    }
+// Initialize Firestore
+// Check if we're in browser environment before using persistent cache
+let db: ReturnType<typeof getFirestore>
 
-    // Try persistent cache first (client-side), fallback to basic (server-side)
+if (typeof window !== 'undefined') {
+    // Client-side: try to use persistent cache
     try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(globalThis as any).firestore = initializeFirestore(app, {
+        db = initializeFirestore(app, {
             localCache: persistentLocalCache(),
         })
-    } catch (_error) {
-        // Fallback to basic getFirestore (server-side or already initialized)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(globalThis as any).firestore = getFirestore(app)
+    } catch (error) {
+        // If already initialized, get the existing instance
+        db = getFirestore(app)
     }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (globalThis as any).firestore
+} else {
+    // Server-side: use basic getFirestore without persistent cache
+    db = getFirestore(app)
 }
-
-// Export getDb function for lazy initialization
-export function getFirestoreDb() {
-    return getDb()
-}
-
-// Lazy initialization - only call getDb() when db is first accessed
-let _db: ReturnType<typeof getFirestore> | null = null
-const db = new Proxy({} as ReturnType<typeof getFirestore>, {
-    get(_target, prop) {
-        if (!_db) {
-            _db = getDb()
-        }
-        return (_db as any)[prop]
-    },
-})
 
 const auth = getAuth(app)
 
