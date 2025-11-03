@@ -11,6 +11,7 @@ import { useAppStore } from '../../stores/appStore'
 import { CustomRow, CustomRowFormData, CUSTOM_ROW_CONSTRAINTS } from '../../types/customRows'
 import { GuestModeNotification } from '../../components/auth/GuestModeNotification'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
+import { CustomRowsFirestore } from '../../utils/firestore/customRows'
 
 type ViewMode = 'list' | 'create' | 'edit'
 
@@ -48,18 +49,8 @@ const RowsPage = () => {
         const loadRows = async () => {
             setLoading(true)
             try {
-                const response = await fetch('/api/custom-rows', {
-                    headers: {
-                        'X-User-ID': userId,
-                    },
-                })
-
-                if (!response.ok) {
-                    throw new Error('Failed to load custom rows')
-                }
-
-                const data = await response.json()
-                setRows(userId, data.rows)
+                const rows = await CustomRowsFirestore.getUserCustomRows(userId)
+                setRows(userId, rows)
             } catch (error) {
                 console.error('Error loading rows:', error)
                 showToast('error', 'Failed to load custom rows')
@@ -77,22 +68,8 @@ const RowsPage = () => {
         if (!userId) return
 
         try {
-            const response = await fetch('/api/custom-rows', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-User-ID': userId,
-                },
-                body: JSON.stringify(formData),
-            })
-
-            if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.message || 'Failed to create row')
-            }
-
-            const data = await response.json()
-            addRow(userId, data.row)
+            const row = await CustomRowsFirestore.createCustomRow(userId, formData)
+            addRow(userId, row)
             showToast('success', 'Row created successfully')
             setViewMode('list')
         } catch (error) {
@@ -106,22 +83,12 @@ const RowsPage = () => {
         if (!userId || !editingRow) return
 
         try {
-            const response = await fetch(`/api/custom-rows/${editingRow.id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-User-ID': userId,
-                },
-                body: JSON.stringify(formData),
-            })
-
-            if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.message || 'Failed to update row')
-            }
-
-            const data = await response.json()
-            updateRow(userId, editingRow.id, data.row)
+            const updatedRow = await CustomRowsFirestore.updateCustomRow(
+                userId,
+                editingRow.id,
+                formData
+            )
+            updateRow(userId, editingRow.id, updatedRow)
             showToast('success', 'Row updated successfully')
             setViewMode('list')
             setEditingRow(null)
@@ -136,18 +103,7 @@ const RowsPage = () => {
         if (!userId) return
 
         try {
-            const response = await fetch(`/api/custom-rows/${row.id}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-User-ID': userId,
-                },
-            })
-
-            if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.message || 'Failed to delete row')
-            }
-
+            await CustomRowsFirestore.deleteCustomRow(userId, row.id)
             removeRow(userId, row.id)
             showToast('success', 'Row deleted successfully')
         } catch (error) {
@@ -161,23 +117,9 @@ const RowsPage = () => {
         if (!userId) return
 
         try {
-            const response = await fetch(`/api/custom-rows/${row.id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-User-ID': userId,
-                },
-                body: JSON.stringify({ enabled: !row.enabled }),
-            })
-
-            if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.message || 'Failed to toggle row')
-            }
-
-            const data = await response.json()
-            updateRow(userId, row.id, data.row)
-            showToast('success', row.enabled ? 'Row disabled' : 'Row enabled')
+            const newEnabledStatus = await CustomRowsFirestore.toggleRowEnabled(userId, row.id)
+            updateRow(userId, row.id, { ...row, enabled: newEnabledStatus })
+            showToast('success', newEnabledStatus ? 'Row enabled' : 'Row disabled')
         } catch (error) {
             console.error('Error toggling row:', error)
             showToast('error', (error as Error).message)
