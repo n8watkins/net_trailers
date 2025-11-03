@@ -27,10 +27,10 @@ const createDefaultWatchlistVirtual = (items: Content[]): UserList => ({
 const createListManagementOps = (sessionData: ReturnType<typeof useSessionData>) => ({
     createList: (request: CreateListRequest) => sessionData.createList(request),
     updateList: (listId: string, updates: { name?: string; emoji?: string; color?: string }) => {
-        sessionData.updateList(listId, updates)
+        return sessionData.updateList(listId, updates)
     },
     deleteList: (listId: string) => {
-        sessionData.deleteList(listId)
+        return sessionData.deleteList(listId)
     },
     addToList: sessionData.addToList,
     removeFromList: sessionData.removeFromList,
