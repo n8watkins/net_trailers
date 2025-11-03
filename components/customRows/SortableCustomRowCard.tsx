@@ -16,6 +16,7 @@ interface SortableCustomRowCardProps {
 /**
  * Sortable wrapper for CustomRowCard
  * Enables drag and drop reordering for custom rows
+ * Uses setActivatorNodeRef to only enable dragging from the drag handle
  */
 export function SortableCustomRowCard({
     row,
@@ -23,25 +24,33 @@ export function SortableCustomRowCard({
     onDelete,
     onToggleEnabled,
 }: SortableCustomRowCardProps) {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        setActivatorNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({
         id: row.id,
-        disabled: false, // All rows can be dragged now
+        disabled: false,
     })
 
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
-        cursor: 'grab',
     }
 
     return (
-        <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+        <div ref={setNodeRef} style={style}>
             <CustomRowCard
                 row={row}
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onToggleEnabled={onToggleEnabled}
+                dragHandleProps={{ ref: setActivatorNodeRef, ...attributes, ...listeners }}
             />
         </div>
     )

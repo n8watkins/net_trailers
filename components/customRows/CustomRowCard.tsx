@@ -9,6 +9,7 @@ import {
     FilmIcon,
     TvIcon,
     SparklesIcon,
+    Bars3Icon,
 } from '@heroicons/react/24/outline'
 import { DisplayRow } from '../../types/customRows'
 import { MOVIE_GENRES, TV_GENRES } from '../../constants/genres'
@@ -18,6 +19,7 @@ interface CustomRowCardProps {
     onEdit: (row: DisplayRow) => void
     onDelete: (row: DisplayRow) => void
     onToggleEnabled: (row: DisplayRow) => void
+    dragHandleProps?: any
 }
 
 /**
@@ -27,7 +29,13 @@ interface CustomRowCardProps {
  * System rows: Can only be enabled/disabled
  * Custom rows: Full CRUD operations (edit, delete, enable/disable)
  */
-export function CustomRowCard({ row, onEdit, onDelete, onToggleEnabled }: CustomRowCardProps) {
+export function CustomRowCard({
+    row,
+    onEdit,
+    onDelete,
+    onToggleEnabled,
+    dragHandleProps,
+}: CustomRowCardProps) {
     const [isDeleting, setIsDeleting] = useState(false)
 
     const genres = row.mediaType === 'movie' || row.mediaType === 'both' ? MOVIE_GENRES : TV_GENRES
@@ -50,6 +58,14 @@ export function CustomRowCard({ row, onEdit, onDelete, onToggleEnabled }: Custom
             } ${row.isSystemRow ? 'border-l-4 border-l-purple-500' : ''}`}
         >
             <div className="flex items-start justify-between gap-4">
+                {/* Drag Handle */}
+                <div
+                    {...dragHandleProps}
+                    className="flex items-center justify-center p-2 cursor-grab active:cursor-grabbing hover:bg-gray-800 rounded transition-colors"
+                    title="Drag to reorder"
+                >
+                    <Bars3Icon className="w-5 h-5 text-gray-400" />
+                </div>
                 {/* Row Info */}
                 <div className="flex-1 space-y-3">
                     {/* Name and Status */}
