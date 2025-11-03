@@ -9,10 +9,11 @@
 export interface BaseRowConfig {
     id: string // UUID v4 or system-{type}-{name}
     name: string // User-facing title (3-50 chars)
-    genres: number[] // TMDB genre IDs (1-5 genres)
+    genres: number[] // TMDB genre IDs (1-5 genres for custom rows, 0 for special system rows like Trending/Top Rated)
     genreLogic: 'AND' | 'OR' // How to combine genres
     mediaType: 'movie' | 'tv' | 'both' // Content type(s) to show
     order: number // Display order (0-based, lower = higher)
+    isSpecialRow?: boolean // true for Trending/Top Rated rows that don't use genre filtering
 }
 
 /**
@@ -76,7 +77,8 @@ export const CUSTOM_ROW_CONSTRAINTS = {
     MAX_ROWS_PER_AUTH_USER: 10, // Authenticated users can create up to 10 custom rows
     MAX_ROWS_PER_GUEST_USER: 1, // Guest users can create 1 custom row
     MAX_GENRES_PER_ROW: 5,
-    MIN_GENRES_PER_ROW: 1,
+    MIN_GENRES_PER_ROW: 1, // Only applies to custom rows; special system rows can have 0 genres
+    MIN_GENRES_PER_SPECIAL_ROW: 0, // Special rows (Trending, Top Rated) have no genre requirements
     MIN_NAME_LENGTH: 3,
     MAX_NAME_LENGTH: 50,
 } as const

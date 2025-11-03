@@ -19,6 +19,8 @@ interface CustomRowCardProps {
     onEdit: (row: DisplayRow) => void
     onDelete: (row: DisplayRow) => void
     onToggleEnabled: (row: DisplayRow) => void
+    onMoveUp?: (row: DisplayRow) => void
+    onMoveDown?: (row: DisplayRow) => void
     dragHandleProps?: any
 }
 
@@ -34,6 +36,8 @@ export function CustomRowCard({
     onEdit,
     onDelete,
     onToggleEnabled,
+    onMoveUp,
+    onMoveDown,
     dragHandleProps,
 }: CustomRowCardProps) {
     const [isDeleting, setIsDeleting] = useState(false)
@@ -51,6 +55,16 @@ export function CustomRowCard({
         }
     }
 
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'ArrowUp' && onMoveUp) {
+            e.preventDefault()
+            onMoveUp(row)
+        } else if (e.key === 'ArrowDown' && onMoveDown) {
+            e.preventDefault()
+            onMoveDown(row)
+        }
+    }
+
     return (
         <div
             className={`bg-[#1a1a1a] border rounded-lg p-5 transition-all ${
@@ -59,13 +73,16 @@ export function CustomRowCard({
         >
             <div className="flex items-start justify-between gap-4">
                 {/* Drag Handle */}
-                <div
+                <button
                     {...dragHandleProps}
-                    className="flex items-center justify-center p-2 cursor-grab active:cursor-grabbing hover:bg-gray-800 rounded transition-colors"
-                    title="Drag to reorder"
+                    onKeyDown={handleKeyDown}
+                    className="flex items-center justify-center p-2 cursor-grab active:cursor-grabbing hover:bg-gray-800 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+                    title="Drag to reorder or use arrow keys"
+                    aria-label={`Drag to reorder ${row.name} or use arrow keys to move up or down`}
+                    tabIndex={0}
                 >
                     <Bars3Icon className="w-5 h-5 text-gray-400" />
-                </div>
+                </button>
                 {/* Row Info */}
                 <div className="flex-1 space-y-3">
                     {/* Name and Status */}

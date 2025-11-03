@@ -11,6 +11,8 @@ interface SortableCustomRowCardProps {
     onEdit: (row: DisplayRow) => void
     onDelete: (row: DisplayRow) => void
     onToggleEnabled: (row: DisplayRow) => void
+    onMoveUp?: (row: DisplayRow) => void
+    onMoveDown?: (row: DisplayRow) => void
 }
 
 /**
@@ -23,6 +25,8 @@ export function SortableCustomRowCard({
     onEdit,
     onDelete,
     onToggleEnabled,
+    onMoveUp,
+    onMoveDown,
 }: SortableCustomRowCardProps) {
     const {
         attributes,
@@ -50,6 +54,8 @@ export function SortableCustomRowCard({
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onToggleEnabled={onToggleEnabled}
+                onMoveUp={onMoveUp}
+                onMoveDown={onMoveDown}
                 dragHandleProps={{ ref: setActivatorNodeRef, ...attributes, ...listeners }}
             />
         </div>

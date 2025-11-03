@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Header from '../../components/layout/Header'
 import {
     Squares2X2Icon,
@@ -72,15 +72,24 @@ const RowsPage = () => {
         })
     )
 
-    // Filter rows based on search query
-    const filterRows = (rows: DisplayRow[]) =>
-        searchQuery.trim()
-            ? rows.filter((row) => row.name.toLowerCase().includes(searchQuery.toLowerCase()))
-            : rows
+    // Filter rows based on search query (optimized with useMemo)
+    const filteredMovieRows = useMemo(() => {
+        if (!searchQuery.trim()) return movieRows
+        const lowerQuery = searchQuery.toLowerCase()
+        return movieRows.filter((row) => row.name.toLowerCase().includes(lowerQuery))
+    }, [movieRows, searchQuery])
 
-    const filteredMovieRows = filterRows(movieRows)
-    const filteredTvRows = filterRows(tvRows)
-    const filteredHomeRows = filterRows(homeRows)
+    const filteredTvRows = useMemo(() => {
+        if (!searchQuery.trim()) return tvRows
+        const lowerQuery = searchQuery.toLowerCase()
+        return tvRows.filter((row) => row.name.toLowerCase().includes(lowerQuery))
+    }, [tvRows, searchQuery])
+
+    const filteredHomeRows = useMemo(() => {
+        if (!searchQuery.trim()) return homeRows
+        const lowerQuery = searchQuery.toLowerCase()
+        return homeRows.filter((row) => row.name.toLowerCase().includes(lowerQuery))
+    }, [homeRows, searchQuery])
 
     const totalRows = movieRows.length + tvRows.length + homeRows.length
     const hasAnyRows = totalRows > 0
@@ -217,6 +226,94 @@ const RowsPage = () => {
         openCustomRowModal('create')
     }
 
+    // Move row up (keyboard accessibility)
+    const handleMoveUp = async (row: DisplayRow) => {
+        if (!userId) return
+
+        // Determine which array this row belongs to
+        const rows =
+            row.mediaType === 'movie' ? movieRows : row.mediaType === 'tv' ? tvRows : homeRows
+        const currentIndex = rows.findIndex((r) => r.id === row.id)
+
+        if (currentIndex <= 0) return // Already at top
+
+        const newIndex = currentIndex - 1
+        const newOrder = arrayMove(rows, currentIndex, newIndex)
+
+        // Update order in store optimistically for all rows
+        newOrder.forEach((r, index) => {
+            if (r.isSystemRow) {
+                updateSystemRowOrder(userId, r.id, index)
+            } else {
+                updateRow(userId, r.id, { order: index } as Partial<CustomRow>)
+            }
+        })
+
+        // Persist to Firestore
+        try {
+            const customRowUpdates = newOrder.filter((r) => !r.isSystemRow)
+            if (customRowUpdates.length > 0) {
+                await CustomRowsFirestore.reorderCustomRows(
+                    userId,
+                    customRowUpdates.map((r) => r.id)
+                )
+            }
+
+            const systemRowUpdates = newOrder.filter((r) => r.isSystemRow)
+            for (let i = 0; i < systemRowUpdates.length; i++) {
+                const r = systemRowUpdates[i]
+                await CustomRowsFirestore.updateSystemRowOrder(userId, r.id, i)
+            }
+        } catch (error) {
+            console.error('Error moving row up:', error)
+            showToast('error', 'Failed to save row order')
+        }
+    }
+
+    // Move row down (keyboard accessibility)
+    const handleMoveDown = async (row: DisplayRow) => {
+        if (!userId) return
+
+        // Determine which array this row belongs to
+        const rows =
+            row.mediaType === 'movie' ? movieRows : row.mediaType === 'tv' ? tvRows : homeRows
+        const currentIndex = rows.findIndex((r) => r.id === row.id)
+
+        if (currentIndex === -1 || currentIndex >= rows.length - 1) return // Already at bottom
+
+        const newIndex = currentIndex + 1
+        const newOrder = arrayMove(rows, currentIndex, newIndex)
+
+        // Update order in store optimistically for all rows
+        newOrder.forEach((r, index) => {
+            if (r.isSystemRow) {
+                updateSystemRowOrder(userId, r.id, index)
+            } else {
+                updateRow(userId, r.id, { order: index } as Partial<CustomRow>)
+            }
+        })
+
+        // Persist to Firestore
+        try {
+            const customRowUpdates = newOrder.filter((r) => !r.isSystemRow)
+            if (customRowUpdates.length > 0) {
+                await CustomRowsFirestore.reorderCustomRows(
+                    userId,
+                    customRowUpdates.map((r) => r.id)
+                )
+            }
+
+            const systemRowUpdates = newOrder.filter((r) => r.isSystemRow)
+            for (let i = 0; i < systemRowUpdates.length; i++) {
+                const r = systemRowUpdates[i]
+                await CustomRowsFirestore.updateSystemRowOrder(userId, r.id, i)
+            }
+        } catch (error) {
+            console.error('Error moving row down:', error)
+            showToast('error', 'Failed to save row order')
+        }
+    }
+
     // No user ID
     if (!userId) {
         return (
@@ -348,7 +445,9 @@ const RowsPage = () => {
                                     {filteredHomeRows.length === 0 ? (
                                         <div className="text-center py-8">
                                             <p className="text-gray-400 text-sm">
-                                                {searchQuery.trim() ? 'No matches' : 'No home rows'}
+                                                {searchQuery.trim()
+                                                    ? `No home rows match "${searchQuery}". Try a different search term.`
+                                                    : 'No home rows yet. System rows can be enabled in settings, or create a custom row with mediaType "both".'}
                                             </p>
                                         </div>
                                     ) : (
@@ -368,6 +467,8 @@ const RowsPage = () => {
                                                         onEdit={handleEdit}
                                                         onDelete={handleDelete}
                                                         onToggleEnabled={handleToggleEnabled}
+                                                        onMoveUp={handleMoveUp}
+                                                        onMoveDown={handleMoveDown}
                                                     />
                                                 ))}
                                             </SortableContext>
@@ -388,8 +489,8 @@ const RowsPage = () => {
                                         <div className="text-center py-8">
                                             <p className="text-gray-400 text-sm">
                                                 {searchQuery.trim()
-                                                    ? 'No matches'
-                                                    : 'No TV show rows'}
+                                                    ? `No TV show rows match "${searchQuery}". Try a different search term.`
+                                                    : 'No TV show rows yet. Create a custom row with mediaType "tv" or enable system TV rows.'}
                                             </p>
                                         </div>
                                     ) : (
@@ -409,6 +510,8 @@ const RowsPage = () => {
                                                         onEdit={handleEdit}
                                                         onDelete={handleDelete}
                                                         onToggleEnabled={handleToggleEnabled}
+                                                        onMoveUp={handleMoveUp}
+                                                        onMoveDown={handleMoveDown}
                                                     />
                                                 ))}
                                             </SortableContext>
@@ -429,8 +532,8 @@ const RowsPage = () => {
                                         <div className="text-center py-8">
                                             <p className="text-gray-400 text-sm">
                                                 {searchQuery.trim()
-                                                    ? 'No matches'
-                                                    : 'No movie rows'}
+                                                    ? `No movie rows match "${searchQuery}". Try a different search term.`
+                                                    : 'No movie rows yet. Create a custom row with mediaType "movie" or enable system movie rows.'}
                                             </p>
                                         </div>
                                     ) : (
@@ -450,6 +553,8 @@ const RowsPage = () => {
                                                         onEdit={handleEdit}
                                                         onDelete={handleDelete}
                                                         onToggleEnabled={handleToggleEnabled}
+                                                        onMoveUp={handleMoveUp}
+                                                        onMoveDown={handleMoveDown}
                                                     />
                                                 ))}
                                             </SortableContext>

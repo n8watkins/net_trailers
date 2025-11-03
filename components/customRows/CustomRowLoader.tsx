@@ -42,23 +42,60 @@ export function CustomRowLoader({ row }: CustomRowLoaderProps) {
                 let url: URL
 
                 // Handle special system rows (trending, top-rated)
-                if (row.genres.length === 0) {
-                    // Determine API endpoint based on row ID
+                if (row.isSpecialRow || row.genres.length === 0) {
+                    // For 'both' mediaType, we need to fetch from both APIs and combine
+                    if (row.mediaType === 'both') {
+                        const apiType = row.id.includes('trending') ? 'trending' : 'top-rated'
+
+                        // Fetch both movies and TV in parallel
+                        const [moviesResponse, tvResponse] = await Promise.all([
+                            fetch(
+                                `/api/movies/${apiType}${childSafetyMode ? '?childSafetyMode=true' : ''}`,
+                                {
+                                    headers: { 'X-User-ID': userId },
+                                }
+                            ),
+                            fetch(
+                                `/api/tv/${apiType}${childSafetyMode ? '?childSafetyMode=true' : ''}`,
+                                {
+                                    headers: { 'X-User-ID': userId },
+                                }
+                            ),
+                        ])
+
+                        if (!moviesResponse.ok || !tvResponse.ok) {
+                            throw new Error('Failed to load content')
+                        }
+
+                        const [moviesData, tvData] = await Promise.all([
+                            moviesResponse.json(),
+                            tvResponse.json(),
+                        ])
+
+                        // Combine and interleave results (alternating between movies and TV)
+                        const combined: Content[] = []
+                        const maxLength = Math.max(moviesData.results.length, tvData.results.length)
+
+                        for (let i = 0; i < maxLength; i++) {
+                            if (i < moviesData.results.length) {
+                                combined.push(moviesData.results[i])
+                            }
+                            if (i < tvData.results.length) {
+                                combined.push(tvData.results[i])
+                            }
+                        }
+
+                        setContent(combined)
+                        setIsLoading(false)
+                        return
+                    }
+
+                    // For single media type
+                    const mediaType = row.mediaType === 'tv' ? 'tv' : 'movies'
+
                     if (row.id.includes('trending')) {
-                        const mediaType =
-                            row.mediaType === 'both'
-                                ? 'movies'
-                                : row.mediaType === 'tv'
-                                  ? 'tv'
-                                  : 'movies'
                         url = new URL(`/api/${mediaType}/trending`, window.location.origin)
                     } else if (row.id.includes('top-rated')) {
-                        const mediaType =
-                            row.mediaType === 'both'
-                                ? 'movies'
-                                : row.mediaType === 'tv'
-                                  ? 'tv'
-                                  : 'movies'
                         url = new URL(`/api/${mediaType}/top-rated`, window.location.origin)
                     } else {
                         throw new Error('Invalid special row configuration')
@@ -135,14 +172,14 @@ export function CustomRowLoader({ row }: CustomRowLoaderProps) {
     let apiEndpoint: string
 
     // Handle special system rows (trending, top-rated)
-    if (row.genres.length === 0) {
+    // Note: For 'both' mediaType, infinite scroll will use movies API
+    // (combined results are only for initial load)
+    if (row.isSpecialRow || row.genres.length === 0) {
+        const mediaType = row.mediaType === 'tv' ? 'tv' : 'movies' // Default to movies for 'both'
+
         if (row.id.includes('trending')) {
-            const mediaType =
-                row.mediaType === 'both' ? 'movies' : row.mediaType === 'tv' ? 'tv' : 'movies'
             apiEndpoint = `/api/${mediaType}/trending${childSafetyMode ? '?childSafetyMode=true' : ''}`
         } else if (row.id.includes('top-rated')) {
-            const mediaType =
-                row.mediaType === 'both' ? 'movies' : row.mediaType === 'tv' ? 'tv' : 'movies'
             apiEndpoint = `/api/${mediaType}/top-rated${childSafetyMode ? '?childSafetyMode=true' : ''}`
         } else {
             // Fallback - shouldn't reach here

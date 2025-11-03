@@ -18,6 +18,7 @@ export const SYSTEM_MOVIE_ROWS: SystemRowConfig[] = [
         genreLogic: 'OR',
         mediaType: 'movie',
         order: 0,
+        isSpecialRow: true,
     },
     {
         id: 'system-movie-top-rated',
@@ -26,6 +27,7 @@ export const SYSTEM_MOVIE_ROWS: SystemRowConfig[] = [
         genreLogic: 'OR',
         mediaType: 'movie',
         order: 1,
+        isSpecialRow: true,
     },
     {
         id: 'system-movie-action',
@@ -80,6 +82,7 @@ export const SYSTEM_TV_ROWS: SystemRowConfig[] = [
         genreLogic: 'OR',
         mediaType: 'tv',
         order: 0,
+        isSpecialRow: true,
     },
     {
         id: 'system-tv-top-rated',
@@ -88,6 +91,7 @@ export const SYSTEM_TV_ROWS: SystemRowConfig[] = [
         genreLogic: 'OR',
         mediaType: 'tv',
         order: 1,
+        isSpecialRow: true,
     },
     {
         id: 'system-tv-action',
@@ -142,6 +146,7 @@ export const SYSTEM_HOME_ROWS: SystemRowConfig[] = [
         genreLogic: 'OR',
         mediaType: 'both',
         order: 0,
+        isSpecialRow: true,
     },
     {
         id: 'system-home-top-rated',
@@ -150,6 +155,7 @@ export const SYSTEM_HOME_ROWS: SystemRowConfig[] = [
         genreLogic: 'OR',
         mediaType: 'both',
         order: 1,
+        isSpecialRow: true,
     },
     {
         id: 'system-home-animation',

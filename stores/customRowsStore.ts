@@ -15,6 +15,9 @@ export interface CustomRowsState {
     // System row preferences by userId (which system rows are enabled)
     systemRowPreferences: Map<string, SystemRowPreferences>
 
+    // Track last access time for memory cleanup
+    lastAccessTime: Map<string, number>
+
     // Loading states
     isLoading: boolean
     isCreating: boolean
@@ -56,6 +59,9 @@ export interface CustomRowsActions {
     // Selection
     setSelectedRow: (row: CustomRow | null) => void
 
+    // Memory cleanup
+    cleanupInactiveUsers: () => void
+
     // Helpers
     getRows: (userId: string) => CustomRow[]
     getRow: (userId: string, rowId: string) => CustomRow | null
@@ -87,10 +93,16 @@ export type CustomRowsStore = CustomRowsState & CustomRowsActions
  * updateRow(userId, rowId, { enabled: false })
  * ```
  */
+// Cleanup interval: 30 minutes
+const CLEANUP_INTERVAL_MS = 30 * 60 * 1000
+// Consider user inactive after 1 hour
+const INACTIVE_USER_THRESHOLD_MS = 60 * 60 * 1000
+
 export const useCustomRowsStore = create<CustomRowsStore>((set, get) => ({
     // Initial state
     customRowsByUser: new Map<string, CustomRow[]>(),
     systemRowPreferences: new Map<string, SystemRowPreferences>(),
+    lastAccessTime: new Map<string, number>(),
     isLoading: false,
     isCreating: false,
     isUpdating: false,
@@ -236,10 +248,48 @@ export const useCustomRowsStore = create<CustomRowsStore>((set, get) => ({
     // Helpers
 
     /**
+     * Clean up inactive users from memory
+     * Removes data for users who haven't been accessed in over 1 hour
+     */
+    cleanupInactiveUsers: () => {
+        set((state) => {
+            const now = Date.now()
+            const newCustomRowsByUser = new Map(state.customRowsByUser)
+            const newSystemRowPreferences = new Map(state.systemRowPreferences)
+            const newLastAccessTime = new Map(state.lastAccessTime)
+
+            // Find and remove inactive users
+            for (const [userId, lastAccess] of state.lastAccessTime.entries()) {
+                if (now - lastAccess > INACTIVE_USER_THRESHOLD_MS) {
+                    newCustomRowsByUser.delete(userId)
+                    newSystemRowPreferences.delete(userId)
+                    newLastAccessTime.delete(userId)
+                    console.log(`[CustomRowsStore] Cleaned up inactive user: ${userId}`)
+                }
+            }
+
+            return {
+                customRowsByUser: newCustomRowsByUser,
+                systemRowPreferences: newSystemRowPreferences,
+                lastAccessTime: newLastAccessTime,
+            }
+        })
+    },
+
+    /**
      * Get all custom rows for a user
+     * Updates last access time for memory management
      */
     getRows: (userId: string) => {
         const state = get()
+
+        // Update last access time
+        set((state) => {
+            const newLastAccessTime = new Map(state.lastAccessTime)
+            newLastAccessTime.set(userId, Date.now())
+            return { lastAccessTime: newLastAccessTime }
+        })
+
         return state.customRowsByUser.get(userId) || []
     },
 
@@ -332,3 +382,11 @@ export const useCustomRowsStore = create<CustomRowsStore>((set, get) => ({
         }
     },
 }))
+
+// Set up periodic cleanup of inactive users
+// Run every 30 minutes in browser environment
+if (typeof window !== 'undefined') {
+    setInterval(() => {
+        useCustomRowsStore.getState().cleanupInactiveUsers()
+    }, CLEANUP_INTERVAL_MS)
+}
