@@ -30,6 +30,56 @@ service cloud.firestore {
              && data.lastActive is number;
     }
 
+    // Custom Rows collection
+    match /customRows/{rowId} {
+      // Helper function to check if user owns the row
+      function isRowOwner() {
+        // Allow both authenticated users and guest users (identified by userId field)
+        return request.auth != null &&
+               resource.data != null &&
+               resource.data.userId == request.auth.uid;
+      }
+
+      // Helper function to check if creating user matches auth
+      function isCreatingOwnRow() {
+        return request.auth != null &&
+               request.resource.data.userId == request.auth.uid;
+      }
+
+      // Helper function to validate custom row data structure
+      function isValidCustomRow(data) {
+        return data.keys().hasAll(['id', 'userId', 'name', 'genres', 'genreLogic', 'mediaType', 'displayOn', 'order', 'enabled', 'createdAt', 'updatedAt'])
+               && data.id is string
+               && data.userId is string
+               && data.name is string
+               && data.name.size() >= 3
+               && data.name.size() <= 50
+               && data.genres is list
+               && data.genres.size() >= 1
+               && data.genres.size() <= 5
+               && (data.genreLogic == 'AND' || data.genreLogic == 'OR')
+               && (data.mediaType == 'movie' || data.mediaType == 'tv')
+               && data.displayOn is map
+               && data.displayOn.keys().hasAll(['main', 'movies', 'tvShows'])
+               && data.order is int
+               && data.enabled is bool
+               && data.createdAt is number
+               && data.updatedAt is number;
+      }
+
+      // Allow authenticated users to read rows they own
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+
+      // Allow authenticated users to create their own rows
+      allow create: if isCreatingOwnRow() && isValidCustomRow(request.resource.data);
+
+      // Allow authenticated users to update their own rows
+      allow update: if isRowOwner() && isValidCustomRow(request.resource.data);
+
+      // Allow authenticated users to delete their own rows
+      allow delete: if isRowOwner();
+    }
+
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;
