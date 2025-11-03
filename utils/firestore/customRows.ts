@@ -38,13 +38,8 @@ export class CustomRowsFirestore {
     static async createCustomRow(userId: string, formData: CustomRowFormData): Promise<CustomRow> {
         // Validate userId
         if (!userId || userId === 'undefined' || userId === 'null') {
+            console.error('[CustomRowsFirestore] Invalid userId:', userId)
             throw new Error('Invalid userId provided to createCustomRow')
-        }
-
-        // Debug: Check if db is properly initialized
-        if (!db) {
-            console.error('[CustomRowsFirestore] Firestore db is undefined!')
-            throw new Error('Firestore database is not initialized')
         }
 
         // Check if user has reached max rows

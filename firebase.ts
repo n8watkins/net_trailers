@@ -40,15 +40,27 @@ function getDb() {
         return (globalThis as any).firestore
     }
 
+    // Determine if we're on the server or client
+    const isServer = typeof window === 'undefined'
+
     // Try to initialize with custom options
     try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(globalThis as any).firestore = initializeFirestore(app, {
-            localCache: persistentLocalCache({
-                // Optional: Configure cache size (default is 40MB)
-                // cacheSizeBytes: 40 * 1024 * 1024,
-            }),
-        })
+        // Only use persistent cache on client side
+        // Server-side (API routes) doesn't support persistentLocalCache
+        if (isServer) {
+            // Server-side: use simple getFirestore
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            ;(globalThis as any).firestore = getFirestore(app)
+        } else {
+            // Client-side: use persistent cache for better performance
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            ;(globalThis as any).firestore = initializeFirestore(app, {
+                localCache: persistentLocalCache({
+                    // Optional: Configure cache size (default is 40MB)
+                    // cacheSizeBytes: 40 * 1024 * 1024,
+                }),
+            })
+        }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return (globalThis as any).firestore
     } catch (error: unknown) {
