@@ -1,16 +1,4 @@
-import {
-    collection,
-    doc,
-    setDoc,
-    getDoc,
-    getDocs,
-    deleteDoc,
-    query,
-    where,
-    orderBy,
-    updateDoc,
-    Timestamp,
-} from 'firebase/firestore'
+import { doc, getDoc, updateDoc } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { CustomRow, CustomRowFormData, CUSTOM_ROW_CONSTRAINTS } from '../../types/customRows'
 import { v4 as uuidv4 } from 'uuid'
@@ -18,22 +6,27 @@ import { v4 as uuidv4 } from 'uuid'
 /**
  * Firestore utility functions for Custom Rows
  *
+ * Custom rows are stored in the user document at /users/{userId}
+ * as a map field called `customRows` where keys are row IDs.
+ *
  * Data structure in Firestore:
- * /customRows/{rowId}
- *   - id: string (UUID v4)
- *   - userId: string (Firebase Auth UID or Guest ID)
- *   - name: string
- *   - genres: number[]
- *   - genreLogic: 'AND' | 'OR'
- *   - mediaType: 'movie' | 'tv' | 'both'
- *   - order: number
- *   - enabled: boolean
- *   - createdAt: number (Unix timestamp)
- *   - updatedAt: number (Unix timestamp)
+ * /users/{userId}
+ *   - customRows: {
+ *       [rowId]: {
+ *         id: string (UUID v4)
+ *         userId: string (Firebase Auth UID or Guest ID)
+ *         name: string
+ *         genres: number[]
+ *         genreLogic: 'AND' | 'OR'
+ *         mediaType: 'movie' | 'tv' | 'both'
+ *         order: number
+ *         enabled: boolean
+ *         createdAt: number (Unix timestamp)
+ *         updatedAt: number (Unix timestamp)
+ *       }
+ *     }
  */
 export class CustomRowsFirestore {
-    private static COLLECTION = 'customRows'
-
     /**
      * Create a new custom row
      *
@@ -79,10 +72,26 @@ export class CustomRowsFirestore {
             updatedAt: now,
         }
 
-        // Save to Firestore - Note: We spread customRow to satisfy TypeScript,
-        // but the actual Firestore document won't have displayOn since it's not in formData
-        const docRef = doc(db, this.COLLECTION, rowId)
-        await setDoc(docRef, customRow)
+        // Get user document
+        const userDocRef = doc(db, 'users', userId)
+        const userDoc = await getDoc(userDocRef)
+
+        if (!userDoc.exists()) {
+            throw new Error('User document not found')
+        }
+
+        // Get existing customRows map
+        const userData = userDoc.data()
+        const customRows = userData.customRows || {}
+
+        // Add new row to the map
+        customRows[rowId] = customRow
+
+        // Update user document
+        await updateDoc(userDocRef, {
+            customRows,
+            lastActive: now,
+        })
 
         return customRow
     }
@@ -104,18 +113,19 @@ export class CustomRowsFirestore {
         }
 
         try {
-            const q = query(
-                collection(db, this.COLLECTION),
-                where('userId', '==', userId),
-                orderBy('order', 'asc')
-            )
+            const userDocRef = doc(db, 'users', userId)
+            const userDoc = await getDoc(userDocRef)
 
-            const snapshot = await getDocs(q)
-            const rows: CustomRow[] = []
+            if (!userDoc.exists()) {
+                return []
+            }
 
-            snapshot.forEach((doc) => {
-                rows.push(doc.data() as CustomRow)
-            })
+            const userData = userDoc.data()
+            const customRows = userData.customRows || {}
+
+            // Convert map to array and sort by order
+            const rows: CustomRow[] = Object.values(customRows)
+            rows.sort((a, b) => a.order - b.order)
 
             return rows
         } catch (error) {
@@ -139,21 +149,27 @@ export class CustomRowsFirestore {
         }
 
         try {
-            const docRef = doc(db, this.COLLECTION, rowId)
-            const docSnap = await getDoc(docRef)
+            const userDocRef = doc(db, 'users', userId)
+            const userDoc = await getDoc(userDocRef)
 
-            if (!docSnap.exists()) {
+            if (!userDoc.exists()) {
                 return null
             }
 
-            const row = docSnap.data() as CustomRow
+            const userData = userDoc.data()
+            const customRows = userData.customRows || {}
+            const row = customRows[rowId]
+
+            if (!row) {
+                return null
+            }
 
             // Verify ownership
             if (row.userId !== userId) {
                 throw new Error('Unauthorized: Row belongs to different user')
             }
 
-            return row
+            return row as CustomRow
         } catch (error) {
             console.error('[CustomRowsFirestore] Failed to get custom row:', error)
             throw error
@@ -185,22 +201,37 @@ export class CustomRowsFirestore {
             throw new Error('Custom row not found')
         }
 
-        // Prepare update data
-        const updateData = {
-            ...updates,
-            updatedAt: Date.now(),
-        }
+        const now = Date.now()
 
-        // Update in Firestore
-        const docRef = doc(db, this.COLLECTION, rowId)
-        await updateDoc(docRef, updateData)
-
-        // Return updated row
-        return {
+        // Create updated row
+        const updatedRow: CustomRow = {
             ...existingRow,
             ...updates,
-            updatedAt: updateData.updatedAt,
+            updatedAt: now,
         }
+
+        // Get user document
+        const userDocRef = doc(db, 'users', userId)
+        const userDoc = await getDoc(userDocRef)
+
+        if (!userDoc.exists()) {
+            throw new Error('User document not found')
+        }
+
+        // Get existing customRows map
+        const userData = userDoc.data()
+        const customRows = userData.customRows || {}
+
+        // Update the row in the map
+        customRows[rowId] = updatedRow
+
+        // Update user document
+        await updateDoc(userDocRef, {
+            customRows,
+            lastActive: now,
+        })
+
+        return updatedRow
     }
 
     /**
@@ -222,9 +253,28 @@ export class CustomRowsFirestore {
             throw new Error('Custom row not found')
         }
 
-        // Delete from Firestore
-        const docRef = doc(db, this.COLLECTION, rowId)
-        await deleteDoc(docRef)
+        const now = Date.now()
+
+        // Get user document
+        const userDocRef = doc(db, 'users', userId)
+        const userDoc = await getDoc(userDocRef)
+
+        if (!userDoc.exists()) {
+            throw new Error('User document not found')
+        }
+
+        // Get existing customRows map
+        const userData = userDoc.data()
+        const customRows = userData.customRows ? { ...userData.customRows } : {}
+
+        // Delete the row from the map
+        delete customRows[rowId]
+
+        // Update user document
+        await updateDoc(userDocRef, {
+            customRows,
+            lastActive: now,
+        })
     }
 
     /**
@@ -242,24 +292,45 @@ export class CustomRowsFirestore {
             throw new Error('Invalid userId provided to reorderCustomRows')
         }
 
-        // Verify all rows exist and belong to user
-        const verificationPromises = rowIds.map((rowId) => this.getCustomRow(userId, rowId))
-        const rows = await Promise.all(verificationPromises)
+        const now = Date.now()
 
-        if (rows.some((row) => row === null)) {
-            throw new Error('One or more rows not found')
+        // Get user document
+        const userDocRef = doc(db, 'users', userId)
+        const userDoc = await getDoc(userDocRef)
+
+        if (!userDoc.exists()) {
+            throw new Error('User document not found')
+        }
+
+        // Get existing customRows map
+        const userData = userDoc.data()
+        const customRows = userData.customRows ? { ...userData.customRows } : {}
+
+        // Verify all rows exist and belong to user
+        for (const rowId of rowIds) {
+            const row = customRows[rowId]
+            if (!row) {
+                throw new Error(`Row ${rowId} not found`)
+            }
+            if (row.userId !== userId) {
+                throw new Error(`Row ${rowId} belongs to different user`)
+            }
         }
 
         // Update order for each row
-        const updatePromises = rowIds.map((rowId, index) => {
-            const docRef = doc(db, this.COLLECTION, rowId)
-            return updateDoc(docRef, {
+        rowIds.forEach((rowId, index) => {
+            customRows[rowId] = {
+                ...customRows[rowId],
                 order: index,
-                updatedAt: Date.now(),
-            })
+                updatedAt: now,
+            }
         })
 
-        await Promise.all(updatePromises)
+        // Update user document
+        await updateDoc(userDocRef, {
+            customRows,
+            lastActive: now,
+        })
     }
 
     /**
@@ -293,10 +364,8 @@ export class CustomRowsFirestore {
 
         const newEnabledStatus = !row.enabled
 
-        const docRef = doc(db, this.COLLECTION, rowId)
-        await updateDoc(docRef, {
+        await this.updateCustomRow(userId, rowId, {
             enabled: newEnabledStatus,
-            updatedAt: Date.now(),
         })
 
         return newEnabledStatus

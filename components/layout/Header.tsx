@@ -8,7 +8,6 @@ import {
     EyeIcon,
     EyeSlashIcon,
     CheckCircleIcon,
-    Squares2X2Icon,
 } from '@heroicons/react/24/outline'
 import { useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
@@ -153,13 +152,6 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                             </li>
                             <li>
                                 <MyListsDropdown />
-                            </li>
-                            <li
-                                className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${pathname === '/my-rows' ? 'text-white hover:text-white font-semibold' : ''}`}
-                                onClick={() => router.push('/my-rows')}
-                            >
-                                <Squares2X2Icon className="h-4 w-4" />
-                                <span>My Rows</span>
                             </li>
                             {process.env.NODE_ENV === 'development' &&
                                 debugSettings.showToastDebug && (
@@ -387,22 +379,6 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                             >
                                                 <MagnifyingGlassIcon className="h-5 w-5" />
                                                 <span>Search</span>
-                                            </button>
-                                        </li>
-                                        <li>
-                                            <button
-                                                className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
-                                                    pathname === '/my-rows'
-                                                        ? 'text-white font-semibold bg-red-600/20'
-                                                        : 'hover:bg-white/10'
-                                                }`}
-                                                onClick={() => {
-                                                    router.push('/my-rows')
-                                                    setShowMobileMenu(false)
-                                                }}
-                                            >
-                                                <Squares2X2Icon className="h-5 w-5" />
-                                                <span>My Rows</span>
                                             </button>
                                         </li>
                                     </ul>
