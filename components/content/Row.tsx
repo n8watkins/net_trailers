@@ -501,9 +501,9 @@ function Row({ title, content, apiEndpoint }: Props) {
                         WebkitOverflowScrolling: 'touch',
                     }}
                 >
-                    {filteredContent.map((item) => (
+                    {filteredContent.map((item, index) => (
                         <div
-                            key={`${item.media_type || 'unknown'}-${item.id}`}
+                            key={`${item.media_type || 'unknown'}-${item.id}-${index}`}
                             className="flex-shrink-0"
                         >
                             <ContentCard content={item} />
