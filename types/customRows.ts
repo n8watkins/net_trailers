@@ -3,24 +3,53 @@
  * V1 MVP - Simplified scope without AI generation and advanced filters
  */
 
-export interface CustomRow {
-    // Identity
-    id: string // UUID v4
-    userId: string // Firebase Auth UID or Guest ID
-
-    // Configuration
+/**
+ * Base row configuration shared by both system and custom rows
+ */
+export interface BaseRowConfig {
+    id: string // UUID v4 or system-{type}-{name}
     name: string // User-facing title (3-50 chars)
     genres: number[] // TMDB genre IDs (1-5 genres)
     genreLogic: 'AND' | 'OR' // How to combine genres
     mediaType: 'movie' | 'tv' | 'both' // Content type(s) to show
-
-    // Organization
     order: number // Display order (0-based, lower = higher)
-    enabled: boolean // Toggle visibility without deletion
+}
 
-    // Metadata
+/**
+ * System/default rows that all users see
+ * Cannot be edited or deleted, only enabled/disabled per user
+ */
+export type SystemRowConfig = BaseRowConfig
+
+/**
+ * Custom rows created by users
+ * Full CRUD operations available
+ */
+export interface CustomRow extends BaseRowConfig {
+    userId: string // Firebase Auth UID or Guest ID
+    enabled: boolean // Toggle visibility without deletion
     createdAt: number // Unix timestamp
     updatedAt: number // Unix timestamp
+}
+
+/**
+ * Combined type for rendering rows in UI
+ * Includes both system and custom rows with their enabled state
+ */
+export interface DisplayRow extends BaseRowConfig {
+    isSystemRow: boolean // true for system rows, false for custom rows
+    enabled: boolean // Current enabled state for this user
+    userId?: string // Only present for custom rows
+    createdAt?: number // Only present for custom rows
+    updatedAt?: number // Only present for custom rows
+}
+
+/**
+ * User preferences for system row visibility
+ * Stored per user in Firestore
+ */
+export interface SystemRowPreferences {
+    [systemRowId: string]: boolean // systemRowId -> enabled
 }
 
 /**

@@ -19,6 +19,13 @@ const defaultState: AppStore = {
         mode: undefined,
     },
 
+    // Custom row modal state
+    customRowModal: {
+        isOpen: false,
+        editingRowId: null,
+        mode: 'create',
+    },
+
     // Auth modal state
     authModal: {
         isOpen: false,
@@ -52,6 +59,10 @@ const defaultState: AppStore = {
     closeListModal: () => {},
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     setListModalMode: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    openCustomRowModal: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    closeCustomRowModal: () => {},
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     showToast: () => {},
     // eslint-disable-next-line @typescript-eslint/no-empty-function

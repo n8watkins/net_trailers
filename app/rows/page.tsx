@@ -2,12 +2,18 @@
 
 import { useState, useEffect } from 'react'
 import Header from '../../components/layout/Header'
-import { Squares2X2Icon, PlusIcon, MagnifyingGlassIcon } from '@heroicons/react/24/solid'
+import {
+    Squares2X2Icon,
+    PlusIcon,
+    MagnifyingGlassIcon,
+    FilmIcon,
+    TvIcon,
+} from '@heroicons/react/24/solid'
 import { CustomRowCard } from '../../components/customRows/CustomRowCard'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useCustomRowsStore } from '../../stores/customRowsStore'
 import { useAppStore } from '../../stores/appStore'
-import { CustomRow, CUSTOM_ROW_CONSTRAINTS } from '../../types/customRows'
+import { CustomRow, CUSTOM_ROW_CONSTRAINTS, DisplayRow } from '../../types/customRows'
 import { GuestModeNotification } from '../../components/auth/GuestModeNotification'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import { CustomRowsFirestore } from '../../utils/firestore/customRows'
@@ -17,21 +23,44 @@ const RowsPage = () => {
     const [searchQuery, setSearchQuery] = useState('')
 
     // Stores
-    const getUserId = useSessionStore((state) => state.getUserId)
-    const { getRows, setRows, removeRow, updateRow, setLoading, setError } = useCustomRowsStore()
+    const getUserId = useSessionStore((state: any) => state.getUserId)
+    const {
+        getRows,
+        setRows,
+        removeRow,
+        updateRow,
+        setLoading,
+        setError,
+        getDisplayRowsByMediaType,
+        setSystemRowPreferences,
+        toggleSystemRow: toggleSystemRowStore,
+    } = useCustomRowsStore()
     const { modal, showToast, openCustomRowModal } = useAppStore()
     const showModal = modal.isOpen
 
     const userId = getUserId()
-    const rows = userId ? getRows(userId) : []
-    const atMaxRows = rows.length >= CUSTOM_ROW_CONSTRAINTS.MAX_ROWS_PER_USER
+    const customRows = userId ? getRows(userId) : []
+    const atMaxRows = customRows.length >= CUSTOM_ROW_CONSTRAINTS.MAX_ROWS_PER_USER
+
+    // Get rows by media type (includes both system and custom)
+    const movieRows = userId ? getDisplayRowsByMediaType(userId, 'movie') : []
+    const tvRows = userId ? getDisplayRowsByMediaType(userId, 'tv') : []
+    const homeRows = userId ? getDisplayRowsByMediaType(userId, 'both') : []
 
     // Filter rows based on search query
-    const filteredRows = searchQuery.trim()
-        ? rows.filter((row) => row.name.toLowerCase().includes(searchQuery.toLowerCase()))
-        : rows
+    const filterRows = (rows: DisplayRow[]) =>
+        searchQuery.trim()
+            ? rows.filter((row) => row.name.toLowerCase().includes(searchQuery.toLowerCase()))
+            : rows
 
-    // Load rows on mount (only for authenticated users, not guests)
+    const filteredMovieRows = filterRows(movieRows)
+    const filteredTvRows = filterRows(tvRows)
+    const filteredHomeRows = filterRows(homeRows)
+
+    const totalRows = movieRows.length + tvRows.length + homeRows.length
+    const hasAnyRows = totalRows > 0
+
+    // Load rows and preferences on mount (only for authenticated users, not guests)
     useEffect(() => {
         if (!userId || !isInitialized) return
         if (isGuest) {
@@ -40,11 +69,16 @@ const RowsPage = () => {
             return
         }
 
-        const loadRows = async () => {
+        const loadData = async () => {
             setLoading(true)
             try {
-                const rows = await CustomRowsFirestore.getUserCustomRows(userId)
-                setRows(userId, rows)
+                // Load custom rows and system row preferences in parallel
+                const [customRows, systemPrefs] = await Promise.all([
+                    CustomRowsFirestore.getUserCustomRows(userId),
+                    CustomRowsFirestore.getSystemRowPreferences(userId),
+                ])
+                setRows(userId, customRows)
+                setSystemRowPreferences(userId, systemPrefs)
             } catch (error) {
                 console.error('Error loading rows:', error)
                 showToast('error', 'Failed to load custom rows')
@@ -54,12 +88,21 @@ const RowsPage = () => {
             }
         }
 
-        loadRows()
-    }, [userId, isGuest, isInitialized, setRows, setLoading, setError, showToast])
+        loadData()
+    }, [
+        userId,
+        isGuest,
+        isInitialized,
+        setRows,
+        setSystemRowPreferences,
+        setLoading,
+        setError,
+        showToast,
+    ])
 
-    // Delete row
-    const handleDelete = async (row: CustomRow) => {
-        if (!userId) return
+    // Delete custom row
+    const handleDelete = async (row: DisplayRow) => {
+        if (!userId || row.isSystemRow) return
 
         try {
             await CustomRowsFirestore.deleteCustomRow(userId, row.id)
@@ -71,22 +114,31 @@ const RowsPage = () => {
         }
     }
 
-    // Toggle enabled
-    const handleToggleEnabled = async (row: CustomRow) => {
+    // Toggle enabled (works for both system and custom rows)
+    const handleToggleEnabled = async (row: DisplayRow) => {
         if (!userId) return
 
         try {
-            const newEnabledStatus = await CustomRowsFirestore.toggleRowEnabled(userId, row.id)
-            updateRow(userId, row.id, { ...row, enabled: newEnabledStatus })
-            showToast('success', newEnabledStatus ? 'Row enabled' : 'Row disabled')
+            if (row.isSystemRow) {
+                // Toggle system row
+                const newEnabledStatus = await CustomRowsFirestore.toggleSystemRow(userId, row.id)
+                toggleSystemRowStore(userId, row.id)
+                showToast('success', newEnabledStatus ? 'Row enabled' : 'Row disabled')
+            } else {
+                // Toggle custom row
+                const newEnabledStatus = await CustomRowsFirestore.toggleRowEnabled(userId, row.id)
+                updateRow(userId, row.id, { enabled: newEnabledStatus } as Partial<CustomRow>)
+                showToast('success', newEnabledStatus ? 'Row enabled' : 'Row disabled')
+            }
         } catch (error) {
             console.error('Error toggling row:', error)
             showToast('error', (error as Error).message)
         }
     }
 
-    // Edit row - opens modal
-    const handleEdit = (row: CustomRow) => {
+    // Edit custom row - opens modal (only for custom rows)
+    const handleEdit = (row: DisplayRow) => {
+        if (row.isSystemRow) return
         openCustomRowModal('edit', row.id)
     }
 
@@ -143,12 +195,15 @@ const RowsPage = () => {
                         {isInitialized && isGuest && <GuestModeNotification align="left" />}
 
                         {/* Action Buttons Row */}
-                        {rows.length > 0 && !isGuest && (
+                        {hasAnyRows && !isGuest && (
                             <div className="flex items-center space-x-4 py-3 mb-4 border-b border-gray-700/30">
                                 {/* Stats */}
                                 <div className="text-lg font-semibold text-white">
-                                    {rows.length} row{rows.length !== 1 ? 's' : ''} •{' '}
-                                    {rows.filter((r) => r.enabled).length} enabled
+                                    {totalRows} total • {customRows.length} custom •{' '}
+                                    {movieRows.filter((r) => r.enabled).length +
+                                        tvRows.filter((r) => r.enabled).length +
+                                        homeRows.filter((r) => r.enabled).length}{' '}
+                                    enabled
                                 </div>
 
                                 {/* Create Button */}
@@ -174,7 +229,7 @@ const RowsPage = () => {
                         )}
 
                         {/* Search Bar */}
-                        {rows.length > 0 && (
+                        {hasAnyRows && (
                             <div className="max-w-md">
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -182,7 +237,7 @@ const RowsPage = () => {
                                     </div>
                                     <input
                                         type="text"
-                                        placeholder="Search your rows..."
+                                        placeholder="Search all rows..."
                                         className="w-full pl-10 pr-4 py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -193,24 +248,18 @@ const RowsPage = () => {
                     </div>
 
                     {/* Content Section */}
-                    {filteredRows.length === 0 ? (
+                    {!hasAnyRows ? (
                         <div className="text-center py-16">
                             <div className="text-6xl mb-4">{isGuest ? '🔒' : '📊'}</div>
                             <h2 className="text-2xl font-semibold text-white mb-2">
-                                {isGuest
-                                    ? 'Sign In Required'
-                                    : searchQuery.trim()
-                                      ? 'No rows found'
-                                      : 'No Custom Rows Yet'}
+                                {isGuest ? 'Sign In Required' : 'No Rows Yet'}
                             </h2>
                             <p className="text-gray-400 mb-8">
                                 {isGuest
                                     ? 'Custom rows require a Firebase account. Please sign in with Google or email to create custom rows.'
-                                    : searchQuery.trim()
-                                      ? 'Try a different search term'
-                                      : 'Create your first custom row to get started!'}
+                                    : 'Create your first custom row to get started!'}
                             </p>
-                            {!searchQuery.trim() && !isGuest && (
+                            {!isGuest && (
                                 <button
                                     onClick={handleCreate}
                                     className="inline-flex items-center gap-2 bg-red-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 transition-colors"
@@ -221,16 +270,90 @@ const RowsPage = () => {
                             )}
                         </div>
                     ) : (
-                        <div className="space-y-4 max-w-5xl">
-                            {filteredRows.map((row) => (
-                                <CustomRowCard
-                                    key={row.id}
-                                    row={row}
-                                    onEdit={handleEdit}
-                                    onDelete={handleDelete}
-                                    onToggleEnabled={handleToggleEnabled}
-                                />
-                            ))}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl">
+                            {/* Movies Column */}
+                            <div className="space-y-4">
+                                <div className="flex items-center space-x-2 mb-4 pb-2 border-b border-gray-700/50">
+                                    <FilmIcon className="w-5 h-5 text-red-500" />
+                                    <h2 className="text-xl font-bold text-white">Movies</h2>
+                                    <span className="text-sm text-gray-400">
+                                        ({filteredMovieRows.length})
+                                    </span>
+                                </div>
+                                {filteredMovieRows.length === 0 ? (
+                                    <div className="text-center py-8">
+                                        <p className="text-gray-400 text-sm">
+                                            {searchQuery.trim() ? 'No matches' : 'No movie rows'}
+                                        </p>
+                                    </div>
+                                ) : (
+                                    filteredMovieRows.map((row) => (
+                                        <CustomRowCard
+                                            key={row.id}
+                                            row={row}
+                                            onEdit={handleEdit}
+                                            onDelete={handleDelete}
+                                            onToggleEnabled={handleToggleEnabled}
+                                        />
+                                    ))
+                                )}
+                            </div>
+
+                            {/* TV Shows Column */}
+                            <div className="space-y-4">
+                                <div className="flex items-center space-x-2 mb-4 pb-2 border-b border-gray-700/50">
+                                    <TvIcon className="w-5 h-5 text-red-500" />
+                                    <h2 className="text-xl font-bold text-white">TV Shows</h2>
+                                    <span className="text-sm text-gray-400">
+                                        ({filteredTvRows.length})
+                                    </span>
+                                </div>
+                                {filteredTvRows.length === 0 ? (
+                                    <div className="text-center py-8">
+                                        <p className="text-gray-400 text-sm">
+                                            {searchQuery.trim() ? 'No matches' : 'No TV show rows'}
+                                        </p>
+                                    </div>
+                                ) : (
+                                    filteredTvRows.map((row) => (
+                                        <CustomRowCard
+                                            key={row.id}
+                                            row={row}
+                                            onEdit={handleEdit}
+                                            onDelete={handleDelete}
+                                            onToggleEnabled={handleToggleEnabled}
+                                        />
+                                    ))
+                                )}
+                            </div>
+
+                            {/* Home (Both) Column */}
+                            <div className="space-y-4">
+                                <div className="flex items-center space-x-2 mb-4 pb-2 border-b border-gray-700/50">
+                                    <Squares2X2Icon className="w-5 h-5 text-red-500" />
+                                    <h2 className="text-xl font-bold text-white">Home (Both)</h2>
+                                    <span className="text-sm text-gray-400">
+                                        ({filteredHomeRows.length})
+                                    </span>
+                                </div>
+                                {filteredHomeRows.length === 0 ? (
+                                    <div className="text-center py-8">
+                                        <p className="text-gray-400 text-sm">
+                                            {searchQuery.trim() ? 'No matches' : 'No home rows'}
+                                        </p>
+                                    </div>
+                                ) : (
+                                    filteredHomeRows.map((row) => (
+                                        <CustomRowCard
+                                            key={row.id}
+                                            row={row}
+                                            onEdit={handleEdit}
+                                            onDelete={handleDelete}
+                                            onToggleEnabled={handleToggleEnabled}
+                                        />
+                                    ))
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>

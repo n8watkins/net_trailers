@@ -1,0 +1,161 @@
+/**
+ * System/Default Rows
+ *
+ * Pre-configured rows that all users see by default.
+ * Users can enable/disable these but cannot edit or delete them.
+ */
+
+import { SystemRowConfig } from '../types/customRows'
+
+/**
+ * System rows for Movies page (mediaType: 'movie')
+ */
+export const SYSTEM_MOVIE_ROWS: SystemRowConfig[] = [
+    {
+        id: 'system-movie-action',
+        name: 'Action-Packed',
+        genres: [28], // Action
+        genreLogic: 'OR',
+        mediaType: 'movie',
+        order: 0,
+    },
+    {
+        id: 'system-movie-comedy',
+        name: 'Comedy Classics',
+        genres: [35], // Comedy
+        genreLogic: 'OR',
+        mediaType: 'movie',
+        order: 1,
+    },
+    {
+        id: 'system-movie-scifi',
+        name: 'Sci-Fi Adventures',
+        genres: [878], // Science Fiction
+        genreLogic: 'OR',
+        mediaType: 'movie',
+        order: 2,
+    },
+    {
+        id: 'system-movie-horror',
+        name: 'Horror Thrills',
+        genres: [27], // Horror
+        genreLogic: 'OR',
+        mediaType: 'movie',
+        order: 3,
+    },
+    {
+        id: 'system-movie-romance',
+        name: 'Romantic Films',
+        genres: [10749], // Romance
+        genreLogic: 'OR',
+        mediaType: 'movie',
+        order: 4,
+    },
+]
+
+/**
+ * System rows for TV Shows page (mediaType: 'tv')
+ */
+export const SYSTEM_TV_ROWS: SystemRowConfig[] = [
+    {
+        id: 'system-tv-action',
+        name: 'Action & Adventure',
+        genres: [10759], // Action & Adventure
+        genreLogic: 'OR',
+        mediaType: 'tv',
+        order: 0,
+    },
+    {
+        id: 'system-tv-comedy',
+        name: 'Comedy Series',
+        genres: [35], // Comedy
+        genreLogic: 'OR',
+        mediaType: 'tv',
+        order: 1,
+    },
+    {
+        id: 'system-tv-scifi',
+        name: 'Sci-Fi & Fantasy',
+        genres: [10765], // Sci-Fi & Fantasy
+        genreLogic: 'OR',
+        mediaType: 'tv',
+        order: 2,
+    },
+    {
+        id: 'system-tv-kids',
+        name: 'Kids Shows',
+        genres: [10762], // Kids
+        genreLogic: 'OR',
+        mediaType: 'tv',
+        order: 3,
+    },
+    {
+        id: 'system-tv-reality',
+        name: 'Reality TV',
+        genres: [10764], // Reality
+        genreLogic: 'OR',
+        mediaType: 'tv',
+        order: 4,
+    },
+]
+
+/**
+ * System rows for Home page (mediaType: 'both')
+ */
+export const SYSTEM_HOME_ROWS: SystemRowConfig[] = [
+    {
+        id: 'system-home-animation',
+        name: 'Animated Favorites',
+        genres: [16], // Animation
+        genreLogic: 'OR',
+        mediaType: 'both',
+        order: 0,
+    },
+    {
+        id: 'system-home-family',
+        name: 'Family Fun',
+        genres: [10751], // Family
+        genreLogic: 'OR',
+        mediaType: 'both',
+        order: 1,
+    },
+    {
+        id: 'system-home-documentary',
+        name: 'Documentaries',
+        genres: [99], // Documentary
+        genreLogic: 'OR',
+        mediaType: 'both',
+        order: 2,
+    },
+    {
+        id: 'system-home-mystery',
+        name: 'Mystery & Suspense',
+        genres: [9648], // Mystery
+        genreLogic: 'OR',
+        mediaType: 'both',
+        order: 3,
+    },
+]
+
+/**
+ * All system rows combined
+ */
+export const ALL_SYSTEM_ROWS: SystemRowConfig[] = [
+    ...SYSTEM_MOVIE_ROWS,
+    ...SYSTEM_TV_ROWS,
+    ...SYSTEM_HOME_ROWS,
+]
+
+/**
+ * Get system rows by media type
+ */
+export function getSystemRowsByMediaType(mediaType: 'movie' | 'tv' | 'both'): SystemRowConfig[] {
+    switch (mediaType) {
+        case 'movie':
+            return SYSTEM_MOVIE_ROWS
+        case 'tv':
+            return SYSTEM_TV_ROWS
+        case 'both':
+            return SYSTEM_HOME_ROWS
+    }
+}

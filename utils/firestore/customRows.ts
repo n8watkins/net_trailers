@@ -1,6 +1,11 @@
 import { doc, getDoc, updateDoc, setDoc } from 'firebase/firestore'
 import { db } from '../../firebase'
-import { CustomRow, CustomRowFormData, CUSTOM_ROW_CONSTRAINTS } from '../../types/customRows'
+import {
+    CustomRow,
+    CustomRowFormData,
+    CUSTOM_ROW_CONSTRAINTS,
+    SystemRowPreferences,
+} from '../../types/customRows'
 import { v4 as uuidv4 } from 'uuid'
 
 /**
@@ -8,6 +13,9 @@ import { v4 as uuidv4 } from 'uuid'
  *
  * Custom rows are stored in the user document at /users/{userId}
  * as a map field called `customRows` where keys are row IDs.
+ *
+ * System row preferences are stored as a map field called `systemRowPreferences`
+ * where keys are system row IDs and values are boolean (enabled/disabled).
  *
  * Data structure in Firestore:
  * /users/{userId}
@@ -24,6 +32,9 @@ import { v4 as uuidv4 } from 'uuid'
  *         createdAt: number (Unix timestamp)
  *         updatedAt: number (Unix timestamp)
  *       }
+ *     }
+ *   - systemRowPreferences: {
+ *       [systemRowId]: boolean (enabled/disabled)
  *     }
  */
 export class CustomRowsFirestore {
@@ -354,7 +365,7 @@ export class CustomRowsFirestore {
     }
 
     /**
-     * Toggle enabled status for a row
+     * Toggle enabled status for a custom row
      *
      * @param userId - Firebase Auth UID or Guest ID
      * @param rowId - Row UUID
@@ -373,5 +384,129 @@ export class CustomRowsFirestore {
         })
 
         return newEnabledStatus
+    }
+
+    /**
+     * Get system row preferences for a user
+     *
+     * @param userId - Firebase Auth UID or Guest ID
+     * @returns SystemRowPreferences object (empty if none set)
+     */
+    static async getSystemRowPreferences(userId: string): Promise<SystemRowPreferences> {
+        // Validate userId
+        if (!userId || userId === 'undefined' || userId === 'null') {
+            console.warn(
+                '[CustomRowsFirestore] Invalid userId provided to getSystemRowPreferences:',
+                userId
+            )
+            return {}
+        }
+
+        try {
+            const userDocRef = doc(db, 'users', userId)
+            const userDoc = await getDoc(userDocRef)
+
+            if (!userDoc.exists()) {
+                return {}
+            }
+
+            const userData = userDoc.data()
+            return userData.systemRowPreferences || {}
+        } catch (error) {
+            console.error('[CustomRowsFirestore] Failed to get system row preferences:', error)
+            throw error
+        }
+    }
+
+    /**
+     * Toggle a system row's enabled state
+     *
+     * @param userId - Firebase Auth UID or Guest ID
+     * @param systemRowId - System row ID (e.g., 'system-movie-action')
+     * @returns Updated enabled status
+     */
+    static async toggleSystemRow(userId: string, systemRowId: string): Promise<boolean> {
+        // Validate userId
+        if (!userId || userId === 'undefined' || userId === 'null') {
+            throw new Error('Invalid userId provided to toggleSystemRow')
+        }
+
+        const now = Date.now()
+
+        // Get user document
+        const userDocRef = doc(db, 'users', userId)
+        const userDoc = await getDoc(userDocRef)
+
+        let currentPreferences: SystemRowPreferences = {}
+
+        if (userDoc.exists()) {
+            const userData = userDoc.data()
+            currentPreferences = userData.systemRowPreferences || {}
+        }
+
+        // Toggle the state (default is enabled = true)
+        const currentState = currentPreferences[systemRowId] ?? true
+        const newState = !currentState
+
+        currentPreferences[systemRowId] = newState
+
+        // Update or create user document
+        if (!userDoc.exists()) {
+            await setDoc(userDocRef, {
+                watchlist: [],
+                ratings: [],
+                userLists: {},
+                customRows: {},
+                systemRowPreferences: currentPreferences,
+                lastActive: now,
+            })
+        } else {
+            await updateDoc(userDocRef, {
+                systemRowPreferences: currentPreferences,
+                lastActive: now,
+            })
+        }
+
+        return newState
+    }
+
+    /**
+     * Set system row preferences (batch update)
+     *
+     * @param userId - Firebase Auth UID or Guest ID
+     * @param preferences - SystemRowPreferences object
+     */
+    static async setSystemRowPreferences(
+        userId: string,
+        preferences: SystemRowPreferences
+    ): Promise<void> {
+        // Validate userId
+        if (!userId || userId === 'undefined' || userId === 'null') {
+            throw new Error('Invalid userId provided to setSystemRowPreferences')
+        }
+
+        const now = Date.now()
+
+        // Get user document
+        const userDocRef = doc(db, 'users', userId)
+        const userDoc = await getDoc(userDocRef)
+
+        if (!userDoc.exists()) {
+            // Create new user document with preferences
+            await setDoc(userDocRef, {
+                watchlist: [],
+                ratings: [],
+                userLists: {},
+                customRows: {},
+                systemRowPreferences: preferences,
+                lastActive: now,
+            })
+        } else {
+            // Update existing document
+            await updateDoc(userDocRef, {
+                systemRowPreferences: preferences,
+                lastActive: now,
+            })
+        }
     }
 }
