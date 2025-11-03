@@ -48,6 +48,12 @@ export class CustomRowsFirestore {
             throw new Error('Invalid userId provided to createCustomRow')
         }
 
+        // Debug: Check if db is properly initialized
+        if (!db) {
+            console.error('[CustomRowsFirestore] Firestore db is undefined!')
+            throw new Error('Firestore database is not initialized')
+        }
+
         // Check if user has reached max rows
         const existingRows = await this.getUserCustomRows(userId)
         if (existingRows.length >= CUSTOM_ROW_CONSTRAINTS.MAX_ROWS_PER_USER) {
@@ -73,7 +79,8 @@ export class CustomRowsFirestore {
             updatedAt: now,
         }
 
-        // Save to Firestore
+        // Save to Firestore - Note: We spread customRow to satisfy TypeScript,
+        // but the actual Firestore document won't have displayOn since it's not in formData
         const docRef = doc(db, this.COLLECTION, rowId)
         await setDoc(docRef, customRow)
 
