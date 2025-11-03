@@ -36,9 +36,14 @@ const RowsPage = () => {
         ? rows.filter((row) => row.name.toLowerCase().includes(searchQuery.toLowerCase()))
         : rows
 
-    // Load rows on mount
+    // Load rows on mount (only for authenticated users, not guests)
     useEffect(() => {
-        if (!userId) return
+        if (!userId || !isInitialized) return
+        if (isGuest) {
+            // Guest users can't use custom rows (requires Firebase Auth)
+            setLoading(false)
+            return
+        }
 
         const loadRows = async () => {
             setLoading(true)
@@ -65,7 +70,7 @@ const RowsPage = () => {
         }
 
         loadRows()
-    }, [userId, setRows, setLoading, setError, showToast])
+    }, [userId, isGuest, isInitialized, setRows, setLoading, setError, showToast])
 
     // Create row
     const handleCreate = async (formData: CustomRowFormData) => {
@@ -239,7 +244,7 @@ const RowsPage = () => {
                         {isInitialized && isGuest && <GuestModeNotification align="left" />}
 
                         {/* Action Buttons Row */}
-                        {viewMode === 'list' && rows.length > 0 && (
+                        {viewMode === 'list' && rows.length > 0 && !isGuest && (
                             <div className="flex items-center space-x-4 py-3 mb-4 border-b border-gray-700/30">
                                 {/* Stats */}
                                 <div className="text-lg font-semibold text-white">
@@ -293,18 +298,22 @@ const RowsPage = () => {
                         <>
                             {filteredRows.length === 0 ? (
                                 <div className="text-center py-16">
-                                    <div className="text-6xl mb-4">📊</div>
+                                    <div className="text-6xl mb-4">{isGuest ? '🔒' : '📊'}</div>
                                     <h2 className="text-2xl font-semibold text-white mb-2">
-                                        {searchQuery.trim()
-                                            ? 'No rows found'
-                                            : 'No Custom Rows Yet'}
+                                        {isGuest
+                                            ? 'Sign In Required'
+                                            : searchQuery.trim()
+                                              ? 'No rows found'
+                                              : 'No Custom Rows Yet'}
                                     </h2>
                                     <p className="text-gray-400 mb-8">
-                                        {searchQuery.trim()
-                                            ? 'Try a different search term'
-                                            : 'Create your first custom row to get started!'}
+                                        {isGuest
+                                            ? 'Custom rows require a Firebase account. Please sign in with Google or email to create custom rows.'
+                                            : searchQuery.trim()
+                                              ? 'Try a different search term'
+                                              : 'Create your first custom row to get started!'}
                                     </p>
-                                    {!searchQuery.trim() && (
+                                    {!searchQuery.trim() && !isGuest && (
                                         <button
                                             onClick={() => setViewMode('create')}
                                             className="inline-flex items-center gap-2 bg-red-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 transition-colors"
