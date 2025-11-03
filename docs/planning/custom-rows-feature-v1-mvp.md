@@ -2,13 +2,15 @@
 
 ## Executive Summary
 
-**Status:** REVISED after critical architecture review
+**Status:** IN PROGRESS - Phase 1 Complete, Starting Phase 2
+
+**Current Architecture:** Client-side Firestore (no API routes for CRUD)
 
 **V1 Scope:** Simplified MVP focusing on core functionality with proven patterns
 
-**Timeline:** 5-7 days (reduced from 12-15)
+**Timeline:** 3-4 days remaining (Phase 1 done)
 
-**Key Decision:** Build in 3 phases with working increments
+**Key Decision:** Direct Firestore access from client, matches existing patterns
 
 ---
 
@@ -18,83 +20,104 @@
 
 - Genre selection (multi-select, max 5)
 - AND/OR logic for genre combinations
-- Movie OR TV (not both - see Phase 3)
-- Display on Main/Movies/TV pages
-- Basic CRUD operations
-- Auth-gated (authenticated users only)
+- Movie, TV, or Both media types
+- **Simple display logic**: mediaType determines page placement
+    - `movie` → Shows on `/movies` page only
+    - `tv` → Shows on `/tv` page only
+    - `both` → Shows on `/` (home) page only
+- Basic CRUD operations via **client-side Firestore**
+- Auth-gated (authenticated users only, no guest support)
 - Client-side loading (no SSR complexity)
 - Child safety mode integration
-- Cache integration
+- Cache integration (disabled for now, will revisit)
 
 ### ❌ EXCLUDED (Deferred to V2)
 
-- "Both" media type (pagination too complex)
 - AI name generation (Gemini integration)
 - Advanced filters (year, rating, certification)
 - Drag-and-drop reordering
 - Row analytics/view tracking
 - Sharing functionality
 - Row templates
+- Guest user support (requires localStorage, complex)
 
 ---
 
-## 📋 CRITICAL FIXES FROM REVIEW
+## 📋 PHASE 1 STATUS - ✅ COMPLETE
 
-### Issues Identified & Resolved
+### What's Been Built
 
-1. ✅ **Row Component Integration** - Using client-side CustomRowLoader
-2. ✅ **Store Access Pattern** - Added getUserId() helper
-3. ✅ **"Both" Media Type** - Removed from V1
-4. ✅ **Firestore Rules** - Simplified (no counter)
-5. ✅ **Rate Limiting** - Removed (not needed for V1)
-6. ✅ **Child Safety Integration** - Added to API
-7. ✅ **Cache Integration** - Using existing cacheStore
+1. ✅ **Data Model** - `types/customRows.ts` with all interfaces
+2. ✅ **Firestore Utilities** - `utils/firestore/customRows.ts` (client-side SDK)
+3. ✅ **Zustand Store** - `stores/customRowsStore.ts` with helpers
+4. ✅ **Content API** - `/api/custom-rows/[id]/content` with query params (no server-side Firestore)
+5. ✅ **CustomRowLoader** - Component that loads and displays custom rows
+6. ✅ **Page Integration** - Movies & TV pages load custom rows
+7. ✅ **Child Safety** - Integrated with existing child safety mode
+8. ✅ **Firestore Structure** - Using `/users/{userId}` document with `customRows` map
+
+### Architecture Decisions Made
+
+- **No API routes for CRUD** - Using `CustomRowsFirestore` directly from client
+- **No `displayOn` config** - `mediaType` determines page placement
+- **Both media type supported** - Interleaves movies/TV on home page
+- **No guest support** - Authenticated users only (requires Firebase Auth)
 
 ---
 
 ## 🔧 Technical Architecture (Corrected)
 
-### Data Model (Simplified for V1)
+### Data Model (Current Implementation)
 
 ```typescript
-// types/customRows.ts
+// types/customRows.ts - ACTUAL CURRENT IMPLEMENTATION
 
 export interface CustomRow {
     // Identity
     id: string // UUID v4
-    userId: string // Firebase Auth UID
+    userId: string // Firebase Auth UID (guests not supported)
 
     // Configuration
     name: string // User-facing title (3-50 chars)
     genres: number[] // TMDB genre IDs (1-5)
     genreLogic: 'AND' | 'OR' // How to combine genres
-    mediaType: 'movie' | 'tv' // V1: Only one type per row
-
-    // Display
-    displayOn: {
-        main: boolean
-        movies: boolean
-        tvShows: boolean
-    }
+    mediaType: 'movie' | 'tv' | 'both' // Determines page placement
 
     // Organization
-    order: number // Display order (0-based)
-    enabled: boolean // Toggle visibility
+    order: number // Display order (0-based, lower = higher)
+    enabled: boolean // Toggle visibility without deletion
 
     // Metadata
-    createdAt: number
-    updatedAt: number
+    createdAt: number // Unix timestamp
+    updatedAt: number // Unix timestamp
 }
 
 export interface CustomRowFormData {
     name: string
     genres: number[]
     genreLogic: 'AND' | 'OR'
-    mediaType: 'movie' | 'tv'
-    displayOn: CustomRow['displayOn']
+    mediaType: 'movie' | 'tv' | 'both'
     enabled: boolean
 }
+
+export const CUSTOM_ROW_CONSTRAINTS = {
+    MAX_ROWS_PER_USER: 10,
+    MAX_GENRES_PER_ROW: 5,
+    MIN_GENRES_PER_ROW: 1,
+    MIN_NAME_LENGTH: 3,
+    MAX_NAME_LENGTH: 50,
+} as const
 ```
+
+### Page Display Logic
+
+The `mediaType` field determines where a row appears:
+
+| mediaType | Appears On      | Content Type            |
+| --------- | --------------- | ----------------------- |
+| `'movie'` | `/movies` only  | Movies only             |
+| `'tv'`    | `/tv` only      | TV shows only           |
+| `'both'`  | `/` (home) only | Interleaved movies & TV |
 
 ### Store Integration (FIXED)
 
@@ -369,65 +392,364 @@ service cloud.firestore {
 
 ## 🚀 PHASED IMPLEMENTATION
 
-### Phase 1: Foundation (Days 1-2)
+### Phase 1: Foundation ✅ COMPLETE
 
 **Goal:** Backend + data structures working
 
-**Tasks:**
+**Completed Tasks:**
 
-- [ ] Create `types/customRows.ts` (simplified)
-- [ ] Add `getUserId()` to sessionStore
-- [ ] Create Firestore utility functions (`utils/firestore/customRows.ts`)
-- [ ] Build `stores/customRowsStore.ts` (CRUD only, no AI)
-- [ ] Create API routes:
-    - [ ] `GET /api/custom-rows` (fetch user's rows)
-    - [ ] `POST /api/custom-rows` (create)
-    - [ ] `PUT /api/custom-rows/[id]` (update)
-    - [ ] `DELETE /api/custom-rows/[id]` (delete)
-    - [ ] `GET /api/custom-rows/[id]/content` (fetch TMDB content)
-- [ ] Set up Firestore rules + indexes
-- [ ] Test API with Postman/Thunder Client
+- [x] Created `types/customRows.ts` with full interfaces
+- [x] Created Firestore utility functions (`utils/firestore/customRows.ts`)
+- [x] Built `stores/customRowsStore.ts` with CRUD operations
+- [x] Created content API route: `GET /api/custom-rows/[id]/content`
+    - Accepts row config via query params (no server-side Firestore)
+    - Integrates with child safety mode
+    - Supports both mediaTypes with interleaving
+- [x] Set up Firestore structure in user documents
+- [x] Built `CustomRowLoader` component
+- [x] Integrated into Movies & TV pages
+- [x] Fixed permissions errors with client-side approach
 
-**Deliverable:** Working API that can CRUD custom rows + fetch content
+**Architecture Used:** Direct client-side Firestore access (no API routes for CRUD), matching existing patterns for watchlists/ratings
 
----
-
-### Phase 2: UI Components (Days 3-4)
-
-**Goal:** Management page + row editor functional
-
-**Tasks:**
-
-- [ ] Create `/app/my-rows/page.tsx`
-- [ ] Build `components/customRows/CustomRowCard.tsx`
-- [ ] Build `components/customRows/EmptyState.tsx`
-- [ ] Build `components/customRows/PremiumFeaturePrompt.tsx`
-- [ ] Build `components/customRows/RowEditorModal.tsx` (simplified)
-- [ ] Build `components/customRows/GenreMultiSelect.tsx`
-- [ ] Add validation logic (client-side)
-- [ ] Style with Tailwind
-- [ ] Add to navigation (`MyListsDropdown.tsx`)
-
-**Deliverable:** Users can create, edit, delete custom rows via UI
+**Deliverable:** ✅ Custom rows can be created/read/updated/deleted programmatically and display on pages
 
 ---
 
-### Phase 3: Display Integration (Days 5-6)
+### Phase 2: Management UI (Days 2-3) 🚧 NEXT
+
+**Goal:** Users can create, edit, and manage custom rows via UI
+
+**Overview:**
+Build the `/rows` page where authenticated users manage their custom rows. This will be similar to the existing `/watchlists` or `/liked` pages in structure.
+
+---
+
+#### 2.1: Core Page Structure (4-6 hours)
+
+**File:** `/app/rows/page.tsx`
+
+**Requirements:**
+
+- Client component (`'use client'`)
+- Auth check - redirect guests to sign-in or show premium prompt
+- Load user's custom rows from Firestore on mount
+- Display row count and enabled count
+- Show create button (disabled if at max 10 rows)
+- Handle loading, error, and empty states
+
+**Implementation Notes:**
+
+```typescript
+'use client'
+
+import { useEffect } from 'react'
+import { useSessionStore } from '@/stores/sessionStore'
+import { useCustomRowsStore } from '@/stores/customRowsStore'
+import { useAuthStatus } from '@/hooks/useAuthStatus'
+import { CustomRowsFirestore } from '@/utils/firestore/customRows'
+
+export default function RowsPage() {
+  const { isGuest, isInitialized } = useAuthStatus()
+  const getUserId = useSessionStore(state => state.getUserId)
+  const { getRows, setRows, setLoading, setError } = useCustomRowsStore()
+
+  const userId = getUserId()
+  const rows = userId ? getRows(userId) : []
+  const atMaxRows = rows.length >= 10
+
+  useEffect(() => {
+    if (!userId || !isInitialized) return
+    if (isGuest) {
+      setLoading(false)
+      return
+    }
+
+    const loadRows = async () => {
+      setLoading(true)
+      try {
+        const rows = await CustomRowsFirestore.getUserCustomRows(userId)
+        setRows(userId, rows)
+      } catch (error) {
+        console.error('Error loading rows:', error)
+        setError((error as Error).message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadRows()
+  }, [userId, isGuest, isInitialized])
+
+  // Guest users see sign-in prompt
+  if (isGuest) {
+    return <GuestModeNotification />
+  }
+
+  // Show loading/empty/list states...
+}
+```
+
+**Tasks:**
+
+- [ ] Create page file with basic structure
+- [ ] Add auth guard for guests
+- [ ] Implement row loading with useEffect
+- [ ] Add loading skeleton
+- [ ] Add error state banner
+- [ ] Add header with title and create button
+- [ ] Show row count stats
+- [ ] Handle max rows warning
+
+---
+
+#### 2.2: Row Card Component (3-4 hours)
+
+**File:** `components/customRows/CustomRowCard.tsx`
+
+**Requirements:**
+
+- Display row name, genres, media type, enabled status
+- Show genre chips with AND/OR badge
+- Action buttons: Edit, Delete, Enable/Disable toggle
+- Confirmation dialog for delete
+- Visual indicator for disabled rows
+
+**Features:**
+
+```typescript
+interface CustomRowCardProps {
+    row: CustomRow
+    onEdit: (row: CustomRow) => void
+    onDelete: (row: CustomRow) => void
+    onToggleEnabled: (row: CustomRow) => void
+}
+
+// Display:
+// - Row name + AI badge (if applicable in v2)
+// - Genre tags (styled chips)
+// - Genre logic badge (AND/OR)
+// - Media type badge (Movie/TV/Both)
+// - Enabled/disabled indicator
+// - Action buttons (edit, delete, toggle)
+```
+
+**Tasks:**
+
+- [ ] Create card component with layout
+- [ ] Add genre display with chips
+- [ ] Add action buttons with icons
+- [ ] Add toggle enabled functionality
+- [ ] Add delete confirmation
+- [ ] Style with hover states
+- [ ] Add disabled row visual indicator
+
+---
+
+#### 2.3: Row Editor Modal (6-8 hours)
+
+**File:** `components/customRows/RowEditorModal.tsx`
+
+**Requirements:**
+
+- Modal overlay with backdrop
+- Create and Edit modes
+- Step-by-step form:
+    1. Row name input
+    2. Media type selector (Movie/TV/Both)
+    3. Genre selection (multi-select, max 5)
+    4. Genre logic (AND/OR)
+- Client-side validation
+- Cancel/Save buttons
+- Loading state during save
+
+**Form Structure:**
+
+```typescript
+interface RowEditorModalProps {
+    isOpen: boolean
+    onClose: () => void
+    editingRow?: CustomRow | null // null = create mode
+}
+
+const [formData, setFormData] = useState<CustomRowFormData>({
+    name: editingRow?.name || '',
+    genres: editingRow?.genres || [],
+    genreLogic: editingRow?.genreLogic || 'OR',
+    mediaType: editingRow?.mediaType || 'movie',
+    enabled: editingRow?.enabled ?? true,
+})
+```
+
+**Validation Rules:**
+
+- Name: 3-50 characters, required
+- Genres: 1-5 genres, at least 1 required
+- All fields required before save
+
+**Tasks:**
+
+- [ ] Create modal component with overlay
+- [ ] Build form with controlled inputs
+- [ ] Add row name input with character counter
+- [ ] Add media type selector (3 buttons)
+- [ ] Build GenreMultiSelect component (separate)
+- [ ] Add genre logic selector (AND/OR buttons)
+- [ ] Implement validation logic
+- [ ] Add save/cancel handlers
+- [ ] Handle create vs edit modes
+- [ ] Show loading state during save
+- [ ] Close modal on successful save
+
+---
+
+#### 2.4: Genre Multi-Select Component (3-4 hours)
+
+**File:** `components/customRows/GenreMultiSelect.tsx`
+
+**Requirements:**
+
+- Grid of genre buttons
+- Toggle selection on click
+- Show selected count
+- Disable selection when at max (5)
+- Load correct genre list based on media type
+- Visual feedback for selected/disabled states
+
+**Implementation:**
+
+```typescript
+interface GenreMultiSelectProps {
+    mediaType: 'movie' | 'tv' | 'both'
+    selectedGenres: number[]
+    onChange: (genres: number[]) => void
+    maxGenres?: number // default 5
+}
+
+// Genre lists from constants/genres.ts
+// MOVIE_GENRES, TV_GENRES
+// For "both", show union of both lists (no duplicates)
+```
+
+**Tasks:**
+
+- [ ] Create component with grid layout
+- [ ] Load genre list based on media type
+- [ ] Implement toggle selection logic
+- [ ] Add visual states (selected, unselected, disabled)
+- [ ] Show genre count indicator
+- [ ] Handle "both" media type (union of genres)
+- [ ] Add responsive grid (2-3 cols mobile, 4+ desktop)
+
+---
+
+#### 2.5: Empty State Component (1-2 hours)
+
+**File:** `components/customRows/EmptyState.tsx`
+
+**Requirements:**
+
+- Friendly illustration/icon
+- Clear call to action
+- Explain feature benefits
+- Create button
+
+**Tasks:**
+
+- [ ] Create empty state component
+- [ ] Add icon/illustration
+- [ ] Add headline and description
+- [ ] Add "Create Your First Row" button
+- [ ] Add feature benefit cards (optional)
+
+---
+
+#### 2.6: Navigation Integration (1 hour)
+
+**File:** `components/layout/Header.tsx` or navigation component
+
+**Requirements:**
+
+- Add "My Rows" link to user menu/dropdown
+- Show only for authenticated users
+- Badge or indicator showing it's a premium feature
+
+**Tasks:**
+
+- [ ] Find navigation dropdown component
+- [ ] Add "My Rows" menu item
+- [ ] Add auth guard (only show if authenticated)
+- [ ] Style consistently with other menu items
+- [ ] Add route to `/rows`
+
+---
+
+#### 2.7: Integration & Testing (2-3 hours)
+
+**Tasks:**
+
+- [ ] Test create flow end-to-end
+- [ ] Test edit flow
+- [ ] Test delete flow
+- [ ] Test toggle enabled
+- [ ] Test validation errors
+- [ ] Test max rows limit (create 10, try 11th)
+- [ ] Test with no rows (empty state)
+- [ ] Test responsive design (mobile, tablet, desktop)
+- [ ] Test guest user experience
+- [ ] Verify rows appear on pages after creation
+
+---
+
+### Phase 2 Summary
+
+**Total Estimated Time:** 20-30 hours (2.5-4 days)
+
+**Components to Build:**
+
+1. `/app/rows/page.tsx` - Main management page
+2. `CustomRowCard.tsx` - Individual row display
+3. `RowEditorModal.tsx` - Create/edit modal
+4. `GenreMultiSelect.tsx` - Genre picker
+5. `EmptyState.tsx` - No rows state
+6. Navigation link
+
+**Key Dependencies:**
+
+- Existing: `useCustomRowsStore`, `CustomRowsFirestore`, `MOVIE_GENRES`, `TV_GENRES`
+- New: Modal overlay, form validation, toast notifications
+
+**Deliverable:** ✅ Users can create, edit, delete, and toggle custom rows through the UI
+
+---
+
+### Phase 3: Display Integration ✅ MOSTLY COMPLETE
 
 **Goal:** Custom rows show on main/movies/TV pages
 
-**Tasks:**
+**Completed Tasks:**
 
-- [ ] Create `components/customRows/CustomRowLoader.tsx`
-- [ ] Integrate into `app/page.tsx` (main)
-- [ ] Integrate into `app/movies/page.tsx`
-- [ ] Integrate into `app/tv/page.tsx`
-- [ ] Add child safety mode support
+- [x] Created `components/customRows/CustomRowLoader.tsx`
+- [x] Integrated into `app/movies/page.tsx` (MoviesClient)
+- [x] Integrated into `app/tv/page.tsx` (TVClient)
+- [x] Added child safety mode support
+- [x] Content API accepts row config via query params
+- [x] Handle loading/error states (silent failures)
+
+**Remaining Tasks:**
+
+- [ ] Integrate into `app/page.tsx` (home page for "both" rows)
 - [ ] Test infinite scroll with custom rows
-- [ ] Add cache integration
-- [ ] Handle loading/error states
+- [ ] Re-enable cache integration (currently disabled)
+- [ ] Add row display order sorting
 
-**Deliverable:** Custom rows display and scroll correctly on all pages
+**Notes:**
+
+- Movies and TV pages already load custom rows filtered by `mediaType`
+- Home page needs integration for rows with `mediaType: 'both'`
+- Cache was temporarily disabled during debugging, needs re-enabling
+
+**Deliverable:** ✅ Custom rows display on Movies/TV pages, need home page integration
 
 ---
 
