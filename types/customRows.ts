@@ -45,11 +45,16 @@ export interface DisplayRow extends BaseRowConfig {
 }
 
 /**
- * User preferences for system row visibility
+ * User preferences for system row visibility and order
  * Stored per user in Firestore
  */
+export interface SystemRowPreference {
+    enabled: boolean // Whether the row is enabled
+    order: number // Custom order position (overrides default)
+}
+
 export interface SystemRowPreferences {
-    [systemRowId: string]: boolean // systemRowId -> enabled
+    [systemRowId: string]: SystemRowPreference // systemRowId -> preference
 }
 
 /**

@@ -449,11 +449,16 @@ export class CustomRowsFirestore {
             currentPreferences = userData.systemRowPreferences || {}
         }
 
-        // Toggle the state (default is enabled = true)
-        const currentState = currentPreferences[systemRowId] ?? true
-        const newState = !currentState
+        // Get current preference or create default
+        const currentPref = currentPreferences[systemRowId]
+        const currentEnabled = currentPref?.enabled ?? true
+        const currentOrder = currentPref?.order ?? 0
+        const newEnabled = !currentEnabled
 
-        currentPreferences[systemRowId] = newState
+        currentPreferences[systemRowId] = {
+            enabled: newEnabled,
+            order: currentOrder,
+        }
 
         // Update or create user document
         if (!userDoc.exists()) {
@@ -472,7 +477,64 @@ export class CustomRowsFirestore {
             })
         }
 
-        return newState
+        return newEnabled
+    }
+
+    /**
+     * Update system row order
+     *
+     * @param userId - Firebase Auth UID or Guest ID
+     * @param systemRowId - System row ID
+     * @param order - New order position
+     */
+    static async updateSystemRowOrder(
+        userId: string,
+        systemRowId: string,
+        order: number
+    ): Promise<void> {
+        // Validate userId
+        if (!userId || userId === 'undefined' || userId === 'null') {
+            throw new Error('Invalid userId provided to updateSystemRowOrder')
+        }
+
+        const now = Date.now()
+
+        // Get user document
+        const userDocRef = doc(db, 'users', userId)
+        const userDoc = await getDoc(userDocRef)
+
+        let currentPreferences: SystemRowPreferences = {}
+
+        if (userDoc.exists()) {
+            const userData = userDoc.data()
+            currentPreferences = userData.systemRowPreferences || {}
+        }
+
+        // Get current preference or create default
+        const currentPref = currentPreferences[systemRowId]
+        const currentEnabled = currentPref?.enabled ?? true
+
+        currentPreferences[systemRowId] = {
+            enabled: currentEnabled,
+            order,
+        }
+
+        // Update or create user document
+        if (!userDoc.exists()) {
+            await setDoc(userDocRef, {
+                watchlist: [],
+                ratings: [],
+                userLists: {},
+                customRows: {},
+                systemRowPreferences: currentPreferences,
+                lastActive: now,
+            })
+        } else {
+            await updateDoc(userDocRef, {
+                systemRowPreferences: currentPreferences,
+                lastActive: now,
+            })
+        }
     }
 
     /**

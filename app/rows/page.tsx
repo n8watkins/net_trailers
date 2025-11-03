@@ -49,6 +49,7 @@ const RowsPage = () => {
         getDisplayRowsByMediaType,
         setSystemRowPreferences,
         toggleSystemRow: toggleSystemRowStore,
+        updateSystemRowOrder,
     } = useCustomRowsStore()
     const { modal, showToast, openCustomRowModal } = useAppStore()
     const showModal = modal.isOpen
@@ -110,7 +111,7 @@ const RowsPage = () => {
         loadData()
     }, [userId, isInitialized, setRows, setSystemRowPreferences, setLoading, setError, showToast])
 
-    // Handle drag end for reordering rows within same column
+    // Handle drag end for reordering rows within same column (both system and custom)
     const handleDragEnd = async (event: DragEndEvent, mediaType: 'movie' | 'tv' | 'both') => {
         const { active, over } = event
 
@@ -124,33 +125,48 @@ const RowsPage = () => {
 
         if (oldIndex === -1 || newIndex === -1) return
 
-        // Only allow reordering custom rows
-        const draggedRow = rows[oldIndex]
-        if (draggedRow.isSystemRow) {
-            showToast('error', 'Cannot reorder system rows')
-            return
-        }
-
         // Create new order array
         const newOrder = arrayMove(rows, oldIndex, newIndex)
 
-        // Update order in store optimistically
+        // Update order in store optimistically for all rows
         newOrder.forEach((row, index) => {
-            if (!row.isSystemRow) {
+            if (row.isSystemRow) {
+                updateSystemRowOrder(userId, row.id, index)
+            } else {
                 updateRow(userId, row.id, { order: index } as Partial<CustomRow>)
             }
         })
 
         // Persist to Firestore
         try {
-            const customRowIds = newOrder.filter((r) => !r.isSystemRow).map((r) => r.id)
-            await CustomRowsFirestore.reorderCustomRows(userId, customRowIds)
+            // Update custom rows
+            const customRowUpdates = newOrder
+                .filter((r) => !r.isSystemRow)
+                .map((r, index) => ({ id: r.id, index }))
+
+            if (customRowUpdates.length > 0) {
+                const customRowIds = customRowUpdates.map((u) => u.id)
+                await CustomRowsFirestore.reorderCustomRows(userId, customRowIds)
+            }
+
+            // Update system rows
+            const systemRowUpdates = newOrder
+                .filter((r) => r.isSystemRow)
+                .map((r, index) => ({ id: r.id, index }))
+
+            for (const update of systemRowUpdates) {
+                await CustomRowsFirestore.updateSystemRowOrder(userId, update.id, update.index)
+            }
         } catch (error) {
             console.error('Error reordering rows:', error)
             showToast('error', 'Failed to save row order')
             // Reload to get correct order
-            const rows = await CustomRowsFirestore.getUserCustomRows(userId)
-            setRows(userId, rows)
+            const [customRows, systemPrefs] = await Promise.all([
+                CustomRowsFirestore.getUserCustomRows(userId),
+                CustomRowsFirestore.getSystemRowPreferences(userId),
+            ])
+            setRows(userId, customRows)
+            setSystemRowPreferences(userId, systemPrefs)
         }
     }
 

@@ -25,14 +25,14 @@ export function SortableCustomRowCard({
 }: SortableCustomRowCardProps) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: row.id,
-        disabled: row.isSystemRow, // System rows cannot be dragged
+        disabled: false, // All rows can be dragged now
     })
 
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
-        cursor: row.isSystemRow ? 'default' : 'grab',
+        cursor: 'grab',
     }
 
     return (

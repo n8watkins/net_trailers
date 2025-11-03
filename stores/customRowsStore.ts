@@ -42,6 +42,7 @@ export interface CustomRowsActions {
     // System row preferences
     setSystemRowPreferences: (userId: string, preferences: SystemRowPreferences) => void
     toggleSystemRow: (userId: string, systemRowId: string) => void
+    updateSystemRowOrder: (userId: string, systemRowId: string, order: number) => void
 
     // Loading states
     setLoading: (loading: boolean) => void
@@ -183,10 +184,37 @@ export const useCustomRowsStore = create<CustomRowsStore>((set, get) => ({
         set((state) => {
             const newPreferences = new Map(state.systemRowPreferences)
             const currentPrefs = newPreferences.get(userId) || {}
-            const currentState = currentPrefs[systemRowId] ?? true // Default enabled
+            const currentPref = currentPrefs[systemRowId]
+            const currentEnabled = currentPref?.enabled ?? true // Default enabled
+            const currentOrder = currentPref?.order ?? 0
+
             newPreferences.set(userId, {
                 ...currentPrefs,
-                [systemRowId]: !currentState,
+                [systemRowId]: {
+                    enabled: !currentEnabled,
+                    order: currentOrder,
+                },
+            })
+            return { systemRowPreferences: newPreferences }
+        })
+    },
+
+    /**
+     * Update system row order
+     */
+    updateSystemRowOrder: (userId: string, systemRowId: string, order: number) => {
+        set((state) => {
+            const newPreferences = new Map(state.systemRowPreferences)
+            const currentPrefs = newPreferences.get(userId) || {}
+            const currentPref = currentPrefs[systemRowId]
+            const currentEnabled = currentPref?.enabled ?? true
+
+            newPreferences.set(userId, {
+                ...currentPrefs,
+                [systemRowId]: {
+                    enabled: currentEnabled,
+                    order,
+                },
             })
             return { systemRowPreferences: newPreferences }
         })
@@ -248,7 +276,7 @@ export const useCustomRowsStore = create<CustomRowsStore>((set, get) => ({
 
     /**
      * Get all display rows (system + custom) for a user
-     * Merges system rows with user's custom rows and applies enabled states
+     * Merges system rows with user's custom rows and applies enabled states and custom orders
      */
     getAllDisplayRows: (userId: string): DisplayRow[] => {
         const state = get()
@@ -256,11 +284,15 @@ export const useCustomRowsStore = create<CustomRowsStore>((set, get) => ({
         const systemPrefs = state.systemRowPreferences.get(userId) || {}
 
         // Convert system rows to DisplayRow format
-        const systemDisplayRows: DisplayRow[] = ALL_SYSTEM_ROWS.map((systemRow) => ({
-            ...systemRow,
-            isSystemRow: true,
-            enabled: systemPrefs[systemRow.id] ?? true, // Default enabled
-        }))
+        const systemDisplayRows: DisplayRow[] = ALL_SYSTEM_ROWS.map((systemRow) => {
+            const pref = systemPrefs[systemRow.id]
+            return {
+                ...systemRow,
+                isSystemRow: true,
+                enabled: pref?.enabled ?? true, // Default enabled
+                order: pref?.order ?? systemRow.order, // Use custom order if set, else default
+            }
+        })
 
         // Convert custom rows to DisplayRow format
         const customDisplayRows: DisplayRow[] = customRows.map((customRow) => ({
