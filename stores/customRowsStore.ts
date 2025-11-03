@@ -193,11 +193,11 @@ export const useCustomRowsStore = create<CustomRowsStore>((set, get) => ({
 
             switch (page) {
                 case 'main':
-                    return row.displayOn.main
+                    return row.mediaType === 'both'
                 case 'movies':
-                    return row.displayOn.movies
+                    return row.mediaType === 'movie'
                 case 'tvShows':
-                    return row.displayOn.tvShows
+                    return row.mediaType === 'tv'
                 default:
                     return false
             }

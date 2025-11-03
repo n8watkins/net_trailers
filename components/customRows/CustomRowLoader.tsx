@@ -24,7 +24,7 @@ export function CustomRowLoader({ row }: CustomRowLoaderProps) {
     const [error, setError] = useState<string | null>(null)
 
     const getUserId = useSessionStore((state) => state.getUserId)
-    const { childSafetyMode } = useChildSafety()
+    const { isEnabled: childSafetyMode } = useChildSafety()
     const userId = getUserId()
 
     useEffect(() => {
