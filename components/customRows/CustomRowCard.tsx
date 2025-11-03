@@ -31,11 +31,6 @@ export function CustomRowCard({ row, onEdit, onDelete, onToggleEnabled }: Custom
     const genres = row.mediaType === 'movie' ? MOVIE_GENRES : TV_GENRES
     const genreNames = row.genres.map((id) => genres.find((g) => g.id === id)?.name).filter(Boolean)
 
-    const displayPages = []
-    if (row.displayOn.main) displayPages.push('Main')
-    if (row.displayOn.movies) displayPages.push('Movies')
-    if (row.displayOn.tvShows) displayPages.push('TV')
-
     const handleDelete = () => {
         if (isDeleting) {
             onDelete(row)
@@ -93,12 +88,6 @@ export function CustomRowCard({ row, onEdit, onDelete, onToggleEnabled }: Custom
                                 )}
                             </React.Fragment>
                         ))}
-                    </div>
-
-                    {/* Display Pages */}
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-400">Shows on:</span>
-                        <span className="text-sm text-white">{displayPages.join(', ')}</span>
                     </div>
                 </div>
 

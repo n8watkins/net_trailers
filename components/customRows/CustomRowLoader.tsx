@@ -52,12 +52,19 @@ export function CustomRowLoader({ rowId, rowName }: CustomRowLoaderProps) {
                 })
 
                 if (!response.ok) {
-                    const errorData = await response.json()
-                    throw new Error(errorData.message || 'Failed to load content')
+                    let errorMessage = 'Failed to load content'
+                    try {
+                        const errorData = await response.json()
+                        errorMessage = errorData.message || errorMessage
+                    } catch {
+                        // Response body is not JSON, use default error message
+                        errorMessage = `Failed to load content (${response.status} ${response.statusText})`
+                    }
+                    throw new Error(errorMessage)
                 }
 
                 const data = await response.json()
-                setContent(data.content || [])
+                setContent(data.results || [])
             } catch (err) {
                 console.error('Error loading custom row content:', err)
                 setError((err as Error).message)
