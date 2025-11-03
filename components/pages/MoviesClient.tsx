@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import Header from '../layout/Header'
 import Banner from '../layout/Banner'
+import Row from '../content/Row'
 import { HomeData } from '../../lib/serverData'
 import { useAppStore } from '../../stores/appStore'
 import { getChildSafetyModeClient } from '../../lib/childSafetyCookieClient'
