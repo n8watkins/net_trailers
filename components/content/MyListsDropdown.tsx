@@ -32,7 +32,7 @@ function MyListsDropdown() {
     }
 
     const isAnyListPath = () => {
-        return ['/watchlists', '/liked', '/hidden', '/my-rows'].includes(pathname)
+        return ['/watchlists', '/liked', '/hidden', '/rows'].includes(pathname)
     }
 
     const handleLinkClick = () => {
@@ -57,10 +57,10 @@ function MyListsDropdown() {
             {isOpen && (
                 <div className="absolute top-full left-0 mt-2 w-48 bg-[#141414]/95 backdrop-blur-sm border border-red-500/40 rounded-xl shadow-2xl shadow-red-500/20 z-[250]">
                     <div className="py-2">
-                        <Link href="/my-rows" onClick={handleLinkClick}>
+                        <Link href="/rows" onClick={handleLinkClick}>
                             <div
                                 className={`w-full text-left px-4 py-3 hover:bg-white/10 transition-colors flex items-center space-x-3 ${
-                                    isCurrentPath('/my-rows')
+                                    isCurrentPath('/rows')
                                         ? 'bg-white/10 text-white font-semibold'
                                         : 'text-gray-300'
                                 }`}
