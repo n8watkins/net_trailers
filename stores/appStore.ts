@@ -98,7 +98,12 @@ export interface AppActions {
     setAuthModalMode: (mode: 'signin' | 'signup') => void
 
     // Toast actions
-    showToast: (type: ToastType, title: string, message?: string) => void
+    showToast: (
+        type: ToastType,
+        title: string,
+        message?: string,
+        options?: { onUndo?: () => void; contentId?: number }
+    ) => void
     dismissToast: (id: string) => void
 
     // Loading actions
@@ -336,13 +341,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
      * showToast('error', 'Failed to save', 'Please try again')
      * ```
      */
-    showToast: (type: ToastType, title: string, message?: string) => {
+    showToast: (
+        type: ToastType,
+        title: string,
+        message?: string,
+        options?: { onUndo?: () => void; contentId?: number }
+    ) => {
         const toast: ToastMessage = {
             id: generateToastId(),
             type,
             title,
             message,
             timestamp: typeof window !== 'undefined' ? Date.now() : 0,
+            onUndo: options?.onUndo,
+            contentId: options?.contentId,
         }
 
         // If we're at max capacity, dismiss the oldest toast to make room

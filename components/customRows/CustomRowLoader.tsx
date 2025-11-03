@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import Row from '../content/Row'
-import { Content } from '../../types/content'
+import { Content } from '../../typings'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useChildSafety } from '../../hooks/useChildSafety'
 import { CustomRow } from '../../types/customRows'

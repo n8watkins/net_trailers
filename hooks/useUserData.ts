@@ -228,7 +228,7 @@ export default function useUserData() {
             }),
             clearAccountData: async () => {
                 const { auth, db } = await import('../firebase')
-                const { doc, updateDoc } = await import('firebase/firestore')
+                const { doc, setDoc } = await import('firebase/firestore')
 
                 if (!auth.currentUser) {
                     throw new Error('No authenticated user found')
@@ -239,12 +239,21 @@ export default function useUserData() {
                 // Clear Firestore data first
                 try {
                     const userDocRef = doc(db, 'users', userId)
-                    await updateDoc(userDocRef, {
-                        defaultWatchlist: [],
-                        likedMovies: [],
-                        hiddenMovies: [],
-                        userCreatedWatchlists: [],
-                    })
+                    // Use setDoc with merge to handle non-existent documents
+                    await setDoc(
+                        userDocRef,
+                        {
+                            defaultWatchlist: [],
+                            likedMovies: [],
+                            hiddenMovies: [],
+                            userCreatedWatchlists: [],
+                            customRows: {},
+                            ratings: [],
+                            userLists: {},
+                            lastActive: Date.now(),
+                        },
+                        { merge: true }
+                    )
                 } catch (firestoreError) {
                     authError('Error clearing Firestore data:', firestoreError)
                     throw new Error('Failed to clear data from server. Please try again.')

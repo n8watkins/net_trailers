@@ -32,61 +32,39 @@ import { ToastMessage } from '../components/common/Toast'
  */
 export const useToast = () => {
     const toasts = useAppStore((state) => state.toasts)
+    const showToast = useAppStore((state) => state.showToast)
     const dismissToast = useAppStore((state) => state.dismissToast)
-
-    const setToasts = (updater: ((prev: ToastMessage[]) => ToastMessage[]) | ToastMessage[]) => {
-        if (typeof updater === 'function') {
-            const currentToasts = useAppStore.getState().toasts
-            const newToasts = updater(currentToasts)
-            useAppStore.setState({ toasts: newToasts })
-        } else {
-            useAppStore.setState({ toasts: updater })
-        }
-    }
-
-    const addToast = (toast: Omit<ToastMessage, 'id'>) => {
-        const id = Date.now().toString()
-        const newToast: ToastMessage = {
-            ...toast,
-            id,
-        }
-        setToasts((prev) => {
-            // Append new toast (max limit enforced by appStore)
-            return [...prev, newToast]
-        })
-    }
 
     const removeToast = (id: string) => {
         dismissToast(id)
     }
 
     const showSuccess = (title: string, message?: string) => {
-        addToast({ type: 'success', title, message, timestamp: Date.now() })
+        showToast('success', title, message)
     }
 
     const showError = (title: string, message?: string) => {
-        addToast({ type: 'error', title, message, timestamp: Date.now() })
+        showToast('error', title, message)
     }
 
     const showWatchlistAdd = (title: string, message?: string) => {
-        addToast({ type: 'watchlist-add', title, message, timestamp: Date.now() })
+        showToast('watchlist-add', title, message)
     }
 
     const showWatchlistRemove = (title: string, message?: string) => {
-        addToast({ type: 'watchlist-remove', title, message, timestamp: Date.now() })
+        showToast('watchlist-remove', title, message)
     }
 
     const showContentHidden = (title: string, message?: string, onUndo?: () => void) => {
-        addToast({ type: 'content-hidden', title, message, onUndo, timestamp: Date.now() })
+        showToast('content-hidden', title, message, { onUndo })
     }
 
     const showContentShown = (title: string, message?: string) => {
-        addToast({ type: 'content-shown', title, message, timestamp: Date.now() })
+        showToast('content-shown', title, message)
     }
 
     return {
         toasts,
-        addToast,
         removeToast,
         showSuccess,
         showError,
