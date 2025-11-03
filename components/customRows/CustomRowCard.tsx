@@ -75,42 +75,46 @@ export function CustomRowCard({ row, onEdit, onDelete, onToggleEnabled }: Custom
                         </div>
                     </div>
 
-                    {/* Media Type */}
-                    <div className="flex items-center gap-2 text-sm">
-                        {row.mediaType === 'movie' ? (
-                            <FilmIcon className="w-4 h-4 text-gray-400" />
-                        ) : row.mediaType === 'tv' ? (
-                            <TvIcon className="w-4 h-4 text-gray-400" />
-                        ) : (
-                            <div className="flex gap-1">
+                    {/* Media Type - Only show for custom rows */}
+                    {!row.isSystemRow && (
+                        <div className="flex items-center gap-2 text-sm">
+                            {row.mediaType === 'movie' ? (
                                 <FilmIcon className="w-4 h-4 text-gray-400" />
+                            ) : row.mediaType === 'tv' ? (
                                 <TvIcon className="w-4 h-4 text-gray-400" />
-                            </div>
-                        )}
-                        <span className="text-gray-400">
-                            {row.mediaType === 'movie'
-                                ? 'Movies'
-                                : row.mediaType === 'tv'
-                                  ? 'TV Shows'
-                                  : 'Movies & TV'}
-                        </span>
-                    </div>
+                            ) : (
+                                <div className="flex gap-1">
+                                    <FilmIcon className="w-4 h-4 text-gray-400" />
+                                    <TvIcon className="w-4 h-4 text-gray-400" />
+                                </div>
+                            )}
+                            <span className="text-gray-400">
+                                {row.mediaType === 'movie'
+                                    ? 'Movies'
+                                    : row.mediaType === 'tv'
+                                      ? 'TV Shows'
+                                      : 'Movies & TV'}
+                            </span>
+                        </div>
+                    )}
 
-                    {/* Genres */}
-                    <div className="flex flex-wrap gap-2">
-                        {genreNames.map((name, index) => (
-                            <React.Fragment key={index}>
-                                <span className="px-2 py-1 bg-red-600/20 text-red-400 rounded text-xs font-medium">
-                                    {name}
-                                </span>
-                                {index < genreNames.length - 1 && row.genres.length > 1 && (
-                                    <span className="text-gray-500 text-xs flex items-center">
-                                        {row.genreLogic}
+                    {/* Genres - Only show for custom rows */}
+                    {!row.isSystemRow && (
+                        <div className="flex flex-wrap gap-2">
+                            {genreNames.map((name, index) => (
+                                <React.Fragment key={index}>
+                                    <span className="px-2 py-1 bg-red-600/20 text-red-400 rounded text-xs font-medium">
+                                        {name}
                                     </span>
-                                )}
-                            </React.Fragment>
-                        ))}
-                    </div>
+                                    {index < genreNames.length - 1 && row.genres.length > 1 && (
+                                        <span className="text-gray-500 text-xs flex items-center">
+                                            {row.genreLogic}
+                                        </span>
+                                    )}
+                                </React.Fragment>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* Actions */}

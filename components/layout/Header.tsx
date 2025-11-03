@@ -3,6 +3,7 @@ import {
     MagnifyingGlassIcon,
     Bars3Icon,
     XMarkIcon,
+    HomeIcon,
     TvIcon,
     FilmIcon,
     EyeIcon,
@@ -133,6 +134,13 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                     />
                     <div className="hidden lg:flex items-center space-x-6 flex-1">
                         <ul className="flex space-x-4 items-center">
+                            <li
+                                className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${pathname === '/' ? 'text-white hover:text-white font-semibold' : ''}`}
+                                onClick={() => router.push('/')}
+                            >
+                                <HomeIcon className="h-4 w-4" />
+                                <span>Home</span>
+                            </li>
                             <li
                                 className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${pathname === '/tv' ? 'text-white hover:text-white font-semibold' : ''}`}
                                 onClick={() => router.push('/tv')}

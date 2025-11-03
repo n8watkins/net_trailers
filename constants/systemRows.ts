@@ -12,12 +12,28 @@ import { SystemRowConfig } from '../types/customRows'
  */
 export const SYSTEM_MOVIE_ROWS: SystemRowConfig[] = [
     {
+        id: 'system-movie-trending',
+        name: 'Trending Movies',
+        genres: [], // Special: uses trending API
+        genreLogic: 'OR',
+        mediaType: 'movie',
+        order: 0,
+    },
+    {
+        id: 'system-movie-top-rated',
+        name: 'Top Rated Movies',
+        genres: [], // Special: uses top-rated API
+        genreLogic: 'OR',
+        mediaType: 'movie',
+        order: 1,
+    },
+    {
         id: 'system-movie-action',
         name: 'Action-Packed',
         genres: [28], // Action
         genreLogic: 'OR',
         mediaType: 'movie',
-        order: 0,
+        order: 2,
     },
     {
         id: 'system-movie-comedy',
@@ -25,7 +41,7 @@ export const SYSTEM_MOVIE_ROWS: SystemRowConfig[] = [
         genres: [35], // Comedy
         genreLogic: 'OR',
         mediaType: 'movie',
-        order: 1,
+        order: 3,
     },
     {
         id: 'system-movie-scifi',
@@ -33,7 +49,7 @@ export const SYSTEM_MOVIE_ROWS: SystemRowConfig[] = [
         genres: [878], // Science Fiction
         genreLogic: 'OR',
         mediaType: 'movie',
-        order: 2,
+        order: 4,
     },
     {
         id: 'system-movie-horror',
@@ -41,7 +57,7 @@ export const SYSTEM_MOVIE_ROWS: SystemRowConfig[] = [
         genres: [27], // Horror
         genreLogic: 'OR',
         mediaType: 'movie',
-        order: 3,
+        order: 5,
     },
     {
         id: 'system-movie-romance',
@@ -49,7 +65,7 @@ export const SYSTEM_MOVIE_ROWS: SystemRowConfig[] = [
         genres: [10749], // Romance
         genreLogic: 'OR',
         mediaType: 'movie',
-        order: 4,
+        order: 6,
     },
 ]
 
@@ -58,12 +74,28 @@ export const SYSTEM_MOVIE_ROWS: SystemRowConfig[] = [
  */
 export const SYSTEM_TV_ROWS: SystemRowConfig[] = [
     {
+        id: 'system-tv-trending',
+        name: 'Trending TV Shows',
+        genres: [], // Special: uses trending API
+        genreLogic: 'OR',
+        mediaType: 'tv',
+        order: 0,
+    },
+    {
+        id: 'system-tv-top-rated',
+        name: 'Top Rated TV Shows',
+        genres: [], // Special: uses top-rated API
+        genreLogic: 'OR',
+        mediaType: 'tv',
+        order: 1,
+    },
+    {
         id: 'system-tv-action',
         name: 'Action & Adventure',
         genres: [10759], // Action & Adventure
         genreLogic: 'OR',
         mediaType: 'tv',
-        order: 0,
+        order: 2,
     },
     {
         id: 'system-tv-comedy',
@@ -71,7 +103,7 @@ export const SYSTEM_TV_ROWS: SystemRowConfig[] = [
         genres: [35], // Comedy
         genreLogic: 'OR',
         mediaType: 'tv',
-        order: 1,
+        order: 3,
     },
     {
         id: 'system-tv-scifi',
@@ -79,7 +111,7 @@ export const SYSTEM_TV_ROWS: SystemRowConfig[] = [
         genres: [10765], // Sci-Fi & Fantasy
         genreLogic: 'OR',
         mediaType: 'tv',
-        order: 2,
+        order: 4,
     },
     {
         id: 'system-tv-kids',
@@ -87,7 +119,7 @@ export const SYSTEM_TV_ROWS: SystemRowConfig[] = [
         genres: [10762], // Kids
         genreLogic: 'OR',
         mediaType: 'tv',
-        order: 3,
+        order: 5,
     },
     {
         id: 'system-tv-reality',
@@ -95,7 +127,7 @@ export const SYSTEM_TV_ROWS: SystemRowConfig[] = [
         genres: [10764], // Reality
         genreLogic: 'OR',
         mediaType: 'tv',
-        order: 4,
+        order: 6,
     },
 ]
 
@@ -104,12 +136,28 @@ export const SYSTEM_TV_ROWS: SystemRowConfig[] = [
  */
 export const SYSTEM_HOME_ROWS: SystemRowConfig[] = [
     {
+        id: 'system-home-trending',
+        name: 'Trending',
+        genres: [], // Special: uses trending API
+        genreLogic: 'OR',
+        mediaType: 'both',
+        order: 0,
+    },
+    {
+        id: 'system-home-top-rated',
+        name: 'Top Rated',
+        genres: [], // Special: uses top-rated API
+        genreLogic: 'OR',
+        mediaType: 'both',
+        order: 1,
+    },
+    {
         id: 'system-home-animation',
         name: 'Animated Favorites',
         genres: [16], // Animation
         genreLogic: 'OR',
         mediaType: 'both',
-        order: 0,
+        order: 2,
     },
     {
         id: 'system-home-family',
@@ -117,7 +165,7 @@ export const SYSTEM_HOME_ROWS: SystemRowConfig[] = [
         genres: [10751], // Family
         genreLogic: 'OR',
         mediaType: 'both',
-        order: 1,
+        order: 3,
     },
     {
         id: 'system-home-documentary',
@@ -125,7 +173,7 @@ export const SYSTEM_HOME_ROWS: SystemRowConfig[] = [
         genres: [99], // Documentary
         genreLogic: 'OR',
         mediaType: 'both',
-        order: 2,
+        order: 4,
     },
     {
         id: 'system-home-mystery',
@@ -133,7 +181,7 @@ export const SYSTEM_HOME_ROWS: SystemRowConfig[] = [
         genres: [9648], // Mystery
         genreLogic: 'OR',
         mediaType: 'both',
-        order: 3,
+        order: 5,
     },
 ]
 

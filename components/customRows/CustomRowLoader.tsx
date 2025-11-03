@@ -5,10 +5,10 @@ import Row from '../content/Row'
 import { Content } from '../../typings'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useChildSafety } from '../../hooks/useChildSafety'
-import { CustomRow } from '../../types/customRows'
+import { CustomRow, DisplayRow } from '../../types/customRows'
 
 interface CustomRowLoaderProps {
-    row: CustomRow
+    row: CustomRow | DisplayRow
 }
 
 /**
@@ -39,14 +39,44 @@ export function CustomRowLoader({ row }: CustomRowLoaderProps) {
             setError(null)
 
             try {
-                // Build URL with row configuration as query params
-                const url = new URL(`/api/custom-rows/${row.id}/content`, window.location.origin)
-                url.searchParams.append('page', '1')
-                url.searchParams.append('genres', row.genres.join(','))
-                url.searchParams.append('genreLogic', row.genreLogic)
-                url.searchParams.append('mediaType', row.mediaType)
-                if (childSafetyMode) {
-                    url.searchParams.append('childSafetyMode', 'true')
+                let url: URL
+
+                // Handle special system rows (trending, top-rated)
+                if (row.genres.length === 0) {
+                    // Determine API endpoint based on row ID
+                    if (row.id.includes('trending')) {
+                        const mediaType =
+                            row.mediaType === 'both'
+                                ? 'movies'
+                                : row.mediaType === 'tv'
+                                  ? 'tv'
+                                  : 'movies'
+                        url = new URL(`/api/${mediaType}/trending`, window.location.origin)
+                    } else if (row.id.includes('top-rated')) {
+                        const mediaType =
+                            row.mediaType === 'both'
+                                ? 'movies'
+                                : row.mediaType === 'tv'
+                                  ? 'tv'
+                                  : 'movies'
+                        url = new URL(`/api/${mediaType}/top-rated`, window.location.origin)
+                    } else {
+                        throw new Error('Invalid special row configuration')
+                    }
+
+                    if (childSafetyMode) {
+                        url.searchParams.append('childSafetyMode', 'true')
+                    }
+                } else {
+                    // Regular custom/system row with genre filters
+                    url = new URL(`/api/custom-rows/${row.id}/content`, window.location.origin)
+                    url.searchParams.append('page', '1')
+                    url.searchParams.append('genres', row.genres.join(','))
+                    url.searchParams.append('genreLogic', row.genreLogic)
+                    url.searchParams.append('mediaType', row.mediaType)
+                    if (childSafetyMode) {
+                        url.searchParams.append('childSafetyMode', 'true')
+                    }
                 }
 
                 const response = await fetch(url.toString(), {
@@ -102,14 +132,33 @@ export function CustomRowLoader({ row }: CustomRowLoaderProps) {
     }
 
     // Build API endpoint for infinite scroll with row configuration
-    const apiEndpointUrl = new URL(`/api/custom-rows/${row.id}/content`, window.location.origin)
-    apiEndpointUrl.searchParams.append('genres', row.genres.join(','))
-    apiEndpointUrl.searchParams.append('genreLogic', row.genreLogic)
-    apiEndpointUrl.searchParams.append('mediaType', row.mediaType)
-    if (childSafetyMode) {
-        apiEndpointUrl.searchParams.append('childSafetyMode', 'true')
+    let apiEndpoint: string
+
+    // Handle special system rows (trending, top-rated)
+    if (row.genres.length === 0) {
+        if (row.id.includes('trending')) {
+            const mediaType =
+                row.mediaType === 'both' ? 'movies' : row.mediaType === 'tv' ? 'tv' : 'movies'
+            apiEndpoint = `/api/${mediaType}/trending${childSafetyMode ? '?childSafetyMode=true' : ''}`
+        } else if (row.id.includes('top-rated')) {
+            const mediaType =
+                row.mediaType === 'both' ? 'movies' : row.mediaType === 'tv' ? 'tv' : 'movies'
+            apiEndpoint = `/api/${mediaType}/top-rated${childSafetyMode ? '?childSafetyMode=true' : ''}`
+        } else {
+            // Fallback - shouldn't reach here
+            apiEndpoint = `/api/movies/trending`
+        }
+    } else {
+        // Regular custom/system row with genre filters
+        const apiEndpointUrl = new URL(`/api/custom-rows/${row.id}/content`, window.location.origin)
+        apiEndpointUrl.searchParams.append('genres', row.genres.join(','))
+        apiEndpointUrl.searchParams.append('genreLogic', row.genreLogic)
+        apiEndpointUrl.searchParams.append('mediaType', row.mediaType)
+        if (childSafetyMode) {
+            apiEndpointUrl.searchParams.append('childSafetyMode', 'true')
+        }
+        apiEndpoint = apiEndpointUrl.pathname + apiEndpointUrl.search
     }
-    const apiEndpoint = apiEndpointUrl.pathname + apiEndpointUrl.search
 
     return <Row title={row.name} content={content} apiEndpoint={apiEndpoint} />
 }

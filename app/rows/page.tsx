@@ -336,34 +336,32 @@ const RowsPage = () => {
                     ) : (
                         <div className="flex justify-center w-full px-4">
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 w-full max-w-[1600px]">
-                                {/* Movies Column */}
+                                {/* Home (Both) Column */}
                                 <div className="space-y-4">
                                     <div className="flex items-center space-x-2 mb-4 pb-2 border-b border-gray-700/50">
-                                        <FilmIcon className="w-5 h-5 text-red-500" />
-                                        <h2 className="text-xl font-bold text-white">Movies</h2>
+                                        <Squares2X2Icon className="w-5 h-5 text-red-500" />
+                                        <h2 className="text-xl font-bold text-white">Home</h2>
                                         <span className="text-sm text-gray-400">
-                                            ({filteredMovieRows.length})
+                                            ({filteredHomeRows.length})
                                         </span>
                                     </div>
-                                    {filteredMovieRows.length === 0 ? (
+                                    {filteredHomeRows.length === 0 ? (
                                         <div className="text-center py-8">
                                             <p className="text-gray-400 text-sm">
-                                                {searchQuery.trim()
-                                                    ? 'No matches'
-                                                    : 'No movie rows'}
+                                                {searchQuery.trim() ? 'No matches' : 'No home rows'}
                                             </p>
                                         </div>
                                     ) : (
                                         <DndContext
                                             sensors={sensors}
                                             collisionDetection={closestCenter}
-                                            onDragEnd={(e) => handleDragEnd(e, 'movie')}
+                                            onDragEnd={(e) => handleDragEnd(e, 'both')}
                                         >
                                             <SortableContext
-                                                items={filteredMovieRows.map((r) => r.id)}
+                                                items={filteredHomeRows.map((r) => r.id)}
                                                 strategy={verticalListSortingStrategy}
                                             >
-                                                {filteredMovieRows.map((row) => (
+                                                {filteredHomeRows.map((row) => (
                                                     <SortableCustomRowCard
                                                         key={row.id}
                                                         row={row}
@@ -418,34 +416,34 @@ const RowsPage = () => {
                                     )}
                                 </div>
 
-                                {/* Home (Both) Column */}
+                                {/* Movies Column */}
                                 <div className="space-y-4">
                                     <div className="flex items-center space-x-2 mb-4 pb-2 border-b border-gray-700/50">
-                                        <Squares2X2Icon className="w-5 h-5 text-red-500" />
-                                        <h2 className="text-xl font-bold text-white">
-                                            Home (Both)
-                                        </h2>
+                                        <FilmIcon className="w-5 h-5 text-red-500" />
+                                        <h2 className="text-xl font-bold text-white">Movies</h2>
                                         <span className="text-sm text-gray-400">
-                                            ({filteredHomeRows.length})
+                                            ({filteredMovieRows.length})
                                         </span>
                                     </div>
-                                    {filteredHomeRows.length === 0 ? (
+                                    {filteredMovieRows.length === 0 ? (
                                         <div className="text-center py-8">
                                             <p className="text-gray-400 text-sm">
-                                                {searchQuery.trim() ? 'No matches' : 'No home rows'}
+                                                {searchQuery.trim()
+                                                    ? 'No matches'
+                                                    : 'No movie rows'}
                                             </p>
                                         </div>
                                     ) : (
                                         <DndContext
                                             sensors={sensors}
                                             collisionDetection={closestCenter}
-                                            onDragEnd={(e) => handleDragEnd(e, 'both')}
+                                            onDragEnd={(e) => handleDragEnd(e, 'movie')}
                                         >
                                             <SortableContext
-                                                items={filteredHomeRows.map((r) => r.id)}
+                                                items={filteredMovieRows.map((r) => r.id)}
                                                 strategy={verticalListSortingStrategy}
                                             >
-                                                {filteredHomeRows.map((row) => (
+                                                {filteredMovieRows.map((row) => (
                                                     <SortableCustomRowCard
                                                         key={row.id}
                                                         row={row}

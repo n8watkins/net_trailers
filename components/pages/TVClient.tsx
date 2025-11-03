@@ -25,7 +25,7 @@ export default function TVClient({ data }: TVClientProps) {
     // Get display rows from store (includes both system and custom rows)
     const { getDisplayRowsForPage, setRows, setSystemRowPreferences } = useCustomRowsStore()
 
-    const { trending, topRated, genre1, genre2, genre3, genre4, documentaries } = data
+    const { trending } = data
 
     // Load custom rows and system preferences on mount (client-side Firestore)
     useEffect(() => {
@@ -61,27 +61,12 @@ export default function TVClient({ data }: TVClientProps) {
                     <Banner trending={trending} variant="compact" />
                 </div>
                 <section className="relative -mt-[55vh] z-10 pb-52 space-y-8">
-                    {trending.length > 0 && (
-                        <div className="pt-8 sm:pt-12 md:pt-16">
-                            <Row
-                                title="Trending TV Shows"
-                                content={trending}
-                                apiEndpoint="/api/tv/trending"
-                            />
-                        </div>
-                    )}
-                    {topRated.length > 0 && (
-                        <Row
-                            title="Top Rated TV Shows"
-                            content={topRated}
-                            apiEndpoint="/api/tv/top-rated"
-                        />
-                    )}
-
-                    {/* Dynamic rows (system + custom) sorted by user preferences */}
-                    {enabledRows.map((row) => (
-                        <CustomRowLoader key={row.id} row={row} />
-                    ))}
+                    <div className="pt-8 sm:pt-12 md:pt-16">
+                        {/* Dynamic rows (system + custom) sorted by user preferences */}
+                        {enabledRows.map((row) => (
+                            <CustomRowLoader key={row.id} row={row} />
+                        ))}
+                    </div>
                 </section>
             </main>
         </div>
