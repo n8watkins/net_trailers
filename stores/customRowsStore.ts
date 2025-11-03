@@ -118,8 +118,10 @@ export const useCustomRowsStore = create<CustomRowsStore>((set, get) => ({
     setRows: (userId: string, rows: CustomRow[]) => {
         set((state) => {
             const newRowsByUser = new Map(state.customRowsByUser)
+            const newLastAccessTime = new Map(state.lastAccessTime)
             newRowsByUser.set(userId, rows)
-            return { customRowsByUser: newRowsByUser }
+            newLastAccessTime.set(userId, Date.now())
+            return { customRowsByUser: newRowsByUser, lastAccessTime: newLastAccessTime }
         })
     },
 
@@ -185,8 +187,10 @@ export const useCustomRowsStore = create<CustomRowsStore>((set, get) => ({
     setSystemRowPreferences: (userId: string, preferences: SystemRowPreferences) => {
         set((state) => {
             const newPreferences = new Map(state.systemRowPreferences)
+            const newLastAccessTime = new Map(state.lastAccessTime)
             newPreferences.set(userId, preferences)
-            return { systemRowPreferences: newPreferences }
+            newLastAccessTime.set(userId, Date.now())
+            return { systemRowPreferences: newPreferences, lastAccessTime: newLastAccessTime }
         })
     },
 
@@ -278,18 +282,9 @@ export const useCustomRowsStore = create<CustomRowsStore>((set, get) => ({
 
     /**
      * Get all custom rows for a user
-     * Updates last access time for memory management
      */
     getRows: (userId: string) => {
         const state = get()
-
-        // Update last access time
-        set((state) => {
-            const newLastAccessTime = new Map(state.lastAccessTime)
-            newLastAccessTime.set(userId, Date.now())
-            return { lastAccessTime: newLastAccessTime }
-        })
-
         return state.customRowsByUser.get(userId) || []
     },
 
