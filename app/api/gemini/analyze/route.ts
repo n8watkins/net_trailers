@@ -20,9 +20,9 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Text too short for analysis' }, { status: 400 })
         }
 
-        const apiKey = process.env.GOOGLE_AI_API_KEY
+        const apiKey = process.env.GEMINI_API_KEY
         if (!apiKey) {
-            console.error('GOOGLE_AI_API_KEY not configured')
+            console.error('GEMINI_API_KEY not configured')
             return NextResponse.json({ error: 'AI analysis unavailable' }, { status: 503 })
         }
 
