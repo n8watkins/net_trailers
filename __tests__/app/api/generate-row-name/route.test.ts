@@ -367,14 +367,14 @@ describe('/api/generate-row-name - Creative Name Generation Tests', () => {
             await POST(request)
 
             expect(global.fetch).toHaveBeenCalledWith(
-                expect.stringContaining('gemini-2.0-flash:generateContent'),
+                expect.stringContaining('gemini-2.5-flash:generateContent'),
                 expect.objectContaining({
                     body: expect.stringContaining('"temperature":0.9'),
                 })
             )
         })
 
-        it('should limit output tokens to 100', async () => {
+        it('should allocate 5000 tokens for Gemini 2.5 thinking mode', async () => {
             ;(global.fetch as jest.Mock).mockResolvedValueOnce(mockGeminiResponse('Short Name'))
 
             const request = createRequest({
@@ -388,7 +388,7 @@ describe('/api/generate-row-name - Creative Name Generation Tests', () => {
             expect(global.fetch).toHaveBeenCalledWith(
                 expect.any(String),
                 expect.objectContaining({
-                    body: expect.stringContaining('"maxOutputTokens":100'),
+                    body: expect.stringContaining('"maxOutputTokens":5000'),
                 })
             )
         })

@@ -122,9 +122,9 @@ Generate ONE perfect name for: ${genreNames} (${genreLogic} logic).
 
 Response format: Just output the name, nothing else.`
 
-        // Call Gemini API (using 2.0 to avoid thinking tokens overhead)
+        // Call Gemini API
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
             {
                 method: 'POST',
                 headers: {
@@ -144,7 +144,7 @@ Response format: Just output the name, nothing else.`
                         temperature: 0.9,
                         topK: 40,
                         topP: 0.95,
-                        maxOutputTokens: 100, // Gemini 2.0 doesn't have thinking overhead
+                        maxOutputTokens: 5000, // Gemini 2.5 thinking mode uses 999+ tokens, need large allocation
                     },
                 }),
             }
