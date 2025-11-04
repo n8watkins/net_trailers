@@ -323,10 +323,12 @@ export async function POST(request: NextRequest) {
 | `/api/generate-row-name`   | ✅ Has auth check   | Ready to use                   |
 | `/api/custom-rows/preview` | ❌ Not built        | Optional for Phase 1           |
 
-**Integration:** Ready ✅
+**Integration:** ✅ COMPLETE
 
-- All components ready for CustomRowModal
-- Just need to pass props and hook up handlers
+- All components integrated into CustomRowModal
+- Props passed correctly (isAuthenticated, onSignIn, onComplete, onClose)
+- Handlers hooked up to app stores (session, customRows, auth modal)
+- Server compiles successfully
 
 ---
 
@@ -335,12 +337,13 @@ export async function POST(request: NextRequest) {
 ### Immediate (Critical Path)
 
 1. ✅ **~~Build all wizard steps~~** (DONE!)
-2. 🔄 **Integrate into CustomRowModal** (In Progress)
-    - Replace old form with wizard
-    - Pass isAuthenticated prop
-    - Pass onSignIn handler
-    - Hook up to create API
-3. 🧪 **Test end-to-end**
+2. ✅ **~~Integrate into CustomRowModal~~** (DONE!)
+    - ✅ Replaced old CustomRowForm with CustomRowWizard
+    - ✅ Passed isAuthenticated prop from sessionType check
+    - ✅ Passed onSignIn handler that opens auth modal
+    - ✅ Hooked up to CustomRowsFirestore.createCustomRow API
+    - ✅ Server compiles successfully with no errors
+3. 🧪 **Test end-to-end** (Ready for Manual Testing)
     - Manual testing with both user types
     - Test all flows
     - Fix any bugs
