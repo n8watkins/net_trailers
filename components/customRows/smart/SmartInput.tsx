@@ -52,15 +52,27 @@ export function SmartInput({
     const [isSearching, setIsSearching] = useState(false)
     const inputRef = useRef<HTMLTextAreaElement>(null)
 
-    // Extract word at cursor position
+    // Extract phrase at cursor position (supports multi-word like "christopher nolan")
     useEffect(() => {
         const textBeforeCursor = rawText.slice(0, cursorPos)
-        const words = textBeforeCursor.split(/\s+/)
-        const word = words[words.length - 1].replace(/[^\w]/g, '')
 
-        if (word.length >= 2) {
-            setCurrentWord(word)
-            debouncedSearch(word)
+        // Find the last phrase after @ or after a sentence boundary (., !, ?)
+        // This allows multi-word searches like "christopher nolan"
+        const lastAtIndex = textBeforeCursor.lastIndexOf('@')
+        const lastPuncIndex = Math.max(
+            textBeforeCursor.lastIndexOf('.'),
+            textBeforeCursor.lastIndexOf('!'),
+            textBeforeCursor.lastIndexOf('?'),
+            textBeforeCursor.lastIndexOf(',')
+        )
+
+        // Start from either @ symbol or after last punctuation
+        const startIndex = Math.max(lastAtIndex + 1, lastPuncIndex + 1, 0)
+        const phrase = textBeforeCursor.slice(startIndex).trim()
+
+        if (phrase.length >= 2 && !phrase.startsWith('@')) {
+            setCurrentWord(phrase)
+            debouncedSearch(phrase)
         } else {
             setShowDropdown(false)
             setSuggestions([])
