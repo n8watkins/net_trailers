@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect, useMemo } from 'react'
+import Image from 'next/image'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { debounce } from 'lodash'
 
@@ -248,7 +249,7 @@ export function SmartInput({
 
                 {/* Autocomplete Dropdown - Compact */}
                 {showDropdown && suggestions.length > 0 && (
-                    <div className="absolute z-50 left-0 mt-1 bg-gray-800 border border-gray-700 rounded-md shadow-xl max-h-48 overflow-y-auto min-w-[280px] max-w-[400px]">
+                    <div className="absolute z-50 left-0 mt-1 bg-[#1a1a1a] border border-gray-600 rounded-md shadow-xl max-h-48 overflow-y-auto min-w-[280px] max-w-[400px] scrollbar-thin scrollbar-track-gray-800 scrollbar-thumb-red-600">
                         {suggestions.map((entity, index) => (
                             <SuggestionItem
                                 key={`${entity.type}-${entity.id}`}
@@ -308,19 +309,33 @@ function SuggestionItem({ entity, isSelected, onClick }: SuggestionItemProps) {
     return (
         <button
             onClick={onClick}
-            className={`w-full flex items-center gap-2 px-3 py-2 transition-colors text-sm ${
-                isSelected ? 'bg-red-600 text-white' : 'hover:bg-gray-700 text-gray-200'
+            className={`w-full flex items-center gap-3 px-3 py-2.5 transition-colors text-sm ${
+                isSelected ? 'bg-red-600 text-white' : 'hover:bg-gray-700/50 text-white'
             }`}
         >
-            {/* Icon Only */}
-            <span className="text-base flex-shrink-0">{getIcon()}</span>
+            {/* Image/Icon */}
+            {entity.type === 'person' && entity.image ? (
+                <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden bg-gray-700 ring-2 ring-gray-600">
+                    <Image
+                        src={`https://image.tmdb.org/t/p/w92${entity.image}`}
+                        alt={entity.name}
+                        width={32}
+                        height={32}
+                        className="object-cover w-full h-full"
+                    />
+                </div>
+            ) : (
+                <span className="text-base flex-shrink-0">{getIcon()}</span>
+            )}
 
             {/* Name */}
             <span className="flex-1 text-left truncate font-medium">{entity.name}</span>
 
             {/* Subtitle (if exists) */}
             {entity.subtitle && (
-                <span className="text-xs text-gray-400 truncate max-w-[100px]">
+                <span
+                    className={`text-xs truncate max-w-[100px] ${isSelected ? 'text-red-100' : 'text-gray-400'}`}
+                >
                     {entity.subtitle}
                 </span>
             )}
@@ -354,7 +369,21 @@ function EntityChip({ entity, onRemove }: EntityChipProps) {
 
     return (
         <div className="inline-flex items-center gap-2 px-3 py-2 bg-red-600/20 border border-red-500/30 rounded-lg">
-            <span className="text-lg">{getIcon()}</span>
+            {/* Image/Icon */}
+            {entity.type === 'person' && entity.image ? (
+                <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden bg-gray-700 ring-2 ring-red-500/50">
+                    <Image
+                        src={`https://image.tmdb.org/t/p/w92${entity.image}`}
+                        alt={entity.name}
+                        width={32}
+                        height={32}
+                        className="object-cover w-full h-full"
+                    />
+                </div>
+            ) : (
+                <span className="text-lg">{getIcon()}</span>
+            )}
+
             <div className="flex flex-col">
                 <span className="text-white text-sm font-medium">{entity.name}</span>
                 {entity.subtitle && (
