@@ -48,15 +48,121 @@ export async function POST(request: NextRequest) {
         const tmdbResult = await generateSmartSuggestions(inputData, seed)
 
         // Merge Gemini insights with TMDB suggestions
-        if (geminiInsights) {
-            const mergedResult = mergeGeminiInsights(tmdbResult, geminiInsights, mediaType)
-            return NextResponse.json(mergedResult)
+        const mergedResult = geminiInsights
+            ? mergeGeminiInsights(tmdbResult, geminiInsights, mediaType)
+            : { ...tmdbResult, mediaType }
+
+        // Generate creative row names using Gemini
+        try {
+            const nameResult = await generateCreativeRowName(
+                request.nextUrl.origin,
+                entities,
+                rawText,
+                mediaType,
+                geminiInsights
+            )
+            if (nameResult) {
+                mergedResult.rowNames = [nameResult, ...mergedResult.rowNames].slice(0, 3)
+            }
+        } catch (error) {
+            console.warn('Failed to generate creative name, using defaults:', error)
         }
 
-        return NextResponse.json({ ...tmdbResult, mediaType })
+        return NextResponse.json(mergedResult)
     } catch (error) {
         console.error('Smart suggestions error:', error)
         return NextResponse.json({ error: 'Failed to generate suggestions' }, { status: 500 })
+    }
+}
+
+/**
+ * Generate super creative row name using Gemini
+ */
+async function generateCreativeRowName(
+    origin: string,
+    entities: any[],
+    rawText: string,
+    mediaType: string,
+    geminiInsights: any
+): Promise<string | null> {
+    // Build context for name generation
+    const people = entities.filter((e) => e.type === 'person')
+    const genres = entities.filter((e) => e.type === 'genre')
+
+    // Combine entity genres with Gemini-detected genres
+    const allGenres = [...genres.map((g) => g.name), ...(geminiInsights?.genres || [])]
+    const uniqueGenres = [...new Set(allGenres)]
+
+    if (people.length === 0 && uniqueGenres.length === 0) {
+        return null // Need at least something to work with
+    }
+
+    // Build a smart prompt for Gemini
+    let context = rawText || ''
+    if (people.length > 0) {
+        context += ` featuring ${people.map((p: any) => p.name).join(', ')}`
+    }
+    if (uniqueGenres.length > 0) {
+        context += ` in ${uniqueGenres.join('/')}`
+    }
+
+    // Call Gemini directly with a specialized creative naming prompt
+    const apiKey = process.env.GEMINI_API_KEY
+    if (!apiKey) return null
+
+    const prompt = `You are the COOLEST content curator who creates row names that SHOCK and DELIGHT users.
+
+Context: "${context}"
+Media Type: ${mediaType}
+
+Create ONE ultra-creative, surprisingly witty row name (1-3 words MAX) that:
+- Makes people go "WOW that's so cool!"
+- Uses internet slang, memes, pop culture
+- Sounds like a cool friend, not corporate marketing
+
+Examples of the vibe:
+- "THE GOAT" (for legendary directors/actors)
+- "Peak Scorsese" (for Martin Scorsese)
+- "Certified Bangers" (for action)
+- "Chef's Kiss" (for perfection)
+- "Built Different" (for unique)
+- "No Skips" (for consistent quality)
+- "Unhinged Energy" (for wild content)
+
+For this selection, create a name that's SO surprisingly cool it delights the user.
+
+Response: Just the name, nothing else.`
+
+    try {
+        const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: {
+                        temperature: 0.95, // High creativity
+                        maxOutputTokens: 50,
+                    },
+                }),
+            }
+        )
+
+        if (!response.ok) return null
+
+        const data = await response.json()
+        const name = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
+
+        return name
+            ? name
+                  .replace(/^["']|["']$/g, '')
+                  .replace(/\*\*/g, '')
+                  .trim()
+            : null
+    } catch (error) {
+        console.error('Creative name generation error:', error)
+        return null
     }
 }
 

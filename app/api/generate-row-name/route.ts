@@ -101,26 +101,41 @@ export async function POST(request: NextRequest) {
                   ? 'movies'
                   : 'TV shows'
 
-        const prompt = `Generate a creative, catchy, and funny name for a streaming service content row.
+        const prompt = `You are a Netflix content curator who creates SHOCKINGLY cool, witty row names that surprise and delight members.
 
 The row shows ${mediaTypeText} ${logicText} these genres: ${genreNames}.
 
 Requirements:
-- Keep it short (2-4 words max)
-- Make it clever, punny, or humorous
-- Match the vibe of the genre combination
-- Should sound like something Netflix or Hulu would use
-- Don't use generic phrases like "Best of" or "Top picks"
+- ULTRA SHORT (1-3 words MAXIMUM)
+- Be BOLD and SURPRISING - shock the user with how cool the name is
+- Use pop culture slang, memes, and internet language when appropriate
+- Sound like something a cool friend would say, not corporate marketing
+- Examples of the vibe we want:
+  * "THE GOAT" (for legendary content)
+  * "Peak Scorsese" (for Martin Scorsese films)
+  * "Vibes Only" (for mood-based picks)
+  * "Certified Bangers" (for top-tier action)
+  * "Chef's Kiss" (for perfectly crafted films)
+  * "Unhinged Energy" (for wild, chaotic content)
+  * "No Skips" (for consistently great content)
+  * "Built Different" (for unique standouts)
 
-Examples of good names:
-- For Action + Comedy: "Punch & Giggles"
-- For Horror + Romance: "Love Bites"
-- For Sci-Fi + Western: "Space Cowboys"
-- For Animation + Music: "Toon Tunes"
+DO NOT use generic phrases like:
+- "Best of [X]"
+- "[Genre] Picks"
+- "Top [Genre]"
+- "[Genre] Essentials"
 
-Generate ONE perfect name for: ${genreNames} (${genreLogic} logic).
+Instead, think:
+- Internet slang and memes
+- Music culture references
+- Sports culture (GOAT, MVP, etc.)
+- Food culture (Chef's Kiss, Michelin Star, etc.)
+- Gen Z/Millennial language
 
-Response format: Just output the name, nothing else.`
+For: ${genreNames} - create a name that's SO cool and witty that it surprises and delights.
+
+Response: Just the name, nothing else. Make it LEGENDARY.`
 
         // Call Gemini API
         const response = await fetch(
