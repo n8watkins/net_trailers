@@ -4,15 +4,10 @@ import React, { useState } from 'react'
 import { SmartInput, Entity } from './SmartInput'
 
 interface SmartStep1InputProps {
-    onContinue: (data: {
-        entities: Entity[]
-        rawText: string
-        mediaType: 'movie' | 'tv' | 'both'
-    }) => void
+    onContinue: (data: { entities: Entity[]; rawText: string }) => void
     initialData?: {
         entities: Entity[]
         rawText: string
-        mediaType: 'movie' | 'tv' | 'both'
     }
 }
 
@@ -21,15 +16,12 @@ interface SmartStep1InputProps {
  *
  * Features:
  * - Smart input field with entity tagging
- * - Media type selector
+ * - AI infers content type from your description
  * - Continue button with validation
  */
 export function SmartStep1Input({ onContinue, initialData }: SmartStep1InputProps) {
     const [entities, setEntities] = useState<Entity[]>(initialData?.entities || [])
     const [rawText, setRawText] = useState(initialData?.rawText || '')
-    const [mediaType, setMediaType] = useState<'movie' | 'tv' | 'both'>(
-        initialData?.mediaType || 'movie'
-    )
 
     const canContinue = entities.length > 0 || rawText.trim().length >= 10
 
@@ -37,7 +29,6 @@ export function SmartStep1Input({ onContinue, initialData }: SmartStep1InputProp
         onContinue({
             entities,
             rawText,
-            mediaType,
         })
     }
 
@@ -45,10 +36,9 @@ export function SmartStep1Input({ onContinue, initialData }: SmartStep1InputProp
         <div className="space-y-6">
             {/* Header */}
             <div>
-                <h3 className="text-lg font-semibold text-white mb-2">Describe your perfect row</h3>
+                <h3 className="text-lg font-semibold text-white mb-2">What are you looking for?</h3>
                 <p className="text-gray-400 text-sm">
-                    Type naturally and tag genres, actors, directors, movies, or studios. We'll
-                    analyze your selections and suggest smart filters.
+                    Tag actors, directors, genres, or describe your vibe. AI handles the rest.
                 </p>
             </div>
 
@@ -56,40 +46,32 @@ export function SmartStep1Input({ onContinue, initialData }: SmartStep1InputProp
             <SmartInput
                 onEntitiesChange={setEntities}
                 onTextChange={setRawText}
-                placeholder="Describe naturally. Use @ for people, : for specific titles. Example: 'dark sci-fi thrillers with @Christopher Nolan like :Inception'"
+                placeholder="Try: 'dark sci-fi thrillers @Christopher Nolan' or 'wholesome 90s family movies'"
             />
 
             {/* Tips */}
             <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-                <p className="text-gray-300 text-sm font-medium mb-2">💡 How it works:</p>
+                <p className="text-gray-300 text-sm font-medium mb-2">Quick tips:</p>
                 <ul className="text-gray-400 text-sm space-y-1">
-                    <li>• Type naturally: "dark sci-fi thrillers from the 80s"</li>
                     <li>
-                        • Use <span className="text-white">@</span> to tag people: @Christopher
-                        Nolan
+                        • <span className="text-white">@</span> for people: @Spielberg
                     </li>
                     <li>
-                        • Use <span className="text-white">:</span> to tag titles: :Inception
+                        • <span className="text-white">:</span> for titles: :Inception
                     </li>
-                    <li className="pt-2 text-purple-400">
-                        ✨ AI analyzes your text for genres, styles, and themes
+                    <li className="pt-1 text-purple-400">
+                        ✨ AI infers movies/shows, genres, tone, and era
                     </li>
                 </ul>
             </div>
 
-            {/* Media Type Selector */}
-            <div>
-                <label className="block text-sm font-medium text-gray-200 mb-3">Content Type</label>
+            {/* Removed Media Type Selector - AI infers this */}
+            <div className="hidden">
                 <div className="grid grid-cols-3 gap-3">
                     {(['movie', 'tv', 'both'] as const).map((type) => (
                         <button
                             key={type}
-                            onClick={() => setMediaType(type)}
-                            className={`p-4 rounded-lg border-2 transition-all font-medium ${
-                                mediaType === type
-                                    ? 'border-red-600 bg-red-600/20 text-white'
-                                    : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600'
-                            }`}
+                            className={`p-4 rounded-lg border-2 transition-all font-medium border-gray-700 bg-gray-800 text-gray-400`}
                         >
                             <div className="flex flex-col items-center gap-1">
                                 <span className="text-2xl">

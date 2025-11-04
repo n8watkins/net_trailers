@@ -74,6 +74,7 @@ export async function POST(request: NextRequest) {
             certification: analysis.certification || null,
             recommendations: analysis.recommendations || [],
             insight: analysis.insight || '',
+            mediaType: analysis.mediaType || 'both',
         })
     } catch (error) {
         console.error('Gemini analysis error:', error)
@@ -102,6 +103,7 @@ ${taggedContent.length > 0 ? `Tagged Titles: ${taggedContent.join(', ')}` : ''}
 
 Extract and return a JSON object with:
 {
+  "mediaType": "movie"|"tv"|"both",  // Infer from context (series/show → tv, film/movie → movie, unclear → both)
   "genres": ["genre1", "genre2"],  // TMDB genre names (Action, Sci-Fi, Thriller, Horror, Comedy, Drama, etc.)
   "style": {
     "tone": "dark|light|gritty|whimsical|serious|comedic",  // Overall tone
@@ -122,6 +124,7 @@ Extract and return a JSON object with:
 }
 
 Important:
+- MediaType inference: "series/show/tv" → tv, "film/movie" → movie, ambiguous/both → both
 - Only include genres that are clearly mentioned or strongly implied
 - Be conservative with recommendations - only suggest what clearly fits
 - Tone keywords: dark, gritty → likely R-rated mature content

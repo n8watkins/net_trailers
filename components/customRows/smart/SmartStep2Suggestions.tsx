@@ -10,10 +10,13 @@ interface SmartStep2SuggestionsProps {
     inputData: {
         entities: Entity[]
         rawText: string
-        mediaType: 'movie' | 'tv' | 'both'
     }
     onBack: () => void
-    onContinue: (data: { selectedSuggestions: Suggestion[]; selectedRowName: string }) => void
+    onContinue: (data: {
+        selectedSuggestions: Suggestion[]
+        selectedRowName: string
+        mediaType: 'movie' | 'tv' | 'both'
+    }) => void
 }
 
 /**
@@ -41,6 +44,7 @@ export function SmartStep2Suggestions({
     const [isRefreshingNames, setIsRefreshingNames] = useState(false)
     const [previewContent, setPreviewContent] = useState<any[]>([])
     const [isLoadingPreview, setIsLoadingPreview] = useState(false)
+    const [inferredMediaType, setInferredMediaType] = useState<'movie' | 'tv' | 'both'>('both')
 
     useEffect(() => {
         generateSuggestions()
@@ -70,6 +74,7 @@ export function SmartStep2Suggestions({
             setRowNames(data.rowNames || [])
             setInsight(data.insight || '')
             setSelectedRowName(data.rowNames[0] || '')
+            setInferredMediaType(data.mediaType || 'both')
 
             // Auto-select high-confidence suggestions (90%+)
             const autoSelect = new Set<number>()
@@ -119,7 +124,7 @@ export function SmartStep2Suggestions({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     suggestions: selectedSuggestions,
-                    mediaType: inputData.mediaType,
+                    mediaType: inferredMediaType,
                 }),
             })
 
@@ -150,6 +155,7 @@ export function SmartStep2Suggestions({
         onContinue({
             selectedSuggestions,
             selectedRowName,
+            mediaType: inferredMediaType,
         })
     }
 
@@ -167,7 +173,16 @@ export function SmartStep2Suggestions({
         <div className="space-y-6">
             {/* Header */}
             <div>
-                <h3 className="text-lg font-semibold text-white mb-2">Smart Suggestions</h3>
+                <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-lg font-semibold text-white">Smart Suggestions</h3>
+                    <span className="text-sm text-gray-400">
+                        {inferredMediaType === 'movie'
+                            ? '🎬 Movies'
+                            : inferredMediaType === 'tv'
+                              ? '📺 TV Shows'
+                              : '🎭 Movies + Shows'}
+                    </span>
+                </div>
                 {insight && <p className="text-gray-400 text-sm italic">💡 {insight}</p>}
             </div>
 

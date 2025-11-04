@@ -4,50 +4,56 @@ import { generateSmartSuggestions } from '../../../utils/smartRowSuggestions'
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json()
-        const { entities, mediaType, rawText, seed } = body
+        const { entities, rawText, seed } = body
+        let mediaType = body.mediaType || 'both'
 
         // Validate input
         if (!entities || !Array.isArray(entities)) {
             return NextResponse.json({ error: 'Invalid entities' }, { status: 400 })
         }
 
-        if (!mediaType || !['movie', 'tv', 'both'].includes(mediaType)) {
-            return NextResponse.json({ error: 'Invalid media type' }, { status: 400 })
-        }
-
-        // Generate TMDB-based suggestions (people/content analysis)
-        const inputData = { entities, mediaType, rawText }
-        const tmdbResult = await generateSmartSuggestions(inputData, seed)
-
-        // Call Gemini for semantic analysis if there's text
+        // Call Gemini for semantic analysis if there's text (to infer media type)
         let geminiInsights = null
-        if (inputData.rawText && inputData.rawText.trim().length >= 5) {
+        if (rawText && rawText.trim().length >= 5) {
             try {
                 const geminiResponse = await fetch(`${request.nextUrl.origin}/api/gemini/analyze`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        text: inputData.rawText,
-                        entities: inputData.entities,
-                        mediaType: inputData.mediaType,
+                        text: rawText,
+                        entities,
+                        mediaType,
                     }),
                 })
 
                 if (geminiResponse.ok) {
                     geminiInsights = await geminiResponse.json()
+                    // Use Gemini's inferred media type if available
+                    if (geminiInsights.mediaType) {
+                        mediaType = geminiInsights.mediaType
+                    }
                 }
             } catch (error) {
                 console.warn('Gemini analysis failed, continuing with TMDB only:', error)
             }
         }
 
+        // Validate media type
+        if (!['movie', 'tv', 'both'].includes(mediaType)) {
+            mediaType = 'both'
+        }
+
+        // Generate TMDB-based suggestions (people/content analysis)
+        const inputData = { entities, mediaType, rawText }
+        const tmdbResult = await generateSmartSuggestions(inputData, seed)
+
         // Merge Gemini insights with TMDB suggestions
         if (geminiInsights) {
-            const mergedResult = mergeGeminiInsights(tmdbResult, geminiInsights)
+            const mergedResult = mergeGeminiInsights(tmdbResult, geminiInsights, mediaType)
             return NextResponse.json(mergedResult)
         }
 
-        return NextResponse.json(tmdbResult)
+        return NextResponse.json({ ...tmdbResult, mediaType })
     } catch (error) {
         console.error('Smart suggestions error:', error)
         return NextResponse.json({ error: 'Failed to generate suggestions' }, { status: 500 })
@@ -57,7 +63,7 @@ export async function POST(request: NextRequest) {
 /**
  * Merge Gemini semantic insights with TMDB suggestions
  */
-function mergeGeminiInsights(tmdbResult: any, geminiInsights: any): any {
+function mergeGeminiInsights(tmdbResult: any, geminiInsights: any, mediaType: string): any {
     const { suggestions, rowNames, insight } = tmdbResult
     const mergedSuggestions = [...suggestions]
 
@@ -92,5 +98,6 @@ function mergeGeminiInsights(tmdbResult: any, geminiInsights: any): any {
         suggestions: mergedSuggestions,
         rowNames,
         insight: finalInsight,
+        mediaType: geminiInsights.mediaType || mediaType,
     }
 }

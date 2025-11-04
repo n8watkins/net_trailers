@@ -41,20 +41,20 @@ export function SmartRowBuilder({
     const [step1Data, setStep1Data] = useState<{
         entities: Entity[]
         rawText: string
-        mediaType: 'movie' | 'tv' | 'both'
     }>({
         entities: [],
         rawText: '',
-        mediaType: 'movie',
     })
 
-    // Step 2 data
-    const [_step2Data, setStep2Data] = useState<{
+    // Step 2 data (includes AI-inferred mediaType)
+    const [step2Data, setStep2Data] = useState<{
         selectedSuggestions: Suggestion[]
         selectedRowName: string
+        mediaType: 'movie' | 'tv' | 'both'
     }>({
         selectedSuggestions: [],
         selectedRowName: '',
+        mediaType: 'both',
     })
 
     // Final form data
@@ -80,9 +80,9 @@ export function SmartRowBuilder({
     const handleStep2Complete = (data: typeof step2Data) => {
         setStep2Data(data)
 
-        // Convert suggestions to CustomRowFormData
+        // Convert suggestions to CustomRowFormData (use inferred mediaType)
         const convertedData = convertSuggestionsToFormData(
-            step1Data,
+            { ...step1Data, mediaType: data.mediaType },
             data.selectedSuggestions,
             data.selectedRowName
         )
