@@ -70,12 +70,14 @@ export async function POST(request: NextRequest) {
 
         // Fetch content based on media type
         let content: any[] = []
+        let totalResults = 0
 
         if (mediaType === 'movie' || mediaType === 'both') {
             const movieParams = { ...discoverParams }
             delete movieParams.first_air_date
             const movies = await tmdb.fetch('/discover/movie', movieParams)
             content.push(...(movies.results || []).slice(0, 10))
+            totalResults += movies.total_results || 0
         }
 
         if (mediaType === 'tv' || mediaType === 'both') {
@@ -83,12 +85,13 @@ export async function POST(request: NextRequest) {
             delete tvParams.primary_release_date
             const shows = await tmdb.fetch('/discover/tv', tvParams)
             content.push(...(shows.results || []).slice(0, 10))
+            totalResults += shows.total_results || 0
         }
 
         // Limit to 10 items max
         content = content.slice(0, 10)
 
-        return NextResponse.json({ content })
+        return NextResponse.json({ content, totalResults })
     } catch (error) {
         console.error('Preview fetch error:', error)
         return NextResponse.json({ content: [] })

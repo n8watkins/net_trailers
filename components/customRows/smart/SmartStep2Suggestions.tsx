@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { ArrowPathIcon } from '@heroicons/react/24/solid'
+import { ArrowPathIcon, PlusIcon, XMarkIcon, SparklesIcon } from '@heroicons/react/24/solid'
 import type { Entity } from './SmartInput'
 
 interface SmartStep2SuggestionsProps {
@@ -18,14 +18,38 @@ interface SmartStep2SuggestionsProps {
     }) => void
 }
 
+// TMDB Genre mapping
+const GENRE_MAP: Record<number, string> = {
+    28: 'Action',
+    12: 'Adventure',
+    16: 'Animation',
+    35: 'Comedy',
+    80: 'Crime',
+    99: 'Documentary',
+    18: 'Drama',
+    10751: 'Family',
+    14: 'Fantasy',
+    36: 'History',
+    27: 'Horror',
+    10402: 'Music',
+    9648: 'Mystery',
+    10749: 'Romance',
+    878: 'Science Fiction',
+    53: 'Thriller',
+    10752: 'War',
+    37: 'Western',
+    10759: 'Action & Adventure',
+    10762: 'Kids',
+    10763: 'News',
+    10764: 'Reality',
+    10765: 'Sci-Fi & Fantasy',
+    10766: 'Soap',
+    10767: 'Talk',
+    10768: 'War & Politics',
+}
+
 /**
- * SmartStep2Suggestions - Display AI-powered recommendations in a card format
- *
- * Features:
- * - Gemini-powered genre inference from text
- * - Shockingly cool, witty row names (like "THE GOAT", "Peak Scorsese")
- * - Simple card-based preview of recommended content
- * - One-click continue to create the row
+ * SmartStep2Suggestions - Editable AI-powered recommendations preview
  */
 export function SmartStep2Suggestions({
     inputData,
@@ -33,64 +57,63 @@ export function SmartStep2Suggestions({
     onContinue,
 }: SmartStep2SuggestionsProps) {
     const [rowName, setRowName] = useState('')
-    const [alternateNames, setAlternateNames] = useState<string[]>([])
-    const [previewContent, setPreviewContent] = useState<any[]>([])
-    const [isLoading, setIsLoading] = useState(true)
-    const [isRefreshing, setIsRefreshing] = useState(false)
+    const [genreIds, setGenreIds] = useState<number[]>([])
     const [mediaType, setMediaType] = useState<'movie' | 'tv' | 'both'>('both')
-    const [suggestions, setSuggestions] = useState<any[]>([])
-    const [insight, setInsight] = useState('')
-    const [seed, setSeed] = useState(0)
+    const [previewContent, setPreviewContent] = useState<any[]>([])
+    const [totalResults, setTotalResults] = useState(0)
+    const [isLoading, setIsLoading] = useState(true)
+    const [isRefreshingName, setIsRefreshingName] = useState(false)
+    const [isRefreshingPreview, setIsRefreshingPreview] = useState(false)
+    const [showGenreModal, setShowGenreModal] = useState(false)
+    const [nameSeed, setNameSeed] = useState(0)
 
     useEffect(() => {
-        loadRecommendations()
+        loadInitialData()
     }, [])
 
-    const loadRecommendations = async (newSeed: number = seed) => {
+    useEffect(() => {
+        if (genreIds.length > 0) {
+            fetchPreview()
+        }
+    }, [genreIds, mediaType])
+
+    const loadInitialData = async () => {
         setIsLoading(true)
         try {
-            // Call smart suggestions API (includes Gemini analysis)
+            // Call Gemini to analyze and get genre IDs
             const response = await fetch('/api/smart-suggestions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...inputData, seed: newSeed }),
+                body: JSON.stringify({ ...inputData, seed: 0 }),
             })
 
             if (!response.ok) throw new Error('Failed to generate suggestions')
 
             const data = await response.json()
 
-            // Extract data
+            // Extract genre IDs from suggestions
+            const genreSuggestion = data.suggestions?.find((s: any) => s.type === 'genre')
+            const ids = genreSuggestion?.value || []
+
             setRowName(data.rowNames?.[0] || 'My Custom Row')
-            setAlternateNames(data.rowNames?.slice(1) || [])
+            setGenreIds(ids)
             setMediaType(data.mediaType || 'both')
-            setSuggestions(data.suggestions || [])
-            setInsight(data.insight || '')
-
-            // Auto-select high-confidence suggestions for preview
-            const autoSelected = (data.suggestions || [])
-                .filter((s: any) => s.confidence >= 85)
-                .slice(0, 5) // Top 5 suggestions
-
-            // Fetch preview content
-            if (autoSelected.length > 0) {
-                await fetchPreview(autoSelected, data.mediaType || 'both')
-            }
         } catch (error) {
-            console.error('Recommendation error:', error)
+            console.error('Load error:', error)
         } finally {
             setIsLoading(false)
         }
     }
 
-    const fetchPreview = async (selectedSuggestions: any[], type: string) => {
+    const fetchPreview = async () => {
+        setIsRefreshingPreview(true)
         try {
             const response = await fetch('/api/smart-suggestions/preview', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    suggestions: selectedSuggestions,
-                    mediaType: type,
+                    suggestions: [{ type: 'genre', value: genreIds }],
+                    mediaType,
                 }),
             })
 
@@ -98,31 +121,53 @@ export function SmartStep2Suggestions({
 
             const data = await response.json()
             setPreviewContent(data.content || [])
+            setTotalResults(data.totalResults || data.content?.length || 0)
         } catch (error) {
-            console.error('Preview fetch error:', error)
+            console.error('Preview error:', error)
             setPreviewContent([])
+            setTotalResults(0)
+        } finally {
+            setIsRefreshingPreview(false)
         }
     }
 
     const refreshName = async () => {
-        setIsRefreshing(true)
-        const newSeed = seed + 1
-        setSeed(newSeed)
+        setIsRefreshingName(true)
+        const newSeed = nameSeed + 1
+        setNameSeed(newSeed)
 
         try {
-            await loadRecommendations(newSeed)
+            const response = await fetch('/api/smart-suggestions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...inputData, seed: newSeed }),
+            })
+
+            if (!response.ok) throw new Error('Failed to generate name')
+
+            const data = await response.json()
+            setRowName(data.rowNames?.[0] || rowName)
         } catch (error) {
-            console.error('Refresh error:', error)
+            console.error('Name refresh error:', error)
         } finally {
-            setIsRefreshing(false)
+            setIsRefreshingName(false)
         }
     }
 
+    const addGenre = (genreId: number) => {
+        if (!genreIds.includes(genreId)) {
+            setGenreIds([...genreIds, genreId])
+        }
+        setShowGenreModal(false)
+    }
+
+    const removeGenre = (genreId: number) => {
+        setGenreIds(genreIds.filter((id) => id !== genreId))
+    }
+
     const handleContinue = () => {
-        // Use the auto-selected high-confidence suggestions
-        const autoSelected = suggestions.filter((s) => s.confidence >= 85)
         onContinue({
-            selectedSuggestions: autoSelected,
+            selectedSuggestions: [{ type: 'genre', value: genreIds, confidence: 95 }],
             selectedRowName: rowName,
             mediaType,
         })
@@ -140,29 +185,97 @@ export function SmartStep2Suggestions({
 
     return (
         <div className="space-y-6">
-            {/* Header with Witty Title */}
-            <div className="text-center space-y-3">
+            {/* Header with Title and AI Rename */}
+            <div className="space-y-4">
                 <div className="flex items-center justify-center gap-3">
-                    <h2 className="text-3xl font-bold text-white">{rowName}</h2>
+                    <h2 className="text-3xl font-bold text-white text-center">{rowName}</h2>
                     <button
                         onClick={refreshName}
-                        disabled={isRefreshing}
+                        disabled={isRefreshingName}
                         className="p-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Generate new name"
                     >
-                        <ArrowPathIcon
-                            className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`}
+                        <SparklesIcon
+                            className={`w-5 h-5 ${isRefreshingName ? 'animate-spin' : ''}`}
                         />
                     </button>
                 </div>
+
+                {/* Editable Filters */}
+                <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 space-y-4">
+                    {/* Media Type Selector */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-200 mb-2">
+                            Media Type:
+                        </label>
+                        <div className="flex gap-2">
+                            {(['movie', 'tv', 'both'] as const).map((type) => (
+                                <button
+                                    key={type}
+                                    onClick={() => setMediaType(type)}
+                                    className={`px-4 py-2 rounded-lg transition-colors ${
+                                        mediaType === type
+                                            ? 'bg-red-600 text-white'
+                                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                    }`}
+                                >
+                                    {type === 'movie'
+                                        ? '🎬 Movies'
+                                        : type === 'tv'
+                                          ? '📺 TV Shows'
+                                          : '🎭 Both'}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Genre Bubbles */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-200 mb-2">
+                            Genres:
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                            {genreIds.map((id) => (
+                                <span
+                                    key={id}
+                                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-600/20 text-red-400 rounded-full border border-red-600/50"
+                                >
+                                    {GENRE_MAP[id] || `Genre ${id}`}
+                                    <button
+                                        onClick={() => removeGenre(id)}
+                                        className="hover:text-red-300 transition-colors"
+                                    >
+                                        <XMarkIcon className="w-4 h-4" />
+                                    </button>
+                                </span>
+                            ))}
+                            <button
+                                onClick={() => setShowGenreModal(true)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-700 text-gray-300 rounded-full hover:bg-gray-600 transition-colors"
+                            >
+                                <PlusIcon className="w-4 h-4" />
+                                Add Genre
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Result Count */}
+                    {totalResults > 0 && (
+                        <div className="text-sm text-gray-400">
+                            📊 ~{totalResults} results found
+                        </div>
+                    )}
+                </div>
             </div>
 
-            {/* Content Preview Cards */}
-            {previewContent.length > 0 ? (
+            {/* Content Preview */}
+            {isRefreshingPreview ? (
+                <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+                </div>
+            ) : previewContent.length > 0 ? (
                 <div>
-                    <h4 className="text-sm font-medium text-gray-300 mb-3 text-center">
-                        Here's what we found:
-                    </h4>
+                    <h4 className="text-sm font-medium text-gray-300 mb-3 text-center">Preview:</h4>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                         {previewContent.slice(0, 10).map((item, idx) => (
                             <div
@@ -184,7 +297,6 @@ export function SmartStep2Suggestions({
                                             {item.title || item.name}
                                         </div>
                                     )}
-                                    {/* Rating Badge */}
                                     {item.vote_average && item.vote_average > 0 && (
                                         <div className="absolute top-2 right-2 bg-black/80 px-2 py-1 rounded text-xs font-bold text-white">
                                             ⭐ {item.vote_average.toFixed(1)}
@@ -200,25 +312,7 @@ export function SmartStep2Suggestions({
                 </div>
             ) : (
                 <div className="py-12 text-center">
-                    <p className="text-gray-500">No results found. Try adjusting your search.</p>
-                </div>
-            )}
-
-            {/* Alternate Names */}
-            {alternateNames.length > 0 && (
-                <div>
-                    <p className="text-sm text-gray-400 text-center mb-2">Other cool names:</p>
-                    <div className="flex flex-wrap gap-2 justify-center">
-                        {alternateNames.map((name, idx) => (
-                            <button
-                                key={idx}
-                                onClick={() => setRowName(name)}
-                                className="px-3 py-1.5 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 transition-colors text-sm"
-                            >
-                                {name}
-                            </button>
-                        ))}
-                    </div>
+                    <p className="text-gray-500">No results found. Try adding more genres.</p>
                 </div>
             )}
 
@@ -232,12 +326,42 @@ export function SmartStep2Suggestions({
                 </button>
                 <button
                     onClick={handleContinue}
-                    disabled={previewContent.length === 0}
+                    disabled={genreIds.length === 0 || previewContent.length === 0}
                     className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-lg"
                 >
                     Create Row →
                 </button>
             </div>
+
+            {/* Genre Selection Modal */}
+            {showGenreModal && (
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+                    <div className="bg-gray-900 rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl font-bold text-white">Add Genre</h3>
+                            <button
+                                onClick={() => setShowGenreModal(false)}
+                                className="text-gray-400 hover:text-white"
+                            >
+                                <XMarkIcon className="w-6 h-6" />
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            {Object.entries(GENRE_MAP)
+                                .filter(([id]) => !genreIds.includes(Number(id)))
+                                .map(([id, name]) => (
+                                    <button
+                                        key={id}
+                                        onClick={() => addGenre(Number(id))}
+                                        className="px-4 py-2 bg-gray-800 text-gray-300 rounded-lg hover:bg-red-600 hover:text-white transition-colors text-sm"
+                                    >
+                                        {name}
+                                    </button>
+                                ))}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
