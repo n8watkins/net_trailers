@@ -1,20 +1,25 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { useAppStore } from '../../stores/appStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useCustomRowsStore } from '../../stores/customRowsStore'
 import { CustomRowsFirestore } from '../../utils/firestore/customRows'
 import { CustomRowWizard } from '../customRows/CustomRowWizard'
+import { SmartRowBuilder } from '../customRows/smart/SmartRowBuilder'
 import { CustomRowFormData } from '../../types/customRows'
 import { useToast } from '../../hooks/useToast'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 
+type CreationMode = 'traditional' | 'smart'
+
 /**
  * CustomRowModal Component
  *
- * Modal wrapper for the CustomRowWizard.
- * Handles authentication state and integrates with app stores.
+ * Modal wrapper for custom row creation.
+ * Supports two modes:
+ * - Traditional: Step-by-step wizard with manual filter selection
+ * - Smart: AI-powered with entity tagging and TMDB suggestions
  */
 function CustomRowModal() {
     const { customRowModal, closeCustomRowModal, openAuthModal } = useAppStore()
@@ -23,6 +28,8 @@ function CustomRowModal() {
     const { addRow } = useCustomRowsStore()
     const { showSuccess, showError } = useToast()
     const { isGuest } = useAuthStatus()
+
+    const [mode, setMode] = useState<CreationMode>('smart')
 
     const userId = getUserId()
     const isOpen = customRowModal.isOpen
@@ -55,12 +62,52 @@ function CustomRowModal() {
     }
 
     return (
-        <CustomRowWizard
-            onClose={closeCustomRowModal}
-            onComplete={handleComplete}
-            isAuthenticated={isAuthenticated}
-            onSignIn={handleSignIn}
-        />
+        <div className="relative">
+            {/* Mode Switcher - Floating at top of modal */}
+            <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[60]">
+                <div className="bg-gray-800 border border-gray-700 rounded-lg p-1 shadow-lg">
+                    <div className="flex gap-1">
+                        <button
+                            onClick={() => setMode('smart')}
+                            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                                mode === 'smart'
+                                    ? 'bg-red-600 text-white'
+                                    : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                            }`}
+                        >
+                            ✨ Smart Builder
+                        </button>
+                        <button
+                            onClick={() => setMode('traditional')}
+                            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                                mode === 'traditional'
+                                    ? 'bg-red-600 text-white'
+                                    : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                            }`}
+                        >
+                            🔧 Traditional
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Render selected mode */}
+            {mode === 'smart' ? (
+                <SmartRowBuilder
+                    onClose={closeCustomRowModal}
+                    onComplete={handleComplete}
+                    isAuthenticated={isAuthenticated}
+                    onSignIn={handleSignIn}
+                />
+            ) : (
+                <CustomRowWizard
+                    onClose={closeCustomRowModal}
+                    onComplete={handleComplete}
+                    isAuthenticated={isAuthenticated}
+                    onSignIn={handleSignIn}
+                />
+            )}
+        </div>
     )
 }
 
