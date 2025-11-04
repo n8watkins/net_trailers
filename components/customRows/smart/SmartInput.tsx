@@ -85,6 +85,18 @@ export function SmartInput({
         // Extract the query after the trigger
         const query = textBeforeCursor.slice(triggerIndex + 1).trim()
 
+        // Check if this query is already a tagged entity (prevent re-tagging)
+        const isAlreadyTagged = taggedEntities.some(
+            (entity) => entity.name.toLowerCase() === query.toLowerCase()
+        )
+
+        if (isAlreadyTagged) {
+            setShowDropdown(false)
+            setSuggestions([])
+            setCurrentWord('')
+            return
+        }
+
         // Only search if we have 2+ characters after trigger
         if (query.length >= 2) {
             setCurrentWord(query)
@@ -99,7 +111,7 @@ export function SmartInput({
             setShowDropdown(false)
             setSuggestions([])
         }
-    }, [rawText, cursorPos])
+    }, [rawText, cursorPos, taggedEntities])
 
     // Debounced search function with trigger-based filtering
     const debouncedSearch = useMemo(
@@ -109,8 +121,15 @@ export function SmartInput({
                 try {
                     const results = await searchAll(query)
 
-                    // Filter by trigger character
+                    // Filter by trigger character and exclude already-tagged entities
                     const filtered = results.filter((entity) => {
+                        // Check if already tagged
+                        const isTagged = taggedEntities.some(
+                            (e) => e.id === entity.id && e.type === entity.type
+                        )
+                        if (isTagged) return false
+
+                        // Filter by trigger
                         switch (triggerChar) {
                             case '@':
                                 return entity.type === 'person'
@@ -132,7 +151,7 @@ export function SmartInput({
                     setIsSearching(false)
                 }
             }, 300),
-        [triggerChar]
+        [triggerChar, taggedEntities]
     )
 
     // Unified search across all entity types
@@ -151,21 +170,26 @@ export function SmartInput({
 
     // Handle entity selection
     const selectEntity = (entity: Entity) => {
+        // Check for duplicates
+        const isDuplicate = taggedEntities.some((e) => e.id === entity.id && e.type === entity.type)
+        if (isDuplicate) {
+            setShowDropdown(false)
+            return
+        }
+
         // Find the trigger character position
         const textBeforeCursor = rawText.slice(0, cursorPos)
         const triggerIndex = Math.max(
             textBeforeCursor.lastIndexOf('@'),
-            textBeforeCursor.lastIndexOf('#'),
-            textBeforeCursor.lastIndexOf('&'),
-            textBeforeCursor.lastIndexOf('!')
+            textBeforeCursor.lastIndexOf(':')
         )
 
         if (triggerIndex === -1) return
 
-        // Replace from trigger to cursor with trigger + entity name
+        // Replace from trigger to cursor with just entity name (no trigger char in display)
         const beforeTrigger = rawText.slice(0, triggerIndex)
         const afterCursor = rawText.slice(cursorPos)
-        const newText = `${beforeTrigger}${triggerChar}${entity.name} ${afterCursor}`
+        const newText = `${beforeTrigger}${entity.name} ${afterCursor}`
 
         setRawText(newText)
         const newEntities = [...taggedEntities, { ...entity, triggerChar }]
@@ -173,11 +197,13 @@ export function SmartInput({
         onEntitiesChange(newEntities)
         onTextChange(newText)
         setShowDropdown(false)
+        setSuggestions([])
+        setCurrentWord('')
 
         // Focus back to input
         setTimeout(() => {
             inputRef.current?.focus()
-            const newCursorPos = beforeTrigger.length + triggerChar.length + entity.name.length + 1
+            const newCursorPos = beforeTrigger.length + entity.name.length + 1
             inputRef.current?.setSelectionRange(newCursorPos, newCursorPos)
         }, 0)
     }
@@ -222,10 +248,53 @@ export function SmartInput({
         }
     }
 
+    // Render text with highlighted entities
+    const renderHighlightedText = () => {
+        if (!rawText) return null
+
+        const parts: React.ReactNode[] = []
+        let lastIndex = 0
+
+        // Find all tagged entity names in the text
+        taggedEntities.forEach((entity, idx) => {
+            const entityIndex = rawText.indexOf(entity.name, lastIndex)
+            if (entityIndex !== -1) {
+                // Add text before entity
+                if (entityIndex > lastIndex) {
+                    parts.push(
+                        <span key={`text-${idx}`}>{rawText.slice(lastIndex, entityIndex)}</span>
+                    )
+                }
+                // Add highlighted entity
+                parts.push(
+                    <span key={`entity-${idx}`} className="text-blue-400 font-medium">
+                        {entity.name}
+                    </span>
+                )
+                lastIndex = entityIndex + entity.name.length
+            }
+        })
+
+        // Add remaining text
+        if (lastIndex < rawText.length) {
+            parts.push(<span key="text-end">{rawText.slice(lastIndex)}</span>)
+        }
+
+        return parts
+    }
+
     return (
         <div className={`space-y-4 ${className}`}>
             {/* Main Input */}
             <div className="relative">
+                {/* Hidden overlay for highlighting */}
+                <div
+                    className="pointer-events-none absolute inset-0 p-4 text-white whitespace-pre-wrap break-words font-mono text-sm leading-6 overflow-hidden"
+                    style={{ color: 'transparent' }}
+                >
+                    {renderHighlightedText()}
+                </div>
+
                 <textarea
                     ref={inputRef}
                     value={rawText}
@@ -235,14 +304,21 @@ export function SmartInput({
                     }}
                     onKeyUp={(e) => setCursorPos(e.currentTarget.selectionStart)}
                     onKeyDown={handleKeyDown}
+                    onClick={(e) => setCursorPos(e.currentTarget.selectionStart)}
                     placeholder={placeholder}
-                    className="w-full min-h-[120px] p-4 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 resize-none"
+                    className="w-full min-h-[120px] p-4 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 resize-none font-mono text-sm leading-6 relative z-10"
+                    style={{
+                        backgroundColor: 'rgb(31 41 55)',
+                        caretColor: 'white',
+                        color: taggedEntities.length > 0 ? 'transparent' : 'white',
+                    }}
                     rows={4}
+                    spellCheck={false}
                 />
 
                 {/* Search indicator */}
                 {isSearching && (
-                    <div className="absolute top-4 right-4">
+                    <div className="absolute top-4 right-4 z-20">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
                     </div>
                 )}
