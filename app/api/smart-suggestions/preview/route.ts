@@ -15,6 +15,8 @@ export async function POST(request: NextRequest) {
         const tmdb = TMDBApiClient.getInstance()
 
         // Check if we have a content_list suggestion (Gemini-curated specific content)
+        // For hybrid queries (e.g., "dark scifi thriller"), this takes priority in preview
+        // Genres are still stored and used as fallback when row needs more content
         const contentListSuggestion = suggestions.find((s: any) => s.type === 'content_list')
         if (contentListSuggestion) {
             // Directly fetch the specific content IDs recommended by Gemini

@@ -171,7 +171,9 @@ Examples:
 - "space adventures" → {"genreIds": [878, 12]} (Sci-Fi + Adventure)
 - "action comedies" → {"genreIds": [28, 35]} (Action + Comedy)
 
-CONCEPT QUERY Examples (populate movieRecommendations instead of just genres):
+CONCEPT QUERY Examples:
+
+**Pure Concept (provide BOTH genres AND specific titles):**
 - "comedy of errors" → {
     "conceptQuery": "Comedy films with mistaken identities, misunderstandings, and escalating chaos",
     "movieRecommendations": [
@@ -182,17 +184,35 @@ CONCEPT QUERY Examples (populate movieRecommendations instead of just genres):
       {"title": "Arsenic and Old Lace", "year": 1944, "reason": "Dark comedy with mounting confusion"},
       // ... 10-15 total
     ],
-    "genreIds": [35]  // Still include genre for filtering
+    "genreIds": [35]  // Still include genre for broader filtering
   }
-- "fish out of water" → Provide movies about characters in unfamiliar situations
-- "heist gone wrong" → Provide heist films where plans fall apart
-- "coming of age" → Provide films about growing up and self-discovery
+
+**Hybrid Genre+Vibe (provide BOTH genres AND specific titles):**
+- "dark scifi thriller" → {
+    "conceptQuery": "Dark, atmospheric sci-fi thrillers with suspense and tension",
+    "movieRecommendations": [
+      {"title": "Blade Runner", "year": 1982, "reason": "Neo-noir sci-fi with dark atmosphere"},
+      {"title": "Ex Machina", "year": 2014, "reason": "Tense AI thriller with dark undertones"},
+      {"title": "Moon", "year": 2009, "reason": "Psychological sci-fi thriller"},
+      {"title": "Annihilation", "year": 2018, "reason": "Dark cosmic horror sci-fi"},
+      // ... 10-15 total
+    ],
+    "genreIds": [878, 53]  // Sci-Fi + Thriller for backup/fallback
+  }
+
+**Simple Genre (NO recommendations needed):**
+- "action movies" → {"genreIds": [28], "movieRecommendations": []}
+- "romantic comedies" → {"genreIds": [10749, 35], "movieRecommendations": []}
 
 Rules:
 - MediaType: "series/show/tv" → "tv", "film/movie" → "movie", unclear → "both"
-- Detect CONCEPT queries (vibes, tropes, narrative structures) vs simple genre requests
-- For concept queries: provide 10-15 specific titles with years and reasons
-- For simple genres: just use genreIds
+- ALWAYS provide genreIds when genres are clear
+- Provide movieRecommendations when:
+  1. Query describes a vibe/tone (dark, gritty, wholesome, epic)
+  2. Query describes a narrative structure (fish out of water, heist gone wrong)
+  3. Query has subjective qualities beyond genre (best, underrated, hidden gems)
+- For simple genre-only queries (no vibe/concept): return empty movieRecommendations
+- For concept/vibe queries: provide 10-15 specific titles AND relevant genres
 - Return 1-3 genre IDs maximum
 - ONLY use IDs from the lists above
 - Be precise - don't add extra genres

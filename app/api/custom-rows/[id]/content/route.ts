@@ -51,6 +51,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         const mediaType = (searchParams.get('mediaType') || 'movie') as MediaType
 
         // Handle curated content lists (Gemini recommendations)
+        // For hybrid queries (e.g., "dark scifi thriller"), contentIds take priority
+        // Genres are still stored in the row for future pagination/expansion
         if (contentIdsParam) {
             const contentIds = contentIdsParam.split(',').map((id) => parseInt(id.trim(), 10))
 
