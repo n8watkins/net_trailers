@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { XMarkIcon, CheckIcon } from '@heroicons/react/24/outline'
 import { SmartStep1Input } from './SmartStep1Input'
 import { SmartStep2Suggestions } from './SmartStep2Suggestions'
-import { WizardStep3NamePreview } from '../WizardStep3NamePreview'
+import { SmartStep3Preview } from './SmartStep3Preview'
 import { WizardStep4Confirmation } from '../WizardStep4Confirmation'
 import type { Entity } from './SmartInput'
 import type { Suggestion } from '@/utils/smartRowSuggestions'
@@ -214,7 +214,10 @@ export function SmartRowBuilder({
                         )}
 
                         {currentStep === 3 && (
-                            <WizardStep3NamePreview
+                            <SmartStep3Preview
+                                selectedSuggestions={step2Data.selectedSuggestions}
+                                selectedRowName={step2Data.selectedRowName}
+                                mediaType={step2Data.mediaType}
                                 formData={formData}
                                 onChange={(updates) => setFormData({ ...formData, ...updates })}
                                 onBack={prevStep}

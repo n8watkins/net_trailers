@@ -1,8 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import Image from 'next/image'
-import { ArrowPathIcon, PlusIcon, XMarkIcon, SparklesIcon } from '@heroicons/react/24/solid'
+import { PlusIcon, XMarkIcon, SparklesIcon } from '@heroicons/react/24/solid'
 import type { Entity } from './SmartInput'
 
 interface SmartStep2SuggestionsProps {
@@ -49,7 +48,7 @@ const GENRE_MAP: Record<number, string> = {
 }
 
 /**
- * SmartStep2Suggestions - Editable AI-powered recommendations preview
+ * SmartStep2Suggestions - Configure filters before preview
  */
 export function SmartStep2Suggestions({
     inputData,
@@ -59,23 +58,17 @@ export function SmartStep2Suggestions({
     const [rowName, setRowName] = useState('')
     const [genreIds, setGenreIds] = useState<number[]>([])
     const [mediaType, setMediaType] = useState<'movie' | 'tv' | 'both'>('both')
-    const [previewContent, setPreviewContent] = useState<any[]>([])
-    const [totalResults, setTotalResults] = useState(0)
+    const [people, setPeople] = useState<
+        Array<{ id: number; name: string; type: 'actor' | 'director'; required: boolean }>
+    >([])
     const [isLoading, setIsLoading] = useState(true)
     const [isRefreshingName, setIsRefreshingName] = useState(false)
-    const [isRefreshingPreview, setIsRefreshingPreview] = useState(false)
     const [showGenreModal, setShowGenreModal] = useState(false)
     const [nameSeed, setNameSeed] = useState(0)
 
     useEffect(() => {
         loadInitialData()
     }, [])
-
-    useEffect(() => {
-        if (genreIds.length > 0) {
-            fetchPreview()
-        }
-    }, [genreIds, mediaType])
 
     const loadInitialData = async () => {
         setIsLoading(true)
@@ -95,39 +88,26 @@ export function SmartStep2Suggestions({
             const genreSuggestion = data.suggestions?.find((s: any) => s.type === 'genre')
             const ids = genreSuggestion?.value || []
 
+            // Extract tagged people from entities
+            const taggedPeople = inputData.entities
+                .filter((e) => e.type === 'person')
+                .map((e) => ({
+                    id: e.id as number,
+                    name: e.name,
+                    type: (e.subtitle?.toLowerCase().includes('direct') ? 'director' : 'actor') as
+                        | 'actor'
+                        | 'director',
+                    required: true, // Default to required
+                }))
+
             setRowName(data.rowNames?.[0] || 'My Custom Row')
             setGenreIds(ids)
+            setPeople(taggedPeople)
             setMediaType(data.mediaType || 'both')
         } catch (error) {
             console.error('Load error:', error)
         } finally {
             setIsLoading(false)
-        }
-    }
-
-    const fetchPreview = async () => {
-        setIsRefreshingPreview(true)
-        try {
-            const response = await fetch('/api/smart-suggestions/preview', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    suggestions: [{ type: 'genre', value: genreIds }],
-                    mediaType,
-                }),
-            })
-
-            if (!response.ok) throw new Error('Failed to fetch preview')
-
-            const data = await response.json()
-            setPreviewContent(data.content || [])
-            setTotalResults(data.totalResults || data.content?.length || 0)
-        } catch (error) {
-            console.error('Preview error:', error)
-            setPreviewContent([])
-            setTotalResults(0)
-        } finally {
-            setIsRefreshingPreview(false)
         }
     }
 
@@ -165,9 +145,75 @@ export function SmartStep2Suggestions({
         setGenreIds(genreIds.filter((id) => id !== genreId))
     }
 
+    const togglePersonRequired = (personId: number) => {
+        setPeople(people.map((p) => (p.id === personId ? { ...p, required: !p.required } : p)))
+    }
+
+    const removePerson = (personId: number) => {
+        setPeople(people.filter((p) => p.id !== personId))
+    }
+
     const handleContinue = () => {
+        const suggestions: any[] = []
+
+        // Add genres
+        if (genreIds.length > 0) {
+            suggestions.push({ type: 'genre', value: genreIds, confidence: 95 })
+        }
+
+        // Add people (directors/actors)
+        const requiredPeople = people.filter((p) => p.required)
+        const optionalPeople = people.filter((p) => p.required === false)
+
+        if (requiredPeople.length > 0) {
+            // Group by type
+            const directors = requiredPeople.filter((p) => p.type === 'director').map((p) => p.id)
+            const actors = requiredPeople.filter((p) => p.type === 'actor').map((p) => p.id)
+
+            if (directors.length > 0) {
+                suggestions.push({
+                    type: 'director',
+                    value: directors,
+                    confidence: 100,
+                    required: true,
+                })
+            }
+
+            if (actors.length > 0) {
+                suggestions.push({
+                    type: 'actor',
+                    value: actors,
+                    confidence: 100,
+                    required: true,
+                })
+            }
+        }
+
+        if (optionalPeople.length > 0) {
+            const directors = optionalPeople.filter((p) => p.type === 'director').map((p) => p.id)
+            const actors = optionalPeople.filter((p) => p.type === 'actor').map((p) => p.id)
+
+            if (directors.length > 0) {
+                suggestions.push({
+                    type: 'director',
+                    value: directors,
+                    confidence: 80,
+                    required: false,
+                })
+            }
+
+            if (actors.length > 0) {
+                suggestions.push({
+                    type: 'actor',
+                    value: actors,
+                    confidence: 80,
+                    required: false,
+                })
+            }
+        }
+
         onContinue({
-            selectedSuggestions: [{ type: 'genre', value: genreIds, confidence: 95 }],
+            selectedSuggestions: suggestions,
             selectedRowName: rowName,
             mediaType,
         })
@@ -229,6 +275,55 @@ export function SmartStep2Suggestions({
                         </div>
                     </div>
 
+                    {/* People (Directors/Actors) */}
+                    {people.length > 0 && (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-200 mb-2">
+                                Directors & Actors:
+                            </label>
+                            <div className="space-y-2">
+                                {people.map((person) => (
+                                    <div
+                                        key={person.id}
+                                        className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-white font-medium">
+                                                {person.name}
+                                            </span>
+                                            <span className="text-xs text-gray-400">
+                                                {person.type === 'director'
+                                                    ? '🎬 Director'
+                                                    : '🎭 Actor'}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => togglePersonRequired(person.id)}
+                                                className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                                                    person.required
+                                                        ? 'bg-green-600/20 text-green-400 border border-green-600/50'
+                                                        : 'bg-gray-600/20 text-gray-400 border border-gray-600/50'
+                                                }`}
+                                            >
+                                                {person.required ? 'Required' : 'Optional'}
+                                            </button>
+                                            <button
+                                                onClick={() => removePerson(person.id)}
+                                                className="text-gray-400 hover:text-red-400 transition-colors"
+                                            >
+                                                <XMarkIcon className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <p className="text-xs text-gray-500 mt-2">
+                                💡 Tip: Required = must match ALL, Optional = match ANY
+                            </p>
+                        </div>
+                    )}
+
                     {/* Genre Bubbles */}
                     <div>
                         <label className="block text-sm font-medium text-gray-200 mb-2">
@@ -258,63 +353,8 @@ export function SmartStep2Suggestions({
                             </button>
                         </div>
                     </div>
-
-                    {/* Result Count */}
-                    {totalResults > 0 && (
-                        <div className="text-sm text-gray-400">
-                            📊 ~{totalResults} results found
-                        </div>
-                    )}
                 </div>
             </div>
-
-            {/* Content Preview */}
-            {isRefreshingPreview ? (
-                <div className="flex items-center justify-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
-                </div>
-            ) : previewContent.length > 0 ? (
-                <div>
-                    <h4 className="text-sm font-medium text-gray-300 mb-3 text-center">Preview:</h4>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-                        {previewContent.slice(0, 10).map((item, idx) => (
-                            <div
-                                key={idx}
-                                className="group cursor-pointer"
-                                title={item.title || item.name}
-                            >
-                                <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-gray-800 shadow-lg group-hover:shadow-2xl transition-shadow">
-                                    {item.poster_path ? (
-                                        <Image
-                                            src={`https://image.tmdb.org/t/p/w342${item.poster_path}`}
-                                            alt={item.title || item.name}
-                                            fill
-                                            className="object-cover group-hover:scale-105 transition-transform duration-200"
-                                            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-gray-600 text-xs p-2 text-center">
-                                            {item.title || item.name}
-                                        </div>
-                                    )}
-                                    {item.vote_average && item.vote_average > 0 && (
-                                        <div className="absolute top-2 right-2 bg-black/80 px-2 py-1 rounded text-xs font-bold text-white">
-                                            ⭐ {item.vote_average.toFixed(1)}
-                                        </div>
-                                    )}
-                                </div>
-                                <p className="text-white text-sm mt-2 line-clamp-2 text-center">
-                                    {item.title || item.name}
-                                </p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            ) : (
-                <div className="py-12 text-center">
-                    <p className="text-gray-500">No results found. Try adding more genres.</p>
-                </div>
-            )}
 
             {/* Navigation */}
             <div className="flex gap-3 pt-4">
@@ -326,10 +366,10 @@ export function SmartStep2Suggestions({
                 </button>
                 <button
                     onClick={handleContinue}
-                    disabled={genreIds.length === 0 || previewContent.length === 0}
+                    disabled={genreIds.length === 0 && people.length === 0}
                     className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-lg"
                 >
-                    Create Row →
+                    Preview Row →
                 </button>
             </div>
 

@@ -22,6 +22,9 @@ export async function POST(request: NextRequest) {
         }
 
         // Process each suggestion type
+        const requiredPeopleIds: number[] = []
+        const optionalPeopleIds: number[] = []
+
         for (const suggestion of suggestions) {
             switch (suggestion.type) {
                 case 'genre':
@@ -51,9 +54,19 @@ export async function POST(request: NextRequest) {
                     break
 
                 case 'actor':
-                case 'director':
-                    discoverParams.with_people = suggestion.value
+                case 'director': {
+                    const peopleArray = Array.isArray(suggestion.value)
+                        ? suggestion.value
+                        : [suggestion.value]
+
+                    // Separate required (AND logic) vs optional (OR logic)
+                    if (suggestion.required) {
+                        requiredPeopleIds.push(...peopleArray)
+                    } else {
+                        optionalPeopleIds.push(...peopleArray)
+                    }
                     break
+                }
 
                 case 'studio':
                     discoverParams.with_companies = suggestion.value
@@ -66,6 +79,14 @@ export async function POST(request: NextRequest) {
                     }
                     break
             }
+        }
+
+        // Add people IDs (TMDB uses with_people for both actors and directors)
+        // For required people (AND logic), we'll need to filter results client-side
+        // For optional people (OR logic), TMDB's with_people handles this natively
+        const allPeopleIds = [...requiredPeopleIds, ...optionalPeopleIds]
+        if (allPeopleIds.length > 0) {
+            discoverParams.with_people = allPeopleIds.join(',')
         }
 
         // Fetch content based on media type
@@ -88,8 +109,48 @@ export async function POST(request: NextRequest) {
             totalResults += shows.total_results || 0
         }
 
-        // Limit to 10 items max
-        content = content.slice(0, 10)
+        // Client-side filtering for required people (AND logic)
+        // TMDB's with_people uses OR logic, so we need to filter to ensure ALL required people are present
+        if (requiredPeopleIds.length > 1) {
+            const filteredContent = []
+
+            for (const item of content) {
+                // Fetch credits for this item to check if all required people are present
+                try {
+                    const creditsEndpoint =
+                        item.media_type === 'movie' || mediaType === 'movie'
+                            ? `/movie/${item.id}/credits`
+                            : `/tv/${item.id}/credits`
+
+                    const credits = await tmdb.fetch(creditsEndpoint, {})
+
+                    // Get all person IDs in this content (cast + crew)
+                    const castIds = credits.cast?.map((c: any) => c.id) || []
+                    const crewIds = credits.crew?.map((c: any) => c.id) || []
+                    const allPersonIds = new Set([...castIds, ...crewIds])
+
+                    // Check if ALL required people are present
+                    const hasAllRequiredPeople = requiredPeopleIds.every((id) =>
+                        allPersonIds.has(id)
+                    )
+
+                    if (hasAllRequiredPeople) {
+                        filteredContent.push(item)
+                    }
+                } catch (error) {
+                    // If credits fetch fails, skip this item
+                    console.warn(`Failed to fetch credits for ${item.id}:`, error)
+                }
+
+                // Stop if we have enough items
+                if (filteredContent.length >= 10) break
+            }
+
+            content = filteredContent
+        } else {
+            // No filtering needed, just limit to 10 items
+            content = content.slice(0, 10)
+        }
 
         return NextResponse.json({ content, totalResults })
     } catch (error) {
