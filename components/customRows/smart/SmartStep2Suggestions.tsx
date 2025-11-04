@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { CheckIcon } from '@heroicons/react/24/solid'
+import Image from 'next/image'
+import { CheckIcon, ArrowPathIcon } from '@heroicons/react/24/solid'
 import type { Entity } from './SmartInput'
 import type { Suggestion } from '@/utils/smartRowSuggestions'
 
@@ -36,18 +37,30 @@ export function SmartStep2Suggestions({
     const [selected, setSelected] = useState<Set<number>>(new Set())
     const [isLoading, setIsLoading] = useState(true)
     const [selectedRowName, setSelectedRowName] = useState('')
+    const [nameSeed, setNameSeed] = useState(0)
+    const [isRefreshingNames, setIsRefreshingNames] = useState(false)
+    const [previewContent, setPreviewContent] = useState<any[]>([])
+    const [isLoadingPreview, setIsLoadingPreview] = useState(false)
 
     useEffect(() => {
         generateSuggestions()
     }, [])
 
-    const generateSuggestions = async () => {
+    useEffect(() => {
+        if (selected.size > 0) {
+            fetchPreviewContent()
+        } else {
+            setPreviewContent([])
+        }
+    }, [selected])
+
+    const generateSuggestions = async (seed: number = nameSeed) => {
         setIsLoading(true)
         try {
             const response = await fetch('/api/smart-suggestions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(inputData),
+                body: JSON.stringify({ ...inputData, seed }),
             })
 
             if (!response.ok) throw new Error('Failed to generate suggestions')
@@ -70,6 +83,55 @@ export function SmartStep2Suggestions({
             console.error('Suggestion generation error:', error)
         } finally {
             setIsLoading(false)
+        }
+    }
+
+    const refreshRowNames = async () => {
+        setIsRefreshingNames(true)
+        const newSeed = nameSeed + 1
+        setNameSeed(newSeed)
+
+        try {
+            const response = await fetch('/api/smart-suggestions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...inputData, seed: newSeed }),
+            })
+
+            if (!response.ok) throw new Error('Failed to generate suggestions')
+
+            const data = await response.json()
+            setRowNames(data.rowNames || [])
+            setSelectedRowName(data.rowNames[0] || '')
+        } catch (error) {
+            console.error('Name refresh error:', error)
+        } finally {
+            setIsRefreshingNames(false)
+        }
+    }
+
+    const fetchPreviewContent = async () => {
+        setIsLoadingPreview(true)
+        try {
+            const selectedSuggestions = Array.from(selected).map((idx) => suggestions[idx])
+            const response = await fetch('/api/smart-suggestions/preview', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    suggestions: selectedSuggestions,
+                    mediaType: inputData.mediaType,
+                }),
+            })
+
+            if (!response.ok) throw new Error('Failed to fetch preview')
+
+            const data = await response.json()
+            setPreviewContent(data.content || [])
+        } catch (error) {
+            console.error('Preview fetch error:', error)
+            setPreviewContent([])
+        } finally {
+            setIsLoadingPreview(false)
         }
     }
 
@@ -186,12 +248,67 @@ export function SmartStep2Suggestions({
                 })}
             </div>
 
+            {/* Content Preview */}
+            {selected.size > 0 && (
+                <div>
+                    <h4 className="text-sm font-medium text-gray-200 mb-3">Preview:</h4>
+                    {isLoadingPreview ? (
+                        <div className="flex items-center justify-center py-8 bg-gray-800/30 rounded-lg">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                        </div>
+                    ) : previewContent.length > 0 ? (
+                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-gray-900">
+                            {previewContent.map((item, idx) => (
+                                <div
+                                    key={idx}
+                                    className="flex-shrink-0 w-28 group cursor-pointer"
+                                    title={item.title || item.name}
+                                >
+                                    <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-gray-800">
+                                        {item.poster_path ? (
+                                            <Image
+                                                src={`https://image.tmdb.org/t/p/w342${item.poster_path}`}
+                                                alt={item.title || item.name}
+                                                fill
+                                                className="object-cover group-hover:scale-105 transition-transform duration-200"
+                                                sizes="112px"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-gray-600 text-xs p-2 text-center">
+                                                {item.title || item.name}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-gray-500 text-sm py-4 text-center">
+                            No results found for selected filters
+                        </p>
+                    )}
+                </div>
+            )}
+
             {/* Row Name Suggestions */}
             {rowNames.length > 0 && (
                 <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-3">
-                        Suggested Row Names:
-                    </label>
+                    <div className="flex items-center justify-between mb-3">
+                        <label className="block text-sm font-medium text-gray-200">
+                            Suggested Row Names:
+                        </label>
+                        <button
+                            onClick={refreshRowNames}
+                            disabled={isRefreshingNames}
+                            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Generate new name suggestions"
+                        >
+                            <ArrowPathIcon
+                                className={`w-4 h-4 ${isRefreshingNames ? 'animate-spin' : ''}`}
+                            />
+                            Refresh
+                        </button>
+                    </div>
                     <div className="grid grid-cols-1 gap-2">
                         {rowNames.map((name, idx) => (
                             <button
@@ -239,6 +356,20 @@ export function SmartStep2Suggestions({
 }
 
 function formatSuggestionLabel(suggestion: Suggestion): string {
+    // Use displayName when available for cleaner display
+    if (suggestion.displayName) {
+        switch (suggestion.type) {
+            case 'genre':
+                return `Genre: ${suggestion.displayName}`
+            case 'actor':
+                return `Actor: ${suggestion.displayName}`
+            case 'director':
+                return `Director: ${suggestion.displayName}`
+            case 'studio':
+                return `Studio: ${suggestion.displayName}`
+        }
+    }
+
     switch (suggestion.type) {
         case 'genre':
             return `Genres: ${Array.isArray(suggestion.value) ? 'Multiple' : suggestion.value}`

@@ -3,19 +3,21 @@ import { generateSmartSuggestions } from '../../../utils/smartRowSuggestions'
 
 export async function POST(request: NextRequest) {
     try {
-        const inputData = await request.json()
+        const body = await request.json()
+        const { entities, mediaType, rawText, seed } = body
 
         // Validate input
-        if (!inputData.entities || !Array.isArray(inputData.entities)) {
+        if (!entities || !Array.isArray(entities)) {
             return NextResponse.json({ error: 'Invalid entities' }, { status: 400 })
         }
 
-        if (!inputData.mediaType || !['movie', 'tv', 'both'].includes(inputData.mediaType)) {
+        if (!mediaType || !['movie', 'tv', 'both'].includes(mediaType)) {
             return NextResponse.json({ error: 'Invalid media type' }, { status: 400 })
         }
 
         // Generate TMDB-based suggestions (people/content analysis)
-        const tmdbResult = await generateSmartSuggestions(inputData)
+        const inputData = { entities, mediaType, rawText }
+        const tmdbResult = await generateSmartSuggestions(inputData, seed)
 
         // Call Gemini for semantic analysis if there's text
         let geminiInsights = null

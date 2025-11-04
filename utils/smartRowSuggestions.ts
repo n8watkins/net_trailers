@@ -4,6 +4,7 @@ import type { Entity } from '../components/customRows/smart/SmartInput'
 export interface Suggestion {
     type: 'genre' | 'rating' | 'year_range' | 'studio' | 'actor' | 'director' | 'certification'
     value: any
+    displayName?: string // Human-readable name for display
     confidence: number // 0-100
     reason: string
     estimatedResults?: number
@@ -25,7 +26,10 @@ interface InputData {
 /**
  * Generate suggestions based on user input (TMDB-powered, no AI)
  */
-export async function generateSmartSuggestions(inputData: InputData): Promise<SuggestionResult> {
+export async function generateSmartSuggestions(
+    inputData: InputData,
+    seed?: number
+): Promise<SuggestionResult> {
     const suggestions: Suggestion[] = []
 
     // 1. Add user-tagged entities (100% confidence)
@@ -34,8 +38,9 @@ export async function generateSmartSuggestions(inputData: InputData): Promise<Su
             suggestions.push({
                 type: 'genre',
                 value: [entity.id],
+                displayName: entity.name,
                 confidence: 100,
-                reason: 'Your explicit selection',
+                reason: 'Your selection',
                 source: 'user',
             })
         } else if (entity.type === 'person') {
@@ -43,16 +48,18 @@ export async function generateSmartSuggestions(inputData: InputData): Promise<Su
             suggestions.push({
                 type: isDirector ? 'director' : 'actor',
                 value: entity.id,
+                displayName: entity.name,
                 confidence: 100,
-                reason: 'Your explicit selection',
+                reason: 'Your selection',
                 source: 'user',
             })
         } else if (entity.type === 'company') {
             suggestions.push({
                 type: 'studio',
                 value: entity.id,
+                displayName: entity.name,
                 confidence: 100,
-                reason: 'Your explicit selection',
+                reason: 'Your selection',
                 source: 'user',
             })
         }
@@ -107,8 +114,8 @@ export async function generateSmartSuggestions(inputData: InputData): Promise<Su
     const textSuggestions = analyzeTextKeywords(inputData.rawText)
     suggestions.push(...textSuggestions)
 
-    // 4. Generate row names
-    const rowNames = generateRowNames(inputData)
+    // 4. Generate row names (with optional seed for variations)
+    const rowNames = generateRowNames(inputData, seed)
 
     // 5. Generate insight
     const insight = generateInsight(inputData, suggestions)
@@ -292,9 +299,9 @@ function analyzeTextKeywords(text: string): Suggestion[] {
 }
 
 /**
- * Generate row names based on entities
+ * Generate row names based on entities with whimsical variations
  */
-function generateRowNames(inputData: InputData): string[] {
+function generateRowNames(inputData: InputData, seed: number = 0): string[] {
     const { entities, mediaType } = inputData
     const names: string[] = []
 
@@ -304,42 +311,104 @@ function generateRowNames(inputData: InputData): string[] {
 
     const contentType = mediaType === 'movie' ? 'Films' : mediaType === 'tv' ? 'Shows' : 'Content'
 
-    // Pattern 1: Person + Genre
+    // Helper to pick variation based on seed
+    const pick = (options: string[]) => options[seed % options.length]
+
+    // Pattern 1: Person + Genre (whimsical variations)
     if (people.length > 0 && genres.length > 0) {
-        names.push(`${people[0].name}'s ${genres[0].name} ${contentType}`)
+        const variations = [
+            `${people[0].name}'s ${genres[0].name} Adventures`,
+            `${genres[0].name} Nights with ${people[0].name}`,
+            `${people[0].name}'s ${genres[0].name} Playground`,
+            `When ${people[0].name} Gets ${genres[0].name}`,
+            `${people[0].name}: ${genres[0].name} Extraordinaire`,
+            `${people[0].name}'s ${genres[0].name} Masterclass`,
+            `Peak ${genres[0].name} à la ${people[0].name}`,
+        ]
+        names.push(pick(variations))
     }
 
-    // Pattern 2: Studio + Genre
+    // Pattern 2: Studio + Genre (brand-focused wit)
     if (studios.length > 0 && genres.length > 0) {
-        names.push(`${studios[0].name} ${genres[0].name} Collection`)
+        const variations = [
+            `${studios[0].name}'s ${genres[0].name} Vault`,
+            `Pure ${genres[0].name} by ${studios[0].name}`,
+            `${studios[0].name}'s ${genres[0].name} Gold`,
+            `${genres[0].name} Classics: ${studios[0].name} Edition`,
+            `${studios[0].name}'s ${genres[0].name} Hits`,
+            `The ${studios[0].name} ${genres[0].name} Files`,
+        ]
+        names.push(pick(variations))
     }
 
-    // Pattern 3: Multiple Genres
+    // Pattern 3: Multiple Genres (fusion names)
     if (genres.length >= 2) {
-        names.push(`${genres[0].name} ${genres[1].name} ${contentType}`)
+        const variations = [
+            `${genres[0].name} Meets ${genres[1].name}`,
+            `When ${genres[0].name} Gets ${genres[1].name}`,
+            `${genres[0].name}-${genres[1].name} Fusion`,
+            `${genres[0].name} with a Splash of ${genres[1].name}`,
+            `Double Trouble: ${genres[0].name} + ${genres[1].name}`,
+            `${genres[0].name} & ${genres[1].name} Magic`,
+        ]
+        names.push(pick(variations))
     }
 
-    // Pattern 4: Person-focused
+    // Pattern 4: Person-focused (celebrate the talent)
     if (people.length > 0) {
-        names.push(`${people[0].name} Collection`)
+        const variations = [
+            `The ${people[0].name} Experience`,
+            `Peak ${people[0].name}`,
+            `${people[0].name}'s Greatest Hits`,
+            `All Things ${people[0].name}`,
+            `${people[0].name}: The Archives`,
+            `${people[0].name}'s Hall of Fame`,
+            `${people[0].name} Essentials`,
+        ]
+        names.push(pick(variations))
     }
 
-    // Pattern 5: Studio-focused
+    // Pattern 5: Studio-focused (brand personality)
     if (studios.length > 0) {
-        names.push(`${studios[0].name} Originals`)
+        const variations = [
+            `${studios[0].name} Vault`,
+            `Best of ${studios[0].name}`,
+            `${studios[0].name} Classics`,
+            `${studios[0].name}'s Finest`,
+            `The ${studios[0].name} Collection`,
+            `${studios[0].name} Treasures`,
+        ]
+        names.push(pick(variations))
     }
 
-    // Pattern 6: Single genre
+    // Pattern 6: Single genre (playful descriptors)
     if (genres.length === 1) {
-        names.push(`${genres[0].name} ${contentType}`)
+        const variations = [
+            `${genres[0].name} Paradise`,
+            `Pure ${genres[0].name}`,
+            `${genres[0].name} Gems`,
+            `${genres[0].name} Essentials`,
+            `${genres[0].name} Gold`,
+            `${genres[0].name} Wonderland`,
+            `Peak ${genres[0].name}`,
+        ]
+        names.push(pick(variations))
     }
 
-    // Fallback
+    // Fallback (creative defaults)
     if (names.length === 0) {
-        names.push(`Custom ${contentType}`)
+        const variations = [
+            `My Curated ${contentType}`,
+            `Handpicked ${contentType}`,
+            `Custom ${contentType} Mix`,
+            `Unique ${contentType} Blend`,
+            `Specially Selected ${contentType}`,
+        ]
+        names.push(pick(variations))
     }
 
-    return names.slice(0, 3) // Return top 3
+    // Return top 3 unique names
+    return [...new Set(names)].slice(0, 3)
 }
 
 /**
@@ -352,23 +421,23 @@ function generateInsight(inputData: InputData, suggestions: Suggestion[]): strin
     const studios = entities.filter((e) => e.type === 'company')
 
     if (people.length > 0 && genres.length > 0) {
-        return `${people[0].name} is known for ${genres[0].name.toLowerCase()} content. We've suggested additional filters based on their filmography.`
+        return `${people[0].name}'s ${genres[0].name.toLowerCase()} catalog curated for you`
     }
 
     if (studios.length > 0) {
-        return `${studios[0].name} is a prolific studio. We've analyzed their catalog to suggest relevant filters.`
+        return `Exploring ${studios[0].name}'s finest work`
     }
 
     if (genres.length >= 2) {
-        return `Combining ${genres.map((g) => g.name.toLowerCase()).join(' and ')} creates a unique mix. We've suggested complementary filters.`
+        return `${genres[0].name} meets ${genres[1].name} – an interesting mix`
     }
 
     const tmdbSuggestions = suggestions.filter((s) => s.source === 'tmdb').length
     if (tmdbSuggestions > 0) {
-        return `We've analyzed your selections and found ${tmdbSuggestions} pattern${tmdbSuggestions > 1 ? 's' : ''} to help refine your row.`
+        return `Found ${tmdbSuggestions} pattern${tmdbSuggestions > 1 ? 's' : ''} from your selections`
     }
 
-    return "We've generated suggestions based on your input to help you create the perfect row."
+    return 'Smart suggestions from your selections'
 }
 
 /**

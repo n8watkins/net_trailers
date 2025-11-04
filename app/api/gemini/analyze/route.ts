@@ -118,7 +118,7 @@ Extract and return a JSON object with:
       "confidence": 0-100
     }
   ],
-  "insight": "Brief explanation of what you understood from their description"
+  "insight": "Single concise sentence (10-15 words max) capturing the vibe"
 }
 
 Important:
@@ -127,6 +127,7 @@ Important:
 - Tone keywords: dark, gritty → likely R-rated mature content
 - Family keywords: kids, children, wholesome → G/PG ratings
 - Era mentions: 80s → 1980-1989, 90s → 1990-1999, classic → pre-2000, modern → post-2015
+- Keep insight VERY concise - single sentence, max 15 words, capturing the essence
 
 Return ONLY valid JSON, no markdown formatting.`
 }
