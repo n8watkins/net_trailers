@@ -2,13 +2,21 @@ import { TMDBApiClient } from './tmdbApi'
 import type { Entity } from '../components/customRows/smart/SmartInput'
 
 export interface Suggestion {
-    type: 'genre' | 'rating' | 'year_range' | 'studio' | 'actor' | 'director' | 'certification'
+    type:
+        | 'genre'
+        | 'rating'
+        | 'year_range'
+        | 'studio'
+        | 'actor'
+        | 'director'
+        | 'certification'
+        | 'content_list'
     value: any
     displayName?: string // Human-readable name for display
     confidence: number // 0-100
     reason: string
     estimatedResults?: number
-    source: 'user' | 'tmdb' | 'text_analysis'
+    source: 'user' | 'tmdb' | 'text_analysis' | 'gemini'
 }
 
 export interface SuggestionResult {

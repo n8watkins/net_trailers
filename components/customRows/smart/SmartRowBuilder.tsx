@@ -215,6 +215,7 @@ export function SmartRowBuilder({
 
                         {currentStep === 3 && (
                             <SmartStep3Preview
+                                key={JSON.stringify(step2Data.selectedSuggestions)} // Force re-mount when suggestions change
                                 selectedSuggestions={step2Data.selectedSuggestions}
                                 selectedRowName={step2Data.selectedRowName}
                                 mediaType={step2Data.mediaType}
@@ -302,6 +303,11 @@ function convertSuggestionsToFormData(
                     formData.advancedFilters!.withCast = []
                 }
                 formData.advancedFilters!.withCast.push(String(suggestion.value))
+                break
+
+            case 'content_list':
+                // Gemini-curated specific content IDs
+                formData.advancedFilters!.contentIds = suggestion.value
                 break
         }
     })

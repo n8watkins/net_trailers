@@ -46,10 +46,88 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
         // Get row configuration from query params
         const genresParam = searchParams.get('genres')
+        const contentIdsParam = searchParams.get('contentIds') // Gemini-curated content list
         const genreLogic = (searchParams.get('genreLogic') || 'OR') as GenreLogic
         const mediaType = (searchParams.get('mediaType') || 'movie') as MediaType
 
-        // Validate required parameters
+        // Handle curated content lists (Gemini recommendations)
+        if (contentIdsParam) {
+            const contentIds = contentIdsParam.split(',').map((id) => parseInt(id.trim(), 10))
+
+            // Fetch specific content by IDs
+            let enrichedResults: any[] = []
+
+            for (const tmdbId of contentIds) {
+                try {
+                    const endpoint =
+                        mediaType === 'tv'
+                            ? `${BASE_URL}/tv/${tmdbId}`
+                            : `${BASE_URL}/movie/${tmdbId}`
+
+                    const url = new URL(endpoint)
+                    url.searchParams.append('api_key', API_KEY)
+                    url.searchParams.append('language', 'en-US')
+
+                    const response = await fetch(url.toString())
+                    if (!response.ok) continue
+
+                    const item = await response.json()
+                    enrichedResults.push({
+                        ...item,
+                        media_type: mediaType,
+                    })
+                } catch (error) {
+                    console.warn(`Failed to fetch content ${tmdbId}:`, error)
+                }
+            }
+
+            // Apply child safety filtering if needed
+            if (childSafeMode) {
+                const beforeCount = enrichedResults.length
+                enrichedResults = filterContentByAdultFlag(enrichedResults, true)
+
+                const hasTV = enrichedResults.some((item: any) => item.media_type === 'tv')
+                if (hasTV && enrichedResults.length > 0) {
+                    enrichedResults = await filterMatureTVShows(enrichedResults, API_KEY)
+                }
+
+                const hiddenCount = beforeCount - enrichedResults.length
+
+                return NextResponse.json(
+                    {
+                        results: enrichedResults,
+                        page: 1,
+                        total_pages: 1,
+                        total_results: enrichedResults.length,
+                        child_safety_enabled: true,
+                        hidden_count: hiddenCount,
+                    },
+                    {
+                        status: 200,
+                        headers: {
+                            'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=3600',
+                        },
+                    }
+                )
+            }
+
+            return NextResponse.json(
+                {
+                    results: enrichedResults,
+                    page: 1,
+                    total_pages: 1,
+                    total_results: enrichedResults.length,
+                },
+                {
+                    status: 200,
+                    headers: {
+                        'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=3600',
+                    },
+                }
+            )
+        }
+
+        // Validate required parameters for genre-based filtering
         if (!genresParam) {
             return NextResponse.json(
                 { error: 'Bad Request', message: 'genres parameter is required' },

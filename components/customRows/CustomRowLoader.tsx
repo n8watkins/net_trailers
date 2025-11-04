@@ -105,11 +105,27 @@ export function CustomRowLoader({ row }: CustomRowLoaderProps) {
                         url.searchParams.append('childSafetyMode', 'true')
                     }
                 } else {
-                    // Regular custom/system row with genre filters
+                    // Regular custom/system row with genre filters or curated content list
                     url = new URL(`/api/custom-rows/${row.id}/content`, window.location.origin)
                     url.searchParams.append('page', '1')
-                    url.searchParams.append('genres', row.genres.join(','))
-                    url.searchParams.append('genreLogic', row.genreLogic)
+
+                    // Check for curated content list (Gemini recommendations)
+                    const customRow = row as CustomRow
+                    if (
+                        customRow.advancedFilters?.contentIds &&
+                        customRow.advancedFilters.contentIds.length > 0
+                    ) {
+                        // Use content IDs for concept-based rows
+                        url.searchParams.append(
+                            'contentIds',
+                            customRow.advancedFilters.contentIds.join(',')
+                        )
+                    } else {
+                        // Use genre filters for traditional rows
+                        url.searchParams.append('genres', row.genres.join(','))
+                        url.searchParams.append('genreLogic', row.genreLogic)
+                    }
+
                     url.searchParams.append('mediaType', row.mediaType)
                     if (childSafetyMode) {
                         url.searchParams.append('childSafetyMode', 'true')

@@ -72,6 +72,8 @@ export async function POST(request: NextRequest) {
             certification: analysis.certification || null,
             recommendations: analysis.recommendations || [],
             mediaType: analysis.mediaType || 'both',
+            conceptQuery: analysis.conceptQuery || null, // For vibe-based queries like "comedy of errors"
+            movieRecommendations: analysis.movieRecommendations || [], // Specific movie titles to search for
         })
     } catch (error) {
         console.error('Gemini analysis error:', error)
@@ -152,6 +154,14 @@ Return ONLY this JSON structure with TMDB genre IDs:
       "reason": "brief reason",
       "confidence": 0-100
     }
+  ],
+  "conceptQuery": string | null,  // If user describes a VIBE/CONCEPT (like "comedy of errors", "fish out of water", "heist gone wrong"), provide a search-friendly description
+  "movieRecommendations": [  // If conceptQuery exists, provide 10-15 specific movie/show titles that match
+    {
+      "title": "Clue",  // Exact title for TMDB search
+      "year": 1985,     // Release year for disambiguation
+      "reason": "Classic comedy of errors with mistaken identity"
+    }
   ]
 }
 
@@ -161,8 +171,28 @@ Examples:
 - "space adventures" → {"genreIds": [878, 12]} (Sci-Fi + Adventure)
 - "action comedies" → {"genreIds": [28, 35]} (Action + Comedy)
 
+CONCEPT QUERY Examples (populate movieRecommendations instead of just genres):
+- "comedy of errors" → {
+    "conceptQuery": "Comedy films with mistaken identities, misunderstandings, and escalating chaos",
+    "movieRecommendations": [
+      {"title": "Clue", "year": 1985, "reason": "Murder mystery comedy with mistaken identities"},
+      {"title": "Noises Off", "year": 1992, "reason": "Farce with cascading misunderstandings"},
+      {"title": "A Fish Called Wanda", "year": 1988, "reason": "Heist comedy with double-crosses and confusion"},
+      {"title": "The Pink Panther", "year": 1963, "reason": "Slapstick comedy with bumbling detective"},
+      {"title": "Arsenic and Old Lace", "year": 1944, "reason": "Dark comedy with mounting confusion"},
+      // ... 10-15 total
+    ],
+    "genreIds": [35]  // Still include genre for filtering
+  }
+- "fish out of water" → Provide movies about characters in unfamiliar situations
+- "heist gone wrong" → Provide heist films where plans fall apart
+- "coming of age" → Provide films about growing up and self-discovery
+
 Rules:
 - MediaType: "series/show/tv" → "tv", "film/movie" → "movie", unclear → "both"
+- Detect CONCEPT queries (vibes, tropes, narrative structures) vs simple genre requests
+- For concept queries: provide 10-15 specific titles with years and reasons
+- For simple genres: just use genreIds
 - Return 1-3 genre IDs maximum
 - ONLY use IDs from the lists above
 - Be precise - don't add extra genres

@@ -45,6 +45,9 @@ export interface AdvancedFilters {
     // Cast/Crew filters
     withCast?: string[] // Actor names or TMDB person IDs
     withDirector?: string // Director name or TMDB person ID
+
+    // Curated content list (Gemini AI recommendations)
+    contentIds?: number[] // Specific TMDB IDs for concept-based rows (e.g., "comedy of errors")
 }
 
 /**

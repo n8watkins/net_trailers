@@ -14,6 +14,38 @@ export async function POST(request: NextRequest) {
 
         const tmdb = TMDBApiClient.getInstance()
 
+        // Check if we have a content_list suggestion (Gemini-curated specific content)
+        const contentListSuggestion = suggestions.find((s: any) => s.type === 'content_list')
+        if (contentListSuggestion) {
+            // Directly fetch the specific content IDs recommended by Gemini
+            const content: any[] = []
+            const tmdb = TMDBApiClient.getInstance()
+
+            for (const tmdbId of contentListSuggestion.value) {
+                try {
+                    const endpoint =
+                        mediaType === 'tv' || mediaType === 'both'
+                            ? `/tv/${tmdbId}`
+                            : `/movie/${tmdbId}`
+
+                    const item = await tmdb.fetch(endpoint, {})
+                    if (item) {
+                        content.push(item)
+                    }
+
+                    // Limit to 20 items for preview
+                    if (content.length >= 20) break
+                } catch (error) {
+                    console.warn(`Failed to fetch content ${tmdbId}:`, error)
+                }
+            }
+
+            return NextResponse.json({
+                content: content.slice(0, 10),
+                totalResults: contentListSuggestion.value.length,
+            })
+        }
+
         // Build query parameters from suggestions
         const discoverParams: any = {
             sort_by: 'popularity.desc',

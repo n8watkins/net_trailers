@@ -49,7 +49,12 @@ export async function POST(request: NextRequest) {
 
         // Merge Gemini insights with TMDB suggestions
         const mergedResult = geminiInsights
-            ? mergeGeminiInsights(tmdbResult, geminiInsights, mediaType)
+            ? await mergeGeminiInsights(
+                  tmdbResult,
+                  geminiInsights,
+                  mediaType,
+                  request.nextUrl.origin
+              )
             : { ...tmdbResult, mediaType }
 
         // Generate creative row names using Gemini
@@ -161,7 +166,12 @@ Response: Just the name, nothing else.`
 /**
  * Merge Gemini semantic insights with TMDB suggestions
  */
-function mergeGeminiInsights(tmdbResult: any, geminiInsights: any, mediaType: string): any {
+async function mergeGeminiInsights(
+    tmdbResult: any,
+    geminiInsights: any,
+    mediaType: string,
+    origin: string
+): Promise<any> {
     const { suggestions, rowNames, insight } = tmdbResult
     const mergedSuggestions = [...suggestions]
 
@@ -174,6 +184,29 @@ function mergeGeminiInsights(tmdbResult: any, geminiInsights: any, mediaType: st
             reason: 'AI detected these genres from your description',
             source: 'gemini',
         })
+    }
+
+    // Handle concept queries with specific movie recommendations
+    if (geminiInsights.movieRecommendations && geminiInsights.movieRecommendations.length > 0) {
+        try {
+            // Search TMDB for each recommended title to get IDs
+            const tmdbIds = await searchTMDBForTitles(
+                geminiInsights.movieRecommendations,
+                mediaType
+            )
+
+            if (tmdbIds.length > 0) {
+                mergedSuggestions.push({
+                    type: 'content_list',
+                    value: tmdbIds, // Array of TMDB IDs
+                    confidence: 95,
+                    reason: geminiInsights.conceptQuery || 'AI-curated content matching your vibe',
+                    source: 'gemini',
+                })
+            }
+        } catch (error) {
+            console.error('Error searching TMDB for recommendations:', error)
+        }
     }
 
     // Add Gemini recommendations
@@ -195,4 +228,55 @@ function mergeGeminiInsights(tmdbResult: any, geminiInsights: any, mediaType: st
         insight: '', // No descriptive insight
         mediaType: geminiInsights.mediaType || mediaType,
     }
+}
+
+/**
+ * Search TMDB for specific movie/show titles to get their IDs
+ */
+async function searchTMDBForTitles(
+    recommendations: Array<{ title: string; year?: number; reason?: string }>,
+    mediaType: string
+): Promise<number[]> {
+    const tmdbIds: number[] = []
+
+    for (const rec of recommendations) {
+        try {
+            // Search TMDB for this title
+            const searchUrl =
+                mediaType === 'tv'
+                    ? `https://api.themoviedb.org/3/search/tv?api_key=${process.env.TMDB_API_KEY}&query=${encodeURIComponent(rec.title)}`
+                    : `https://api.themoviedb.org/3/search/movie?api_key=${process.env.TMDB_API_KEY}&query=${encodeURIComponent(rec.title)}`
+
+            const response = await fetch(searchUrl)
+            if (!response.ok) continue
+
+            const data = await response.json()
+            const results = data.results || []
+
+            // Find best match (prefer by year if provided)
+            let bestMatch = results[0]
+            if (rec.year && results.length > 1) {
+                for (const result of results) {
+                    const releaseYear = parseInt(
+                        (result.release_date || result.first_air_date || '').split('-')[0]
+                    )
+                    if (releaseYear === rec.year) {
+                        bestMatch = result
+                        break
+                    }
+                }
+            }
+
+            if (bestMatch?.id) {
+                tmdbIds.push(bestMatch.id)
+            }
+
+            // Rate limit: don't overwhelm TMDB
+            if (tmdbIds.length >= 15) break
+        } catch (error) {
+            console.error(`Failed to search TMDB for "${rec.title}":`, error)
+        }
+    }
+
+    return tmdbIds
 }

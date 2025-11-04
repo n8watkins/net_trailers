@@ -228,11 +228,53 @@ export function SmartStep2Suggestions({
     }
 
     if (isLoading) {
+        const loadingMessages = [
+            { emoji: '🤖', text: 'Consulting the AI overlords...', sub: 'They know what you like' },
+            {
+                emoji: '🎬',
+                text: 'Analyzing cinematic masterpieces...',
+                sub: 'From Spielberg to Scorsese',
+            },
+            {
+                emoji: '🔮',
+                text: 'Predicting your next binge...',
+                sub: 'Crystal ball not included',
+            },
+            { emoji: '🧠', text: 'Teaching robots to love movies...', sub: 'Beep boop... ACTION!' },
+            { emoji: '✨', text: 'Sprinkling AI magic dust...', sub: 'This is how rows are born' },
+            { emoji: '🎭', text: 'Curating peak cinema...', sub: 'No film bros were harmed' },
+        ]
+        const randomMessage = loadingMessages[Math.floor(Math.random() * loadingMessages.length)]
+
         return (
-            <div className="flex flex-col items-center justify-center py-16">
-                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-red-600 mb-4"></div>
-                <p className="text-white text-lg font-medium">Creating your recommendations...</p>
-                <p className="text-gray-400 text-sm mt-2">Using AI to find the perfect matches</p>
+            <div className="flex flex-col items-center justify-center py-20">
+                {/* Netflix-style animated logo */}
+                <div className="relative mb-8">
+                    <div className="text-9xl animate-pulse">{randomMessage.emoji}</div>
+                    <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2">
+                        <div className="flex gap-1">
+                            <div
+                                className="w-2 h-2 bg-red-600 rounded-full animate-bounce"
+                                style={{ animationDelay: '0ms' }}
+                            ></div>
+                            <div
+                                className="w-2 h-2 bg-red-600 rounded-full animate-bounce"
+                                style={{ animationDelay: '150ms' }}
+                            ></div>
+                            <div
+                                className="w-2 h-2 bg-red-600 rounded-full animate-bounce"
+                                style={{ animationDelay: '300ms' }}
+                            ></div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Geeky loading text */}
+                <p className="text-white text-2xl font-bold mb-2 animate-pulse">
+                    {randomMessage.text}
+                </p>
+                <p className="text-gray-400 text-sm italic">{randomMessage.sub}</p>
+                <p className="text-gray-500 text-xs mt-4">// Building your perfect row...</p>
             </div>
         )
     }
@@ -405,8 +447,7 @@ export function SmartStep2Suggestions({
                 </button>
                 <button
                     onClick={handleContinue}
-                    disabled={genreIds.length === 0 && people.length === 0}
-                    className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-lg"
+                    className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold text-lg"
                 >
                     Preview Row →
                 </button>
