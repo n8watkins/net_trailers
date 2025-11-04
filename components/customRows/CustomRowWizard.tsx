@@ -2,13 +2,18 @@
 
 import React, { useState } from 'react'
 import { XMarkIcon, CheckIcon } from '@heroicons/react/24/outline'
-import { CustomRowFormData, AdvancedFilters } from '../../types/customRows'
+import { CustomRowFormData } from '../../types/customRows'
 import { Content } from '../../types/content'
+import { WizardStep1Basic } from './WizardStep1Basic'
+import { WizardStep2Advanced } from './WizardStep2Advanced'
+import { WizardStep3NamePreview } from './WizardStep3NamePreview'
+import { WizardStep4Confirmation } from './WizardStep4Confirmation'
 
 interface CustomRowWizardProps {
     onClose: () => void
     onComplete: (data: CustomRowFormData) => Promise<void>
     isAuthenticated: boolean // Controls access to premium features
+    onSignIn: () => void // Callback to open sign-in modal
 }
 
 type WizardStep = 1 | 2 | 3 | 4
@@ -24,7 +29,12 @@ type WizardStep = 1 | 2 | 3 | 4
  *
  * Users can skip to Step 3 with "Quick Create" or use advanced features.
  */
-export function CustomRowWizard({ onClose, onComplete, isAuthenticated }: CustomRowWizardProps) {
+export function CustomRowWizard({
+    onClose,
+    onComplete,
+    isAuthenticated,
+    onSignIn,
+}: CustomRowWizardProps) {
     const [currentStep, setCurrentStep] = useState<WizardStep>(1)
     const [useAdvancedFilters, setUseAdvancedFilters] = useState(false)
     const [formData, setFormData] = useState<CustomRowFormData>({
@@ -71,7 +81,7 @@ export function CustomRowWizard({ onClose, onComplete, isAuthenticated }: Custom
     // Use advanced features - go to step 2
     const handleUseAdvanced = () => {
         if (!isAuthenticated) {
-            // Show sign-in modal (will be handled by parent)
+            onSignIn()
             return
         }
         setUseAdvancedFilters(true)
@@ -189,98 +199,56 @@ export function CustomRowWizard({ onClose, onComplete, isAuthenticated }: Custom
                     {/* Step content */}
                     <div className="p-6">
                         {currentStep === 1 && (
-                            <div>
-                                <p className="text-gray-300">Step 1: Basic setup goes here</p>
-                                <div className="flex gap-3 mt-6">
-                                    <button
-                                        onClick={handleQuickCreate}
-                                        disabled={!canProgressFromStep1}
-                                        className="flex-1 px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        Quick Create
-                                    </button>
-                                    <button
-                                        onClick={handleUseAdvanced}
-                                        disabled={!canProgressFromStep1}
-                                        className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        Use Advanced Features
-                                    </button>
-                                </div>
-                            </div>
+                            <WizardStep1Basic
+                                formData={formData}
+                                onChange={updateFormData}
+                                onQuickCreate={handleQuickCreate}
+                                onUseAdvanced={handleUseAdvanced}
+                                canProgress={canProgressFromStep1}
+                                isAuthenticated={isAuthenticated}
+                                onSignIn={onSignIn}
+                            />
                         )}
 
                         {currentStep === 2 && (
-                            <div>
-                                <p className="text-gray-300">Step 2: Advanced filters go here</p>
-                                <div className="flex gap-3 mt-6">
-                                    <button
-                                        onClick={prevStep}
-                                        className="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
-                                    >
-                                        Back
-                                    </button>
-                                    <button
-                                        onClick={nextStep}
-                                        className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                                    >
-                                        Continue
-                                    </button>
-                                </div>
-                            </div>
+                            <WizardStep2Advanced
+                                filters={formData.advancedFilters || {}}
+                                onChange={(advancedFilters) => updateFormData({ advancedFilters })}
+                                onBack={prevStep}
+                                onContinue={nextStep}
+                            />
                         )}
 
                         {currentStep === 3 && (
-                            <div>
-                                <p className="text-gray-300">Step 3: Name and preview go here</p>
-                                <div className="flex gap-3 mt-6">
-                                    <button
-                                        onClick={prevStep}
-                                        className="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
-                                    >
-                                        Back
-                                    </button>
-                                    <button
-                                        onClick={handleCreate}
-                                        disabled={!canProgressFromStep3 || isLoading}
-                                        className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {isLoading ? 'Creating...' : 'Create Row'}
-                                    </button>
-                                </div>
-                            </div>
+                            <WizardStep3NamePreview
+                                formData={formData}
+                                onChange={updateFormData}
+                                onBack={prevStep}
+                                onCreate={handleCreate}
+                                isCreating={isLoading}
+                                isAuthenticated={isAuthenticated}
+                                onSignIn={onSignIn}
+                            />
                         )}
 
                         {currentStep === 4 && (
-                            <div>
-                                <p className="text-gray-300">Step 4: Confirmation goes here</p>
-                                <div className="flex gap-3 mt-6">
-                                    <button
-                                        onClick={onClose}
-                                        className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                                    >
-                                        View on Homepage
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            // Reset and start over
-                                            setCurrentStep(1)
-                                            setFormData({
-                                                name: '',
-                                                genres: [],
-                                                genreLogic: 'AND',
-                                                mediaType: 'movie',
-                                                enabled: true,
-                                                advancedFilters: {},
-                                            })
-                                            setUseAdvancedFilters(false)
-                                        }}
-                                        className="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
-                                    >
-                                        Create Another
-                                    </button>
-                                </div>
-                            </div>
+                            <WizardStep4Confirmation
+                                rowName={formData.name}
+                                onViewHomepage={onClose}
+                                onCreateAnother={() => {
+                                    // Reset and start over
+                                    setCurrentStep(1)
+                                    setFormData({
+                                        name: '',
+                                        genres: [],
+                                        genreLogic: 'AND',
+                                        mediaType: 'movie',
+                                        enabled: true,
+                                        advancedFilters: {},
+                                    })
+                                    setUseAdvancedFilters(false)
+                                }}
+                            />
                         )}
                     </div>
                 </div>
