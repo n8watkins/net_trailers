@@ -53,13 +53,13 @@ export function SmartInput({
     const [triggerChar, setTriggerChar] = useState<string>('')
     const inputRef = useRef<HTMLTextAreaElement>(null)
 
-    // Extract phrase after trigger character (@, #, &, !)
-    // @ = people, # = genres, & = studios, ! = movies/TV
+    // Extract phrase after trigger character (@ for people, : for content)
+    // Everything else will be analyzed by Gemini for semantic understanding
     useEffect(() => {
         const textBeforeCursor = rawText.slice(0, cursorPos)
 
-        // Look for trigger characters: @, #, &, !
-        const triggers = ['@', '#', '&', '!']
+        // Look for trigger characters: @ (people), : (movies/TV)
+        const triggers = ['@', ':']
         let triggerIndex = -1
         let foundTrigger = ''
 
@@ -113,11 +113,7 @@ export function SmartInput({
                         switch (triggerChar) {
                             case '@':
                                 return entity.type === 'person'
-                            case '#':
-                                return entity.type === 'genre'
-                            case '&':
-                                return entity.type === 'company'
-                            case '!':
+                            case ':':
                                 return entity.type === 'movie' || entity.type === 'tv'
                             default:
                                 return true

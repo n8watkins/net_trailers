@@ -56,27 +56,23 @@ export function SmartStep1Input({ onContinue, initialData }: SmartStep1InputProp
             <SmartInput
                 onEntitiesChange={setEntities}
                 onTextChange={setRawText}
-                placeholder="Use @ for people, # for genres, & for studios, ! for movies/shows. Example: '@Christopher Nolan #sci-fi'"
+                placeholder="Describe naturally. Use @ for people, : for specific titles. Example: 'dark sci-fi thrillers with @Christopher Nolan like :Inception'"
             />
 
             {/* Tips */}
             <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-                <p className="text-gray-300 text-sm font-medium mb-2">💡 Trigger Characters:</p>
+                <p className="text-gray-300 text-sm font-medium mb-2">💡 How it works:</p>
                 <ul className="text-gray-400 text-sm space-y-1">
+                    <li>• Type naturally: "dark sci-fi thrillers from the 80s"</li>
                     <li>
-                        • <span className="text-white">@</span> for people (actors, directors)
+                        • Use <span className="text-white">@</span> to tag people: @Christopher
+                        Nolan
                     </li>
                     <li>
-                        • <span className="text-white">#</span> for genres
+                        • Use <span className="text-white">:</span> to tag titles: :Inception
                     </li>
-                    <li>
-                        • <span className="text-white">&</span> for studios
-                    </li>
-                    <li>
-                        • <span className="text-white">!</span> for specific movies/shows
-                    </li>
-                    <li className="pt-2 text-gray-500">
-                        Type 2+ letters after a trigger to see suggestions
+                    <li className="pt-2 text-purple-400">
+                        ✨ AI analyzes your text for genres, styles, and themes
                     </li>
                 </ul>
             </div>
