@@ -15,8 +15,8 @@ function GenrePageContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const params = useParams<{ type: string; id: string }>()
-    const name = searchParams.get('name')
-    const title = searchParams.get('title')
+    const name = searchParams?.get('name')
+    const title = searchParams?.get('title')
     const sessionData = useSessionData()
     const [content, setContent] = useState<Content[]>([])
     const [loading, setLoading] = useState(true)
@@ -35,8 +35,8 @@ function GenrePageContent() {
         year: 'all',
     })
 
-    const genreId = params.id
-    const mediaType = params.type
+    const genreId = params?.id
+    const mediaType = params?.type
     const genreName = name
     const pageTitle = title
     const { isEnabled: childSafetyEnabled } = useChildSafety()

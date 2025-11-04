@@ -28,7 +28,7 @@ function SearchPageContent() {
 
     // Update search query from URL parameter (only on initial load)
     useEffect(() => {
-        const q = searchParams.get('q')
+        const q = searchParams?.get('q')
         if (isInitialLoad && q && typeof q === 'string' && q !== query) {
             updateQuery(q)
             setIsInitialLoad(false)
@@ -82,7 +82,7 @@ function SearchPageContent() {
     useEffect(() => {
         if (!isInitialLoad && query) {
             // Check if the URL would actually change
-            const currentQuery = searchParams.get('q')
+            const currentQuery = searchParams?.get('q')
             if (currentQuery === query) {
                 return // Don't update if the URL query is already the same
             }
@@ -94,7 +94,7 @@ function SearchPageContent() {
 
             // Debounce URL updates to avoid interference with typing
             urlUpdateTimeoutRef.current = setTimeout(() => {
-                const params = new URLSearchParams(searchParams.toString())
+                const params = new URLSearchParams(searchParams?.toString())
                 params.set('q', query)
                 router.replace(`/search?${params.toString()}`, { scroll: false })
             }, 500) // Wait 500ms after user stops typing
