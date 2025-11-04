@@ -56,17 +56,28 @@ export function SmartStep1Input({ onContinue, initialData }: SmartStep1InputProp
             <SmartInput
                 onEntitiesChange={setEntities}
                 onTextChange={setRawText}
-                placeholder="Example: 'sci-fi thrillers with Christopher Nolan' or 'anime from Studio Ghibli'"
+                placeholder="Use @ for people, # for genres, & for studios, ! for movies/shows. Example: '@Christopher Nolan #sci-fi'"
             />
 
             {/* Tips */}
             <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-                <p className="text-gray-300 text-sm font-medium mb-2">💡 Tips:</p>
+                <p className="text-gray-300 text-sm font-medium mb-2">💡 Trigger Characters:</p>
                 <ul className="text-gray-400 text-sm space-y-1">
-                    <li>• Type freely - we'll extract entities automatically</li>
-                    <li>• Tag 2+ items for better suggestions</li>
-                    <li>• Mix genres, people, movies, and studios</li>
-                    <li>• Use keywords like "high rated", "recent", "classic" for extra context</li>
+                    <li>
+                        • <span className="text-white">@</span> for people (actors, directors)
+                    </li>
+                    <li>
+                        • <span className="text-white">#</span> for genres
+                    </li>
+                    <li>
+                        • <span className="text-white">&</span> for studios
+                    </li>
+                    <li>
+                        • <span className="text-white">!</span> for specific movies/shows
+                    </li>
+                    <li className="pt-2 text-gray-500">
+                        Type 2+ letters after a trigger to see suggestions
+                    </li>
                 </ul>
             </div>
 

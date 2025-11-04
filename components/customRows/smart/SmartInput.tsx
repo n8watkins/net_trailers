@@ -50,45 +50,82 @@ export function SmartInput({
     const [taggedEntities, setTaggedEntities] = useState<Entity[]>([])
     const [showDropdown, setShowDropdown] = useState(false)
     const [isSearching, setIsSearching] = useState(false)
+    const [triggerChar, setTriggerChar] = useState<string>('')
     const inputRef = useRef<HTMLTextAreaElement>(null)
 
-    // Extract phrase at cursor position (supports multi-word like "christopher nolan")
+    // Extract phrase after trigger character (@, #, &, !)
+    // @ = people, # = genres, & = studios, ! = movies/TV
     useEffect(() => {
         const textBeforeCursor = rawText.slice(0, cursorPos)
 
-        // Find the last phrase after @ or after a sentence boundary (., !, ?)
-        // This allows multi-word searches like "christopher nolan"
-        const lastAtIndex = textBeforeCursor.lastIndexOf('@')
-        const lastPuncIndex = Math.max(
-            textBeforeCursor.lastIndexOf('.'),
-            textBeforeCursor.lastIndexOf('!'),
-            textBeforeCursor.lastIndexOf('?'),
-            textBeforeCursor.lastIndexOf(',')
-        )
+        // Look for trigger characters: @, #, &, !
+        const triggers = ['@', '#', '&', '!']
+        let triggerIndex = -1
+        let foundTrigger = ''
 
-        // Start from either @ symbol or after last punctuation
-        const startIndex = Math.max(lastAtIndex + 1, lastPuncIndex + 1, 0)
-        const phrase = textBeforeCursor.slice(startIndex).trim()
+        // Find the most recent trigger character
+        for (const trigger of triggers) {
+            const index = textBeforeCursor.lastIndexOf(trigger)
+            if (index > triggerIndex) {
+                triggerIndex = index
+                foundTrigger = trigger
+            }
+        }
 
-        if (phrase.length >= 2 && !phrase.startsWith('@')) {
-            setCurrentWord(phrase)
-            debouncedSearch(phrase)
-        } else {
+        // If no trigger found or trigger too far back, hide dropdown
+        if (triggerIndex === -1 || cursorPos - triggerIndex > 50) {
             setShowDropdown(false)
             setSuggestions([])
             setCurrentWord('')
+            setTriggerChar('')
+            return
+        }
+
+        // Extract the query after the trigger
+        const query = textBeforeCursor.slice(triggerIndex + 1).trim()
+
+        // Only search if we have 2+ characters after trigger
+        if (query.length >= 2) {
+            setCurrentWord(query)
+            setTriggerChar(foundTrigger)
+            debouncedSearch(query)
+        } else if (query.length === 0 && foundTrigger) {
+            // Just typed trigger, show empty state or instructions
+            setCurrentWord('')
+            setTriggerChar(foundTrigger)
+            setShowDropdown(false)
+        } else {
+            setShowDropdown(false)
+            setSuggestions([])
         }
     }, [rawText, cursorPos])
 
-    // Debounced search function
+    // Debounced search function with trigger-based filtering
     const debouncedSearch = useMemo(
         () =>
             debounce(async (query: string) => {
                 setIsSearching(true)
                 try {
                     const results = await searchAll(query)
-                    setSuggestions(results)
-                    setShowDropdown(results.length > 0)
+
+                    // Filter by trigger character
+                    const filtered = results.filter((entity) => {
+                        switch (triggerChar) {
+                            case '@':
+                                return entity.type === 'person'
+                            case '#':
+                                return entity.type === 'genre'
+                            case '&':
+                                return entity.type === 'company'
+                            case '!':
+                                return entity.type === 'movie' || entity.type === 'tv'
+                            default:
+                                return true
+                        }
+                    })
+
+                    setSuggestions(filtered)
+                    setShowDropdown(filtered.length > 0)
                     setSelectedIndex(0)
                 } catch (error) {
                     console.error('Search error:', error)
@@ -98,7 +135,7 @@ export function SmartInput({
                     setIsSearching(false)
                 }
             }, 300),
-        []
+        [triggerChar]
     )
 
     // Unified search across all entity types
@@ -117,13 +154,24 @@ export function SmartInput({
 
     // Handle entity selection
     const selectEntity = (entity: Entity) => {
-        // Replace current word with entity tag
-        const beforeWord = rawText.slice(0, cursorPos - currentWord.length)
-        const afterWord = rawText.slice(cursorPos)
-        const newText = `${beforeWord}@${entity.name} ${afterWord}`
+        // Find the trigger character position
+        const textBeforeCursor = rawText.slice(0, cursorPos)
+        const triggerIndex = Math.max(
+            textBeforeCursor.lastIndexOf('@'),
+            textBeforeCursor.lastIndexOf('#'),
+            textBeforeCursor.lastIndexOf('&'),
+            textBeforeCursor.lastIndexOf('!')
+        )
+
+        if (triggerIndex === -1) return
+
+        // Replace from trigger to cursor with trigger + entity name
+        const beforeTrigger = rawText.slice(0, triggerIndex)
+        const afterCursor = rawText.slice(cursorPos)
+        const newText = `${beforeTrigger}${triggerChar}${entity.name} ${afterCursor}`
 
         setRawText(newText)
-        const newEntities = [...taggedEntities, entity]
+        const newEntities = [...taggedEntities, { ...entity, triggerChar }]
         setTaggedEntities(newEntities)
         onEntitiesChange(newEntities)
         onTextChange(newText)
@@ -132,7 +180,7 @@ export function SmartInput({
         // Focus back to input
         setTimeout(() => {
             inputRef.current?.focus()
-            const newCursorPos = beforeWord.length + entity.name.length + 2 // +2 for @ and space
+            const newCursorPos = beforeTrigger.length + triggerChar.length + entity.name.length + 1
             inputRef.current?.setSelectionRange(newCursorPos, newCursorPos)
         }, 0)
     }
@@ -202,9 +250,9 @@ export function SmartInput({
                     </div>
                 )}
 
-                {/* Autocomplete Dropdown */}
+                {/* Autocomplete Dropdown - Compact */}
                 {showDropdown && suggestions.length > 0 && (
-                    <div className="absolute z-50 w-full mt-2 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl max-h-80 overflow-y-auto">
+                    <div className="absolute z-50 left-0 mt-1 bg-gray-800 border border-gray-700 rounded-md shadow-xl max-h-48 overflow-y-auto min-w-[280px] max-w-[400px]">
                         {suggestions.map((entity, index) => (
                             <SuggestionItem
                                 key={`${entity.type}-${entity.id}`}
@@ -261,47 +309,25 @@ function SuggestionItem({ entity, isSelected, onClick }: SuggestionItemProps) {
         }
     }
 
-    const getImage = () => {
-        if (!entity.image) return null
-        const baseUrl = 'https://image.tmdb.org/t/p/'
-        const size = 'w92'
-        return `${baseUrl}${size}${entity.image}`
-    }
-
     return (
         <button
             onClick={onClick}
-            className={`w-full flex items-center gap-3 p-3 transition-colors ${
-                isSelected ? 'bg-red-600' : 'hover:bg-gray-700'
+            className={`w-full flex items-center gap-2 px-3 py-2 transition-colors text-sm ${
+                isSelected ? 'bg-red-600 text-white' : 'hover:bg-gray-700 text-gray-200'
             }`}
         >
-            {/* Image or Icon */}
-            {entity.image ? (
-                <img
-                    src={getImage()!}
-                    alt={entity.name}
-                    className={`${
-                        entity.type === 'person' ? 'rounded-full' : 'rounded'
-                    } w-10 h-10 object-cover flex-shrink-0`}
-                />
-            ) : (
-                <div className="w-10 h-10 flex items-center justify-center bg-gray-700 rounded-full text-xl flex-shrink-0">
-                    {getIcon()}
-                </div>
+            {/* Icon Only */}
+            <span className="text-base flex-shrink-0">{getIcon()}</span>
+
+            {/* Name */}
+            <span className="flex-1 text-left truncate font-medium">{entity.name}</span>
+
+            {/* Subtitle (if exists) */}
+            {entity.subtitle && (
+                <span className="text-xs text-gray-400 truncate max-w-[100px]">
+                    {entity.subtitle}
+                </span>
             )}
-
-            {/* Text Info */}
-            <div className="flex-1 text-left min-w-0">
-                <div className="text-white font-medium truncate">{entity.name}</div>
-                {entity.subtitle && (
-                    <div className="text-gray-400 text-sm truncate">{entity.subtitle}</div>
-                )}
-            </div>
-
-            {/* Type Badge */}
-            <span className="px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded capitalize flex-shrink-0">
-                {entity.type}
-            </span>
         </button>
     )
 }
