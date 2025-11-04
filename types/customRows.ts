@@ -23,6 +23,31 @@ export interface BaseRowConfig {
 export type SystemRowConfig = BaseRowConfig
 
 /**
+ * Advanced filter options for custom rows
+ */
+export interface AdvancedFilters {
+    // Year filters
+    yearMin?: number // e.g., 1990
+    yearMax?: number // e.g., 2024
+
+    // Rating filters (0-10 scale, whole numbers)
+    ratingMin?: number // e.g., 3 (for "bad" movies)
+    ratingMax?: number // e.g., 6 (max rating for "bad" movies)
+
+    // Popularity filter (0-5 scale: None, Low, Medium, High, Very High)
+    // Maps to TMDB values: 0, 10, 50, 100, 200
+    popularity?: number // 0-4 (index in popularity scale)
+
+    // Vote count filter (0-5 scale: None, Few, Some, Many, Tons)
+    // Maps to values: 0, 100, 1000, 5000, 10000
+    voteCount?: number // 0-4 (index in vote count scale)
+
+    // Cast/Crew filters
+    withCast?: string[] // Actor names or TMDB person IDs
+    withDirector?: string // Director name or TMDB person ID
+}
+
+/**
  * Custom rows created by users
  * Full CRUD operations available
  */
@@ -31,6 +56,7 @@ export interface CustomRow extends BaseRowConfig {
     enabled: boolean // Toggle visibility without deletion
     createdAt: number // Unix timestamp
     updatedAt: number // Unix timestamp
+    advancedFilters?: AdvancedFilters // Advanced filtering options
 }
 
 /**
@@ -56,25 +82,6 @@ export interface SystemRowPreference {
 
 export interface SystemRowPreferences {
     [systemRowId: string]: SystemRowPreference // systemRowId -> preference
-}
-
-/**
- * Advanced filter options for custom rows
- */
-export interface AdvancedFilters {
-    // Year filters
-    yearMin?: number // e.g., 1990
-    yearMax?: number // e.g., 2024
-
-    // Rating filters (0-10 scale)
-    ratingMin?: number // e.g., 3.0 (for "bad" movies)
-    ratingMax?: number // e.g., 6.0 (max rating for "bad" movies)
-
-    // Popularity filters
-    popularityMin?: number // e.g., 10 (minimum popularity score)
-
-    // Vote count filters (to find popular but bad movies)
-    voteCountMin?: number // e.g., 1000 (ensure enough votes for credibility)
 }
 
 /**
