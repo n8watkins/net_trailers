@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
         // Call Gemini API
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
                     generationConfig: {
                         temperature: 0.3, // Lower for more consistent results
                         maxOutputTokens: 1000,
+                        responseMimeType: 'application/json', // Force JSON output without markdown
                     },
                 }),
             }
@@ -56,8 +57,14 @@ export async function POST(request: NextRequest) {
             throw new Error('No analysis returned from Gemini')
         }
 
+        // Strip markdown code blocks if present (Gemini 2.5 wraps JSON in ```json...```)
+        const cleanedText = analysisText
+            .replace(/^```json\s*\n?/i, '') // Remove opening ```json
+            .replace(/\n?```\s*$/, '') // Remove closing ```
+            .trim()
+
         // Parse the JSON response from Gemini
-        const analysis = JSON.parse(analysisText)
+        const analysis = JSON.parse(cleanedText)
 
         return NextResponse.json({
             genres: analysis.genres || [],

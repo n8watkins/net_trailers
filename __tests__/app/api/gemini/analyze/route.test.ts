@@ -252,7 +252,7 @@ describe('/api/gemini/analyze - Semantic Analysis Tests', () => {
             await POST(request)
 
             expect(global.fetch).toHaveBeenCalledWith(
-                expect.stringContaining('gemini-1.5-flash:generateContent'),
+                expect.stringContaining('gemini-2.5-flash:generateContent'),
                 expect.objectContaining({
                     method: 'POST',
                     body: expect.stringContaining('"temperature":0.3'),
