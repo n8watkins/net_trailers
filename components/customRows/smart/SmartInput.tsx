@@ -287,13 +287,12 @@ export function SmartInput({
         <div className={`space-y-4 ${className}`}>
             {/* Main Input */}
             <div className="relative">
-                {/* Hidden overlay for highlighting */}
-                <div
-                    className="pointer-events-none absolute inset-0 p-4 text-white whitespace-pre-wrap break-words font-mono text-sm leading-6 overflow-hidden"
-                    style={{ color: 'transparent' }}
-                >
-                    {renderHighlightedText()}
-                </div>
+                {/* Overlay for highlighting tagged entities */}
+                {taggedEntities.length > 0 && (
+                    <div className="pointer-events-none absolute inset-0 p-4 text-white whitespace-pre-wrap break-words font-mono text-sm leading-6 overflow-hidden z-20">
+                        {renderHighlightedText()}
+                    </div>
+                )}
 
                 <textarea
                     ref={inputRef}
@@ -306,7 +305,7 @@ export function SmartInput({
                     onKeyDown={handleKeyDown}
                     onClick={(e) => setCursorPos(e.currentTarget.selectionStart)}
                     placeholder={placeholder}
-                    className="w-full min-h-[120px] p-4 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 resize-none font-mono text-sm leading-6 relative z-10"
+                    className="w-full min-h-[120px] p-4 bg-gray-800 border border-gray-700 rounded-lg placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 resize-none font-mono text-sm leading-6 relative z-10"
                     style={{
                         backgroundColor: 'rgb(31 41 55)',
                         caretColor: 'white',
