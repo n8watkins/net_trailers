@@ -141,7 +141,7 @@ export function SmartStep2Suggestions({
     return (
         <div className="space-y-6">
             {/* Header with Witty Title */}
-            <div className="text-center space-y-2">
+            <div className="text-center space-y-3">
                 <div className="flex items-center justify-center gap-3">
                     <h2 className="text-3xl font-bold text-white">{rowName}</h2>
                     <button
@@ -155,14 +155,6 @@ export function SmartStep2Suggestions({
                         />
                     </button>
                 </div>
-                {insight && <p className="text-gray-400 text-sm italic">💡 {insight}</p>}
-                <p className="text-gray-500 text-xs">
-                    {mediaType === 'movie'
-                        ? '🎬 Movies'
-                        : mediaType === 'tv'
-                          ? '📺 TV Shows'
-                          : '🎭 Movies + Shows'}
-                </p>
             </div>
 
             {/* Content Preview Cards */}

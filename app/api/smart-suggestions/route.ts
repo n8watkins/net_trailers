@@ -87,23 +87,15 @@ async function generateCreativeRowName(
 ): Promise<string | null> {
     // Build context for name generation
     const people = entities.filter((e) => e.type === 'person')
-    const genres = entities.filter((e) => e.type === 'genre')
 
-    // Combine entity genres with Gemini-detected genres
-    const allGenres = [...genres.map((g) => g.name), ...(geminiInsights?.genres || [])]
-    const uniqueGenres = [...new Set(allGenres)]
-
-    if (people.length === 0 && uniqueGenres.length === 0) {
+    if (people.length === 0 && !rawText) {
         return null // Need at least something to work with
     }
 
-    // Build a smart prompt for Gemini
+    // Build a smart prompt for Gemini using raw text and people
     let context = rawText || ''
     if (people.length > 0) {
         context += ` featuring ${people.map((p: any) => p.name).join(', ')}`
-    }
-    if (uniqueGenres.length > 0) {
-        context += ` in ${uniqueGenres.join('/')}`
     }
 
     // Call Gemini directly with a specialized creative naming prompt
@@ -173,12 +165,12 @@ function mergeGeminiInsights(tmdbResult: any, geminiInsights: any, mediaType: st
     const { suggestions, rowNames, insight } = tmdbResult
     const mergedSuggestions = [...suggestions]
 
-    // Add Gemini genre recommendations
-    if (geminiInsights.genres && geminiInsights.genres.length > 0) {
+    // Add Gemini genre recommendations (as TMDB genre IDs)
+    if (geminiInsights.genreIds && geminiInsights.genreIds.length > 0) {
         mergedSuggestions.push({
             type: 'genre',
-            value: geminiInsights.genres,
-            confidence: 85,
+            value: geminiInsights.genreIds, // Array of TMDB genre IDs (numbers)
+            confidence: 95, // High confidence since it's AI-inferred
             reason: 'AI detected these genres from your description',
             source: 'gemini',
         })
@@ -197,13 +189,10 @@ function mergeGeminiInsights(tmdbResult: any, geminiInsights: any, mediaType: st
         })
     }
 
-    // Use Gemini insight if available
-    const finalInsight = geminiInsights.insight || insight
-
     return {
         suggestions: mergedSuggestions,
         rowNames,
-        insight: finalInsight,
+        insight: '', // No descriptive insight
         mediaType: geminiInsights.mediaType || mediaType,
     }
 }

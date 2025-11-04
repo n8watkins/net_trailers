@@ -67,13 +67,10 @@ export async function POST(request: NextRequest) {
         const analysis = JSON.parse(cleanedText)
 
         return NextResponse.json({
-            genres: analysis.genres || [],
-            style: analysis.style || {},
-            themes: analysis.themes || [],
+            genreIds: analysis.genreIds || [], // Array of TMDB genre IDs (numbers)
             yearRange: analysis.yearRange || null,
             certification: analysis.certification || null,
             recommendations: analysis.recommendations || [],
-            insight: analysis.insight || '',
             mediaType: analysis.mediaType || 'both',
         })
     } catch (error) {
@@ -94,43 +91,82 @@ function buildAnalysisPrompt(text: string, entities: any[], mediaType: string): 
         .filter((e) => e.type === 'movie' || e.type === 'tv')
         .map((e) => e.name)
 
-    return `You are an expert film/TV analyst. Analyze this user's description of content they want to watch.
+    return `You are an expert film/TV analyst. Analyze this user's description and map it to TMDB genre IDs.
 
 User Input: "${text}"
 Media Type: ${mediaType}
 ${taggedPeople.length > 0 ? `Tagged People: ${taggedPeople.join(', ')}` : ''}
 ${taggedContent.length > 0 ? `Tagged Titles: ${taggedContent.join(', ')}` : ''}
 
-Extract and return a JSON object with:
+**IMPORTANT: You MUST use these exact TMDB genre IDs:**
+
+MOVIE GENRES:
+- 28: Action
+- 12: Adventure
+- 16: Animation
+- 35: Comedy
+- 80: Crime
+- 99: Documentary
+- 18: Drama
+- 10751: Family
+- 14: Fantasy
+- 36: History
+- 27: Horror
+- 10402: Music
+- 9648: Mystery
+- 10749: Romance
+- 878: Science Fiction
+- 10770: TV Movie
+- 53: Thriller
+- 10752: War
+- 37: Western
+
+TV GENRES:
+- 10759: Action & Adventure
+- 16: Animation
+- 35: Comedy
+- 80: Crime
+- 99: Documentary
+- 18: Drama
+- 10751: Family
+- 10762: Kids
+- 9648: Mystery
+- 10763: News
+- 10764: Reality
+- 10765: Sci-Fi & Fantasy
+- 10766: Soap
+- 10767: Talk
+- 10768: War & Politics
+- 37: Western
+
+Return ONLY this JSON structure with TMDB genre IDs:
 {
-  "mediaType": "movie"|"tv"|"both",  // Infer from context (series/show → tv, film/movie → movie, unclear → both)
-  "genres": ["genre1", "genre2"],  // TMDB genre names (Action, Sci-Fi, Thriller, Horror, Comedy, Drama, etc.)
-  "style": {
-    "tone": "dark|light|gritty|whimsical|serious|comedic",  // Overall tone
-    "maturity": "family|teen|mature|adult"  // Content maturity level
-  },
-  "themes": ["theme1", "theme2"],  // e.g. "revenge", "time travel", "coming-of-age"
-  "yearRange": { "min": 1980, "max": 1989 } | null,  // If user mentions era/decade
-  "certification": ["R", "PG-13"] | null,  // MPAA ratings if tone suggests it
+  "mediaType": "movie"|"tv"|"both",
+  "genreIds": [80, 18],  // ARRAY OF NUMBERS ONLY - TMDB genre IDs from the lists above
+  "yearRange": { "min": 1980, "max": 1989 } | null,
+  "certification": ["R", "PG-13"] | null,
   "recommendations": [
     {
-      "type": "rating"|"year_range"|"keyword",
+      "type": "rating"|"year_range",
       "value": any,
-      "reason": "why this makes sense based on the description",
+      "reason": "brief reason",
       "confidence": 0-100
     }
-  ],
-  "insight": "Single concise sentence (10-15 words max) capturing the vibe"
+  ]
 }
 
-Important:
-- MediaType inference: "series/show/tv" → tv, "film/movie" → movie, ambiguous/both → both
-- Only include genres that are clearly mentioned or strongly implied
-- Be conservative with recommendations - only suggest what clearly fits
-- Tone keywords: dark, gritty → likely R-rated mature content
-- Family keywords: kids, children, wholesome → G/PG ratings
-- Era mentions: 80s → 1980-1989, 90s → 1990-1999, classic → pre-2000, modern → post-2015
-- Keep insight VERY concise - single sentence, max 15 words, capturing the essence
+Examples:
+- "gangster movies" → {"genreIds": [80, 18]} (Crime + Drama)
+- "scary films" → {"genreIds": [27]} (Horror)
+- "space adventures" → {"genreIds": [878, 12]} (Sci-Fi + Adventure)
+- "action comedies" → {"genreIds": [28, 35]} (Action + Comedy)
+
+Rules:
+- MediaType: "series/show/tv" → "tv", "film/movie" → "movie", unclear → "both"
+- Return 1-3 genre IDs maximum
+- ONLY use IDs from the lists above
+- Be precise - don't add extra genres
+- Return ONLY valid JSON
 
 Return ONLY valid JSON, no markdown formatting.`
 }
