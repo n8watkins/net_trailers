@@ -253,7 +253,7 @@ function convertSuggestionsToFormData(
     const formData: CustomRowFormData = {
         name: rowName,
         genres: [],
-        genreLogic: 'AND',
+        genreLogic: 'OR', // Default to OR - Gemini will override to AND if certain
         mediaType: step1Data.mediaType,
         enabled: true,
         advancedFilters: {},

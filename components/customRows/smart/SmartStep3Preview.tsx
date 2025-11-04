@@ -20,6 +20,9 @@ interface SmartStep3PreviewProps {
 /**
  * SmartStep3Preview - Show actual content preview before creating row
  */
+// Simple in-memory cache for preview data (persists during session)
+const previewCache = new Map<string, { content: any[]; totalResults: number }>()
+
 export function SmartStep3Preview({
     selectedSuggestions,
     selectedRowName,
@@ -42,6 +45,18 @@ export function SmartStep3Preview({
     }, [])
 
     const loadPreview = async () => {
+        // Create cache key from suggestions + mediaType
+        const cacheKey = JSON.stringify({ selectedSuggestions, mediaType })
+
+        // Check cache first
+        const cached = previewCache.get(cacheKey)
+        if (cached) {
+            setPreviewContent(cached.content)
+            setTotalResults(cached.totalResults)
+            setIsLoadingPreview(false)
+            return
+        }
+
         setIsLoadingPreview(true)
         try {
             const response = await fetch('/api/smart-suggestions/preview', {
@@ -56,8 +71,14 @@ export function SmartStep3Preview({
             if (!response.ok) throw new Error('Failed to load preview')
 
             const data = await response.json()
-            setPreviewContent(data.content || [])
-            setTotalResults(data.totalResults || 0)
+            const content = data.content || []
+            const total = data.totalResults || 0
+
+            // Cache the results
+            previewCache.set(cacheKey, { content, totalResults: total })
+
+            setPreviewContent(content)
+            setTotalResults(total)
         } catch (error) {
             console.error('Preview load error:', error)
         } finally {

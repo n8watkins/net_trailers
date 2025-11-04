@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { PlusIcon, XMarkIcon, SparklesIcon } from '@heroicons/react/24/solid'
 import type { Entity } from './SmartInput'
 
@@ -59,7 +60,13 @@ export function SmartStep2Suggestions({
     const [genreIds, setGenreIds] = useState<number[]>([])
     const [mediaType, setMediaType] = useState<'movie' | 'tv' | 'both'>('both')
     const [people, setPeople] = useState<
-        Array<{ id: number; name: string; type: 'actor' | 'director'; required: boolean }>
+        Array<{
+            id: number
+            name: string
+            type: 'actor' | 'director'
+            required: boolean
+            image?: string
+        }>
     >([])
     const [isLoading, setIsLoading] = useState(true)
     const [isRefreshingName, setIsRefreshingName] = useState(false)
@@ -97,7 +104,8 @@ export function SmartStep2Suggestions({
                     type: (e.subtitle?.toLowerCase().includes('direct') ? 'director' : 'actor') as
                         | 'actor'
                         | 'director',
-                    required: true, // Default to required
+                    required: false, // Default to optional (OR logic) - Gemini will decide if they should be required
+                    image: e.image, // TMDB profile image path
                 }))
 
             setRowName(data.rowNames?.[0] || 'My Custom Row')
@@ -285,32 +293,61 @@ export function SmartStep2Suggestions({
                                 {people.map((person) => (
                                     <div
                                         key={person.id}
-                                        className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg"
+                                        className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700/70 transition-colors"
                                     >
                                         <div className="flex items-center gap-3">
-                                            <span className="text-white font-medium">
-                                                {person.name}
-                                            </span>
-                                            <span className="text-xs text-gray-400">
-                                                {person.type === 'director'
-                                                    ? '🎬 Director'
-                                                    : '🎭 Actor'}
-                                            </span>
+                                            {/* Profile Image */}
+                                            {person.image ? (
+                                                <div className="relative w-12 h-12 rounded-full overflow-hidden bg-gray-800 flex-shrink-0">
+                                                    <Image
+                                                        src={`https://image.tmdb.org/t/p/w185${person.image}`}
+                                                        alt={person.name}
+                                                        fill
+                                                        className="object-cover"
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center flex-shrink-0">
+                                                    <span className="text-gray-500 text-xl">
+                                                        {person.name.charAt(0).toUpperCase()}
+                                                    </span>
+                                                </div>
+                                            )}
+
+                                            {/* Name and Type */}
+                                            <div>
+                                                <span className="text-white font-medium block">
+                                                    {person.name}
+                                                </span>
+                                                <span className="text-xs text-gray-400">
+                                                    {person.type === 'director'
+                                                        ? '🎬 Director'
+                                                        : '🎭 Actor'}
+                                                </span>
+                                            </div>
                                         </div>
+
+                                        {/* Actions */}
                                         <div className="flex items-center gap-2">
+                                            {/* Improved Required/Optional Toggle */}
                                             <button
                                                 onClick={() => togglePersonRequired(person.id)}
-                                                className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                                                className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
                                                     person.required
-                                                        ? 'bg-green-600/20 text-green-400 border border-green-600/50'
-                                                        : 'bg-gray-600/20 text-gray-400 border border-gray-600/50'
+                                                        ? 'bg-red-600 text-white hover:bg-red-700 shadow-md'
+                                                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600'
                                                 }`}
+                                                title={
+                                                    person.required
+                                                        ? 'Must be in ALL results (AND logic)'
+                                                        : 'Can be in ANY results (OR logic)'
+                                                }
                                             >
-                                                {person.required ? 'Required' : 'Optional'}
+                                                {person.required ? '✓ Must Include' : '~ Suggested'}
                                             </button>
                                             <button
                                                 onClick={() => removePerson(person.id)}
-                                                className="text-gray-400 hover:text-red-400 transition-colors"
+                                                className="text-gray-400 hover:text-red-400 transition-colors p-1"
                                             >
                                                 <XMarkIcon className="w-5 h-5" />
                                             </button>
@@ -319,7 +356,9 @@ export function SmartStep2Suggestions({
                                 ))}
                             </div>
                             <p className="text-xs text-gray-500 mt-2">
-                                💡 Tip: Required = must match ALL, Optional = match ANY
+                                💡 Tip: <strong>Must Include</strong> = content MUST feature this
+                                person (AND), <strong>Suggested</strong> = include similar
+                                actors/directors (OR)
                             </p>
                         </div>
                     )}
