@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { generateSmartSuggestions } from '@/utils/smartRowSuggestions'
+import { generateSmartSuggestions } from '../../../utils/smartRowSuggestions'
 
 export async function POST(request: NextRequest) {
     try {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { TMDBApiClient } from '@/utils/tmdbApi'
-import { MOVIE_GENRES, TV_GENRES } from '@/constants/genres'
+import { TMDBApiClient } from '../../../utils/tmdbApi'
+import { MOVIE_GENRES, TV_GENRES } from '../../../constants/genres'
 
 // In-memory cache for search results (5 minute TTL)
 const searchCache = new Map<string, { results: any[]; timestamp: number }>()
