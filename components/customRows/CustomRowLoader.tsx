@@ -42,7 +42,13 @@ export function CustomRowLoader({ row }: CustomRowLoaderProps) {
                 let url: URL
 
                 // Handle special system rows (trending, top-rated)
-                if (row.isSpecialRow || row.genres.length === 0) {
+                // Note: Curated rows with contentIds but no genres should NOT be treated as special rows
+                const customRow = row as CustomRow
+                const hasCuratedContent =
+                    customRow.advancedFilters?.contentIds &&
+                    customRow.advancedFilters.contentIds.length > 0
+
+                if (row.isSpecialRow || (row.genres.length === 0 && !hasCuratedContent)) {
                     // For 'both' mediaType, we need to fetch from both APIs and combine
                     if (row.mediaType === 'both') {
                         const apiType = row.id.includes('trending') ? 'trending' : 'top-rated'
