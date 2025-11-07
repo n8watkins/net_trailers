@@ -70,6 +70,10 @@ export default function SmartSearchInput() {
         setActive(true)
     }
 
+    const handleBlur = () => {
+        setActive(false)
+    }
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value
         setLocalQuery(value)
@@ -120,6 +124,7 @@ export default function SmartSearchInput() {
                     value={localQuery}
                     onChange={handleChange}
                     onFocus={handleFocus}
+                    onBlur={handleBlur}
                     placeholder={
                         localQuery ? 'Describe what you want to watch...' : placeholderText
                     }
@@ -168,7 +173,7 @@ export default function SmartSearchInput() {
             {/* Hint text */}
             {isActive && !localQuery && (
                 <p className="mt-2 text-center text-xs text-gray-400/80 animate-fade-in">
-                    Try &quot;dark sci-fi movies&quot; or use @actor :movie to tag
+                    Use @actor or :movie to tag
                 </p>
             )}
         </form>
