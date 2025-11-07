@@ -7,6 +7,7 @@ import { useCustomRowsStore } from '../../stores/customRowsStore'
 import { CustomRowsFirestore } from '../../utils/firestore/customRows'
 import { CustomRowWizard } from '../customRows/CustomRowWizard'
 import { SmartRowBuilder } from '../customRows/smart/SmartRowBuilder'
+import { SimplifiedSmartBuilder } from '../customRows/smart/SimplifiedSmartBuilder'
 import { CustomRowFormData } from '../../types/customRows'
 import { useToast } from '../../hooks/useToast'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
@@ -30,6 +31,9 @@ function CustomRowModal() {
     const { isGuest } = useAuthStatus()
 
     const [mode, setMode] = useState<CreationMode>('smart')
+
+    // Feature flag: Use simplified builder (set to true to test new flow)
+    const USE_SIMPLIFIED_BUILDER = true
 
     const userId = getUserId()
     const isOpen = customRowModal.isOpen
@@ -64,7 +68,7 @@ function CustomRowModal() {
     return (
         <div className="relative">
             {/* Mode Switcher - Floating at top of modal */}
-            <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[60]">
+            <div className="fixed top-32 left-1/2 -translate-x-1/2 z-[60]">
                 <div className="bg-gray-800 border border-gray-700 rounded-lg p-1 shadow-lg">
                     <div className="flex gap-1">
                         <button
@@ -93,12 +97,21 @@ function CustomRowModal() {
 
             {/* Render selected mode */}
             {mode === 'smart' ? (
-                <SmartRowBuilder
-                    onClose={closeCustomRowModal}
-                    onComplete={handleComplete}
-                    isAuthenticated={isAuthenticated}
-                    onSignIn={handleSignIn}
-                />
+                USE_SIMPLIFIED_BUILDER ? (
+                    <SimplifiedSmartBuilder
+                        onClose={closeCustomRowModal}
+                        onComplete={handleComplete}
+                        isAuthenticated={isAuthenticated}
+                        onSignIn={handleSignIn}
+                    />
+                ) : (
+                    <SmartRowBuilder
+                        onClose={closeCustomRowModal}
+                        onComplete={handleComplete}
+                        isAuthenticated={isAuthenticated}
+                        onSignIn={handleSignIn}
+                    />
+                )
             ) : (
                 <CustomRowWizard
                     onClose={closeCustomRowModal}

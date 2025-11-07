@@ -56,10 +56,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         if (contentIdsParam) {
             const contentIds = contentIdsParam.split(',').map((id) => parseInt(id.trim(), 10))
 
-            // Fetch specific content by IDs
-            let enrichedResults: any[] = []
-
-            for (const tmdbId of contentIds) {
+            // Fetch specific content by IDs using parallel fetching for better performance
+            const fetchPromises = contentIds.map(async (tmdbId) => {
                 try {
                     const endpoint =
                         mediaType === 'tv'
@@ -71,17 +69,21 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                     url.searchParams.append('language', 'en-US')
 
                     const response = await fetch(url.toString())
-                    if (!response.ok) continue
+                    if (!response.ok) return null
 
                     const item = await response.json()
-                    enrichedResults.push({
+                    return {
                         ...item,
                         media_type: mediaType,
-                    })
+                    }
                 } catch (error) {
                     console.warn(`Failed to fetch content ${tmdbId}:`, error)
+                    return null
                 }
-            }
+            })
+
+            const results = await Promise.all(fetchPromises)
+            let enrichedResults = results.filter((item) => item !== null)
 
             // Apply child safety filtering if needed
             if (childSafeMode) {

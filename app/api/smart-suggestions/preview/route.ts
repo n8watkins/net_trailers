@@ -20,10 +20,11 @@ export async function POST(request: NextRequest) {
         const contentListSuggestion = suggestions.find((s: any) => s.type === 'content_list')
         if (contentListSuggestion) {
             // Directly fetch the specific content IDs recommended by Gemini
-            const content: any[] = []
+            // Use parallel fetching for better performance
             const tmdb = TMDBApiClient.getInstance()
+            const idsToFetch = contentListSuggestion.value.slice(0, 20) // Limit to 20 items for preview
 
-            for (const tmdbId of contentListSuggestion.value) {
+            const fetchPromises = idsToFetch.map(async (tmdbId: number) => {
                 try {
                     const endpoint =
                         mediaType === 'tv' || mediaType === 'both'
@@ -31,16 +32,15 @@ export async function POST(request: NextRequest) {
                             : `/movie/${tmdbId}`
 
                     const item = await tmdb.fetch(endpoint, {})
-                    if (item) {
-                        content.push(item)
-                    }
-
-                    // Limit to 20 items for preview
-                    if (content.length >= 20) break
+                    return item
                 } catch (error) {
                     console.warn(`Failed to fetch content ${tmdbId}:`, error)
+                    return null
                 }
-            }
+            })
+
+            const results = await Promise.all(fetchPromises)
+            const content = results.filter((item) => item !== null)
 
             return NextResponse.json({
                 content: content.slice(0, 10),
