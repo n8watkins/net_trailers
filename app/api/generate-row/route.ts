@@ -27,6 +27,10 @@ export async function POST(request: NextRequest) {
 
         // Build prompt for Gemini
         const prompt = buildGenerateRowPrompt(query)
+        console.log('=== GENERATE ROW REQUEST ===')
+        console.log('User Query:', query)
+        console.log('Prompt sent to Gemini:', prompt)
+        console.log('============================')
 
         // Call Gemini API
         const response = await fetch(
@@ -38,7 +42,7 @@ export async function POST(request: NextRequest) {
                     contents: [{ parts: [{ text: prompt }] }],
                     generationConfig: {
                         temperature: 0.4, // Balanced creativity
-                        maxOutputTokens: 2000,
+                        maxOutputTokens: 4000, // Increased to handle full response with row name
                         responseMimeType: 'application/json',
                     },
                 }),
@@ -46,15 +50,25 @@ export async function POST(request: NextRequest) {
         )
 
         if (!response.ok) {
+            const errorText = await response.text()
+            console.error('Gemini API error response:', errorText)
             throw new Error(`Gemini API error: ${response.status}`)
         }
 
         const data = await response.json()
+        console.log('\n=== GEMINI RESPONSE ===')
+        console.log('Finish Reason:', data.candidates?.[0]?.finishReason)
+        console.log('Raw response:', JSON.stringify(data, null, 2))
+        console.log('======================\n')
+
         const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text
 
         if (!resultText) {
+            console.error('❌ Gemini response structure:', data)
             throw new Error('No response from Gemini')
         }
+
+        console.log('📝 Gemini result text:', resultText)
 
         // Parse JSON response
         const cleanedText = resultText
@@ -62,20 +76,38 @@ export async function POST(request: NextRequest) {
             .replace(/\n?```\s*$/, '')
             .trim()
 
+        console.log('🧹 Cleaned text for parsing:', cleanedText)
+
         const geminiResult = JSON.parse(cleanedText)
+        console.log('✅ Parsed successfully:', {
+            movieCount: geminiResult.movies?.length,
+            rowName: geminiResult.rowName,
+            mediaType: geminiResult.mediaType,
+        })
 
         // Validate and enrich with TMDB data
+        console.log('🎬 Enriching movies with TMDB data...')
         const enrichedMovies = await enrichMoviesWithTMDB(
             geminiResult.movies || [],
             geminiResult.mediaType || 'movie'
         )
+        console.log(`✅ Enriched ${enrichedMovies.length} movies successfully`)
 
-        return NextResponse.json({
+        const finalResult = {
             movies: enrichedMovies,
             rowName: geminiResult.rowName || 'Custom Row',
             mediaType: geminiResult.mediaType || 'movie',
             genreFallback: geminiResult.genreFallback || [],
-        })
+        }
+
+        console.log('\n=== FINAL RESULT ===')
+        console.log('Row Name:', finalResult.rowName)
+        console.log('Media Type:', finalResult.mediaType)
+        console.log('Movies:', enrichedMovies.length)
+        console.log('Movies List:', enrichedMovies.map((m) => `${m.title} (${m.year})`).join(', '))
+        console.log('====================\n')
+
+        return NextResponse.json(finalResult)
     } catch (error) {
         console.error('Generate row error:', error)
         return NextResponse.json(
@@ -99,9 +131,7 @@ Generate 10-15 movie/TV recommendations that match this query. Return ONLY this 
   "movies": [
     {
       "title": "Blade Runner",
-      "year": 1982,
-      "tmdbId": 78,
-      "reason": "Neo-noir sci-fi with dark atmosphere"
+      "year": 1982
     }
   ],
   "rowName": "Dystopian Futures",
@@ -111,7 +141,7 @@ Generate 10-15 movie/TV recommendations that match this query. Return ONLY this 
 
 **CRITICAL RULES:**
 
-1. **TMDB IDs:** Provide exact TMDB IDs for popular/well-known titles. For obscure titles, set tmdbId to null (we'll search by title+year).
+1. **Title and Year Only:** Provide exact movie/TV show titles and release years. We will search TMDB to find the correct IDs.
 
 2. **Row Name:** Create a creative, catchy name (1-4 words):
    - Use internet slang, pop culture references
@@ -136,16 +166,17 @@ TV GENRES:
 - 99: Documentary, 18: Drama, 10751: Family, 10762: Kids
 - 9648: Mystery, 10765: Sci-Fi & Fantasy, 10768: War & Politics
 
-5. **Quality:** Only recommend titles you're confident match the query. Prioritize well-known titles for TMDB ID accuracy.
+5. **Quality:** Only recommend titles you're confident match the query. Use exact titles as they appear in TMDB.
 
 Examples:
 
 Query: "dark scifi thriller"
 {
   "movies": [
-    {"title": "Blade Runner", "year": 1982, "tmdbId": 78, "reason": "Dystopian noir atmosphere"},
-    {"title": "Ex Machina", "year": 2014, "tmdbId": 264660, "reason": "AI thriller with tension"},
-    {"title": "Moon", "year": 2009, "tmdbId": 17431, "reason": "Psychological isolation"}
+    {"title": "Blade Runner", "year": 1982},
+    {"title": "Ex Machina", "year": 2014},
+    {"title": "Moon", "year": 2009},
+    {"title": "Annihilation", "year": 2018}
   ],
   "rowName": "Dystopian Nightmares",
   "mediaType": "movie",
@@ -155,8 +186,10 @@ Query: "dark scifi thriller"
 Query: "best denzel washington movies"
 {
   "movies": [
-    {"title": "Training Day", "year": 2001, "tmdbId": 2567, "reason": "Oscar-winning performance"},
-    {"title": "Malcolm X", "year": 1992, "tmdbId": 488, "reason": "Powerful biographical drama"}
+    {"title": "Training Day", "year": 2001},
+    {"title": "Malcolm X", "year": 1992},
+    {"title": "Glory", "year": 1989},
+    {"title": "Remember the Titans", "year": 2000}
   ],
   "rowName": "THE GOAT",
   "mediaType": "movie",
@@ -174,8 +207,6 @@ async function enrichMoviesWithTMDB(
     movies: Array<{
         title: string
         year?: number
-        tmdbId?: number | null
-        reason?: string
     }>,
     mediaType: string
 ): Promise<
@@ -205,54 +236,39 @@ async function enrichMoviesWithTMDB(
     // Process movies in parallel
     const promises = movies.map(async (movie) => {
         try {
-            let tmdbId = movie.tmdbId
+            let tmdbId: number | null = null
             let tmdbData: any = null
 
-            // If Gemini provided TMDB ID, fetch directly
-            if (tmdbId) {
-                const endpoint =
-                    mediaType === 'tv'
-                        ? `https://api.themoviedb.org/3/tv/${tmdbId}`
-                        : `https://api.themoviedb.org/3/movie/${tmdbId}`
+            // Search TMDB by title + year
+            const searchEndpoint =
+                mediaType === 'tv'
+                    ? 'https://api.themoviedb.org/3/search/tv'
+                    : 'https://api.themoviedb.org/3/search/movie'
 
-                const response = await fetch(`${endpoint}?api_key=${API_KEY}`)
-                if (response.ok) {
-                    tmdbData = await response.json()
-                }
-            }
+            const searchUrl = `${searchEndpoint}?api_key=${API_KEY}&query=${encodeURIComponent(movie.title)}`
+            const searchResponse = await fetch(searchUrl)
 
-            // Fallback: Search by title + year
-            if (!tmdbData) {
-                const searchEndpoint =
-                    mediaType === 'tv'
-                        ? 'https://api.themoviedb.org/3/search/tv'
-                        : 'https://api.themoviedb.org/3/search/movie'
+            if (searchResponse.ok) {
+                const searchData = await searchResponse.json()
+                const results = searchData.results || []
 
-                const searchUrl = `${searchEndpoint}?api_key=${API_KEY}&query=${encodeURIComponent(movie.title)}`
-                const searchResponse = await fetch(searchUrl)
-
-                if (searchResponse.ok) {
-                    const searchData = await searchResponse.json()
-                    const results = searchData.results || []
-
-                    // Find best match by year
-                    let bestMatch = results[0]
-                    if (movie.year && results.length > 1) {
-                        for (const result of results) {
-                            const releaseYear = parseInt(
-                                (result.release_date || result.first_air_date || '').split('-')[0]
-                            )
-                            if (releaseYear === movie.year) {
-                                bestMatch = result
-                                break
-                            }
+                // Find best match by year
+                let bestMatch = results[0]
+                if (movie.year && results.length > 1) {
+                    for (const result of results) {
+                        const releaseYear = parseInt(
+                            (result.release_date || result.first_air_date || '').split('-')[0]
+                        )
+                        if (releaseYear === movie.year) {
+                            bestMatch = result
+                            break
                         }
                     }
+                }
 
-                    if (bestMatch) {
-                        tmdbData = bestMatch
-                        tmdbId = bestMatch.id
-                    }
+                if (bestMatch) {
+                    tmdbData = bestMatch
+                    tmdbId = bestMatch.id
                 }
             }
 
@@ -269,7 +285,7 @@ async function enrichMoviesWithTMDB(
                     tmdbId,
                     posterPath: tmdbData.poster_path || null,
                     rating: tmdbData.vote_average || 0,
-                    reason: movie.reason || '',
+                    reason: tmdbData.overview?.substring(0, 100) || '',
                 }
             }
 
