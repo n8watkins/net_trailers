@@ -100,11 +100,11 @@ export default function SmartSearchInput() {
                 className={`
               relative flex items-center
               transition-all duration-300 ease-out
-              rounded-md overflow-hidden border
+              rounded-md overflow-hidden
               ${
                   isActive
-                      ? 'bg-black/60 backdrop-blur-xl shadow-2xl border-red-500/50'
-                      : 'bg-black/40 backdrop-blur-md shadow-lg border-white/10'
+                      ? 'bg-black/60 backdrop-blur-xl shadow-[0_0_20px_rgba(239,68,68,0.5)]'
+                      : 'bg-black/40 backdrop-blur-md shadow-lg'
               }
             `}
             >
@@ -133,28 +133,14 @@ export default function SmartSearchInput() {
 
                 {/* Search and Clear Buttons */}
                 <div className="absolute right-3 sm:right-4 flex items-center gap-1">
-                    {/* Search/Submit Button - always visible */}
-                    <button
-                        type="submit"
-                        className="
-                  p-1 rounded-full
-                  hover:bg-white/10
-                  transition-colors
-                  cursor-pointer
-                "
-                        aria-label="Search"
-                    >
-                        <MagnifyingGlassIcon className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-gray-500 hover:text-red-400 transition-colors" />
-                    </button>
-
-                    {/* Clear Button - only visible when there's text */}
+                    {/* Clear Button - only visible when there's text, appears FIRST (left side) */}
                     {localQuery && (
                         <button
                             type="button"
                             onClick={handleClear}
                             className="
                       p-1 rounded-full
-                      hover:bg-white/10
+                      hover:bg-black/20
                       transition-colors
                     "
                             aria-label="Clear search"
@@ -162,6 +148,20 @@ export default function SmartSearchInput() {
                             <XMarkIcon className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-gray-400 hover:text-white" />
                         </button>
                     )}
+
+                    {/* Search/Submit Button - always visible, appears LAST (right side) */}
+                    <button
+                        type="submit"
+                        className="
+                  p-1 rounded-full
+                  hover:bg-black/20
+                  transition-colors
+                  cursor-pointer
+                "
+                        aria-label="Search"
+                    >
+                        <MagnifyingGlassIcon className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-gray-500 hover:text-red-400 transition-colors" />
+                    </button>
                 </div>
             </div>
 
