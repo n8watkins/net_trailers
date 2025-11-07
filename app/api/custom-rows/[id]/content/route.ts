@@ -51,9 +51,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         const mediaType = (searchParams.get('mediaType') || 'movie') as MediaType
 
         // Handle curated content lists (Gemini recommendations)
-        // For hybrid queries (e.g., "dark scifi thriller"), contentIds take priority
-        // Genres are still stored in the row for future pagination/expansion
-        if (contentIdsParam) {
+        // Page 1: Show curated content
+        // Page 2+: Fall back to genre-based discovery (if genres exist)
+        if (contentIdsParam && page === '1') {
             const contentIds = contentIdsParam.split(',').map((id) => parseInt(id.trim(), 10))
 
             // Fetch specific content by IDs using parallel fetching for better performance
@@ -115,12 +115,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                 )
             }
 
+            // Check if genres exist for infinite pagination
+            const hasGenresFallback = genresParam && genresParam.length > 0
+
             return NextResponse.json(
                 {
                     results: enrichedResults,
                     page: 1,
-                    total_pages: 1,
+                    total_pages: hasGenresFallback ? 999 : 1, // Indicate more pages if genres exist
                     total_results: enrichedResults.length,
+                    is_curated: true, // Mark as curated content
                 },
                 {
                     status: 200,
@@ -129,6 +133,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                     },
                 }
             )
+        }
+
+        // Page 2+ for curated rows: Fall back to genre-based content
+        // This happens when user scrolls past curated content (if infinite is enabled)
+        if (contentIdsParam && parseInt(page) > 1 && genresParam) {
+            // Continue with genre-based discovery below
+            // (fall through to genre logic)
         }
 
         // Validate required parameters for genre-based filtering

@@ -202,10 +202,33 @@ export function CustomRowLoader({ row }: CustomRowLoaderProps) {
             apiEndpoint = `/api/movies/trending`
         }
     } else {
-        // Regular custom/system row with genre filters
+        // Regular custom/system row with genre filters or curated content
         const apiEndpointUrl = new URL(`/api/custom-rows/${row.id}/content`, window.location.origin)
-        apiEndpointUrl.searchParams.append('genres', row.genres.join(','))
-        apiEndpointUrl.searchParams.append('genreLogic', row.genreLogic)
+
+        // Check if this is a curated content row (contentIds exist)
+        const customRow = row as CustomRow
+        const hasContentIds =
+            customRow.advancedFilters?.contentIds && customRow.advancedFilters.contentIds.length > 0
+        const hasGenres = row.genres && row.genres.length > 0
+
+        if (hasContentIds) {
+            // For curated rows: include contentIds
+            apiEndpointUrl.searchParams.append(
+                'contentIds',
+                customRow.advancedFilters!.contentIds!.join(',')
+            )
+
+            // Only include genres if they exist (for fallback infinite content)
+            if (hasGenres) {
+                apiEndpointUrl.searchParams.append('genres', row.genres.join(','))
+                apiEndpointUrl.searchParams.append('genreLogic', row.genreLogic)
+            }
+        } else if (hasGenres) {
+            // For traditional rows: use genres only
+            apiEndpointUrl.searchParams.append('genres', row.genres.join(','))
+            apiEndpointUrl.searchParams.append('genreLogic', row.genreLogic)
+        }
+
         apiEndpointUrl.searchParams.append('mediaType', row.mediaType)
         if (childSafetyMode) {
             apiEndpointUrl.searchParams.append('childSafetyMode', 'true')

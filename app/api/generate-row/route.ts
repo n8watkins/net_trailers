@@ -168,6 +168,8 @@ TV GENRES:
 
 5. **Quality:** Only recommend titles you're confident match the query. Use exact titles as they appear in TMDB.
 
+6. **Series & Trilogies:** For actor/director queries, group related movies together (trilogies, franchises, series in chronological order).
+
 Examples:
 
 Query: "dark scifi thriller"
@@ -195,6 +197,30 @@ Query: "best denzel washington movies"
   "mediaType": "movie",
   "genreFallback": [18, 80]
 }
+
+Query: "keanu reeves movies"
+{
+  "movies": [
+    {"title": "The Matrix", "year": 1999},
+    {"title": "The Matrix Reloaded", "year": 2003},
+    {"title": "The Matrix Revolutions", "year": 2003},
+    {"title": "The Matrix Resurrections", "year": 2021},
+    {"title": "John Wick", "year": 2014},
+    {"title": "John Wick: Chapter 2", "year": 2017},
+    {"title": "John Wick: Chapter 3 - Parabellum", "year": 2019},
+    {"title": "John Wick: Chapter 4", "year": 2023},
+    {"title": "Speed", "year": 1994},
+    {"title": "Point Break", "year": 1991},
+    {"title": "Bill & Ted's Excellent Adventure", "year": 1989},
+    {"title": "Bill & Ted's Bogus Journey", "year": 1991},
+    {"title": "Constantine", "year": 2005}
+  ],
+  "rowName": "Keanu's Greatest Hits",
+  "mediaType": "movie",
+  "genreFallback": [28, 878]
+}
+
+**NOTE:** For actor/director queries, always group franchises together in chronological order (Matrix trilogy, then John Wick series, then Bill & Ted, etc.)
 
 Return ONLY valid JSON, no additional text.`
 }

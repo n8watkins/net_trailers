@@ -47,6 +47,7 @@ export function SimplifiedSmartBuilder({
     const [generatedRow, setGeneratedRow] = useState<GeneratedRow | null>(null)
     const [error, setError] = useState<string | null>(null)
     const [currentStep, setCurrentStep] = useState<1 | 2>(1)
+    const [enableInfiniteContent, setEnableInfiniteContent] = useState(false)
 
     const handleGenerate = async () => {
         if (query.trim().length < 3) {
@@ -96,7 +97,8 @@ export function SimplifiedSmartBuilder({
         try {
             const formData: CustomRowFormData = {
                 name: generatedRow.rowName,
-                genres: generatedRow.genreFallback,
+                // Only include genres if infinite content is enabled (for fallback pagination)
+                genres: enableInfiniteContent ? generatedRow.genreFallback : [],
                 genreLogic: 'OR',
                 mediaType: generatedRow.mediaType,
                 enabled: true,
@@ -119,6 +121,7 @@ export function SimplifiedSmartBuilder({
         setGeneratedRow(null)
         setError(null)
         setCurrentStep(1)
+        setEnableInfiniteContent(false)
     }
 
     // Step 2: Success confirmation
@@ -233,6 +236,37 @@ export function SimplifiedSmartBuilder({
                                                   : 'Movies'}
                                         </p>
                                     </div>
+                                </div>
+
+                                {/* Infinite Content Toggle */}
+                                <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                                    <div className="flex-1">
+                                        <label className="text-sm font-medium text-white flex items-center gap-2">
+                                            <span>♾️</span>
+                                            Enable Infinite Content
+                                        </label>
+                                        <p className="text-xs text-gray-400 mt-1">
+                                            After these {generatedRow.movies.length} curated titles,
+                                            show more similar content based on genres
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setEnableInfiniteContent(!enableInfiniteContent)
+                                        }
+                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                            enableInfiniteContent ? 'bg-red-600' : 'bg-gray-600'
+                                        }`}
+                                    >
+                                        <span
+                                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                                enableInfiniteContent
+                                                    ? 'translate-x-6'
+                                                    : 'translate-x-1'
+                                            }`}
+                                        />
+                                    </button>
                                 </div>
 
                                 {/* Movie Grid */}
