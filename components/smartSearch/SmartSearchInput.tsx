@@ -13,41 +13,41 @@ export default function SmartSearchInput() {
     const [localQuery, setLocalQuery] = useState(query)
     const inputRef = useRef<HTMLInputElement>(null)
 
-    // 30 diverse search examples similar to user's request
+    // 30 diverse search examples - dynamic parts after "I feel like watching"
     const searchExamples = [
-        'I feel like watching neo-like characters...',
-        'Keanu Reeves comedies...',
-        'Dark superheroes that find their way...',
-        'Mind-bending time travel thrillers...',
-        'Strong female leads in sci-fi...',
-        'Quirky indie rom-coms...',
-        'Heist movies with clever twists...',
-        'Dystopian futures with hope...',
-        'True crime documentaries...',
-        'Foreign films with subtitles...',
-        'Coming-of-age stories set in the 80s...',
-        'Psychological thrillers that mess with your head...',
-        'Space operas with epic battles...',
-        'Underdog sports stories...',
-        'Animated films that make adults cry...',
-        'Detective mysteries with witty banter...',
-        'Found footage horror...',
-        'Historical dramas about royalty...',
-        'Revenge stories with moral dilemmas...',
-        'Buddy cop action comedies...',
-        'Epic fantasy with dragons...',
-        'Biographies of controversial figures...',
-        'Romantic dramas set in Paris...',
-        'Survival stories in extreme conditions...',
-        'Tech thrillers about AI gone wrong...',
-        'Feel-good movies about second chances...',
-        'Noir films from the 40s...',
-        'Musical biopics...',
-        'Disaster movies with ensemble casts...',
-        'Surreal art films that challenge reality...',
+        'neo-like characters',
+        'Keanu Reeves comedies',
+        'dark superheroes that find their way',
+        'mind-bending time travel thrillers',
+        'strong female leads in sci-fi',
+        'quirky indie rom-coms',
+        'heist movies with clever twists',
+        'dystopian futures with hope',
+        'true crime documentaries',
+        'foreign films with subtitles',
+        'coming-of-age stories set in the 80s',
+        'Denzel Washington action films',
+        'psychological thrillers that mess with your head',
+        'space operas with epic battles',
+        'underdog sports stories',
+        'animated films that make adults cry',
+        'detective mysteries with witty banter',
+        'found footage horror',
+        'historical dramas about royalty',
+        'revenge stories with moral dilemmas',
+        'buddy cop action comedies',
+        'epic fantasy with dragons',
+        'biographies of controversial figures',
+        'romantic dramas set in Paris',
+        'survival stories in extreme conditions',
+        'tech thrillers about AI gone wrong',
+        'feel-good movies about second chances',
+        'noir films from the 40s',
+        'musical biopics',
+        'surreal art films that challenge reality',
     ]
 
-    // Typing animation for placeholder
+    // Typing animation for the dynamic part after "I feel like watching"
     const typewriterText = useTypewriter({
         words: searchExamples,
         typeSpeed: 60,
@@ -55,6 +55,11 @@ export default function SmartSearchInput() {
         delayBetweenWords: 2500,
         loop: true,
     })
+
+    // Combine static prefix with dynamic typewriter text
+    const placeholderText = typewriterText
+        ? `I feel like watching ${typewriterText}...`
+        : 'I feel like watching...'
 
     // Sync local query with store
     useEffect(() => {
@@ -115,7 +120,9 @@ export default function SmartSearchInput() {
                     value={localQuery}
                     onChange={handleChange}
                     onFocus={handleFocus}
-                    placeholder={localQuery ? 'Describe what you want to watch...' : typewriterText}
+                    placeholder={
+                        localQuery ? 'Describe what you want to watch...' : placeholderText
+                    }
                     className="
                 w-full pl-10 sm:pl-12 pr-10 sm:pr-12 py-4 sm:py-5
                 bg-transparent text-white placeholder-gray-400
