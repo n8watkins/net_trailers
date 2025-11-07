@@ -1,14 +1,60 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { MagnifyingGlassIcon, XMarkIcon, SparklesIcon } from '@heroicons/react/24/outline'
 import { useSmartSearchStore } from '../../stores/smartSearchStore'
+import { useTypewriter } from '../../hooks/useTypewriter'
 
 export default function SmartSearchInput() {
+    const router = useRouter()
     const { query, isActive, setQuery, setActive, reset } = useSmartSearchStore()
 
     const [localQuery, setLocalQuery] = useState(query)
     const inputRef = useRef<HTMLInputElement>(null)
+
+    // 30 diverse search examples similar to user's request
+    const searchExamples = [
+        'I feel like watching neo-like characters...',
+        'Keanu Reeves comedies...',
+        'Dark superheroes that find their way...',
+        'Mind-bending time travel thrillers...',
+        'Strong female leads in sci-fi...',
+        'Quirky indie rom-coms...',
+        'Heist movies with clever twists...',
+        'Dystopian futures with hope...',
+        'True crime documentaries...',
+        'Foreign films with subtitles...',
+        'Coming-of-age stories set in the 80s...',
+        'Psychological thrillers that mess with your head...',
+        'Space operas with epic battles...',
+        'Underdog sports stories...',
+        'Animated films that make adults cry...',
+        'Detective mysteries with witty banter...',
+        'Found footage horror...',
+        'Historical dramas about royalty...',
+        'Revenge stories with moral dilemmas...',
+        'Buddy cop action comedies...',
+        'Epic fantasy with dragons...',
+        'Biographies of controversial figures...',
+        'Romantic dramas set in Paris...',
+        'Survival stories in extreme conditions...',
+        'Tech thrillers about AI gone wrong...',
+        'Feel-good movies about second chances...',
+        'Noir films from the 40s...',
+        'Musical biopics...',
+        'Disaster movies with ensemble casts...',
+        'Surreal art films that challenge reality...',
+    ]
+
+    // Typing animation for placeholder
+    const typewriterText = useTypewriter({
+        words: searchExamples,
+        typeSpeed: 60,
+        deleteSpeed: 30,
+        delayBetweenWords: 2500,
+        loop: true,
+    })
 
     // Sync local query with store
     useEffect(() => {
@@ -28,8 +74,8 @@ export default function SmartSearchInput() {
         setLocalQuery('')
         setQuery('')
         reset()
-        setActive(false)
-        inputRef.current?.blur()
+        // Keep suggestions active, don't blur or deactivate
+        inputRef.current?.focus()
     }
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -38,6 +84,8 @@ export default function SmartSearchInput() {
             setQuery(localQuery.trim())
             setActive(false)
             inputRef.current?.blur()
+            // Navigate to smart search page with query
+            router.push(`/smartsearch?q=${encodeURIComponent(localQuery.trim())}`)
         }
     }
 
@@ -57,7 +105,7 @@ export default function SmartSearchInput() {
             >
                 {/* AI Sparkles Icon */}
                 <div className="absolute left-3 sm:left-4 pointer-events-none">
-                    <SparklesIcon className="h-4 w-4 sm:h-5 sm:w-5 text-red-400" />
+                    <SparklesIcon className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-red-400" />
                 </div>
 
                 {/* Input */}
@@ -67,12 +115,12 @@ export default function SmartSearchInput() {
                     value={localQuery}
                     onChange={handleChange}
                     onFocus={handleFocus}
-                    placeholder="Describe what you want to watch..."
+                    placeholder={localQuery ? 'Describe what you want to watch...' : typewriterText}
                     className="
-                w-full pl-10 sm:pl-12 pr-10 sm:pr-12 py-2.5 sm:py-3
+                w-full pl-10 sm:pl-12 pr-10 sm:pr-12 py-4 sm:py-5
                 bg-transparent text-white placeholder-gray-400
                 focus:outline-none
-                text-sm sm:text-base
+                text-base sm:text-lg md:text-xl
               "
                 />
 
@@ -89,11 +137,11 @@ export default function SmartSearchInput() {
                 "
                         aria-label="Clear search"
                     >
-                        <XMarkIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 hover:text-white" />
+                        <XMarkIcon className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-gray-400 hover:text-white" />
                     </button>
                 ) : (
                     <div className="absolute right-3 sm:right-4 pointer-events-none">
-                        <MagnifyingGlassIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
+                        <MagnifyingGlassIcon className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-gray-500" />
                     </div>
                 )}
             </div>
