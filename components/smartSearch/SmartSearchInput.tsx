@@ -131,26 +131,12 @@ export default function SmartSearchInput() {
               "
                 />
 
-                {/* Clear Button OR Search Button */}
-                {localQuery ? (
-                    <button
-                        type="button"
-                        onClick={handleClear}
-                        className="
-                  absolute right-3 sm:right-4
-                  p-1 rounded-full
-                  hover:bg-white/10
-                  transition-colors
-                "
-                        aria-label="Clear search"
-                    >
-                        <XMarkIcon className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-gray-400 hover:text-white" />
-                    </button>
-                ) : (
+                {/* Search and Clear Buttons */}
+                <div className="absolute right-3 sm:right-4 flex items-center gap-1">
+                    {/* Search/Submit Button - always visible */}
                     <button
                         type="submit"
                         className="
-                  absolute right-3 sm:right-4
                   p-1 rounded-full
                   hover:bg-white/10
                   transition-colors
@@ -160,7 +146,23 @@ export default function SmartSearchInput() {
                     >
                         <MagnifyingGlassIcon className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-gray-500 hover:text-red-400 transition-colors" />
                     </button>
-                )}
+
+                    {/* Clear Button - only visible when there's text */}
+                    {localQuery && (
+                        <button
+                            type="button"
+                            onClick={handleClear}
+                            className="
+                      p-1 rounded-full
+                      hover:bg-white/10
+                      transition-colors
+                    "
+                            aria-label="Clear search"
+                        >
+                            <XMarkIcon className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-gray-400 hover:text-white" />
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Hint text */}
