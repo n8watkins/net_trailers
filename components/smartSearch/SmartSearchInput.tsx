@@ -170,12 +170,8 @@ export default function SmartSearchInput() {
                 </div>
             </div>
 
-            {/* Hint text */}
-            {isActive && !localQuery && (
-                <p className="mt-2 text-center text-xs text-gray-400/80 animate-fade-in">
-                    Use @actor or :movie to tag
-                </p>
-            )}
+            {/* Hint text - always visible */}
+            <p className="mt-2 text-center text-xs text-gray-400/80">Use @actor or :movie to tag</p>
         </form>
     )
 }
