@@ -12,8 +12,8 @@ exec('pkill -f "next dev"', (error) => {
         console.log('⚠️  Error killing existing processes:', error.message)
     }
 
-    // Kill processes on ports 3000-3010 (common dev ports)
-    const ports = [3000, 3001, 3002, 3003, 3004, 3005, 3006, 3007, 3008, 3009, 3010]
+    // Kill processes on common dev ports (including 1234 as default for net_trailers)
+    const ports = [1234, 3000, 3001, 3002, 3003, 3004, 3005, 3006, 3007, 3008, 3009, 3010]
     let portsChecked = 0
 
     ports.forEach((port) => {

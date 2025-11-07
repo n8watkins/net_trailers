@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ```bash
-npm run dev          # Start development server (runs on port 3000, or 3004 if 3000 is occupied)
+npm run dev          # Start development server (runs on port 1234 by default)
 npm run build        # Build for production
 npm run start        # Start production server
 npm run lint         # Run ESLint
@@ -184,7 +184,7 @@ const showModal = useAppStore((state) => state.modal.isOpen)
 
 - **Zustand package**: Already installed and configured for all state management
 - The project has been migrated from pnpm to npm - always use npm commands
-- Development server may run on port 3004 if 3000 is occupied
+- Development server runs on port 1234 by default
 - TMDB API has rate limits (40 requests/second) - respect these in API calls
 - Always clear build cache (`rm -rf .next`) if experiencing build issues
 - When working on state: Use Zustand stores directly (`useAppStore`, `useSessionStore`, etc.)
