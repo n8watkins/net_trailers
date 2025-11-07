@@ -100,11 +100,11 @@ export default function SmartSearchInput() {
                 className={`
               relative flex items-center
               transition-all duration-300 ease-out
-              rounded-md overflow-hidden
+              rounded-2xl overflow-hidden
               ${
                   isActive
-                      ? 'bg-black/60 backdrop-blur-xl shadow-[0_0_20px_rgba(239,68,68,0.5)]'
-                      : 'bg-black/40 backdrop-blur-md shadow-lg'
+                      ? 'bg-black/50 backdrop-blur-xl shadow-[0_0_25px_rgba(239,68,68,0.6)]'
+                      : 'bg-white/5 backdrop-blur-lg'
               }
             `}
             >
