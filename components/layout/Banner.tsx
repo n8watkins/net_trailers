@@ -7,7 +7,7 @@ import { InformationCircleIcon } from '@heroicons/react/24/outline'
 import { useAppStore } from '../../stores/appStore'
 import useUserData from '../../hooks/useUserData'
 import { filterDislikedContent } from '../../utils/contentFilter'
-import SmartSearchInput from '../smartSearch/SmartSearchInput'
+import HeroSearchOverlay from '../smartSearch/HeroSearchOverlay'
 
 interface Props {
     trending: Content[]
@@ -91,6 +91,9 @@ function Banner({ trending, variant = 'default' }: Props) {
     const contentImgUrl = featuredContent?.backdrop_path || featuredContent?.poster_path
     return (
         <>
+            {/* AI-Powered Smart Search Overlay - Centered */}
+            <HeroSearchOverlay />
+
             {/* background image with mobile-responsive container */}
             <div className="absolute inset-0 -z-10 font-sans overflow-hidden">
                 {contentImgUrl && isCurrentImageLoaded && (
@@ -203,11 +206,6 @@ function Banner({ trending, variant = 'default' }: Props) {
                                 More Info
                             </span>
                         </button>
-                    </div>
-
-                    {/* Smart Search - AI Powered */}
-                    <div className="pt-6 md:pt-8">
-                        <SmartSearchInput />
                     </div>
                 </div>
 
