@@ -131,7 +131,7 @@ export default function SmartSearchInput() {
               "
                 />
 
-                {/* Clear Button OR Search Icon */}
+                {/* Clear Button OR Search Button */}
                 {localQuery ? (
                     <button
                         type="button"
@@ -147,9 +147,19 @@ export default function SmartSearchInput() {
                         <XMarkIcon className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-gray-400 hover:text-white" />
                     </button>
                 ) : (
-                    <div className="absolute right-3 sm:right-4 pointer-events-none">
-                        <MagnifyingGlassIcon className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-gray-500" />
-                    </div>
+                    <button
+                        type="submit"
+                        className="
+                  absolute right-3 sm:right-4
+                  p-1 rounded-full
+                  hover:bg-white/10
+                  transition-colors
+                  cursor-pointer
+                "
+                        aria-label="Search"
+                    >
+                        <MagnifyingGlassIcon className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-gray-500 hover:text-red-400 transition-colors" />
+                    </button>
                 )}
             </div>
 
