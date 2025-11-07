@@ -56,10 +56,10 @@ export default function SmartSearchInput() {
         loop: true,
     })
 
-    // Combine static prefix with dynamic typewriter text
+    // Use just the dynamic typewriter text as placeholder
     const placeholderText = typewriterText
-        ? `I feel like watching ${typewriterText}...`
-        : 'I feel like watching...'
+        ? `${typewriterText}...`
+        : 'Describe what you want to watch...'
 
     // Sync local query with store
     useEffect(() => {
