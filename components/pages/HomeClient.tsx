@@ -9,7 +9,6 @@ import { useSessionStore } from '../../stores/sessionStore'
 import { CustomRowLoader } from '../customRows/CustomRowLoader'
 import { CustomRowsFirestore } from '../../utils/firestore/customRows'
 import { useCustomRowsStore } from '../../stores/customRowsStore'
-import SmartSearchInput from '../smartSearch/SmartSearchInput'
 import SmartSearchOverlay from '../smartSearch/SmartSearchOverlay'
 
 interface HomeClientProps {
@@ -58,9 +57,6 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
             className={`relative min-h-screen overflow-x-clip ${showModal && `overflow-y-hidden`} `}
         >
             <Header />
-
-            {/* Smart Search Input - Always Visible */}
-            <SmartSearchInput />
 
             {/* Smart Search Overlay - Shows when results available */}
             <SmartSearchOverlay />

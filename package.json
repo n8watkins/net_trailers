@@ -29,6 +29,7 @@
         "@dnd-kit/utilities": "^3.2.2",
         "@emotion/react": "^11.14.0",
         "@emotion/styled": "^11.14.1",
+        "@google/generative-ai": "^0.24.1",
         "@heroicons/react": "^2.0.13",
         "@mui/material": "^5.11.7",
         "@next/third-parties": "^16.0.0",

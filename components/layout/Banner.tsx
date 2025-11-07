@@ -7,6 +7,7 @@ import { InformationCircleIcon } from '@heroicons/react/24/outline'
 import { useAppStore } from '../../stores/appStore'
 import useUserData from '../../hooks/useUserData'
 import { filterDislikedContent } from '../../utils/contentFilter'
+import SmartSearchInput from '../smartSearch/SmartSearchInput'
 
 interface Props {
     trending: Content[]
@@ -202,6 +203,11 @@ function Banner({ trending, variant = 'default' }: Props) {
                                 More Info
                             </span>
                         </button>
+                    </div>
+
+                    {/* Smart Search - AI Powered */}
+                    <div className="pt-6 md:pt-8">
+                        <SmartSearchInput />
                     </div>
                 </div>
 
