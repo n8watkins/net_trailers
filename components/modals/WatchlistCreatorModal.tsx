@@ -1,30 +1,41 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAppStore } from '../../stores/appStore'
 import { useSessionStore } from '../../stores/sessionStore'
+import { useSmartSearchStore } from '../../stores/smartSearchStore'
 import { useToast } from '../../hooks/useToast'
-import { XMarkIcon, PlusIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
+import {
+    XMarkIcon,
+    PlusIcon,
+    ChevronLeftIcon,
+    ChevronRightIcon,
+    SparklesIcon,
+} from '@heroicons/react/24/outline'
 import IconPickerModal from './IconPickerModal'
 import ColorPickerModal from './ColorPickerModal'
 import useUserData from '../../hooks/useUserData'
-import Image from 'next/image'
-import { getTitle } from '../../typings'
+import ContentCard from '../common/ContentCard'
 
 const ITEMS_PER_PAGE = 6
 
 export default function WatchlistCreatorModal() {
+    const router = useRouter()
     const { watchlistCreatorModal, closeWatchlistCreatorModal, setWatchlistCreatorName } =
         useAppStore()
     const getUserId = useSessionStore((state) => state.getUserId)
     const { createList, addToList } = useUserData()
     const { showSuccess, showError } = useToast()
+    const { query, mode, conversationHistory, addResults, addToConversation } =
+        useSmartSearchStore()
 
     const [selectedEmoji, setSelectedEmoji] = useState('📺')
     const [selectedColor, setSelectedColor] = useState('#3b82f6') // blue-500
     const [showIconPicker, setShowIconPicker] = useState(false)
     const [showColorPicker, setShowColorPicker] = useState(false)
     const [isCreating, setIsCreating] = useState(false)
+    const [isLoadingMore, setIsLoadingMore] = useState(false)
     const [currentPage, setCurrentPage] = useState(0)
 
     if (!watchlistCreatorModal.isOpen) return null
@@ -33,6 +44,10 @@ export default function WatchlistCreatorModal() {
     const startIndex = currentPage * ITEMS_PER_PAGE
     const endIndex = startIndex + ITEMS_PER_PAGE
     const currentItems = watchlistCreatorModal.content.slice(startIndex, endIndex)
+
+    // Fill empty slots to maintain grid height
+    const emptySlots = ITEMS_PER_PAGE - currentItems.length
+    const fillerItems = Array(emptySlots).fill(null)
 
     const handleClose = () => {
         closeWatchlistCreatorModal()
@@ -78,11 +93,92 @@ export default function WatchlistCreatorModal() {
             )
 
             handleClose()
+
+            // Navigate to watchlists page
+            router.push('/watchlists')
         } catch (error: any) {
             console.error('Create watchlist error:', error)
             showError('Failed to create watchlist', error.message)
         } finally {
             setIsCreating(false)
+        }
+    }
+
+    const handleAskForMore = async () => {
+        setIsLoadingMore(true)
+
+        try {
+            const state = useSmartSearchStore.getState()
+
+            // Create list of existing movies with title and year for better context
+            const existingMovies = state.results.map((r) => ({
+                title: r.title || r.name || 'Unknown',
+                year: r.release_date?.substring(0, 4) || r.first_air_date?.substring(0, 4) || '',
+            }))
+
+            const response = await fetch('/api/ai-suggestions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    query: query,
+                    mode,
+                    conversationHistory: state.conversationHistory,
+                    existingMovies,
+                }),
+            })
+
+            if (!response.ok) {
+                throw new Error('Failed to get more suggestions')
+            }
+
+            const data = await response.json()
+
+            // Create a Set of existing titles (normalized) for duplicate checking
+            const existingTitlesSet = new Set(
+                state.results.map((r) => {
+                    const title = (r.title || r.name || '').toLowerCase().trim()
+                    const year = (
+                        r.release_date?.substring(0, 4) ||
+                        r.first_air_date?.substring(0, 4) ||
+                        ''
+                    ).trim()
+                    return `${title}::${year}`
+                })
+            )
+
+            // Filter out duplicates from new results
+            const uniqueNewResults = data.results.filter((newItem: any) => {
+                const title = (newItem.title || newItem.name || '').toLowerCase().trim()
+                const year = (
+                    newItem.release_date?.substring(0, 4) ||
+                    newItem.first_air_date?.substring(0, 4) ||
+                    ''
+                ).trim()
+                const key = `${title}::${year}`
+                return !existingTitlesSet.has(key)
+            })
+
+            if (uniqueNewResults.length > 0) {
+                addResults(uniqueNewResults)
+                addToConversation({
+                    role: 'user',
+                    content: 'Show me more similar titles',
+                })
+                addToConversation({
+                    role: 'assistant',
+                    content: `Added ${uniqueNewResults.length} more suggestions`,
+                })
+                showSuccess('Added more suggestions', `Found ${uniqueNewResults.length} new titles`)
+            } else {
+                showError('No new suggestions found', 'All returned titles were duplicates')
+            }
+        } catch (error) {
+            console.error('Ask for more error:', error)
+            showError('Failed to get more suggestions')
+        } finally {
+            setIsLoadingMore(false)
         }
     }
 
@@ -108,7 +204,7 @@ export default function WatchlistCreatorModal() {
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} />
 
             {/* Modal */}
-            <div className="relative bg-[#141414] rounded-lg shadow-2xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="relative bg-[#141414] rounded-lg shadow-2xl max-w-7xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-700">
                     <div>
@@ -129,7 +225,7 @@ export default function WatchlistCreatorModal() {
                 {/* Content */}
                 <div className="p-6 flex-1 overflow-y-auto">
                     <div className="space-y-6">
-                        {/* Icon and Color Pickers */}
+                        {/* Icon, Color Pickers, and Name Input */}
                         <div className="flex items-center space-x-3">
                             {/* Icon Picker */}
                             <div className="relative flex-shrink-0">
@@ -192,32 +288,40 @@ export default function WatchlistCreatorModal() {
 
                         {/* Content Grid */}
                         <div>
-                            <h3 className="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-wide">
-                                Content Preview
-                            </h3>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
+                                    Content Preview
+                                </h3>
+                                <button
+                                    onClick={handleAskForMore}
+                                    disabled={isLoadingMore}
+                                    className="
+                                        flex items-center gap-2 px-4 py-2 rounded-md
+                                        bg-white/10 text-white text-sm font-medium
+                                        hover:bg-white/20
+                                        disabled:opacity-50 disabled:cursor-not-allowed
+                                        transition-all duration-200
+                                    "
+                                >
+                                    <SparklesIcon
+                                        className={`h-4 w-4 ${isLoadingMore ? 'animate-pulse' : ''}`}
+                                    />
+                                    {isLoadingMore ? 'Generating...' : 'Generate More'}
+                                </button>
+                            </div>
+
+                            {/* Content Cards Grid - Fixed height with 6 slots */}
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 min-h-[550px]">
                                 {currentItems.map((item) => (
+                                    <ContentCard key={item.id} content={item} size="small" />
+                                ))}
+                                {/* Filler items to maintain grid height */}
+                                {fillerItems.map((_, index) => (
                                     <div
-                                        key={item.id}
-                                        className="group relative aspect-[2/3] bg-gray-800 rounded-lg overflow-hidden"
+                                        key={`filler-${index}`}
+                                        className="opacity-0 pointer-events-none"
                                     >
-                                        {item.poster_path && (
-                                            <Image
-                                                src={`https://image.tmdb.org/t/p/w342${item.poster_path}`}
-                                                alt={getTitle(item)}
-                                                fill
-                                                className="object-cover transition-transform group-hover:scale-105"
-                                                sizes="(max-width: 640px) 50vw, 33vw"
-                                            />
-                                        )}
-                                        {/* Title Overlay */}
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <div className="absolute bottom-0 left-0 right-0 p-2">
-                                                <p className="text-white text-xs font-medium line-clamp-2">
-                                                    {getTitle(item)}
-                                                </p>
-                                            </div>
-                                        </div>
+                                        <div className="w-full aspect-[2/3] bg-transparent"></div>
                                     </div>
                                 ))}
                             </div>
