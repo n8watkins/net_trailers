@@ -19,7 +19,7 @@ import useUserData from '../../hooks/useUserData'
 import Image from 'next/image'
 import { Content, getTitle, isMovie } from '../../typings'
 
-const ITEMS_PER_PAGE = 12 // 2 rows x 6 columns
+const ITEMS_PER_PAGE = 8 // 2 rows x 4 columns
 
 // Simplified content card for modal display
 function SimpleContentCard({ content }: { content: Content }) {
@@ -111,7 +111,7 @@ export default function WatchlistCreatorModal() {
     const endIndex = startIndex + ITEMS_PER_PAGE
     const currentItems = watchlistCreatorModal.content.slice(startIndex, endIndex)
 
-    // Fill empty slots to maintain grid height (2 rows x 6 columns = 12 slots)
+    // Fill empty slots to maintain grid height (2 rows x 4 columns = 8 slots)
     const emptySlots = ITEMS_PER_PAGE - currentItems.length
     const fillerItems = Array(emptySlots).fill(null)
 
@@ -374,17 +374,19 @@ export default function WatchlistCreatorModal() {
                                 </button>
                             </div>
 
-                            {/* Content Cards Grid - 2 rows x 6 columns, centered */}
+                            {/* Content Cards Grid - 2 rows x 4 columns, centered */}
                             <div className="flex justify-center">
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 min-h-[580px]">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 min-h-[620px]">
                                     {currentItems.map((item) => (
-                                        <SimpleContentCard key={item.id} content={item} />
+                                        <div key={item.id} className="w-44">
+                                            <SimpleContentCard content={item} />
+                                        </div>
                                     ))}
                                     {/* Filler items to maintain grid height */}
                                     {fillerItems.map((_, index) => (
                                         <div
                                             key={`filler-${index}`}
-                                            className="opacity-0 pointer-events-none"
+                                            className="w-44 opacity-0 pointer-events-none"
                                         >
                                             <div className="w-full aspect-[2/3] bg-transparent"></div>
                                         </div>
