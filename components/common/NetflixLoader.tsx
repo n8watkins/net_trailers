@@ -4,14 +4,17 @@ import React, { useState, useEffect } from 'react'
 
 interface Props {
     message?: string
+    inline?: boolean // New prop to control full-page vs inline mode
 }
 
-const NetflixLoader: React.FC<Props> = ({ message = 'Loading your movies...' }) => {
+const NetflixLoader: React.FC<Props> = ({ message = 'Loading your movies...', inline = false }) => {
     const [loadingCounter, setLoadingCounter] = useState(0)
     const [loadingMessage, setLoadingMessage] = useState('🎬 Finding your favorite movies...')
 
-    // Prevent scrolling while loading
+    // Prevent scrolling while loading (only in full-page mode)
     useEffect(() => {
+        if (inline) return // Skip scroll prevention in inline mode
+
         // Save original overflow style
         const originalOverflow = document.body.style.overflow
         const originalPosition = document.body.style.position
@@ -30,7 +33,7 @@ const NetflixLoader: React.FC<Props> = ({ message = 'Loading your movies...' }) 
             // Scroll to top after loading completes
             window.scrollTo({ top: 0, behavior: 'instant' })
         }
-    }, [])
+    }, [inline])
 
     // Counter animation for loading
     useEffect(() => {
@@ -75,7 +78,13 @@ const NetflixLoader: React.FC<Props> = ({ message = 'Loading your movies...' }) 
     }, [])
 
     return (
-        <div className="fixed inset-0 z-[9999] bg-[#141414] flex items-center justify-center">
+        <div
+            className={
+                inline
+                    ? 'py-32 flex items-center justify-center min-h-[60vh]'
+                    : 'fixed inset-0 z-[9999] bg-[#141414] flex items-center justify-center'
+            }
+        >
             <div className="text-center max-w-md px-6">
                 <div className="flex space-x-3 justify-center mb-6">
                     <div className="w-6 h-6 bg-red-600 rounded-full animate-bounce"></div>

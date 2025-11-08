@@ -117,7 +117,9 @@ export default function SmartSearchClient() {
                     )}
 
                     {/* Loading State */}
-                    {isLoading && <NetflixLoader message="Our AI is analyzing your request" />}
+                    {isLoading && (
+                        <NetflixLoader message="Our AI is analyzing your request" inline={true} />
+                    )}
 
                     {/* Results Grid */}
                     {!isLoading && results.length > 0 && (
