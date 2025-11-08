@@ -173,15 +173,6 @@ export default function WatchlistCreatorModal() {
                             </div>
                         </div>
 
-                        {/* Info Text */}
-                        <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-                            <p className="text-sm text-gray-300">
-                                This watchlist will contain {watchlistCreatorModal.content.length}{' '}
-                                title{watchlistCreatorModal.content.length !== 1 ? 's' : ''} from
-                                your smart search results.
-                            </p>
-                        </div>
-
                         {/* Action Buttons */}
                         <div className="flex space-x-3 pt-2">
                             <button
