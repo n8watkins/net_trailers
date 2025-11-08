@@ -16,9 +16,75 @@ import {
 import IconPickerModal from './IconPickerModal'
 import ColorPickerModal from './ColorPickerModal'
 import useUserData from '../../hooks/useUserData'
-import ContentCard from '../common/ContentCard'
+import Image from 'next/image'
+import { Content, getTitle, isMovie } from '../../typings'
 
-const ITEMS_PER_PAGE = 6
+const ITEMS_PER_PAGE = 12 // 2 rows x 6 columns
+
+// Simplified content card for modal display
+function SimpleContentCard({ content }: { content: Content }) {
+    const [imageLoaded, setImageLoaded] = useState(false)
+
+    return (
+        <div className="relative group cursor-pointer">
+            {/* Poster Image */}
+            <div className="relative aspect-[2/3] bg-gray-800 rounded-md overflow-hidden">
+                {!imageLoaded && (
+                    <div className="w-full h-full bg-gray-800 animate-pulse flex items-center justify-center">
+                        <div className="w-6 h-6 border-2 border-gray-600 border-t-red-600 rounded-full animate-spin"></div>
+                    </div>
+                )}
+
+                {content.poster_path && (
+                    <Image
+                        src={`https://image.tmdb.org/t/p/w342${content.poster_path}`}
+                        alt={getTitle(content)}
+                        fill
+                        className="object-cover transition-transform group-hover:scale-105"
+                        sizes="(max-width: 640px) 50vw, 150px"
+                        onLoad={() => setImageLoaded(true)}
+                    />
+                )}
+            </div>
+
+            {/* Rating Badge */}
+            {content.vote_average > 0 && imageLoaded && (
+                <div className="absolute top-2 left-2 bg-black/80 backdrop-blur-sm rounded-full px-2 py-1 z-10">
+                    <div className="flex items-center gap-1">
+                        <span className="text-yellow-400 text-xs">⭐</span>
+                        <span className="text-white text-xs font-medium">
+                            {content.vote_average.toFixed(1)}
+                        </span>
+                    </div>
+                </div>
+            )}
+
+            {/* Media Type Pill */}
+            {imageLoaded && (
+                <div className="absolute top-2 right-2 z-10">
+                    <span
+                        className={`px-2 py-0.5 text-xs rounded-full backdrop-blur-sm font-bold ${
+                            isMovie(content)
+                                ? 'bg-white/90 text-black'
+                                : 'bg-black/90 text-white border border-white/50'
+                        }`}
+                    >
+                        {isMovie(content) ? 'Movie' : 'TV'}
+                    </span>
+                </div>
+            )}
+
+            {/* Title on Hover */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity rounded-md">
+                <div className="absolute bottom-0 left-0 right-0 p-2">
+                    <p className="text-white text-xs font-medium line-clamp-2">
+                        {getTitle(content)}
+                    </p>
+                </div>
+            </div>
+        </div>
+    )
+}
 
 export default function WatchlistCreatorModal() {
     const router = useRouter()
@@ -45,7 +111,7 @@ export default function WatchlistCreatorModal() {
     const endIndex = startIndex + ITEMS_PER_PAGE
     const currentItems = watchlistCreatorModal.content.slice(startIndex, endIndex)
 
-    // Fill empty slots to maintain grid height
+    // Fill empty slots to maintain grid height (2 rows x 6 columns = 12 slots)
     const emptySlots = ITEMS_PER_PAGE - currentItems.length
     const fillerItems = Array(emptySlots).fill(null)
 
@@ -214,19 +280,20 @@ export default function WatchlistCreatorModal() {
                             {watchlistCreatorModal.content.length !== 1 ? 's' : ''} selected
                         </p>
                     </div>
+                    {/* White circle with black X */}
                     <button
                         onClick={handleClose}
-                        className="p-2 hover:bg-gray-700 rounded-full transition-colors"
+                        className="w-10 h-10 rounded-full bg-white hover:bg-gray-200 flex items-center justify-center transition-colors"
                     >
-                        <XMarkIcon className="w-5 h-5 text-white" />
+                        <XMarkIcon className="w-6 h-6 text-black" />
                     </button>
                 </div>
 
                 {/* Content */}
                 <div className="p-6 flex-1 overflow-y-auto">
                     <div className="space-y-6">
-                        {/* Icon, Color Pickers, and Name Input */}
-                        <div className="flex items-center space-x-3">
+                        {/* Icon, Color Pickers, and Name Input - Centered */}
+                        <div className="flex items-center justify-center space-x-3">
                             {/* Icon Picker */}
                             <div className="relative flex-shrink-0">
                                 <button
@@ -272,26 +339,23 @@ export default function WatchlistCreatorModal() {
                                 />
                             </div>
 
-                            {/* Name Input */}
-                            <div className="flex-1">
+                            {/* Name Input - Fixed width */}
+                            <div>
                                 <input
                                     type="text"
                                     placeholder="Watchlist name"
                                     value={watchlistCreatorModal.name}
                                     onChange={(e) => setWatchlistCreatorName(e.target.value)}
                                     onKeyDown={handleKeyPress}
-                                    className="w-full h-14 px-4 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-96 h-14 px-4 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     autoFocus
                                 />
                             </div>
                         </div>
 
-                        {/* Content Grid */}
+                        {/* Content Grid - Centered */}
                         <div>
-                            <div className="flex items-center justify-between mb-3">
-                                <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
-                                    Content Preview
-                                </h3>
+                            <div className="flex items-center justify-center mb-4">
                                 <button
                                     onClick={handleAskForMore}
                                     disabled={isLoadingMore}
@@ -310,20 +374,22 @@ export default function WatchlistCreatorModal() {
                                 </button>
                             </div>
 
-                            {/* Content Cards Grid - Fixed height with 6 slots */}
-                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 min-h-[550px]">
-                                {currentItems.map((item) => (
-                                    <ContentCard key={item.id} content={item} size="small" />
-                                ))}
-                                {/* Filler items to maintain grid height */}
-                                {fillerItems.map((_, index) => (
-                                    <div
-                                        key={`filler-${index}`}
-                                        className="opacity-0 pointer-events-none"
-                                    >
-                                        <div className="w-full aspect-[2/3] bg-transparent"></div>
-                                    </div>
-                                ))}
+                            {/* Content Cards Grid - 2 rows x 6 columns, centered */}
+                            <div className="flex justify-center">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 min-h-[580px]">
+                                    {currentItems.map((item) => (
+                                        <SimpleContentCard key={item.id} content={item} />
+                                    ))}
+                                    {/* Filler items to maintain grid height */}
+                                    {fillerItems.map((_, index) => (
+                                        <div
+                                            key={`filler-${index}`}
+                                            className="opacity-0 pointer-events-none"
+                                        >
+                                            <div className="w-full aspect-[2/3] bg-transparent"></div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
 
                             {/* Pagination */}
