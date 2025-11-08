@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAppStore } from '../../stores/appStore'
 import { useSessionStore } from '../../stores/sessionStore'
@@ -8,10 +8,10 @@ import { useSmartSearchStore } from '../../stores/smartSearchStore'
 import { useToast } from '../../hooks/useToast'
 import {
     XMarkIcon,
-    PlusIcon,
     ChevronLeftIcon,
     ChevronRightIcon,
     SparklesIcon,
+    MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline'
 import IconPickerModal from './IconPickerModal'
 import ColorPickerModal from './ColorPickerModal'
@@ -22,11 +22,37 @@ import { Content, getTitle, isMovie } from '../../typings'
 const ITEMS_PER_PAGE = 8 // 2 rows x 4 columns
 
 // Simplified content card for modal display
-function SimpleContentCard({ content }: { content: Content }) {
+function SimpleContentCard({
+    content,
+    onRemove,
+}: {
+    content: Content
+    onRemove: (e: React.MouseEvent) => void
+}) {
     const [imageLoaded, setImageLoaded] = useState(false)
 
     return (
         <div className="relative group cursor-pointer">
+            {/* Remove Button - Center Top with white circle and black X */}
+            <button
+                onClick={onRemove}
+                onMouseEnter={(e) => e.stopPropagation()}
+                onMouseLeave={(e) => e.stopPropagation()}
+                className="
+                    absolute top-2 left-1/2 -translate-x-1/2 z-50
+                    w-10 h-10 rounded-full
+                    bg-white shadow-lg
+                    border-2 border-black
+                    opacity-0 group-hover:opacity-100
+                    transition-all duration-200
+                    hover:scale-110
+                    flex items-center justify-center
+                "
+                aria-label="Remove from watchlist"
+            >
+                <XMarkIcon className="h-6 w-6 text-black" />
+            </button>
+
             {/* Poster Image */}
             <div className="relative aspect-[2/3] bg-gray-800 rounded-md overflow-hidden">
                 {!imageLoaded && (
@@ -88,8 +114,12 @@ function SimpleContentCard({ content }: { content: Content }) {
 
 export default function WatchlistCreatorModal() {
     const router = useRouter()
-    const { watchlistCreatorModal, closeWatchlistCreatorModal, setWatchlistCreatorName } =
-        useAppStore()
+    const {
+        watchlistCreatorModal,
+        closeWatchlistCreatorModal,
+        setWatchlistCreatorName,
+        removeFromWatchlistCreator,
+    } = useAppStore()
     const getUserId = useSessionStore((state) => state.getUserId)
     const { createList, addToList } = useUserData()
     const { showSuccess, showError } = useToast()
@@ -103,13 +133,25 @@ export default function WatchlistCreatorModal() {
     const [isCreating, setIsCreating] = useState(false)
     const [isLoadingMore, setIsLoadingMore] = useState(false)
     const [currentPage, setCurrentPage] = useState(0)
+    const [searchFilter, setSearchFilter] = useState('')
 
     if (!watchlistCreatorModal.isOpen) return null
 
-    const totalPages = Math.ceil(watchlistCreatorModal.content.length / ITEMS_PER_PAGE)
+    // Filter content based on search
+    const filteredContent = useMemo(() => {
+        if (!searchFilter.trim()) return watchlistCreatorModal.content
+
+        const searchLower = searchFilter.toLowerCase().trim()
+        return watchlistCreatorModal.content.filter((item) => {
+            const title = getTitle(item).toLowerCase()
+            return title.includes(searchLower)
+        })
+    }, [watchlistCreatorModal.content, searchFilter])
+
+    const totalPages = Math.ceil(filteredContent.length / ITEMS_PER_PAGE)
     const startIndex = currentPage * ITEMS_PER_PAGE
     const endIndex = startIndex + ITEMS_PER_PAGE
-    const currentItems = watchlistCreatorModal.content.slice(startIndex, endIndex)
+    const currentItems = filteredContent.slice(startIndex, endIndex)
 
     // Fill empty slots to maintain grid height (2 rows x 4 columns = 8 slots)
     const emptySlots = ITEMS_PER_PAGE - currentItems.length
@@ -122,18 +164,19 @@ export default function WatchlistCreatorModal() {
         setShowIconPicker(false)
         setShowColorPicker(false)
         setCurrentPage(0)
+        setSearchFilter('')
     }
 
     const handleCreate = async () => {
         const userId = getUserId()
 
         if (!userId) {
-            showError('Please sign in to create watchlists')
+            showError('Please sign in to create collections')
             return
         }
 
         if (!watchlistCreatorModal.name.trim()) {
-            showError('Please enter a watchlist name')
+            showError('Please enter a collection name')
             return
         }
 
@@ -154,7 +197,7 @@ export default function WatchlistCreatorModal() {
             })
 
             showSuccess(
-                'Watchlist created!',
+                'Collection saved!',
                 `"${watchlistCreatorModal.name}" with ${watchlistCreatorModal.content.length} titles`
             )
 
@@ -163,8 +206,8 @@ export default function WatchlistCreatorModal() {
             // Navigate to watchlists page
             router.push('/watchlists')
         } catch (error: any) {
-            console.error('Create watchlist error:', error)
-            showError('Failed to create watchlist', error.message)
+            console.error('Create collection error:', error)
+            showError('Failed to create collection', error.message)
         } finally {
             setIsCreating(false)
         }
@@ -264,17 +307,34 @@ export default function WatchlistCreatorModal() {
         setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1))
     }
 
+    const handleRemoveContent = (e: React.MouseEvent, contentId: number) => {
+        e.stopPropagation()
+        removeFromWatchlistCreator(contentId)
+
+        // If this was the last item, close the modal
+        if (watchlistCreatorModal.content.length === 1) {
+            handleClose()
+            showError('Collection is empty', 'Add some content to create a collection')
+            return
+        }
+
+        // If we removed the last item on the current page and it's not the first page, go back one page
+        if (currentItems.length === 1 && currentPage > 0) {
+            setCurrentPage(currentPage - 1)
+        }
+    }
+
     return (
         <div className="fixed inset-0 z-[55000] flex items-center justify-center">
             {/* Backdrop */}
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} />
 
-            {/* Modal */}
-            <div className="relative bg-[#141414] rounded-lg shadow-2xl max-w-7xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Modal - Narrower width */}
+            <div className="relative bg-[#141414] rounded-lg shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-700">
                     <div>
-                        <h2 className="text-xl font-semibold text-white">Create Watchlist</h2>
+                        <h2 className="text-xl font-semibold text-white">Create Collection</h2>
                         <p className="text-sm text-gray-400 mt-1">
                             {watchlistCreatorModal.content.length} title
                             {watchlistCreatorModal.content.length !== 1 ? 's' : ''} selected
@@ -343,13 +403,41 @@ export default function WatchlistCreatorModal() {
                             <div>
                                 <input
                                     type="text"
-                                    placeholder="Watchlist name"
+                                    placeholder="Collection name"
                                     value={watchlistCreatorModal.name}
                                     onChange={(e) => setWatchlistCreatorName(e.target.value)}
                                     onKeyDown={handleKeyPress}
                                     className="w-96 h-14 px-4 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     autoFocus
                                 />
+                            </div>
+                        </div>
+
+                        {/* Search Filter Input - Centered */}
+                        <div className="flex justify-center">
+                            <div className="relative w-96">
+                                <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Filter titles..."
+                                    value={searchFilter}
+                                    onChange={(e) => {
+                                        setSearchFilter(e.target.value)
+                                        setCurrentPage(0) // Reset to first page when filtering
+                                    }}
+                                    className="w-full h-12 pl-12 pr-4 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
+                                {searchFilter && (
+                                    <button
+                                        onClick={() => {
+                                            setSearchFilter('')
+                                            setCurrentPage(0)
+                                        }}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                                    >
+                                        <XMarkIcon className="h-5 w-5" />
+                                    </button>
+                                )}
                             </div>
                         </div>
 
@@ -379,7 +467,10 @@ export default function WatchlistCreatorModal() {
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 min-h-[620px]">
                                     {currentItems.map((item) => (
                                         <div key={item.id} className="w-44">
-                                            <SimpleContentCard content={item} />
+                                            <SimpleContentCard
+                                                content={item}
+                                                onRemove={(e) => handleRemoveContent(e, item.id)}
+                                            />
                                         </div>
                                     ))}
                                     {/* Filler items to maintain grid height */}
@@ -430,8 +521,7 @@ export default function WatchlistCreatorModal() {
                             disabled={!watchlistCreatorModal.name.trim() || isCreating}
                             className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold transition-all duration-200 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <PlusIcon className="w-5 h-5" />
-                            {isCreating ? 'Creating...' : 'Create Watchlist'}
+                            {isCreating ? 'Saving...' : 'Save'}
                         </button>
                         <button
                             onClick={handleClose}
