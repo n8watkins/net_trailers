@@ -88,23 +88,25 @@ export function CustomRowCard({
                     {/* Name and Status */}
                     <div className="flex items-start gap-3">
                         <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                                <h3 className="text-lg font-semibold text-white">{row.name}</h3>
-                                {row.isSystemRow && (
-                                    <span
-                                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-600/20 text-purple-400 rounded text-xs font-medium"
-                                        title="System row - cannot be edited or deleted"
-                                    >
-                                        <SparklesIcon className="w-3 h-3" />
-                                        System
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <h3 className="text-lg font-semibold text-white">{row.name}</h3>
+                                    {row.isSystemRow && (
+                                        <span
+                                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-600/20 text-purple-400 rounded text-xs font-medium"
+                                            title="System row"
+                                        >
+                                            <SparklesIcon className="w-3 h-3" />
+                                            System
+                                        </span>
+                                    )}
+                                </div>
+                                {!row.enabled && (
+                                    <span className="inline-block mt-1 text-xs text-gray-500">
+                                        (Disabled)
                                     </span>
                                 )}
                             </div>
-                            {!row.enabled && (
-                                <span className="inline-block mt-1 text-xs text-gray-500">
-                                    (Disabled)
-                                </span>
-                            )}
                         </div>
                     </div>
 
@@ -165,19 +167,19 @@ export function CustomRowCard({
                         )}
                     </button>
 
-                    {/* Edit - Only for custom rows */}
-                    {!row.isSystemRow && (
+                    {/* Edit - For custom rows and editable system rows */}
+                    {(!row.isSystemRow || row.canEdit !== false) && (
                         <button
                             onClick={() => onEdit(row)}
                             className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors"
-                            title="Edit row"
+                            title={row.isSystemRow ? 'Edit row name' : 'Edit row'}
                         >
                             <PencilIcon className="w-5 h-5 text-gray-300" />
                         </button>
                     )}
 
-                    {/* Delete - Only for custom rows */}
-                    {!row.isSystemRow && (
+                    {/* Delete - For custom rows and deletable system rows */}
+                    {(!row.isSystemRow || row.canDelete !== false) && (
                         <button
                             onClick={handleDelete}
                             className={`p-2 rounded-lg transition-colors ${
@@ -196,10 +198,12 @@ export function CustomRowCard({
             </div>
 
             {/* Delete Confirmation Message */}
-            {isDeleting && !row.isSystemRow && (
+            {isDeleting && (!row.isSystemRow || row.canDelete !== false) && (
                 <div className="mt-3 p-3 bg-red-600/20 border border-red-600/50 rounded-lg">
                     <p className="text-sm text-red-400">
-                        Click delete again to permanently remove this row
+                        {row.isSystemRow
+                            ? 'Click delete again to remove this system row (can be restored with "Reset Defaults")'
+                            : 'Click delete again to permanently remove this row'}
                     </p>
                 </div>
             )}

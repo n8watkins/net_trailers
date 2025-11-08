@@ -71,72 +71,82 @@ export function buildFollowUpPrompt(
     query: string,
     mode: SmartSearchMode,
     conversationHistory: ConversationMessage[],
-    existingResultIds: number[]
+    existingMovies: Array<{ title: string; year: string }>
 ): string {
-    const historyContext = conversationHistory
-        .map((msg) => `${msg.role}: ${msg.content}`)
+    // Format existing movies list for clear context
+    const existingMoviesList = existingMovies
+        .map((m) => `- ${m.title}${m.year ? ` (${m.year})` : ''}`)
         .join('\n')
 
-    const baseInstructions = `You are continuing a conversation about movie/TV recommendations.
+    const baseInstructions = `ORIGINAL USER QUERY: "${query}"
 
-Previous conversation:
-${historyContext}
+YOU ALREADY PROVIDED THESE ${existingMovies.length} RECOMMENDATIONS:
+${existingMoviesList}
 
-Current request: "${query}"
+TASK: Find MORE movies/shows that are VERY SIMILAR to the original query "${query}".
 
-The user already has ${existingResultIds.length} suggestions. Provide NEW, DIFFERENT recommendations that complement the existing ones.
+CRITICAL REQUIREMENTS:
+1. STAY EXTREMELY CLOSE to the theme, style, and vibe of "${query}"
+2. DO NOT repeat ANY of the ${existingMovies.length} titles listed above
+3. Find titles that someone who liked the first batch would DEFINITELY want to watch
+4. Maintain the same quality level, genre, and tone
+5. Think of what naturally belongs in the same collection
+
+DO NOT:
+- Suggest any title already in the list above (check carefully!)
+- Drift away from the original query's theme
+- Include random or loosely related content
 
 IMPORTANT: Return ONLY valid JSON. Do NOT wrap in markdown code blocks.`
 
     const modeSpecificInstructions = {
         suggestions: `
-Generate 8-12 ADDITIONAL movie/TV recommendations that are similar but different from what was already suggested.
+Generate 10-15 MORE recommendations that perfectly match "${query}".
 
 Return JSON in this exact format:
 {
   "movies": [{"title": "Movie Title", "year": 2020}],
-  "rowName": "Updated Name (if needed, or keep similar theme)",
+  "rowName": "Keep same theme as before",
   "mediaType": "movie" | "tv" | "both",
   "genreFallback": [genre_id1, genre_id2]
 }
 
-Guidelines:
-- Avoid duplicating existing suggestions
-- Expand on the theme
-- Discover deeper cuts and hidden gems
-- Maintain consistency with previous recommendations`,
+Focus on:
+- Titles with the exact same vibe as the original recommendations
+- Mix of well-known and hidden gems
+- Natural companions to what was already suggested`,
 
         row: `
-Generate 8-12 ADDITIONAL movies/shows to expand the custom row.
+Generate 10-15 MORE titles to expand this row about "${query}".
 
 Return JSON in this exact format:
 {
   "movies": [{"title": "Movie Title", "year": 2020}],
-  "rowName": "Same or similar name",
+  "rowName": "Keep same name",
   "mediaType": "movie" | "tv" | "both",
   "genreFallback": [genre_id1, genre_id2]
 }
 
-Guidelines:
-- Complement existing selections
-- Maintain thematic consistency
-- Include both popular and underrated titles`,
+Focus on:
+- Perfect thematic matches for "${query}"
+- Continue the same quality and style
+- Titles that belong in this exact collection`,
 
         watchlist: `
-Generate 6-10 ADDITIONAL titles to expand the watchlist.
+Generate 8-12 MORE titles for this "${query}" watchlist.
 
 Return JSON in this exact format:
 {
   "movies": [{"title": "Movie Title", "year": 2020}],
-  "rowName": "Same or similar name",
+  "rowName": "Keep same name",
   "mediaType": "movie" | "tv" | "both",
   "genreFallback": []
 }
 
-Guidelines:
-- Build on the existing watchlist theme
-- Maintain quality and relevance
-- Keep watchlist cohesive`,
+Focus on:
+- Must-watch titles that fit "${query}" perfectly
+- Same caliber as the first batch
+- Natural additions to this collection`,
     }
 
     return `${baseInstructions}\n${modeSpecificInstructions[mode]}`

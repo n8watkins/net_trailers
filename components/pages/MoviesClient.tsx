@@ -63,7 +63,7 @@ export default function MoviesClient({ data }: MoviesClientProps) {
                     <div className="pt-8 sm:pt-12 md:pt-16">
                         {/* Dynamic rows (system + custom) sorted by user preferences */}
                         {enabledRows.map((row) => (
-                            <CustomRowLoader key={row.id} row={row} />
+                            <CustomRowLoader key={row.id} row={row} pageType="movies" />
                         ))}
                     </div>
                 </section>

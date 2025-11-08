@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react'
+import { AVAILABLE_COLORS } from '../../config/constants'
 
 interface ColorPickerModalProps {
     isOpen: boolean
@@ -15,25 +16,8 @@ function ColorPickerModal({
 }: ColorPickerModalProps) {
     const dropdownRef = useRef<HTMLDivElement>(null)
 
-    // 16 vibrant colors that pop on dark backgrounds (Red, Yellow, Purple, Blue)
-    const colors = [
-        '#ef4444', // Red
-        '#dc2626', // Red (darker)
-        '#f97316', // Orange
-        '#f43f5e', // Rose
-        '#fbbf24', // Amber/Gold
-        '#facc15', // Yellow
-        '#eab308', // Yellow (darker)
-        '#f59e0b', // Amber
-        '#2dd4bf', // Teal
-        '#22d3ee', // Cyan
-        '#38bdf8', // Sky Blue
-        '#3b82f6', // Blue
-        '#6366f1', // Indigo
-        '#8b5cf6', // Violet
-        '#a855f7', // Purple
-        '#d946ef', // Fuchsia
-    ]
+    // Use shared colors constant
+    const colors = AVAILABLE_COLORS as unknown as string[]
 
     // Close on click outside
     useEffect(() => {

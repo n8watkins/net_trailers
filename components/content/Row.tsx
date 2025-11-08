@@ -1,9 +1,10 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react'
 import { Content, getTitle } from '../../typings'
-import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
+import { ChevronLeftIcon, ChevronRightIcon, PencilIcon } from '@heroicons/react/24/solid'
 import ContentCard from '../common/ContentCard'
 import { useSessionData } from '../../hooks/useSessionData'
 import { filterDislikedContent } from '../../utils/contentFilter'
+import { useAppStore } from '../../stores/appStore'
 
 // Debug logging - only in development
 const DEBUG_INFINITE_SCROLL = process.env.NODE_ENV === 'development'
@@ -17,8 +18,10 @@ interface Props {
     title: string
     content: Content[]
     apiEndpoint?: string // Optional endpoint for loading more content
+    pageType?: 'home' | 'movies' | 'tv' // Page type for row editing
 }
-function Row({ title, content, apiEndpoint }: Props) {
+function Row({ title, content, apiEndpoint, pageType }: Props) {
+    const openRowEditorModal = useAppStore((state) => state.openRowEditorModal)
     const rowRef = useRef<HTMLDivElement>(null)
     const sentinelRef = useRef<HTMLDivElement>(null)
     const isLoadingRef = useRef(false)
@@ -464,10 +467,21 @@ function Row({ title, content, apiEndpoint }: Props) {
     }
     return (
         <div className="pb-4 sm:pb-6 md:pb-8">
-            {/* Section Title */}
-            <h2 className="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold px-4 sm:px-6 md:px-8 lg:px-16 pt-8 sm:pt-10 md:pt-12 transition duration-200 hover:text-gray-300">
-                {title}
-            </h2>
+            {/* Section Title with Edit Button */}
+            <div className="flex items-center gap-3 px-4 sm:px-6 md:px-8 lg:px-16 pt-8 sm:pt-10 md:pt-12 group/title">
+                <h2 className="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold transition duration-200 hover:text-gray-300">
+                    {title}
+                </h2>
+                {pageType && (
+                    <button
+                        onClick={() => openRowEditorModal(pageType)}
+                        className="opacity-0 group-hover/title:opacity-100 transition-opacity duration-200 p-1.5 hover:bg-gray-800/50 rounded-lg"
+                        title="Edit rows"
+                    >
+                        <PencilIcon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 hover:text-white transition-colors" />
+                    </button>
+                )}
+            </div>
 
             {/* Content Row */}
             <div className="relative row-container h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] group">

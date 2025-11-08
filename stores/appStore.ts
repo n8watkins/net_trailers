@@ -58,6 +58,20 @@ export interface AuthModalState {
     mode: 'signin' | 'signup'
 }
 
+// Row editor modal state
+export interface RowEditorModalState {
+    isOpen: boolean
+    pageType: 'home' | 'movies' | 'tv'
+}
+
+// Watchlist creator modal state
+export interface WatchlistCreatorModalState {
+    isOpen: boolean
+    name: string
+    content: Content[]
+    mediaType: 'movie' | 'tv' | 'all'
+}
+
 // App state interface
 export interface AppState {
     // Modal state
@@ -71,6 +85,12 @@ export interface AppState {
 
     // Auth modal state
     authModal: AuthModalState
+
+    // Row editor modal state
+    rowEditorModal: RowEditorModalState
+
+    // Watchlist creator modal state
+    watchlistCreatorModal: WatchlistCreatorModalState
 
     // Toast notifications
     toasts: ToastMessage[]
@@ -110,6 +130,19 @@ export interface AppActions {
     openAuthModal: (mode?: 'signin' | 'signup') => void
     closeAuthModal: () => void
     setAuthModalMode: (mode: 'signin' | 'signup') => void
+
+    // Row editor modal actions
+    openRowEditorModal: (pageType: 'home' | 'movies' | 'tv') => void
+    closeRowEditorModal: () => void
+
+    // Watchlist creator modal actions
+    openWatchlistCreatorModal: (
+        name: string,
+        content: Content[],
+        mediaType: 'movie' | 'tv' | 'all'
+    ) => void
+    closeWatchlistCreatorModal: () => void
+    setWatchlistCreatorName: (name: string) => void
 
     // Toast actions
     showToast: (
@@ -169,6 +202,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
     authModal: {
         isOpen: false,
         mode: 'signin',
+    },
+
+    rowEditorModal: {
+        isOpen: false,
+        pageType: 'home',
+    },
+
+    watchlistCreatorModal: {
+        isOpen: false,
+        name: '',
+        content: [],
+        mediaType: 'all',
     },
 
     toasts: [],
@@ -365,6 +410,76 @@ export const useAppStore = create<AppStore>((set, get) => ({
             authModal: {
                 ...state.authModal,
                 mode,
+            },
+        }))
+    },
+
+    // Row editor modal actions
+    openRowEditorModal: (pageType: 'home' | 'movies' | 'tv') => {
+        startTransition(() => {
+            set({
+                rowEditorModal: {
+                    isOpen: true,
+                    pageType,
+                },
+            })
+            console.log('📊 [AppStore] Row editor modal opened:', pageType)
+        })
+    },
+
+    closeRowEditorModal: () => {
+        startTransition(() => {
+            set({
+                rowEditorModal: {
+                    isOpen: false,
+                    pageType: 'home',
+                },
+            })
+            console.log('❌ [AppStore] Row editor modal closed')
+        })
+    },
+
+    // Watchlist creator modal actions
+    openWatchlistCreatorModal: (
+        name: string,
+        content: Content[],
+        mediaType: 'movie' | 'tv' | 'all'
+    ) => {
+        startTransition(() => {
+            set({
+                watchlistCreatorModal: {
+                    isOpen: true,
+                    name,
+                    content,
+                    mediaType,
+                },
+            })
+            console.log('📋 [AppStore] Watchlist creator modal opened:', {
+                name,
+                contentCount: content.length,
+            })
+        })
+    },
+
+    closeWatchlistCreatorModal: () => {
+        startTransition(() => {
+            set({
+                watchlistCreatorModal: {
+                    isOpen: false,
+                    name: '',
+                    content: [],
+                    mediaType: 'all',
+                },
+            })
+            console.log('❌ [AppStore] Watchlist creator modal closed')
+        })
+    },
+
+    setWatchlistCreatorName: (name: string) => {
+        set((state) => ({
+            watchlistCreatorModal: {
+                ...state.watchlistCreatorModal,
+                name,
             },
         }))
     },

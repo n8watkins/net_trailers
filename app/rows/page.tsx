@@ -48,6 +48,7 @@ const RowsPage = () => {
         setError,
         getDisplayRowsByMediaType,
         setSystemRowPreferences,
+        setDeletedSystemRows,
         toggleSystemRow: toggleSystemRowStore,
         updateSystemRowOrder,
     } = useCustomRowsStore()
@@ -101,13 +102,15 @@ const RowsPage = () => {
         const loadData = async () => {
             setLoading(true)
             try {
-                // Load custom rows and system row preferences in parallel
-                const [customRows, systemPrefs] = await Promise.all([
+                // Load custom rows, system row preferences, and deleted rows in parallel
+                const [customRows, systemPrefs, deletedRows] = await Promise.all([
                     CustomRowsFirestore.getUserCustomRows(userId),
                     CustomRowsFirestore.getSystemRowPreferences(userId),
+                    CustomRowsFirestore.getDeletedSystemRows(userId),
                 ])
                 setRows(userId, customRows)
                 setSystemRowPreferences(userId, systemPrefs)
+                setDeletedSystemRows(userId, deletedRows)
             } catch (error) {
                 console.error('Error loading rows:', error)
                 showToast('error', 'Failed to load custom rows')
@@ -118,7 +121,16 @@ const RowsPage = () => {
         }
 
         loadData()
-    }, [userId, isInitialized, setRows, setSystemRowPreferences, setLoading, setError, showToast])
+    }, [
+        userId,
+        isInitialized,
+        setRows,
+        setSystemRowPreferences,
+        setDeletedSystemRows,
+        setLoading,
+        setError,
+        showToast,
+    ])
 
     // Handle drag end for reordering rows within same column (both system and custom)
     const handleDragEnd = async (event: DragEndEvent, mediaType: 'movie' | 'tv' | 'both') => {
@@ -202,12 +214,18 @@ const RowsPage = () => {
                 // Toggle system row
                 const newEnabledStatus = await CustomRowsFirestore.toggleSystemRow(userId, row.id)
                 toggleSystemRowStore(userId, row.id)
-                showToast('success', newEnabledStatus ? 'Row enabled' : 'Row disabled')
+                showToast(
+                    'success',
+                    newEnabledStatus ? `"${row.name}" enabled` : `"${row.name}" disabled`
+                )
             } else {
                 // Toggle custom row
                 const newEnabledStatus = await CustomRowsFirestore.toggleRowEnabled(userId, row.id)
                 updateRow(userId, row.id, { enabled: newEnabledStatus } as Partial<CustomRow>)
-                showToast('success', newEnabledStatus ? 'Row enabled' : 'Row disabled')
+                showToast(
+                    'success',
+                    newEnabledStatus ? `"${row.name}" enabled` : `"${row.name}" disabled`
+                )
             }
         } catch (error) {
             console.error('Error toggling row:', error)
@@ -321,8 +339,8 @@ const RowsPage = () => {
                 className={`relative min-h-screen overflow-x-clip ${showModal && `overflow-y-hidden`} bg-gradient-to-b`}
             >
                 <Header />
-                <main className="relative pl-4 pb-24 lg:space-y-24 lg:pl-16">
-                    <div className="flex flex-col space-y-8 py-16 md:space-y-12 md:py-20 lg:py-24">
+                <main className="relative pb-24 px-4 sm:px-6 lg:px-8">
+                    <div className="max-w-[1600px] mx-auto flex flex-col space-y-8 py-16 md:space-y-12 md:py-20 lg:py-24">
                         <div className="text-center py-16">
                             <div className="text-6xl mb-4">🔒</div>
                             <h2 className="text-2xl font-semibold text-white mb-2">
@@ -344,8 +362,8 @@ const RowsPage = () => {
         >
             <Header />
 
-            <main className="relative pl-4 pb-24 lg:space-y-24 lg:pl-16">
-                <div className="flex flex-col space-y-8 py-16 md:space-y-12 md:py-20 lg:py-24">
+            <main className="relative pb-24 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-[1600px] mx-auto flex flex-col space-y-8 py-16 md:space-y-12 md:py-20 lg:py-24">
                     {/* Header Section */}
                     <div className="space-y-6">
                         <div className="flex items-center space-x-3 pt-8 sm:pt-10 md:pt-12">

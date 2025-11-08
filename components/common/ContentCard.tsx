@@ -104,7 +104,7 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
             className={`relative cursor-pointer transition-all duration-300 ease-out group
                        ${getCardSizeClasses()}
                        hover:z-40 ${className}
-                       min-h-[340px] sm:min-h-[370px] md:min-h-[400px] lg:min-h-[430px] xl:min-h-[490px]`}
+                       ${size === 'small' ? 'min-h-[280px] sm:min-h-[310px] md:min-h-[340px] lg:min-h-[370px]' : 'min-h-[340px] sm:min-h-[370px] md:min-h-[400px] lg:min-h-[430px] xl:min-h-[490px]'}`}
             onClick={handleImageClick}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}

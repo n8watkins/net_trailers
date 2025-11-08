@@ -15,6 +15,9 @@ export interface CustomRowsState {
     // System row preferences by userId (which system rows are enabled)
     systemRowPreferences: Map<string, SystemRowPreferences>
 
+    // Deleted system row IDs by userId
+    deletedSystemRows: Map<string, string[]>
+
     // Track last access time for memory cleanup
     lastAccessTime: Map<string, number>
 
@@ -46,6 +49,8 @@ export interface CustomRowsActions {
     setSystemRowPreferences: (userId: string, preferences: SystemRowPreferences) => void
     toggleSystemRow: (userId: string, systemRowId: string) => void
     updateSystemRowOrder: (userId: string, systemRowId: string, order: number) => void
+    setDeletedSystemRows: (userId: string, deletedRowIds: string[]) => void
+    deleteSystemRow: (userId: string, systemRowId: string) => void
 
     // Loading states
     setLoading: (loading: boolean) => void
@@ -102,6 +107,7 @@ export const useCustomRowsStore = create<CustomRowsStore>((set, get) => ({
     // Initial state
     customRowsByUser: new Map<string, CustomRow[]>(),
     systemRowPreferences: new Map<string, SystemRowPreferences>(),
+    deletedSystemRows: new Map<string, string[]>(),
     lastAccessTime: new Map<string, number>(),
     isLoading: false,
     isCreating: false,
@@ -172,11 +178,14 @@ export const useCustomRowsStore = create<CustomRowsStore>((set, get) => ({
         set((state) => {
             const newRowsByUser = new Map(state.customRowsByUser)
             const newSystemPrefs = new Map(state.systemRowPreferences)
+            const newDeletedRows = new Map(state.deletedSystemRows)
             newRowsByUser.delete(userId)
             newSystemPrefs.delete(userId)
+            newDeletedRows.delete(userId)
             return {
                 customRowsByUser: newRowsByUser,
                 systemRowPreferences: newSystemPrefs,
+                deletedSystemRows: newDeletedRows,
             }
         })
     },
@@ -237,6 +246,33 @@ export const useCustomRowsStore = create<CustomRowsStore>((set, get) => ({
         })
     },
 
+    /**
+     * Set deleted system rows for a user
+     */
+    setDeletedSystemRows: (userId: string, deletedRowIds: string[]) => {
+        set((state) => {
+            const newDeletedRows = new Map(state.deletedSystemRows)
+            const newLastAccessTime = new Map(state.lastAccessTime)
+            newDeletedRows.set(userId, deletedRowIds)
+            newLastAccessTime.set(userId, Date.now())
+            return { deletedSystemRows: newDeletedRows, lastAccessTime: newLastAccessTime }
+        })
+    },
+
+    /**
+     * Delete a system row (mark as deleted)
+     */
+    deleteSystemRow: (userId: string, systemRowId: string) => {
+        set((state) => {
+            const newDeletedRows = new Map(state.deletedSystemRows)
+            const currentDeleted = newDeletedRows.get(userId) || []
+            if (!currentDeleted.includes(systemRowId)) {
+                newDeletedRows.set(userId, [...currentDeleted, systemRowId])
+            }
+            return { deletedSystemRows: newDeletedRows }
+        })
+    },
+
     // Loading states
     setLoading: (loading: boolean) => set({ isLoading: loading }),
     setCreating: (creating: boolean) => set({ isCreating: creating }),
@@ -260,6 +296,7 @@ export const useCustomRowsStore = create<CustomRowsStore>((set, get) => ({
             const now = Date.now()
             const newCustomRowsByUser = new Map(state.customRowsByUser)
             const newSystemRowPreferences = new Map(state.systemRowPreferences)
+            const newDeletedSystemRows = new Map(state.deletedSystemRows)
             const newLastAccessTime = new Map(state.lastAccessTime)
 
             // Find and remove inactive users
@@ -267,6 +304,7 @@ export const useCustomRowsStore = create<CustomRowsStore>((set, get) => ({
                 if (now - lastAccess > INACTIVE_USER_THRESHOLD_MS) {
                     newCustomRowsByUser.delete(userId)
                     newSystemRowPreferences.delete(userId)
+                    newDeletedSystemRows.delete(userId)
                     newLastAccessTime.delete(userId)
                     console.log(`[CustomRowsStore] Cleaned up inactive user: ${userId}`)
                 }
@@ -275,6 +313,7 @@ export const useCustomRowsStore = create<CustomRowsStore>((set, get) => ({
             return {
                 customRowsByUser: newCustomRowsByUser,
                 systemRowPreferences: newSystemRowPreferences,
+                deletedSystemRows: newDeletedSystemRows,
                 lastAccessTime: newLastAccessTime,
             }
         })
@@ -323,17 +362,22 @@ export const useCustomRowsStore = create<CustomRowsStore>((set, get) => ({
     /**
      * Get all display rows (system + custom) for a user
      * Merges system rows with user's custom rows and applies enabled states and custom orders
+     * Filters out deleted system rows
      */
     getAllDisplayRows: (userId: string): DisplayRow[] => {
         const state = get()
         const customRows = state.customRowsByUser.get(userId) || []
         const systemPrefs = state.systemRowPreferences.get(userId) || {}
+        const deletedRowIds = state.deletedSystemRows.get(userId) || []
 
-        // Convert system rows to DisplayRow format
-        const systemDisplayRows: DisplayRow[] = ALL_SYSTEM_ROWS.map((systemRow) => {
+        // Convert system rows to DisplayRow format, filtering out deleted ones
+        const systemDisplayRows: DisplayRow[] = ALL_SYSTEM_ROWS.filter(
+            (systemRow) => !deletedRowIds.includes(systemRow.id)
+        ).map((systemRow) => {
             const pref = systemPrefs[systemRow.id]
             return {
                 ...systemRow,
+                name: pref?.customName || systemRow.name, // Use custom name if set
                 isSystemRow: true,
                 enabled: pref?.enabled ?? true, // Default enabled
                 order: pref?.order ?? systemRow.order, // Use custom order if set, else default

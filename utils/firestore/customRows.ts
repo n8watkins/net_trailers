@@ -8,6 +8,7 @@ import {
     getMaxRowsForUser,
 } from '../../types/customRows'
 import { v4 as uuidv4 } from 'uuid'
+import { getSystemRowsByMediaType } from '../../constants/systemRows'
 
 /**
  * Firestore utility functions for Custom Rows
@@ -424,6 +425,65 @@ export class CustomRowsFirestore {
     }
 
     /**
+     * Update system row custom name
+     *
+     * @param userId - Firebase Auth UID or Guest ID
+     * @param systemRowId - System row ID
+     * @param customName - New custom name
+     */
+    static async updateSystemRowName(
+        userId: string,
+        systemRowId: string,
+        customName: string
+    ): Promise<void> {
+        // Validate userId
+        if (!userId || userId === 'undefined' || userId === 'null') {
+            throw new Error('Invalid userId provided to updateSystemRowName')
+        }
+
+        const now = Date.now()
+
+        // Get user document
+        const userDocRef = doc(db, 'users', userId)
+        const userDoc = await getDoc(userDocRef)
+
+        let currentPreferences: SystemRowPreferences = {}
+
+        if (userDoc.exists()) {
+            const userData = userDoc.data()
+            currentPreferences = userData.systemRowPreferences || {}
+        }
+
+        // Get current preference or create default
+        const currentPref = currentPreferences[systemRowId]
+        const currentEnabled = currentPref?.enabled ?? true
+        const currentOrder = currentPref?.order ?? 0
+
+        currentPreferences[systemRowId] = {
+            enabled: currentEnabled,
+            order: currentOrder,
+            customName: customName.trim() || undefined, // Remove if empty
+        }
+
+        // Update or create user document
+        if (!userDoc.exists()) {
+            await setDoc(userDocRef, {
+                watchlist: [],
+                ratings: [],
+                userLists: {},
+                customRows: {},
+                systemRowPreferences: currentPreferences,
+                lastActive: now,
+            })
+        } else {
+            await updateDoc(userDocRef, {
+                systemRowPreferences: currentPreferences,
+                lastActive: now,
+            })
+        }
+    }
+
+    /**
      * Toggle a system row's enabled state
      *
      * @param userId - Firebase Auth UID or Guest ID
@@ -572,6 +632,165 @@ export class CustomRowsFirestore {
             // Update existing document
             await updateDoc(userDocRef, {
                 systemRowPreferences: preferences,
+                lastActive: now,
+            })
+        }
+    }
+
+    /**
+     * Delete a system row (marks it as deleted in preferences)
+     * Only deletable system rows (canDelete !== false) can be deleted
+     *
+     * @param userId - Firebase Auth UID or Guest ID
+     * @param systemRowId - System row ID
+     * @throws Error if row is non-deletable (core row)
+     */
+    static async deleteSystemRow(userId: string, systemRowId: string): Promise<void> {
+        // Validate userId
+        if (!userId || userId === 'undefined' || userId === 'null') {
+            throw new Error('Invalid userId provided to deleteSystemRow')
+        }
+
+        const now = Date.now()
+
+        // Get user document
+        const userDocRef = doc(db, 'users', userId)
+        const userDoc = await getDoc(userDocRef)
+
+        let currentPreferences: SystemRowPreferences = {}
+
+        if (userDoc.exists()) {
+            const userData = userDoc.data()
+            currentPreferences = userData.systemRowPreferences || {}
+        }
+
+        // Mark as deleted by setting enabled to false and adding a deleted flag
+        currentPreferences[systemRowId] = {
+            enabled: false,
+            order: currentPreferences[systemRowId]?.order ?? 0,
+        }
+
+        // Store deleted row IDs in a separate field
+        const deletedSystemRows = userDoc.exists()
+            ? (userDoc.data().deletedSystemRows as string[]) || []
+            : []
+
+        if (!deletedSystemRows.includes(systemRowId)) {
+            deletedSystemRows.push(systemRowId)
+        }
+
+        // Update or create user document
+        if (!userDoc.exists()) {
+            await setDoc(userDocRef, {
+                watchlist: [],
+                ratings: [],
+                userLists: {},
+                customRows: {},
+                systemRowPreferences: currentPreferences,
+                deletedSystemRows,
+                lastActive: now,
+            })
+        } else {
+            await updateDoc(userDocRef, {
+                systemRowPreferences: currentPreferences,
+                deletedSystemRows,
+                lastActive: now,
+            })
+        }
+    }
+
+    /**
+     * Get list of deleted system row IDs for a user
+     *
+     * @param userId - Firebase Auth UID or Guest ID
+     * @returns Array of deleted system row IDs
+     */
+    static async getDeletedSystemRows(userId: string): Promise<string[]> {
+        // Validate userId
+        if (!userId || userId === 'undefined' || userId === 'null') {
+            return []
+        }
+
+        try {
+            const userDocRef = doc(db, 'users', userId)
+            const userDoc = await getDoc(userDocRef)
+
+            if (!userDoc.exists()) {
+                return []
+            }
+
+            const userData = userDoc.data()
+            return (userData.deletedSystemRows as string[]) || []
+        } catch (error) {
+            console.error('[CustomRowsFirestore] Failed to get deleted system rows:', error)
+            return []
+        }
+    }
+
+    /**
+     * Reset default rows for a specific media type
+     * Restores any missing system rows by removing them from the deleted list
+     *
+     * @param userId - Firebase Auth UID or Guest ID
+     * @param mediaType - Media type to reset ('movie', 'tv', or 'both')
+     */
+    static async resetDefaultRows(
+        userId: string,
+        mediaType: 'movie' | 'tv' | 'both'
+    ): Promise<void> {
+        // Validate userId
+        if (!userId || userId === 'undefined' || userId === 'null') {
+            throw new Error('Invalid userId provided to resetDefaultRows')
+        }
+
+        const now = Date.now()
+
+        // Get system rows for this media type
+        const systemRows = getSystemRowsByMediaType(mediaType)
+        const systemRowIds = systemRows.map((row) => row.id)
+
+        // Get user document
+        const userDocRef = doc(db, 'users', userId)
+        const userDoc = await getDoc(userDocRef)
+
+        let deletedSystemRows: string[] = []
+        let currentPreferences: SystemRowPreferences = {}
+
+        if (userDoc.exists()) {
+            const userData = userDoc.data()
+            deletedSystemRows = (userData.deletedSystemRows as string[]) || []
+            currentPreferences = userData.systemRowPreferences || {}
+        }
+
+        // Remove media type's system rows from deleted list
+        deletedSystemRows = deletedSystemRows.filter((rowId) => !systemRowIds.includes(rowId))
+
+        // Reset preferences for restored rows (enable them with default order)
+        systemRowIds.forEach((rowId) => {
+            const systemRow = systemRows.find((r) => r.id === rowId)
+            if (systemRow) {
+                currentPreferences[rowId] = {
+                    enabled: true,
+                    order: systemRow.order,
+                }
+            }
+        })
+
+        // Update or create user document
+        if (!userDoc.exists()) {
+            await setDoc(userDocRef, {
+                watchlist: [],
+                ratings: [],
+                userLists: {},
+                customRows: {},
+                systemRowPreferences: currentPreferences,
+                deletedSystemRows,
+                lastActive: now,
+            })
+        } else {
+            await updateDoc(userDocRef, {
+                systemRowPreferences: currentPreferences,
+                deletedSystemRows,
                 lastActive: now,
             })
         }

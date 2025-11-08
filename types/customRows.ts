@@ -14,11 +14,17 @@ export interface BaseRowConfig {
     mediaType: 'movie' | 'tv' | 'both' // Content type(s) to show
     order: number // Display order (0-based, lower = higher)
     isSpecialRow?: boolean // true for Trending/Top Rated rows that don't use genre filtering
+    canDelete?: boolean // false for core system rows (Trending/Top Rated), undefined for custom rows
+    canEdit?: boolean // false for core system rows (Trending/Top Rated), undefined/true for others
 }
 
 /**
  * System/default rows that all users see
- * Cannot be edited or deleted, only enabled/disabled per user
+ * Core rows (Trending/Top Rated with canDelete: false) cannot be deleted or edited
+ * Other system rows can be:
+ *   - Deleted and restored via "Reset Default Rows"
+ *   - Edited (custom name only)
+ *   - Enabled/disabled per user
  */
 export type SystemRowConfig = BaseRowConfig
 
@@ -72,6 +78,7 @@ export interface DisplayRow extends BaseRowConfig {
     userId?: string // Only present for custom rows
     createdAt?: number // Only present for custom rows
     updatedAt?: number // Only present for custom rows
+    canDelete?: boolean // false for core system rows, true/undefined for deletable rows
 }
 
 /**
@@ -81,6 +88,7 @@ export interface DisplayRow extends BaseRowConfig {
 export interface SystemRowPreference {
     enabled: boolean // Whether the row is enabled
     order: number // Custom order position (overrides default)
+    customName?: string // Custom name override (only for editable system rows)
 }
 
 export interface SystemRowPreferences {

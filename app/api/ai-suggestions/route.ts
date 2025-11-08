@@ -6,7 +6,7 @@ import { parseGeminiResponse, enrichWithTMDB } from '../../../utils/gemini/respo
 export async function POST(request: NextRequest) {
     try {
         const body: SmartSearchAPIRequest = await request.json()
-        const { query, mode, conversationHistory = [], existingResultIds = [] } = body
+        const { query, mode, conversationHistory = [], existingMovies = [] } = body
 
         if (!query || !mode) {
             return NextResponse.json(
@@ -22,11 +22,13 @@ export async function POST(request: NextRequest) {
         }
 
         // Build prompt based on context
-        const isFollowUp = conversationHistory.length > 0 || existingResultIds.length > 0
+        const isFollowUp = conversationHistory.length > 0 || existingMovies.length > 0
 
         const prompt = isFollowUp
-            ? buildFollowUpPrompt(query, mode, conversationHistory, existingResultIds)
+            ? buildFollowUpPrompt(query, mode, conversationHistory, existingMovies)
             : buildInitialPrompt(query, mode)
+
+        console.log('[AI Suggestions] Existing movies count:', existingMovies.length)
 
         console.log('[AI Suggestions] Sending prompt to Gemini:', {
             mode,

@@ -46,6 +46,7 @@ function ListSelectionModal() {
     const [editingListEmoji, setEditingListEmoji] = useState('')
     const [editingListColor, setEditingListColor] = useState('')
     const [deletingList, setDeletingList] = useState<UserList | null>(null)
+    const [deleteConfirmationInput, setDeleteConfirmationInput] = useState('')
     const [showIconPicker, setShowIconPicker] = useState(false)
     const [showColorPicker, setShowColorPicker] = useState(false)
     const [showEditIconPicker, setShowEditIconPicker] = useState(false)
@@ -241,6 +242,7 @@ function ListSelectionModal() {
 
     const cancelDeleteList = () => {
         setDeletingList(null)
+        setDeleteConfirmationInput('')
     }
 
     return (
@@ -815,10 +817,38 @@ function ListSelectionModal() {
                                     Are you sure you want to delete &ldquo;{deletingList.name}
                                     &rdquo;? This action cannot be undone.
                                 </p>
+                                <div className="mb-4">
+                                    <label className="block text-sm text-gray-400 mb-2">
+                                        Type{' '}
+                                        <span className="text-white font-semibold">
+                                            {deletingList.name}
+                                        </span>{' '}
+                                        to confirm:
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={deleteConfirmationInput}
+                                        onChange={(e) => setDeleteConfirmationInput(e.target.value)}
+                                        placeholder={deletingList.name}
+                                        className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                        autoFocus
+                                        onKeyDown={(e) => {
+                                            if (
+                                                e.key === 'Enter' &&
+                                                deleteConfirmationInput === deletingList.name
+                                            ) {
+                                                confirmDeleteList()
+                                            } else if (e.key === 'Escape') {
+                                                cancelDeleteList()
+                                            }
+                                        }}
+                                    />
+                                </div>
                                 <div className="flex space-x-3">
                                     <button
                                         onClick={confirmDeleteList}
-                                        className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium transition-all duration-200 hover:bg-red-700"
+                                        disabled={deleteConfirmationInput !== deletingList.name}
+                                        className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium transition-all duration-200 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         Delete
                                     </button>

@@ -70,35 +70,57 @@ async function searchTMDB(
     mediaType: 'movie' | 'tv' | 'both'
 ): Promise<Content | null> {
     try {
+        const apiKey = process.env.TMDB_API_KEY
+        if (!apiKey) {
+            console.error('TMDB_API_KEY not configured')
+            return null
+        }
+
         // Try movie first if mediaType allows
         if (mediaType === 'movie' || mediaType === 'both') {
             const movieResponse = await fetch(
-                `/api/search?query=${encodeURIComponent(title)}&mediaType=movie`
+                `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${encodeURIComponent(title)}`
             )
 
             if (movieResponse.ok) {
                 const movieData = await movieResponse.json()
                 // Find best match by year
-                const match = movieData.results.find(
-                    (m: Content) => Math.abs((m as any).release_date?.substring(0, 4) - year) <= 1
-                )
-                if (match) return match
+                const match = movieData.results.find((m: any) => {
+                    const releaseYear = m.release_date
+                        ? parseInt(m.release_date.substring(0, 4))
+                        : 0
+                    return Math.abs(releaseYear - year) <= 1
+                })
+                if (match) {
+                    return {
+                        ...match,
+                        media_type: 'movie',
+                    } as Content
+                }
             }
         }
 
         // Try TV if movie failed or if mediaType allows
         if (mediaType === 'tv' || mediaType === 'both') {
             const tvResponse = await fetch(
-                `/api/search?query=${encodeURIComponent(title)}&mediaType=tv`
+                `https://api.themoviedb.org/3/search/tv?api_key=${apiKey}&query=${encodeURIComponent(title)}`
             )
 
             if (tvResponse.ok) {
                 const tvData = await tvResponse.json()
                 // Find best match by year
-                const match = tvData.results.find(
-                    (t: Content) => Math.abs((t as any).first_air_date?.substring(0, 4) - year) <= 1
-                )
-                if (match) return match
+                const match = tvData.results.find((t: any) => {
+                    const airYear = t.first_air_date
+                        ? parseInt(t.first_air_date.substring(0, 4))
+                        : 0
+                    return Math.abs(airYear - year) <= 1
+                })
+                if (match) {
+                    return {
+                        ...match,
+                        media_type: 'tv',
+                    } as Content
+                }
             }
         }
 

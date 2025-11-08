@@ -9,6 +9,7 @@ import { CustomRow, DisplayRow } from '../../types/customRows'
 
 interface CustomRowLoaderProps {
     row: CustomRow | DisplayRow
+    pageType?: 'home' | 'movies' | 'tv' // Page type for row editing
 }
 
 /**
@@ -18,7 +19,7 @@ interface CustomRowLoaderProps {
  * Handles initial content fetch and provides API endpoint for infinite scroll.
  * Integrates with child safety mode and user session.
  */
-export function CustomRowLoader({ row }: CustomRowLoaderProps) {
+export function CustomRowLoader({ row, pageType }: CustomRowLoaderProps) {
     const [content, setContent] = useState<Content[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -242,5 +243,5 @@ export function CustomRowLoader({ row }: CustomRowLoaderProps) {
         apiEndpoint = apiEndpointUrl.pathname + apiEndpointUrl.search
     }
 
-    return <Row title={row.name} content={content} apiEndpoint={apiEndpoint} />
+    return <Row title={row.name} content={content} apiEndpoint={apiEndpoint} pageType={pageType} />
 }

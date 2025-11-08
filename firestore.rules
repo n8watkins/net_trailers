@@ -28,7 +28,8 @@ service cloud.firestore {
              && data.ratings is list
              && data.userLists is map
              && data.customRows is map
-             && data.lastActive is number;
+             && data.lastActive is number
+             && (!data.keys().hasAny(['hiddenMovies']) || data.hiddenMovies is list);
     }
 
     // Deny all other access

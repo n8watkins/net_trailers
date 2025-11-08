@@ -2,7 +2,8 @@
  * System/Default Rows
  *
  * Pre-configured rows that all users see by default.
- * Users can enable/disable these but cannot edit or delete them.
+ * Core rows (Trending/Top Rated) cannot be deleted, only disabled.
+ * Other system rows can be deleted and restored via "Reset Default Rows".
  */
 
 import { SystemRowConfig } from '../types/customRows'
@@ -19,6 +20,8 @@ export const SYSTEM_MOVIE_ROWS: SystemRowConfig[] = [
         mediaType: 'movie',
         order: 0,
         isSpecialRow: true,
+        canDelete: false, // Core row - cannot be deleted
+        canEdit: false, // Core row - cannot be edited
     },
     {
         id: 'system-movie-top-rated',
@@ -28,6 +31,8 @@ export const SYSTEM_MOVIE_ROWS: SystemRowConfig[] = [
         mediaType: 'movie',
         order: 1,
         isSpecialRow: true,
+        canDelete: false, // Core row - cannot be deleted
+        canEdit: false, // Core row - cannot be edited
     },
     {
         id: 'system-movie-action',
@@ -83,6 +88,8 @@ export const SYSTEM_TV_ROWS: SystemRowConfig[] = [
         mediaType: 'tv',
         order: 0,
         isSpecialRow: true,
+        canDelete: false, // Core row - cannot be deleted
+        canEdit: false, // Core row - cannot be edited
     },
     {
         id: 'system-tv-top-rated',
@@ -92,6 +99,8 @@ export const SYSTEM_TV_ROWS: SystemRowConfig[] = [
         mediaType: 'tv',
         order: 1,
         isSpecialRow: true,
+        canDelete: false, // Core row - cannot be deleted
+        canEdit: false, // Core row - cannot be edited
     },
     {
         id: 'system-tv-action',
@@ -147,6 +156,8 @@ export const SYSTEM_HOME_ROWS: SystemRowConfig[] = [
         mediaType: 'both',
         order: 0,
         isSpecialRow: true,
+        canDelete: false, // Core row - cannot be deleted
+        canEdit: false, // Core row - cannot be edited
     },
     {
         id: 'system-home-top-rated',
@@ -156,6 +167,8 @@ export const SYSTEM_HOME_ROWS: SystemRowConfig[] = [
         mediaType: 'both',
         order: 1,
         isSpecialRow: true,
+        canDelete: false, // Core row - cannot be deleted
+        canEdit: false, // Core row - cannot be edited
     },
     {
         id: 'system-home-animation',

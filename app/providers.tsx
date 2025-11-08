@@ -5,7 +5,10 @@ import ToastManager from '../components/common/ToastManager'
 import Modal from '../components/modals/Modal'
 import ListSelectionModal from '../components/modals/ListSelectionModal'
 import CustomRowModal from '../components/modals/CustomRowModal'
+import { RowEditorModal } from '../components/modals/RowEditorModal'
+import WatchlistCreatorModal from '../components/modals/WatchlistCreatorModal'
 import { SessionSyncManager } from '../components/utility/SessionSyncManager'
+import { useAppStore } from '../stores/appStore'
 
 /**
  * Providers component wraps the entire app with necessary context providers
@@ -26,6 +29,23 @@ export function Providers({ children }: { children: React.ReactNode }) {
             <Modal />
             <ListSelectionModal />
             <CustomRowModal />
+            <RowEditorModalWrapper />
+            <WatchlistCreatorModal />
         </AuthProvider>
+    )
+}
+
+/**
+ * Wrapper component to connect RowEditorModal to Zustand store
+ */
+function RowEditorModalWrapper() {
+    const { rowEditorModal, closeRowEditorModal } = useAppStore()
+
+    return (
+        <RowEditorModal
+            isOpen={rowEditorModal.isOpen}
+            onClose={closeRowEditorModal}
+            pageType={rowEditorModal.pageType}
+        />
     )
 }

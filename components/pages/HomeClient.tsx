@@ -9,7 +9,6 @@ import { useSessionStore } from '../../stores/sessionStore'
 import { CustomRowLoader } from '../customRows/CustomRowLoader'
 import { CustomRowsFirestore } from '../../utils/firestore/customRows'
 import { useCustomRowsStore } from '../../stores/customRowsStore'
-import SmartSearchOverlay from '../smartSearch/SmartSearchOverlay'
 
 interface HomeClientProps {
     data: HomeData
@@ -58,9 +57,6 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
         >
             <Header />
 
-            {/* Smart Search Overlay - Shows when results available */}
-            <SmartSearchOverlay />
-
             <main id="content" className="relative">
                 <div className="relative h-screen w-full">
                     <Banner trending={trending} />
@@ -68,7 +64,7 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
                 <section className="relative z-10 pb-52 space-y-8">
                     {/* Dynamic rows (system + custom) sorted by user preferences */}
                     {enabledRows.map((row) => (
-                        <CustomRowLoader key={row.id} row={row} />
+                        <CustomRowLoader key={row.id} row={row} pageType="home" />
                     ))}
                 </section>
             </main>

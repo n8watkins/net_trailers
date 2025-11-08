@@ -49,6 +49,25 @@ export class AuthStorageService {
             }
         }
 
+        // Check if Firebase Auth is ready by verifying currentUser
+        const { auth } = await import('../firebase')
+        if (!auth.currentUser || auth.currentUser.uid !== userId) {
+            authWarn('Firebase Auth not ready or user mismatch, returning defaults:', {
+                requestedUserId: userId,
+                currentUser: auth.currentUser?.uid,
+            })
+            return {
+                likedMovies: [],
+                hiddenMovies: [],
+                defaultWatchlist: [],
+                userCreatedWatchlists: [],
+                lastActive: Date.now(),
+                autoMute: true,
+                defaultVolume: 50,
+                childSafetyMode: false,
+            }
+        }
+
         // Check cache first
         const cached = userDataCache.get(userId)
         if (cached) {
@@ -167,20 +186,29 @@ export class AuthStorageService {
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : String(error)
 
-                authError('🚨 [AuthStorageService] Failed to load user data:', {
-                    error: errorMessage,
-                    userId,
-                    isTimeout: errorMessage.includes('timeout'),
-                    isOffline: errorMessage.includes('offline') || errorMessage.includes('network'),
-                })
+                // Check if error is due to permissions (auth not ready), offline, or timeout
+                const isPermissionError =
+                    errorMessage.includes('permission') ||
+                    errorMessage.includes('insufficient') ||
+                    errorMessage.includes('Missing or insufficient permissions')
+                const isOfflineError =
+                    errorMessage.includes('offline') || errorMessage.includes('network')
+                const isTimeoutError = errorMessage.includes('timeout')
 
-                // Check if error is due to offline status or timeout
-                if (
-                    errorMessage.includes('offline') ||
-                    errorMessage.includes('network') ||
-                    errorMessage.includes('timeout')
-                ) {
+                if (isPermissionError) {
+                    authWarn(
+                        '⚠️ Firebase permissions error (auth may not be ready), using defaults'
+                    )
+                } else if (isOfflineError || isTimeoutError) {
                     authWarn('⚠️ Firebase is offline or timed out, using default auth preferences')
+                } else {
+                    authError('🚨 [AuthStorageService] Failed to load user data:', {
+                        error: errorMessage,
+                        userId,
+                        isTimeout: isTimeoutError,
+                        isOffline: isOfflineError,
+                        isPermissionError,
+                    })
                 }
 
                 // Clear loading promise on error

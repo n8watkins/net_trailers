@@ -58,7 +58,7 @@ export interface SmartSearchActions {
     clearConversation: () => void
 
     // Reset
-    reset: () => void
+    reset: (clearQuery?: boolean) => void
 }
 
 export interface SmartSearchMetadata {
@@ -67,11 +67,16 @@ export interface SmartSearchMetadata {
     mediaType: 'movie' | 'tv' | 'both'
 }
 
+export interface ExistingMovie {
+    title: string
+    year: string
+}
+
 export interface SmartSearchAPIRequest {
     query: string
     mode: SmartSearchMode
     conversationHistory?: ConversationMessage[]
-    existingResultIds?: number[] // For "Ask for More" deduplication
+    existingMovies?: ExistingMovie[] // For "Ask for More" - send titles and years
 }
 
 export interface SmartSearchAPIResponse {

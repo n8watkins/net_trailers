@@ -64,7 +64,7 @@ export default function TVClient({ data }: TVClientProps) {
                     <div className="pt-8 sm:pt-12 md:pt-16">
                         {/* Dynamic rows (system + custom) sorted by user preferences */}
                         {enabledRows.map((row) => (
-                            <CustomRowLoader key={row.id} row={row} />
+                            <CustomRowLoader key={row.id} row={row} pageType="tv" />
                         ))}
                     </div>
                 </section>

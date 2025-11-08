@@ -153,8 +153,8 @@ const Watchlists = () => {
         >
             <Header />
 
-            <main className="relative pl-4 pb-24 lg:space-y-24 lg:pl-16">
-                <div className="flex flex-col space-y-8 py-16 md:space-y-12 md:py-20 lg:py-24">
+            <main className="relative pb-24 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-[1600px] mx-auto flex flex-col space-y-8 py-16 md:space-y-12 md:py-20 lg:py-24">
                     {/* Header Section */}
                     <div className="space-y-6">
                         <div className="flex items-center space-x-3 pt-8 sm:pt-10 md:pt-12">
@@ -290,28 +290,11 @@ const Watchlists = () => {
                                     }
                                 )
 
-                                const moviesContent = watchlistContent.filter(
-                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                    (item: any) => {
-                                        return item.content && isMovie(item.content)
-                                    }
-                                )
-
-                                const tvShowsContent = watchlistContent.filter(
-                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                    (item: any) => {
-                                        return item.content && isTVShow(item.content)
-                                    }
-                                )
-
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                const renderContentGrid = (items: any[], title: string) => (
+                                // No need to separate by media type - ContentCard shows the type
+                                return (
                                     <div>
-                                        <h3 className="text-2xl font-bold text-white mb-6">
-                                            {title}
-                                        </h3>
                                         <div className="flex flex-wrap gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 md:gap-x-8 md:gap-y-12">
-                                            {items.map(
+                                            {watchlistContent.map(
                                                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                 (item: any) => (
                                                     <div
@@ -327,21 +310,6 @@ const Watchlists = () => {
                                             )}
                                         </div>
                                     </div>
-                                )
-
-                                return (
-                                    <>
-                                        {moviesContent.length > 0 &&
-                                            renderContentGrid(
-                                                moviesContent,
-                                                'Movies in Watchlists'
-                                            )}
-                                        {tvShowsContent.length > 0 &&
-                                            renderContentGrid(
-                                                tvShowsContent,
-                                                'TV Shows in Watchlists'
-                                            )}
-                                    </>
                                 )
                             })()}
                         </div>

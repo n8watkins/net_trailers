@@ -96,6 +96,9 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
             }
         }
 
+        // Check initial scroll position on mount
+        handleScroll()
+
         window.addEventListener('scroll', handleScroll)
 
         return () => {

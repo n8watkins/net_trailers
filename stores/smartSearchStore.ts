@@ -107,10 +107,10 @@ export const useSmartSearchStore = create<SmartSearchStore>((set, get) => ({
         }),
 
     // Reset
-    reset: () =>
+    reset: (clearQuery = false) =>
         set({
             ...initialState,
-            // Preserve query to allow re-searching
-            query: get().query,
+            // Preserve query unless explicitly requested to clear
+            query: clearQuery ? '' : get().query,
         }),
 }))
