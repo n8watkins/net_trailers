@@ -134,6 +134,8 @@ export default function WatchlistCreatorModal() {
     const [isLoadingMore, setIsLoadingMore] = useState(false)
     const [currentPage, setCurrentPage] = useState(0)
     const [searchFilter, setSearchFilter] = useState('')
+    const [displayAsRow, setDisplayAsRow] = useState(false)
+    const [isPublic, setIsPublic] = useState(false)
 
     if (!watchlistCreatorModal.isOpen) return null
 
@@ -165,6 +167,8 @@ export default function WatchlistCreatorModal() {
         setShowColorPicker(false)
         setCurrentPage(0)
         setSearchFilter('')
+        setDisplayAsRow(false)
+        setIsPublic(false)
     }
 
     const handleCreate = async () => {
@@ -186,9 +190,13 @@ export default function WatchlistCreatorModal() {
             // Create the list using useUserData hook
             const newList = createList({
                 name: watchlistCreatorModal.name.trim(),
-                isPublic: false,
+                isPublic,
                 emoji: selectedEmoji,
                 color: selectedColor,
+                displayAsRow,
+                collectionType: 'ai-generated', // This is from smart search
+                originalQuery: query, // Store the original search query
+                canGenerateMore: true, // AI-generated collections can always generate more
             })
 
             // Add all content items to the list
@@ -410,6 +418,37 @@ export default function WatchlistCreatorModal() {
                                     className="w-96 h-14 px-4 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     autoFocus
                                 />
+                            </div>
+                        </div>
+
+                        {/* Collection Options - Centered */}
+                        <div className="flex justify-center">
+                            <div className="flex gap-6">
+                                {/* Display as Row Checkbox */}
+                                <label className="flex items-center gap-2 cursor-pointer group">
+                                    <input
+                                        type="checkbox"
+                                        checked={displayAsRow}
+                                        onChange={(e) => setDisplayAsRow(e.target.checked)}
+                                        className="w-5 h-5 rounded border-gray-600 bg-gray-800 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
+                                    />
+                                    <span className="text-sm text-gray-300 group-hover:text-white transition-colors">
+                                        Display as row on home
+                                    </span>
+                                </label>
+
+                                {/* Public Collection Checkbox */}
+                                <label className="flex items-center gap-2 cursor-pointer group">
+                                    <input
+                                        type="checkbox"
+                                        checked={isPublic}
+                                        onChange={(e) => setIsPublic(e.target.checked)}
+                                        className="w-5 h-5 rounded border-gray-600 bg-gray-800 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
+                                    />
+                                    <span className="text-sm text-gray-300 group-hover:text-white transition-colors">
+                                        Public collection
+                                    </span>
+                                </label>
                             </div>
                         </div>
 

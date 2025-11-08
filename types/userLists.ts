@@ -1,5 +1,13 @@
 import { Content } from '../typings'
 
+/**
+ * Collection types define how content is sourced
+ */
+export type CollectionType =
+    | 'ai-generated' // AI-generated from Gemini smart search
+    | 'tmdb-genre' // TMDB genre-based (infinite scrolling)
+    | 'manual' // Manually curated by user
+
 export interface UserList {
     id: string
     name: string
@@ -10,6 +18,14 @@ export interface UserList {
     updatedAt: number
     color?: string // Optional theme color for the list
     emoji?: string // Optional emoji icon for the list
+
+    // Collection display and type flags
+    displayAsRow?: boolean // Display collection as a row on home/browse pages
+    collectionType?: CollectionType // How the collection content is sourced
+
+    // AI-generated collection metadata
+    originalQuery?: string // Original search query for AI-generated collections
+    canGenerateMore?: boolean // Can generate more similar content (infinite collection)
 }
 
 // DEPRECATED - OLD SCHEMA
@@ -36,6 +52,10 @@ export interface CreateListRequest {
     isPublic?: boolean
     color?: string
     emoji?: string
+    displayAsRow?: boolean
+    collectionType?: CollectionType
+    originalQuery?: string
+    canGenerateMore?: boolean
 }
 
 export interface UpdateListRequest {
