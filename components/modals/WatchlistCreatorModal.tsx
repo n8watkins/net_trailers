@@ -15,6 +15,7 @@ import {
 } from '@heroicons/react/24/outline'
 import IconPickerModal from './IconPickerModal'
 import ColorPickerModal from './ColorPickerModal'
+import InlineSearchBar from './InlineSearchBar'
 import useUserData from '../../hooks/useUserData'
 import Image from 'next/image'
 import { Content, getTitle, isMovie } from '../../typings'
@@ -118,6 +119,7 @@ export default function WatchlistCreatorModal() {
         watchlistCreatorModal,
         closeWatchlistCreatorModal,
         setWatchlistCreatorName,
+        addToWatchlistCreator,
         removeFromWatchlistCreator,
     } = useAppStore()
     const getUserId = useSessionStore((state) => state.getUserId)
@@ -449,6 +451,19 @@ export default function WatchlistCreatorModal() {
                                         Public collection
                                     </span>
                                 </label>
+                            </div>
+                        </div>
+
+                        {/* Inline Search Bar - Add Individual Content */}
+                        <div className="flex justify-center">
+                            <div className="w-full max-w-2xl">
+                                <InlineSearchBar
+                                    onAddContent={addToWatchlistCreator}
+                                    existingContentIds={watchlistCreatorModal.content.map(
+                                        (c) => c.id
+                                    )}
+                                    placeholder="Search to add movies or TV shows..."
+                                />
                             </div>
                         </div>
 

@@ -143,6 +143,8 @@ export interface AppActions {
     ) => void
     closeWatchlistCreatorModal: () => void
     setWatchlistCreatorName: (name: string) => void
+    addToWatchlistCreator: (content: Content) => void
+    removeFromWatchlistCreator: (contentId: number) => void
 
     // Toast actions
     showToast: (
@@ -480,6 +482,26 @@ export const useAppStore = create<AppStore>((set, get) => ({
             watchlistCreatorModal: {
                 ...state.watchlistCreatorModal,
                 name,
+            },
+        }))
+    },
+
+    addToWatchlistCreator: (content: Content) => {
+        set((state) => ({
+            watchlistCreatorModal: {
+                ...state.watchlistCreatorModal,
+                content: [...state.watchlistCreatorModal.content, content],
+            },
+        }))
+    },
+
+    removeFromWatchlistCreator: (contentId: number) => {
+        set((state) => ({
+            watchlistCreatorModal: {
+                ...state.watchlistCreatorModal,
+                content: state.watchlistCreatorModal.content.filter(
+                    (item) => item.id !== contentId
+                ),
             },
         }))
     },
