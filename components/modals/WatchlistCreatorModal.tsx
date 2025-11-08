@@ -49,7 +49,7 @@ function SimpleContentCard({
                     hover:scale-110
                     flex items-center justify-center
                 "
-                aria-label="Remove from watchlist"
+                aria-label="Remove from collection"
             >
                 <XMarkIcon className="h-6 w-6 text-black" />
             </button>
