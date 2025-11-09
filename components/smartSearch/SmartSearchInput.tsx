@@ -2,13 +2,21 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { MagnifyingGlassIcon, XMarkIcon, SparklesIcon } from '@heroicons/react/24/outline'
+import {
+    MagnifyingGlassIcon,
+    XMarkIcon,
+    SparklesIcon,
+    MicrophoneIcon,
+} from '@heroicons/react/24/outline'
 import { useSmartSearchStore } from '../../stores/smartSearchStore'
 import { useTypewriter } from '../../hooks/useTypewriter'
+import { useVoiceInput } from '../../hooks/useVoiceInput'
+import { useToast } from '../../hooks/useToast'
 
 export default function SmartSearchInput() {
     const router = useRouter()
     const { query, isActive, setQuery, setActive, reset } = useSmartSearchStore()
+    const { showError } = useToast()
 
     const [localQuery, setLocalQuery] = useState(query)
     const inputRef = useRef<HTMLInputElement>(null)
@@ -57,9 +65,17 @@ export default function SmartSearchInput() {
     })
 
     // Use just the dynamic typewriter text as placeholder
-    const placeholderText = typewriterText
-        ? `${typewriterText}...`
-        : 'Describe what you want to watch...'
+    const placeholderText = typewriterText ? typewriterText : 'Describe what you want to watch...'
+
+    // Voice input
+    const { isListening, isSupported, startListening, stopListening } = useVoiceInput({
+        onResult: (transcript) => {
+            setLocalQuery(transcript)
+        },
+        onError: (error) => {
+            showError('Voice input error', error)
+        },
+    })
 
     // Sync local query with store
     useEffect(() => {
@@ -85,6 +101,14 @@ export default function SmartSearchInput() {
         reset()
         // Keep suggestions active, don't blur or deactivate
         inputRef.current?.focus()
+    }
+
+    const handleVoiceToggle = () => {
+        if (isListening) {
+            stopListening()
+        } else {
+            startListening()
+        }
     }
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -136,7 +160,7 @@ export default function SmartSearchInput() {
               "
                 />
 
-                {/* Search and Clear Buttons */}
+                {/* Search, Voice, and Clear Buttons */}
                 <div className="absolute right-3 sm:right-4 flex items-center gap-1">
                     {/* Clear Button - only visible when there's text, appears FIRST (left side) */}
                     {localQuery && (
@@ -151,6 +175,28 @@ export default function SmartSearchInput() {
                             aria-label="Clear search"
                         >
                             <XMarkIcon className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-gray-400 hover:text-white" />
+                        </button>
+                    )}
+
+                    {/* Voice Input Button - only visible when supported */}
+                    {isSupported && (
+                        <button
+                            type="button"
+                            onClick={handleVoiceToggle}
+                            className={`
+                      p-1 rounded-full
+                      transition-all
+                      ${isListening ? 'bg-red-500/20 animate-pulse' : 'hover:bg-black/20'}
+                    `}
+                            aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
+                        >
+                            <MicrophoneIcon
+                                className={`h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 transition-colors ${
+                                    isListening
+                                        ? 'text-red-400'
+                                        : 'text-gray-500 hover:text-red-400'
+                                }`}
+                            />
                         </button>
                     )}
 

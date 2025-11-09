@@ -1,9 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { MagnifyingGlassIcon, XMarkIcon, FunnelIcon } from '@heroicons/react/24/outline'
+import {
+    MagnifyingGlassIcon,
+    XMarkIcon,
+    FunnelIcon,
+    MicrophoneIcon,
+} from '@heroicons/react/24/outline'
 import { useRouter, usePathname } from 'next/navigation'
 import { useAppStore } from '../../stores/appStore'
 import { useSearch } from '../../hooks/useSearch'
 import { useTypewriter } from '../../hooks/useTypewriter'
+import { useVoiceInput } from '../../hooks/useVoiceInput'
+import { useToast } from '../../hooks/useToast'
 import { Content } from '../../typings'
 import SearchFiltersDropdown from './SearchFiltersDropdown'
 import SearchSuggestionsDropdown from './SearchSuggestionsDropdown'
@@ -64,6 +71,17 @@ export default function SearchBar({
     } = useSearch()
 
     const openModal = useAppStore((state) => state.openModal)
+    const { showError } = useToast()
+
+    // Voice input
+    const { isListening, isSupported, startListening, stopListening } = useVoiceInput({
+        onResult: (transcript) => {
+            updateQuery(transcript)
+        },
+        onError: (error) => {
+            showError('Voice input error', error)
+        },
+    })
 
     const [isFocused, setIsFocused] = useState(false)
     const [showSuggestions, setShowSuggestions] = useState(false)
@@ -72,10 +90,12 @@ export default function SearchBar({
     const [isSeeAllButtonSelected, setIsSeeAllButtonSelected] = useState(false)
     const [isMobileExpanded, setIsMobileExpanded] = useState(false)
     const [showFilters, setShowFilters] = useState(false)
+    const [isTyping, setIsTyping] = useState(false)
     const inputRef = useRef<HTMLInputElement>(null)
     const suggestionsRef = useRef<HTMLDivElement>(null)
     const resultRefs = useRef<(HTMLDivElement | null)[]>([])
     const seeAllButtonRef = useRef<HTMLButtonElement>(null)
+    const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
     // Scroll selected element into view
     const scrollToSelected = (index: number, isSeeAllButton = false) => {
@@ -93,6 +113,15 @@ export default function SearchBar({
             })
         }
     }
+
+    // Cleanup typing timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current)
+            }
+        }
+    }, [])
 
     // Close suggestions when clicking outside
     useEffect(() => {
@@ -150,6 +179,23 @@ export default function SearchBar({
         setSelectedIndex(-1) // Reset selection when typing
         setSelectedResultIndex(-1) // Reset result selection when typing
         setIsSeeAllButtonSelected(false) // Reset button selection when typing
+
+        // Show typing indicator
+        if (value.length >= 2) {
+            setIsTyping(true)
+
+            // Clear existing timeout
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current)
+            }
+
+            // Hide typing indicator after debounce time (300ms)
+            typingTimeoutRef.current = setTimeout(() => {
+                setIsTyping(false)
+            }, 300)
+        } else {
+            setIsTyping(false)
+        }
     }
 
     const handleInputFocus = () => {
@@ -203,7 +249,19 @@ export default function SearchBar({
         e?.stopPropagation()
         clearSearch()
         setShowSuggestions(false)
+        setIsTyping(false)
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current)
+        }
         inputRef.current?.focus()
+    }
+
+    const handleVoiceToggle = () => {
+        if (isListening) {
+            stopListening()
+        } else {
+            startListening()
+        }
     }
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -345,7 +403,7 @@ export default function SearchBar({
                     }`}
                 >
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        {isLoading ? (
+                        {isLoading || isTyping ? (
                             <div className="animate-spin h-5 w-5 text-gray-400">
                                 <svg
                                     className="w-5 h-5"
@@ -417,6 +475,23 @@ export default function SearchBar({
                         >
                             <FunnelIcon className="h-5 w-5" aria-hidden="true" />
                         </button>
+
+                        {/* Voice Input Button */}
+                        {isSupported && (
+                            <button
+                                onClick={handleVoiceToggle}
+                                className={`px-3 py-2 transition-all ${
+                                    isListening
+                                        ? 'text-red-400 animate-pulse'
+                                        : 'text-gray-400 hover:text-white'
+                                }`}
+                                type="button"
+                                title={isListening ? 'Stop voice input' : 'Start voice input'}
+                                aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
+                            >
+                                <MicrophoneIcon className="h-5 w-5" aria-hidden="true" />
+                            </button>
+                        )}
 
                         {/* Clear Button */}
                         {query && (

@@ -1,9 +1,16 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { MagnifyingGlassIcon, XMarkIcon, PlusIcon } from '@heroicons/react/24/outline'
+import {
+    MagnifyingGlassIcon,
+    XMarkIcon,
+    PlusIcon,
+    MicrophoneIcon,
+} from '@heroicons/react/24/outline'
 import Image from 'next/image'
 import { Content, getTitle, isMovie } from '../../typings'
+import { useVoiceInput } from '../../hooks/useVoiceInput'
+import { useToast } from '../../hooks/useToast'
 
 interface InlineSearchBarProps {
     onAddContent: (content: Content) => void
@@ -16,6 +23,7 @@ export default function InlineSearchBar({
     existingContentIds,
     placeholder = 'Search to add movies or TV shows...',
 }: InlineSearchBarProps) {
+    const { showError } = useToast()
     const [query, setQuery] = useState('')
     const [results, setResults] = useState<Content[]>([])
     const [isLoading, setIsLoading] = useState(false)
@@ -23,6 +31,16 @@ export default function InlineSearchBar({
     const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const dropdownRef = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLInputElement>(null)
+
+    // Voice input
+    const { isListening, isSupported, startListening, stopListening } = useVoiceInput({
+        onResult: (transcript) => {
+            setQuery(transcript)
+        },
+        onError: (error) => {
+            showError('Voice input error', error)
+        },
+    })
 
     // Debounced search
     useEffect(() => {
@@ -102,6 +120,14 @@ export default function InlineSearchBar({
         inputRef.current?.focus()
     }
 
+    const handleVoiceToggle = () => {
+        if (isListening) {
+            stopListening()
+        } else {
+            startListening()
+        }
+    }
+
     return (
         <div className="relative">
             {/* Search Input */}
@@ -114,16 +140,33 @@ export default function InlineSearchBar({
                     onChange={(e) => setQuery(e.target.value)}
                     onFocus={() => query.length >= 2 && setShowResults(true)}
                     placeholder={placeholder}
-                    className="w-full h-12 pl-12 pr-12 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full h-12 pl-12 pr-24 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
-                {query && (
-                    <button
-                        onClick={handleClear}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-                    >
-                        <XMarkIcon className="h-5 w-5" />
-                    </button>
-                )}
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    {/* Voice Input Button */}
+                    {isSupported && (
+                        <button
+                            onClick={handleVoiceToggle}
+                            className={`transition-all ${
+                                isListening
+                                    ? 'text-blue-400 animate-pulse'
+                                    : 'text-gray-400 hover:text-white'
+                            }`}
+                            title={isListening ? 'Stop voice input' : 'Start voice input'}
+                        >
+                            <MicrophoneIcon className="h-5 w-5" />
+                        </button>
+                    )}
+                    {/* Clear Button */}
+                    {query && (
+                        <button
+                            onClick={handleClear}
+                            className="text-gray-400 hover:text-white transition-colors"
+                        >
+                            <XMarkIcon className="h-5 w-5" />
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Search Results Dropdown */}
