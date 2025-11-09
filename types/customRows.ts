@@ -66,6 +66,12 @@ export interface CustomRow extends BaseRowConfig {
     createdAt: number // Unix timestamp
     updatedAt: number // Unix timestamp
     advancedFilters?: AdvancedFilters // Advanced filtering options
+
+    // Auto-update settings (Phase 5)
+    autoUpdateEnabled?: boolean // Owner setting: allow auto-updates from TMDB
+    updateFrequency?: 'daily' | 'weekly' | 'never' // How often to check for new content
+    lastCheckedAt?: number // Last time we checked TMDB for new content
+    lastUpdateCount?: number // Number of items added in last update
 }
 
 /**
@@ -106,6 +112,22 @@ export interface CustomRowFormData {
     mediaType: 'movie' | 'tv' | 'both'
     enabled: boolean
     advancedFilters?: AdvancedFilters
+    autoUpdateEnabled?: boolean
+    updateFrequency?: 'daily' | 'weekly' | 'never'
+}
+
+/**
+ * Collection Update Tracking (Phase 5)
+ * Tracks when collections are checked for new content and what was added
+ */
+export interface CollectionUpdate {
+    id: string // Update ID
+    collectionId: string // CustomRow ID
+    userId: string // Collection owner
+    newContentIds: number[] // TMDB IDs of new matches found
+    checkedAt: number // When the check was performed
+    notificationSent: boolean // Whether notification was created
+    addedCount: number // Number of items actually added
 }
 
 /**
