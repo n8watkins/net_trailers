@@ -103,11 +103,11 @@ export default function SmartSearchInput() {
         inputRef.current?.focus()
     }
 
-    const handleVoiceToggle = () => {
+    const handleVoiceToggle = async () => {
         if (isListening) {
             stopListening()
         } else {
-            startListening()
+            await startListening()
         }
     }
 

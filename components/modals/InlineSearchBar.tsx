@@ -120,11 +120,11 @@ export default function InlineSearchBar({
         inputRef.current?.focus()
     }
 
-    const handleVoiceToggle = () => {
+    const handleVoiceToggle = async () => {
         if (isListening) {
             stopListening()
         } else {
-            startListening()
+            await startListening()
         }
     }
 

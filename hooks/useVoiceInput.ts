@@ -13,7 +13,7 @@ interface UseVoiceInputReturn {
     isListening: boolean
     isSupported: boolean
     transcript: string
-    startListening: () => void
+    startListening: () => Promise<void>
     stopListening: () => void
     resetTranscript: () => void
 }
@@ -96,7 +96,7 @@ export function useVoiceInput({
         }
     }, [language, continuous, onResult, onError])
 
-    const startListening = useCallback(() => {
+    const startListening = useCallback(async () => {
         if (!isSupported) {
             if (onError) {
                 onError('Speech recognition is not supported in this browser.')
@@ -104,15 +104,57 @@ export function useVoiceInput({
             return
         }
 
+        // Check if site is using HTTPS (required for microphone access)
+        if (
+            typeof window !== 'undefined' &&
+            window.location.protocol !== 'https:' &&
+            window.location.hostname !== 'localhost'
+        ) {
+            if (onError) {
+                onError('Microphone access requires HTTPS. Please use a secure connection.')
+            }
+            return
+        }
+
         if (recognitionRef.current && !isListening) {
             setTranscript('')
+
             try {
+                // Request microphone permission explicitly using getUserMedia
+                // This MUST happen before speech recognition to ensure permission is granted
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    console.log('Requesting microphone permission...')
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+                    console.log('Microphone permission granted')
+                    // Stop the stream immediately - we only needed the permission
+                    stream.getTracks().forEach((track) => track.stop())
+                }
+
+                // Now start speech recognition with permission already granted
                 recognitionRef.current.start()
                 setIsListening(true)
-            } catch (error) {
+            } catch (error: any) {
                 console.error('Failed to start recognition:', error)
-                if (onError) {
-                    onError('Failed to start voice input.')
+                setIsListening(false)
+
+                // Handle specific error cases
+                if (
+                    error.name === 'NotAllowedError' ||
+                    error.name === 'PermissionDeniedError' ||
+                    error.message?.includes('denied')
+                ) {
+                    if (onError) {
+                        onError(
+                            'Microphone access denied. Please click the microphone icon in your browser address bar and allow access.'
+                        )
+                    }
+                } else if (error.message?.includes('already started')) {
+                    // Recognition already running, ignore
+                    setIsListening(true)
+                } else {
+                    if (onError) {
+                        onError('Failed to start voice input. Please try again.')
+                    }
                 }
             }
         }

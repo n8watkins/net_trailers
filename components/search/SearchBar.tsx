@@ -256,11 +256,11 @@ export default function SearchBar({
         inputRef.current?.focus()
     }
 
-    const handleVoiceToggle = () => {
+    const handleVoiceToggle = async () => {
         if (isListening) {
             stopListening()
         } else {
-            startListening()
+            await startListening()
         }
     }
 
