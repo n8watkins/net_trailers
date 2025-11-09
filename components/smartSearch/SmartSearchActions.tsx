@@ -31,7 +31,7 @@ export default function SmartSearchActions({
     } = useSmartSearchStore()
 
     const getUserId = useSessionStore((state) => state.getUserId)
-    const getSessionType = useSessionStore((state) => state.getSessionType)
+    const sessionType = useSessionStore((state) => state.sessionType)
     const addRow = useCustomRowsStore((state) => state.addRow)
     const openWatchlistCreatorModal = useAppStore((state) => state.openWatchlistCreatorModal)
     const { showSuccess, showError } = useToast()
@@ -134,18 +134,24 @@ export default function SmartSearchActions({
 
     const handleCreateRow = async () => {
         const userId = getUserId()
-        const sessionType = getSessionType()
 
         if (!userId) {
             showError('Please sign in to create custom rows')
             return
         }
 
+        // Prevent guest users from calling Firestore (requires auth.uid)
+        if (sessionType === 'guest') {
+            showError(
+                'Please sign in to create custom rows',
+                'Guest users cannot save rows to the cloud'
+            )
+            return
+        }
+
         setIsCreating(true)
 
         try {
-            const isGuest = sessionType === 'guest'
-
             // Always create rows with infinite content enabled
             const formData = {
                 name: editedName || generatedName,
@@ -158,7 +164,8 @@ export default function SmartSearchActions({
                 },
             }
 
-            const newRow = await CustomRowsFirestore.createCustomRow(userId, formData, isGuest)
+            // isGuest is always false here (guests are blocked above)
+            const newRow = await CustomRowsFirestore.createCustomRow(userId, formData, false)
             addRow(userId, newRow)
 
             showSuccess('Row created!', `"${newRow.name}" with infinite content enabled`)

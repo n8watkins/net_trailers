@@ -194,10 +194,16 @@ export function CustomRowLoader({ row, pageType }: CustomRowLoaderProps) {
     // Build API endpoint for infinite scroll with row configuration
     let apiEndpoint: string
 
+    // Check for curated content to avoid treating it as a special row
+    const customRow = row as CustomRow
+    const hasCuratedContent =
+        customRow.advancedFilters?.contentIds && customRow.advancedFilters.contentIds.length > 0
+
     // Handle special system rows (trending, top-rated)
     // Note: For 'both' mediaType, infinite scroll will use movies API
     // (combined results are only for initial load)
-    if (row.isSpecialRow || row.genres.length === 0) {
+    // Note: Curated rows with contentIds but no genres should NOT be treated as special rows
+    if (row.isSpecialRow || (row.genres.length === 0 && !hasCuratedContent)) {
         const mediaType = row.mediaType === 'tv' ? 'tv' : 'movies' // Default to movies for 'both'
 
         if (row.id.includes('trending')) {
@@ -212,13 +218,10 @@ export function CustomRowLoader({ row, pageType }: CustomRowLoaderProps) {
         // Regular custom/system row with genre filters or curated content
         const apiEndpointUrl = new URL(`/api/custom-rows/${row.id}/content`, window.location.origin)
 
-        // Check if this is a curated content row (contentIds exist)
-        const customRow = row as CustomRow
-        const hasContentIds =
-            customRow.advancedFilters?.contentIds && customRow.advancedFilters.contentIds.length > 0
+        // Check if this row has genres for fallback infinite content
         const hasGenres = row.genres && row.genres.length > 0
 
-        if (hasContentIds) {
+        if (hasCuratedContent) {
             // For curated rows: include contentIds
             apiEndpointUrl.searchParams.append(
                 'contentIds',

@@ -59,6 +59,35 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             // Fetch specific content by IDs using parallel fetching for better performance
             const fetchPromises = contentIds.map(async (tmdbId) => {
                 try {
+                    // For "both" media type, try movie first, then TV if it fails
+                    if (mediaType === 'both') {
+                        // Try movie endpoint first
+                        const movieUrl = new URL(`${BASE_URL}/movie/${tmdbId}`)
+                        movieUrl.searchParams.append('api_key', API_KEY)
+                        movieUrl.searchParams.append('language', 'en-US')
+
+                        const movieResponse = await fetch(movieUrl.toString())
+                        if (movieResponse.ok) {
+                            const item = await movieResponse.json()
+                            return { ...item, media_type: 'movie' }
+                        }
+
+                        // If movie fails, try TV endpoint
+                        const tvUrl = new URL(`${BASE_URL}/tv/${tmdbId}`)
+                        tvUrl.searchParams.append('api_key', API_KEY)
+                        tvUrl.searchParams.append('language', 'en-US')
+
+                        const tvResponse = await fetch(tvUrl.toString())
+                        if (tvResponse.ok) {
+                            const item = await tvResponse.json()
+                            return { ...item, media_type: 'tv' }
+                        }
+
+                        // Both failed
+                        return null
+                    }
+
+                    // For single media type, fetch directly
                     const endpoint =
                         mediaType === 'tv'
                             ? `${BASE_URL}/tv/${tmdbId}`

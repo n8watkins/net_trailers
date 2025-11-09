@@ -110,6 +110,8 @@ export const useSmartSearchStore = create<SmartSearchStore>((set, get) => ({
     reset: (clearQuery = false) =>
         set({
             ...initialState,
+            removedIds: new Set(), // Create fresh Set instance (don't reuse shared reference)
+            conversationHistory: [], // Create fresh array instance
             // Preserve query unless explicitly requested to clear
             query: clearQuery ? '' : get().query,
         }),
