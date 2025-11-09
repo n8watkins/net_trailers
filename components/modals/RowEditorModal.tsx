@@ -7,9 +7,6 @@ import {
     FilmIcon,
     TvIcon,
     Squares2X2Icon,
-    EyeIcon,
-    EyeSlashIcon,
-    QueueListIcon,
     ArrowPathIcon,
 } from '@heroicons/react/24/solid'
 import { SortableCustomRowCard } from '../customRows/SortableCustomRowCard'
@@ -40,10 +37,10 @@ interface RowEditorModalProps {
     pageType: 'home' | 'movies' | 'tv'
 }
 
-type StatusFilter = 'all' | 'enabled' | 'disabled'
-
 export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProps) {
-    const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+    const [editingSystemRow, setEditingSystemRow] = useState<{ id: string; name: string } | null>(
+        null
+    )
 
     // Stores
     const getUserId = useSessionStore((state: any) => state.getUserId)
@@ -80,19 +77,8 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         })
     )
 
-    // Filter rows based on status
-    const filteredRows = useMemo(() => {
-        let rows = displayRows
-
-        // Apply status filter
-        if (statusFilter === 'enabled') {
-            rows = rows.filter((row) => row.enabled)
-        } else if (statusFilter === 'disabled') {
-            rows = rows.filter((row) => !row.enabled)
-        }
-
-        return rows
-    }, [displayRows, statusFilter])
+    // Just use displayRows directly - no filtering
+    const filteredRows = displayRows
 
     // Handle body scroll lock
     useEffect(() => {
@@ -200,15 +186,9 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         }
     }
 
-    // Delete row (custom or deletable system row)
+    // Delete row (custom or system row) - all collections are deletable
     const handleDelete = async (row: DisplayRow) => {
         if (!userId) return
-
-        // Prevent deletion of core system rows (Trending/Top Rated)
-        if (row.isSystemRow && row.canDelete === false) {
-            showToast('error', 'Core rows cannot be deleted')
-            return
-        }
 
         try {
             if (row.isSystemRow) {
@@ -228,40 +208,13 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         }
     }
 
-    // Toggle enabled (works for both system and custom rows)
-    const handleToggleEnabled = async (row: DisplayRow) => {
-        if (!userId) return
-
-        try {
-            if (row.isSystemRow) {
-                const newEnabledStatus = await CustomRowsFirestore.toggleSystemRow(userId, row.id)
-                toggleSystemRowStore(userId, row.id)
-                showToast(
-                    'success',
-                    newEnabledStatus ? `"${row.name}" enabled` : `"${row.name}" disabled`
-                )
-            } else {
-                const newEnabledStatus = await CustomRowsFirestore.toggleRowEnabled(userId, row.id)
-                updateRow(userId, row.id, { enabled: newEnabledStatus } as Partial<CustomRow>)
-                showToast(
-                    'success',
-                    newEnabledStatus ? `"${row.name}" enabled` : `"${row.name}" disabled`
-                )
-            }
-        } catch (error) {
-            console.error('Error toggling row:', error)
-            showToast('error', (error as Error).message)
-        }
-    }
+    // No longer needed - removed toggle enabled functionality
 
     // Edit row
     const handleEdit = (row: DisplayRow) => {
         if (row.isSystemRow) {
-            // For system rows, use browser prompt for now (simple solution)
-            const newName = window.prompt('Enter new name for this row:', row.name)
-            if (newName && newName.trim() && newName !== row.name) {
-                handleUpdateSystemRowName(row.id, newName.trim())
-            }
+            // Open edit modal for system rows
+            setEditingSystemRow({ id: row.id, name: row.name })
         } else {
             // Open modal for custom rows
             openCustomRowModal('edit', row.id)
@@ -277,7 +230,8 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
             // Reload preferences to get updated name
             const systemPrefs = await CustomRowsFirestore.getSystemRowPreferences(userId)
             setSystemRowPreferences(userId, systemPrefs)
-            showToast('success', 'Row name updated')
+            showToast('success', 'Collection name updated')
+            setEditingSystemRow(null)
         } catch (error) {
             console.error('Error updating system row name:', error)
             showToast('error', (error as Error).message)
@@ -420,7 +374,9 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
                 <div className="flex items-center justify-between p-6 border-b border-gray-700">
                     <div className="flex items-center gap-2">
                         <PageIcon className="w-6 h-6 text-red-500" />
-                        <h2 className="text-2xl font-bold text-white">Edit {pageTitle} Rows</h2>
+                        <h2 className="text-2xl font-bold text-white">
+                            Edit {pageTitle} Collections
+                        </h2>
                     </div>
                     <div className="flex items-center gap-3">
                         <button
@@ -428,7 +384,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
                             className="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
                         >
                             <PlusIcon className="w-4 h-4" />
-                            <span>Create New Row</span>
+                            <span>New Collection</span>
                         </button>
                         <button
                             onClick={handleResetDefaultRows}
@@ -447,53 +403,13 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
                     </div>
                 </div>
 
-                {/* Status Filters */}
-                <div className="px-6 pt-6 flex gap-2">
-                    <button
-                        onClick={() => setStatusFilter('all')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                            statusFilter === 'all'
-                                ? 'bg-red-600 text-white'
-                                : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700'
-                        }`}
-                    >
-                        <QueueListIcon className="w-4 h-4" />
-                        <span>All</span>
-                    </button>
-                    <button
-                        onClick={() => setStatusFilter('enabled')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                            statusFilter === 'enabled'
-                                ? 'bg-red-600 text-white'
-                                : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700'
-                        }`}
-                    >
-                        <EyeIcon className="w-4 h-4" />
-                        <span>Enabled</span>
-                    </button>
-                    <button
-                        onClick={() => setStatusFilter('disabled')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                            statusFilter === 'disabled'
-                                ? 'bg-red-600 text-white'
-                                : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700'
-                        }`}
-                    >
-                        <EyeSlashIcon className="w-4 h-4" />
-                        <span>Disabled</span>
-                    </button>
-                </div>
-
                 {/* Rows List */}
-                <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
+                <div className="flex-1 overflow-y-auto px-6 py-6 space-y-2">
                     {filteredRows.length === 0 ? (
                         <div className="text-center py-12">
                             <p className="text-gray-400">
-                                {statusFilter === 'enabled'
-                                    ? `No enabled ${pageTitle.toLowerCase()} rows yet.`
-                                    : statusFilter === 'disabled'
-                                      ? `No disabled ${pageTitle.toLowerCase()} rows.`
-                                      : `No ${pageTitle.toLowerCase()} rows yet. Create your first row!`}
+                                No {pageTitle.toLowerCase()} collections yet. Create your first
+                                collection!
                             </p>
                         </div>
                     ) : (
@@ -512,7 +428,6 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
                                         row={row}
                                         onEdit={handleEdit}
                                         onDelete={handleDelete}
-                                        onToggleEnabled={handleToggleEnabled}
                                         onMoveUp={handleMoveUp}
                                         onMoveDown={handleMoveDown}
                                     />
@@ -532,6 +447,71 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
                     </button>
                 </div>
             </div>
+
+            {/* System Collection Edit Modal - Overlays the editor */}
+            {editingSystemRow && (
+                <div
+                    className="absolute inset-0 bg-black/60 backdrop-blur-sm z-10 flex items-center justify-center p-4"
+                    onClick={() => setEditingSystemRow(null)}
+                >
+                    <div
+                        className="bg-gray-800 border border-gray-600 rounded-xl p-6 max-w-md w-full shadow-2xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <h3 className="text-xl font-bold text-white mb-4">Edit Collection Name</h3>
+                        <input
+                            type="text"
+                            defaultValue={editingSystemRow.name}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    const input = e.currentTarget
+                                    if (
+                                        input.value.trim() &&
+                                        input.value !== editingSystemRow.name
+                                    ) {
+                                        handleUpdateSystemRowName(
+                                            editingSystemRow.id,
+                                            input.value.trim()
+                                        )
+                                    }
+                                } else if (e.key === 'Escape') {
+                                    setEditingSystemRow(null)
+                                }
+                            }}
+                            className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-600"
+                            placeholder="Collection name"
+                            autoFocus
+                        />
+                        <div className="flex gap-3 mt-4">
+                            <button
+                                onClick={() => {
+                                    const input = document.querySelector<HTMLInputElement>(
+                                        'input[placeholder="Collection name"]'
+                                    )
+                                    if (
+                                        input?.value.trim() &&
+                                        input.value !== editingSystemRow.name
+                                    ) {
+                                        handleUpdateSystemRowName(
+                                            editingSystemRow.id,
+                                            input.value.trim()
+                                        )
+                                    }
+                                }}
+                                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+                            >
+                                Save
+                            </button>
+                            <button
+                                onClick={() => setEditingSystemRow(null)}
+                                className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

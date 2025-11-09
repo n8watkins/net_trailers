@@ -484,7 +484,6 @@ const RowsPage = () => {
                                                         row={row}
                                                         onEdit={handleEdit}
                                                         onDelete={handleDelete}
-                                                        onToggleEnabled={handleToggleEnabled}
                                                         onMoveUp={handleMoveUp}
                                                         onMoveDown={handleMoveDown}
                                                     />
@@ -527,7 +526,6 @@ const RowsPage = () => {
                                                         row={row}
                                                         onEdit={handleEdit}
                                                         onDelete={handleDelete}
-                                                        onToggleEnabled={handleToggleEnabled}
                                                         onMoveUp={handleMoveUp}
                                                         onMoveDown={handleMoveDown}
                                                     />
@@ -570,7 +568,6 @@ const RowsPage = () => {
                                                         row={row}
                                                         onEdit={handleEdit}
                                                         onDelete={handleDelete}
-                                                        onToggleEnabled={handleToggleEnabled}
                                                         onMoveUp={handleMoveUp}
                                                         onMoveDown={handleMoveDown}
                                                     />
