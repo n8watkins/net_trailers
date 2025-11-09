@@ -101,6 +101,8 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
 
     return (
         <div
+            role="button"
+            tabIndex={0}
             className={`relative cursor-pointer transition-all duration-300 ease-out group
                        ${getCardSizeClasses()}
                        hover:z-40 ${className}
@@ -108,6 +110,12 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
             onClick={handleImageClick}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    handleImageClick()
+                }
+            }}
         >
             {/* Image Container with Fixed Dimensions */}
             <div

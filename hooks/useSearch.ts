@@ -158,7 +158,7 @@ export function useSearch() {
     const addToSearchHistory = useSearchStore((state) => state.addToSearchHistory)
 
     const { isEnabled: childSafetyEnabled } = useChildSafety()
-    const debouncedQuery = useDebounce(query, 200)
+    const debouncedQuery = useDebounce(query, 300)
     const abortControllerRef = useRef<AbortController | undefined>(undefined)
     const lastQueryRef = useRef<string>('')
 
@@ -182,6 +182,7 @@ export function useSearch() {
     const hasActiveFilters = useCallback((filters: SearchFilters) => {
         return Object.entries(filters).some(([key, value]) => {
             if (key === 'sortBy') return value !== 'popularity.desc'
+            if (key === 'genres') return Array.isArray(value) && value.length > 0
             return value !== 'all'
         })
     }, [])
@@ -297,11 +298,10 @@ export function useSearch() {
                         isTruncated: true,
                     }))
                 } else {
-                    // AbortError is expected when cancelling requests
+                    // AbortError is expected when cancelling requests - don't mark as truncated
                     setSearch((prev) => ({
                         ...prev,
                         isLoadingAll: false,
-                        isTruncated: true,
                     }))
                 }
             }
@@ -422,11 +422,10 @@ export function useSearch() {
                     isTruncated: true,
                 }))
             } else {
-                // AbortError is expected when cancelling requests
+                // AbortError is expected when cancelling requests - don't mark as truncated
                 setSearch((prev) => ({
                     ...prev,
                     isLoadingAll: false,
-                    isTruncated: true,
                 }))
             }
         }
