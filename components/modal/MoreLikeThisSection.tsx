@@ -7,11 +7,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Content } from '../../types/userLists'
+import { Content, getTitle } from '../../typings'
 import { Recommendation } from '../../types/recommendations'
-import { getTitle } from '../../typings'
-import { useAppStore } from '../../stores/appStore'
-import Thumbnail from '../common/Thumbnail'
+import ContentCard from '../common/ContentCard'
 
 interface MoreLikeThisSectionProps {
     /** Current content being viewed */
@@ -22,8 +20,6 @@ export default function MoreLikeThisSection({ content }: MoreLikeThisSectionProp
     const [recommendations, setRecommendations] = useState<Recommendation[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-
-    const { openModal } = useAppStore()
 
     // Fetch similar content
     useEffect(() => {
@@ -92,20 +88,7 @@ export default function MoreLikeThisSection({ content }: MoreLikeThisSectionProp
             {/* Grid of recommendations */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
                 {recommendations.map((rec) => (
-                    <div
-                        key={rec.content.id}
-                        className="group cursor-pointer transform transition-transform duration-200 hover:scale-105"
-                        onClick={() => {
-                            // Open modal with recommended content
-                            openModal({
-                                content: rec.content,
-                                autoPlay: true,
-                                autoPlayWithSound: false,
-                            })
-                        }}
-                    >
-                        <Thumbnail content={rec.content} showTitle={true} compact={true} />
-                    </div>
+                    <ContentCard key={rec.content.id} content={rec.content} size="small" />
                 ))}
             </div>
         </div>
