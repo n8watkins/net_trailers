@@ -1,598 +1,215 @@
+/**
+ * DEPRECATED: This file is being phased out.
+ *
+ * appStore has been split into focused stores for better performance:
+ * - modalStore - All modal state and actions
+ * - toastStore - Toast notifications
+ * - loadingStore - Global loading state
+ * - uiStore - Misc UI state (auth mode, demo message, etc.)
+ *
+ * MIGRATION GUIDE:
+ * ================
+ *
+ * OLD (causes unnecessary re-renders):
+ * ```tsx
+ * import { useAppStore } from '@/stores/appStore'
+ * const { showToast } = useAppStore() // ❌ Re-renders when modal opens
+ * ```
+ *
+ * NEW (only re-renders when toast state changes):
+ * ```tsx
+ * import { useToastStore } from '@/stores/toastStore'
+ * const { showToast } = useToastStore() // ✅ Only subscribes to toast state
+ * ```
+ *
+ * BACKWARDS COMPATIBILITY:
+ * This file re-exports everything from the new stores, so existing code
+ * will continue to work. However, you should migrate to the new stores
+ * for better performance.
+ */
+
+// Re-export types
+export type {
+    ModalContent,
+    ModalState,
+    ListModalState,
+    CustomRowModalState,
+    AuthModalState,
+    RowEditorModalState,
+    WatchlistCreatorModalState,
+} from './modalStore'
+
+export type { ToastType, ToastMessage } from './toastStore'
+
+export { MAX_TOASTS, TOAST_DURATION, TOAST_EXIT_DURATION } from './toastStore'
+
+// Create combined store for backwards compatibility
+import { useModalStore } from './modalStore'
+import { useToastStore } from './toastStore'
+import { useLoadingStore } from './loadingStore'
+import { useUIStore } from './uiStore'
+
 import { create } from 'zustand'
-import { Content, getTitle } from '../typings'
-import { startTransition } from 'react'
+import type { ModalStore } from './modalStore'
+import type { ToastStore } from './toastStore'
+import type { LoadingStore } from './loadingStore'
+import type { UIStore } from './uiStore'
 
-// Toast configuration constants
-export const MAX_TOASTS = 2 // Maximum 2 toasts displayed at once
-export const TOAST_DURATION = 3000 // 3 seconds
-export const TOAST_EXIT_DURATION = 500 // 500ms fade-out animation
-
-// Modal types
-export interface ModalContent {
-    content: Content
-    autoPlay: boolean
-    autoPlayWithSound: boolean
-}
-
-export interface ModalState {
-    isOpen: boolean
-    content: ModalContent | null
-}
-
-// Toast types
-export type ToastType =
-    | 'success'
-    | 'error'
-    | 'watchlist-add'
-    | 'watchlist-remove'
-    | 'content-hidden'
-    | 'content-shown'
-
-export interface ToastMessage {
-    id: string
-    type: ToastType
-    title: string
-    message?: string
-    timestamp: number
-    onUndo?: () => void // Optional undo callback
-    contentId?: number // Optional content ID for undo operations
-}
-
-// List modal state
-export interface ListModalState {
-    isOpen: boolean
-    content: Content | null
-    mode?: 'manage' | 'create' | 'add'
-}
-
-// Custom row modal state
-export interface CustomRowModalState {
-    isOpen: boolean
-    editingRowId: string | null
-    mode: 'create' | 'edit'
-}
-
-// Auth modal state
-export interface AuthModalState {
-    isOpen: boolean
-    mode: 'signin' | 'signup'
-}
-
-// Row editor modal state
-export interface RowEditorModalState {
-    isOpen: boolean
-    pageType: 'home' | 'movies' | 'tv'
-}
-
-// Watchlist creator modal state
-export interface WatchlistCreatorModalState {
-    isOpen: boolean
-    name: string
-    content: Content[]
-    mediaType: 'movie' | 'tv' | 'all'
-}
-
-// App state interface
+// Combined store state
 export interface AppState {
     // Modal state
-    modal: ModalState
+    modal: ModalStore['modal']
+    listModal: ModalStore['listModal']
+    customRowModal: ModalStore['customRowModal']
+    authModal: ModalStore['authModal']
+    rowEditorModal: ModalStore['rowEditorModal']
+    watchlistCreatorModal: ModalStore['watchlistCreatorModal']
 
-    // List modal state
-    listModal: ListModalState
+    // Toast state
+    toasts: ToastStore['toasts']
 
-    // Custom row modal state
-    customRowModal: CustomRowModalState
+    // Loading state
+    isLoading: LoadingStore['isLoading']
+    loadingMessage: LoadingStore['loadingMessage']
 
-    // Auth modal state
-    authModal: AuthModalState
-
-    // Row editor modal state
-    rowEditorModal: RowEditorModalState
-
-    // Watchlist creator modal state
-    watchlistCreatorModal: WatchlistCreatorModalState
-
-    // Toast notifications
-    toasts: ToastMessage[]
-
-    // Global loading state
-    isLoading: boolean
-    loadingMessage?: string
-
-    // Auth mode
-    authMode: 'login' | 'register' | 'guest'
-
-    // Demo messaging
-    showDemoMessage: boolean
-
-    // Content loading success
-    contentLoadedSuccessfully: boolean
+    // UI state
+    authMode: UIStore['authMode']
+    showDemoMessage: UIStore['showDemoMessage']
+    contentLoadedSuccessfully: UIStore['contentLoadedSuccessfully']
 }
 
-// App actions interface
+// Combined store actions
 export interface AppActions {
     // Modal actions
-    openModal: (content: Content, autoPlay?: boolean, autoPlayWithSound?: boolean) => void
-    closeModal: () => void
-    setAutoPlay: (autoPlay: boolean) => void
-    setAutoPlayWithSound: (autoPlayWithSound: boolean) => void
-
-    // List modal actions
-    openListModal: (content?: Content, mode?: 'manage' | 'create' | 'add') => void
-    closeListModal: () => void
-    setListModalMode: (mode: 'manage' | 'create' | 'add') => void
-
-    // Custom row modal actions
-    openCustomRowModal: (mode: 'create' | 'edit', editingRowId?: string) => void
-    closeCustomRowModal: () => void
-
-    // Auth modal actions
-    openAuthModal: (mode?: 'signin' | 'signup') => void
-    closeAuthModal: () => void
-    setAuthModalMode: (mode: 'signin' | 'signup') => void
-
-    // Row editor modal actions
-    openRowEditorModal: (pageType: 'home' | 'movies' | 'tv') => void
-    closeRowEditorModal: () => void
-
-    // Watchlist creator modal actions
-    openWatchlistCreatorModal: (
-        name: string,
-        content: Content[],
-        mediaType: 'movie' | 'tv' | 'all'
-    ) => void
-    closeWatchlistCreatorModal: () => void
-    setWatchlistCreatorName: (name: string) => void
-    addToWatchlistCreator: (content: Content) => void
-    removeFromWatchlistCreator: (contentId: number) => void
+    openModal: ModalStore['openModal']
+    closeModal: ModalStore['closeModal']
+    setAutoPlay: ModalStore['setAutoPlay']
+    setAutoPlayWithSound: ModalStore['setAutoPlayWithSound']
+    openListModal: ModalStore['openListModal']
+    closeListModal: ModalStore['closeListModal']
+    setListModalMode: ModalStore['setListModalMode']
+    openCustomRowModal: ModalStore['openCustomRowModal']
+    closeCustomRowModal: ModalStore['closeCustomRowModal']
+    openAuthModal: ModalStore['openAuthModal']
+    closeAuthModal: ModalStore['closeAuthModal']
+    setAuthModalMode: ModalStore['setAuthModalMode']
+    openRowEditorModal: ModalStore['openRowEditorModal']
+    closeRowEditorModal: ModalStore['closeRowEditorModal']
+    openWatchlistCreatorModal: ModalStore['openWatchlistCreatorModal']
+    closeWatchlistCreatorModal: ModalStore['closeWatchlistCreatorModal']
+    setWatchlistCreatorName: ModalStore['setWatchlistCreatorName']
+    addToWatchlistCreator: ModalStore['addToWatchlistCreator']
+    removeFromWatchlistCreator: ModalStore['removeFromWatchlistCreator']
 
     // Toast actions
-    showToast: (
-        type: ToastType,
-        title: string,
-        message?: string,
-        options?: { onUndo?: () => void; contentId?: number }
-    ) => void
-    dismissToast: (id: string) => void
+    showToast: ToastStore['showToast']
+    dismissToast: ToastStore['dismissToast']
 
     // Loading actions
-    setLoading: (loading: boolean, message?: string) => void
+    setLoading: LoadingStore['setLoading']
 
-    // Auth mode actions
-    setAuthMode: (mode: 'login' | 'register' | 'guest') => void
-
-    // Demo message actions
-    setShowDemoMessage: (show: boolean) => void
-
-    // Content loading actions
-    setContentLoadedSuccessfully: (loaded: boolean) => void
+    // UI actions
+    setAuthMode: UIStore['setAuthMode']
+    setShowDemoMessage: UIStore['setShowDemoMessage']
+    setContentLoadedSuccessfully: UIStore['setContentLoadedSuccessfully']
 }
 
 export type AppStore = AppState & AppActions
 
-// Counter for SSR toast IDs to prevent duplicate keys
-let ssrIdCounter = 0
+/**
+ * @deprecated Use individual stores instead: useModalStore, useToastStore, useLoadingStore, useUIStore
+ *
+ * This combined store is provided for backwards compatibility but subscribes to
+ * all sub-stores, causing unnecessary re-renders. Migrate to the individual stores
+ * for better performance.
+ *
+ * MIGRATION EXAMPLE:
+ * ```tsx
+ * // OLD (re-renders on ANY state change):
+ * const { showToast } = useAppStore()
+ *
+ * // NEW (only re-renders on toast changes):
+ * const { showToast } = useToastStore()
+ * ```
+ */
+export const useAppStore = create<AppStore>((set, get) => {
+    // Subscribe to all sub-stores and merge their state
+    useModalStore.subscribe((modalState) => {
+        set({
+            modal: modalState.modal,
+            listModal: modalState.listModal,
+            customRowModal: modalState.customRowModal,
+            authModal: modalState.authModal,
+            rowEditorModal: modalState.rowEditorModal,
+            watchlistCreatorModal: modalState.watchlistCreatorModal,
+        })
+    })
 
-const generateToastId = (): string => {
-    // Generate counter-based IDs during SSR to prevent duplicates
-    // Client-side uses timestamp + random for uniqueness
-    if (typeof window === 'undefined') {
-        return `ssr_toast_${ssrIdCounter++}`
+    useToastStore.subscribe((toastState) => {
+        set({ toasts: toastState.toasts })
+    })
+
+    useLoadingStore.subscribe((loadingState) => {
+        set({
+            isLoading: loadingState.isLoading,
+            loadingMessage: loadingState.loadingMessage,
+        })
+    })
+
+    useUIStore.subscribe((uiState) => {
+        set({
+            authMode: uiState.authMode,
+            showDemoMessage: uiState.showDemoMessage,
+            contentLoadedSuccessfully: uiState.contentLoadedSuccessfully,
+        })
+    })
+
+    // Get initial state from all stores
+    const modalState = useModalStore.getState()
+    const toastState = useToastStore.getState()
+    const loadingState = useLoadingStore.getState()
+    const uiState = useUIStore.getState()
+
+    return {
+        // Initial state from all stores
+        modal: modalState.modal,
+        listModal: modalState.listModal,
+        customRowModal: modalState.customRowModal,
+        authModal: modalState.authModal,
+        rowEditorModal: modalState.rowEditorModal,
+        watchlistCreatorModal: modalState.watchlistCreatorModal,
+        toasts: toastState.toasts,
+        isLoading: loadingState.isLoading,
+        loadingMessage: loadingState.loadingMessage,
+        authMode: uiState.authMode,
+        showDemoMessage: uiState.showDemoMessage,
+        contentLoadedSuccessfully: uiState.contentLoadedSuccessfully,
+
+        // Forward all actions to the appropriate sub-stores
+        openModal: modalState.openModal,
+        closeModal: modalState.closeModal,
+        setAutoPlay: modalState.setAutoPlay,
+        setAutoPlayWithSound: modalState.setAutoPlayWithSound,
+        openListModal: modalState.openListModal,
+        closeListModal: modalState.closeListModal,
+        setListModalMode: modalState.setListModalMode,
+        openCustomRowModal: modalState.openCustomRowModal,
+        closeCustomRowModal: modalState.closeCustomRowModal,
+        openAuthModal: modalState.openAuthModal,
+        closeAuthModal: modalState.closeAuthModal,
+        setAuthModalMode: modalState.setAuthModalMode,
+        openRowEditorModal: modalState.openRowEditorModal,
+        closeRowEditorModal: modalState.closeRowEditorModal,
+        openWatchlistCreatorModal: modalState.openWatchlistCreatorModal,
+        closeWatchlistCreatorModal: modalState.closeWatchlistCreatorModal,
+        setWatchlistCreatorName: modalState.setWatchlistCreatorName,
+        addToWatchlistCreator: modalState.addToWatchlistCreator,
+        removeFromWatchlistCreator: modalState.removeFromWatchlistCreator,
+        showToast: toastState.showToast,
+        dismissToast: toastState.dismissToast,
+        setLoading: loadingState.setLoading,
+        setAuthMode: uiState.setAuthMode,
+        setShowDemoMessage: uiState.setShowDemoMessage,
+        setContentLoadedSuccessfully: uiState.setContentLoadedSuccessfully,
     }
-    return `toast_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-}
-
-export const useAppStore = create<AppStore>((set, get) => ({
-    // Initial state
-    modal: {
-        isOpen: false,
-        content: null,
-    },
-
-    listModal: {
-        isOpen: false,
-        content: null,
-        mode: undefined,
-    },
-
-    customRowModal: {
-        isOpen: false,
-        editingRowId: null,
-        mode: 'create',
-    },
-
-    authModal: {
-        isOpen: false,
-        mode: 'signin',
-    },
-
-    rowEditorModal: {
-        isOpen: false,
-        pageType: 'home',
-    },
-
-    watchlistCreatorModal: {
-        isOpen: false,
-        name: '',
-        content: [],
-        mediaType: 'all',
-    },
-
-    toasts: [],
-
-    isLoading: false,
-    loadingMessage: undefined,
-
-    authMode: 'login',
-    showDemoMessage: true,
-    contentLoadedSuccessfully: false,
-
-    // Modal actions
-    /**
-     * Open the content modal with video player
-     *
-     * @param content - The movie or TV show to display
-     * @param autoPlay - Whether to start playing the trailer automatically (default: false)
-     * @param autoPlayWithSound - Whether to play with sound initially (default: false)
-     *
-     * @example
-     * ```tsx
-     * const { openModal } = useAppStore()
-     *
-     * // Open modal with autoplay muted (More Info button)
-     * openModal(movie, true, false)
-     *
-     * // Open modal with autoplay and sound (Play button)
-     * openModal(movie, true, true)
-     * ```
-     */
-    openModal: (content: Content, autoPlay = false, autoPlayWithSound = false) => {
-        startTransition(() => {
-            set({
-                modal: {
-                    isOpen: true,
-                    content: {
-                        content,
-                        autoPlay,
-                        autoPlayWithSound,
-                    },
-                },
-            })
-            console.log('🎬 [AppStore] Modal opened:', getTitle(content))
-        })
-    },
-
-    /**
-     * Close the content modal
-     *
-     * @example
-     * ```tsx
-     * const { closeModal } = useAppStore()
-     * closeModal()
-     * ```
-     */
-    closeModal: () => {
-        startTransition(() => {
-            set({
-                modal: {
-                    isOpen: false,
-                    content: null,
-                },
-            })
-            console.log('❌ [AppStore] Modal closed')
-        })
-    },
-
-    setAutoPlay: (autoPlay: boolean) => {
-        const state = get()
-        if (state.modal.content) {
-            set({
-                modal: {
-                    ...state.modal,
-                    content: {
-                        ...state.modal.content,
-                        autoPlay,
-                    },
-                },
-            })
-        }
-    },
-
-    setAutoPlayWithSound: (autoPlayWithSound: boolean) => {
-        const state = get()
-        if (state.modal.content) {
-            set({
-                modal: {
-                    ...state.modal,
-                    content: {
-                        ...state.modal.content,
-                        autoPlayWithSound,
-                    },
-                },
-            })
-        }
-    },
-
-    // List modal actions
-    openListModal: (content?: Content, mode?: 'manage' | 'create' | 'add') => {
-        startTransition(() => {
-            set({
-                listModal: {
-                    isOpen: true,
-                    content: content || null,
-                    mode: mode || 'add',
-                },
-            })
-            console.log('📋 [AppStore] List modal opened:', {
-                contentTitle: content ? getTitle(content) : 'No content',
-                mode: mode || 'add',
-            })
-        })
-    },
-
-    closeListModal: () => {
-        startTransition(() => {
-            set({
-                listModal: {
-                    isOpen: false,
-                    content: null,
-                    mode: undefined,
-                },
-            })
-            console.log('❌ [AppStore] List modal closed')
-        })
-    },
-
-    setListModalMode: (mode: 'manage' | 'create' | 'add') => {
-        set((state) => ({
-            listModal: {
-                ...state.listModal,
-                mode,
-            },
-        }))
-    },
-
-    // Custom row modal actions
-    openCustomRowModal: (mode: 'create' | 'edit' = 'create', editingRowId?: string) => {
-        startTransition(() => {
-            set({
-                customRowModal: {
-                    isOpen: true,
-                    mode,
-                    editingRowId: editingRowId || null,
-                },
-            })
-            console.log('📊 [AppStore] Custom row modal opened:', {
-                mode,
-                editingRowId: editingRowId || 'none',
-            })
-        })
-    },
-
-    closeCustomRowModal: () => {
-        startTransition(() => {
-            set({
-                customRowModal: {
-                    isOpen: false,
-                    mode: 'create',
-                    editingRowId: null,
-                },
-            })
-            console.log('❌ [AppStore] Custom row modal closed')
-        })
-    },
-
-    // Auth modal actions
-    openAuthModal: (mode: 'signin' | 'signup' = 'signin') => {
-        startTransition(() => {
-            set({
-                authModal: {
-                    isOpen: true,
-                    mode,
-                },
-            })
-            console.log('✅ [AppStore] Auth modal opened:', mode)
-        })
-    },
-
-    closeAuthModal: () => {
-        startTransition(() => {
-            set({
-                authModal: {
-                    isOpen: false,
-                    mode: 'signin',
-                },
-            })
-            console.log('❌ [AppStore] Auth modal closed')
-        })
-    },
-
-    setAuthModalMode: (mode: 'signin' | 'signup') => {
-        set((state) => ({
-            authModal: {
-                ...state.authModal,
-                mode,
-            },
-        }))
-    },
-
-    // Row editor modal actions
-    openRowEditorModal: (pageType: 'home' | 'movies' | 'tv') => {
-        startTransition(() => {
-            set({
-                rowEditorModal: {
-                    isOpen: true,
-                    pageType,
-                },
-            })
-            console.log('📊 [AppStore] Row editor modal opened:', pageType)
-        })
-    },
-
-    closeRowEditorModal: () => {
-        startTransition(() => {
-            set({
-                rowEditorModal: {
-                    isOpen: false,
-                    pageType: 'home',
-                },
-            })
-            console.log('❌ [AppStore] Row editor modal closed')
-        })
-    },
-
-    // Watchlist creator modal actions
-    openWatchlistCreatorModal: (
-        name: string,
-        content: Content[],
-        mediaType: 'movie' | 'tv' | 'all'
-    ) => {
-        startTransition(() => {
-            set({
-                watchlistCreatorModal: {
-                    isOpen: true,
-                    name,
-                    content,
-                    mediaType,
-                },
-            })
-            console.log('📋 [AppStore] Watchlist creator modal opened:', {
-                name,
-                contentCount: content.length,
-            })
-        })
-    },
-
-    closeWatchlistCreatorModal: () => {
-        startTransition(() => {
-            set({
-                watchlistCreatorModal: {
-                    isOpen: false,
-                    name: '',
-                    content: [],
-                    mediaType: 'all',
-                },
-            })
-            console.log('❌ [AppStore] Watchlist creator modal closed')
-        })
-    },
-
-    setWatchlistCreatorName: (name: string) => {
-        set((state) => ({
-            watchlistCreatorModal: {
-                ...state.watchlistCreatorModal,
-                name,
-            },
-        }))
-    },
-
-    addToWatchlistCreator: (content: Content) => {
-        set((state) => ({
-            watchlistCreatorModal: {
-                ...state.watchlistCreatorModal,
-                content: [...state.watchlistCreatorModal.content, content],
-            },
-        }))
-    },
-
-    removeFromWatchlistCreator: (contentId: number) => {
-        set((state) => ({
-            watchlistCreatorModal: {
-                ...state.watchlistCreatorModal,
-                content: state.watchlistCreatorModal.content.filter(
-                    (item) => item.id !== contentId
-                ),
-            },
-        }))
-    },
-
-    // Toast actions
-    /**
-     * Show a toast notification
-     *
-     * Displays a toast message with auto-dismiss after 3 seconds.
-     * Maximum of 2 toasts shown at once - oldest dismissed when limit reached.
-     *
-     * @param type - Type of toast (success, error, watchlist-add, etc.)
-     * @param title - Main toast message
-     * @param message - Optional secondary message
-     *
-     * @example
-     * ```tsx
-     * const { showToast } = useAppStore()
-     *
-     * // Show success toast
-     * showToast('success', 'Saved successfully')
-     *
-     * // Show error with details
-     * showToast('error', 'Failed to save', 'Please try again')
-     * ```
-     */
-    showToast: (
-        type: ToastType,
-        title: string,
-        message?: string,
-        options?: { onUndo?: () => void; contentId?: number }
-    ) => {
-        const toast: ToastMessage = {
-            id: generateToastId(),
-            type,
-            title,
-            message,
-            timestamp: typeof window !== 'undefined' ? Date.now() : 0,
-            onUndo: options?.onUndo,
-            contentId: options?.contentId,
-        }
-
-        // If we're at max capacity, dismiss the oldest toast to make room
-        const currentToasts = get().toasts
-        if (currentToasts.length >= MAX_TOASTS && currentToasts.length > 0) {
-            const oldestToast = currentToasts[0]
-            // Dismiss the oldest toast - this will trigger its exit animation
-            get().dismissToast(oldestToast.id)
-        }
-
-        // Add the new toast after a brief delay to allow exit animation
-        setTimeout(() => {
-            set((state) => ({
-                toasts: [...state.toasts, toast].slice(-MAX_TOASTS),
-            }))
-        }, 50) // Small delay for smooth transition
-
-        // Note: Auto-dismiss is handled by Toast component for proper cleanup
-        if (process.env.NODE_ENV === 'development') {
-            console.log('🍞 [AppStore] Toast shown:', { type, title, message })
-        }
-    },
-
-    dismissToast: (id: string) => {
-        set((state) => ({
-            toasts: state.toasts.filter((toast) => toast.id !== id),
-        }))
-    },
-
-    // Loading actions
-    setLoading: (loading: boolean, message?: string) => {
-        startTransition(() => {
-            set({
-                isLoading: loading,
-                loadingMessage: message,
-            })
-        })
-    },
-
-    // Auth mode actions
-    setAuthMode: (mode: 'login' | 'register' | 'guest') => {
-        set({ authMode: mode })
-    },
-
-    // Demo message actions
-    setShowDemoMessage: (show: boolean) => {
-        set({ showDemoMessage: show })
-    },
-
-    // Content loading actions
-    setContentLoadedSuccessfully: (loaded: boolean) => {
-        set({ contentLoadedSuccessfully: loaded })
-    },
-}))
+})
