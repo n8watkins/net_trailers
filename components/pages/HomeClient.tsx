@@ -9,6 +9,7 @@ import { useSessionStore } from '../../stores/sessionStore'
 import { CustomRowLoader } from '../customRows/CustomRowLoader'
 import { CustomRowsFirestore } from '../../utils/firestore/customRows'
 import { useCustomRowsStore } from '../../stores/customRowsStore'
+import RecommendedForYouRow from '../recommendations/RecommendedForYouRow'
 
 interface HomeClientProps {
     data: HomeData
@@ -62,6 +63,9 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
                     <Banner trending={trending} />
                 </div>
                 <section className="relative z-10 pb-52 space-y-8">
+                    {/* Personalized Recommendations Row */}
+                    <RecommendedForYouRow />
+
                     {/* Dynamic rows (system + custom) sorted by user preferences */}
                     {enabledRows.map((row) => (
                         <CustomRowLoader key={row.id} row={row} pageType="home" />

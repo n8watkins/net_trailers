@@ -31,6 +31,7 @@ import InlineWatchlistDropdown from './modal-sections/InlineWatchlistDropdown'
 import VideoControls from './modal-sections/VideoControls'
 import ModalVideoPlayer from './modal-sections/ModalVideoPlayer'
 import JsonDebugModal from './modal-sections/JsonDebugModal'
+import MoreLikeThisSection from '../modal/MoreLikeThisSection'
 
 function Modal() {
     // Debug settings
@@ -850,6 +851,9 @@ function Modal() {
                                     }
                                 }}
                             />
+
+                            {/* More Like This Section */}
+                            {currentMovie && <MoreLikeThisSection content={currentMovie} />}
                         </div>
                     )}
                 </div>
