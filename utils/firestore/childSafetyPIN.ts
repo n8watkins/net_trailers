@@ -143,9 +143,9 @@ export async function verifyPIN(
         return { success: false, error: validation.error }
     }
 
-    let pinData: ChildSafetyPIN | null = null
-
     try {
+        let pinData: ChildSafetyPIN
+
         if (isGuest) {
             // Retrieve from localStorage
             const key = getGuestPINKey(userId)
