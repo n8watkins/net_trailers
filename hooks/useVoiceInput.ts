@@ -28,6 +28,7 @@ export function useVoiceInput({
     const [isSupported, setIsSupported] = useState(false)
     const [transcript, setTranscript] = useState('')
     const recognitionRef = useRef<any>(null)
+    const permissionCheckedRef = useRef(false)
 
     // Check if browser supports speech recognition
     useEffect(() => {
@@ -96,6 +97,68 @@ export function useVoiceInput({
         }
     }, [language, continuous, onResult, onError])
 
+    const checkMicrophonePermission = useCallback(async (): Promise<boolean> => {
+        try {
+            // Check permission state using Permissions API
+            if (navigator.permissions && navigator.permissions.query) {
+                const permissionStatus = await navigator.permissions.query({
+                    name: 'microphone' as PermissionName,
+                })
+
+                console.log('Microphone permission state:', permissionStatus.state)
+
+                if (permissionStatus.state === 'denied') {
+                    if (onError) {
+                        onError(
+                            'Microphone access is blocked. Click the lock icon in your browser address bar and allow microphone access, then try again.'
+                        )
+                    }
+                    return false
+                }
+
+                if (permissionStatus.state === 'granted') {
+                    console.log('Microphone permission already granted')
+                    return true
+                }
+
+                // State is 'prompt' - will ask for permission
+                console.log('Will prompt for microphone permission')
+            }
+
+            // Fallback: try to request permission directly
+            // This will show the browser's permission prompt if not yet decided
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                console.log('Requesting microphone permission...')
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+                console.log('Microphone permission granted!')
+                // Stop the stream immediately - we only needed the permission
+                stream.getTracks().forEach((track) => track.stop())
+                return true
+            }
+
+            return true
+        } catch (error: any) {
+            console.error('Permission check/request failed:', error)
+
+            if (
+                error.name === 'NotAllowedError' ||
+                error.name === 'PermissionDeniedError' ||
+                error.message?.includes('denied')
+            ) {
+                if (onError) {
+                    onError(
+                        'Microphone access denied. Click the lock/site icon in your browser address bar, enable microphone access, and try again.'
+                    )
+                }
+            } else {
+                if (onError) {
+                    onError('Failed to access microphone. Please check your browser settings.')
+                }
+            }
+            return false
+        }
+    }, [onError])
+
     const startListening = useCallback(async () => {
         if (!isSupported) {
             if (onError) {
@@ -119,36 +182,23 @@ export function useVoiceInput({
         if (recognitionRef.current && !isListening) {
             setTranscript('')
 
-            try {
-                // Request microphone permission explicitly using getUserMedia
-                // This MUST happen before speech recognition to ensure permission is granted
-                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                    console.log('Requesting microphone permission...')
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-                    console.log('Microphone permission granted')
-                    // Stop the stream immediately - we only needed the permission
-                    stream.getTracks().forEach((track) => track.stop())
-                }
+            // Check and request microphone permission first
+            const hasPermission = await checkMicrophonePermission()
+            if (!hasPermission) {
+                return // Error already shown by checkMicrophonePermission
+            }
 
+            try {
                 // Now start speech recognition with permission already granted
+                console.log('Starting speech recognition...')
                 recognitionRef.current.start()
                 setIsListening(true)
             } catch (error: any) {
-                console.error('Failed to start recognition:', error)
+                console.error('Failed to start speech recognition:', error)
                 setIsListening(false)
 
                 // Handle specific error cases
-                if (
-                    error.name === 'NotAllowedError' ||
-                    error.name === 'PermissionDeniedError' ||
-                    error.message?.includes('denied')
-                ) {
-                    if (onError) {
-                        onError(
-                            'Microphone access denied. Please click the microphone icon in your browser address bar and allow access.'
-                        )
-                    }
-                } else if (error.message?.includes('already started')) {
+                if (error.message?.includes('already started')) {
                     // Recognition already running, ignore
                     setIsListening(true)
                 } else {
@@ -158,7 +208,7 @@ export function useVoiceInput({
                 }
             }
         }
-    }, [isSupported, isListening, onError])
+    }, [isSupported, isListening, onError, checkMicrophonePermission])
 
     const stopListening = useCallback(() => {
         if (recognitionRef.current && isListening) {
