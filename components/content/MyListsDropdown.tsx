@@ -47,7 +47,7 @@ function MyListsDropdown() {
                 }`}
             >
                 <RectangleStackIcon className="h-4 w-4" />
-                <span>Collections 📚</span>
+                <span>Collections</span>
                 <ChevronDownIcon
                     className={`h-4 w-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
                 />
@@ -65,7 +65,7 @@ function MyListsDropdown() {
                                 }`}
                             >
                                 <RectangleStackIcon className="h-4 w-4" />
-                                <span>My Collections 📚</span>
+                                <span>My Collections</span>
                             </div>
                         </Link>
 

@@ -87,7 +87,7 @@ function Footer({
                                         href="/collections"
                                         className="text-gray-300 hover:text-white transition-colors duration-200"
                                     >
-                                        Collections 📚
+                                        Collections
                                     </Link>
                                 </li>
                             </ul>

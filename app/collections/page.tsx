@@ -161,7 +161,7 @@ const Collections = () => {
                         <div className="flex items-center space-x-3 pt-8 sm:pt-10 md:pt-12">
                             <RectangleStackIcon className="w-8 h-8 text-blue-400" />
                             <h1 className="text-3xl font-bold text-white md:text-4xl lg:text-5xl">
-                                Collections 📚
+                                Collections
                             </h1>
                         </div>
 
@@ -241,8 +241,8 @@ const Collections = () => {
                                 onClick={() => openListModal(undefined)}
                                 className="flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 bg-gray-800/50 text-white hover:bg-gray-700/50 border border-gray-600 hover:border-gray-400"
                             >
-                                <PlusIcon className="w-5 h-5 text-white" />
-                                <span>Create Collection 📚</span>
+                                <RectangleStackIcon className="w-5 h-5 text-white" />
+                                <span>Create Collection</span>
                             </button>
                         </div>
 
