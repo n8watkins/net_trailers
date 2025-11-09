@@ -658,16 +658,6 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
                         </DndContext>
                     )}
                 </div>
-
-                {/* Footer */}
-                <div className="p-6 border-t border-gray-700 flex justify-end">
-                    <button
-                        onClick={onClose}
-                        className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
-                    >
-                        Done
-                    </button>
-                </div>
             </div>
 
             {/* System Collection Edit Modal - Overlays the editor */}
