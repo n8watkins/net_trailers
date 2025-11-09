@@ -1,7 +1,8 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { ShareIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
+import ManageSharesModal from '../sharing/ManageSharesModal'
 
 interface DataSummary {
     watchlistCount: number
@@ -20,6 +21,8 @@ interface ShareSectionProps {
 }
 
 const ShareSection: React.FC<ShareSectionProps> = ({ isGuest, dataSummary, onExportData }) => {
+    const [isManageSharesOpen, setIsManageSharesOpen] = useState(false)
+
     return (
         <div className="p-8">
             <div className="mb-6">
@@ -42,7 +45,10 @@ const ShareSection: React.FC<ShareSectionProps> = ({ isGuest, dataSummary, onExp
                             <p className="text-[#b3b3b3] mb-4">
                                 Generate shareable links for your watchlists and custom lists.
                             </p>
-                            <button className="bannerButton bg-blue-600 text-white hover:bg-blue-700">
+                            <button
+                                onClick={() => setIsManageSharesOpen(true)}
+                                className="bannerButton bg-blue-600 text-white hover:bg-blue-700"
+                            >
                                 Manage Sharing
                             </button>
                         </div>
@@ -82,6 +88,12 @@ const ShareSection: React.FC<ShareSectionProps> = ({ isGuest, dataSummary, onExp
                     </div>
                 </div>
             </div>
+
+            {/* Manage Shares Modal */}
+            <ManageSharesModal
+                isOpen={isManageSharesOpen}
+                onClose={() => setIsManageSharesOpen(false)}
+            />
         </div>
     )
 }
