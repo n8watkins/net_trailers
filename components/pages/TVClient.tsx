@@ -11,6 +11,7 @@ import { autoMigrateIfNeeded } from '../../utils/migrations/customRowsToCollecti
 import { getSystemCollectionsForPage } from '../../constants/systemCollections'
 import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
+import { useCustomRowsStore } from '../../stores/customRowsStore'
 
 interface TVClientProps {
     data: HomeData
@@ -30,6 +31,14 @@ export default function TVClient({ data }: TVClientProps) {
     const authCollections = useAuthStore((state) => state.userCreatedWatchlists)
     const guestCollections = useGuestStore((state) => state.userCreatedWatchlists)
 
+    // Get system row preferences from customRowsStore
+    const systemRowPreferencesMap = useCustomRowsStore((state) => state.systemRowPreferences)
+
+    // Memoize the system row preferences to avoid infinite loop
+    const systemRowPreferences = useMemo(() => {
+        return userId ? systemRowPreferencesMap.get(userId) || {} : {}
+    }, [userId, systemRowPreferencesMap])
+
     const { trending } = data
 
     // Auto-migrate custom rows to collections on first load
@@ -47,12 +56,24 @@ export default function TVClient({ data }: TVClientProps) {
         const systemCollections = getSystemCollectionsForPage('tv')
         const userCollections = sessionType === 'auth' ? authCollections : guestCollections
 
+        // Apply custom preferences to system collections
+        const enhancedSystemCollections = systemCollections.map((c) => {
+            const pref = systemRowPreferences[c.id]
+            return {
+                ...c,
+                name: pref?.customName || c.name, // Apply custom name if set
+                order: pref?.order ?? c.order, // Apply custom order if set
+                genres: pref?.customGenres || c.genres, // Apply custom genres if set
+                genreLogic: pref?.customGenreLogic || c.genreLogic, // Apply custom genre logic if set
+            }
+        })
+
         // User collections that should display as rows
         const userRows = userCollections.filter((c) => c.displayAsRow && c.mediaType === 'tv')
 
         // Combine and sort by order
-        return [...systemCollections, ...userRows].sort((a, b) => a.order - b.order)
-    }, [sessionType, authCollections, guestCollections])
+        return [...enhancedSystemCollections, ...userRows].sort((a, b) => a.order - b.order)
+    }, [sessionType, authCollections, guestCollections, systemRowPreferences])
 
     // Filter to enabled collections only
     const enabledCollections = allCollections.filter((c) => c.enabled)

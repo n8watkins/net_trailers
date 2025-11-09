@@ -33,14 +33,20 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
     const authCollections = useAuthStore((state) => state.userCreatedWatchlists)
     const guestCollections = useGuestStore((state) => state.userCreatedWatchlists)
 
-    // Get deleted system rows from customRowsStore
+    // Get system row preferences from customRowsStore
     const deletedSystemRowsMap = useCustomRowsStore((state) => state.deletedSystemRows)
+    const systemRowPreferencesMap = useCustomRowsStore((state) => state.systemRowPreferences)
     const setDeletedSystemRows = useCustomRowsStore((state) => state.setDeletedSystemRows)
 
     // Memoize the deleted system rows array to avoid infinite loop
     const deletedSystemRows = useMemo(() => {
         return userId ? deletedSystemRowsMap.get(userId) || [] : []
     }, [userId, deletedSystemRowsMap])
+
+    // Memoize the system row preferences to avoid infinite loop
+    const systemRowPreferences = useMemo(() => {
+        return userId ? systemRowPreferencesMap.get(userId) || {} : {}
+    }, [userId, systemRowPreferencesMap])
 
     const { trending } = data
 
@@ -75,17 +81,26 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
         const systemCollections = getSystemCollectionsForPage('home')
         const userCollections = sessionType === 'auth' ? authCollections : guestCollections
 
-        // Filter out deleted system collections
-        const activeSystemCollections = systemCollections.filter(
-            (c) => !deletedSystemRows.includes(c.id)
-        )
+        // Filter out deleted system collections and apply custom preferences
+        const activeSystemCollections = systemCollections
+            .filter((c) => !deletedSystemRows.includes(c.id))
+            .map((c) => {
+                const pref = systemRowPreferences[c.id]
+                return {
+                    ...c,
+                    name: pref?.customName || c.name, // Apply custom name if set
+                    order: pref?.order ?? c.order, // Apply custom order if set
+                    genres: pref?.customGenres || c.genres, // Apply custom genres if set
+                    genreLogic: pref?.customGenreLogic || c.genreLogic, // Apply custom genre logic if set
+                }
+            })
 
         // User collections that should display as rows
         const userRows = userCollections.filter((c) => c.displayAsRow && c.mediaType === 'both')
 
         // Combine and sort by order
         return [...activeSystemCollections, ...userRows].sort((a, b) => a.order - b.order)
-    }, [sessionType, authCollections, guestCollections, deletedSystemRows])
+    }, [sessionType, authCollections, guestCollections, deletedSystemRows, systemRowPreferences])
 
     // Filter to enabled collections only
     const enabledCollections = allCollections.filter((c) => c.enabled)
