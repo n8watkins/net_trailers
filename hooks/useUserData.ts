@@ -2,6 +2,7 @@ import { useSessionData } from './useSessionData'
 import { authError } from '../utils/debugLogger'
 import { Content } from '../typings'
 import { UserList, CreateListRequest } from '../types/userLists'
+import { useInteractionTracking } from './useInteractionTracking'
 
 /**
  * Creates a virtual default watchlist object
@@ -92,6 +93,50 @@ const createListManagementOps = (sessionData: ReturnType<typeof useSessionData>)
  */
 export default function useUserData() {
     const sessionData = useSessionData()
+    const trackInteraction = useInteractionTracking()
+
+    // Create tracked wrapper functions for all interactive actions
+    const addToWatchlistTracked = (content: Content) => {
+        trackInteraction.addToWatchlist(content as Content)
+        return sessionData.addToWatchlist(content)
+    }
+
+    const removeFromWatchlistTracked = (contentId: number) => {
+        // Find content in watchlist to track
+        const content = sessionData.defaultWatchlist.find((c) => c.id === contentId)
+        if (content) {
+            trackInteraction.removeFromWatchlist(content as Content)
+        }
+        return sessionData.removeFromWatchlist(contentId)
+    }
+
+    const addLikedMovieTracked = (content: Content) => {
+        trackInteraction.like(content as Content)
+        return sessionData.addLikedMovie(content)
+    }
+
+    const removeLikedMovieTracked = (contentId: number) => {
+        // Find content in liked movies to track
+        const content = sessionData.likedMovies.find((c) => c.id === contentId)
+        if (content) {
+            trackInteraction.unlike(content as Content)
+        }
+        return sessionData.removeLikedMovie(contentId)
+    }
+
+    const addHiddenMovieTracked = (content: Content) => {
+        trackInteraction.hideContent(content as Content)
+        return sessionData.addHiddenMovie(content)
+    }
+
+    const removeHiddenMovieTracked = (contentId: number) => {
+        // Find content in hidden movies to track
+        const content = sessionData.hiddenMovies.find((c) => c.id === contentId)
+        if (content) {
+            trackInteraction.unhideContent(content as Content)
+        }
+        return sessionData.removeHiddenMovie(contentId)
+    }
 
     // Return unified interface that works with both guest and authenticated sessions
     if (sessionData.sessionType === 'guest') {
@@ -116,13 +161,13 @@ export default function useUserData() {
             defaultVolume: sessionData.defaultVolume,
             childSafetyMode: sessionData.childSafetyMode,
 
-            // Actions from Zustand store (NEW SCHEMA)
-            addLikedMovie: sessionData.addLikedMovie,
-            removeLikedMovie: sessionData.removeLikedMovie,
-            addHiddenMovie: sessionData.addHiddenMovie,
-            removeHiddenMovie: sessionData.removeHiddenMovie,
-            addToWatchlist: sessionData.addToWatchlist,
-            removeFromWatchlist: sessionData.removeFromWatchlist,
+            // Actions from Zustand store (NEW SCHEMA) - with tracking
+            addLikedMovie: addLikedMovieTracked,
+            removeLikedMovie: removeLikedMovieTracked,
+            addHiddenMovie: addHiddenMovieTracked,
+            removeHiddenMovie: removeHiddenMovieTracked,
+            addToWatchlist: addToWatchlistTracked,
+            removeFromWatchlist: removeFromWatchlistTracked,
             isLiked: sessionData.isLiked,
             isHidden: sessionData.isHidden,
             isInWatchlist: sessionData.isInWatchlist,
@@ -196,13 +241,13 @@ export default function useUserData() {
             defaultVolume: sessionData.defaultVolume,
             childSafetyMode: sessionData.childSafetyMode,
 
-            // Actions from Zustand store (NEW SCHEMA)
-            addLikedMovie: sessionData.addLikedMovie,
-            removeLikedMovie: sessionData.removeLikedMovie,
-            addHiddenMovie: sessionData.addHiddenMovie,
-            removeHiddenMovie: sessionData.removeHiddenMovie,
-            addToWatchlist: sessionData.addToWatchlist,
-            removeFromWatchlist: sessionData.removeFromWatchlist,
+            // Actions from Zustand store (NEW SCHEMA) - with tracking
+            addLikedMovie: addLikedMovieTracked,
+            removeLikedMovie: removeLikedMovieTracked,
+            addHiddenMovie: addHiddenMovieTracked,
+            removeHiddenMovie: removeHiddenMovieTracked,
+            addToWatchlist: addToWatchlistTracked,
+            removeFromWatchlist: removeFromWatchlistTracked,
             isLiked: sessionData.isLiked,
             isHidden: sessionData.isHidden,
             isInWatchlist: sessionData.isInWatchlist,
