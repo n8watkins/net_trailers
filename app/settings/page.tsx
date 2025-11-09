@@ -29,6 +29,8 @@ import PasswordSection from '../../components/settings/PasswordSection'
 import PreferencesSection from '../../components/settings/PreferencesSection'
 import ShareSection from '../../components/settings/ShareSection'
 import AccountSection from '../../components/settings/AccountSection'
+import ChildSafetyPINModal from '../../components/settings/ChildSafetyPINModal'
+import { useChildSafetyPINStore } from '../../stores/childSafetyStore'
 
 type SettingsSection = 'profile' | 'email' | 'password' | 'preferences' | 'share' | 'account'
 
@@ -80,6 +82,20 @@ const Settings: React.FC = () => {
     const [showChildSafetyModal, setShowChildSafetyModal] = useState(false)
     const [isClearingData, setIsClearingData] = useState(false)
     const [isDeletingAccount, setIsDeletingAccount] = useState(false)
+
+    // PIN Protection states
+    const [pinModalMode, setPinModalMode] = useState<'create' | 'verify' | 'change'>('verify')
+    const [showPINModal, setShowPINModal] = useState(false)
+    const [pendingChildSafetyToggle, setPendingChildSafetyToggle] = useState<boolean | null>(null)
+
+    // PIN store
+    const {
+        settings: pinSettings,
+        loadPINSettings,
+        openSetupModal,
+        closeSetupModal,
+        isSetupModalOpen,
+    } = useChildSafetyPINStore()
 
     // Profile form state
     const [displayName, setDisplayName] = useState(user?.displayName || '')
@@ -160,6 +176,16 @@ const Settings: React.FC = () => {
     React.useEffect(() => {
         setDisplayName(user?.displayName || '')
     }, [user?.displayName])
+
+    // Load PIN settings when user session is ready
+    React.useEffect(() => {
+        if (!userData.isInitializing && !isGuest) {
+            const userId = userData.userSession?.userId
+            if (userId) {
+                loadPINSettings(userId, false)
+            }
+        }
+    }, [userData.isInitializing, isGuest, userData.userSession?.userId, loadPINSettings])
 
     // Check if preferences have changed
     const preferencesChanged =
@@ -612,9 +638,19 @@ const Settings: React.FC = () => {
                 setShowChildSafetyModal(true)
                 return // Don't change local state for guests
             }
+
+            // If toggling OFF and PIN is enabled, require verification
+            if (!checked && pinSettings.hasPIN && pinSettings.enabled) {
+                setPendingChildSafetyToggle(false) // Store the intended toggle
+                setPinModalMode('verify')
+                setShowPINModal(true)
+                return // Don't change state until PIN is verified
+            }
+
+            // If toggling ON, allow without PIN
             setChildSafetyMode(checked)
         },
-        [isGuest]
+        [isGuest, pinSettings.hasPIN, pinSettings.enabled]
     )
 
     const handleAutoMuteChange = React.useCallback((checked: boolean) => {
@@ -627,6 +663,37 @@ const Settings: React.FC = () => {
 
     const handleShowChildSafetyModal = React.useCallback(() => {
         setShowChildSafetyModal(true)
+    }, [])
+
+    // PIN Management Handlers
+    const handleSetupPIN = React.useCallback(() => {
+        setPinModalMode('create')
+        openSetupModal()
+    }, [openSetupModal])
+
+    const handleChangePIN = React.useCallback(() => {
+        setPinModalMode('change')
+        setShowPINModal(true)
+    }, [])
+
+    const handleRemovePIN = React.useCallback(() => {
+        setPinModalMode('verify') // Verify before removing
+        setShowPINModal(true)
+        // Actual removal will happen after verification in handlePINVerified
+    }, [])
+
+    const handlePINVerified = React.useCallback(() => {
+        // If we had a pending Child Safety toggle, apply it now
+        if (pendingChildSafetyToggle !== null) {
+            setChildSafetyMode(pendingChildSafetyToggle)
+            setPendingChildSafetyToggle(null)
+        }
+        setShowPINModal(false)
+    }, [pendingChildSafetyToggle])
+
+    const handleClosePINModal = React.useCallback(() => {
+        setShowPINModal(false)
+        setPendingChildSafetyToggle(null) // Clear pending toggle on cancel
     }, [])
 
     return (
@@ -742,11 +809,16 @@ const Settings: React.FC = () => {
                                             autoMute={autoMute}
                                             defaultVolume={defaultVolume}
                                             preferencesChanged={preferencesChanged}
+                                            hasPIN={pinSettings.hasPIN}
+                                            pinEnabled={pinSettings.enabled}
                                             onChildSafetyModeChange={handleChildSafetyModeChange}
                                             onAutoMuteChange={handleAutoMuteChange}
                                             onDefaultVolumeChange={handleDefaultVolumeChange}
                                             onSave={handleSavePreferences}
                                             onShowChildSafetyModal={handleShowChildSafetyModal}
+                                            onSetupPIN={handleSetupPIN}
+                                            onChangePIN={handleChangePIN}
+                                            onRemovePIN={handleRemovePIN}
                                         />
                                     )}
 
@@ -828,6 +900,24 @@ const Settings: React.FC = () => {
                 cancelButtonText="Maybe Later"
                 emoji="🔒"
             />
+
+            {/* PIN Modals */}
+            {/* Setup Modal (controlled by store) */}
+            <ChildSafetyPINModal
+                mode="create"
+                isOpen={isSetupModalOpen}
+                onClose={closeSetupModal}
+            />
+
+            {/* Verify/Change Modal (local state) */}
+            {showPINModal && (
+                <ChildSafetyPINModal
+                    mode={pinModalMode}
+                    isOpen={showPINModal}
+                    onClose={handleClosePINModal}
+                    onVerified={handlePINVerified}
+                />
+            )}
         </div>
     )
 }
