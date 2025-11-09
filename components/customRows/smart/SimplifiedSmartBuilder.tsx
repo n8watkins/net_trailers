@@ -48,6 +48,8 @@ export function SimplifiedSmartBuilder({
     const [error, setError] = useState<string | null>(null)
     const [currentStep, setCurrentStep] = useState<1 | 2>(1)
     const [enableInfiniteContent, setEnableInfiniteContent] = useState(false)
+    const [autoUpdateEnabled, setAutoUpdateEnabled] = useState(false)
+    const [updateFrequency, setUpdateFrequency] = useState<'daily' | 'weekly' | 'never'>('weekly')
 
     const handleGenerate = async () => {
         if (query.trim().length < 3) {
@@ -105,6 +107,8 @@ export function SimplifiedSmartBuilder({
                 advancedFilters: {
                     contentIds: generatedRow.movies.map((m) => m.tmdbId),
                 },
+                autoUpdateEnabled,
+                updateFrequency,
             }
 
             await onComplete(formData)
@@ -122,6 +126,8 @@ export function SimplifiedSmartBuilder({
         setError(null)
         setCurrentStep(1)
         setEnableInfiniteContent(false)
+        setAutoUpdateEnabled(false)
+        setUpdateFrequency('weekly')
     }
 
     // Step 2: Success confirmation
@@ -267,6 +273,79 @@ export function SimplifiedSmartBuilder({
                                             }`}
                                         />
                                     </button>
+                                </div>
+
+                                {/* Auto-Update Settings */}
+                                <div className="space-y-3 p-4 bg-blue-600/10 rounded-lg border border-blue-500/30">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex-1">
+                                            <label className="text-sm font-medium text-white flex items-center gap-2">
+                                                <span>🔔</span>
+                                                Enable Auto-Updates
+                                            </label>
+                                            <p className="text-xs text-gray-400 mt-1">
+                                                Get notified when new matching content is released
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setAutoUpdateEnabled(!autoUpdateEnabled)}
+                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                                autoUpdateEnabled ? 'bg-blue-600' : 'bg-gray-600'
+                                            }`}
+                                        >
+                                            <span
+                                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                                    autoUpdateEnabled
+                                                        ? 'translate-x-6'
+                                                        : 'translate-x-1'
+                                                }`}
+                                            />
+                                        </button>
+                                    </div>
+
+                                    {autoUpdateEnabled && (
+                                        <div className="space-y-2 pt-2 border-t border-blue-500/20">
+                                            <label className="text-xs font-medium text-gray-300">
+                                                Update Frequency
+                                            </label>
+                                            <div className="grid grid-cols-3 gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setUpdateFrequency('daily')}
+                                                    className={`px-3 py-2 rounded-md text-xs font-medium transition-all ${
+                                                        updateFrequency === 'daily'
+                                                            ? 'bg-blue-600 text-white'
+                                                            : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                                                    }`}
+                                                >
+                                                    Daily
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setUpdateFrequency('weekly')}
+                                                    className={`px-3 py-2 rounded-md text-xs font-medium transition-all ${
+                                                        updateFrequency === 'weekly'
+                                                            ? 'bg-blue-600 text-white'
+                                                            : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                                                    }`}
+                                                >
+                                                    Weekly
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setUpdateFrequency('never')}
+                                                    className={`px-3 py-2 rounded-md text-xs font-medium transition-all ${
+                                                        updateFrequency === 'never'
+                                                            ? 'bg-blue-600 text-white'
+                                                            : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                                                    }`}
+                                                >
+                                                    Never
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Movie Grid */}

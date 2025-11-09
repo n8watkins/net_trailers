@@ -44,6 +44,8 @@ export function CustomRowWizard({
         mediaType: 'movie',
         enabled: true,
         advancedFilters: {},
+        autoUpdateEnabled: false,
+        updateFrequency: 'weekly',
     })
     const [previewResults, setPreviewResults] = useState<Content[]>([])
     const [isLoading, setIsLoading] = useState(false)
@@ -214,6 +216,9 @@ export function CustomRowWizard({
                             <WizardStep2Advanced
                                 filters={formData.advancedFilters || {}}
                                 onChange={(advancedFilters) => updateFormData({ advancedFilters })}
+                                autoUpdateEnabled={formData.autoUpdateEnabled || false}
+                                updateFrequency={formData.updateFrequency || 'weekly'}
+                                onAutoUpdateChange={(settings) => updateFormData(settings)}
                                 onBack={prevStep}
                                 onContinue={nextStep}
                             />
@@ -245,6 +250,8 @@ export function CustomRowWizard({
                                         mediaType: 'movie',
                                         enabled: true,
                                         advancedFilters: {},
+                                        autoUpdateEnabled: false,
+                                        updateFrequency: 'weekly',
                                     })
                                     setUseAdvancedFilters(false)
                                 }}
