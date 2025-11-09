@@ -28,28 +28,27 @@ const firebaseConfig = firebaseConfigSchema.parse({
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp()
 
 // Initialize Firestore with persistence - safe for hot module replacement
-// Use global variable to persist across hot reloads (works in both Node.js and browser)
-const globalThis =
-    typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : {}
-
 declare global {
     var firestore: ReturnType<typeof getFirestore> | undefined
 }
 
-// Initialize Firestore
-// Check if we're in browser environment before using persistent cache
+// Initialize Firestore once and reuse across hot reloads
 let db: ReturnType<typeof getFirestore>
 
 if (typeof window !== 'undefined') {
-    // Client-side: try to use persistent cache
-    try {
-        db = initializeFirestore(app, {
-            localCache: persistentLocalCache(),
-        })
-    } catch (error) {
-        // If already initialized, get the existing instance
-        db = getFirestore(app)
+    // Client-side: Check if already initialized in global scope
+    if (!globalThis.firestore) {
+        try {
+            // Try to initialize with persistent cache
+            globalThis.firestore = initializeFirestore(app, {
+                localCache: persistentLocalCache(),
+            })
+        } catch (error) {
+            // If already initialized, get the existing instance
+            globalThis.firestore = getFirestore(app)
+        }
     }
+    db = globalThis.firestore
 } else {
     // Server-side: use basic getFirestore without persistent cache
     db = getFirestore(app)
