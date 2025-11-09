@@ -26,6 +26,7 @@ import SimpleLikeButton from '../content/SimpleLikeButton'
 import useUserData from '../../hooks/useUserData'
 import { useToast } from '../../hooks/useToast'
 import { useDebugSettings } from '../debug/DebugControls'
+import { useInteractionTracking } from '../../hooks/useInteractionTracking'
 import { getCachedMovieDetails } from '../../utils/prefetchCache'
 import InlineWatchlistDropdown from './modal-sections/InlineWatchlistDropdown'
 import VideoControls from './modal-sections/VideoControls'
@@ -89,6 +90,9 @@ function Modal() {
     const [showVolumeSlider, setShowVolumeSlider] = useState(false)
     const volumeSliderRef = useRef<HTMLDivElement>(null)
     const volumeButtonRef = useRef<HTMLDivElement>(null)
+
+    // Interaction tracking
+    const trackInteraction = useInteractionTracking()
 
     // User data hooks for inline dropdown (NEW SCHEMA)
     const {
@@ -290,6 +294,11 @@ function Modal() {
 
         // Only fetch if we haven't already loaded this movie's details
         if (loadedMovieId === currentMovie.id) return
+
+        // Track modal view interaction
+        if (currentMovie) {
+            trackInteraction.viewModal(currentMovie as Content, 'modal')
+        }
 
         async function fetchMovie() {
             try {
