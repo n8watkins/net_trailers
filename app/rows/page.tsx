@@ -17,6 +17,7 @@ import { CustomRow, DisplayRow, getMaxRowsForUser } from '../../types/customRows
 import { GuestModeNotification } from '../../components/auth/GuestModeNotification'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import { CustomRowsFirestore } from '../../utils/firestore/customRows'
+import { SystemRowStorage } from '../../utils/systemRowStorage'
 import {
     DndContext,
     closestCenter,
@@ -95,25 +96,35 @@ const RowsPage = () => {
     const totalRows = movieRows.length + tvRows.length + homeRows.length
     const hasAnyRows = totalRows > 0
 
-    // Load rows and preferences on mount (guests can now create custom rows too)
+    // Load rows and preferences on mount
     useEffect(() => {
         if (!userId || !isInitialized) return
 
         const loadData = async () => {
             setLoading(true)
             try {
-                // Load custom rows, system row preferences, and deleted rows in parallel
-                const [customRows, systemPrefs, deletedRows] = await Promise.all([
-                    CustomRowsFirestore.getUserCustomRows(userId),
-                    CustomRowsFirestore.getSystemRowPreferences(userId),
-                    CustomRowsFirestore.getDeletedSystemRows(userId),
-                ])
-                setRows(userId, customRows)
-                setSystemRowPreferences(userId, systemPrefs)
-                setDeletedSystemRows(userId, deletedRows)
+                if (isGuest) {
+                    // Guests: only load system row preferences from localStorage
+                    const [systemPrefs, deletedRows] = await Promise.all([
+                        SystemRowStorage.getSystemRowPreferences(userId, true),
+                        SystemRowStorage.getDeletedSystemRows(userId, true),
+                    ])
+                    setSystemRowPreferences(userId, systemPrefs)
+                    setDeletedSystemRows(userId, deletedRows)
+                } else {
+                    // Authenticated: load custom rows and system row preferences from Firebase
+                    const [customRows, systemPrefs, deletedRows] = await Promise.all([
+                        CustomRowsFirestore.getUserCustomRows(userId),
+                        SystemRowStorage.getSystemRowPreferences(userId, false),
+                        SystemRowStorage.getDeletedSystemRows(userId, false),
+                    ])
+                    setRows(userId, customRows)
+                    setSystemRowPreferences(userId, systemPrefs)
+                    setDeletedSystemRows(userId, deletedRows)
+                }
             } catch (error) {
                 console.error('Error loading rows:', error)
-                showToast('error', 'Failed to load custom rows')
+                showToast('error', 'Failed to load rows')
                 setError((error as Error).message)
             } finally {
                 setLoading(false)
@@ -124,6 +135,7 @@ const RowsPage = () => {
     }, [
         userId,
         isInitialized,
+        isGuest,
         setRows,
         setSystemRowPreferences,
         setDeletedSystemRows,
@@ -176,18 +188,28 @@ const RowsPage = () => {
                 .map((r, index) => ({ id: r.id, index }))
 
             for (const update of systemRowUpdates) {
-                await CustomRowsFirestore.updateSystemRowOrder(userId, update.id, update.index)
+                await SystemRowStorage.updateSystemRowOrder(
+                    userId,
+                    update.id,
+                    update.index,
+                    isGuest
+                )
             }
         } catch (error) {
             console.error('Error reordering rows:', error)
             showToast('error', 'Failed to save row order')
             // Reload to get correct order
-            const [customRows, systemPrefs] = await Promise.all([
-                CustomRowsFirestore.getUserCustomRows(userId),
-                CustomRowsFirestore.getSystemRowPreferences(userId),
-            ])
-            setRows(userId, customRows)
-            setSystemRowPreferences(userId, systemPrefs)
+            if (isGuest) {
+                const systemPrefs = await SystemRowStorage.getSystemRowPreferences(userId, true)
+                setSystemRowPreferences(userId, systemPrefs)
+            } else {
+                const [customRows, systemPrefs] = await Promise.all([
+                    CustomRowsFirestore.getUserCustomRows(userId),
+                    SystemRowStorage.getSystemRowPreferences(userId, false),
+                ])
+                setRows(userId, customRows)
+                setSystemRowPreferences(userId, systemPrefs)
+            }
         }
     }
 
@@ -267,20 +289,24 @@ const RowsPage = () => {
             }
         })
 
-        // Persist to Firestore
+        // Persist to storage (localStorage for guests, Firebase for authenticated)
         try {
-            const customRowUpdates = newOrder.filter((r) => !r.isSystemRow)
-            if (customRowUpdates.length > 0) {
-                await CustomRowsFirestore.reorderCustomRows(
-                    userId,
-                    customRowUpdates.map((r) => r.id)
-                )
+            // Update custom rows (authenticated users only)
+            if (!isGuest) {
+                const customRowUpdates = newOrder.filter((r) => !r.isSystemRow)
+                if (customRowUpdates.length > 0) {
+                    await CustomRowsFirestore.reorderCustomRows(
+                        userId,
+                        customRowUpdates.map((r) => r.id)
+                    )
+                }
             }
 
+            // Update system rows
             const systemRowUpdates = newOrder.filter((r) => r.isSystemRow)
             for (let i = 0; i < systemRowUpdates.length; i++) {
                 const r = systemRowUpdates[i]
-                await CustomRowsFirestore.updateSystemRowOrder(userId, r.id, i)
+                await SystemRowStorage.updateSystemRowOrder(userId, r.id, i, isGuest)
             }
         } catch (error) {
             console.error('Error moving row up:', error)
@@ -311,20 +337,24 @@ const RowsPage = () => {
             }
         })
 
-        // Persist to Firestore
+        // Persist to storage (localStorage for guests, Firebase for authenticated)
         try {
-            const customRowUpdates = newOrder.filter((r) => !r.isSystemRow)
-            if (customRowUpdates.length > 0) {
-                await CustomRowsFirestore.reorderCustomRows(
-                    userId,
-                    customRowUpdates.map((r) => r.id)
-                )
+            // Update custom rows (authenticated users only)
+            if (!isGuest) {
+                const customRowUpdates = newOrder.filter((r) => !r.isSystemRow)
+                if (customRowUpdates.length > 0) {
+                    await CustomRowsFirestore.reorderCustomRows(
+                        userId,
+                        customRowUpdates.map((r) => r.id)
+                    )
+                }
             }
 
+            // Update system rows
             const systemRowUpdates = newOrder.filter((r) => r.isSystemRow)
             for (let i = 0; i < systemRowUpdates.length; i++) {
                 const r = systemRowUpdates[i]
-                await CustomRowsFirestore.updateSystemRowOrder(userId, r.id, i)
+                await SystemRowStorage.updateSystemRowOrder(userId, r.id, i, isGuest)
             }
         } catch (error) {
             console.error('Error moving row down:', error)
