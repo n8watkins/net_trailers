@@ -202,6 +202,14 @@ export const SYSTEM_HOME_ROWS: SystemRowConfig[] = [
         mediaType: 'both',
         order: 5,
     },
+    {
+        id: 'system-home-romance-drama',
+        name: 'Romantic Dramas',
+        genres: [10749, 18], // Romance + Drama (multi-genre with AND logic)
+        genreLogic: 'AND',
+        mediaType: 'both',
+        order: 6,
+    },
 ]
 
 /**

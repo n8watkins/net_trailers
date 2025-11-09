@@ -412,6 +412,25 @@ export const SYSTEM_HOME_COLLECTIONS: Collection[] = [
         canDelete: true,
         canEdit: true,
     },
+    {
+        id: 'system-home-romance-drama',
+        name: 'Romantic Dramas',
+        description: 'Heartfelt stories with romance and drama',
+        isPublic: false,
+        createdAt: 0,
+        updatedAt: 0,
+        items: [],
+        collectionType: 'tmdb-genre',
+        displayAsRow: true,
+        order: 6,
+        enabled: true,
+        genres: [10749, 18], // Romance + Drama (multi-genre with AND logic)
+        genreLogic: 'AND',
+        mediaType: 'both',
+        isSystemCollection: true,
+        canDelete: true,
+        canEdit: true,
+    },
 ]
 
 /**

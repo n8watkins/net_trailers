@@ -36,7 +36,7 @@ export interface HomeData {
     genre1: Content[] // Action (movies) | Action & Adventure (TV)
     genre2: Content[] // Comedy (both)
     genre3: Content[] // Horror (movies) | Sci-Fi & Fantasy (TV)
-    genre4: Content[] // Animation (both)
+    genre4: Content[] // Romance+Drama (movies) | Animation (TV)
     documentaries: Content[]
 }
 
@@ -97,7 +97,9 @@ export async function fetchHomeData(filter?: string): Promise<HomeData> {
                     cache: 'no-store',
                 }), // Family
                 fetch(`${baseUrl}/api/genres/movie/12?${childSafetyParam}`, { cache: 'no-store' }), // Adventure
-                fetch(`${baseUrl}/api/genres/movie/14?${childSafetyParam}`, { cache: 'no-store' }), // Fantasy
+                fetch(`${baseUrl}/api/genres/movie/10749,18?${childSafetyParam}`, {
+                    cache: 'no-store',
+                }), // Romance+Drama (multi-genre)
                 fetch(`${baseUrl}/api/genres/movie/99?${childSafetyParam}`, { cache: 'no-store' }), // Documentary
             ]
         } else {
@@ -112,9 +114,9 @@ export async function fetchHomeData(filter?: string): Promise<HomeData> {
                 fetch(`${baseUrl}/api/genres/movie/28?${childSafetyParam}`, { cache: 'no-store' }), // Action
                 fetch(`${baseUrl}/api/genres/movie/35?${childSafetyParam}`, { cache: 'no-store' }), // Comedy
                 fetch(`${baseUrl}/api/genres/movie/27?${childSafetyParam}`, { cache: 'no-store' }), // Horror
-                fetch(`${baseUrl}/api/genres/movie/10749?${childSafetyParam}`, {
+                fetch(`${baseUrl}/api/genres/movie/10749,18?${childSafetyParam}`, {
                     cache: 'no-store',
-                }), // Romance
+                }), // Romance+Drama (multi-genre)
                 fetch(`${baseUrl}/api/genres/movie/99?${childSafetyParam}`, { cache: 'no-store' }), // Documentary
             ]
         }
@@ -150,8 +152,10 @@ export async function fetchHomeData(filter?: string): Promise<HomeData> {
                 // Mixed genres - Adventure (movies + TV Action & Adventure)
                 fetch(`${baseUrl}/api/genres/movie/12?${childSafetyParam}`, { cache: 'no-store' }),
                 fetch(`${baseUrl}/api/genres/tv/10759?${childSafetyParam}`, { cache: 'no-store' }),
-                // Mixed genres - Fantasy (movies + TV Sci-Fi & Fantasy)
-                fetch(`${baseUrl}/api/genres/movie/14?${childSafetyParam}`, { cache: 'no-store' }),
+                // Mixed genres - Romance+Drama (movies) + Sci-Fi & Fantasy (TV)
+                fetch(`${baseUrl}/api/genres/movie/10749,18?${childSafetyParam}`, {
+                    cache: 'no-store',
+                }),
                 fetch(`${baseUrl}/api/genres/tv/10765?${childSafetyParam}`, { cache: 'no-store' }),
                 // Documentary (both)
                 fetch(`${baseUrl}/api/genres/movie/99?${childSafetyParam}`, { cache: 'no-store' }),
@@ -184,8 +188,8 @@ export async function fetchHomeData(filter?: string): Promise<HomeData> {
                 // Mixed genres - Horror (movies) + Sci-Fi & Fantasy (TV)
                 fetch(`${baseUrl}/api/genres/movie/27?${childSafetyParam}`, { cache: 'no-store' }),
                 fetch(`${baseUrl}/api/genres/tv/10765?${childSafetyParam}`, { cache: 'no-store' }),
-                // Mixed genres - Animation (movies + TV)
-                fetch(`${baseUrl}/api/genres/movie/16?${childSafetyParam}`, {
+                // Mixed genres - Romance+Drama (movies) + Animation (TV)
+                fetch(`${baseUrl}/api/genres/movie/10749,18?${childSafetyParam}`, {
                     cache: 'no-store',
                 }),
                 fetch(`${baseUrl}/api/genres/tv/16?${childSafetyParam}`, {
