@@ -62,19 +62,26 @@ export function CollectionRowLoader({ collection, pageType }: CollectionRowLoade
                 // 2. System collections (genre-based collections that start with "system-")
                 // 3. Collections with no genres and no curated content
                 const isSystemCollection = collection.id.startsWith('system-')
-                const isSpecialPublicCollection =
+                const isPublicCollection =
                     collection.isSpecialCollection ||
                     isSystemCollection ||
                     ((!collection.genres || collection.genres.length === 0) && !hasCuratedContent)
 
                 // Only require userId for non-public collections (user-created custom collections)
-                if (!isSpecialPublicCollection && !userId) {
+                if (!isPublicCollection && !userId) {
                     setIsLoading(false)
                     setError('User not authenticated')
                     return
                 }
 
-                if (isSpecialPublicCollection) {
+                // Route to appropriate API based on collection type
+                // Special collections (trending/top-rated) use dedicated endpoints
+                // System collections with genres use custom-rows API with genre filters
+                const useSpecialEndpoint =
+                    collection.isSpecialCollection ||
+                    ((!collection.genres || collection.genres.length === 0) && !hasCuratedContent)
+
+                if (useSpecialEndpoint) {
                     // For 'both' mediaType, fetch from both APIs and combine
                     if (collection.mediaType === 'both') {
                         const apiType = collection.id.includes('trending')
@@ -163,7 +170,7 @@ export function CollectionRowLoader({ collection, pageType }: CollectionRowLoade
 
                 // Only add X-User-ID header for non-public endpoints
                 const headers: Record<string, string> = {}
-                if (!isSpecialPublicCollection && userId) {
+                if (!isPublicCollection && userId) {
                     headers['X-User-ID'] = userId
                 }
 
@@ -247,11 +254,14 @@ export function CollectionRowLoader({ collection, pageType }: CollectionRowLoade
             collection.advancedFilters?.contentIds &&
             collection.advancedFilters.contentIds.length > 0
 
-        // Handle special collections (trending, top-rated)
-        if (
+        // Route to appropriate API based on collection type
+        // Special collections (trending/top-rated) use dedicated endpoints
+        // System collections with genres use custom-rows API with genre filters
+        const useSpecialEndpoint =
             collection.isSpecialCollection ||
             ((!collection.genres || collection.genres.length === 0) && !hasCuratedContent)
-        ) {
+
+        if (useSpecialEndpoint) {
             const mediaType = collection.mediaType === 'tv' ? 'tv' : 'movies'
 
             if (collection.id.includes('trending')) {
