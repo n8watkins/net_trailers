@@ -41,6 +41,23 @@ service cloud.firestore {
                               && request.auth.uid == userId
                               && isValidNotificationData(request.resource.data);
       }
+
+      // Interactions subcollection (for recommendation tracking)
+      match /interactions/{interactionId} {
+        // Only the authenticated user can read/write their own interactions
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+
+        // Validate interaction data structure on create/update
+        allow create, update: if request.auth != null
+                              && request.auth.uid == userId
+                              && isValidInteractionData(request.resource.data);
+      }
+
+      // Interaction summary document (for recommendation tracking)
+      match /interactionSummary/summary {
+        // Only the authenticated user can read/write their own interaction summary
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
     }
 
     // Helper function to validate user data structure (NEW SCHEMA)
@@ -84,6 +101,23 @@ service cloud.firestore {
              && (!data.keys().hasAny(['actionLabel']) || data.actionLabel is string)
              && (!data.keys().hasAny(['icon']) || data.icon is string)
              && (!data.keys().hasAny(['readAt']) || data.readAt is number);
+    }
+
+    // Helper function to validate interaction data structure
+    function isValidInteractionData(data) {
+      return data.keys().hasAll(['id', 'userId', 'contentId', 'mediaType', 'interactionType', 'timestamp', 'genreIds'])
+             && data.id is string
+             && data.userId is string
+             && data.contentId is number
+             && data.mediaType is string
+             && data.interactionType is string
+             && data.timestamp is number
+             && data.genreIds is list
+             // Optional fields
+             && (!data.keys().hasAny(['trailerDuration']) || data.trailerDuration is number)
+             && (!data.keys().hasAny(['searchQuery']) || data.searchQuery is string)
+             && (!data.keys().hasAny(['collectionId']) || data.collectionId is string)
+             && (!data.keys().hasAny(['source']) || data.source is string);
     }
 
     // Deny all other access
