@@ -117,11 +117,16 @@ function SearchPageContent() {
             )
         }
 
-        // Reset flag when query changes
+        // Reset flag when query changes or isTruncated becomes false
         if (!isTruncated) {
             hasShownTruncationToast.current = false
         }
     }, [isTruncated, showError])
+
+    // Reset truncation toast flag when query changes (new search)
+    useEffect(() => {
+        hasShownTruncationToast.current = false
+    }, [query])
 
     // Show fancy loading animation on initial load or when loading with no results
     const showFancyLoading = (isLoading || isLoadingAll) && (!hasSearched || results.length === 0)
