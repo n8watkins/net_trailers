@@ -2,6 +2,49 @@
  * Debounce utility for reducing excessive function calls
  */
 
+import { useState, useEffect } from 'react'
+
+/**
+ * React hook that debounces a value
+ *
+ * Delays updating a value until after a specified delay period.
+ * Useful for optimizing performance by reducing the frequency of expensive operations
+ * like API calls, search queries, or complex computations.
+ *
+ * @template T - The type of value being debounced
+ * @param value - The value to debounce
+ * @param delay - The delay in milliseconds before updating the debounced value
+ * @returns The debounced value that updates after the delay
+ *
+ * @example
+ * ```tsx
+ * const [searchQuery, setSearchQuery] = useState('')
+ * const debouncedQuery = useDebounce(searchQuery, 300)
+ *
+ * useEffect(() => {
+ *   // This only runs 300ms after the user stops typing
+ *   if (debouncedQuery) {
+ *     performSearch(debouncedQuery)
+ *   }
+ * }, [debouncedQuery])
+ * ```
+ */
+export function useDebounce<T>(value: T, delay: number): T {
+    const [debouncedValue, setDebouncedValue] = useState<T>(value)
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedValue(value)
+        }, delay)
+
+        return () => {
+            clearTimeout(handler)
+        }
+    }, [value, delay])
+
+    return debouncedValue
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function debounce<T extends (...args: any[]) => any>(
     func: T,
