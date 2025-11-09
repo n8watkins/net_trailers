@@ -256,11 +256,11 @@ function ListSelectionModal() {
                 <div className="flex items-center justify-between p-6 border-b border-gray-700">
                     <div>
                         <h2 className="text-xl font-semibold text-white">
-                            {isManagementMode ? 'My Lists' : 'Add to Lists'}
+                            {isManagementMode ? 'My Collections 📚' : 'Add to Collections 📚'}
                         </h2>
                         {!isManagementMode && (
                             <p className="text-sm text-gray-400 mt-1">
-                                Click any list to add or remove
+                                Click any collection to add or remove
                             </p>
                         )}
                     </div>

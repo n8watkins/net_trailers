@@ -70,7 +70,7 @@ export default function PortfolioBanner() {
                         ))}
                     </div>
                     <p className="text-base sm:text-lg text-gray-200 font-normal max-w-2xl mx-auto leading-relaxed">
-                        Browse trending movies, watch trailers, and manage your watchlist with
+                        Browse trending movies, watch trailers, and manage your collections with
                         secure authentication and real-time updates
                     </p>
                 </div>

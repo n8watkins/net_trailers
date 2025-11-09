@@ -18,13 +18,13 @@ const modes: Array<{
     },
     {
         id: 'row',
-        label: 'Create Row',
+        label: 'Create Collection',
         icon: RectangleStackIcon,
-        description: 'Build custom row',
+        description: 'Build custom collection',
     },
     {
         id: 'watchlist',
-        label: 'Create Watchlist',
+        label: 'Create Collection',
         icon: BookmarkIcon,
         description: 'Save to watch later',
     },
@@ -70,8 +70,8 @@ export default function SmartSearchModeBar() {
                 <div className="text-white">
                     <h2 className="text-2xl font-bold mb-1">
                         {mode === 'suggestions' && 'Suggested For You'}
-                        {mode === 'row' && (generatedName || 'Custom Row')}
-                        {mode === 'watchlist' && (generatedName || 'Your Watchlist')}
+                        {mode === 'row' && (generatedName || 'Custom Collection')}
+                        {mode === 'watchlist' && (generatedName || 'Your Collection')}
                     </h2>
                     <p className="text-sm text-gray-400">{results.length} titles</p>
                 </div>
