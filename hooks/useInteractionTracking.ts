@@ -20,6 +20,7 @@ import type { InteractionType, InteractionSource } from '@/types/interactions'
  */
 export function useInteractionTracking() {
     const getUserId = useSessionStore((state) => state.getUserId)
+    const sessionType = useSessionStore((state) => state.sessionType)
     const { improveRecommendations } = useSessionData()
 
     /**
@@ -38,9 +39,9 @@ export function useInteractionTracking() {
         ): Promise<void> => {
             const userId = getUserId()
 
-            // Skip tracking for guests (optional - could be enabled for analytics)
-            if (!userId) {
-                console.log('[Tracking] Skipping interaction (no user ID)')
+            // Skip tracking for guest users (interactions require Firestore)
+            if (!userId || sessionType !== 'authenticated') {
+                console.log('[Tracking] Skipping interaction (guest mode or no user ID)')
                 return
             }
 
@@ -63,7 +64,7 @@ export function useInteractionTracking() {
                 console.error('[Tracking] Failed to log interaction:', error)
             }
         },
-        [getUserId, improveRecommendations]
+        [getUserId, sessionType, improveRecommendations]
     )
 
     /**

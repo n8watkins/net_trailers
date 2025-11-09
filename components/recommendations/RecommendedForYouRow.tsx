@@ -22,13 +22,15 @@ export default function RecommendedForYouRow() {
 
     const rowRef = useRef<HTMLDivElement>(null)
     const getUserId = useSessionStore((state) => state.getUserId)
+    const sessionType = useSessionStore((state) => state.sessionType)
     const userId = getUserId()
     const sessionData = useSessionData()
 
     // Fetch personalized recommendations
     useEffect(() => {
         const fetchRecommendations = async () => {
-            if (!userId) {
+            // Only show recommendations for authenticated users (requires Firestore)
+            if (!userId || sessionType !== 'authenticated') {
                 setIsLoading(false)
                 return
             }
@@ -74,7 +76,7 @@ export default function RecommendedForYouRow() {
         }
 
         fetchRecommendations()
-    }, [userId, sessionData.likedMovies.length, sessionData.defaultWatchlist.length])
+    }, [userId, sessionType, sessionData.likedMovies.length, sessionData.defaultWatchlist.length])
 
     // Scroll handlers
     const handleClick = (direction: 'left' | 'right') => {
@@ -89,8 +91,8 @@ export default function RecommendedForYouRow() {
         }
     }
 
-    // Don't render if no user (guest mode)
-    if (!userId) {
+    // Don't render for guest users (recommendations require Firestore for interaction tracking)
+    if (!userId || sessionType !== 'authenticated') {
         return null
     }
 
