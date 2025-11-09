@@ -15,13 +15,16 @@ import { useSessionStore } from '../../stores/sessionStore'
 
 export default function NotificationBell() {
     const getUserId = useSessionStore((state) => state.getUserId)
+    const sessionType = useSessionStore((state) => state.sessionType)
     const userId = getUserId()
+    const isGuest = sessionType === 'guest'
     const { unreadCount, isPanelOpen, togglePanel, subscribe, unsubscribeFromNotifications } =
         useNotificationStore()
 
     // Subscribe to real-time notifications
+    // Skip for guest users (no Firebase notifications for guests)
     useEffect(() => {
-        if (userId) {
+        if (userId && !isGuest) {
             subscribe(userId)
         }
 
@@ -29,10 +32,10 @@ export default function NotificationBell() {
         return () => {
             unsubscribeFromNotifications()
         }
-    }, [userId, subscribe, unsubscribeFromNotifications])
+    }, [userId, isGuest, subscribe, unsubscribeFromNotifications])
 
     // Don't render for guest users (no notifications)
-    if (!userId) {
+    if (!userId || isGuest) {
         return null
     }
 

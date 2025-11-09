@@ -24,6 +24,7 @@ export default function TVClient({ data }: TVClientProps) {
     const isInitialized = useSessionStore((state) => state.isInitialized)
     const userId = getUserId()
     const sessionType = getSessionType()
+    const isGuest = sessionType === 'guest'
 
     // Get collections from appropriate store
     const authCollections = useAuthStore((state) => state.userCreatedWatchlists)
@@ -32,13 +33,14 @@ export default function TVClient({ data }: TVClientProps) {
     const { trending } = data
 
     // Auto-migrate custom rows to collections on first load
+    // Skip migration for guest users (they don't have Firebase data to migrate)
     useEffect(() => {
-        if (!userId || !isInitialized) return
+        if (!userId || !isInitialized || isGuest) return
 
         autoMigrateIfNeeded(userId).catch((error) => {
             console.error('Error during auto-migration:', error)
         })
-    }, [userId, isInitialized])
+    }, [userId, isInitialized, isGuest])
 
     // Combine system collections with user collections
     const allCollections = useMemo(() => {

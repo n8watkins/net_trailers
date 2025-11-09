@@ -61,13 +61,14 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
     }, [userId, isInitialized, isGuest, setDeletedSystemRows])
 
     // Auto-migrate custom rows to collections on first load
+    // Skip migration for guest users (they don't have Firebase data to migrate)
     useEffect(() => {
-        if (!userId || !isInitialized) return
+        if (!userId || !isInitialized || isGuest) return
 
         autoMigrateIfNeeded(userId).catch((error) => {
             console.error('Error during auto-migration:', error)
         })
-    }, [userId, isInitialized])
+    }, [userId, isInitialized, isGuest])
 
     // Combine system collections with user collections
     const allCollections = useMemo(() => {
