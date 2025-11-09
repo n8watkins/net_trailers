@@ -38,11 +38,16 @@ let db: ReturnType<typeof getFirestore>
 if (typeof window !== 'undefined') {
     // Client-side: Check if already initialized in global scope
     if (!globalThis.firestore) {
+        // TEMPORARY: Disable persistent cache to fix corrupted state
+        // Re-enable after cache is cleared by uncommenting the try block
         try {
-            // Try to initialize with persistent cache
-            globalThis.firestore = initializeFirestore(app, {
-                localCache: persistentLocalCache(),
-            })
+            // Try to initialize WITHOUT persistent cache (temporary fix)
+            globalThis.firestore = getFirestore(app)
+
+            // ORIGINAL CODE (re-enable after clearing cache):
+            // globalThis.firestore = initializeFirestore(app, {
+            //     localCache: persistentLocalCache(),
+            // })
         } catch (error) {
             // If already initialized, get the existing instance
             globalThis.firestore = getFirestore(app)
