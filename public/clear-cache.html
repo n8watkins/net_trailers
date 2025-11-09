@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Firestore Cache</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .container {
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 10px;
+            border: 1px solid #444;
+        }
+        h1 {
+            color: #ef4444;
+            margin-top: 0;
+        }
+        button {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            font-weight: 600;
+        }
+        button:hover {
+            background: #dc2626;
+        }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        .status.success {
+            background: #065f46;
+            border: 1px solid #10b981;
+            display: block;
+        }
+        .status.error {
+            background: #7f1d1d;
+            border: 1px solid #ef4444;
+            display: block;
+        }
+        .status.info {
+            background: #1e3a8a;
+            border: 1px solid #3b82f6;
+            display: block;
+        }
+        code {
+            background: #1a1a1a;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .log {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+        }
+        .log-entry.success {
+            color: #10b981;
+        }
+        .log-entry.error {
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Clear Firestore Cache</h1>
+
+        <p>
+            This will clear the corrupted Firestore IndexedDB cache that's causing the
+            <code>INTERNAL ASSERTION FAILED</code> error.
+        </p>
+
+        <div id="status" class="status"></div>
+
+        <button id="clearBtn" onclick="clearFirestoreCache()">
+            Clear Firestore Cache
+        </button>
+
+        <div id="log" class="log" style="display: none;"></div>
+
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #444;">
+            <h3>What this does:</h3>
+            <ul>
+                <li>Deletes all Firestore IndexedDB databases</li>
+                <li>Clears localStorage cache entries</li>
+                <li>Fixes the "Unexpected state (ID: ca9)" error</li>
+                <li>Does NOT delete your user data (that's in Firebase)</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.style.display = 'block';
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function setStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        async function clearFirestoreCache() {
+            const btn = document.getElementById('clearBtn');
+            btn.disabled = true;
+            btn.textContent = 'Clearing cache...';
+
+            setStatus('Clearing cache...', 'info');
+            log('Starting cache clearing process...');
+
+            try {
+                // Clear IndexedDB
+                log('Fetching IndexedDB databases...');
+                const dbs = await indexedDB.databases();
+                log(`Found ${dbs.length} databases`);
+
+                let deletedCount = 0;
+                for (const db of dbs) {
+                    if (db.name && db.name.startsWith('firestore/')) {
+                        log(`Deleting: ${db.name}`, 'info');
+                        await new Promise((resolve, reject) => {
+                            const req = indexedDB.deleteDatabase(db.name);
+                            req.onsuccess = () => {
+                                log(`✓ Deleted: ${db.name}`, 'success');
+                                deletedCount++;
+                                resolve();
+                            };
+                            req.onerror = () => {
+                                log(`✗ Failed to delete: ${db.name}`, 'error');
+                                reject(req.error);
+                            };
+                            req.onblocked = () => {
+                                log(`⚠ Blocked (will retry): ${db.name}`, 'error');
+                                // Resolve anyway, it will get deleted eventually
+                                resolve();
+                            };
+                        });
+                    }
+                }
+
+                log(`Deleted ${deletedCount} Firestore databases`, 'success');
+
+                // Clear localStorage cache entries
+                log('Clearing localStorage cache entries...');
+                let clearedKeys = 0;
+                for (let i = localStorage.length - 1; i >= 0; i--) {
+                    const key = localStorage.key(i);
+                    if (key && (key.startsWith('firebase:') || key.includes('firestore'))) {
+                        localStorage.removeItem(key);
+                        clearedKeys++;
+                    }
+                }
+                log(`Cleared ${clearedKeys} localStorage entries`, 'success');
+
+                setStatus(
+                    `✅ Success! Deleted ${deletedCount} databases and ${clearedKeys} cache entries. Please refresh the page.`,
+                    'success'
+                );
+                log('Cache clearing completed successfully!', 'success');
+
+                btn.textContent = '✅ Cache Cleared - Refresh Page';
+
+                // Auto-refresh after 2 seconds
+                setTimeout(() => {
+                    log('Auto-refreshing page in 3 seconds...', 'info');
+                    setTimeout(() => window.location.href = '/', 3000);
+                }, 2000);
+
+            } catch (error) {
+                console.error('Error clearing cache:', error);
+                setStatus(`❌ Error: ${error.message}`, 'error');
+                log(`Error: ${error.message}`, 'error');
+                btn.disabled = false;
+                btn.textContent = 'Try Again';
+            }
+        }
+    </script>
+</body>
+</html>

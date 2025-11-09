@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { BellIcon } from '@heroicons/react/24/outline'
 import { BellIcon as BellIconSolid } from '@heroicons/react/24/solid'
 import { useNotificationStore } from '../../stores/notificationStore'
@@ -20,6 +20,13 @@ export default function NotificationBell() {
     const isGuest = sessionType === 'guest'
     const { unreadCount, isPanelOpen, togglePanel, subscribe, unsubscribeFromNotifications } =
         useNotificationStore()
+
+    // Fix hydration mismatch: only show dynamic content after mount
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => {
+        setMounted(true)
+    }, [])
 
     // Subscribe to real-time notifications
     // Skip for guest users (no Firebase notifications for guests)
@@ -39,14 +46,17 @@ export default function NotificationBell() {
         return null
     }
 
-    const hasUnread = unreadCount > 0
+    // Use safe values during SSR/initial render
+    const hasUnread = mounted && unreadCount > 0
+    const safeUnreadCount = mounted ? unreadCount : 0
+    const safeIsPanelOpen = mounted && isPanelOpen
 
     return (
         <button
             onClick={togglePanel}
             className="group relative flex items-center justify-center rounded-full p-2 transition-all hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900"
-            aria-label={`Notifications${hasUnread ? ` (${unreadCount} unread)` : ''}`}
-            aria-expanded={isPanelOpen}
+            aria-label={`Notifications${hasUnread ? ` (${safeUnreadCount} unread)` : ''}`}
+            aria-expanded={safeIsPanelOpen}
             aria-haspopup="true"
         >
             {/* Bell Icon */}
@@ -68,7 +78,7 @@ export default function NotificationBell() {
                     className="absolute right-0 top-0 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white ring-2 ring-gray-900"
                     aria-hidden="true"
                 >
-                    {unreadCount > 99 ? '99+' : unreadCount}
+                    {safeUnreadCount > 99 ? '99+' : safeUnreadCount}
                 </span>
             )}
 
