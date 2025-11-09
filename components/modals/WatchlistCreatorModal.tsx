@@ -216,8 +216,8 @@ export default function WatchlistCreatorModal() {
 
             handleClose()
 
-            // Navigate to watchlists page
-            router.push('/watchlists')
+            // Navigate to collections page
+            router.push('/collections')
         } catch (error: any) {
             console.error('Create collection error:', error)
             showError('Failed to create collection', error.message)

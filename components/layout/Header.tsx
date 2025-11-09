@@ -339,17 +339,17 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                         <li>
                                             <button
                                                 className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
-                                                    pathname === '/watchlists'
+                                                    pathname === '/collections'
                                                         ? 'text-white font-semibold bg-red-600/20'
                                                         : 'hover:bg-white/10'
                                                 }`}
                                                 onClick={() => {
-                                                    router.push('/watchlists')
+                                                    router.push('/collections')
                                                     setShowMobileMenu(false)
                                                 }}
                                             >
                                                 <EyeIcon className="h-5 w-5" />
-                                                <span>Watchlists</span>
+                                                <span>Collections</span>
                                             </button>
                                         </li>
                                         <li>

@@ -32,7 +32,7 @@ function MyListsDropdown() {
     }
 
     const isAnyListPath = () => {
-        return pathname ? ['/watchlists', '/liked', '/hidden', '/rows'].includes(pathname) : false
+        return pathname ? ['/collections', '/liked', '/hidden', '/rows'].includes(pathname) : false
     }
 
     const handleLinkClick = () => {
@@ -70,10 +70,10 @@ function MyListsDropdown() {
                             </div>
                         </Link>
 
-                        <Link href="/watchlists" onClick={handleLinkClick}>
+                        <Link href="/collections" onClick={handleLinkClick}>
                             <div
                                 className={`w-full text-left px-4 py-3 hover:bg-white/10 transition-colors flex items-center space-x-3 ${
-                                    isCurrentPath('/watchlists')
+                                    isCurrentPath('/collections')
                                         ? 'bg-white/10 text-white font-semibold'
                                         : 'text-gray-300'
                                 }`}

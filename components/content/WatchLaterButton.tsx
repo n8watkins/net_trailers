@@ -52,7 +52,7 @@ function WatchLaterButton({
 
     const _handleNavigateToWatchlists = (e: React.MouseEvent) => {
         e.stopPropagation()
-        router.push('/watchlists')
+        router.push('/collections')
     }
 
     const _handleQuickWatchlist = (e: React.MouseEvent) => {
