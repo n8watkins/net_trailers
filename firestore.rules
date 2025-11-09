@@ -19,6 +19,17 @@ service cloud.firestore {
 
       // Allow delete only of own data
       allow delete: if request.auth != null && request.auth.uid == userId;
+
+      // Child Safety PIN settings subcollection
+      match /settings/childSafety {
+        // Only the authenticated user can read/write their own PIN settings
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+
+        // Validate PIN data structure on create/update
+        allow create, update: if request.auth != null
+                              && request.auth.uid == userId
+                              && isValidPINData(request.resource.data);
+      }
     }
 
     // Helper function to validate user data structure
@@ -30,6 +41,18 @@ service cloud.firestore {
              && data.customRows is map
              && data.lastActive is number
              && (!data.keys().hasAny(['hiddenMovies']) || data.hiddenMovies is list);
+    }
+
+    // Helper function to validate PIN data structure
+    function isValidPINData(data) {
+      return data.keys().hasAll(['hash', 'createdAt', 'lastChangedAt', 'enabled'])
+             && data.hash is string
+             && data.hash.size() > 0  // bcrypt hash should not be empty
+             && data.createdAt is number
+             && data.lastChangedAt is number
+             && data.enabled is bool
+             && (!data.keys().hasAny(['failedAttempts']) || data.failedAttempts is number)
+             && (!data.keys().hasAny(['rateLimitResetAt']) || data.rateLimitResetAt is number);
     }
 
     // Deny all other access
