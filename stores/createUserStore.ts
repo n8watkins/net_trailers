@@ -21,6 +21,7 @@ export interface UserState {
     autoMute?: boolean
     defaultVolume?: number
     childSafetyMode?: boolean
+    improveRecommendations?: boolean
 }
 
 /**
@@ -89,6 +90,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
         autoMute: true,
         defaultVolume: 50,
         childSafetyMode: false,
+        improveRecommendations: true,
         ...(adapter.isAsync && { syncStatus: 'synced' as const }),
     })
 
@@ -123,6 +125,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                 autoMute: state.autoMute ?? true,
                 defaultVolume: state.defaultVolume ?? 50,
                 childSafetyMode: state.childSafetyMode ?? false,
+                improveRecommendations: state.improveRecommendations ?? true,
             })
             logger.log(`✅ [${trackingContext}] Saved to ${adapter.name}`)
         } catch (error) {
@@ -474,6 +477,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                     autoMute: state.autoMute,
                     defaultVolume: state.defaultVolume,
                     childSafetyMode: state.childSafetyMode,
+                    improveRecommendations: state.improveRecommendations,
                 })
             } catch (_error) {
                 if (adapter.isAsync) set({ syncStatus: 'offline' })
@@ -524,6 +528,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                                 autoMute: firebaseData.autoMute ?? true,
                                 defaultVolume: firebaseData.defaultVolume ?? 50,
                                 childSafetyMode: firebaseData.childSafetyMode ?? false,
+                                improveRecommendations: firebaseData.improveRecommendations ?? true,
                                 syncStatus: 'synced',
                             })
 
@@ -559,6 +564,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                     autoMute: loadedData.autoMute ?? true,
                     defaultVolume: loadedData.defaultVolume ?? 50,
                     childSafetyMode: false, // Always false for guests
+                    improveRecommendations: loadedData.improveRecommendations ?? true,
                 })
                 logger.log(`🔄 [${trackingContext}] Synced from localStorage:`, {
                     guestId,

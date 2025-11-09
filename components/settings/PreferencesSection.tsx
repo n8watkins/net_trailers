@@ -9,6 +9,7 @@ interface PreferencesControlsProps {
     childSafetyMode: boolean
     autoMute: boolean
     defaultVolume: number
+    improveRecommendations: boolean
     preferencesChanged: boolean
     isGuest: boolean
     hasPIN: boolean
@@ -16,6 +17,7 @@ interface PreferencesControlsProps {
     onChildSafetyModeChange: (checked: boolean) => void
     onAutoMuteChange: (checked: boolean) => void
     onDefaultVolumeChange: (volume: number) => void
+    onImproveRecommendationsChange: (checked: boolean) => void
     onSave: () => void
     onShowChildSafetyModal: () => void
     onSetupPIN: () => void
@@ -28,6 +30,7 @@ const PreferencesControls = React.memo<PreferencesControlsProps>(
         childSafetyMode,
         autoMute,
         defaultVolume,
+        improveRecommendations,
         preferencesChanged,
         isGuest,
         hasPIN,
@@ -35,6 +38,7 @@ const PreferencesControls = React.memo<PreferencesControlsProps>(
         onChildSafetyModeChange,
         onAutoMuteChange,
         onDefaultVolumeChange,
+        onImproveRecommendationsChange,
         onSave,
         onShowChildSafetyModal,
         onSetupPIN,
@@ -210,6 +214,43 @@ const PreferencesControls = React.memo<PreferencesControlsProps>(
                     </div>
                 </div>
 
+                {/* Privacy & Recommendations Section */}
+                <div>
+                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                        Privacy & Recommendations
+                    </h3>
+                    <div className="space-y-6 bg-[#0a0a0a] rounded-lg border border-[#313131] p-6">
+                        {/* Improve Recommendations Toggle */}
+                        <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-[#e5e5e5] mb-1">
+                                    Improve Recommendations
+                                </label>
+                                <p className="text-sm text-[#b3b3b3] mb-2">
+                                    Allow NetTrailers to learn from your interactions to provide
+                                    personalized recommendations
+                                </p>
+                                <p className="text-xs text-[#999]">
+                                    When enabled, we track which content you view, add to your
+                                    watchlist, like, and hide. This data helps us recommend movies
+                                    and shows you'll enjoy.
+                                </p>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer ml-4">
+                                <input
+                                    type="checkbox"
+                                    checked={improveRecommendations}
+                                    onChange={(e) =>
+                                        onImproveRecommendationsChange(e.target.checked)
+                                    }
+                                    className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Save Button */}
                 <div className="flex justify-end">
                     <button
@@ -237,12 +278,14 @@ interface PreferencesSectionProps {
     childSafetyMode: boolean
     autoMute: boolean
     defaultVolume: number
+    improveRecommendations: boolean
     preferencesChanged: boolean
     hasPIN: boolean
     pinEnabled: boolean
     onChildSafetyModeChange: (checked: boolean) => void
     onAutoMuteChange: (checked: boolean) => void
     onDefaultVolumeChange: (volume: number) => void
+    onImproveRecommendationsChange: (checked: boolean) => void
     onSave: () => void
     onShowChildSafetyModal: () => void
     onSetupPIN: () => void
@@ -256,12 +299,14 @@ const PreferencesSection: React.FC<PreferencesSectionProps> = ({
     childSafetyMode,
     autoMute,
     defaultVolume,
+    improveRecommendations,
     preferencesChanged,
     hasPIN,
     pinEnabled,
     onChildSafetyModeChange,
     onAutoMuteChange,
     onDefaultVolumeChange,
+    onImproveRecommendationsChange,
     onSave,
     onShowChildSafetyModal,
     onSetupPIN,
@@ -301,6 +346,7 @@ const PreferencesSection: React.FC<PreferencesSectionProps> = ({
                     childSafetyMode={childSafetyMode}
                     autoMute={autoMute}
                     defaultVolume={defaultVolume}
+                    improveRecommendations={improveRecommendations}
                     preferencesChanged={preferencesChanged}
                     isGuest={isGuest}
                     hasPIN={hasPIN}
@@ -308,6 +354,7 @@ const PreferencesSection: React.FC<PreferencesSectionProps> = ({
                     onChildSafetyModeChange={onChildSafetyModeChange}
                     onAutoMuteChange={onAutoMuteChange}
                     onDefaultVolumeChange={onDefaultVolumeChange}
+                    onImproveRecommendationsChange={onImproveRecommendationsChange}
                     onSave={onSave}
                     onShowChildSafetyModal={onShowChildSafetyModal}
                     onSetupPIN={onSetupPIN}

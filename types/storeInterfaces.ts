@@ -23,5 +23,6 @@ export interface StateWithPreferences extends StateWithLists {
     autoMute: boolean
     defaultVolume: number
     childSafetyMode: boolean
+    improveRecommendations: boolean
     lastActive: number
 }

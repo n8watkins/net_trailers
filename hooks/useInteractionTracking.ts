@@ -19,6 +19,15 @@ import type { InteractionType, InteractionSource } from '@/types/interactions'
  */
 export function useInteractionTracking() {
     const getUserId = useSessionStore((state) => state.getUserId)
+    const getImproveRecommendations = useSessionStore((state) => {
+        const sessionType = state.sessionType
+        if (sessionType === 'authenticated') {
+            return state.authStore?.improveRecommendations ?? true
+        } else if (sessionType === 'guest') {
+            return state.guestStore?.improveRecommendations ?? true
+        }
+        return true
+    })
 
     /**
      * Generic track function
@@ -42,6 +51,15 @@ export function useInteractionTracking() {
                 return
             }
 
+            // Skip tracking if user has disabled recommendation improvements
+            const improveRecommendations = getImproveRecommendations()
+            if (!improveRecommendations) {
+                console.log(
+                    '[Tracking] Skipping interaction (user disabled recommendation improvements)'
+                )
+                return
+            }
+
             try {
                 const interaction = createInteractionFromContent(content, interactionType, options)
 
@@ -53,7 +71,7 @@ export function useInteractionTracking() {
                 console.error('[Tracking] Failed to log interaction:', error)
             }
         },
-        [getUserId]
+        [getUserId, getImproveRecommendations]
     )
 
     /**

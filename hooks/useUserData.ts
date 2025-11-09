@@ -160,6 +160,7 @@ export default function useUserData() {
             autoMute: sessionData.autoMute,
             defaultVolume: sessionData.defaultVolume,
             childSafetyMode: sessionData.childSafetyMode,
+            improveRecommendations: sessionData.improveRecommendations,
 
             // Actions from Zustand store (NEW SCHEMA) - with tracking
             addLikedMovie: addLikedMovieTracked,
@@ -215,6 +216,7 @@ export default function useUserData() {
                     autoMute: sessionData.autoMute ?? true,
                     defaultVolume: sessionData.defaultVolume ?? 50,
                     childSafetyMode: sessionData.childSafetyMode ?? false,
+                    improveRecommendations: sessionData.improveRecommendations ?? true,
                 },
             },
         }
@@ -240,6 +242,7 @@ export default function useUserData() {
             autoMute: sessionData.autoMute,
             defaultVolume: sessionData.defaultVolume,
             childSafetyMode: sessionData.childSafetyMode,
+            improveRecommendations: sessionData.improveRecommendations,
 
             // Actions from Zustand store (NEW SCHEMA) - with tracking
             addLikedMovie: addLikedMovieTracked,
@@ -377,6 +380,7 @@ export default function useUserData() {
                     autoMute: sessionData.autoMute ?? true,
                     defaultVolume: sessionData.defaultVolume ?? 50,
                     childSafetyMode: sessionData.childSafetyMode ?? false,
+                    improveRecommendations: sessionData.improveRecommendations ?? true,
                 },
             },
         }
@@ -403,6 +407,7 @@ export default function useUserData() {
             autoMute: true,
             defaultVolume: 50,
             childSafetyMode: false,
+            improveRecommendations: true,
 
             // Placeholder functions (will throw errors if called during initialization)
             addLikedMovie: () => {
@@ -471,6 +476,7 @@ export default function useUserData() {
                     autoMute: true,
                     defaultVolume: 50,
                     childSafetyMode: false,
+                    improveRecommendations: true,
                 },
             },
         }

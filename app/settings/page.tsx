@@ -121,8 +121,14 @@ const Settings: React.FC = () => {
             childSafetyMode: userData.childSafetyMode ?? false,
             autoMute: userData.autoMute ?? true,
             defaultVolume: userData.defaultVolume ?? 50,
+            improveRecommendations: userData.improveRecommendations ?? true,
         }
-    }, [userData.childSafetyMode, userData.autoMute, userData.defaultVolume])
+    }, [
+        userData.childSafetyMode,
+        userData.autoMute,
+        userData.defaultVolume,
+        userData.improveRecommendations,
+    ])
 
     // 3) Initialize with store values directly (they default to false/true/50 during SSR anyway)
     const [childSafetyMode, setChildSafetyMode] = useState<boolean>(
@@ -130,12 +136,16 @@ const Settings: React.FC = () => {
     )
     const [autoMute, setAutoMute] = useState<boolean>(() => userData.autoMute ?? true)
     const [defaultVolume, setDefaultVolume] = useState<number>(() => userData.defaultVolume ?? 50)
+    const [improveRecommendations, setImproveRecommendations] = useState<boolean>(
+        () => userData.improveRecommendations ?? true
+    )
 
     // Track original preferences to detect changes
     const [originalPreferences, setOriginalPreferences] = useState({
         childSafetyMode: userData.childSafetyMode ?? false,
         autoMute: userData.autoMute ?? true,
         defaultVolume: userData.defaultVolume ?? 50,
+        improveRecommendations: userData.improveRecommendations ?? true,
     })
 
     // Initialize skeleton state based on whether data is available
@@ -154,7 +164,9 @@ const Settings: React.FC = () => {
         const prefsChanged =
             currentPreferences.childSafetyMode !== lastLoadedPrefsRef.current.childSafetyMode ||
             currentPreferences.autoMute !== lastLoadedPrefsRef.current.autoMute ||
-            currentPreferences.defaultVolume !== lastLoadedPrefsRef.current.defaultVolume
+            currentPreferences.defaultVolume !== lastLoadedPrefsRef.current.defaultVolume ||
+            currentPreferences.improveRecommendations !==
+                lastLoadedPrefsRef.current.improveRecommendations
 
         // Only update UI state if store preferences actually changed
         // This allows user to modify UI without being overridden
@@ -162,10 +174,12 @@ const Settings: React.FC = () => {
             setChildSafetyMode(currentPreferences.childSafetyMode)
             setAutoMute(currentPreferences.autoMute)
             setDefaultVolume(currentPreferences.defaultVolume)
+            setImproveRecommendations(currentPreferences.improveRecommendations)
             setOriginalPreferences({
                 childSafetyMode: currentPreferences.childSafetyMode,
                 autoMute: currentPreferences.autoMute,
                 defaultVolume: currentPreferences.defaultVolume,
+                improveRecommendations: currentPreferences.improveRecommendations,
             })
             // Update our tracking ref
             lastLoadedPrefsRef.current = currentPreferences
@@ -191,7 +205,8 @@ const Settings: React.FC = () => {
     const preferencesChanged =
         childSafetyMode !== originalPreferences.childSafetyMode ||
         autoMute !== originalPreferences.autoMute ||
-        defaultVolume !== originalPreferences.defaultVolume
+        defaultVolume !== originalPreferences.defaultVolume ||
+        improveRecommendations !== originalPreferences.improveRecommendations
 
     // Define all possible sidebar items
     const allSidebarItems: SidebarItem[] = [
@@ -604,6 +619,7 @@ const Settings: React.FC = () => {
                 childSafetyMode,
                 autoMute,
                 defaultVolume,
+                improveRecommendations,
             }
 
             if (isGuest) {
@@ -659,6 +675,10 @@ const Settings: React.FC = () => {
 
     const handleDefaultVolumeChange = React.useCallback((volume: number) => {
         setDefaultVolume(volume)
+    }, [])
+
+    const handleImproveRecommendationsChange = React.useCallback((checked: boolean) => {
+        setImproveRecommendations(checked)
     }, [])
 
     const handleShowChildSafetyModal = React.useCallback(() => {
@@ -808,12 +828,16 @@ const Settings: React.FC = () => {
                                             childSafetyMode={childSafetyMode}
                                             autoMute={autoMute}
                                             defaultVolume={defaultVolume}
+                                            improveRecommendations={improveRecommendations}
                                             preferencesChanged={preferencesChanged}
                                             hasPIN={pinSettings.hasPIN}
                                             pinEnabled={pinSettings.enabled}
                                             onChildSafetyModeChange={handleChildSafetyModeChange}
                                             onAutoMuteChange={handleAutoMuteChange}
                                             onDefaultVolumeChange={handleDefaultVolumeChange}
+                                            onImproveRecommendationsChange={
+                                                handleImproveRecommendationsChange
+                                            }
                                             onSave={handleSavePreferences}
                                             onShowChildSafetyModal={handleShowChildSafetyModal}
                                             onSetupPIN={handleSetupPIN}
