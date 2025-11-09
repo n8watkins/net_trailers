@@ -5,6 +5,11 @@
 
 import { Content } from '../typings'
 import { getChildSafetyMode } from './childSafetyCookieServer'
+import {
+    deduplicateContent,
+    randomizeArray,
+    dedupeAndRandomize,
+} from '../utils/contentDeduplication'
 
 const API_KEY = process.env.TMDB_API_KEY
 
@@ -33,41 +38,6 @@ export interface HomeData {
     genre3: Content[] // Horror (movies) | Sci-Fi & Fantasy (TV)
     genre4: Content[] // Animation (both)
     documentaries: Content[]
-}
-
-/**
- * Helper to deduplicate content by media_type and id
- * Prevents duplicate keys in React rendering
- */
-function deduplicateContent(content: Content[]): Content[] {
-    const seen = new Set<string>()
-    return content.filter((item) => {
-        const key = `${item.media_type || 'unknown'}-${item.id}`
-        if (seen.has(key)) {
-            return false
-        }
-        seen.add(key)
-        return true
-    })
-}
-
-/**
- * Helper to randomize array (Fisher-Yates shuffle)
- */
-function randomizeArray<T>(arr: T[]): T[] {
-    const shuffled = [...arr]
-    for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1))
-        ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-    }
-    return shuffled
-}
-
-/**
- * Helper to deduplicate and randomize content
- */
-function dedupeAndRandomize(content: Content[]): Content[] {
-    return randomizeArray(deduplicateContent(content))
 }
 
 /**

@@ -22,10 +22,9 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
     const { modal } = useAppStore()
     const showModal = modal.isOpen
     const getUserId = useSessionStore((state) => state.getUserId)
-    const getSessionType = useSessionStore((state) => state.getSessionType)
+    const sessionType = useSessionStore((state) => state.sessionType)
     const isInitialized = useSessionStore((state) => state.isInitialized)
     const userId = getUserId()
-    const sessionType = getSessionType()
 
     // Get collections from appropriate store
     const authCollections = useAuthStore((state) => state.userCreatedWatchlists)

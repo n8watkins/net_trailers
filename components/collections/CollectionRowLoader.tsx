@@ -6,6 +6,7 @@ import { Content } from '../../typings'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useChildSafety } from '../../hooks/useChildSafety'
 import { Collection } from '../../types/userLists'
+import { deduplicateContent } from '../../utils/contentDeduplication'
 
 interface CollectionRowLoaderProps {
     collection: Collection
@@ -108,7 +109,8 @@ export function CollectionRowLoader({ collection, pageType }: CollectionRowLoade
                             }
                         }
 
-                        setContent(combined)
+                        // Deduplicate combined results
+                        setContent(deduplicateContent(combined))
                         setIsLoading(false)
                         return
                     }

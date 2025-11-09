@@ -9,6 +9,7 @@ import {
     MagnifyingGlassIcon,
     ArrowDownTrayIcon,
     PlusIcon,
+    RectangleStackIcon,
 } from '@heroicons/react/24/solid'
 import { isMovie, isTVShow } from '../../typings'
 import { getTitle } from '../../typings'
@@ -20,7 +21,7 @@ import { useDebugSettings } from '../../components/debug/DebugControls'
 import { GuestModeNotification } from '../../components/auth/GuestModeNotification'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 
-const Watchlists = () => {
+const Collections = () => {
     const userData = useUserData()
     const { user } = useAuth()
     const { isGuest, isInitialized } = useAuthStatus()
@@ -32,7 +33,7 @@ const Watchlists = () => {
     useEffect(() => {
         // Only log when debug mode is enabled AND user actually changes
         if (process.env.NODE_ENV === 'development' && debugSettings.showFirebaseDebug) {
-            console.log('🔍 Watchlists Page Debug:', {
+            console.log('🔍 Collections Page Debug:', {
                 sessionType: userData.sessionType,
                 isGuest: userData.isGuest,
                 isAuthenticated: userData.isAuthenticated,
@@ -45,7 +46,7 @@ const Watchlists = () => {
 
             // Verify user data isolation
             if (user?.uid && userData.sessionType === 'authenticated') {
-                console.log('✅ [Watchlists Page] User data loaded for:', user.uid)
+                console.log('✅ [Collections Page] User data loaded for:', user.uid)
             }
         }
     }, [user?.uid, userData.sessionType, debugSettings.showFirebaseDebug]) // Only depend on stable values
@@ -158,9 +159,9 @@ const Watchlists = () => {
                     {/* Header Section */}
                     <div className="space-y-6">
                         <div className="flex items-center space-x-3 pt-8 sm:pt-10 md:pt-12">
-                            <EyeIcon className="w-8 h-8 text-blue-400" />
+                            <RectangleStackIcon className="w-8 h-8 text-blue-400" />
                             <h1 className="text-3xl font-bold text-white md:text-4xl lg:text-5xl">
-                                Watchlists
+                                Collections 📚
                             </h1>
                         </div>
 
@@ -201,12 +202,12 @@ const Watchlists = () => {
                             </div>
                         )}
 
-                        {/* List Filter Buttons */}
+                        {/* Collection Filter Buttons */}
                         <div className="flex flex-wrap gap-3">
-                            {/* List Buttons - Watchlist will be first */}
+                            {/* Collection Buttons - Watchlist (default collection) will be first */}
                             {allLists
                                 .sort((a, b) => {
-                                    // Put Watchlist first, then other lists
+                                    // Put Watchlist (default collection) first, then other collections
                                     if (a.name === 'Watchlist') return -1
                                     if (b.name === 'Watchlist') return 1
                                     return 0
@@ -235,13 +236,13 @@ const Watchlists = () => {
                                     </button>
                                 ))}
 
-                            {/* Create New List Button */}
+                            {/* Create New Collection Button */}
                             <button
                                 onClick={() => openListModal(undefined)}
                                 className="flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 bg-gray-800/50 text-white hover:bg-gray-700/50 border border-gray-600 hover:border-gray-400"
                             >
                                 <PlusIcon className="w-5 h-5 text-white" />
-                                <span>Create List</span>
+                                <span>Create Collection 📚</span>
                             </button>
                         </div>
 
@@ -272,8 +273,7 @@ const Watchlists = () => {
                                 yet
                             </h2>
                             <p className="text-gray-400">
-                                Start adding movies and TV shows to your watchlists and create
-                                custom lists!
+                                Start adding movies and TV shows to your collections!
                             </p>
                         </div>
                     ) : (
@@ -320,4 +320,4 @@ const Watchlists = () => {
     )
 }
 
-export default Watchlists
+export default Collections

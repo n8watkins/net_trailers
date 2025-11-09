@@ -84,10 +84,10 @@ function Footer({
                                 </li>
                                 <li>
                                     <Link
-                                        href="/watchlists"
+                                        href="/collections"
                                         className="text-gray-300 hover:text-white transition-colors duration-200"
                                     >
-                                        My Lists
+                                        Collections 📚
                                     </Link>
                                 </li>
                             </ul>
