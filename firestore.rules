@@ -32,15 +32,20 @@ service cloud.firestore {
       }
     }
 
-    // Helper function to validate user data structure
+    // Helper function to validate user data structure (NEW SCHEMA)
     function isValidUserData(data) {
-      return data.keys().hasAll(['watchlist', 'ratings', 'userLists', 'customRows', 'lastActive'])
-             && data.watchlist is list
-             && data.ratings is list
-             && data.userLists is map
-             && data.customRows is map
+      // Required fields for new schema
+      return data.keys().hasAll(['defaultWatchlist', 'likedMovies', 'hiddenMovies', 'userCreatedWatchlists', 'lastActive'])
+             && data.defaultWatchlist is list
+             && data.likedMovies is list
+             && data.hiddenMovies is list
+             && data.userCreatedWatchlists is list
              && data.lastActive is number
-             && (!data.keys().hasAny(['hiddenMovies']) || data.hiddenMovies is list);
+             // Optional preference fields
+             && (!data.keys().hasAny(['autoMute']) || data.autoMute is bool)
+             && (!data.keys().hasAny(['defaultVolume']) || data.defaultVolume is number)
+             && (!data.keys().hasAny(['childSafetyMode']) || data.childSafetyMode is bool)
+             && (!data.keys().hasAny(['improveRecommendations']) || data.improveRecommendations is bool);
     }
 
     // Helper function to validate PIN data structure
