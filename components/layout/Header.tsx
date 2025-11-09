@@ -24,6 +24,8 @@ import { useAppStore } from '../../stores/appStore'
 import { ChildSafetyIndicator } from '../content/ChildSafetyIndicator'
 import { GuestModeIndicator } from '../auth/GuestModeIndicator'
 import { useLayoutContext } from '../../contexts/LayoutContext'
+import NotificationBell from '../notifications/NotificationBell'
+import NotificationPanel from '../notifications/NotificationPanel'
 
 interface HeaderProps {
     onOpenAboutModal?: () => void
@@ -223,6 +225,12 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                     {/* Guest Mode Indicator - Hidden on mobile */}
                     <div className="hidden lg:block">
                         <GuestModeIndicator />
+                    </div>
+
+                    {/* Notification Bell with Panel */}
+                    <div className="relative">
+                        <NotificationBell />
+                        <NotificationPanel />
                     </div>
 
                     {/* Avatar Dropdown */}
