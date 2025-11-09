@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
-import Image from 'next/image'
 import { useSearch } from '../../hooks/useSearch'
-import { Content, isMovie, getTitle, getYear, getContentType } from '../../typings'
+import { Content } from '../../typings'
 import { useAppStore } from '../../stores/appStore'
 import useUserData from '../../hooks/useUserData'
 import { filterDislikedContent } from '../../utils/contentFilter'
+import ContentCard from '../common/ContentCard'
 
 interface SearchResultsProps {
     className?: string
@@ -32,7 +32,7 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
         isLoadingAll,
     } = useSearch()
 
-    const { openModal, modal } = useAppStore()
+    const modal = useAppStore((state) => state.modal)
     const { hiddenMovies } = useUserData()
 
     // Filter out disliked content from search results
@@ -43,13 +43,17 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
     const resultRefs = useRef<(HTMLDivElement | null)[]>([])
     const containerRef = useRef<HTMLDivElement>(null)
 
-    const handleContentClick = useCallback(
-        (content: Content) => {
-            // More info mode - autoPlay=true, autoPlayWithSound=false (starts muted)
-            openModal(content, true, false)
-        },
-        [openModal]
-    )
+    // Trigger click on selected card (for keyboard navigation)
+    const triggerCardClick = useCallback((index: number) => {
+        const cardElement = resultRefs.current[index]
+        if (cardElement) {
+            // Find and click the ContentCard within the wrapper
+            const contentCard = cardElement.querySelector('[role="button"]') as HTMLElement
+            if (contentCard) {
+                contentCard.click()
+            }
+        }
+    }, [])
 
     // Scroll selected element into view
     const scrollToSelected = (index: number) => {
@@ -99,16 +103,13 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
                 })
             } else if (e.key === 'Enter' && selectedIndex >= 0) {
                 e.preventDefault()
-                const selectedContent = filteredResults[selectedIndex]
-                if (selectedContent) {
-                    handleContentClick(selectedContent)
-                }
+                triggerCardClick(selectedIndex)
             } else if (e.key === 'Escape') {
                 e.preventDefault()
                 setSelectedIndex(-1)
             }
         },
-        [isOnSearchPage, filteredResults, selectedIndex, modal.isOpen, handleContentClick]
+        [isOnSearchPage, filteredResults, selectedIndex, modal.isOpen, triggerCardClick]
     )
 
     // Set up keyboard event listeners
@@ -246,94 +247,21 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
                 </div>
             )}
 
-            {/* Results List - Horizontal Row Layout */}
-            <div className="space-y-2 animate-fade-in" ref={containerRef}>
+            {/* Results Grid - Card Layout */}
+            <div className="flex flex-wrap gap-6 animate-fade-in" ref={containerRef}>
                 {filteredResults.map((item: Content, index) => (
                     <div
                         key={`${item.id}-${index}`}
                         ref={(el) => {
                             resultRefs.current[index] = el
                         }}
-                        className={`flex items-center rounded-lg p-4 cursor-pointer group border transition-all duration-300 ease-in-out ${
+                        className={`relative ${
                             isOnSearchPage && selectedIndex === index
-                                ? 'bg-red-600/30 border-red-500/50 shadow-lg shadow-red-500/20'
-                                : 'bg-gray-800/50 hover:bg-gray-700/50 border-transparent'
+                                ? 'ring-2 ring-red-500 rounded-lg'
+                                : ''
                         }`}
-                        onClick={() => handleContentClick(item)}
                     >
-                        {/* Movie Poster - Using standard ContentCard but in horizontal layout */}
-                        <div className="flex-shrink-0 w-16 h-24 sm:w-20 sm:h-30 md:w-24 md:h-36 relative rounded-lg overflow-hidden bg-gray-700">
-                            {item.poster_path ? (
-                                <Image
-                                    src={`https://image.tmdb.org/t/p/w200${item.poster_path}`}
-                                    alt={getTitle(item)}
-                                    width={200}
-                                    height={300}
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                                />
-                            ) : (
-                                <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                    <svg
-                                        className="w-8 h-8"
-                                        fill="currentColor"
-                                        viewBox="0 0 20 20"
-                                    >
-                                        <path
-                                            fillRule="evenodd"
-                                            d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
-                                            clipRule="evenodd"
-                                        />
-                                    </svg>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Content Details */}
-                        <div className="flex-1 ml-4 min-w-0">
-                            {/* Title and Year */}
-                            <div className="flex items-start justify-between mb-2">
-                                <div className="flex-1 min-w-0">
-                                    <h3 className="text-white font-semibold text-lg truncate group-hover:text-red-400 transition-colors">
-                                        {getTitle(item)}
-                                    </h3>
-                                    <p className="text-gray-400 text-sm">{getYear(item)}</p>
-                                </div>
-                            </div>
-
-                            {/* Rating, Media Type, and Overview */}
-                            <div className="flex items-center gap-4 mb-2">
-                                {/* Rating */}
-                                {item.vote_average > 0 && (
-                                    <div className="flex items-center gap-1">
-                                        <span className="text-yellow-400">⭐</span>
-                                        <span className="text-white text-sm font-medium">
-                                            {item.vote_average.toFixed(1)}
-                                        </span>
-                                    </div>
-                                )}
-
-                                {/* Media Type Badge */}
-                                <span
-                                    className={`
-                                    px-2 py-1 text-xs font-medium rounded-full
-                                    ${
-                                        isMovie(item)
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-green-600 text-white'
-                                    }
-                                `}
-                                >
-                                    {getContentType(item)}
-                                </span>
-                            </div>
-
-                            {/* Overview */}
-                            {item.overview && (
-                                <p className="text-gray-300 text-sm line-clamp-2 md:line-clamp-1">
-                                    {item.overview}
-                                </p>
-                            )}
-                        </div>
+                        <ContentCard content={item} size="medium" />
                     </div>
                 ))}
             </div>
