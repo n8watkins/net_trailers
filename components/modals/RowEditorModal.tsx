@@ -15,6 +15,7 @@ import { useCustomRowsStore } from '../../stores/customRowsStore'
 import { useAppStore } from '../../stores/appStore'
 import { CustomRow, DisplayRow } from '../../types/customRows'
 import { CustomRowsFirestore } from '../../utils/firestore/customRows'
+import { SystemRowStorage } from '../../utils/systemRowStorage'
 import {
     DndContext,
     closestCenter,
@@ -58,18 +59,20 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         toggleSystemRow: toggleSystemRowStore,
         updateSystemRowOrder,
     } = useCustomRowsStore()
-    const { showToast, openCustomRowModal } = useAppStore()
+    const { showToast, openCustomRowModal, openAuthModal } = useAppStore()
 
     const userId = getUserId()
+    const sessionType = useSessionStore((state) => state.sessionType)
+    const isGuest = sessionType === 'guest'
 
     // Map page type to media type
     const mediaType = pageType === 'home' ? 'both' : pageType === 'movies' ? 'movie' : 'tv'
 
-    // Get rows for this page's media type - only system rows
+    // Get rows for this page's media type
     const displayRows = userId ? getDisplayRowsByMediaType(userId, mediaType) : []
 
-    // Filter to only show system rows (no custom rows)
-    const systemOnlyRows = displayRows.filter((row) => row.isSystemRow)
+    // For guests: only show system rows. For authenticated: show all rows
+    const filteredRows = isGuest ? displayRows.filter((row) => row.isSystemRow) : displayRows
 
     // Drag and drop sensors
     const sensors = useSensors(
@@ -79,8 +82,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         })
     )
 
-    // Only show system rows - no custom rows
-    const filteredRows = systemOnlyRows
+    // filteredRows already set above based on guest/auth status
 
     // Handle body scroll lock
     useEffect(() => {
@@ -95,22 +97,35 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         }
     }, [isOpen])
 
-    // Load system row preferences when modal opens (no custom rows)
+    // Load system row preferences when modal opens
     useEffect(() => {
         if (!userId || !isOpen) return
 
         const loadData = async () => {
             setLoading(true)
             try {
-                const [systemPrefs, deletedRows] = await Promise.all([
-                    CustomRowsFirestore.getSystemRowPreferences(userId),
-                    CustomRowsFirestore.getDeletedSystemRows(userId),
-                ])
-                setSystemRowPreferences(userId, systemPrefs)
-                setDeletedSystemRows(userId, deletedRows)
+                if (isGuest) {
+                    // Guests: only load system preferences from localStorage
+                    const [systemPrefs, deletedRows] = await Promise.all([
+                        SystemRowStorage.getSystemRowPreferences(userId, true),
+                        SystemRowStorage.getDeletedSystemRows(userId, true),
+                    ])
+                    setSystemRowPreferences(userId, systemPrefs)
+                    setDeletedSystemRows(userId, deletedRows)
+                } else {
+                    // Authenticated: load both custom rows and system preferences from Firebase
+                    const [customRows, systemPrefs, deletedRows] = await Promise.all([
+                        CustomRowsFirestore.getUserCustomRows(userId),
+                        SystemRowStorage.getSystemRowPreferences(userId, false),
+                        SystemRowStorage.getDeletedSystemRows(userId, false),
+                    ])
+                    setRows(userId, customRows)
+                    setSystemRowPreferences(userId, systemPrefs)
+                    setDeletedSystemRows(userId, deletedRows)
+                }
             } catch (error) {
-                console.error('Error loading system collections:', error)
-                showToast('error', 'Failed to load system collections')
+                console.error('Error loading collections:', error)
+                showToast('error', 'Failed to load collections')
                 setError((error as Error).message)
             } finally {
                 setLoading(false)
@@ -121,6 +136,8 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
     }, [
         userId,
         isOpen,
+        isGuest,
+        setRows,
         setSystemRowPreferences,
         setDeletedSystemRows,
         setLoading,
@@ -128,13 +145,13 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         showToast,
     ])
 
-    // Handle drag end for reordering system collections
+    // Handle drag end for reordering collections
     const handleDragEnd = async (event: DragEndEvent) => {
         const { active, over } = event
 
         if (!over || active.id === over.id || !userId) return
 
-        const rows = filteredRows // filteredRows is already system-only
+        const rows = filteredRows
         const oldIndex = rows.findIndex((r) => r.id === active.id)
         const newIndex = rows.findIndex((r) => r.id === over.id)
 
@@ -145,36 +162,65 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
 
         // Update order in store optimistically
         newOrder.forEach((row, index) => {
-            updateSystemRowOrder(userId, row.id, index)
+            if (row.isSystemRow) {
+                updateSystemRowOrder(userId, row.id, index)
+            } else {
+                updateRow(userId, row.id, { order: index } as Partial<CustomRow>)
+            }
         })
 
-        // Persist to Firestore
+        // Persist to storage (localStorage for guests, Firebase for authenticated)
         try {
-            // Update system collections order
-            for (let i = 0; i < newOrder.length; i++) {
-                await CustomRowsFirestore.updateSystemRowOrder(userId, newOrder[i].id, i)
+            // Update custom rows (authenticated users only)
+            if (!isGuest) {
+                const customRowUpdates = newOrder.filter((r) => !r.isSystemRow)
+                if (customRowUpdates.length > 0) {
+                    await CustomRowsFirestore.reorderCustomRows(
+                        userId,
+                        customRowUpdates.map((r) => r.id)
+                    )
+                }
+            }
+
+            // Update system rows
+            const systemRowUpdates = newOrder.filter((r) => r.isSystemRow)
+            for (let i = 0; i < systemRowUpdates.length; i++) {
+                const r = systemRowUpdates[i]
+                await SystemRowStorage.updateSystemRowOrder(userId, r.id, i, isGuest)
             }
         } catch (error) {
             console.error('Error reordering collections:', error)
             showToast('error', 'Failed to save collection order')
             // Reload to get correct order
-            const [customRows, systemPrefs] = await Promise.all([
-                CustomRowsFirestore.getUserCustomRows(userId),
-                CustomRowsFirestore.getSystemRowPreferences(userId),
-            ])
-            setRows(userId, customRows)
-            setSystemRowPreferences(userId, systemPrefs)
+            if (isGuest) {
+                const systemPrefs = await SystemRowStorage.getSystemRowPreferences(userId, true)
+                setSystemRowPreferences(userId, systemPrefs)
+            } else {
+                const [customRows, systemPrefs] = await Promise.all([
+                    CustomRowsFirestore.getUserCustomRows(userId),
+                    SystemRowStorage.getSystemRowPreferences(userId, false),
+                ])
+                setRows(userId, customRows)
+                setSystemRowPreferences(userId, systemPrefs)
+            }
         }
     }
 
-    // Delete system collection
+    // Delete collection (system or custom)
     const handleDelete = async (row: DisplayRow) => {
-        if (!userId || !row.isSystemRow) return
+        if (!userId) return
 
         try {
-            await CustomRowsFirestore.deleteSystemRow(userId, row.id)
-            deleteSystemRowStore(userId, row.id)
-            showToast('success', `"${row.name}" deleted successfully`)
+            if (row.isSystemRow) {
+                await SystemRowStorage.deleteSystemRow(userId, row.id, isGuest)
+                deleteSystemRowStore(userId, row.id)
+                showToast('success', `"${row.name}" deleted successfully`)
+            } else {
+                // Custom row deletion (authenticated users only)
+                await CustomRowsFirestore.deleteCustomRow(userId, row.id)
+                removeRow(userId, row.id)
+                showToast('success', `"${row.name}" deleted successfully`)
+            }
         } catch (error) {
             console.error('Error deleting collection:', error)
             showToast('error', (error as Error).message)
@@ -183,11 +229,19 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
 
     // No longer needed - removed toggle enabled functionality
 
-    // Edit system collection name
+    // Edit collection
     const handleEdit = (row: DisplayRow) => {
-        if (!row.isSystemRow) return
-        // Open edit modal for system collections
-        setEditingSystemRow({ id: row.id, name: row.name })
+        if (row.isSystemRow) {
+            // Open edit modal for system collections
+            setEditingSystemRow({ id: row.id, name: row.name })
+        } else {
+            // Open modal for custom rows (authenticated users only)
+            if (isGuest) {
+                openAuthModal('signin')
+                return
+            }
+            openCustomRowModal('edit', row.id)
+        }
     }
 
     // Update system row name
@@ -195,9 +249,9 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         if (!userId) return
 
         try {
-            await CustomRowsFirestore.updateSystemRowName(userId, systemRowId, newName)
+            await SystemRowStorage.updateSystemRowName(userId, systemRowId, newName, isGuest)
             // Reload preferences to get updated name
-            const systemPrefs = await CustomRowsFirestore.getSystemRowPreferences(userId)
+            const systemPrefs = await SystemRowStorage.getSystemRowPreferences(userId, isGuest)
             setSystemRowPreferences(userId, systemPrefs)
             showToast('success', 'Collection name updated')
             setEditingSystemRow(null)
@@ -207,21 +261,42 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         }
     }
 
-    // Removed - no custom row creation, only system collections
+    // Create new collection
+    const handleCreate = () => {
+        if (isGuest) {
+            // Show auth modal for guests
+            openAuthModal('signin')
+            showToast('error', 'Sign in required', 'Please sign in to create custom collections')
+            return
+        }
+        // Open custom row modal for authenticated users
+        openCustomRowModal('create')
+    }
 
-    // Reset default system collections
+    // Reset default collections
     const handleResetDefaultRows = async () => {
         if (!userId) return
 
         try {
-            await CustomRowsFirestore.resetDefaultRows(userId, mediaType)
-            // Reload system preferences only
-            const [systemPrefs, deletedRows] = await Promise.all([
-                CustomRowsFirestore.getSystemRowPreferences(userId),
-                CustomRowsFirestore.getDeletedSystemRows(userId),
-            ])
-            setSystemRowPreferences(userId, systemPrefs)
-            setDeletedSystemRows(userId, deletedRows)
+            await SystemRowStorage.resetDefaultRows(userId, mediaType, isGuest)
+            // Reload data
+            if (isGuest) {
+                const [systemPrefs, deletedRows] = await Promise.all([
+                    SystemRowStorage.getSystemRowPreferences(userId, true),
+                    SystemRowStorage.getDeletedSystemRows(userId, true),
+                ])
+                setSystemRowPreferences(userId, systemPrefs)
+                setDeletedSystemRows(userId, deletedRows)
+            } else {
+                const [customRows, systemPrefs, deletedRows] = await Promise.all([
+                    CustomRowsFirestore.getUserCustomRows(userId),
+                    SystemRowStorage.getSystemRowPreferences(userId, false),
+                    SystemRowStorage.getDeletedSystemRows(userId, false),
+                ])
+                setRows(userId, customRows)
+                setSystemRowPreferences(userId, systemPrefs)
+                setDeletedSystemRows(userId, deletedRows)
+            }
             showToast('success', 'Default collections restored successfully')
         } catch (error) {
             console.error('Error resetting default collections:', error)
@@ -229,11 +304,11 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         }
     }
 
-    // Move system collection up (keyboard accessibility)
+    // Move collection up (keyboard accessibility)
     const handleMoveUp = async (row: DisplayRow) => {
-        if (!userId || !row.isSystemRow) return
+        if (!userId) return
 
-        const rows = systemOnlyRows
+        const rows = filteredRows
         const currentIndex = rows.findIndex((r) => r.id === row.id)
 
         if (currentIndex <= 0) return
@@ -242,13 +317,30 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         const newOrder = arrayMove(rows, currentIndex, newIndex)
 
         newOrder.forEach((r, index) => {
-            updateSystemRowOrder(userId, r.id, index)
+            if (r.isSystemRow) {
+                updateSystemRowOrder(userId, r.id, index)
+            } else {
+                updateRow(userId, r.id, { order: index } as Partial<CustomRow>)
+            }
         })
 
         try {
-            for (let i = 0; i < newOrder.length; i++) {
-                const r = newOrder[i]
-                await CustomRowsFirestore.updateSystemRowOrder(userId, r.id, i)
+            // Update custom rows (authenticated users only)
+            if (!isGuest) {
+                const customRowUpdates = newOrder.filter((r) => !r.isSystemRow)
+                if (customRowUpdates.length > 0) {
+                    await CustomRowsFirestore.reorderCustomRows(
+                        userId,
+                        customRowUpdates.map((r) => r.id)
+                    )
+                }
+            }
+
+            // Update system rows
+            const systemRowUpdates = newOrder.filter((r) => r.isSystemRow)
+            for (let i = 0; i < systemRowUpdates.length; i++) {
+                const r = systemRowUpdates[i]
+                await SystemRowStorage.updateSystemRowOrder(userId, r.id, i, isGuest)
             }
         } catch (error) {
             console.error('Error moving collection up:', error)
@@ -256,11 +348,11 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         }
     }
 
-    // Move system collection down (keyboard accessibility)
+    // Move collection down (keyboard accessibility)
     const handleMoveDown = async (row: DisplayRow) => {
-        if (!userId || !row.isSystemRow) return
+        if (!userId) return
 
-        const rows = systemOnlyRows
+        const rows = filteredRows
         const currentIndex = rows.findIndex((r) => r.id === row.id)
 
         if (currentIndex === -1 || currentIndex >= rows.length - 1) return
@@ -269,13 +361,30 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         const newOrder = arrayMove(rows, currentIndex, newIndex)
 
         newOrder.forEach((r, index) => {
-            updateSystemRowOrder(userId, r.id, index)
+            if (r.isSystemRow) {
+                updateSystemRowOrder(userId, r.id, index)
+            } else {
+                updateRow(userId, r.id, { order: index } as Partial<CustomRow>)
+            }
         })
 
         try {
-            for (let i = 0; i < newOrder.length; i++) {
-                const r = newOrder[i]
-                await CustomRowsFirestore.updateSystemRowOrder(userId, r.id, i)
+            // Update custom rows (authenticated users only)
+            if (!isGuest) {
+                const customRowUpdates = newOrder.filter((r) => !r.isSystemRow)
+                if (customRowUpdates.length > 0) {
+                    await CustomRowsFirestore.reorderCustomRows(
+                        userId,
+                        customRowUpdates.map((r) => r.id)
+                    )
+                }
+            }
+
+            // Update system rows
+            const systemRowUpdates = newOrder.filter((r) => r.isSystemRow)
+            for (let i = 0; i < systemRowUpdates.length; i++) {
+                const r = systemRowUpdates[i]
+                await SystemRowStorage.updateSystemRowOrder(userId, r.id, i, isGuest)
             }
         } catch (error) {
             console.error('Error moving collection down:', error)
@@ -318,8 +427,20 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
                     </div>
                     <div className="flex items-center gap-3">
                         <button
-                            onClick={handleResetDefaultRows}
+                            onClick={handleCreate}
                             className="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
+                            title={
+                                isGuest
+                                    ? 'Sign in to create custom collections'
+                                    : 'Create a new custom collection'
+                            }
+                        >
+                            <PlusIcon className="w-4 h-4" />
+                            <span>New Collection</span>
+                        </button>
+                        <button
+                            onClick={handleResetDefaultRows}
+                            className="flex items-center space-x-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors"
                             title="Restore all default system collections"
                         >
                             <ArrowPathIcon className="w-4 h-4" />
