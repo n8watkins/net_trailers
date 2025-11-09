@@ -43,12 +43,7 @@ export function CollectionRowLoader({ collection, pageType }: CollectionRowLoade
         }
 
         // For TMDB-based collections, fetch from API
-        if (!userId) {
-            setIsLoading(false)
-            setError('User not authenticated')
-            return
-        }
-
+        // Note: Special collections (trending, top-rated) don't require authentication
         const loadContent = async () => {
             setIsLoading(true)
             setError(null)
@@ -61,29 +56,31 @@ export function CollectionRowLoader({ collection, pageType }: CollectionRowLoade
                     collection.advancedFilters?.contentIds &&
                     collection.advancedFilters.contentIds.length > 0
 
-                if (
+                const isSpecialPublicCollection =
                     collection.isSpecialCollection ||
                     ((!collection.genres || collection.genres.length === 0) && !hasCuratedContent)
-                ) {
+
+                // Only require userId for non-public collections
+                if (!isSpecialPublicCollection && !userId) {
+                    setIsLoading(false)
+                    setError('User not authenticated')
+                    return
+                }
+
+                if (isSpecialPublicCollection) {
                     // For 'both' mediaType, fetch from both APIs and combine
                     if (collection.mediaType === 'both') {
                         const apiType = collection.id.includes('trending')
                             ? 'trending'
                             : 'top-rated'
 
-                        // Fetch both movies and TV in parallel
+                        // Fetch both movies and TV in parallel (no auth required)
                         const [moviesResponse, tvResponse] = await Promise.all([
                             fetch(
-                                `/api/movies/${apiType}${childSafetyMode ? '?childSafetyMode=true' : ''}`,
-                                {
-                                    headers: { 'X-User-ID': userId },
-                                }
+                                `/api/movies/${apiType}${childSafetyMode ? '?childSafetyMode=true' : ''}`
                             ),
                             fetch(
-                                `/api/tv/${apiType}${childSafetyMode ? '?childSafetyMode=true' : ''}`,
-                                {
-                                    headers: { 'X-User-ID': userId },
-                                }
+                                `/api/tv/${apiType}${childSafetyMode ? '?childSafetyMode=true' : ''}`
                             ),
                         ])
 
@@ -157,11 +154,13 @@ export function CollectionRowLoader({ collection, pageType }: CollectionRowLoade
                     }
                 }
 
-                const response = await fetch(url.toString(), {
-                    headers: {
-                        'X-User-ID': userId,
-                    },
-                })
+                // Only add X-User-ID header for non-public endpoints
+                const headers: Record<string, string> = {}
+                if (!isSpecialPublicCollection && userId) {
+                    headers['X-User-ID'] = userId
+                }
+
+                const response = await fetch(url.toString(), { headers })
 
                 if (!response.ok) {
                     let errorMessage = 'Failed to load content'
@@ -191,6 +190,7 @@ export function CollectionRowLoader({ collection, pageType }: CollectionRowLoade
         collection.genres?.join(','),
         collection.genreLogic,
         collection.mediaType,
+        collection.isSpecialCollection,
         userId,
         childSafetyMode,
     ])
@@ -200,8 +200,15 @@ export function CollectionRowLoader({ collection, pageType }: CollectionRowLoade
         return null
     }
 
-    // Don't render if no user (for TMDB-based collections)
-    if (collection.collectionType === 'tmdb-genre' && !userId) {
+    // Don't render if no user (for non-public TMDB-based collections)
+    // Special collections (trending, top-rated) are public and don't require auth
+    const isPublicCollection =
+        collection.isSpecialCollection ||
+        (collection.collectionType === 'tmdb-genre' &&
+            (!collection.genres || collection.genres.length === 0) &&
+            !collection.advancedFilters?.contentIds)
+
+    if (collection.collectionType === 'tmdb-genre' && !isPublicCollection && !userId) {
         return null
     }
 

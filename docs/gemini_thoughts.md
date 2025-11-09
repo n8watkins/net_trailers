@@ -1,5 +1,11 @@
 # Review Notes
 
+## 2025-XX-XX Firebase Permissions Review
+
+- `firestore.rules`: Rules only cover `/users/{userId}` docs plus `settings/childSafety`, yet the code reads/writes `users/{uid}/interactions/*`, `/notifications/*`, `/collections/*`, and top-level `/shares/*`, so every one of those paths is implicitly denied. Add explicit `match` blocks mirroring the access patterns (auth-scoped checks for user subcollections, broader validation for `/shares`) and redeploy the rules.
+- `utils/firestore/childSafetyPIN.ts:189-197,220-223,289-295`: The PIN helpers set `rateLimitResetAt: null` whenever the rate limit resets, but `isValidPINData` only allows numbers. Those writes fail validation and surface as “Missing or insufficient permissions.” Either stop sending `null` (delete the field) or loosen the rule to tolerate nullish values.
+- `app/api/shares/create/route.ts`, `app/api/collections/duplicate/route.ts`, `app/api/cron/update-collections/route.ts` (and any other server handlers calling Firestore): They use the client SDK without a signed-in user, so `request.auth` is `null` in production and rules reject every request. Move these endpoints to the Admin SDK (verifying `x-user-id` or an ID token) or run the Firestore operations on the client with the user’s Firebase Auth session.
+
 ## 2025-XX-XX Code Review Snapshot
 
 - `components/recommendations/RecommendedForYouRow.tsx`: `useSessionStore()` destructuring assumes a `userId` field that no longer exists; the hook only exposes `getUserId()`. As a result the row never fetches personalized data. Fix by reading from `getUserId` (same issue in `NotificationBell`, `NotificationPanel`, and `NotificationItem`).
