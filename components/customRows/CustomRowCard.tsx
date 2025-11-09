@@ -10,9 +10,28 @@ import {
     TvIcon,
     SparklesIcon,
     Bars3Icon,
+    BellIcon,
+    ClockIcon,
 } from '@heroicons/react/24/outline'
 import { DisplayRow } from '../../types/customRows'
 import { MOVIE_GENRES, TV_GENRES } from '../../constants/genres'
+
+/**
+ * Format timestamp to relative time (e.g., "2 hours ago")
+ */
+function formatRelativeTime(timestamp: number): string {
+    const now = Date.now()
+    const diff = now - timestamp
+    const seconds = Math.floor(diff / 1000)
+    const minutes = Math.floor(seconds / 60)
+    const hours = Math.floor(minutes / 60)
+    const days = Math.floor(hours / 24)
+
+    if (days > 0) return `${days}d ago`
+    if (hours > 0) return `${hours}h ago`
+    if (minutes > 0) return `${minutes}m ago`
+    return 'Just now'
+}
 
 interface CustomRowCardProps {
     row: DisplayRow
@@ -89,7 +108,7 @@ export function CustomRowCard({
                     <div className="flex items-start gap-3">
                         <div className="flex-1">
                             <div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                     <h3 className="text-lg font-semibold text-white">{row.name}</h3>
                                     {row.isSystemRow && (
                                         <span
@@ -100,12 +119,37 @@ export function CustomRowCard({
                                             System
                                         </span>
                                     )}
+                                    {!row.isSystemRow && row.autoUpdateEnabled && (
+                                        <span
+                                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-600/20 text-blue-400 rounded text-xs font-medium"
+                                            title={`Auto-updating ${row.updateFrequency || 'weekly'}`}
+                                        >
+                                            <BellIcon className="w-3 h-3" />
+                                            Auto
+                                        </span>
+                                    )}
+                                    {!row.isSystemRow &&
+                                        row.lastUpdateCount !== undefined &&
+                                        row.lastUpdateCount > 0 && (
+                                            <span
+                                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-600/20 text-green-400 rounded text-xs font-medium"
+                                                title="New items added in last update"
+                                            >
+                                                +{row.lastUpdateCount}
+                                            </span>
+                                        )}
                                 </div>
-                                {!row.enabled && (
-                                    <span className="inline-block mt-1 text-xs text-gray-500">
-                                        (Disabled)
-                                    </span>
-                                )}
+                                <div className="flex items-center gap-3 mt-1">
+                                    {!row.enabled && (
+                                        <span className="text-xs text-gray-500">(Disabled)</span>
+                                    )}
+                                    {!row.isSystemRow && row.lastCheckedAt && (
+                                        <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+                                            <ClockIcon className="w-3 h-3" />
+                                            Updated {formatRelativeTime(row.lastCheckedAt)}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -85,6 +85,11 @@ export interface DisplayRow extends BaseRowConfig {
     createdAt?: number // Only present for custom rows
     updatedAt?: number // Only present for custom rows
     canDelete?: boolean // false for core system rows, true/undefined for deletable rows
+    // Auto-update fields (Phase 5) - Only present for custom rows
+    autoUpdateEnabled?: boolean
+    updateFrequency?: 'daily' | 'weekly' | 'never'
+    lastCheckedAt?: number
+    lastUpdateCount?: number
 }
 
 /**
