@@ -1,6 +1,13 @@
 import React, { useEffect } from 'react'
 import Link from 'next/link'
-import { CommandLineIcon } from '@heroicons/react/24/outline'
+import {
+    CommandLineIcon,
+    HomeIcon,
+    MagnifyingGlassIcon,
+    TvIcon,
+    FilmIcon,
+    RectangleStackIcon,
+} from '@heroicons/react/24/outline'
 import { getFirstVisitStatus } from '../../utils/firstVisitTracker'
 
 interface FooterProps {
@@ -53,41 +60,46 @@ function Footer({
                                 <li>
                                     <Link
                                         href="/"
-                                        className="text-gray-300 hover:text-white transition-colors duration-200"
+                                        className="text-gray-300 hover:text-white transition-colors duration-200 flex items-center space-x-2"
                                     >
-                                        Home
+                                        <HomeIcon className="h-4 w-4" />
+                                        <span>Home</span>
                                     </Link>
                                 </li>
                                 <li>
                                     <Link
                                         href="/search"
-                                        className="text-gray-300 hover:text-white transition-colors duration-200"
+                                        className="text-gray-300 hover:text-white transition-colors duration-200 flex items-center space-x-2"
                                     >
-                                        Search
+                                        <MagnifyingGlassIcon className="h-4 w-4" />
+                                        <span>Search</span>
                                     </Link>
                                 </li>
                                 <li>
                                     <Link
-                                        href="/?filter=tv"
-                                        className="text-gray-300 hover:text-white transition-colors duration-200"
+                                        href="/tv"
+                                        className="text-gray-300 hover:text-white transition-colors duration-200 flex items-center space-x-2"
                                     >
-                                        TV Shows
+                                        <TvIcon className="h-4 w-4" />
+                                        <span>TV Shows</span>
                                     </Link>
                                 </li>
                                 <li>
                                     <Link
-                                        href="/?filter=movies"
-                                        className="text-gray-300 hover:text-white transition-colors duration-200"
+                                        href="/movies"
+                                        className="text-gray-300 hover:text-white transition-colors duration-200 flex items-center space-x-2"
                                     >
-                                        Movies
+                                        <FilmIcon className="h-4 w-4" />
+                                        <span>Movies</span>
                                     </Link>
                                 </li>
                                 <li>
                                     <Link
                                         href="/collections"
-                                        className="text-gray-300 hover:text-white transition-colors duration-200"
+                                        className="text-gray-300 hover:text-white transition-colors duration-200 flex items-center space-x-2"
                                     >
-                                        Collections
+                                        <RectangleStackIcon className="h-4 w-4" />
+                                        <span>Collections</span>
                                     </Link>
                                 </li>
                             </ul>
