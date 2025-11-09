@@ -71,8 +71,8 @@ export default function PostHydrationEffects() {
 
                 // Handle any route-based state updates
                 // Note: In App Router, router is always ready, no need to check isReady
-                const queryQ = searchParams.get('q')
-                const queryRedirect = searchParams.get('redirect')
+                const queryQ = searchParams?.get('q')
+                const queryRedirect = searchParams?.get('redirect')
 
                 // Restore search query from URL
                 if (queryQ && typeof queryQ === 'string') {

@@ -107,7 +107,7 @@ function buildDiscoverParams(
 ): Record<string, string | number> {
     const params: Record<string, string | number> = {
         sort_by: 'release_date.desc', // Newest first
-        include_adult: false,
+        include_adult: 'false',
         page: 1,
     }
 

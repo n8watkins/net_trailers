@@ -32,6 +32,20 @@ const defaultState: AppStore = {
         mode: 'signin',
     },
 
+    // Row editor modal state
+    rowEditorModal: {
+        isOpen: false,
+        pageType: 'home',
+    },
+
+    // Watchlist creator modal state
+    watchlistCreatorModal: {
+        isOpen: false,
+        name: '',
+        content: [],
+        mediaType: 'all',
+    },
+
     // Toast notifications
     toasts: [],
 
@@ -81,6 +95,20 @@ const defaultState: AppStore = {
     closeAuthModal: () => {},
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     setAuthModalMode: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    openRowEditorModal: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    closeRowEditorModal: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    openWatchlistCreatorModal: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    closeWatchlistCreatorModal: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    setWatchlistCreatorName: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    addToWatchlistCreator: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    removeFromWatchlistCreator: () => {},
 }
 
 /**

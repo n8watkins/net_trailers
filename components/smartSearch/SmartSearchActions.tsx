@@ -8,6 +8,7 @@ import { useCustomRowsStore } from '../../stores/customRowsStore'
 import { useAppStore } from '../../stores/appStore'
 import { CustomRowsFirestore } from '../../utils/firestore/customRows'
 import { useToast } from '../../hooks/useToast'
+import { getTitle, getYear } from '../../typings'
 
 interface SmartSearchActionsProps {
     showAskForMore?: boolean
@@ -61,8 +62,8 @@ export default function SmartSearchActions({
 
             // Create list of existing movies with title and year for better context
             const existingMovies = state.results.map((r) => ({
-                title: r.title || r.name || 'Unknown',
-                year: r.release_date?.substring(0, 4) || r.first_air_date?.substring(0, 4) || '',
+                title: getTitle(r),
+                year: getYear(r),
             }))
 
             const response = await fetch('/api/ai-suggestions', {
@@ -87,24 +88,16 @@ export default function SmartSearchActions({
             // Create a Set of existing titles (normalized) for duplicate checking
             const existingTitlesSet = new Set(
                 state.results.map((r) => {
-                    const title = (r.title || r.name || '').toLowerCase().trim()
-                    const year = (
-                        r.release_date?.substring(0, 4) ||
-                        r.first_air_date?.substring(0, 4) ||
-                        ''
-                    ).trim()
+                    const title = getTitle(r).toLowerCase().trim()
+                    const year = getYear(r).trim()
                     return `${title}::${year}`
                 })
             )
 
             // Filter out duplicates from new results
             const uniqueNewResults = data.results.filter((newItem: any) => {
-                const title = (newItem.title || newItem.name || '').toLowerCase().trim()
-                const year = (
-                    newItem.release_date?.substring(0, 4) ||
-                    newItem.first_air_date?.substring(0, 4) ||
-                    ''
-                ).trim()
+                const title = getTitle(newItem).toLowerCase().trim()
+                const year = getYear(newItem).trim()
                 const key = `${title}::${year}`
                 return !existingTitlesSet.has(key)
             })
@@ -189,7 +182,9 @@ export default function SmartSearchActions({
         }
 
         // Open the watchlist creator modal with smart search results
-        openWatchlistCreatorModal(editedName || generatedName, results, mediaType)
+        // Map 'both' to 'all' for watchlist creator modal
+        const watchlistMediaType: 'movie' | 'tv' | 'all' = mediaType === 'both' ? 'all' : mediaType
+        openWatchlistCreatorModal(editedName || generatedName, results, watchlistMediaType)
     }
 
     // If showing only "Ask for More", render just that section

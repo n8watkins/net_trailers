@@ -37,10 +37,13 @@ export async function getSimilarContent(
             page,
         })
 
-        return response.results.map((item) => ({
-            ...item,
-            media_type: mediaType,
-        }))
+        return response.results.map(
+            (item) =>
+                ({
+                    ...item,
+                    media_type: mediaType,
+                }) as Content
+        )
     } catch (error) {
         console.error(`Error fetching similar content for ${contentId}:`, error)
         return []
@@ -68,10 +71,13 @@ export async function getTMDBRecommendations(
             { page }
         )
 
-        return response.results.map((item) => ({
-            ...item,
-            media_type: mediaType,
-        }))
+        return response.results.map(
+            (item) =>
+                ({
+                    ...item,
+                    media_type: mediaType,
+                }) as Content
+        )
     } catch (error) {
         console.error(`Error fetching TMDB recommendations for ${contentId}:`, error)
         return []
@@ -150,10 +156,13 @@ export async function discoverByPreferences(params: {
 
         const response = await tmdb.fetch<TMDBResponse>(`/discover/${mediaType}`, queryParams)
 
-        return response.results.map((item) => ({
-            ...item,
-            media_type: mediaType,
-        }))
+        return response.results.map(
+            (item) =>
+                ({
+                    ...item,
+                    media_type: mediaType,
+                }) as Content
+        )
     } catch (error) {
         console.error('Error discovering content by preferences:', error)
         return []
@@ -181,10 +190,13 @@ export async function getTopRatedByGenre(
             page,
         })
 
-        return response.results.map((item) => ({
-            ...item,
-            media_type: mediaType,
-        }))
+        return response.results.map(
+            (item) =>
+                ({
+                    ...item,
+                    media_type: mediaType,
+                }) as Content
+        )
     } catch (error) {
         console.error(`Error fetching top rated by genre ${genreId}:`, error)
         return []

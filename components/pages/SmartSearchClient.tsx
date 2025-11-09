@@ -13,7 +13,7 @@ import { useSmartSearchStore } from '../../stores/smartSearchStore'
 export default function SmartSearchClient() {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const queryParam = searchParams.get('q')
+    const queryParam = searchParams?.get('q')
 
     const {
         query,

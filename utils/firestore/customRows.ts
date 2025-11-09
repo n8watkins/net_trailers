@@ -209,7 +209,7 @@ export class CustomRowsFirestore {
     static async updateCustomRow(
         userId: string,
         rowId: string,
-        updates: Partial<CustomRowFormData>
+        updates: Partial<Omit<CustomRow, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>
     ): Promise<CustomRow> {
         // Validate userId
         if (!userId || userId === 'undefined' || userId === 'null') {

@@ -300,7 +300,8 @@ export const useCustomRowsStore = create<CustomRowsStore>((set, get) => ({
             const newLastAccessTime = new Map(state.lastAccessTime)
 
             // Find and remove inactive users
-            for (const [userId, lastAccess] of state.lastAccessTime.entries()) {
+            const entries = Array.from(state.lastAccessTime.entries())
+            for (const [userId, lastAccess] of entries) {
                 if (now - lastAccess > INACTIVE_USER_THRESHOLD_MS) {
                     newCustomRowsByUser.delete(userId)
                     newSystemRowPreferences.delete(userId)

@@ -25,7 +25,7 @@ import { useSessionStore } from '../../../stores/sessionStore'
 export default function SharedCollectionViewPage() {
     const params = useParams()
     const router = useRouter()
-    const shareId = params.shareId as string
+    const shareId = params?.shareId as string
 
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)

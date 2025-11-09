@@ -167,7 +167,8 @@ export async function GET(request: NextRequest) {
         // Clean old cache entries (prevent memory leak)
         if (searchCache.size > 1000) {
             const now = Date.now()
-            for (const [key, value] of searchCache.entries()) {
+            const entries = Array.from(searchCache.entries())
+            for (const [key, value] of entries) {
                 if (now - value.timestamp > CACHE_TTL) {
                     searchCache.delete(key)
                 }

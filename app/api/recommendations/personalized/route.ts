@@ -15,7 +15,7 @@ import {
 } from '@/utils/recommendations/genreEngine'
 import { getBatchSimilarContent } from '@/utils/tmdb/recommendations'
 import { Recommendation, RECOMMENDATION_CONSTRAINTS } from '@/types/recommendations'
-import { Content } from '@/typings'
+import { Content, getTitle } from '@/typings'
 
 export async function GET(request: NextRequest) {
     try {
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
                 reason = `Trending in ${profile.topGenres[0].genreName}`
             } else if (source === 'tmdb_similar' && userData.likedMovies.length > 0) {
                 const sourceMovie = userData.likedMovies[0]
-                reason = `Similar to ${sourceMovie.title || sourceMovie.name}`
+                reason = `Similar to ${getTitle(sourceMovie)}`
             }
 
             return {

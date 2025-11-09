@@ -18,7 +18,7 @@ import ColorPickerModal from './ColorPickerModal'
 import InlineSearchBar from './InlineSearchBar'
 import useUserData from '../../hooks/useUserData'
 import Image from 'next/image'
-import { Content, getTitle, isMovie } from '../../typings'
+import { Content, getTitle, getYear, isMovie } from '../../typings'
 
 const ITEMS_PER_PAGE = 8 // 2 rows x 4 columns
 
@@ -190,7 +190,7 @@ export default function WatchlistCreatorModal() {
 
         try {
             // Create the list using useUserData hook
-            const newList = createList({
+            const newListResult = createList({
                 name: watchlistCreatorModal.name.trim(),
                 isPublic,
                 emoji: selectedEmoji,
@@ -201,9 +201,12 @@ export default function WatchlistCreatorModal() {
                 canGenerateMore: true, // AI-generated collections can always generate more
             })
 
+            // Handle both sync and async returns
+            const listId = typeof newListResult === 'string' ? newListResult : await newListResult
+
             // Add all content items to the list
             watchlistCreatorModal.content.forEach((contentItem) => {
-                addToList(newList.id, contentItem)
+                addToList(listId, contentItem)
             })
 
             showSuccess(
@@ -231,8 +234,8 @@ export default function WatchlistCreatorModal() {
 
             // Create list of existing movies with title and year for better context
             const existingMovies = state.results.map((r) => ({
-                title: r.title || r.name || 'Unknown',
-                year: r.release_date?.substring(0, 4) || r.first_air_date?.substring(0, 4) || '',
+                title: getTitle(r),
+                year: getYear(r),
             }))
 
             const response = await fetch('/api/ai-suggestions', {
@@ -257,24 +260,16 @@ export default function WatchlistCreatorModal() {
             // Create a Set of existing titles (normalized) for duplicate checking
             const existingTitlesSet = new Set(
                 state.results.map((r) => {
-                    const title = (r.title || r.name || '').toLowerCase().trim()
-                    const year = (
-                        r.release_date?.substring(0, 4) ||
-                        r.first_air_date?.substring(0, 4) ||
-                        ''
-                    ).trim()
+                    const title = getTitle(r).toLowerCase().trim()
+                    const year = getYear(r).trim()
                     return `${title}::${year}`
                 })
             )
 
             // Filter out duplicates from new results
             const uniqueNewResults = data.results.filter((newItem: any) => {
-                const title = (newItem.title || newItem.name || '').toLowerCase().trim()
-                const year = (
-                    newItem.release_date?.substring(0, 4) ||
-                    newItem.first_air_date?.substring(0, 4) ||
-                    ''
-                ).trim()
+                const title = getTitle(newItem).toLowerCase().trim()
+                const year = getYear(newItem).trim()
                 const key = `${title}::${year}`
                 return !existingTitlesSet.has(key)
             })

@@ -416,7 +416,7 @@ function generateRowNames(inputData: InputData, seed: number = 0): string[] {
     }
 
     // Return top 3 unique names
-    return [...new Set(names)].slice(0, 3)
+    return Array.from(new Set(names)).slice(0, 3)
 }
 
 /**

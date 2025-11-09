@@ -80,7 +80,7 @@ export const useSmartSearchStore = create<SmartSearchStore>((set, get) => ({
         const state = get()
         set({
             results: state.results.filter((r) => r.id !== tmdbId),
-            removedIds: new Set([...state.removedIds, tmdbId]),
+            removedIds: new Set([...Array.from(state.removedIds), tmdbId]),
         })
     },
 

@@ -32,7 +32,7 @@ function MyListsDropdown() {
     }
 
     const isAnyListPath = () => {
-        return ['/watchlists', '/liked', '/hidden', '/rows'].includes(pathname)
+        return pathname ? ['/watchlists', '/liked', '/hidden', '/rows'].includes(pathname) : false
     }
 
     const handleLinkClick = () => {

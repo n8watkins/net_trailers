@@ -154,7 +154,6 @@ async function processCollection(userId: string, collection: CustomRow): Promise
             advancedFilters: updatedCollection.advancedFilters,
             lastCheckedAt: updatedCollection.lastCheckedAt,
             lastUpdateCount: updatedCollection.lastUpdateCount,
-            updatedAt: updatedCollection.updatedAt,
         })
 
         // Create notification for user

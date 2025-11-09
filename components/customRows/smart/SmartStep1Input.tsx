@@ -4,10 +4,15 @@ import React, { useState } from 'react'
 import { SmartInput, Entity } from './SmartInput'
 
 interface SmartStep1InputProps {
-    onContinue: (data: { entities: Entity[]; rawText: string }) => void
+    onContinue: (data: {
+        entities: Entity[]
+        rawText: string
+        mediaType: 'movie' | 'tv' | 'both'
+    }) => void
     initialData?: {
         entities: Entity[]
         rawText: string
+        mediaType?: 'movie' | 'tv' | 'both'
     }
 }
 
@@ -22,6 +27,9 @@ interface SmartStep1InputProps {
 export function SmartStep1Input({ onContinue, initialData }: SmartStep1InputProps) {
     const [entities, setEntities] = useState<Entity[]>(initialData?.entities || [])
     const [rawText, setRawText] = useState(initialData?.rawText || '')
+    const [mediaType, setMediaType] = useState<'movie' | 'tv' | 'both'>(
+        initialData?.mediaType || 'movie'
+    )
 
     const canContinue = entities.length > 0 || rawText.trim().length >= 10
 
@@ -29,6 +37,7 @@ export function SmartStep1Input({ onContinue, initialData }: SmartStep1InputProp
         onContinue({
             entities,
             rawText,
+            mediaType,
         })
     }
 

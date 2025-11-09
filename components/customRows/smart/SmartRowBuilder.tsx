@@ -41,9 +41,11 @@ export function SmartRowBuilder({
     const [step1Data, setStep1Data] = useState<{
         entities: Entity[]
         rawText: string
+        mediaType: 'movie' | 'tv' | 'both'
     }>({
         entities: [],
         rawText: '',
+        mediaType: 'movie',
     })
 
     // Step 2 data (includes AI-inferred mediaType)
@@ -108,7 +110,7 @@ export function SmartRowBuilder({
     const handleCreateAnother = () => {
         setCurrentStep(1)
         setStep1Data({ entities: [], rawText: '', mediaType: 'movie' })
-        setStep2Data({ selectedSuggestions: [], selectedRowName: '' })
+        setStep2Data({ selectedSuggestions: [], selectedRowName: '', mediaType: 'movie' })
         setFormData({
             name: '',
             genres: [],
@@ -271,7 +273,7 @@ function convertSuggestionsToFormData(
     })
 
     // Remove duplicates
-    formData.genres = [...new Set(formData.genres)]
+    formData.genres = Array.from(new Set(formData.genres))
 
     // Build advanced filters
     suggestions.forEach((suggestion) => {

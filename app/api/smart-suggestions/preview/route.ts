@@ -130,17 +130,21 @@ export async function POST(request: NextRequest) {
         if (mediaType === 'movie' || mediaType === 'both') {
             const movieParams = { ...discoverParams }
             delete movieParams.first_air_date
-            const movies = await tmdb.fetch('/discover/movie', movieParams)
-            content.push(...(movies.results || []).slice(0, 10))
-            totalResults += movies.total_results || 0
+            const movies = (await tmdb.fetch('/discover/movie', movieParams)) as any
+            if (movies && Array.isArray(movies.results)) {
+                content.push(...movies.results.slice(0, 10))
+                totalResults += movies.total_results || 0
+            }
         }
 
         if (mediaType === 'tv' || mediaType === 'both') {
             const tvParams = { ...discoverParams }
             delete tvParams.primary_release_date
-            const shows = await tmdb.fetch('/discover/tv', tvParams)
-            content.push(...(shows.results || []).slice(0, 10))
-            totalResults += shows.total_results || 0
+            const shows = (await tmdb.fetch('/discover/tv', tvParams)) as any
+            if (shows && Array.isArray(shows.results)) {
+                content.push(...shows.results.slice(0, 10))
+                totalResults += shows.total_results || 0
+            }
         }
 
         // Client-side filtering for required people (AND logic)
@@ -156,11 +160,11 @@ export async function POST(request: NextRequest) {
                             ? `/movie/${item.id}/credits`
                             : `/tv/${item.id}/credits`
 
-                    const credits = await tmdb.fetch(creditsEndpoint, {})
+                    const credits = (await tmdb.fetch(creditsEndpoint, {})) as any
 
                     // Get all person IDs in this content (cast + crew)
-                    const castIds = credits.cast?.map((c: any) => c.id) || []
-                    const crewIds = credits.crew?.map((c: any) => c.id) || []
+                    const castIds = credits?.cast?.map((c: any) => c.id) || []
+                    const crewIds = credits?.crew?.map((c: any) => c.id) || []
                     const allPersonIds = new Set([...castIds, ...crewIds])
 
                     // Check if ALL required people are present
