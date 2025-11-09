@@ -34,10 +34,13 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
     const guestCollections = useGuestStore((state) => state.userCreatedWatchlists)
 
     // Get deleted system rows from customRowsStore
-    const deletedSystemRows = useCustomRowsStore((state) =>
-        userId ? state.deletedSystemRows.get(userId) || [] : []
-    )
+    const deletedSystemRowsMap = useCustomRowsStore((state) => state.deletedSystemRows)
     const setDeletedSystemRows = useCustomRowsStore((state) => state.setDeletedSystemRows)
+
+    // Memoize the deleted system rows array to avoid infinite loop
+    const deletedSystemRows = useMemo(() => {
+        return userId ? deletedSystemRowsMap.get(userId) || [] : []
+    }, [userId, deletedSystemRowsMap])
 
     const { trending } = data
 
