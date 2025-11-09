@@ -56,11 +56,18 @@ export function CollectionRowLoader({ collection, pageType }: CollectionRowLoade
                     collection.advancedFilters?.contentIds &&
                     collection.advancedFilters.contentIds.length > 0
 
+                // Determine if this is a public collection (doesn't require authentication)
+                // Public collections include:
+                // 1. Special collections (trending, top-rated)
+                // 2. System collections (genre-based collections that start with "system-")
+                // 3. Collections with no genres and no curated content
+                const isSystemCollection = collection.id.startsWith('system-')
                 const isSpecialPublicCollection =
                     collection.isSpecialCollection ||
+                    isSystemCollection ||
                     ((!collection.genres || collection.genres.length === 0) && !hasCuratedContent)
 
-                // Only require userId for non-public collections
+                // Only require userId for non-public collections (user-created custom collections)
                 if (!isSpecialPublicCollection && !userId) {
                     setIsLoading(false)
                     setError('User not authenticated')

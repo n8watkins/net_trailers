@@ -12,6 +12,8 @@ import { getSystemCollectionsForPage } from '../../constants/systemCollections'
 import RecommendedForYouRow from '../recommendations/RecommendedForYouRow'
 import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
+import { useCustomRowsStore } from '../../stores/customRowsStore'
+import { SystemRowStorage } from '../../utils/systemRowStorage'
 
 interface HomeClientProps {
     data: HomeData
@@ -25,12 +27,35 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
     const sessionType = useSessionStore((state) => state.sessionType)
     const isInitialized = useSessionStore((state) => state.isInitialized)
     const userId = getUserId()
+    const isGuest = sessionType === 'guest'
 
     // Get collections from appropriate store
     const authCollections = useAuthStore((state) => state.userCreatedWatchlists)
     const guestCollections = useGuestStore((state) => state.userCreatedWatchlists)
 
+    // Get deleted system rows from customRowsStore
+    const deletedSystemRows = useCustomRowsStore((state) =>
+        userId ? state.deletedSystemRows.get(userId) || [] : []
+    )
+    const setDeletedSystemRows = useCustomRowsStore((state) => state.setDeletedSystemRows)
+
     const { trending } = data
+
+    // Load deleted system rows from localStorage/Firebase on mount
+    useEffect(() => {
+        if (!userId || !isInitialized) return
+
+        const loadDeletedRows = async () => {
+            try {
+                const deletedRows = await SystemRowStorage.getDeletedSystemRows(userId, isGuest)
+                setDeletedSystemRows(userId, deletedRows)
+            } catch (error) {
+                console.error('Error loading deleted system rows:', error)
+            }
+        }
+
+        loadDeletedRows()
+    }, [userId, isInitialized, isGuest, setDeletedSystemRows])
 
     // Auto-migrate custom rows to collections on first load
     useEffect(() => {
@@ -46,12 +71,17 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
         const systemCollections = getSystemCollectionsForPage('home')
         const userCollections = sessionType === 'auth' ? authCollections : guestCollections
 
+        // Filter out deleted system collections
+        const activeSystemCollections = systemCollections.filter(
+            (c) => !deletedSystemRows.includes(c.id)
+        )
+
         // User collections that should display as rows
         const userRows = userCollections.filter((c) => c.displayAsRow && c.mediaType === 'both')
 
         // Combine and sort by order
-        return [...systemCollections, ...userRows].sort((a, b) => a.order - b.order)
-    }, [sessionType, authCollections, guestCollections])
+        return [...activeSystemCollections, ...userRows].sort((a, b) => a.order - b.order)
+    }, [sessionType, authCollections, guestCollections, deletedSystemRows])
 
     // Filter to enabled collections only
     const enabledCollections = allCollections.filter((c) => c.enabled)
