@@ -463,6 +463,71 @@ export class CustomRowsFirestore {
             enabled: currentEnabled,
             order: currentOrder,
             customName: customName.trim() || undefined, // Remove if empty
+            customGenres: currentPref?.customGenres,
+            customGenreLogic: currentPref?.customGenreLogic,
+        }
+
+        // Update or create user document
+        if (!userDoc.exists()) {
+            await setDoc(userDocRef, {
+                watchlist: [],
+                ratings: [],
+                userLists: {},
+                customRows: {},
+                systemRowPreferences: currentPreferences,
+                lastActive: now,
+            })
+        } else {
+            await updateDoc(userDocRef, {
+                systemRowPreferences: currentPreferences,
+                lastActive: now,
+            })
+        }
+    }
+
+    /**
+     * Update system row genres
+     *
+     * @param userId - Firebase Auth UID or Guest ID
+     * @param systemRowId - System row ID
+     * @param customGenres - New custom genres array
+     * @param customGenreLogic - Genre logic ('AND' | 'OR')
+     */
+    static async updateSystemRowGenres(
+        userId: string,
+        systemRowId: string,
+        customGenres: number[],
+        customGenreLogic: 'AND' | 'OR'
+    ): Promise<void> {
+        // Validate userId
+        if (!userId || userId === 'undefined' || userId === 'null') {
+            throw new Error('Invalid userId provided to updateSystemRowGenres')
+        }
+
+        const now = Date.now()
+
+        // Get user document
+        const userDocRef = doc(db, 'users', userId)
+        const userDoc = await getDoc(userDocRef)
+
+        let currentPreferences: SystemRowPreferences = {}
+
+        if (userDoc.exists()) {
+            const userData = userDoc.data()
+            currentPreferences = userData.systemRowPreferences || {}
+        }
+
+        // Get current preference or create default
+        const currentPref = currentPreferences[systemRowId]
+        const currentEnabled = currentPref?.enabled ?? true
+        const currentOrder = currentPref?.order ?? 0
+
+        currentPreferences[systemRowId] = {
+            enabled: currentEnabled,
+            order: currentOrder,
+            customName: currentPref?.customName,
+            customGenres: customGenres.length > 0 ? customGenres : undefined,
+            customGenreLogic: customGenres.length > 0 ? customGenreLogic : undefined,
         }
 
         // Update or create user document

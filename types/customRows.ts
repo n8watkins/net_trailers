@@ -100,6 +100,8 @@ export interface SystemRowPreference {
     enabled: boolean // Whether the row is enabled
     order: number // Custom order position (overrides default)
     customName?: string // Custom name override (only for editable system rows)
+    customGenres?: number[] // Custom genre override (only for editable system rows)
+    customGenreLogic?: 'AND' | 'OR' // Custom genre logic override
 }
 
 export interface SystemRowPreferences {

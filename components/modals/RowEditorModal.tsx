@@ -9,6 +9,7 @@ import {
     Squares2X2Icon,
     ArrowPathIcon,
 } from '@heroicons/react/24/solid'
+import { MOVIE_GENRES, TV_GENRES, Genre } from '../../constants/genres'
 import { SortableCustomRowCard } from '../customRows/SortableCustomRowCard'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useCustomRowsStore } from '../../stores/customRowsStore'
@@ -32,6 +33,151 @@ import {
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 
+interface SystemCollectionEditModalProps {
+    collection: {
+        id: string
+        name: string
+        genres: number[]
+        genreLogic: 'AND' | 'OR'
+    }
+    onSave: (id: string, name: string, genres: number[], genreLogic: 'AND' | 'OR') => Promise<void>
+    onCancel: () => void
+    mediaType: 'movie' | 'tv' | 'both'
+}
+
+/**
+ * SystemCollectionEditModal Component
+ *
+ * Modal for editing system collection name and genres
+ */
+function SystemCollectionEditModal({
+    collection,
+    onSave,
+    onCancel,
+    mediaType,
+}: SystemCollectionEditModalProps) {
+    const [name, setName] = useState(collection.name)
+    const [selectedGenres, setSelectedGenres] = useState<number[]>(collection.genres)
+    const [genreLogic, setGenreLogic] = useState<'AND' | 'OR'>(collection.genreLogic)
+
+    // Get appropriate genres based on media type
+    const availableGenres: Genre[] =
+        mediaType === 'tv' ? TV_GENRES : mediaType === 'movie' ? MOVIE_GENRES : MOVIE_GENRES
+
+    const toggleGenre = (genreId: number) => {
+        setSelectedGenres((prev) =>
+            prev.includes(genreId) ? prev.filter((id) => id !== genreId) : [...prev, genreId]
+        )
+    }
+
+    const handleSave = () => {
+        if (!name.trim()) return
+        onSave(collection.id, name.trim(), selectedGenres, genreLogic)
+    }
+
+    return (
+        <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm z-10 flex items-center justify-center p-4"
+            onClick={onCancel}
+        >
+            <div
+                className="bg-gray-800 border border-gray-600 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <h3 className="text-xl font-bold text-white mb-4">Edit Collection</h3>
+
+                {/* Name Input */}
+                <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Collection Name
+                    </label>
+                    <input
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-600"
+                        placeholder="Collection name"
+                        autoFocus
+                    />
+                </div>
+
+                {/* Genre Selection */}
+                <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Genres (optional)
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-60 overflow-y-auto p-2 bg-gray-900 rounded-lg border border-gray-700">
+                        {availableGenres.map((genre) => (
+                            <label
+                                key={genre.id}
+                                className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 cursor-pointer transition-colors"
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={selectedGenres.includes(genre.id)}
+                                    onChange={() => toggleGenre(genre.id)}
+                                    className="w-4 h-4 text-red-600 bg-gray-700 border-gray-600 rounded focus:ring-red-500 focus:ring-2"
+                                />
+                                <span className="text-sm text-gray-300">{genre.name}</span>
+                            </label>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Genre Logic */}
+                {selectedGenres.length > 1 && (
+                    <div className="mb-6">
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                            Genre Match Logic
+                        </label>
+                        <div className="flex gap-4">
+                            <label className="flex items-center space-x-2 cursor-pointer">
+                                <input
+                                    type="radio"
+                                    checked={genreLogic === 'OR'}
+                                    onChange={() => setGenreLogic('OR')}
+                                    className="w-4 h-4 text-red-600 bg-gray-700 border-gray-600 focus:ring-red-500 focus:ring-2"
+                                />
+                                <span className="text-sm text-gray-300">
+                                    OR (matches any selected genre)
+                                </span>
+                            </label>
+                            <label className="flex items-center space-x-2 cursor-pointer">
+                                <input
+                                    type="radio"
+                                    checked={genreLogic === 'AND'}
+                                    onChange={() => setGenreLogic('AND')}
+                                    className="w-4 h-4 text-red-600 bg-gray-700 border-gray-600 focus:ring-red-500 focus:ring-2"
+                                />
+                                <span className="text-sm text-gray-300">
+                                    AND (matches all selected genres)
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                    <button
+                        onClick={handleSave}
+                        disabled={!name.trim()}
+                        className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
+                    >
+                        Save Changes
+                    </button>
+                    <button
+                        onClick={onCancel}
+                        className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
 interface RowEditorModalProps {
     isOpen: boolean
     onClose: () => void
@@ -39,9 +185,12 @@ interface RowEditorModalProps {
 }
 
 export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProps) {
-    const [editingSystemRow, setEditingSystemRow] = useState<{ id: string; name: string } | null>(
-        null
-    )
+    const [editingSystemRow, setEditingSystemRow] = useState<{
+        id: string
+        name: string
+        genres: number[]
+        genreLogic: 'AND' | 'OR'
+    } | null>(null)
 
     // Stores
     const getUserId = useSessionStore((state: any) => state.getUserId)
@@ -233,7 +382,12 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
     const handleEdit = (row: DisplayRow) => {
         if (row.isSystemRow) {
             // Open edit modal for system collections
-            setEditingSystemRow({ id: row.id, name: row.name })
+            setEditingSystemRow({
+                id: row.id,
+                name: row.name,
+                genres: row.genres || [],
+                genreLogic: row.genreLogic || 'OR',
+            })
         } else {
             // Open modal for custom rows (authenticated users only)
             if (isGuest) {
@@ -244,19 +398,35 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         }
     }
 
-    // Update system row name
-    const handleUpdateSystemRowName = async (systemRowId: string, newName: string) => {
+    // Update system row (name and genres)
+    const handleUpdateSystemRow = async (
+        systemRowId: string,
+        newName: string,
+        newGenres: number[],
+        newGenreLogic: 'AND' | 'OR'
+    ) => {
         if (!userId) return
 
         try {
-            await SystemRowStorage.updateSystemRowName(userId, systemRowId, newName, isGuest)
-            // Reload preferences to get updated name
+            // Update both name and genres
+            await Promise.all([
+                SystemRowStorage.updateSystemRowName(userId, systemRowId, newName, isGuest),
+                SystemRowStorage.updateSystemRowGenres(
+                    userId,
+                    systemRowId,
+                    newGenres,
+                    newGenreLogic,
+                    isGuest
+                ),
+            ])
+
+            // Reload preferences to get updated data
             const systemPrefs = await SystemRowStorage.getSystemRowPreferences(userId, isGuest)
             setSystemRowPreferences(userId, systemPrefs)
-            showToast('success', 'Collection name updated')
+            showToast('success', 'Collection updated successfully')
             setEditingSystemRow(null)
         } catch (error) {
-            console.error('Error updating system row name:', error)
+            console.error('Error updating system row:', error)
             showToast('error', (error as Error).message)
         }
     }
@@ -502,67 +672,12 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
 
             {/* System Collection Edit Modal - Overlays the editor */}
             {editingSystemRow && (
-                <div
-                    className="absolute inset-0 bg-black/60 backdrop-blur-sm z-10 flex items-center justify-center p-4"
-                    onClick={() => setEditingSystemRow(null)}
-                >
-                    <div
-                        className="bg-gray-800 border border-gray-600 rounded-xl p-6 max-w-md w-full shadow-2xl"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <h3 className="text-xl font-bold text-white mb-4">Edit Collection Name</h3>
-                        <input
-                            type="text"
-                            defaultValue={editingSystemRow.name}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    const input = e.currentTarget
-                                    if (
-                                        input.value.trim() &&
-                                        input.value !== editingSystemRow.name
-                                    ) {
-                                        handleUpdateSystemRowName(
-                                            editingSystemRow.id,
-                                            input.value.trim()
-                                        )
-                                    }
-                                } else if (e.key === 'Escape') {
-                                    setEditingSystemRow(null)
-                                }
-                            }}
-                            className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-600"
-                            placeholder="Collection name"
-                            autoFocus
-                        />
-                        <div className="flex gap-3 mt-4">
-                            <button
-                                onClick={() => {
-                                    const input = document.querySelector<HTMLInputElement>(
-                                        'input[placeholder="Collection name"]'
-                                    )
-                                    if (
-                                        input?.value.trim() &&
-                                        input.value !== editingSystemRow.name
-                                    ) {
-                                        handleUpdateSystemRowName(
-                                            editingSystemRow.id,
-                                            input.value.trim()
-                                        )
-                                    }
-                                }}
-                                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
-                            >
-                                Save
-                            </button>
-                            <button
-                                onClick={() => setEditingSystemRow(null)}
-                                className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <SystemCollectionEditModal
+                    collection={editingSystemRow}
+                    onSave={handleUpdateSystemRow}
+                    onCancel={() => setEditingSystemRow(null)}
+                    mediaType={mediaType}
+                />
             )}
         </div>
     )

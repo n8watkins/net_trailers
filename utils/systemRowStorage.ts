@@ -91,6 +91,8 @@ class GuestSystemRowStorage {
             enabled: currentPref?.enabled ?? true,
             order: currentPref?.order ?? 0,
             customName: customName.trim() || undefined,
+            customGenres: currentPref?.customGenres,
+            customGenreLogic: currentPref?.customGenreLogic,
         }
 
         this.saveGuestData(guestId, data)
@@ -107,6 +109,31 @@ class GuestSystemRowStorage {
             enabled: currentPref?.enabled ?? true,
             order,
             customName: currentPref?.customName,
+            customGenres: currentPref?.customGenres,
+            customGenreLogic: currentPref?.customGenreLogic,
+        }
+
+        this.saveGuestData(guestId, data)
+    }
+
+    /**
+     * Update system row genres for a guest user
+     */
+    static updateSystemRowGenres(
+        guestId: string,
+        systemRowId: string,
+        customGenres: number[],
+        customGenreLogic: 'AND' | 'OR'
+    ): void {
+        const data = this.loadGuestData(guestId)
+        const currentPref = data.systemRowPreferences[systemRowId]
+
+        data.systemRowPreferences[systemRowId] = {
+            enabled: currentPref?.enabled ?? true,
+            order: currentPref?.order ?? 0,
+            customName: currentPref?.customName,
+            customGenres: customGenres.length > 0 ? customGenres : undefined,
+            customGenreLogic: customGenres.length > 0 ? customGenreLogic : undefined,
         }
 
         this.saveGuestData(guestId, data)
@@ -231,6 +258,33 @@ export class SystemRowStorage {
             return
         }
         return CustomRowsFirestore.updateSystemRowOrder(userId, systemRowId, order)
+    }
+
+    /**
+     * Update system row genres
+     */
+    static async updateSystemRowGenres(
+        userId: string,
+        systemRowId: string,
+        customGenres: number[],
+        customGenreLogic: 'AND' | 'OR',
+        isGuest: boolean
+    ): Promise<void> {
+        if (isGuest) {
+            GuestSystemRowStorage.updateSystemRowGenres(
+                userId,
+                systemRowId,
+                customGenres,
+                customGenreLogic
+            )
+            return
+        }
+        return CustomRowsFirestore.updateSystemRowGenres(
+            userId,
+            systemRowId,
+            customGenres,
+            customGenreLogic
+        )
     }
 
     /**
