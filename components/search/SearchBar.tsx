@@ -376,6 +376,12 @@ export default function SearchBar({
         <div
             className={`relative transition-all duration-300 ease-in-out w-full mx-auto ${className}`}
         >
+            {/* Screen reader announcements for accessibility */}
+            <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+                {isListening && 'Voice input active. Listening for your search query.'}
+                {!isListening && transcript && 'Voice input stopped. Transcript captured.'}
+            </div>
+
             {/* Unified Mobile/Desktop Search Container */}
             <div
                 className={`relative transition-all duration-300 ease-in-out ${

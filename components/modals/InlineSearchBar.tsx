@@ -137,6 +137,12 @@ export default function InlineSearchBar({
 
     return (
         <div className="relative">
+            {/* Screen reader announcements for accessibility */}
+            <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+                {isListening && 'Voice input active. Listening for search.'}
+                {!isListening && transcript && 'Voice input stopped. Transcript captured.'}
+            </div>
+
             {/* Search Input */}
             <div className="relative">
                 <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />

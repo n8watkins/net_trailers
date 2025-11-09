@@ -2,6 +2,58 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 
+// TypeScript types for Web Speech API
+interface SpeechRecognitionEvent extends Event {
+    results: SpeechRecognitionResultList
+    resultIndex: number
+}
+
+interface SpeechRecognitionResultList {
+    length: number
+    item(index: number): SpeechRecognitionResult
+    [index: number]: SpeechRecognitionResult
+}
+
+interface SpeechRecognitionResult {
+    length: number
+    item(index: number): SpeechRecognitionAlternative
+    [index: number]: SpeechRecognitionAlternative
+    isFinal: boolean
+}
+
+interface SpeechRecognitionAlternative {
+    transcript: string
+    confidence: number
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+    error: string
+    message: string
+}
+
+interface SpeechRecognition extends EventTarget {
+    continuous: boolean
+    interimResults: boolean
+    lang: string
+    start(): void
+    stop(): void
+    abort(): void
+    onresult: ((event: SpeechRecognitionEvent) => void) | null
+    onerror: ((event: SpeechRecognitionErrorEvent) => void) | null
+    onend: (() => void) | null
+}
+
+interface SpeechRecognitionConstructor {
+    new (): SpeechRecognition
+}
+
+declare global {
+    interface Window {
+        SpeechRecognition?: SpeechRecognitionConstructor
+        webkitSpeechRecognition?: SpeechRecognitionConstructor
+    }
+}
+
 interface UseVoiceInputOptions {
     onResult: (transcript: string) => void
     onError?: (error: string) => void
@@ -27,14 +79,30 @@ export function useVoiceInput({
     const [isListening, setIsListening] = useState(false)
     const [isSupported, setIsSupported] = useState(false)
     const [transcript, setTranscript] = useState('')
-    const recognitionRef = useRef<any>(null)
-    const permissionCheckedRef = useRef(false)
 
-    // Check if browser supports speech recognition
+    // Refs for proper cleanup and callback stability
+    const recognitionRef = useRef<SpeechRecognition | null>(null)
+    const mountedRef = useRef(true)
+    const onResultRef = useRef(onResult)
+    const onErrorRef = useRef(onError)
+
+    // Keep callback refs up to date
+    useEffect(() => {
+        onResultRef.current = onResult
+        onErrorRef.current = onError
+    }, [onResult, onError])
+
+    // Track mounted state to prevent state updates after unmount
+    useEffect(() => {
+        return () => {
+            mountedRef.current = false
+        }
+    }, [])
+
+    // Initialize speech recognition (only depends on language and continuous)
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            const SpeechRecognition =
-                (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
             setIsSupported(!!SpeechRecognition)
 
             if (SpeechRecognition) {
@@ -43,7 +111,7 @@ export function useVoiceInput({
                 recognitionRef.current.interimResults = true
                 recognitionRef.current.lang = language
 
-                recognitionRef.current.onresult = (event: any) => {
+                recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
                     let finalTranscript = ''
                     let interimTranscript = ''
 
@@ -57,20 +125,27 @@ export function useVoiceInput({
                     }
 
                     const currentTranscript = finalTranscript || interimTranscript
-                    setTranscript(currentTranscript)
+
+                    // Only update state if component is still mounted
+                    if (mountedRef.current) {
+                        setTranscript(currentTranscript)
+                    }
 
                     // Call onResult with final transcript
-                    if (finalTranscript) {
-                        onResult(finalTranscript)
-                        if (!continuous) {
+                    if (finalTranscript && onResultRef.current) {
+                        onResultRef.current(finalTranscript)
+                        if (!continuous && mountedRef.current) {
                             setIsListening(false)
                         }
                     }
                 }
 
-                recognitionRef.current.onerror = (event: any) => {
+                recognitionRef.current.onerror = (event: SpeechRecognitionErrorEvent) => {
                     console.error('Speech recognition error:', event.error)
-                    setIsListening(false)
+
+                    if (mountedRef.current) {
+                        setIsListening(false)
+                    }
 
                     const errorMessage =
                         event.error === 'no-speech'
@@ -79,13 +154,15 @@ export function useVoiceInput({
                               ? 'Microphone access denied. Please enable microphone permissions.'
                               : 'Speech recognition error. Please try again.'
 
-                    if (onError) {
-                        onError(errorMessage)
+                    if (onErrorRef.current) {
+                        onErrorRef.current(errorMessage)
                     }
                 }
 
                 recognitionRef.current.onend = () => {
-                    setIsListening(false)
+                    if (mountedRef.current) {
+                        setIsListening(false)
+                    }
                 }
             }
         }
@@ -95,56 +172,64 @@ export function useVoiceInput({
                 recognitionRef.current.stop()
             }
         }
-    }, [language, continuous, onResult, onError])
+    }, [language, continuous]) // Fixed: only depend on stable values
 
     const checkMicrophonePermission = useCallback(async (): Promise<boolean> => {
+        let stream: MediaStream | null = null
+
         try {
             // Request microphone permission directly - this will show the browser prompt
             // We're NOT checking Permissions API first because it can return stale cached data
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                 console.log('Requesting microphone permission via getUserMedia...')
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+                stream = await navigator.mediaDevices.getUserMedia({ audio: true })
                 console.log('✅ Microphone permission granted!')
-                // Stop the stream immediately - we only needed the permission
-                stream.getTracks().forEach((track) => track.stop())
                 return true
             } else {
                 console.error('getUserMedia not supported')
-                if (onError) {
-                    onError('Your browser does not support microphone access.')
+                if (onErrorRef.current) {
+                    onErrorRef.current('Your browser does not support microphone access.')
                 }
                 return false
             }
-        } catch (error: any) {
-            console.error('❌ Permission request failed:', error.name, error.message)
+        } catch (error: unknown) {
+            const err = error as { name?: string; message?: string }
+            console.error('❌ Permission request failed:', err.name, err.message)
 
             if (
-                error.name === 'NotAllowedError' ||
-                error.name === 'PermissionDeniedError' ||
-                error.message?.includes('denied')
+                err.name === 'NotAllowedError' ||
+                err.name === 'PermissionDeniedError' ||
+                err.message?.includes('denied')
             ) {
-                if (onError) {
-                    onError(
+                if (onErrorRef.current) {
+                    onErrorRef.current(
                         'Microphone access denied. Click the lock icon (🔒) in your browser address bar, set Microphone to "Allow", then refresh the page and try again.'
                     )
                 }
-            } else if (error.name === 'NotFoundError') {
-                if (onError) {
-                    onError('No microphone found. Please connect a microphone and try again.')
+            } else if (err.name === 'NotFoundError') {
+                if (onErrorRef.current) {
+                    onErrorRef.current(
+                        'No microphone found. Please connect a microphone and try again.'
+                    )
                 }
             } else {
-                if (onError) {
-                    onError(`Microphone error: ${error.message || 'Unknown error'}`)
+                if (onErrorRef.current) {
+                    onErrorRef.current(`Microphone error: ${err.message || 'Unknown error'}`)
                 }
             }
             return false
+        } finally {
+            // Always clean up the media stream
+            if (stream) {
+                stream.getTracks().forEach((track) => track.stop())
+            }
         }
-    }, [onError])
+    }, []) // No dependencies - uses refs
 
     const startListening = useCallback(async () => {
         if (!isSupported) {
-            if (onError) {
-                onError('Speech recognition is not supported in this browser.')
+            if (onErrorRef.current) {
+                onErrorRef.current('Speech recognition is not supported in this browser.')
             }
             return
         }
@@ -155,14 +240,18 @@ export function useVoiceInput({
             window.location.protocol !== 'https:' &&
             window.location.hostname !== 'localhost'
         ) {
-            if (onError) {
-                onError('Microphone access requires HTTPS. Please use a secure connection.')
+            if (onErrorRef.current) {
+                onErrorRef.current(
+                    'Microphone access requires HTTPS. Please use a secure connection.'
+                )
             }
             return
         }
 
         if (recognitionRef.current && !isListening) {
-            setTranscript('')
+            if (mountedRef.current) {
+                setTranscript('')
+            }
 
             // Check and request microphone permission first
             const hasPermission = await checkMicrophonePermission()
@@ -174,33 +263,47 @@ export function useVoiceInput({
                 // Now start speech recognition with permission already granted
                 console.log('Starting speech recognition...')
                 recognitionRef.current.start()
-                setIsListening(true)
-            } catch (error: any) {
-                console.error('Failed to start speech recognition:', error)
-                setIsListening(false)
+
+                // Only update state if still mounted
+                if (mountedRef.current) {
+                    setIsListening(true)
+                }
+            } catch (error: unknown) {
+                const err = error as { message?: string }
+                console.error('Failed to start speech recognition:', err)
+
+                if (mountedRef.current) {
+                    setIsListening(false)
+                }
 
                 // Handle specific error cases
-                if (error.message?.includes('already started')) {
-                    // Recognition already running, ignore
-                    setIsListening(true)
+                if (err.message?.includes('already started')) {
+                    // Recognition already running, set listening to true
+                    if (mountedRef.current) {
+                        setIsListening(true)
+                    }
                 } else {
-                    if (onError) {
-                        onError('Failed to start voice input. Please try again.')
+                    if (onErrorRef.current) {
+                        onErrorRef.current('Failed to start voice input. Please try again.')
                     }
                 }
             }
         }
-    }, [isSupported, isListening, onError, checkMicrophonePermission])
+    }, [isSupported, isListening, checkMicrophonePermission])
 
     const stopListening = useCallback(() => {
         if (recognitionRef.current && isListening) {
             recognitionRef.current.stop()
-            setIsListening(false)
+            if (mountedRef.current) {
+                setIsListening(false)
+            }
         }
     }, [isListening])
 
     const resetTranscript = useCallback(() => {
-        setTranscript('')
+        if (mountedRef.current) {
+            setTranscript('')
+        }
     }, [])
 
     return {

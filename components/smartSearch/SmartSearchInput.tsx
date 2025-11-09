@@ -131,6 +131,12 @@ export default function SmartSearchInput() {
 
     return (
         <form onSubmit={handleSubmit} className="relative w-full">
+            {/* Screen reader announcements for accessibility */}
+            <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+                {isListening && 'Voice input active. Listening for your search query.'}
+                {!isListening && transcript && 'Voice input stopped. Transcript captured.'}
+            </div>
+
             <div
                 className={`
               relative flex items-center
