@@ -77,15 +77,43 @@ export class UserListsService {
         const sanitizedColor =
             request.color && /^#[0-9A-Fa-f]{6}$/.test(request.color) ? request.color : undefined
 
+        // Sanitize description if provided
+        const sanitizedDescription = request.description
+            ? this.sanitizeText(request.description)
+            : undefined
+
+        // Calculate order (place at end of existing collections)
+        const maxOrder = state.userCreatedWatchlists.reduce(
+            (max, list) => Math.max(max, list.order ?? 0),
+            -1
+        )
+        const order = maxOrder + 1
+
         const newList: UserList = {
             id: this.generateId(),
             name: sanitizedName,
+            description: sanitizedDescription,
             items: [],
             isPublic: request.isPublic || false,
             createdAt: Date.now(),
             updatedAt: Date.now(),
             color: sanitizedColor,
             emoji: sanitizedEmoji,
+            collectionType: request.collectionType,
+            displayAsRow: request.displayAsRow ?? true,
+            order,
+            enabled: true,
+            // TMDB-based collection fields
+            genres: request.genres,
+            genreLogic: request.genreLogic,
+            mediaType: request.mediaType,
+            advancedFilters: request.advancedFilters,
+            // Auto-update settings
+            autoUpdateEnabled: request.autoUpdateEnabled,
+            updateFrequency: request.updateFrequency,
+            // AI-generated metadata
+            originalQuery: request.originalQuery,
+            canGenerateMore: request.canGenerateMore,
         }
 
         return {
@@ -109,6 +137,13 @@ export class UserListsService {
             sanitizedUpdates.name = this.sanitizeText(request.name)
         }
 
+        // Sanitize description if provided
+        if (request.description !== undefined) {
+            sanitizedUpdates.description = request.description
+                ? this.sanitizeText(request.description)
+                : undefined
+        }
+
         // Validate and sanitize emoji if provided
         if (request.emoji !== undefined) {
             sanitizedUpdates.emoji =
@@ -124,6 +159,45 @@ export class UserListsService {
         // Include isPublic if provided
         if (request.isPublic !== undefined) {
             sanitizedUpdates.isPublic = request.isPublic
+        }
+
+        // Collection-specific fields
+        if (request.displayAsRow !== undefined) {
+            sanitizedUpdates.displayAsRow = request.displayAsRow
+        }
+
+        if (request.enabled !== undefined) {
+            sanitizedUpdates.enabled = request.enabled
+        }
+
+        if (request.order !== undefined) {
+            sanitizedUpdates.order = request.order
+        }
+
+        // TMDB-based collection fields
+        if (request.genres !== undefined) {
+            sanitizedUpdates.genres = request.genres
+        }
+
+        if (request.genreLogic !== undefined) {
+            sanitizedUpdates.genreLogic = request.genreLogic
+        }
+
+        if (request.mediaType !== undefined) {
+            sanitizedUpdates.mediaType = request.mediaType
+        }
+
+        if (request.advancedFilters !== undefined) {
+            sanitizedUpdates.advancedFilters = request.advancedFilters
+        }
+
+        // Auto-update settings
+        if (request.autoUpdateEnabled !== undefined) {
+            sanitizedUpdates.autoUpdateEnabled = request.autoUpdateEnabled
+        }
+
+        if (request.updateFrequency !== undefined) {
+            sanitizedUpdates.updateFrequency = request.updateFrequency
         }
 
         const updatedList = {

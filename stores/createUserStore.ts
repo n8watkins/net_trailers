@@ -518,12 +518,23 @@ export function createUserStore(options: CreateUserStoreOptions) {
                                 return null
                             }
 
+                            // Ensure all collections have required new fields for backward compatibility
+                            const normalizedCollections = (
+                                firebaseData.userCreatedWatchlists || []
+                            ).map((list, index) => ({
+                                ...list,
+                                collectionType: list.collectionType || ('manual' as const),
+                                displayAsRow: list.displayAsRow ?? true,
+                                order: list.order ?? index,
+                                enabled: list.enabled ?? true,
+                            }))
+
                             set({
                                 userId,
                                 likedMovies: firebaseData.likedMovies,
                                 hiddenMovies: firebaseData.hiddenMovies,
                                 defaultWatchlist: firebaseData.defaultWatchlist,
-                                userCreatedWatchlists: firebaseData.userCreatedWatchlists,
+                                userCreatedWatchlists: normalizedCollections,
                                 lastActive: firebaseData.lastActive,
                                 autoMute: firebaseData.autoMute ?? true,
                                 defaultVolume: firebaseData.defaultVolume ?? 50,
@@ -554,12 +565,24 @@ export function createUserStore(options: CreateUserStoreOptions) {
         ...(enableGuestFeatures && {
             syncFromLocalStorage: async (guestId: string) => {
                 const loadedData = await adapter.load(guestId)
+
+                // Ensure all collections have required new fields for backward compatibility
+                const normalizedCollections = (loadedData.userCreatedWatchlists || []).map(
+                    (list, index) => ({
+                        ...list,
+                        collectionType: list.collectionType || ('manual' as const),
+                        displayAsRow: list.displayAsRow ?? true,
+                        order: list.order ?? index,
+                        enabled: list.enabled ?? true,
+                    })
+                )
+
                 set({
                     [idField]: guestId,
                     likedMovies: loadedData.likedMovies,
                     hiddenMovies: loadedData.hiddenMovies,
                     defaultWatchlist: loadedData.defaultWatchlist,
-                    userCreatedWatchlists: loadedData.userCreatedWatchlists,
+                    userCreatedWatchlists: normalizedCollections,
                     lastActive: loadedData.lastActive,
                     autoMute: loadedData.autoMute ?? true,
                     defaultVolume: loadedData.defaultVolume ?? 50,
