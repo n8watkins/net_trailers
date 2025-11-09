@@ -36,7 +36,7 @@ export type {
     CustomRowModalState,
     AuthModalState,
     RowEditorModalState,
-    WatchlistCreatorModalState,
+    CollectionCreatorModalState,
 } from './modalStore'
 
 export type { ToastType, ToastMessage } from './toastStore'
@@ -63,7 +63,7 @@ export interface AppState {
     customRowModal: ModalStore['customRowModal']
     authModal: ModalStore['authModal']
     rowEditorModal: ModalStore['rowEditorModal']
-    watchlistCreatorModal: ModalStore['watchlistCreatorModal']
+    collectionCreatorModal: ModalStore['collectionCreatorModal']
 
     // Toast state
     toasts: ToastStore['toasts']
@@ -95,11 +95,11 @@ export interface AppActions {
     setAuthModalMode: ModalStore['setAuthModalMode']
     openRowEditorModal: ModalStore['openRowEditorModal']
     closeRowEditorModal: ModalStore['closeRowEditorModal']
-    openWatchlistCreatorModal: ModalStore['openWatchlistCreatorModal']
-    closeWatchlistCreatorModal: ModalStore['closeWatchlistCreatorModal']
-    setWatchlistCreatorName: ModalStore['setWatchlistCreatorName']
-    addToWatchlistCreator: ModalStore['addToWatchlistCreator']
-    removeFromWatchlistCreator: ModalStore['removeFromWatchlistCreator']
+    openCollectionCreatorModal: ModalStore['openCollectionCreatorModal']
+    closeCollectionCreatorModal: ModalStore['closeCollectionCreatorModal']
+    setCollectionCreatorName: ModalStore['setCollectionCreatorName']
+    addToCollectionCreator: ModalStore['addToCollectionCreator']
+    removeFromCollectionCreator: ModalStore['removeFromCollectionCreator']
 
     // Toast actions
     showToast: ToastStore['showToast']
@@ -141,7 +141,7 @@ export const useAppStore = create<AppStore>((set, get) => {
             customRowModal: modalState.customRowModal,
             authModal: modalState.authModal,
             rowEditorModal: modalState.rowEditorModal,
-            watchlistCreatorModal: modalState.watchlistCreatorModal,
+            collectionCreatorModal: modalState.collectionCreatorModal,
         })
     })
 
@@ -177,7 +177,7 @@ export const useAppStore = create<AppStore>((set, get) => {
         customRowModal: modalState.customRowModal,
         authModal: modalState.authModal,
         rowEditorModal: modalState.rowEditorModal,
-        watchlistCreatorModal: modalState.watchlistCreatorModal,
+        collectionCreatorModal: modalState.collectionCreatorModal,
         toasts: toastState.toasts,
         isLoading: loadingState.isLoading,
         loadingMessage: loadingState.loadingMessage,
@@ -200,11 +200,11 @@ export const useAppStore = create<AppStore>((set, get) => {
         setAuthModalMode: modalState.setAuthModalMode,
         openRowEditorModal: modalState.openRowEditorModal,
         closeRowEditorModal: modalState.closeRowEditorModal,
-        openWatchlistCreatorModal: modalState.openWatchlistCreatorModal,
-        closeWatchlistCreatorModal: modalState.closeWatchlistCreatorModal,
-        setWatchlistCreatorName: modalState.setWatchlistCreatorName,
-        addToWatchlistCreator: modalState.addToWatchlistCreator,
-        removeFromWatchlistCreator: modalState.removeFromWatchlistCreator,
+        openCollectionCreatorModal: modalState.openCollectionCreatorModal,
+        closeCollectionCreatorModal: modalState.closeCollectionCreatorModal,
+        setCollectionCreatorName: modalState.setCollectionCreatorName,
+        addToCollectionCreator: modalState.addToCollectionCreator,
+        removeFromCollectionCreator: modalState.removeFromCollectionCreator,
         showToast: toastState.showToast,
         dismissToast: toastState.dismissToast,
         setLoading: loadingState.setLoading,

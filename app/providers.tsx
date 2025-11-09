@@ -6,7 +6,7 @@ import Modal from '../components/modals/Modal'
 import ListSelectionModal from '../components/modals/ListSelectionModal'
 import CustomRowModal from '../components/modals/CustomRowModal'
 import { RowEditorModal } from '../components/modals/RowEditorModal'
-import WatchlistCreatorModal from '../components/modals/WatchlistCreatorModal'
+import CollectionCreatorModal from '../components/modals/CollectionCreatorModal'
 import { SessionSyncManager } from '../components/utility/SessionSyncManager'
 import { useAppStore } from '../stores/appStore'
 
@@ -30,7 +30,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             <ListSelectionModal />
             <CustomRowModal />
             <RowEditorModalWrapper />
-            <WatchlistCreatorModal />
+            <CollectionCreatorModal />
         </AuthProvider>
     )
 }

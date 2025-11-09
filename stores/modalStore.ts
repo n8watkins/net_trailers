@@ -40,8 +40,8 @@ export interface RowEditorModalState {
     pageType: 'home' | 'movies' | 'tv'
 }
 
-// Watchlist creator modal state
-export interface WatchlistCreatorModalState {
+// Collection creator modal state
+export interface CollectionCreatorModalState {
     isOpen: boolean
     name: string
     content: Content[]
@@ -65,8 +65,8 @@ export interface ModalStoreState {
     // Row editor modal (for home/movies/tv pages)
     rowEditorModal: RowEditorModalState
 
-    // Watchlist creator modal
-    watchlistCreatorModal: WatchlistCreatorModalState
+    // Collection creator modal
+    collectionCreatorModal: CollectionCreatorModalState
 }
 
 // Modal store actions interface
@@ -95,16 +95,16 @@ export interface ModalStoreActions {
     openRowEditorModal: (pageType: 'home' | 'movies' | 'tv') => void
     closeRowEditorModal: () => void
 
-    // Watchlist creator modal actions
-    openWatchlistCreatorModal: (
+    // Collection creator modal actions
+    openCollectionCreatorModal: (
         name: string,
         content: Content[],
         mediaType: 'movie' | 'tv' | 'all'
     ) => void
-    closeWatchlistCreatorModal: () => void
-    setWatchlistCreatorName: (name: string) => void
-    addToWatchlistCreator: (content: Content) => void
-    removeFromWatchlistCreator: (contentId: number) => void
+    closeCollectionCreatorModal: () => void
+    setCollectionCreatorName: (name: string) => void
+    addToCollectionCreator: (content: Content) => void
+    removeFromCollectionCreator: (contentId: number) => void
 }
 
 export type ModalStore = ModalStoreState & ModalStoreActions
@@ -138,7 +138,7 @@ export const useModalStore = create<ModalStore>((set, get) => ({
         pageType: 'home',
     },
 
-    watchlistCreatorModal: {
+    collectionCreatorModal: {
         isOpen: false,
         name: '',
         content: [],
@@ -373,15 +373,15 @@ export const useModalStore = create<ModalStore>((set, get) => ({
         })
     },
 
-    // Watchlist Creator Modal Actions
-    openWatchlistCreatorModal: (
+    // Collection Creator Modal Actions
+    openCollectionCreatorModal: (
         name: string,
         content: Content[],
         mediaType: 'movie' | 'tv' | 'all'
     ) => {
         startTransition(() => {
             set({
-                watchlistCreatorModal: {
+                collectionCreatorModal: {
                     isOpen: true,
                     name,
                     content,
@@ -389,7 +389,7 @@ export const useModalStore = create<ModalStore>((set, get) => ({
                 },
             })
             if (process.env.NODE_ENV === 'development') {
-                console.log('📋 [ModalStore] Watchlist creator modal opened:', {
+                console.log('📋 [ModalStore] Collection creator modal opened:', {
                     name,
                     contentCount: content.length,
                 })
@@ -397,10 +397,10 @@ export const useModalStore = create<ModalStore>((set, get) => ({
         })
     },
 
-    closeWatchlistCreatorModal: () => {
+    closeCollectionCreatorModal: () => {
         startTransition(() => {
             set({
-                watchlistCreatorModal: {
+                collectionCreatorModal: {
                     isOpen: false,
                     name: '',
                     content: [],
@@ -408,34 +408,34 @@ export const useModalStore = create<ModalStore>((set, get) => ({
                 },
             })
             if (process.env.NODE_ENV === 'development') {
-                console.log('❌ [ModalStore] Watchlist creator modal closed')
+                console.log('❌ [ModalStore] Collection creator modal closed')
             }
         })
     },
 
-    setWatchlistCreatorName: (name: string) => {
+    setCollectionCreatorName: (name: string) => {
         set((state) => ({
-            watchlistCreatorModal: {
-                ...state.watchlistCreatorModal,
+            collectionCreatorModal: {
+                ...state.collectionCreatorModal,
                 name,
             },
         }))
     },
 
-    addToWatchlistCreator: (content: Content) => {
+    addToCollectionCreator: (content: Content) => {
         set((state) => ({
-            watchlistCreatorModal: {
-                ...state.watchlistCreatorModal,
-                content: [...state.watchlistCreatorModal.content, content],
+            collectionCreatorModal: {
+                ...state.collectionCreatorModal,
+                content: [...state.collectionCreatorModal.content, content],
             },
         }))
     },
 
-    removeFromWatchlistCreator: (contentId: number) => {
+    removeFromCollectionCreator: (contentId: number) => {
         set((state) => ({
-            watchlistCreatorModal: {
-                ...state.watchlistCreatorModal,
-                content: state.watchlistCreatorModal.content.filter(
+            collectionCreatorModal: {
+                ...state.collectionCreatorModal,
+                content: state.collectionCreatorModal.content.filter(
                     (item) => item.id !== contentId
                 ),
             },

@@ -113,14 +113,14 @@ function SimpleContentCard({
     )
 }
 
-export default function WatchlistCreatorModal() {
+export default function CollectionCreatorModal() {
     const router = useRouter()
     const {
-        watchlistCreatorModal,
-        closeWatchlistCreatorModal,
-        setWatchlistCreatorName,
-        addToWatchlistCreator,
-        removeFromWatchlistCreator,
+        collectionCreatorModal,
+        closeCollectionCreatorModal,
+        setCollectionCreatorName,
+        addToCollectionCreator,
+        removeFromCollectionCreator,
     } = useAppStore()
     const getUserId = useSessionStore((state) => state.getUserId)
     const { createList, addToList } = useUserData()
@@ -139,18 +139,18 @@ export default function WatchlistCreatorModal() {
     const [displayAsRow, setDisplayAsRow] = useState(false)
     const [isPublic, setIsPublic] = useState(false)
 
-    if (!watchlistCreatorModal.isOpen) return null
+    if (!collectionCreatorModal.isOpen) return null
 
     // Filter content based on search
     const filteredContent = useMemo(() => {
-        if (!searchFilter.trim()) return watchlistCreatorModal.content
+        if (!searchFilter.trim()) return collectionCreatorModal.content
 
         const searchLower = searchFilter.toLowerCase().trim()
-        return watchlistCreatorModal.content.filter((item) => {
+        return collectionCreatorModal.content.filter((item) => {
             const title = getTitle(item).toLowerCase()
             return title.includes(searchLower)
         })
-    }, [watchlistCreatorModal.content, searchFilter])
+    }, [collectionCreatorModal.content, searchFilter])
 
     const totalPages = Math.ceil(filteredContent.length / ITEMS_PER_PAGE)
     const startIndex = currentPage * ITEMS_PER_PAGE
@@ -162,7 +162,7 @@ export default function WatchlistCreatorModal() {
     const fillerItems = Array(emptySlots).fill(null)
 
     const handleClose = () => {
-        closeWatchlistCreatorModal()
+        closeCollectionCreatorModal()
         setSelectedEmoji('📺')
         setSelectedColor('#3b82f6')
         setShowIconPicker(false)
@@ -181,7 +181,7 @@ export default function WatchlistCreatorModal() {
             return
         }
 
-        if (!watchlistCreatorModal.name.trim()) {
+        if (!collectionCreatorModal.name.trim()) {
             showError('Please enter a collection name')
             return
         }
@@ -191,7 +191,7 @@ export default function WatchlistCreatorModal() {
         try {
             // Create the list using useUserData hook
             const newListResult = createList({
-                name: watchlistCreatorModal.name.trim(),
+                name: collectionCreatorModal.name.trim(),
                 isPublic,
                 emoji: selectedEmoji,
                 color: selectedColor,
@@ -205,13 +205,13 @@ export default function WatchlistCreatorModal() {
             const listId = typeof newListResult === 'string' ? newListResult : await newListResult
 
             // Add all content items to the list
-            watchlistCreatorModal.content.forEach((contentItem) => {
+            collectionCreatorModal.content.forEach((contentItem) => {
                 addToList(listId, contentItem)
             })
 
             showSuccess(
                 'Collection saved!',
-                `"${watchlistCreatorModal.name}" with ${watchlistCreatorModal.content.length} titles`
+                `"${collectionCreatorModal.name}" with ${collectionCreatorModal.content.length} titles`
             )
 
             handleClose()
@@ -297,7 +297,7 @@ export default function WatchlistCreatorModal() {
     }
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && watchlistCreatorModal.name.trim()) {
+        if (e.key === 'Enter' && collectionCreatorModal.name.trim()) {
             handleCreate()
         } else if (e.key === 'Escape') {
             handleClose()
@@ -314,10 +314,10 @@ export default function WatchlistCreatorModal() {
 
     const handleRemoveContent = (e: React.MouseEvent, contentId: number) => {
         e.stopPropagation()
-        removeFromWatchlistCreator(contentId)
+        removeFromCollectionCreator(contentId)
 
         // If this was the last item, close the modal
-        if (watchlistCreatorModal.content.length === 1) {
+        if (collectionCreatorModal.content.length === 1) {
             handleClose()
             showError('Collection is empty', 'Add some content to create a collection')
             return
@@ -341,8 +341,8 @@ export default function WatchlistCreatorModal() {
                     <div>
                         <h2 className="text-xl font-semibold text-white">Create Collection</h2>
                         <p className="text-sm text-gray-400 mt-1">
-                            {watchlistCreatorModal.content.length} title
-                            {watchlistCreatorModal.content.length !== 1 ? 's' : ''} selected
+                            {collectionCreatorModal.content.length} title
+                            {collectionCreatorModal.content.length !== 1 ? 's' : ''} selected
                         </p>
                     </div>
                     {/* White circle with black X */}
@@ -409,8 +409,8 @@ export default function WatchlistCreatorModal() {
                                 <input
                                     type="text"
                                     placeholder="Collection name"
-                                    value={watchlistCreatorModal.name}
-                                    onChange={(e) => setWatchlistCreatorName(e.target.value)}
+                                    value={collectionCreatorModal.name}
+                                    onChange={(e) => setCollectionCreatorName(e.target.value)}
                                     onKeyDown={handleKeyPress}
                                     className="w-96 h-14 px-4 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     autoFocus
@@ -453,8 +453,8 @@ export default function WatchlistCreatorModal() {
                         <div className="flex justify-center">
                             <div className="w-full max-w-2xl">
                                 <InlineSearchBar
-                                    onAddContent={addToWatchlistCreator}
-                                    existingContentIds={watchlistCreatorModal.content.map(
+                                    onAddContent={addToCollectionCreator}
+                                    existingContentIds={collectionCreatorModal.content.map(
                                         (c) => c.id
                                     )}
                                     placeholder="Search to add movies or TV shows..."
@@ -567,7 +567,7 @@ export default function WatchlistCreatorModal() {
                     <div className="flex space-x-3">
                         <button
                             onClick={handleCreate}
-                            disabled={!watchlistCreatorModal.name.trim() || isCreating}
+                            disabled={!collectionCreatorModal.name.trim() || isCreating}
                             className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold transition-all duration-200 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isCreating ? 'Saving...' : 'Save'}

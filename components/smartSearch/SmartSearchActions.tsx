@@ -34,7 +34,7 @@ export default function SmartSearchActions({
     const getUserId = useSessionStore((state) => state.getUserId)
     const sessionType = useSessionStore((state) => state.sessionType)
     const addRow = useCustomRowsStore((state) => state.addRow)
-    const openWatchlistCreatorModal = useAppStore((state) => state.openWatchlistCreatorModal)
+    const openCollectionCreatorModal = useAppStore((state) => state.openCollectionCreatorModal)
     const { showSuccess, showError } = useToast()
 
     const [editedName, setEditedName] = useState(generatedName)
@@ -173,18 +173,18 @@ export default function SmartSearchActions({
         }
     }
 
-    const handleCreateWatchlist = () => {
+    const handleCreateCollection = () => {
         const userId = getUserId()
 
         if (!userId) {
-            showError('Please sign in to create watchlists')
+            showError('Please sign in to create collections')
             return
         }
 
-        // Open the watchlist creator modal with smart search results
-        // Map 'both' to 'all' for watchlist creator modal
-        const watchlistMediaType: 'movie' | 'tv' | 'all' = mediaType === 'both' ? 'all' : mediaType
-        openWatchlistCreatorModal(editedName || generatedName, results, watchlistMediaType)
+        // Open the collection creator modal with smart search results
+        // Map 'both' to 'all' for collection creator modal
+        const collectionMediaType: 'movie' | 'tv' | 'all' = mediaType === 'both' ? 'all' : mediaType
+        openCollectionCreatorModal(editedName || generatedName, results, collectionMediaType)
     }
 
     // If showing only "Ask for More", render just that section
@@ -276,9 +276,9 @@ export default function SmartSearchActions({
 
             {/* Action Buttons */}
             <div className="flex flex-wrap items-center gap-3">
-                {/* Create Watchlist Button - Always curated, no infinite option */}
+                {/* Create Collection Button - Always curated, no infinite option */}
                 <button
-                    onClick={handleCreateWatchlist}
+                    onClick={handleCreateCollection}
                     disabled={isCreating || results.length === 0}
                     className="
                             flex items-center gap-2 px-6 py-2 rounded-md
@@ -289,7 +289,7 @@ export default function SmartSearchActions({
                         "
                 >
                     <PlusIcon className="h-5 w-5" />
-                    {isCreating ? 'Creating...' : 'Create Watchlist'}
+                    {isCreating ? 'Creating...' : 'Create Collection'}
                 </button>
 
                 {/* Create Row Button - With infinite toggle */}

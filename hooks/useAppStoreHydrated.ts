@@ -38,8 +38,8 @@ const defaultState: AppStore = {
         pageType: 'home',
     },
 
-    // Watchlist creator modal state
-    watchlistCreatorModal: {
+    // Collection creator modal state
+    collectionCreatorModal: {
         isOpen: false,
         name: '',
         content: [],
@@ -100,15 +100,15 @@ const defaultState: AppStore = {
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     closeRowEditorModal: () => {},
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    openWatchlistCreatorModal: () => {},
+    openCollectionCreatorModal: () => {},
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    closeWatchlistCreatorModal: () => {},
+    closeCollectionCreatorModal: () => {},
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    setWatchlistCreatorName: () => {},
+    setCollectionCreatorName: () => {},
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    addToWatchlistCreator: () => {},
+    addToCollectionCreator: () => {},
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    removeFromWatchlistCreator: () => {},
+    removeFromCollectionCreator: () => {},
 }
 
 /**
