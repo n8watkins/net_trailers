@@ -2,23 +2,27 @@
 import { initializeApp, getApp, getApps } from 'firebase/app'
 import { initializeFirestore, getFirestore, persistentLocalCache } from 'firebase/firestore'
 import { getAuth } from 'firebase/auth'
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+import { z } from 'zod'
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
+// Zod schema for Firebase configuration validation
+const firebaseConfigSchema = z.object({
+    apiKey: z.string().min(1, 'Firebase API key is required'),
+    authDomain: z.string().min(1, 'Firebase auth domain is required'),
+    projectId: z.string().min(1, 'Firebase project ID is required'),
+    storageBucket: z.string().min(1, 'Firebase storage bucket is required'),
+    messagingSenderId: z.string().min(1, 'Firebase messaging sender ID is required'),
+    appId: z.string().min(1, 'Firebase app ID is required'),
+})
+
+// Validate and parse Firebase configuration from environment variables
+const firebaseConfig = firebaseConfigSchema.parse({
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
     authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
     projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
     storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
     messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-}
-
-// Validate Firebase configuration
-if (!firebaseConfig.apiKey) {
-    throw new Error('Firebase configuration is missing. Please check your environment variables.')
-}
+})
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp()

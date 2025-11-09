@@ -1,3 +1,24 @@
+/**
+ * IN-MEMORY API CACHE
+ *
+ * ⚠️  IMPORTANT LIMITATION:
+ * This cache uses an in-memory Map which is LOST on every serverless function invocation.
+ * On Vercel/Netlify, each API request gets a cold-start lambda, meaning this cache provides
+ * NO BENEFIT in production.
+ *
+ * Current Status:
+ * - Works locally (dev server keeps process alive)
+ * - Useless in production serverless environments
+ *
+ * Future Improvements:
+ * Option 1: Use Next.js unstable_cache (recommended, free, works on Vercel)
+ * Option 2: Use Upstash Redis (costs money, persistent across lambdas)
+ * Option 3: Remove entirely and document as per-request fetching
+ *
+ * For now, this cache is kept for local development performance only.
+ * Do NOT rely on it for production caching.
+ */
+
 interface CacheEntry<T> {
     data: T
     timestamp: number
@@ -9,6 +30,12 @@ interface CacheOptions {
     maxSize?: number // Maximum number of entries (default: 100)
 }
 
+/**
+ * ApiCache - In-Memory Cache (LOCAL DEVELOPMENT ONLY)
+ *
+ * This class provides caching in local development but does NOT work in serverless production.
+ * See file header for details and future improvement options.
+ */
 class ApiCache {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private cache = new Map<string, CacheEntry<any>>()
