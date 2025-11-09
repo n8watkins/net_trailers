@@ -99,46 +99,24 @@ export function useVoiceInput({
 
     const checkMicrophonePermission = useCallback(async (): Promise<boolean> => {
         try {
-            // Check permission state using Permissions API
-            if (navigator.permissions && navigator.permissions.query) {
-                const permissionStatus = await navigator.permissions.query({
-                    name: 'microphone' as PermissionName,
-                })
-
-                console.log('Microphone permission state:', permissionStatus.state)
-
-                if (permissionStatus.state === 'denied') {
-                    if (onError) {
-                        onError(
-                            'Microphone access is blocked. Click the lock icon in your browser address bar and allow microphone access, then try again.'
-                        )
-                    }
-                    return false
-                }
-
-                if (permissionStatus.state === 'granted') {
-                    console.log('Microphone permission already granted')
-                    return true
-                }
-
-                // State is 'prompt' - will ask for permission
-                console.log('Will prompt for microphone permission')
-            }
-
-            // Fallback: try to request permission directly
-            // This will show the browser's permission prompt if not yet decided
+            // Request microphone permission directly - this will show the browser prompt
+            // We're NOT checking Permissions API first because it can return stale cached data
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                console.log('Requesting microphone permission...')
+                console.log('Requesting microphone permission via getUserMedia...')
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-                console.log('Microphone permission granted!')
+                console.log('✅ Microphone permission granted!')
                 // Stop the stream immediately - we only needed the permission
                 stream.getTracks().forEach((track) => track.stop())
                 return true
+            } else {
+                console.error('getUserMedia not supported')
+                if (onError) {
+                    onError('Your browser does not support microphone access.')
+                }
+                return false
             }
-
-            return true
         } catch (error: any) {
-            console.error('Permission check/request failed:', error)
+            console.error('❌ Permission request failed:', error.name, error.message)
 
             if (
                 error.name === 'NotAllowedError' ||
@@ -147,12 +125,16 @@ export function useVoiceInput({
             ) {
                 if (onError) {
                     onError(
-                        'Microphone access denied. Click the lock/site icon in your browser address bar, enable microphone access, and try again.'
+                        'Microphone access denied. Click the lock icon (🔒) in your browser address bar, set Microphone to "Allow", then refresh the page and try again.'
                     )
+                }
+            } else if (error.name === 'NotFoundError') {
+                if (onError) {
+                    onError('No microphone found. Please connect a microphone and try again.')
                 }
             } else {
                 if (onError) {
-                    onError('Failed to access microphone. Please check your browser settings.')
+                    onError(`Microphone error: ${error.message || 'Unknown error'}`)
                 }
             }
             return false
