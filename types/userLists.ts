@@ -1,4 +1,5 @@
 import { Content } from '../typings'
+import { ShareSettings } from './sharing'
 
 /**
  * Collection types define how content is sourced
@@ -26,6 +27,10 @@ export interface UserList {
     // AI-generated collection metadata
     originalQuery?: string // Original search query for AI-generated collections
     canGenerateMore?: boolean // Can generate more similar content (infinite collection)
+
+    // Sharing settings (Phase 2: Collection Sharing)
+    shareSettings?: ShareSettings // Optional share settings for this collection
+    sharedLinkId?: string // Active share link ID (if collection is currently shared)
 }
 
 // DEPRECATED - OLD SCHEMA
