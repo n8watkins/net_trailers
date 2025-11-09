@@ -215,7 +215,12 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
                         {totalResults > 0 && (
                             <>
                                 {/* Check if any filters are active */}
-                                {Object.values(filters).some((value) => value !== 'all') ? (
+                                {Object.entries(filters).some(([key, value]) => {
+                                    if (key === 'sortBy') return value !== 'popularity.desc'
+                                    if (key === 'genres')
+                                        return Array.isArray(value) && value.length > 0
+                                    return value !== 'all'
+                                }) ? (
                                     /* Filters are active - show filtered count */
                                     hasAllResults ? (
                                         /* We have all results cached */

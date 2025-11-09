@@ -369,6 +369,7 @@ export default function SearchBar({
     // Check if any filters are active
     const hasActiveFilters = Object.entries(filters).some(([key, value]) => {
         if (key === 'sortBy') return value !== 'popularity.desc'
+        if (key === 'genres') return Array.isArray(value) && value.length > 0
         return value !== 'all'
     })
 
