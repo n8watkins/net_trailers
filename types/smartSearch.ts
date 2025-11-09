@@ -1,4 +1,4 @@
-import { Content } from './atoms'
+import { Content } from '../typings'
 
 /**
  * Smart Search System Types

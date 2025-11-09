@@ -14,7 +14,8 @@ import { useSessionStore } from '../../stores/sessionStore'
 import NotificationItem from './NotificationItem'
 
 export default function NotificationPanel() {
-    const { userId } = useSessionStore()
+    const getUserId = useSessionStore((state) => state.getUserId)
+    const userId = getUserId()
     const {
         notifications,
         unreadCount,

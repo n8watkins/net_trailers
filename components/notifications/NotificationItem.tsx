@@ -24,7 +24,8 @@ interface NotificationItemProps {
 
 export default function NotificationItem({ notification }: NotificationItemProps) {
     const router = useRouter()
-    const { userId } = useSessionStore()
+    const getUserId = useSessionStore((state) => state.getUserId)
+    const userId = getUserId()
     const { markNotificationAsRead, deleteNotification, closePanel } = useNotificationStore()
 
     const meta = NOTIFICATION_META[notification.type]

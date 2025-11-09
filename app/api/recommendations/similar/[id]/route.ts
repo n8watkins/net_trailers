@@ -10,14 +10,14 @@ import { getHybridRecommendations } from '@/utils/tmdb/recommendations'
 import { Recommendation, RECOMMENDATION_CONSTRAINTS } from '@/types/recommendations'
 
 interface RouteParams {
-    params: {
+    params: Promise<{
         id: string
-    }
+    }>
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
     try {
-        const { id } = params
+        const { id } = await params
 
         // Validate ID
         const contentId = parseInt(id, 10)

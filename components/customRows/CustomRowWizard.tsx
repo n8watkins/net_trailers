@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { XMarkIcon, CheckIcon } from '@heroicons/react/24/outline'
 import { CustomRowFormData } from '../../types/customRows'
-import { Content } from '../../types/content'
+import { Content } from '../../typings'
 import { WizardStep1Basic } from './WizardStep1Basic'
 import { WizardStep2Advanced } from './WizardStep2Advanced'
 import { WizardStep3NamePreview } from './WizardStep3NamePreview'

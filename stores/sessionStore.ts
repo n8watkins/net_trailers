@@ -169,8 +169,8 @@ export const useSessionStore = create<SessionStore>((set) => ({
      * }
      * ```
      */
-    getUserId: () => {
-        const state = useSessionStore.getState()
+    getUserId: (): string | null => {
+        const state: SessionStore = useSessionStore.getState()
         if (!state.isInitialized || state.sessionType === 'initializing') {
             return null
         }

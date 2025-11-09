@@ -15,7 +15,7 @@ import {
 } from '@/utils/recommendations/genreEngine'
 import { getBatchSimilarContent } from '@/utils/tmdb/recommendations'
 import { Recommendation, RECOMMENDATION_CONSTRAINTS } from '@/types/recommendations'
-import { Content } from '@/types/userLists'
+import { Content } from '@/typings'
 
 export async function GET(request: NextRequest) {
     try {

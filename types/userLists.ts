@@ -1,6 +1,9 @@
 import { Content } from '../typings'
 import { ShareSettings } from './sharing'
 
+// Re-export Content for convenience
+export type { Content }
+
 /**
  * Collection types define how content is sourced
  */

@@ -21,7 +21,8 @@ export default function RecommendedForYouRow() {
     const [isMoved, setIsMoved] = useState(false)
 
     const rowRef = useRef<HTMLDivElement>(null)
-    const { userId } = useSessionStore()
+    const getUserId = useSessionStore((state) => state.getUserId)
+    const userId = getUserId()
     const sessionData = useSessionData()
 
     // Fetch personalized recommendations

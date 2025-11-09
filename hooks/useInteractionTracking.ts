@@ -5,8 +5,9 @@
 
 import { useCallback } from 'react'
 import { useSessionStore } from '@/stores/sessionStore'
+import { useSessionData } from './useSessionData'
 import { logInteraction, createInteractionFromContent } from '@/utils/firestore/interactions'
-import type { Content } from '@/types/content'
+import type { Content } from '@/typings'
 import type { InteractionType, InteractionSource } from '@/types/interactions'
 
 /**
@@ -19,15 +20,7 @@ import type { InteractionType, InteractionSource } from '@/types/interactions'
  */
 export function useInteractionTracking() {
     const getUserId = useSessionStore((state) => state.getUserId)
-    const getImproveRecommendations = useSessionStore((state) => {
-        const sessionType = state.sessionType
-        if (sessionType === 'authenticated') {
-            return state.authStore?.improveRecommendations ?? true
-        } else if (sessionType === 'guest') {
-            return state.guestStore?.improveRecommendations ?? true
-        }
-        return true
-    })
+    const { improveRecommendations } = useSessionData()
 
     /**
      * Generic track function
@@ -52,7 +45,6 @@ export function useInteractionTracking() {
             }
 
             // Skip tracking if user has disabled recommendation improvements
-            const improveRecommendations = getImproveRecommendations()
             if (!improveRecommendations) {
                 console.log(
                     '[Tracking] Skipping interaction (user disabled recommendation improvements)'
@@ -71,7 +63,7 @@ export function useInteractionTracking() {
                 console.error('[Tracking] Failed to log interaction:', error)
             }
         },
-        [getUserId, getImproveRecommendations]
+        [getUserId, improveRecommendations]
     )
 
     /**

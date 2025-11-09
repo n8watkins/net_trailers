@@ -17,14 +17,14 @@ import {
 } from '../../../../utils/firestore/shares'
 
 interface RouteContext {
-    params: {
+    params: Promise<{
         shareId: string
-    }
+    }>
 }
 
 export async function GET(request: NextRequest, { params }: RouteContext) {
     try {
-        const { shareId } = params
+        const { shareId } = await params
 
         if (!shareId) {
             return NextResponse.json(
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
 
 export async function DELETE(request: NextRequest, { params }: RouteContext) {
     try {
-        const { shareId } = params
+        const { shareId } = await params
 
         // Get user ID from headers
         const userId = request.headers.get('x-user-id')

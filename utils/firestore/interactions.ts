@@ -29,7 +29,7 @@ import {
     INTERACTION_CONSTRAINTS,
     InteractionSource,
 } from '@/types/interactions'
-import { Content } from '@/types/content'
+import { Content } from '@/typings'
 
 /**
  * Get Firestore reference to interactions collection

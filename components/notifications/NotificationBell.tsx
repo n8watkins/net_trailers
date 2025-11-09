@@ -14,7 +14,8 @@ import { useNotificationStore } from '../../stores/notificationStore'
 import { useSessionStore } from '../../stores/sessionStore'
 
 export default function NotificationBell() {
-    const { userId } = useSessionStore()
+    const getUserId = useSessionStore((state) => state.getUserId)
+    const userId = getUserId()
     const { unreadCount, isPanelOpen, togglePanel, subscribe, unsubscribeFromNotifications } =
         useNotificationStore()
 

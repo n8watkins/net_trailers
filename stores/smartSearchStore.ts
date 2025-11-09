@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { Content } from '../types/atoms'
+import { Content } from '../typings'
 import {
     SmartSearchState,
     SmartSearchActions,

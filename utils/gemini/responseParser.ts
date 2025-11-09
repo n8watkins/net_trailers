@@ -1,4 +1,4 @@
-import { Content } from '../../types/atoms'
+import { Content } from '../../typings'
 
 /**
  * Parses and enriches Gemini AI responses for smart search

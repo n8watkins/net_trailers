@@ -13,6 +13,7 @@ export interface UserPreferences {
     autoMute: boolean
     defaultVolume: number
     childSafetyMode: boolean
+    improveRecommendations?: boolean
 }
 
 export interface UserSession {
@@ -45,6 +46,7 @@ export const defaultAuthSession: AuthSession = {
         autoMute: true,
         defaultVolume: 50,
         childSafetyMode: false,
+        improveRecommendations: true,
     },
     lastSyncedAt: Date.now(),
 }
@@ -67,6 +69,7 @@ export const defaultGuestSession: GuestSession = {
         autoMute: true,
         defaultVolume: 50,
         childSafetyMode: false,
+        improveRecommendations: true,
     },
     lastSyncedAt: Date.now(),
 }

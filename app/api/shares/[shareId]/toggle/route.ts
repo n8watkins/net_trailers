@@ -13,14 +13,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { deactivateShare, reactivateShare } from '../../../../../utils/firestore/shares'
 
 interface RouteContext {
-    params: {
+    params: Promise<{
         shareId: string
-    }
+    }>
 }
 
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
     try {
-        const { shareId } = params
+        const { shareId } = await params
 
         // Get user ID from headers
         const userId = request.headers.get('x-user-id')
