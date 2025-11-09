@@ -100,6 +100,14 @@ export function CustomRowCard({
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="text-base font-semibold text-white truncate">{row.name}</h3>
+                        {/* Edit Name Button - immediately next to name */}
+                        <button
+                            onClick={() => onEdit(row)}
+                            className="p-1 rounded hover:bg-gray-700 transition-colors shrink-0"
+                            title="Edit collection name"
+                        >
+                            <PencilIcon className="w-3.5 h-3.5 text-gray-400 hover:text-gray-200" />
+                        </button>
                         {row.isSystemRow && (
                             <span
                                 className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-purple-600/20 text-purple-400 rounded text-xs font-medium shrink-0"
@@ -119,19 +127,34 @@ export function CustomRowCard({
                             </span>
                         )}
                     </div>
+                    {/* Genres Display */}
+                    {genreNames.length > 0 && (
+                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                {genreNames.map((genre) => (
+                                    <span
+                                        key={genre}
+                                        className="inline-block px-2 py-0.5 bg-gray-800 text-gray-300 rounded text-xs"
+                                    >
+                                        {genre}
+                                    </span>
+                                ))}
+                            </div>
+                            {/* Edit Genres Button */}
+                            <button
+                                onClick={() => onEdit(row)}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-xs transition-colors"
+                                title="Edit genres"
+                            >
+                                <PencilIcon className="w-3 h-3" />
+                                <span>Edit</span>
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Actions */}
                 <div className="flex gap-1.5">
-                    {/* Edit */}
-                    <button
-                        onClick={() => onEdit(row)}
-                        className="p-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors shrink-0"
-                        title={row.isSystemRow ? 'Edit collection name' : 'Edit collection'}
-                    >
-                        <PencilIcon className="w-4 h-4 text-gray-300" />
-                    </button>
-
                     {/* Delete - All collections are deletable */}
                     <button
                         onClick={handleDelete}
