@@ -33,14 +33,21 @@ export default function InlineSearchBar({
     const inputRef = useRef<HTMLInputElement>(null)
 
     // Voice input
-    const { isListening, isSupported, startListening, stopListening } = useVoiceInput({
-        onResult: (transcript) => {
-            setQuery(transcript)
+    const { isListening, isSupported, transcript, startListening, stopListening } = useVoiceInput({
+        onResult: (finalTranscript) => {
+            setQuery(finalTranscript)
         },
         onError: (error) => {
             showError('Voice input error', error)
         },
     })
+
+    // Show live transcript while listening
+    useEffect(() => {
+        if (isListening && transcript) {
+            setQuery(transcript)
+        }
+    }, [transcript, isListening])
 
     // Debounced search
     useEffect(() => {
@@ -143,6 +150,12 @@ export default function InlineSearchBar({
                     className="w-full h-12 pl-12 pr-24 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    {/* Listening Indicator */}
+                    {isListening && (
+                        <span className="text-xs text-blue-400 mr-1 animate-pulse font-medium">
+                            Listening...
+                        </span>
+                    )}
                     {/* Voice Input Button */}
                     {isSupported && (
                         <button
@@ -158,7 +171,7 @@ export default function InlineSearchBar({
                         </button>
                     )}
                     {/* Clear Button */}
-                    {query && (
+                    {query && !isListening && (
                         <button
                             onClick={handleClear}
                             className="text-gray-400 hover:text-white transition-colors"

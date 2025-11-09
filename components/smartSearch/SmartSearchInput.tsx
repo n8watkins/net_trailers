@@ -68,14 +68,21 @@ export default function SmartSearchInput() {
     const placeholderText = typewriterText ? typewriterText : 'Describe what you want to watch...'
 
     // Voice input
-    const { isListening, isSupported, startListening, stopListening } = useVoiceInput({
-        onResult: (transcript) => {
-            setLocalQuery(transcript)
+    const { isListening, isSupported, transcript, startListening, stopListening } = useVoiceInput({
+        onResult: (finalTranscript) => {
+            setLocalQuery(finalTranscript)
         },
         onError: (error) => {
             showError('Voice input error', error)
         },
     })
+
+    // Show live transcript while listening
+    useEffect(() => {
+        if (isListening && transcript) {
+            setLocalQuery(transcript)
+        }
+    }, [transcript, isListening])
 
     // Sync local query with store
     useEffect(() => {
@@ -162,8 +169,15 @@ export default function SmartSearchInput() {
 
                 {/* Search, Voice, and Clear Buttons */}
                 <div className="absolute right-3 sm:right-4 flex items-center gap-1">
+                    {/* Listening Indicator */}
+                    {isListening && (
+                        <span className="text-xs text-red-400 mr-1 animate-pulse font-medium">
+                            Listening...
+                        </span>
+                    )}
+
                     {/* Clear Button - only visible when there's text, appears FIRST (left side) */}
-                    {localQuery && (
+                    {localQuery && !isListening && (
                         <button
                             type="button"
                             onClick={handleClear}

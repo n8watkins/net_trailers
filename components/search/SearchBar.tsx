@@ -74,14 +74,21 @@ export default function SearchBar({
     const { showError } = useToast()
 
     // Voice input
-    const { isListening, isSupported, startListening, stopListening } = useVoiceInput({
-        onResult: (transcript) => {
-            updateQuery(transcript)
+    const { isListening, isSupported, transcript, startListening, stopListening } = useVoiceInput({
+        onResult: (finalTranscript) => {
+            updateQuery(finalTranscript)
         },
         onError: (error) => {
             showError('Voice input error', error)
         },
     })
+
+    // Show live transcript while listening
+    useEffect(() => {
+        if (isListening && transcript) {
+            updateQuery(transcript)
+        }
+    }, [transcript, isListening, updateQuery])
 
     const [isFocused, setIsFocused] = useState(false)
     const [showSuggestions, setShowSuggestions] = useState(false)
