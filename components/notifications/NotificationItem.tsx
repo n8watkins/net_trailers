@@ -8,15 +8,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import {
-    SparklesIcon,
-    FilmIcon,
-    UserGroupIcon,
-    BellIcon,
-    FireIcon,
-    XMarkIcon,
-} from '@heroicons/react/24/outline'
-import { Notification, NOTIFICATION_META } from '../../types/notifications'
+import { XMarkIcon } from '@heroicons/react/24/outline'
+import { Notification } from '../../types/notifications'
 import { useNotificationStore } from '../../stores/notificationStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useAppStore } from '../../stores/appStore'
@@ -33,28 +26,6 @@ export default function NotificationItem({ notification }: NotificationItemProps
     const { markNotificationAsRead, deleteNotification, closePanel } = useNotificationStore()
     const { openModal } = useAppStore()
     const [isLoading, setIsLoading] = useState(false)
-
-    const meta = NOTIFICATION_META[notification.type]
-
-    // Get the appropriate icon component
-    const getIcon = () => {
-        switch (notification.type) {
-            case 'collection_update':
-                return SparklesIcon
-            case 'new_release':
-                return FilmIcon
-            case 'share_activity':
-                return UserGroupIcon
-            case 'trending_update':
-                return FireIcon
-            case 'system':
-                return BellIcon
-            default:
-                return BellIcon
-        }
-    }
-
-    const Icon = getIcon()
 
     // Format timestamp
     const getTimeAgo = (timestamp: number): string => {
@@ -126,71 +97,111 @@ export default function NotificationItem({ notification }: NotificationItemProps
         await deleteNotification(userId, notification.id)
     }
 
+    // Get category label based on notification type
+    const getCategoryLabel = () => {
+        switch (notification.type) {
+            case 'trending_update':
+                return 'Now Trending 🔥'
+            case 'new_release':
+                return 'New Release'
+            case 'collection_update':
+                return 'Collection Update'
+            case 'share_activity':
+                return 'Share Activity'
+            case 'system':
+                return 'System'
+            default:
+                return 'Notification'
+        }
+    }
+
+    // Extract content title from notification title (remove prefix if present)
+    const getContentTitle = () => {
+        // Remove any category prefix from the title
+        const prefixes = [
+            'Now Trending:',
+            'Now Trending 🔥:',
+            'New Release:',
+            'Collection Update:',
+            'Share Activity:',
+            'System:',
+        ]
+
+        let title = notification.title
+        for (const prefix of prefixes) {
+            if (title.startsWith(prefix)) {
+                title = title.replace(prefix, '').trim()
+                break
+            }
+        }
+
+        return title
+    }
+
+    const categoryLabel = getCategoryLabel()
+    const contentTitle = getContentTitle()
+
     return (
         <div
-            className={`group relative flex gap-3 border-b border-gray-700/50 p-4 transition-all duration-200 ${
+            className={`group relative flex gap-4 border-b border-gray-800/50 p-4 transition-all duration-200 ${
                 notification.actionUrl
                     ? isLoading
                         ? 'cursor-wait opacity-70'
-                        : 'cursor-pointer hover:bg-gray-800/80'
+                        : 'cursor-pointer hover:bg-red-950/30'
                     : 'cursor-default'
             } ${
                 !notification.isRead
-                    ? 'bg-gradient-to-r from-gray-800/40 to-transparent border-l-4 border-l-red-600'
-                    : 'bg-transparent opacity-70'
+                    ? 'bg-gradient-to-r from-red-950/20 to-transparent border-l-4 border-l-red-600'
+                    : 'bg-transparent opacity-60'
             }`}
             onClick={handleClick}
         >
-            {/* Icon */}
-            <div
-                className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${meta.bgColor}`}
-            >
-                <Icon className={`h-5 w-5 ${meta.color}`} aria-hidden="true" />
-            </div>
+            {/* Poster image (left side) */}
+            {notification.imageUrl && (
+                <div className="flex-shrink-0">
+                    <img
+                        src={notification.imageUrl}
+                        alt=""
+                        className="h-28 w-20 rounded object-cover ring-1 ring-red-900/30"
+                    />
+                </div>
+            )}
 
-            {/* Content */}
-            <div className="flex-1 space-y-1">
-                {/* Title and timestamp */}
-                <div className="flex items-start justify-between gap-2">
-                    <h4
-                        className={`text-sm font-medium ${
-                            notification.isRead ? 'text-gray-300' : 'text-white'
-                        }`}
-                    >
-                        {notification.title}
-                    </h4>
+            {/* Text content (right side) */}
+            <div className="flex min-w-0 flex-1 flex-col justify-start gap-2">
+                {/* Header: Category + Timestamp */}
+                <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-medium text-red-400">{categoryLabel}</span>
                     <time
-                        className="text-xs text-gray-500"
+                        className="flex-shrink-0 text-sm text-gray-500"
                         dateTime={new Date(notification.createdAt).toISOString()}
                     >
                         {getTimeAgo(notification.createdAt)}
                     </time>
                 </div>
 
-                {/* Message */}
-                <p className={`text-sm ${notification.isRead ? 'text-gray-400' : 'text-gray-300'}`}>
-                    {notification.message}
-                </p>
+                {/* Content Title */}
+                <h4
+                    className={`line-clamp-3 text-base font-semibold leading-snug ${
+                        notification.isRead ? 'text-gray-300' : 'text-white'
+                    }`}
+                >
+                    {contentTitle}
+                </h4>
 
-                {/* Poster image (if available) */}
-                {notification.imageUrl && (
-                    <div className="mt-2">
-                        <img
-                            src={notification.imageUrl}
-                            alt=""
-                            className="h-20 w-auto rounded object-cover"
-                        />
-                    </div>
+                {/* Message/Description if available */}
+                {notification.message && (
+                    <p className="text-sm text-gray-400 line-clamp-2">{notification.message}</p>
                 )}
             </div>
 
             {/* Delete button */}
             <button
                 onClick={handleDelete}
-                className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-gray-800/80 opacity-0 transition-opacity hover:bg-red-600 group-hover:opacity-100"
+                className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-gray-900/90 opacity-0 transition-all hover:bg-red-600 group-hover:opacity-100"
                 aria-label="Delete notification"
             >
-                <XMarkIcon className="h-4 w-4 text-gray-400 hover:text-white" aria-hidden="true" />
+                <XMarkIcon className="h-5 w-5 text-gray-400 hover:text-white" aria-hidden="true" />
             </button>
         </div>
     )

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Header from '../../components/layout/Header'
+import SubHeader from '../../components/common/SubHeader'
 import useUserData from '../../hooks/useUserData'
 import useAuth from '../../hooks/useAuth'
 import {
@@ -219,6 +220,7 @@ const Collections = () => {
             className={`relative min-h-screen overflow-x-clip ${showModal && `overflow-y-hidden`} bg-gradient-to-b`}
         >
             <Header />
+            <SubHeader />
 
             <main className="relative pb-24 px-4 sm:px-6 lg:px-8">
                 <div className="max-w-[1600px] mx-auto flex flex-col space-y-8 py-16 md:space-y-12 md:py-20 lg:py-24">
@@ -355,47 +357,54 @@ const Collections = () => {
                             </div>
 
                             {/* Selected Collection Title and Count */}
-                            {selectedListId && (() => {
-                                const selectedList = allLists.find((l) => l.id === selectedListId)
-                                return (
-                                    <div className="border-t border-gray-800 pt-6">
-                                        <div className="flex items-center space-x-3 mb-4">
-                                            {/* Collection Icon */}
-                                            <div className="flex items-center justify-center">
-                                                {selectedList?.emoji ? (
-                                                    <span className="text-3xl">{selectedList.emoji}</span>
-                                                ) : (
-                                                    <EyeIcon className="w-8 h-8 text-white" />
-                                                )}
+                            {selectedListId &&
+                                (() => {
+                                    const selectedList = allLists.find(
+                                        (l) => l.id === selectedListId
+                                    )
+                                    return (
+                                        <div className="border-t border-gray-800 pt-6">
+                                            <div className="flex items-center space-x-3 mb-4">
+                                                {/* Collection Icon */}
+                                                <div className="flex items-center justify-center">
+                                                    {selectedList?.emoji ? (
+                                                        <span className="text-3xl">
+                                                            {selectedList.emoji}
+                                                        </span>
+                                                    ) : (
+                                                        <EyeIcon className="w-8 h-8 text-white" />
+                                                    )}
+                                                </div>
+                                                {/* Collection Title */}
+                                                <h2 className="text-2xl font-bold text-white">
+                                                    {selectedList?.name || 'Collection'}
+                                                </h2>
+                                                {/* Item Count */}
+                                                <span className="text-lg text-gray-400 font-medium">
+                                                    {getListCount(selectedListId)} items
+                                                </span>
                                             </div>
-                                            {/* Collection Title */}
-                                            <h2 className="text-2xl font-bold text-white">
-                                                {selectedList?.name || 'Collection'}
-                                            </h2>
-                                            {/* Item Count */}
-                                            <span className="text-lg text-gray-400 font-medium">
-                                                {getListCount(selectedListId)} items
-                                            </span>
-                                        </div>
 
-                                    {/* Search Bar */}
-                                    <div className="max-w-md">
-                                        <div className="relative">
-                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+                                            {/* Search Bar */}
+                                            <div className="max-w-md">
+                                                <div className="relative">
+                                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                        <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+                                                    </div>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Search your favorites..."
+                                                        className="w-full pl-10 pr-4 py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all duration-200"
+                                                        value={searchQuery}
+                                                        onChange={(e) =>
+                                                            setSearchQuery(e.target.value)
+                                                        }
+                                                    />
+                                                </div>
                                             </div>
-                                            <input
-                                                type="text"
-                                                placeholder="Search your favorites..."
-                                                className="w-full pl-10 pr-4 py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all duration-200"
-                                                value={searchQuery}
-                                                onChange={(e) => setSearchQuery(e.target.value)}
-                                            />
                                         </div>
-                                    </div>
-                                </div>
-                                )
-                            })()}
+                                    )
+                                })()}
                         </div>
                     </div>
 

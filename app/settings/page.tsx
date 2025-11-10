@@ -18,6 +18,7 @@ import { useAuthStatus } from '../../hooks/useAuthStatus'
 import { exportUserDataToCSV } from '../../utils/csvExport'
 import { useToast } from '../../hooks/useToast'
 import Header from '../../components/layout/Header'
+import SubHeader from '../../components/common/SubHeader'
 import ConfirmationModal from '../../components/modals/ConfirmationModal'
 import InfoModal from '../../components/modals/InfoModal'
 import { useAppStore } from '../../stores/appStore'
@@ -133,7 +134,9 @@ const Settings: React.FC = () => {
             defaultVolume: userData.defaultVolume ?? 50,
             improveRecommendations: userData.improveRecommendations ?? true,
             showRecommendations: userData.showRecommendations ?? false,
-            notifications: userData.userSession?.preferences?.notifications ?? DEFAULT_NOTIFICATION_PREFERENCES,
+            notifications:
+                userData.userSession?.preferences?.notifications ??
+                DEFAULT_NOTIFICATION_PREFERENCES,
         }
     }, [
         userData.childSafetyMode,
@@ -167,7 +170,8 @@ const Settings: React.FC = () => {
         defaultVolume: userData.defaultVolume ?? 50,
         improveRecommendations: userData.improveRecommendations ?? true,
         showRecommendations: userData.showRecommendations ?? false,
-        notifications: userData.userSession?.preferences?.notifications ?? DEFAULT_NOTIFICATION_PREFERENCES,
+        notifications:
+            userData.userSession?.preferences?.notifications ?? DEFAULT_NOTIFICATION_PREFERENCES,
     })
 
     // Initialize skeleton state based on whether data is available
@@ -779,6 +783,7 @@ const Settings: React.FC = () => {
     return (
         <div className="relative min-h-screen overflow-x-clip">
             <Header />
+            <SubHeader />
 
             <main id="content" className="relative">
                 {/* Settings Page Content */}
@@ -899,7 +904,9 @@ const Settings: React.FC = () => {
                                             onImproveRecommendationsChange={
                                                 handleImproveRecommendationsChange
                                             }
-                                            onShowRecommendationsChange={handleShowRecommendationsChange}
+                                            onShowRecommendationsChange={
+                                                handleShowRecommendationsChange
+                                            }
                                             onSave={handleSavePreferences}
                                             onShowChildSafetyModal={handleShowChildSafetyModal}
                                             onSetupPIN={handleSetupPIN}

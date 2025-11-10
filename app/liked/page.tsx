@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Header from '../../components/layout/Header'
+import SubHeader from '../../components/common/SubHeader'
 import useUserData from '../../hooks/useUserData'
 import { CheckCircleIcon, MagnifyingGlassIcon, ArrowDownTrayIcon } from '@heroicons/react/24/solid'
 import { isMovie, isTVShow } from '../../typings'
@@ -92,6 +93,7 @@ const Liked = () => {
             className={`relative min-h-screen overflow-x-clip ${showModal && `overflow-y-hidden`} bg-gradient-to-b`}
         >
             <Header />
+            <SubHeader />
 
             <main className="relative pl-4 pb-24 lg:space-y-24 lg:pl-16">
                 <div className="flex flex-col space-y-8 py-16 md:space-y-12 md:py-20 lg:py-24">
