@@ -95,7 +95,7 @@ export default function SubHeader() {
     })
 
     return (
-        <div className="w-full border-b border-gray-800 bg-gradient-to-b from-gray-900 to-black">
+        <div className="w-full border-b border-gray-800 bg-gradient-to-b from-gray-900 to-black pt-20">
             {/* User greeting */}
             <div className="mx-auto max-w-7xl px-4 py-6">
                 <h1 className="text-2xl font-semibold text-white">Hi, {userName}</h1>
