@@ -348,22 +348,41 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
             for (const item of collection.items) {
                 if (isGuest) {
                     useGuestStore.getState().addToList(listId, item)
-                    // Set list metadata
-                    const lists = useGuestStore.getState().lists
-                    if (lists[listId]) {
-                        lists[listId].name = collection.name
-                        lists[listId].emoji = collection.emoji
-                        lists[listId].color = collection.color
-                    }
                 } else {
                     useAuthStore.getState().addToList(listId, item)
-                    // Set list metadata
-                    const lists = useAuthStore.getState().lists
-                    if (lists[listId]) {
-                        lists[listId].name = collection.name
-                        lists[listId].emoji = collection.emoji
-                        lists[listId].color = collection.color
-                    }
+                }
+            }
+
+            // Set list metadata after adding all items
+            if (isGuest) {
+                const lists = useGuestStore.getState().lists
+                if (lists && lists[listId]) {
+                    useGuestStore.setState({
+                        lists: {
+                            ...lists,
+                            [listId]: {
+                                ...lists[listId],
+                                name: collection.name,
+                                emoji: collection.emoji,
+                                color: collection.color,
+                            },
+                        },
+                    })
+                }
+            } else {
+                const lists = useAuthStore.getState().lists
+                if (lists && lists[listId]) {
+                    useAuthStore.setState({
+                        lists: {
+                            ...lists,
+                            [listId]: {
+                                ...lists[listId],
+                                name: collection.name,
+                                emoji: collection.emoji,
+                                color: collection.color,
+                            },
+                        },
+                    })
                 }
             }
         }
