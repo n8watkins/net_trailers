@@ -10,7 +10,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
     UserIcon,
-    PlayIcon,
+    ClockIcon,
     HeartIcon,
     BellIcon,
     Cog6ToothIcon,
@@ -19,7 +19,7 @@ import {
 } from '@heroicons/react/24/outline'
 import {
     UserIcon as UserIconSolid,
-    PlayIcon as PlayIconSolid,
+    ClockIcon as ClockIconSolid,
     HeartIcon as HeartIconSolid,
     BellIcon as BellIconSolid,
     Cog6ToothIcon as Cog6ToothIconSolid,
@@ -27,6 +27,7 @@ import {
     EyeSlashIcon as EyeSlashIconSolid,
 } from '@heroicons/react/24/solid'
 import { useSessionStore } from '../../stores/sessionStore'
+import useAuth from '../../hooks/useAuth'
 
 interface NavItem {
     label: string
@@ -43,19 +44,31 @@ const navItems: NavItem[] = [
         iconSolid: UserIconSolid,
     },
     {
-        label: 'Continue Watching',
-        href: '/continue-watching',
-        icon: PlayIcon,
-        iconSolid: PlayIconSolid,
+        label: 'Watch History',
+        href: '/watch-history',
+        icon: ClockIcon,
+        iconSolid: ClockIconSolid,
     },
     {
-        label: 'Watch List',
-        href: '/watchlist',
+        label: 'Collections',
+        href: '/collections',
+        icon: RectangleStackIcon,
+        iconSolid: RectangleStackIconSolid,
+    },
+    {
+        label: 'Liked Content',
+        href: '/liked',
         icon: HeartIcon,
         iconSolid: HeartIconSolid,
     },
     {
-        label: 'Notification',
+        label: 'Hidden Content',
+        href: '/hidden',
+        icon: EyeSlashIcon,
+        iconSolid: EyeSlashIconSolid,
+    },
+    {
+        label: 'Notifications',
         href: '/notifications',
         icon: BellIcon,
         iconSolid: BellIconSolid,
@@ -66,39 +79,34 @@ const navItems: NavItem[] = [
         icon: Cog6ToothIcon,
         iconSolid: Cog6ToothIconSolid,
     },
-    {
-        label: 'Collections',
-        href: '/collections',
-        icon: RectangleStackIcon,
-        iconSolid: RectangleStackIconSolid,
-    },
-    {
-        label: 'Hidden Content',
-        href: '/hidden',
-        icon: EyeSlashIcon,
-        iconSolid: EyeSlashIconSolid,
-    },
 ]
 
 export default function SubHeader() {
     const pathname = usePathname()
+    const { user } = useAuth()
     const sessionType = useSessionStore((state) => state.sessionType)
 
-    // Get user's name from session store
-    const userName = useSessionStore((state) => {
-        if (state.sessionType === 'authenticated') {
-            // Safely access nested properties
-            const displayName = state.authStore?.userPreferences?.displayName
-            return displayName || 'User'
+    // Get user's name - prioritize Firebase user displayName
+    const userName = (() => {
+        if (user?.displayName) {
+            // Get first name from full name
+            return user.displayName.split(' ')[0]
         }
-        return 'Guest'
-    })
+        if (user?.email) {
+            // Use email username as fallback
+            return user.email.split('@')[0]
+        }
+        if (sessionType === 'guest') {
+            return 'Guest'
+        }
+        return 'User'
+    })()
 
     return (
-        <div className="w-full border-b border-gray-800 bg-gradient-to-b from-gray-900 to-black pt-20">
+        <div className="w-full border-b border-gray-800 bg-gradient-to-b from-gray-900 to-black pt-24">
             {/* User greeting */}
-            <div className="mx-auto max-w-7xl px-4 py-6">
-                <h1 className="text-2xl font-semibold text-white">Hi, {userName}</h1>
+            <div className="mx-auto max-w-7xl px-4 py-8">
+                <h1 className="text-3xl font-semibold text-white">Hi, {userName}</h1>
             </div>
 
             {/* Navigation tabs */}
