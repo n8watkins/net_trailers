@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import Header from '../../components/layout/Header'
-import SubHeader from '../../components/common/SubHeader'
+import SubPageLayout from '../../components/layout/SubPageLayout'
 import useUserData from '../../hooks/useUserData'
 import useAuth from '../../hooks/useAuth'
 import {
@@ -18,6 +17,8 @@ import {
 import { isMovie, isTVShow } from '../../typings'
 import { getTitle } from '../../typings'
 import ContentCard from '../../components/common/ContentCard'
+import EmptyState from '../../components/common/EmptyState'
+import SearchBar from '../../components/common/SearchBar'
 import { useAppStore } from '../../stores/appStore'
 import { useModalStore } from '../../stores/modalStore'
 import { exportUserDataToCSV } from '../../utils/csvExport'
@@ -215,253 +216,213 @@ const Collections = () => {
         return list ? list.items.length : 0
     }
 
-    return (
-        <div
-            className={`relative min-h-screen overflow-x-clip ${showModal && `overflow-y-hidden`} bg-gradient-to-b`}
-        >
-            <Header />
-            <SubHeader />
+    const headerActions = (
+        <div className="space-y-6">
+            {/* Manage Collections Dropdown - Top Right */}
+            <div className="flex justify-end">
+                <div className="relative" ref={manageDropdownRef}>
+                    <button
+                        onClick={() => setShowManageDropdown(!showManageDropdown)}
+                        className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 text-gray-400 hover:text-white transition-all duration-200"
+                    >
+                        <Cog6ToothIcon className="w-5 h-5" />
+                        <span className="font-medium">Manage</span>
+                        <ChevronDownIcon
+                            className={`w-4 h-4 transition-transform ${
+                                showManageDropdown ? 'rotate-180' : ''
+                            }`}
+                        />
+                    </button>
 
-            <main className="relative pb-24 px-4 sm:px-6 lg:px-8">
-                <div className="max-w-[1600px] mx-auto flex flex-col space-y-8 py-16 md:space-y-12 md:py-20 lg:py-24">
-                    {/* Header Section */}
-                    <div className="space-y-6">
-                        <div className="flex items-center justify-between pt-8 sm:pt-10 md:pt-12">
-                            <div className="flex items-center space-x-3">
-                                <RectangleStackIcon className="w-8 h-8 text-blue-400" />
-                                <h1 className="text-3xl font-bold text-white md:text-4xl lg:text-5xl">
-                                    Collections
-                                </h1>
-                            </div>
-
-                            {/* Manage Collections Dropdown - Top Right */}
-                            <div className="relative" ref={manageDropdownRef}>
-                                <button
-                                    onClick={() => setShowManageDropdown(!showManageDropdown)}
-                                    className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 text-gray-400 hover:text-white transition-all duration-200"
-                                >
-                                    <Cog6ToothIcon className="w-5 h-5" />
-                                    <span className="font-medium">Manage</span>
-                                    <ChevronDownIcon
-                                        className={`w-4 h-4 transition-transform ${
-                                            showManageDropdown ? 'rotate-180' : ''
-                                        }`}
-                                    />
-                                </button>
-
-                                {/* Dropdown Menu */}
-                                {showManageDropdown && (
-                                    <div className="absolute top-full mt-2 right-0 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-xl z-50 min-w-[200px] overflow-hidden">
-                                        <button
-                                            onClick={() => {
-                                                openListModal(undefined)
-                                                setShowManageDropdown(false)
-                                            }}
-                                            className="w-full flex items-center space-x-3 px-4 py-3 text-white hover:bg-gray-800 transition-colors text-left"
-                                        >
-                                            <RectangleStackIcon className="w-5 h-5 text-gray-400" />
-                                            <span>Manage Collections</span>
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        <p className="text-gray-400 max-w-2xl">
-                            Keep track of the content you love!
-                        </p>
-
-                        {/* Debug Button - controlled by Auth Flow Logs toggle */}
-                        {process.env.NODE_ENV === 'development' &&
-                            debugSettings.showFirebaseDebug && (
-                                <button
-                                    onClick={debugAuthState}
-                                    className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
-                                >
-                                    🐛 Debug Auth State
-                                </button>
-                            )}
-
-                        {isInitialized && isGuest && <GuestModeNotification align="left" />}
-
-                        {/* Action Buttons Row - Above List Filter Buttons */}
-                        {allLists.some((list) => list.items.length > 0) && (
-                            <div className="flex items-center space-x-4 py-3 mb-4 border-b border-gray-700/30">
-                                {/* Stats */}
-                                <div className="text-lg font-semibold text-white">
-                                    {allLists.reduce((total, list) => total + list.items.length, 0)}{' '}
-                                    items total
-                                </div>
-
-                                {/* Export Button */}
-                                <button
-                                    onClick={handleExportCSV}
-                                    className="flex items-center space-x-2 px-5 py-2.5 bg-gray-800/50 hover:bg-white/10 text-white border border-gray-600 hover:border-gray-400 rounded-full text-sm font-medium transition-all duration-200"
-                                >
-                                    <ArrowDownTrayIcon className="w-4 h-4" />
-                                    <span>Export to CSV</span>
-                                </button>
-                            </div>
-                        )}
-
-                        {/* Collection Filter Buttons */}
-                        <div className="bg-[#1a1a1a] border border-gray-800 rounded-2xl p-6 space-y-6">
-                            <div className="flex flex-wrap gap-4">
-                                {/* Collection Pills - Watch Later (default collection) will be first */}
-                                {allLists
-                                    .sort((a, b) => {
-                                        // Put Watch Later (default collection) first, then other collections
-                                        if (a.name === 'Watch Later') return -1
-                                        if (b.name === 'Watch Later') return 1
-                                        return 0
-                                    })
-                                    .map((list) => {
-                                        const isSelected = selectedListId === list.id
-                                        const listColor = list.color || '#6b7280' // Default gray
-
-                                        return (
-                                            <button
-                                                key={list.id}
-                                                onClick={() => setSelectedListId(list.id)}
-                                                className={`flex items-center space-x-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-200 ${getListStyle(
-                                                    list,
-                                                    isSelected
-                                                )}`}
-                                                style={
-                                                    isSelected
-                                                        ? { borderColor: 'white' }
-                                                        : {
-                                                              borderColor: listColor,
-                                                              backgroundColor: hexToRgba(
-                                                                  listColor,
-                                                                  0.15
-                                                              ),
-                                                          }
-                                                }
-                                            >
-                                                {getListIcon(list, isSelected)}
-                                                <span>{list.name}</span>
-                                            </button>
-                                        )
-                                    })}
-
-                                {/* New Collection Button */}
-                                <button
-                                    onClick={() => openCollectionBuilderModal()}
-                                    className="flex items-center space-x-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-200 bg-gray-800/80 text-white hover:bg-gray-700/80 border border-gray-600 hover:border-gray-400 hover:scale-105"
-                                >
-                                    <PlusIcon className="w-5 h-5 text-white" />
-                                    <RectangleStackIcon className="w-5 h-5 text-white" />
-                                    <span>New Collection</span>
-                                </button>
-                            </div>
-
-                            {/* Selected Collection Title and Count */}
-                            {selectedListId &&
-                                (() => {
-                                    const selectedList = allLists.find(
-                                        (l) => l.id === selectedListId
-                                    )
-                                    return (
-                                        <div className="border-t border-gray-800 pt-6">
-                                            <div className="flex items-center space-x-3 mb-4">
-                                                {/* Collection Icon */}
-                                                <div className="flex items-center justify-center">
-                                                    {selectedList?.emoji ? (
-                                                        <span className="text-3xl">
-                                                            {selectedList.emoji}
-                                                        </span>
-                                                    ) : (
-                                                        <EyeIcon className="w-8 h-8 text-white" />
-                                                    )}
-                                                </div>
-                                                {/* Collection Title */}
-                                                <h2 className="text-2xl font-bold text-white">
-                                                    {selectedList?.name || 'Collection'}
-                                                </h2>
-                                                {/* Item Count */}
-                                                <span className="text-lg text-gray-400 font-medium">
-                                                    {getListCount(selectedListId)} items
-                                                </span>
-                                            </div>
-
-                                            {/* Search Bar */}
-                                            <div className="max-w-md">
-                                                <div className="relative">
-                                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                        <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
-                                                    </div>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Search your favorites..."
-                                                        className="w-full pl-10 pr-4 py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all duration-200"
-                                                        value={searchQuery}
-                                                        onChange={(e) =>
-                                                            setSearchQuery(e.target.value)
-                                                        }
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )
-                                })()}
-                        </div>
-                    </div>
-
-                    {/* Content Sections */}
-                    {filteredContent.length === 0 ? (
-                        <div className="text-center py-16">
-                            <div className="text-6xl mb-4">🍿</div>
-                            <h2 className="text-2xl font-semibold text-white mb-2">
-                                No content in{' '}
-                                {allLists.find((l) => l.id === selectedListId)?.name || 'this list'}{' '}
-                                yet
-                            </h2>
-                            <p className="text-gray-400">
-                                Start adding movies and TV shows to your collections!
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="space-y-12">
-                            {(() => {
-                                // Filter out "Liked" and "Not For Me" items - they have their own pages now
-                                const watchlistContent = filteredContent.filter(
-                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                    (item: any) => {
-                                        return (
-                                            item.content &&
-                                            !['Liked', 'Not For Me'].includes(item.listName)
-                                        )
-                                    }
-                                )
-
-                                // No need to separate by media type - ContentCard shows the type
-                                return (
-                                    <div>
-                                        <div className="flex flex-wrap gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 md:gap-x-8 md:gap-y-12">
-                                            {watchlistContent.map(
-                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                                (item: any) => (
-                                                    <div
-                                                        key={`${item.contentId}-${item.listId}`}
-                                                        className="relative mb-12 sm:mb-16 md:mb-20"
-                                                    >
-                                                        <ContentCard
-                                                            content={item.content}
-                                                            className=""
-                                                        />
-                                                    </div>
-                                                )
-                                            )}
-                                        </div>
-                                    </div>
-                                )
-                            })()}
+                    {/* Dropdown Menu */}
+                    {showManageDropdown && (
+                        <div className="absolute top-full mt-2 right-0 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-xl z-50 min-w-[200px] overflow-hidden">
+                            <button
+                                onClick={() => {
+                                    openListModal(undefined)
+                                    setShowManageDropdown(false)
+                                }}
+                                className="w-full flex items-center space-x-3 px-4 py-3 text-white hover:bg-gray-800 transition-colors text-left"
+                            >
+                                <RectangleStackIcon className="w-5 h-5 text-gray-400" />
+                                <span>Manage Collections</span>
+                            </button>
                         </div>
                     )}
                 </div>
-            </main>
+            </div>
+
+            {/* Debug Button - controlled by Auth Flow Logs toggle */}
+            {process.env.NODE_ENV === 'development' && debugSettings.showFirebaseDebug && (
+                <button
+                    onClick={debugAuthState}
+                    className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+                >
+                    🐛 Debug Auth State
+                </button>
+            )}
+
+            {isInitialized && isGuest && <GuestModeNotification align="left" />}
+
+            {/* Action Buttons Row - Above List Filter Buttons */}
+            {allLists.some((list) => list.items.length > 0) && (
+                <div className="flex items-center space-x-4 py-3 mb-4 border-b border-gray-700/30">
+                    {/* Stats */}
+                    <div className="text-lg font-semibold text-white">
+                        {allLists.reduce((total, list) => total + list.items.length, 0)} items total
+                    </div>
+
+                    {/* Export Button */}
+                    <button
+                        onClick={handleExportCSV}
+                        className="flex items-center space-x-2 px-5 py-2.5 bg-gray-800/50 hover:bg-white/10 text-white border border-gray-600 hover:border-gray-400 rounded-full text-sm font-medium transition-all duration-200"
+                    >
+                        <ArrowDownTrayIcon className="w-4 h-4" />
+                        <span>Export to CSV</span>
+                    </button>
+                </div>
+            )}
+
+            {/* Collection Filter Buttons */}
+            <div className="bg-[#1a1a1a] border border-gray-800 rounded-2xl p-6 space-y-6">
+                <div className="flex flex-wrap gap-4">
+                    {/* Collection Pills - Watch Later (default collection) will be first */}
+                    {allLists
+                        .sort((a, b) => {
+                            // Put Watch Later (default collection) first, then other collections
+                            if (a.name === 'Watch Later') return -1
+                            if (b.name === 'Watch Later') return 1
+                            return 0
+                        })
+                        .map((list) => {
+                            const isSelected = selectedListId === list.id
+                            const listColor = list.color || '#6b7280' // Default gray
+
+                            return (
+                                <button
+                                    key={list.id}
+                                    onClick={() => setSelectedListId(list.id)}
+                                    className={`flex items-center space-x-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-200 ${getListStyle(
+                                        list,
+                                        isSelected
+                                    )}`}
+                                    style={
+                                        isSelected
+                                            ? { borderColor: 'white' }
+                                            : {
+                                                  borderColor: listColor,
+                                                  backgroundColor: hexToRgba(listColor, 0.15),
+                                              }
+                                    }
+                                >
+                                    {getListIcon(list, isSelected)}
+                                    <span>{list.name}</span>
+                                </button>
+                            )
+                        })}
+
+                    {/* New Collection Button */}
+                    <button
+                        onClick={() => openCollectionBuilderModal()}
+                        className="flex items-center space-x-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-200 bg-gray-800/80 text-white hover:bg-gray-700/80 border border-gray-600 hover:border-gray-400 hover:scale-105"
+                    >
+                        <PlusIcon className="w-5 h-5 text-white" />
+                        <RectangleStackIcon className="w-5 h-5 text-white" />
+                        <span>New Collection</span>
+                    </button>
+                </div>
+
+                {/* Selected Collection Title and Count */}
+                {selectedListId &&
+                    (() => {
+                        const selectedList = allLists.find((l) => l.id === selectedListId)
+                        return (
+                            <div className="border-t border-gray-800 pt-6">
+                                <div className="flex items-center space-x-3 mb-4">
+                                    {/* Collection Icon */}
+                                    <div className="flex items-center justify-center">
+                                        {selectedList?.emoji ? (
+                                            <span className="text-3xl">{selectedList.emoji}</span>
+                                        ) : (
+                                            <EyeIcon className="w-8 h-8 text-white" />
+                                        )}
+                                    </div>
+                                    {/* Collection Title */}
+                                    <h2 className="text-2xl font-bold text-white">
+                                        {selectedList?.name || 'Collection'}
+                                    </h2>
+                                    {/* Item Count */}
+                                    <span className="text-lg text-gray-400 font-medium">
+                                        {getListCount(selectedListId)} items
+                                    </span>
+                                </div>
+
+                                {/* Search Bar */}
+                                <SearchBar
+                                    value={searchQuery}
+                                    onChange={setSearchQuery}
+                                    placeholder="Search your favorites..."
+                                    focusColor="blue"
+                                />
+                            </div>
+                        )
+                    })()}
+            </div>
         </div>
+    )
+
+    return (
+        <SubPageLayout
+            title="Collections"
+            icon={<RectangleStackIcon />}
+            iconColor="text-blue-400"
+            description="Keep track of the content you love!"
+            headerActions={headerActions}
+        >
+            {/* Content Sections */}
+            {filteredContent.length === 0 ? (
+                <EmptyState
+                    emoji="🍿"
+                    title={`No content in ${
+                        allLists.find((l) => l.id === selectedListId)?.name || 'this list'
+                    } yet`}
+                    description="Start adding movies and TV shows to your collections!"
+                />
+            ) : (
+                <div className="space-y-12">
+                    {(() => {
+                        // Filter out "Liked" and "Not For Me" items - they have their own pages now
+                        const watchlistContent = filteredContent.filter(
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            (item: any) => {
+                                return (
+                                    item.content && !['Liked', 'Not For Me'].includes(item.listName)
+                                )
+                            }
+                        )
+
+                        // No need to separate by media type - ContentCard shows the type
+                        return (
+                            <div>
+                                <div className="flex flex-wrap gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 md:gap-x-8 md:gap-y-12">
+                                    {watchlistContent.map(
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                        (item: any) => (
+                                            <div
+                                                key={`${item.contentId}-${item.listId}`}
+                                                className="relative mb-12 sm:mb-16 md:mb-20"
+                                            >
+                                                <ContentCard content={item.content} className="" />
+                                            </div>
+                                        )
+                                    )}
+                                </div>
+                            </div>
+                        )
+                    })()}
+                </div>
+            )}
+        </SubPageLayout>
     )
 }
 
