@@ -128,13 +128,17 @@ export default function NotificationItem({ notification }: NotificationItemProps
 
     return (
         <div
-            className={`group relative flex gap-3 border-b border-gray-700/50 p-4 transition-colors ${
+            className={`group relative flex gap-3 border-b border-gray-700/50 p-4 transition-all duration-200 ${
                 notification.actionUrl
                     ? isLoading
                         ? 'cursor-wait opacity-70'
-                        : 'cursor-pointer hover:bg-gray-800/50'
+                        : 'cursor-pointer hover:bg-gray-800/80'
                     : 'cursor-default'
-            } ${!notification.isRead ? 'bg-blue-900/10' : ''}`}
+            } ${
+                !notification.isRead
+                    ? 'bg-gradient-to-r from-gray-800/40 to-transparent border-l-4 border-l-red-600'
+                    : 'bg-transparent opacity-70'
+            }`}
             onClick={handleClick}
         >
             {/* Icon */}
@@ -183,19 +187,11 @@ export default function NotificationItem({ notification }: NotificationItemProps
             {/* Delete button */}
             <button
                 onClick={handleDelete}
-                className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-gray-800/80 opacity-0 transition-opacity hover:bg-gray-700 group-hover:opacity-100"
+                className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-gray-800/80 opacity-0 transition-opacity hover:bg-red-600 group-hover:opacity-100"
                 aria-label="Delete notification"
             >
-                <XMarkIcon className="h-4 w-4 text-gray-400" aria-hidden="true" />
+                <XMarkIcon className="h-4 w-4 text-gray-400 hover:text-white" aria-hidden="true" />
             </button>
-
-            {/* Unread indicator */}
-            {!notification.isRead && (
-                <div
-                    className="absolute left-0 top-0 h-full w-1 bg-blue-500"
-                    aria-hidden="true"
-                ></div>
-            )}
         </div>
     )
 }

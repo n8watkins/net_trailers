@@ -93,7 +93,7 @@ export default function NotificationPanel() {
                 <h2 className="text-lg font-semibold text-white">
                     Notifications
                     {unreadCount > 0 && (
-                        <span className="ml-2 inline-flex items-center rounded-full bg-blue-500 px-2 py-0.5 text-xs font-medium text-white">
+                        <span className="ml-2 inline-flex items-center rounded-full bg-red-600 px-2 py-0.5 text-xs font-medium text-white">
                             {unreadCount} new
                         </span>
                     )}
@@ -105,7 +105,7 @@ export default function NotificationPanel() {
                     {unreadCount > 0 && (
                         <button
                             onClick={handleMarkAllAsRead}
-                            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-blue-400 transition-colors hover:bg-gray-800 hover:text-blue-300"
+                            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
                             aria-label="Mark all as read"
                         >
                             <CheckIcon className="h-4 w-4" aria-hidden="true" />
@@ -117,7 +117,7 @@ export default function NotificationPanel() {
                     {notifications.length > 0 && (
                         <button
                             onClick={handleClearAll}
-                            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-gray-400 transition-colors hover:bg-gray-800 hover:text-gray-300"
+                            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-gray-400 transition-colors hover:bg-gray-800 hover:text-red-400"
                             aria-label="Clear all notifications"
                         >
                             <TrashIcon className="h-4 w-4" aria-hidden="true" />
@@ -131,7 +131,7 @@ export default function NotificationPanel() {
             <div className="max-h-96 overflow-y-auto">
                 {isLoading ? (
                     <div className="flex items-center justify-center py-12">
-                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-red-600 border-t-transparent"></div>
                     </div>
                 ) : notifications.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-12 text-gray-400">
