@@ -8,19 +8,23 @@ interface WizardStep4ConfirmationProps {
     rowName: string
     onViewHomepage: () => void
     onCreateAnother: () => void
+    type?: 'row' | 'collection' // Type of item created
 }
 
 /**
  * WizardStep4Confirmation Component
  *
- * Final step of custom row creation wizard.
+ * Final step of custom row/collection creation wizard.
  * Shows success message and provides next actions.
  */
 export function WizardStep4Confirmation({
     rowName,
     onViewHomepage,
     onCreateAnother,
+    type = 'row',
 }: WizardStep4ConfirmationProps) {
+    const itemType = type === 'collection' ? 'Collection' : 'Row'
+    const itemTypeLower = type === 'collection' ? 'collection' : 'row'
     return (
         <div className="space-y-8">
             {/* Success Animation */}
@@ -33,10 +37,10 @@ export function WizardStep4Confirmation({
                     <CheckCircleIcon className="relative w-24 h-24 text-green-500 animate-bounce" />
                 </div>
 
-                <h3 className="text-3xl font-bold text-white mb-3">Row Created Successfully!</h3>
+                <h3 className="text-3xl font-bold text-white mb-3">{itemType} Created Successfully!</h3>
 
                 <p className="text-lg text-gray-300 mb-2">
-                    Your custom row <span className="text-red-400 font-semibold">"{rowName}"</span>
+                    Your {itemTypeLower} <span className="text-red-400 font-semibold">"{rowName}"</span>
                 </p>
                 <p className="text-gray-400">is now live and ready to enjoy</p>
             </div>
@@ -48,9 +52,19 @@ export function WizardStep4Confirmation({
                     <div className="space-y-2">
                         <h4 className="text-white font-semibold">What's Next?</h4>
                         <ul className="text-gray-300 text-sm space-y-1.5">
-                            <li>• Your row will appear on your homepage</li>
-                            <li>• Content updates automatically as new titles are added to TMDB</li>
-                            <li>• You can edit or disable this row anytime from your settings</li>
+                            {type === 'collection' ? (
+                                <>
+                                    <li>• Your collection is ready to view in your Collections page</li>
+                                    <li>• Add more content to it anytime</li>
+                                    <li>• Share your collection with friends</li>
+                                </>
+                            ) : (
+                                <>
+                                    <li>• Your row will appear on your homepage</li>
+                                    <li>• Content updates automatically as new titles are added to TMDB</li>
+                                    <li>• You can edit or disable this row anytime from your settings</li>
+                                </>
+                            )}
                         </ul>
                     </div>
                 </div>
@@ -63,7 +77,7 @@ export function WizardStep4Confirmation({
                     onClick={onViewHomepage}
                     className="flex-1 px-6 py-4 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold text-lg shadow-lg shadow-red-600/20"
                 >
-                    🏠 View on Homepage
+                    {type === 'collection' ? '📚 View Collections' : '🏠 View on Homepage'}
                 </button>
                 <button
                     type="button"
@@ -76,7 +90,7 @@ export function WizardStep4Confirmation({
 
             {/* Subtle hint */}
             <p className="text-center text-gray-500 text-sm">
-                Pro tip: Create multiple rows to organize your content library
+                Pro tip: Create multiple {type === 'collection' ? 'collections' : 'rows'} to organize your content library
             </p>
         </div>
     )

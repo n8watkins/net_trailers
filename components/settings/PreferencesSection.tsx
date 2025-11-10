@@ -10,6 +10,7 @@ interface PreferencesControlsProps {
     autoMute: boolean
     defaultVolume: number
     improveRecommendations: boolean
+    showRecommendations: boolean
     preferencesChanged: boolean
     isGuest: boolean
     hasPIN: boolean
@@ -18,6 +19,7 @@ interface PreferencesControlsProps {
     onAutoMuteChange: (checked: boolean) => void
     onDefaultVolumeChange: (volume: number) => void
     onImproveRecommendationsChange: (checked: boolean) => void
+    onShowRecommendationsChange: (checked: boolean) => void
     onSave: () => void
     onShowChildSafetyModal: () => void
     onSetupPIN: () => void
@@ -31,6 +33,7 @@ const PreferencesControls = React.memo<PreferencesControlsProps>(
         autoMute,
         defaultVolume,
         improveRecommendations,
+        showRecommendations,
         preferencesChanged,
         isGuest,
         hasPIN,
@@ -39,6 +42,7 @@ const PreferencesControls = React.memo<PreferencesControlsProps>(
         onAutoMuteChange,
         onDefaultVolumeChange,
         onImproveRecommendationsChange,
+        onShowRecommendationsChange,
         onSave,
         onShowChildSafetyModal,
         onSetupPIN,
@@ -220,6 +224,42 @@ const PreferencesControls = React.memo<PreferencesControlsProps>(
                         Privacy & Recommendations
                     </h3>
                     <div className="space-y-6 bg-[#0a0a0a] rounded-lg border border-[#313131] p-6">
+                        {/* Show Personalized Recommendations Row Toggle */}
+                        <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-[#e5e5e5] mb-1">
+                                    Show Personalized Recommendations
+                                </label>
+                                <p className="text-sm text-[#b3b3b3] mb-2">
+                                    Display a "Recommended For You" row on the home page based on
+                                    your watch history and preferences
+                                </p>
+                                <p className="text-xs text-[#999]">
+                                    Requires interaction tracking to be enabled. Only available for
+                                    authenticated users.
+                                </p>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer ml-4">
+                                <input
+                                    type="checkbox"
+                                    checked={showRecommendations}
+                                    onChange={(e) => onShowRecommendationsChange(e.target.checked)}
+                                    disabled={!improveRecommendations || isGuest}
+                                    className="sr-only peer"
+                                />
+                                <div
+                                    className={`w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600 ${
+                                        !improveRecommendations || isGuest
+                                            ? 'opacity-50 cursor-not-allowed'
+                                            : ''
+                                    }`}
+                                ></div>
+                            </label>
+                        </div>
+
+                        {/* Divider */}
+                        <div className="border-t border-[#313131]"></div>
+
                         {/* Improve Recommendations Toggle */}
                         <div className="flex items-start justify-between">
                             <div className="flex-1">
@@ -279,6 +319,7 @@ interface PreferencesSectionProps {
     autoMute: boolean
     defaultVolume: number
     improveRecommendations: boolean
+    showRecommendations: boolean
     preferencesChanged: boolean
     hasPIN: boolean
     pinEnabled: boolean
@@ -286,6 +327,7 @@ interface PreferencesSectionProps {
     onAutoMuteChange: (checked: boolean) => void
     onDefaultVolumeChange: (volume: number) => void
     onImproveRecommendationsChange: (checked: boolean) => void
+    onShowRecommendationsChange: (checked: boolean) => void
     onSave: () => void
     onShowChildSafetyModal: () => void
     onSetupPIN: () => void
@@ -300,6 +342,7 @@ const PreferencesSection: React.FC<PreferencesSectionProps> = ({
     autoMute,
     defaultVolume,
     improveRecommendations,
+    showRecommendations,
     preferencesChanged,
     hasPIN,
     pinEnabled,
@@ -307,6 +350,7 @@ const PreferencesSection: React.FC<PreferencesSectionProps> = ({
     onAutoMuteChange,
     onDefaultVolumeChange,
     onImproveRecommendationsChange,
+    onShowRecommendationsChange,
     onSave,
     onShowChildSafetyModal,
     onSetupPIN,
@@ -347,6 +391,7 @@ const PreferencesSection: React.FC<PreferencesSectionProps> = ({
                     autoMute={autoMute}
                     defaultVolume={defaultVolume}
                     improveRecommendations={improveRecommendations}
+                    showRecommendations={showRecommendations}
                     preferencesChanged={preferencesChanged}
                     isGuest={isGuest}
                     hasPIN={hasPIN}
@@ -355,6 +400,7 @@ const PreferencesSection: React.FC<PreferencesSectionProps> = ({
                     onAutoMuteChange={onAutoMuteChange}
                     onDefaultVolumeChange={onDefaultVolumeChange}
                     onImproveRecommendationsChange={onImproveRecommendationsChange}
+                    onShowRecommendationsChange={onShowRecommendationsChange}
                     onSave={onSave}
                     onShowChildSafetyModal={onShowChildSafetyModal}
                     onSetupPIN={onSetupPIN}

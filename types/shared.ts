@@ -3,6 +3,7 @@
 
 import { Content } from '../typings'
 import { UserList } from './userLists'
+import { NotificationPreferences } from './notifications'
 
 export interface UserPreferences {
     defaultWatchlist: Content[]
@@ -14,6 +15,8 @@ export interface UserPreferences {
     defaultVolume: number
     childSafetyMode: boolean
     improveRecommendations?: boolean
+    showRecommendations?: boolean
+    notifications?: NotificationPreferences
 }
 
 export interface UserSession {
@@ -47,6 +50,19 @@ export const defaultAuthSession: AuthSession = {
         defaultVolume: 50,
         childSafetyMode: false,
         improveRecommendations: true,
+        showRecommendations: false, // Disabled by default
+        notifications: {
+            inApp: true,
+            email: false,
+            push: false,
+            types: {
+                collection_update: true,
+                new_release: true,
+                share_activity: true,
+                system: true,
+            },
+            emailDigest: 'never',
+        },
     },
     lastSyncedAt: Date.now(),
 }
@@ -70,6 +86,19 @@ export const defaultGuestSession: GuestSession = {
         defaultVolume: 50,
         childSafetyMode: false,
         improveRecommendations: true,
+        showRecommendations: false, // Disabled by default
+        notifications: {
+            inApp: true,
+            email: false,
+            push: false,
+            types: {
+                collection_update: true,
+                new_release: true,
+                share_activity: true,
+                system: true,
+            },
+            emailDigest: 'never',
+        },
     },
     lastSyncedAt: Date.now(),
 }

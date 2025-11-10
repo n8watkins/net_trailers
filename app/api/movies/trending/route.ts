@@ -27,8 +27,8 @@ export async function GET(request: NextRequest) {
             // Sorted by popularity for trending content
             url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&page=${page}&sort_by=popularity.desc&certification_country=US&certification.lte=PG-13&include_adult=false&vote_count.gte=100`
         } else {
-            // Normal mode - use trending endpoint for mixed content
-            url = `${BASE_URL}/trending/all/week?api_key=${API_KEY}&language=en-US&page=${page}`
+            // Normal mode - use trending endpoint for movies only
+            url = `${BASE_URL}/trending/movie/week?api_key=${API_KEY}&language=en-US&page=${page}`
         }
 
         const response = await fetch(url)

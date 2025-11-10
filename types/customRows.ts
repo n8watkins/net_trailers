@@ -121,6 +121,7 @@ export interface CustomRowFormData {
     advancedFilters?: AdvancedFilters
     autoUpdateEnabled?: boolean
     updateFrequency?: 'daily' | 'weekly' | 'never'
+    previewContent?: any[] // Preview content from TMDB (for collections)
 }
 
 /**

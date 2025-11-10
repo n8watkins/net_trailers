@@ -3,17 +3,13 @@
 import React from 'react'
 import { FilmIcon, TvIcon } from '@heroicons/react/24/outline'
 import { GenrePills } from './GenrePills'
-import { PremiumFeatureGate } from './PremiumFeatureGate'
 import { CustomRowFormData } from '../../types/customRows'
 
 interface WizardStep1BasicProps {
     formData: CustomRowFormData
     onChange: (updates: Partial<CustomRowFormData>) => void
-    onQuickCreate: () => void
-    onUseAdvanced: () => void
+    onNext: () => void
     canProgress: boolean
-    isAuthenticated: boolean
-    onSignIn: () => void
 }
 
 /**
@@ -25,11 +21,8 @@ interface WizardStep1BasicProps {
 export function WizardStep1Basic({
     formData,
     onChange,
-    onQuickCreate,
-    onUseAdvanced,
+    onNext,
     canProgress,
-    isAuthenticated,
-    onSignIn,
 }: WizardStep1BasicProps) {
     return (
         <div className="space-y-6">
@@ -91,82 +84,55 @@ export function WizardStep1Basic({
                 />
             </div>
 
-            {/* Genre Logic (only show if 2+ genres selected) */}
-            {formData.genres.length > 1 && (
-                <div>
-                    <label className="block text-sm font-medium text-gray-200 mb-3">
-                        Genre Matching
-                    </label>
-                    <div className="grid grid-cols-2 gap-3">
-                        <button
-                            type="button"
-                            onClick={() => onChange({ genreLogic: 'AND' })}
-                            className={`px-4 py-4 rounded-lg border-2 transition-all text-left ${
-                                formData.genreLogic === 'AND'
-                                    ? 'border-red-600 bg-red-600/20 text-white'
-                                    : 'border-gray-700 bg-[#1a1a1a] text-gray-400 hover:border-gray-600'
-                            }`}
-                        >
-                            <div className="font-semibold mb-1">Match ALL</div>
-                            <div className="text-xs opacity-80">
-                                Content must have all selected genres
-                            </div>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => onChange({ genreLogic: 'OR' })}
-                            className={`px-4 py-4 rounded-lg border-2 transition-all text-left ${
-                                formData.genreLogic === 'OR'
-                                    ? 'border-red-600 bg-red-600/20 text-white'
-                                    : 'border-gray-700 bg-[#1a1a1a] text-gray-400 hover:border-gray-600'
-                            }`}
-                        >
-                            <div className="font-semibold mb-1">Match ANY</div>
-                            <div className="text-xs opacity-80">
-                                Content with any selected genre
-                            </div>
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex gap-3 pt-6">
-                <button
-                    type="button"
-                    onClick={onQuickCreate}
-                    disabled={!canProgress}
-                    className="flex-1 px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                >
-                    Quick Create →
-                </button>
-
-                {isAuthenticated ? (
+            {/* Genre Matching - Always visible */}
+            <div>
+                <label className="block text-sm font-medium text-gray-200 mb-3">
+                    Genre Matching
+                </label>
+                <div className="grid grid-cols-2 gap-3">
                     <button
                         type="button"
-                        onClick={onUseAdvanced}
-                        disabled={!canProgress}
-                        className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                        onClick={() => onChange({ genreLogic: 'AND' })}
+                        disabled={formData.genres.length < 2}
+                        className={`px-4 py-4 rounded-lg border-2 transition-all text-left ${
+                            formData.genreLogic === 'AND'
+                                ? 'border-red-600 bg-red-600/20 text-white'
+                                : 'border-gray-700 bg-[#1a1a1a] text-gray-400 hover:border-gray-600'
+                        } ${formData.genres.length < 2 ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
-                        Use Advanced Features →
+                        <div className="font-semibold mb-1">Match ALL</div>
+                        <div className="text-xs opacity-80">
+                            Content must have all selected genres
+                        </div>
                     </button>
-                ) : (
-                    <div className="flex-1">
-                        <PremiumFeatureGate
-                            isLocked={true}
-                            feature="advanced_filters"
-                            onUnlockClick={onSignIn}
-                            showBadge={false}
-                        >
-                            <button
-                                type="button"
-                                className="w-full px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
-                            >
-                                Use Advanced Features →
-                            </button>
-                        </PremiumFeatureGate>
-                    </div>
-                )}
+                    <button
+                        type="button"
+                        onClick={() => onChange({ genreLogic: 'OR' })}
+                        disabled={formData.genres.length < 2}
+                        className={`px-4 py-4 rounded-lg border-2 transition-all text-left ${
+                            formData.genreLogic === 'OR'
+                                ? 'border-red-600 bg-red-600/20 text-white'
+                                : 'border-gray-700 bg-[#1a1a1a] text-gray-400 hover:border-gray-600'
+                        } ${formData.genres.length < 2 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                        <div className="font-semibold mb-1">Match ANY</div>
+                        <div className="text-xs opacity-80">
+                            Content with any selected genre
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            {/* Action Button */}
+            <div className="flex justify-end pt-6">
+                <button
+                    type="button"
+                    onClick={onNext}
+                    disabled={!canProgress}
+                    className="px-8 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                >
+                    Next →
+                </button>
             </div>
 
             {/* Helper text */}

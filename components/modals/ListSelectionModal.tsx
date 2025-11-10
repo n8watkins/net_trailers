@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useAppStore } from '../../stores/appStore'
+import { useModalStore } from '../../stores/modalStore'
 import useUserData from '../../hooks/useUserData'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import { getTitle } from '../../typings'
@@ -18,10 +19,12 @@ import {
     PencilIcon,
     TrashIcon,
     LockClosedIcon,
+    RectangleStackIcon,
 } from '@heroicons/react/24/solid'
 
 function ListSelectionModal() {
     const { listModal, closeListModal, openAuthModal } = useAppStore()
+    const { openCollectionBuilderModal } = useModalStore()
     const { isGuest } = useAuthStatus()
     const { showError, showWatchlistAdd, showWatchlistRemove, showSuccess } = useToast()
     const {
@@ -711,11 +714,12 @@ function ListSelectionModal() {
                             </div>
                         ) : !showCreateList ? (
                             <button
-                                onClick={() => setShowCreateList(true)}
-                                className="w-full flex items-center justify-center space-x-2 p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-all duration-200"
+                                onClick={() => openCollectionBuilderModal()}
+                                className="w-full flex items-center justify-center space-x-2 p-3 bg-gray-800/80 hover:bg-gray-700/80 border border-gray-600 hover:border-gray-400 rounded-lg transition-all duration-200"
                             >
                                 <PlusIcon className="w-5 h-5 text-white" />
-                                <span className="text-white font-medium">Create New List</span>
+                                <RectangleStackIcon className="w-5 h-5 text-white" />
+                                <span className="text-white font-medium">New Collection</span>
                             </button>
                         ) : (
                             <div className="space-y-3">

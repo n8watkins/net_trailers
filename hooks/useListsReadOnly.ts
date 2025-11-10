@@ -21,12 +21,12 @@ export const useListsReadOnly = () => {
     const defaultWatchlist = isAuth ? authDefaultWatchlist : guestDefaultWatchlist
     const userCreatedWatchlists = isAuth ? authLists : guestLists
 
-    // Get all lists including default Watchlist + custom lists
+    // Get all lists including default Watch Later + custom lists
     const getAllLists = (): UserList[] => {
-        // Create a virtual "Watchlist" list from defaultWatchlist items
+        // Create a virtual "Watch Later" list from defaultWatchlist items
         const watchlistVirtual: UserList = {
             id: 'default-watchlist',
-            name: 'Watchlist',
+            name: 'Watch Later',
             items: defaultWatchlist,
             emoji: '📺',
             color: '#E50914',
@@ -35,7 +35,7 @@ export const useListsReadOnly = () => {
             updatedAt: Date.now(),
         }
 
-        // Return Watchlist + custom lists
+        // Return Watch Later + custom lists
         return [watchlistVirtual, ...userCreatedWatchlists]
     }
 

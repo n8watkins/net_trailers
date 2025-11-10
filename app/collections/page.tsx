@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import Header from '../../components/layout/Header'
 import useUserData from '../../hooks/useUserData'
 import useAuth from '../../hooks/useAuth'
@@ -10,11 +11,14 @@ import {
     ArrowDownTrayIcon,
     PlusIcon,
     RectangleStackIcon,
+    Cog6ToothIcon,
+    ChevronDownIcon,
 } from '@heroicons/react/24/solid'
 import { isMovie, isTVShow } from '../../typings'
 import { getTitle } from '../../typings'
 import ContentCard from '../../components/common/ContentCard'
 import { useAppStore } from '../../stores/appStore'
+import { useModalStore } from '../../stores/modalStore'
 import { exportUserDataToCSV } from '../../utils/csvExport'
 import { UserList } from '../../types/userLists'
 import { useDebugSettings } from '../../components/debug/DebugControls'
@@ -22,6 +26,7 @@ import { GuestModeNotification } from '../../components/auth/GuestModeNotificati
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 
 const Collections = () => {
+    const router = useRouter()
     const userData = useUserData()
     const { user } = useAuth()
     const { isGuest, isInitialized } = useAuthStatus()
@@ -68,19 +73,44 @@ const Collections = () => {
 
     const [selectedListId, setSelectedListId] = useState<string | 'all'>('all')
     const [searchQuery, setSearchQuery] = useState('')
-    const { modal, openListModal } = useAppStore()
+    const [showManageDropdown, setShowManageDropdown] = useState(false)
+    const manageDropdownRef = useRef<HTMLDivElement>(null)
+    const { modal } = useAppStore()
+    const { openCollectionBuilderModal, openListModal } = useModalStore()
     const showModal = modal.isOpen
+
+    // Force refresh when navigating to this page
+    const [refreshKey, setRefreshKey] = useState(0)
+
+    useEffect(() => {
+        // Refresh data when component mounts or becomes visible
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                console.log('Collections page visible - refreshing data')
+                setRefreshKey((prev) => prev + 1)
+            }
+        }
+
+        // Trigger initial refresh
+        setRefreshKey((prev) => prev + 1)
+
+        document.addEventListener('visibilitychange', handleVisibilityChange)
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange)
+        }
+    }, [])
 
     // Get all available lists
     // FIXED: Use useMemo to prevent recreating allLists on every render
+    // Added refreshKey to force re-evaluation when data changes
     const allLists = useMemo(() => {
         return getAllLists()
-    }, [getAllLists]) // Only recreate when the function changes
+    }, [getAllLists, refreshKey]) // Recreate when refreshKey changes
 
-    // Set default to Watchlist when lists are loaded
+    // Set default to Watch Later when lists are loaded
     useEffect(() => {
         if (selectedListId === 'all' && allLists.length > 0) {
-            const watchlistDefault = allLists.find((list) => list.name === 'Watchlist')
+            const watchlistDefault = allLists.find((list) => list.name === 'Watch Later')
             if (watchlistDefault) {
                 setSelectedListId(watchlistDefault.id)
             } else {
@@ -88,6 +118,26 @@ const Collections = () => {
             }
         }
     }, [allLists, selectedListId])
+
+    // Handle click outside to close dropdown
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                manageDropdownRef.current &&
+                !manageDropdownRef.current.contains(event.target as Node)
+            ) {
+                setShowManageDropdown(false)
+            }
+        }
+
+        if (showManageDropdown) {
+            document.addEventListener('mousedown', handleClickOutside)
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [showManageDropdown])
 
     // Filter content based on selected list
     const getFilteredContent = () => {
@@ -127,20 +177,36 @@ const Collections = () => {
     }
 
     const getListIcon = (list: UserList, isSelected: boolean = false) => {
-        const iconClass = `w-5 h-5 ${isSelected ? 'text-black' : 'text-white'}`
-        const coloredIconClass = `w-5 h-5 ${isSelected ? 'text-black' : list.color ? `text-[${list.color}]` : 'text-white'}`
-
         // Return emoji if the list has one (custom lists)
         if (list.emoji) {
             return <span className="text-lg">{list.emoji}</span>
         }
 
         // Default icons for system lists
-        if (list.name === 'Watchlist') {
-            return <EyeIcon className={coloredIconClass} />
+        const iconClass = `w-5 h-5 ${isSelected ? 'text-black' : 'text-white'}`
+        return <EyeIcon className={iconClass} />
+    }
+
+    const getListStyle = (list: UserList, isSelected: boolean) => {
+        // If selected, always use white background
+        if (isSelected) {
+            return 'bg-white text-black shadow-lg scale-105 border-2'
         }
 
-        return <EyeIcon className={iconClass} />
+        // Default styling
+        return 'hover:scale-105 text-white border-2'
+    }
+
+    // Helper function to convert hex color to rgba with opacity
+    const hexToRgba = (hex: string, opacity: number): string => {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+        if (result) {
+            const r = parseInt(result[1], 16)
+            const g = parseInt(result[2], 16)
+            const b = parseInt(result[3], 16)
+            return `rgba(${r}, ${g}, ${b}, ${opacity})`
+        }
+        return `rgba(107, 114, 128, ${opacity})` // Fallback to gray
     }
 
     const getListCount = (listId: string) => {
@@ -158,11 +224,45 @@ const Collections = () => {
                 <div className="max-w-[1600px] mx-auto flex flex-col space-y-8 py-16 md:space-y-12 md:py-20 lg:py-24">
                     {/* Header Section */}
                     <div className="space-y-6">
-                        <div className="flex items-center space-x-3 pt-8 sm:pt-10 md:pt-12">
-                            <RectangleStackIcon className="w-8 h-8 text-blue-400" />
-                            <h1 className="text-3xl font-bold text-white md:text-4xl lg:text-5xl">
-                                Collections
-                            </h1>
+                        <div className="flex items-center justify-between pt-8 sm:pt-10 md:pt-12">
+                            <div className="flex items-center space-x-3">
+                                <RectangleStackIcon className="w-8 h-8 text-blue-400" />
+                                <h1 className="text-3xl font-bold text-white md:text-4xl lg:text-5xl">
+                                    Collections
+                                </h1>
+                            </div>
+
+                            {/* Manage Collections Dropdown - Top Right */}
+                            <div className="relative" ref={manageDropdownRef}>
+                                <button
+                                    onClick={() => setShowManageDropdown(!showManageDropdown)}
+                                    className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 text-gray-400 hover:text-white transition-all duration-200"
+                                >
+                                    <Cog6ToothIcon className="w-5 h-5" />
+                                    <span className="font-medium">Manage</span>
+                                    <ChevronDownIcon
+                                        className={`w-4 h-4 transition-transform ${
+                                            showManageDropdown ? 'rotate-180' : ''
+                                        }`}
+                                    />
+                                </button>
+
+                                {/* Dropdown Menu */}
+                                {showManageDropdown && (
+                                    <div className="absolute top-full mt-2 right-0 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-xl z-50 min-w-[200px] overflow-hidden">
+                                        <button
+                                            onClick={() => {
+                                                openListModal(undefined)
+                                                setShowManageDropdown(false)
+                                            }}
+                                            className="w-full flex items-center space-x-3 px-4 py-3 text-white hover:bg-gray-800 transition-colors text-left"
+                                        >
+                                            <RectangleStackIcon className="w-5 h-5 text-gray-400" />
+                                            <span>Manage Collections</span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         <p className="text-gray-400 max-w-2xl">
@@ -203,63 +303,99 @@ const Collections = () => {
                         )}
 
                         {/* Collection Filter Buttons */}
-                        <div className="flex flex-wrap gap-3">
-                            {/* Collection Buttons - Watchlist (default collection) will be first */}
-                            {allLists
-                                .sort((a, b) => {
-                                    // Put Watchlist (default collection) first, then other collections
-                                    if (a.name === 'Watchlist') return -1
-                                    if (b.name === 'Watchlist') return 1
-                                    return 0
-                                })
-                                .map((list) => (
-                                    <button
-                                        key={list.id}
-                                        onClick={() => setSelectedListId(list.id)}
-                                        className={`flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                                            selectedListId === list.id
-                                                ? 'bg-white text-black'
-                                                : 'bg-gray-800/50 text-white hover:bg-gray-700/50'
-                                        }`}
-                                    >
-                                        {getListIcon(list, selectedListId === list.id)}
-                                        <span>{list.name}</span>
-                                        <span
-                                            className={`text-xs px-2 py-1 rounded-full ml-2 ${
-                                                selectedListId === list.id
-                                                    ? 'bg-gray-800 text-white'
-                                                    : 'bg-gray-600 text-white'
-                                            }`}
-                                        >
-                                            {getListCount(list.id)}
-                                        </span>
-                                    </button>
-                                ))}
+                        <div className="bg-[#1a1a1a] border border-gray-800 rounded-2xl p-6 space-y-6">
+                            <div className="flex flex-wrap gap-4">
+                                {/* Collection Pills - Watch Later (default collection) will be first */}
+                                {allLists
+                                    .sort((a, b) => {
+                                        // Put Watch Later (default collection) first, then other collections
+                                        if (a.name === 'Watch Later') return -1
+                                        if (b.name === 'Watch Later') return 1
+                                        return 0
+                                    })
+                                    .map((list) => {
+                                        const isSelected = selectedListId === list.id
+                                        const listColor = list.color || '#6b7280' // Default gray
 
-                            {/* Create New Collection Button */}
-                            <button
-                                onClick={() => openListModal(undefined)}
-                                className="flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 bg-gray-800/50 text-white hover:bg-gray-700/50 border border-gray-600 hover:border-gray-400"
-                            >
-                                <RectangleStackIcon className="w-5 h-5 text-white" />
-                                <span>Create Collection</span>
-                            </button>
-                        </div>
+                                        return (
+                                            <button
+                                                key={list.id}
+                                                onClick={() => setSelectedListId(list.id)}
+                                                className={`flex items-center space-x-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-200 ${getListStyle(
+                                                    list,
+                                                    isSelected
+                                                )}`}
+                                                style={
+                                                    isSelected
+                                                        ? { borderColor: 'white' }
+                                                        : {
+                                                              borderColor: listColor,
+                                                              backgroundColor: hexToRgba(
+                                                                  listColor,
+                                                                  0.15
+                                                              ),
+                                                          }
+                                                }
+                                            >
+                                                {getListIcon(list, isSelected)}
+                                                <span>{list.name}</span>
+                                            </button>
+                                        )
+                                    })}
 
-                        {/* Search Bar */}
-                        <div className="max-w-md">
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
-                                </div>
-                                <input
-                                    type="text"
-                                    placeholder="Search your favorites..."
-                                    className="w-full pl-10 pr-4 py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all duration-200"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                />
+                                {/* New Collection Button */}
+                                <button
+                                    onClick={() => openCollectionBuilderModal()}
+                                    className="flex items-center space-x-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-200 bg-gray-800/80 text-white hover:bg-gray-700/80 border border-gray-600 hover:border-gray-400 hover:scale-105"
+                                >
+                                    <PlusIcon className="w-5 h-5 text-white" />
+                                    <RectangleStackIcon className="w-5 h-5 text-white" />
+                                    <span>New Collection</span>
+                                </button>
                             </div>
+
+                            {/* Selected Collection Title and Count */}
+                            {selectedListId && (() => {
+                                const selectedList = allLists.find((l) => l.id === selectedListId)
+                                return (
+                                    <div className="border-t border-gray-800 pt-6">
+                                        <div className="flex items-center space-x-3 mb-4">
+                                            {/* Collection Icon */}
+                                            <div className="flex items-center justify-center">
+                                                {selectedList?.emoji ? (
+                                                    <span className="text-3xl">{selectedList.emoji}</span>
+                                                ) : (
+                                                    <EyeIcon className="w-8 h-8 text-white" />
+                                                )}
+                                            </div>
+                                            {/* Collection Title */}
+                                            <h2 className="text-2xl font-bold text-white">
+                                                {selectedList?.name || 'Collection'}
+                                            </h2>
+                                            {/* Item Count */}
+                                            <span className="text-lg text-gray-400 font-medium">
+                                                {getListCount(selectedListId)} items
+                                            </span>
+                                        </div>
+
+                                    {/* Search Bar */}
+                                    <div className="max-w-md">
+                                        <div className="relative">
+                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+                                            </div>
+                                            <input
+                                                type="text"
+                                                placeholder="Search your favorites..."
+                                                className="w-full pl-10 pr-4 py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all duration-200"
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                )
+                            })()}
                         </div>
                     </div>
 

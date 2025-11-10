@@ -22,6 +22,7 @@ export interface UserState {
     defaultVolume?: number
     childSafetyMode?: boolean
     improveRecommendations?: boolean
+    showRecommendations?: boolean
 }
 
 /**
@@ -39,6 +40,11 @@ export interface UserActions {
         emoji?: string
         color?: string
         isPublic?: boolean
+        collectionType: 'manual' | 'ai-generated'
+        displayAsRow?: boolean
+        description?: string
+        originalQuery?: string
+        canGenerateMore?: boolean
     }) => Promise<string> | string
     addToList: (listId: string, content: Content) => Promise<void> | void
     removeFromList: (listId: string, contentId: number) => Promise<void> | void
@@ -91,6 +97,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
         defaultVolume: 50,
         childSafetyMode: false,
         improveRecommendations: true,
+        showRecommendations: false, // Disabled by default
         ...(adapter.isAsync && { syncStatus: 'synced' as const }),
     })
 
@@ -126,6 +133,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                 defaultVolume: state.defaultVolume ?? 50,
                 childSafetyMode: state.childSafetyMode ?? false,
                 improveRecommendations: state.improveRecommendations ?? true,
+                showRecommendations: state.showRecommendations ?? false,
             })
             logger.log(`✅ [${trackingContext}] Saved to ${adapter.name}`)
         } catch (error) {
@@ -303,6 +311,11 @@ export function createUserStore(options: CreateUserStoreOptions) {
             emoji?: string
             color?: string
             isPublic?: boolean
+            collectionType: 'manual' | 'ai-generated'
+            displayAsRow?: boolean
+            description?: string
+            originalQuery?: string
+            canGenerateMore?: boolean
         }) => {
             const state = get()
             if (adapter.isAsync) set({ syncStatus: 'syncing' })
@@ -478,6 +491,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                     defaultVolume: state.defaultVolume,
                     childSafetyMode: state.childSafetyMode,
                     improveRecommendations: state.improveRecommendations,
+                    showRecommendations: state.showRecommendations,
                 })
             } catch (_error) {
                 if (adapter.isAsync) set({ syncStatus: 'offline' })
@@ -540,6 +554,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                                 defaultVolume: firebaseData.defaultVolume ?? 50,
                                 childSafetyMode: firebaseData.childSafetyMode ?? false,
                                 improveRecommendations: firebaseData.improveRecommendations ?? true,
+                                showRecommendations: firebaseData.showRecommendations ?? false,
                                 syncStatus: 'synced',
                             })
 
@@ -588,6 +603,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                     defaultVolume: loadedData.defaultVolume ?? 50,
                     childSafetyMode: false, // Always false for guests
                     improveRecommendations: loadedData.improveRecommendations ?? true,
+                    showRecommendations: loadedData.showRecommendations ?? false,
                 })
                 logger.log(`🔄 [${trackingContext}] Synced from localStorage:`, {
                     guestId,

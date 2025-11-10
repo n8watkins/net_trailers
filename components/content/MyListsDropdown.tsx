@@ -46,10 +46,10 @@ function MyListsDropdown() {
                     isAnyListPath() ? 'text-white hover:text-white font-semibold' : ''
                 }`}
             >
-                <RectangleStackIcon className="h-4 w-4" />
+                <RectangleStackIcon className="h-5 w-5" />
                 <span>Collections</span>
                 <ChevronDownIcon
-                    className={`h-4 w-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                    className={`h-5 w-5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
                 />
             </button>
 

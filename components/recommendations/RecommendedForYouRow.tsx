@@ -26,6 +26,9 @@ export default function RecommendedForYouRow() {
     const userId = getUserId()
     const sessionData = useSessionData()
 
+    // Check if recommendations are enabled in user preferences
+    const showRecommendations = sessionData.showRecommendations ?? false
+
     // Fetch personalized recommendations
     useEffect(() => {
         const fetchRecommendations = async () => {
@@ -91,6 +94,11 @@ export default function RecommendedForYouRow() {
         }
     }
 
+    // Don't render if feature is disabled
+    if (!showRecommendations) {
+        return null
+    }
+
     // Don't render for guest users (recommendations require Firestore for interaction tracking)
     if (!userId || sessionType !== 'authenticated') {
         return null
@@ -99,7 +107,7 @@ export default function RecommendedForYouRow() {
     // Don't render if loading initially
     if (isLoading && recommendations.length === 0) {
         return (
-            <div className="h-40 space-y-0.5 md:space-y-2 px-4 md:px-12">
+            <div className="space-y-0.5 md:space-y-2 px-4 md:px-12">
                 <h2 className="w-56 cursor-pointer text-sm font-semibold text-[#e5e5e5] transition duration-200 hover:text-white md:text-2xl">
                     Recommended For You
                 </h2>
@@ -119,7 +127,7 @@ export default function RecommendedForYouRow() {
     const content: Content[] = recommendations.map((rec) => rec.content)
 
     return (
-        <div className="h-40 space-y-0.5 md:space-y-2 px-4 md:px-12">
+        <div className="space-y-0.5 md:space-y-2 px-4 md:px-12">
             <h2 className="w-56 cursor-pointer text-sm font-semibold text-[#e5e5e5] transition duration-200 hover:text-white md:text-2xl">
                 Recommended For You
             </h2>

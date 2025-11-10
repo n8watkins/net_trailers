@@ -48,6 +48,16 @@ export interface CollectionCreatorModalState {
     mediaType: 'movie' | 'tv' | 'all'
 }
 
+// Collection mode selection modal state
+export interface CollectionModeSelectionModalState {
+    isOpen: boolean
+}
+
+// Collection builder modal state
+export interface CollectionBuilderModalState {
+    isOpen: boolean
+}
+
 // Modal store state interface
 export interface ModalStoreState {
     // Content modal (main video player modal)
@@ -67,6 +77,12 @@ export interface ModalStoreState {
 
     // Collection creator modal
     collectionCreatorModal: CollectionCreatorModalState
+
+    // Collection mode selection modal
+    collectionModeSelectionModal: CollectionModeSelectionModalState
+
+    // Collection builder modal
+    collectionBuilderModal: CollectionBuilderModalState
 }
 
 // Modal store actions interface
@@ -105,6 +121,14 @@ export interface ModalStoreActions {
     setCollectionCreatorName: (name: string) => void
     addToCollectionCreator: (content: Content) => void
     removeFromCollectionCreator: (contentId: number) => void
+
+    // Collection mode selection modal actions
+    openCollectionModeSelectionModal: () => void
+    closeCollectionModeSelectionModal: () => void
+
+    // Collection builder modal actions
+    openCollectionBuilderModal: () => void
+    closeCollectionBuilderModal: () => void
 }
 
 export type ModalStore = ModalStoreState & ModalStoreActions
@@ -143,6 +167,14 @@ export const useModalStore = create<ModalStore>((set, get) => ({
         name: '',
         content: [],
         mediaType: 'all',
+    },
+
+    collectionModeSelectionModal: {
+        isOpen: false,
+    },
+
+    collectionBuilderModal: {
+        isOpen: false,
     },
 
     // Content Modal Actions
@@ -440,5 +472,59 @@ export const useModalStore = create<ModalStore>((set, get) => ({
                 ),
             },
         }))
+    },
+
+    // Collection Mode Selection Modal Actions
+    openCollectionModeSelectionModal: () => {
+        startTransition(() => {
+            set({
+                collectionModeSelectionModal: {
+                    isOpen: true,
+                },
+            })
+            if (process.env.NODE_ENV === 'development') {
+                console.log('🎯 [ModalStore] Collection mode selection modal opened')
+            }
+        })
+    },
+
+    closeCollectionModeSelectionModal: () => {
+        startTransition(() => {
+            set({
+                collectionModeSelectionModal: {
+                    isOpen: false,
+                },
+            })
+            if (process.env.NODE_ENV === 'development') {
+                console.log('❌ [ModalStore] Collection mode selection modal closed')
+            }
+        })
+    },
+
+    // Collection Builder Modal Actions
+    openCollectionBuilderModal: () => {
+        startTransition(() => {
+            set({
+                collectionBuilderModal: {
+                    isOpen: true,
+                },
+            })
+            if (process.env.NODE_ENV === 'development') {
+                console.log('🎯 [ModalStore] Collection builder modal opened')
+            }
+        })
+    },
+
+    closeCollectionBuilderModal: () => {
+        startTransition(() => {
+            set({
+                collectionBuilderModal: {
+                    isOpen: false,
+                },
+            })
+            if (process.env.NODE_ENV === 'development') {
+                console.log('❌ [ModalStore] Collection builder modal closed')
+            }
+        })
     },
 }))

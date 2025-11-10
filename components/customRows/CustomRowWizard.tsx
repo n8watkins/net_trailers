@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { XMarkIcon, CheckIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, CheckIcon, WrenchScrewdriverIcon } from '@heroicons/react/24/outline'
 import { CustomRowFormData } from '../../types/customRows'
 import { Content } from '../../typings'
 import { WizardStep1Basic } from './WizardStep1Basic'
@@ -14,6 +14,8 @@ interface CustomRowWizardProps {
     onComplete: (data: CustomRowFormData) => Promise<void>
     isAuthenticated: boolean // Controls access to premium features
     onSignIn: () => void // Callback to open sign-in modal
+    mode?: 'smart' | 'traditional'
+    onModeChange?: (mode: 'smart' | 'traditional') => void
 }
 
 type WizardStep = 1 | 2 | 3 | 4
@@ -34,9 +36,10 @@ export function CustomRowWizard({
     onComplete,
     isAuthenticated,
     onSignIn,
+    mode = 'traditional',
+    onModeChange,
 }: CustomRowWizardProps) {
     const [currentStep, setCurrentStep] = useState<WizardStep>(1)
-    const [useAdvancedFilters, setUseAdvancedFilters] = useState(false)
     const [formData, setFormData] = useState<CustomRowFormData>({
         name: '',
         genres: [],
@@ -44,12 +47,11 @@ export function CustomRowWizard({
         mediaType: 'movie',
         enabled: true,
         advancedFilters: {},
-        autoUpdateEnabled: false,
-        updateFrequency: 'weekly',
     })
     const [previewResults, setPreviewResults] = useState<Content[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const [createdRowId, setCreatedRowId] = useState<string | null>(null)
+    const [mouseDownOnBackdrop, setMouseDownOnBackdrop] = useState(false)
 
     // Navigation
     const goToStep = (step: WizardStep) => {
@@ -64,39 +66,27 @@ export function CustomRowWizard({
 
     const prevStep = () => {
         if (currentStep > 1) {
-            // If going back from step 3 and we used advanced, go to step 2
-            if (currentStep === 3 && useAdvancedFilters) {
-                setCurrentStep(2)
-            } else {
-                setCurrentStep((prev) => (prev - 1) as WizardStep)
-            }
+            setCurrentStep((prev) => (prev - 1) as WizardStep)
         }
-    }
-
-    // Quick create - skip advanced and go to name/preview
-    const handleQuickCreate = () => {
-        setUseAdvancedFilters(false)
-        setFormData({ ...formData, advancedFilters: {} })
-        goToStep(3)
-    }
-
-    // Use advanced features - go to step 2
-    const handleUseAdvanced = () => {
-        if (!isAuthenticated) {
-            onSignIn()
-            return
-        }
-        setUseAdvancedFilters(true)
-        goToStep(2)
     }
 
     // Update form data
     const updateFormData = (updates: Partial<CustomRowFormData>) => {
-        setFormData({ ...formData, ...updates })
+        setFormData((prev) => {
+            const updated = { ...prev, ...updates }
+            console.log('updateFormData - updating:', Object.keys(updates), 'new previewContent length:', updated.previewContent?.length || 0)
+            return updated
+        })
     }
 
     // Handle final creation
     const handleCreate = async () => {
+        console.log('handleCreate - formData before onComplete:', {
+            name: formData.name,
+            genres: formData.genres,
+            previewContentLength: formData.previewContent?.length || 0,
+            hasPreviewContent: !!formData.previewContent,
+        })
         setIsLoading(true)
         try {
             await onComplete(formData)
@@ -115,42 +105,85 @@ export function CustomRowWizard({
     const canProgressFromStep3 = formData.name.trim().length >= 3
 
     // Progress indicator
-    const totalSteps = useAdvancedFilters ? 4 : 3 // Skip step 2 if quick create
-    const currentStepNumber =
-        currentStep === 4
-            ? totalSteps
-            : currentStep > 2 && !useAdvancedFilters
-              ? currentStep - 1
-              : currentStep
+    const totalSteps = 4
+    const currentStepNumber = currentStep
+
+    const handleBackdropMouseDown = (e: React.MouseEvent) => {
+        if (e.target === e.currentTarget) {
+            setMouseDownOnBackdrop(true)
+        }
+    }
+
+    const handleBackdropClick = (e: React.MouseEvent) => {
+        // Only close if both mousedown and mouseup happened on the backdrop
+        if (e.target === e.currentTarget && mouseDownOnBackdrop) {
+            onClose()
+        }
+        setMouseDownOnBackdrop(false)
+    }
 
     return (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="fixed inset-0 z-[250] overflow-y-auto">
             {/* Backdrop */}
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
+            <div
+                className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+                onMouseDown={handleBackdropMouseDown}
+                onClick={handleBackdropClick}
+            />
 
             {/* Modal */}
             <div className="relative min-h-screen flex items-center justify-center p-4">
-                <div className="relative bg-[#181818] rounded-lg shadow-2xl max-w-4xl w-full border border-gray-700">
+                <div className="relative bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-lg shadow-2xl max-w-6xl w-full border border-gray-700">
                     {/* Header */}
                     <div className="flex items-center justify-between p-6 border-b border-gray-700">
                         <div className="flex-1">
-                            <h2 className="text-2xl font-bold text-white">Create Custom Row</h2>
+                            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                                <WrenchScrewdriverIcon className="w-6 h-6 text-blue-400" />
+                                Collection Builder
+                            </h2>
                             <p className="text-gray-400 text-sm mt-1">
-                                {currentStep === 1 && 'Choose your media type and genres'}
-                                {currentStep === 2 && 'Fine-tune with advanced filters'}
-                                {currentStep === 3 && 'Name your row and preview content'}
-                                {currentStep === 4 && 'Your custom row is ready!'}
+                                Build your collection step by step
                             </p>
                         </div>
 
-                        {/* Close button */}
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="text-gray-400 hover:text-white transition-colors"
-                        >
-                            <XMarkIcon className="w-6 h-6" />
-                        </button>
+                        <div className="flex items-center gap-3">
+                            {/* Mode Toggle */}
+                            {onModeChange && (
+                                <div className="bg-gray-800 border border-gray-700 rounded-lg p-1 shadow-lg">
+                                    <div className="flex gap-1">
+                                        <button
+                                            onClick={() => onModeChange('smart')}
+                                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                                                mode === 'smart'
+                                                    ? 'bg-red-600 text-white'
+                                                    : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                                            }`}
+                                        >
+                                            ✨ Smart
+                                        </button>
+                                        <button
+                                            onClick={() => onModeChange('traditional')}
+                                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                                                mode === 'traditional'
+                                                    ? 'bg-red-600 text-white'
+                                                    : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                                            }`}
+                                        >
+                                            🔧 Traditional
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Close button */}
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="text-gray-400 hover:text-white transition-colors"
+                            >
+                                <XMarkIcon className="w-6 h-6" />
+                            </button>
+                        </div>
                     </div>
 
                     {/* Progress bar */}
@@ -192,23 +225,20 @@ export function CustomRowWizard({
                             </div>
                             <div className="flex justify-between mt-2 text-xs text-gray-400">
                                 <span>Basic Setup</span>
-                                {useAdvancedFilters && <span>Advanced Filters</span>}
+                                <span>Advanced Filters</span>
                                 <span>Name & Preview</span>
                             </div>
                         </div>
                     )}
 
                     {/* Step content */}
-                    <div className="p-6">
+                    <div className="p-6 min-h-[600px]">
                         {currentStep === 1 && (
                             <WizardStep1Basic
                                 formData={formData}
                                 onChange={updateFormData}
-                                onQuickCreate={handleQuickCreate}
-                                onUseAdvanced={handleUseAdvanced}
+                                onNext={nextStep}
                                 canProgress={canProgressFromStep1}
-                                isAuthenticated={isAuthenticated}
-                                onSignIn={onSignIn}
                             />
                         )}
 
@@ -216,9 +246,6 @@ export function CustomRowWizard({
                             <WizardStep2Advanced
                                 filters={formData.advancedFilters || {}}
                                 onChange={(advancedFilters) => updateFormData({ advancedFilters })}
-                                autoUpdateEnabled={formData.autoUpdateEnabled || false}
-                                updateFrequency={formData.updateFrequency || 'weekly'}
-                                onAutoUpdateChange={(settings) => updateFormData(settings)}
                                 onBack={prevStep}
                                 onContinue={nextStep}
                             />
@@ -250,11 +277,9 @@ export function CustomRowWizard({
                                         mediaType: 'movie',
                                         enabled: true,
                                         advancedFilters: {},
-                                        autoUpdateEnabled: false,
-                                        updateFrequency: 'weekly',
                                     })
-                                    setUseAdvancedFilters(false)
                                 }}
+                                type="collection"
                             />
                         )}
                     </div>

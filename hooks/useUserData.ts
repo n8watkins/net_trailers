@@ -11,7 +11,7 @@ import { useInteractionTracking } from './useInteractionTracking'
  */
 const createDefaultWatchlistVirtual = (items: Content[]): UserList => ({
     id: 'default-watchlist',
-    name: 'Watchlist',
+    name: 'Watch Later',
     items,
     emoji: '📺',
     color: '#E50914',
@@ -161,6 +161,7 @@ export default function useUserData() {
             defaultVolume: sessionData.defaultVolume,
             childSafetyMode: sessionData.childSafetyMode,
             improveRecommendations: sessionData.improveRecommendations,
+            showRecommendations: sessionData.showRecommendations,
 
             // Actions from Zustand store (NEW SCHEMA) - with tracking
             addLikedMovie: addLikedMovieTracked,
@@ -243,6 +244,7 @@ export default function useUserData() {
             defaultVolume: sessionData.defaultVolume,
             childSafetyMode: sessionData.childSafetyMode,
             improveRecommendations: sessionData.improveRecommendations,
+            showRecommendations: sessionData.showRecommendations,
 
             // Actions from Zustand store (NEW SCHEMA) - with tracking
             addLikedMovie: addLikedMovieTracked,
@@ -288,6 +290,7 @@ export default function useUserData() {
                 try {
                     const userDocRef = doc(db, 'users', userId)
                     // Use setDoc with merge to handle non-existent documents
+                    // Only use NEW SCHEMA fields (no deprecated customRows/userLists/ratings)
                     await setDoc(
                         userDocRef,
                         {
@@ -295,9 +298,6 @@ export default function useUserData() {
                             likedMovies: [],
                             hiddenMovies: [],
                             userCreatedWatchlists: [],
-                            customRows: {},
-                            ratings: [],
-                            userLists: {},
                             lastActive: Date.now(),
                         },
                         { merge: true }
@@ -408,6 +408,7 @@ export default function useUserData() {
             defaultVolume: 50,
             childSafetyMode: false,
             improveRecommendations: true,
+            showRecommendations: false,
 
             // Placeholder functions (will throw errors if called during initialization)
             addLikedMovie: () => {

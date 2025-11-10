@@ -139,8 +139,6 @@ export default function CollectionCreatorModal() {
     const [displayAsRow, setDisplayAsRow] = useState(false)
     const [isPublic, setIsPublic] = useState(false)
 
-    if (!collectionCreatorModal.isOpen) return null
-
     // Filter content based on search
     const filteredContent = useMemo(() => {
         if (!searchFilter.trim()) return collectionCreatorModal.content
@@ -328,6 +326,8 @@ export default function CollectionCreatorModal() {
             setCurrentPage(currentPage - 1)
         }
     }
+
+    if (!collectionCreatorModal.isOpen) return null
 
     return (
         <div className="fixed inset-0 z-[55000] flex items-center justify-center">

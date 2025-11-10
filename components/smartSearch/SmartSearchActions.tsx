@@ -4,9 +4,7 @@ import { useState, useEffect } from 'react'
 import { SparklesIcon, PlusIcon, PencilIcon, CheckIcon } from '@heroicons/react/24/outline'
 import { useSmartSearchStore } from '../../stores/smartSearchStore'
 import { useSessionStore } from '../../stores/sessionStore'
-import { useCustomRowsStore } from '../../stores/customRowsStore'
 import { useAppStore } from '../../stores/appStore'
-import { CustomRowsFirestore } from '../../utils/firestore/customRows'
 import { useToast } from '../../hooks/useToast'
 import { getTitle, getYear } from '../../typings'
 
@@ -32,8 +30,6 @@ export default function SmartSearchActions({
     } = useSmartSearchStore()
 
     const getUserId = useSessionStore((state) => state.getUserId)
-    const sessionType = useSessionStore((state) => state.sessionType)
-    const addRow = useCustomRowsStore((state) => state.addRow)
     const openCollectionCreatorModal = useAppStore((state) => state.openCollectionCreatorModal)
     const { showSuccess, showError } = useToast()
 
@@ -122,54 +118,6 @@ export default function SmartSearchActions({
             showError('Failed to get more suggestions')
         } finally {
             setIsAskingMore(false)
-        }
-    }
-
-    const handleCreateRow = async () => {
-        const userId = getUserId()
-
-        if (!userId) {
-            showError('Please sign in to create custom rows')
-            return
-        }
-
-        // Prevent guest users from calling Firestore (requires auth.uid)
-        if (sessionType === 'guest') {
-            showError(
-                'Please sign in to create custom rows',
-                'Guest users cannot save rows to the cloud'
-            )
-            return
-        }
-
-        setIsCreating(true)
-
-        try {
-            // Always create rows with infinite content enabled
-            const formData = {
-                name: editedName || generatedName,
-                genres: genreFallback,
-                genreLogic: 'OR' as const,
-                mediaType,
-                enabled: true,
-                advancedFilters: {
-                    contentIds: results.map((r) => r.id),
-                },
-            }
-
-            // isGuest is always false here (guests are blocked above)
-            const newRow = await CustomRowsFirestore.createCustomRow(userId, formData, false)
-            addRow(userId, newRow)
-
-            showSuccess('Row created!', `"${newRow.name}" with infinite content enabled`)
-
-            // Reset search
-            useSmartSearchStore.getState().reset()
-        } catch (error: any) {
-            console.error('Create row error:', error)
-            showError('Failed to create row', error.message)
-        } finally {
-            setIsCreating(false)
         }
     }
 
@@ -276,7 +224,7 @@ export default function SmartSearchActions({
 
             {/* Action Buttons */}
             <div className="flex flex-wrap items-center gap-3">
-                {/* Create Collection Button - Always curated, no infinite option */}
+                {/* Create Collection Button */}
                 <button
                     onClick={handleCreateCollection}
                     disabled={isCreating || results.length === 0}
@@ -290,22 +238,6 @@ export default function SmartSearchActions({
                 >
                     <PlusIcon className="h-5 w-5" />
                     {isCreating ? 'Creating...' : 'Create Collection'}
-                </button>
-
-                {/* Create Row Button - With infinite toggle */}
-                <button
-                    onClick={handleCreateRow}
-                    disabled={isCreating || results.length === 0}
-                    className="
-                            flex items-center gap-2 px-6 py-2 rounded-md
-                            bg-red-600 text-white font-semibold text-sm
-                            hover:bg-red-700
-                            disabled:opacity-50 disabled:cursor-not-allowed
-                            transition-all duration-200
-                        "
-                >
-                    <PlusIcon className="h-5 w-5" />
-                    {isCreating ? 'Creating...' : 'Create Row'}
                 </button>
             </div>
 

@@ -143,21 +143,21 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                 className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${pathname === '/' ? 'text-white hover:text-white font-semibold' : ''}`}
                                 onClick={() => router.push('/')}
                             >
-                                <HomeIcon className="h-4 w-4" />
+                                <HomeIcon className="h-5 w-5" />
                                 <span>Home</span>
                             </li>
                             <li
                                 className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${pathname === '/tv' ? 'text-white hover:text-white font-semibold' : ''}`}
                                 onClick={() => router.push('/tv')}
                             >
-                                <TvIcon className="h-4 w-4" />
+                                <TvIcon className="h-5 w-5" />
                                 <span>TV Shows</span>
                             </li>
                             <li
                                 className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${pathname === '/movies' ? 'text-white hover:text-white font-semibold' : ''}`}
                                 onClick={() => router.push('/movies')}
                             >
-                                <FilmIcon className="h-4 w-4" />
+                                <FilmIcon className="h-5 w-5" />
                                 <span>Movies</span>
                             </li>
                             <li>

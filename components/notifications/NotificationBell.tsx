@@ -41,15 +41,33 @@ export default function NotificationBell() {
         }
     }, [userId, isGuest, subscribe, unsubscribeFromNotifications])
 
+    // Don't render anything until mounted (prevents hydration issues)
+    if (!mounted) {
+        return (
+            <button
+                className="group relative flex items-center justify-center rounded-full p-2 transition-all hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+                aria-label="Notifications"
+                aria-expanded={false}
+                aria-haspopup="true"
+                disabled
+            >
+                <BellIcon
+                    className="h-7 w-7 text-gray-300 transition-transform group-hover:scale-110 group-hover:text-white"
+                    aria-hidden="true"
+                />
+            </button>
+        )
+    }
+
     // Don't render for guest users (no notifications)
     if (!userId || isGuest) {
         return null
     }
 
-    // Use safe values during SSR/initial render
-    const hasUnread = mounted && unreadCount > 0
-    const safeUnreadCount = mounted ? unreadCount : 0
-    const safeIsPanelOpen = mounted && isPanelOpen
+    // Use safe values after mount
+    const hasUnread = unreadCount > 0
+    const safeUnreadCount = unreadCount
+    const safeIsPanelOpen = isPanelOpen
 
     return (
         <button
@@ -62,12 +80,12 @@ export default function NotificationBell() {
             {/* Bell Icon */}
             {hasUnread ? (
                 <BellIconSolid
-                    className="h-6 w-6 text-blue-400 transition-transform group-hover:scale-110"
+                    className="h-7 w-7 text-blue-400 transition-transform group-hover:scale-110"
                     aria-hidden="true"
                 />
             ) : (
                 <BellIcon
-                    className="h-6 w-6 text-gray-300 transition-transform group-hover:scale-110 group-hover:text-white"
+                    className="h-7 w-7 text-gray-300 transition-transform group-hover:scale-110 group-hover:text-white"
                     aria-hidden="true"
                 />
             )}

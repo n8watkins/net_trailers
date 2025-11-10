@@ -50,7 +50,7 @@ function GenresDropdown() {
             >
                 <span>Genres</span>
                 <ChevronDownIcon
-                    className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                    className={`h-5 w-5 transition-transform ${isOpen ? 'rotate-180' : ''}`}
                 />
             </button>
 

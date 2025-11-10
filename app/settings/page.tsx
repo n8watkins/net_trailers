@@ -10,6 +10,7 @@ import {
     ChevronRightIcon,
     ArrowDownTrayIcon,
     Cog6ToothIcon,
+    BellIcon,
 } from '@heroicons/react/24/outline'
 import useAuth from '../../hooks/useAuth'
 import useUserData from '../../hooks/useUserData'
@@ -29,10 +30,19 @@ import PasswordSection from '../../components/settings/PasswordSection'
 import PreferencesSection from '../../components/settings/PreferencesSection'
 import ShareSection from '../../components/settings/ShareSection'
 import AccountSection from '../../components/settings/AccountSection'
+import NotificationsSection from '../../components/settings/NotificationsSection'
 import ChildSafetyPINModal from '../../components/settings/ChildSafetyPINModal'
 import { useChildSafetyPINStore } from '../../stores/childSafetyStore'
+import { DEFAULT_NOTIFICATION_PREFERENCES } from '../../types/notifications'
 
-type SettingsSection = 'profile' | 'email' | 'password' | 'preferences' | 'share' | 'account'
+type SettingsSection =
+    | 'profile'
+    | 'email'
+    | 'password'
+    | 'preferences'
+    | 'notifications'
+    | 'share'
+    | 'account'
 
 interface SidebarItem {
     id: SettingsSection
@@ -122,12 +132,16 @@ const Settings: React.FC = () => {
             autoMute: userData.autoMute ?? true,
             defaultVolume: userData.defaultVolume ?? 50,
             improveRecommendations: userData.improveRecommendations ?? true,
+            showRecommendations: userData.showRecommendations ?? false,
+            notifications: userData.userSession?.preferences?.notifications ?? DEFAULT_NOTIFICATION_PREFERENCES,
         }
     }, [
         userData.childSafetyMode,
         userData.autoMute,
         userData.defaultVolume,
         userData.improveRecommendations,
+        userData.showRecommendations,
+        userData.userSession?.preferences?.notifications,
     ])
 
     // 3) Initialize with store values directly (they default to false/true/50 during SSR anyway)
@@ -139,6 +153,12 @@ const Settings: React.FC = () => {
     const [improveRecommendations, setImproveRecommendations] = useState<boolean>(
         () => userData.improveRecommendations ?? true
     )
+    const [showRecommendations, setShowRecommendations] = useState<boolean>(
+        () => userData.showRecommendations ?? false
+    )
+    const [notifications, setNotifications] = useState(
+        () => userData.userSession?.preferences?.notifications ?? DEFAULT_NOTIFICATION_PREFERENCES
+    )
 
     // Track original preferences to detect changes
     const [originalPreferences, setOriginalPreferences] = useState({
@@ -146,6 +166,8 @@ const Settings: React.FC = () => {
         autoMute: userData.autoMute ?? true,
         defaultVolume: userData.defaultVolume ?? 50,
         improveRecommendations: userData.improveRecommendations ?? true,
+        showRecommendations: userData.showRecommendations ?? false,
+        notifications: userData.userSession?.preferences?.notifications ?? DEFAULT_NOTIFICATION_PREFERENCES,
     })
 
     // Initialize skeleton state based on whether data is available
@@ -166,7 +188,9 @@ const Settings: React.FC = () => {
             currentPreferences.autoMute !== lastLoadedPrefsRef.current.autoMute ||
             currentPreferences.defaultVolume !== lastLoadedPrefsRef.current.defaultVolume ||
             currentPreferences.improveRecommendations !==
-                lastLoadedPrefsRef.current.improveRecommendations
+                lastLoadedPrefsRef.current.improveRecommendations ||
+            JSON.stringify(currentPreferences.notifications) !==
+                JSON.stringify(lastLoadedPrefsRef.current.notifications)
 
         // Only update UI state if store preferences actually changed
         // This allows user to modify UI without being overridden
@@ -175,11 +199,13 @@ const Settings: React.FC = () => {
             setAutoMute(currentPreferences.autoMute)
             setDefaultVolume(currentPreferences.defaultVolume)
             setImproveRecommendations(currentPreferences.improveRecommendations)
+            setNotifications(currentPreferences.notifications)
             setOriginalPreferences({
                 childSafetyMode: currentPreferences.childSafetyMode,
                 autoMute: currentPreferences.autoMute,
                 defaultVolume: currentPreferences.defaultVolume,
                 improveRecommendations: currentPreferences.improveRecommendations,
+                notifications: currentPreferences.notifications,
             })
             // Update our tracking ref
             lastLoadedPrefsRef.current = currentPreferences
@@ -206,7 +232,12 @@ const Settings: React.FC = () => {
         childSafetyMode !== originalPreferences.childSafetyMode ||
         autoMute !== originalPreferences.autoMute ||
         defaultVolume !== originalPreferences.defaultVolume ||
-        improveRecommendations !== originalPreferences.improveRecommendations
+        improveRecommendations !== originalPreferences.improveRecommendations ||
+        showRecommendations !== originalPreferences.showRecommendations
+
+    // Check if notifications have changed
+    const notificationsChanged =
+        JSON.stringify(notifications) !== JSON.stringify(originalPreferences.notifications)
 
     // Define all possible sidebar items
     const allSidebarItems: SidebarItem[] = [
@@ -239,6 +270,13 @@ const Settings: React.FC = () => {
             title: 'Preferences',
             description: 'Content filters and playback settings',
             icon: Cog6ToothIcon,
+            priority: 'low',
+        },
+        {
+            id: 'notifications',
+            title: 'Notifications',
+            description: 'Manage notification preferences',
+            icon: BellIcon,
             priority: 'low',
         },
         {
@@ -620,6 +658,8 @@ const Settings: React.FC = () => {
                 autoMute,
                 defaultVolume,
                 improveRecommendations,
+                showRecommendations,
+                notifications,
             }
 
             if (isGuest) {
@@ -679,6 +719,14 @@ const Settings: React.FC = () => {
 
     const handleImproveRecommendationsChange = React.useCallback((checked: boolean) => {
         setImproveRecommendations(checked)
+        // If disabling recommendation tracking, also disable the recommendations row
+        if (!checked) {
+            setShowRecommendations(false)
+        }
+    }, [])
+
+    const handleShowRecommendationsChange = React.useCallback((checked: boolean) => {
+        setShowRecommendations(checked)
     }, [])
 
     const handleShowChildSafetyModal = React.useCallback(() => {
@@ -715,6 +763,18 @@ const Settings: React.FC = () => {
         setShowPINModal(false)
         setPendingChildSafetyToggle(null) // Clear pending toggle on cancel
     }, [])
+
+    // Notifications handlers
+    const handleNotificationsChange = React.useCallback(
+        (changes: Partial<typeof notifications>) => {
+            setNotifications((prev) => ({ ...prev, ...changes }))
+        },
+        []
+    )
+
+    const handleSaveNotifications = React.useCallback(async () => {
+        await handleSavePreferences()
+    }, [handleSavePreferences])
 
     return (
         <div className="relative min-h-screen overflow-x-clip">
@@ -829,6 +889,7 @@ const Settings: React.FC = () => {
                                             autoMute={autoMute}
                                             defaultVolume={defaultVolume}
                                             improveRecommendations={improveRecommendations}
+                                            showRecommendations={showRecommendations}
                                             preferencesChanged={preferencesChanged}
                                             hasPIN={pinSettings.hasPIN}
                                             pinEnabled={pinSettings.enabled}
@@ -838,11 +899,21 @@ const Settings: React.FC = () => {
                                             onImproveRecommendationsChange={
                                                 handleImproveRecommendationsChange
                                             }
+                                            onShowRecommendationsChange={handleShowRecommendationsChange}
                                             onSave={handleSavePreferences}
                                             onShowChildSafetyModal={handleShowChildSafetyModal}
                                             onSetupPIN={handleSetupPIN}
                                             onChangePIN={handleChangePIN}
                                             onRemovePIN={handleRemovePIN}
+                                        />
+                                    )}
+
+                                    {activeSection === 'notifications' && (
+                                        <NotificationsSection
+                                            notifications={notifications}
+                                            notificationsChanged={notificationsChanged}
+                                            onNotificationsChange={handleNotificationsChange}
+                                            onSave={handleSaveNotifications}
                                         />
                                     )}
 

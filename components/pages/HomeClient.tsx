@@ -79,7 +79,7 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
     // Combine system collections with user collections
     const allCollections = useMemo(() => {
         const systemCollections = getSystemCollectionsForPage('home')
-        const userCollections = sessionType === 'auth' ? authCollections : guestCollections
+        const userCollections = sessionType === 'authenticated' ? authCollections : guestCollections
 
         // Filter out deleted system collections and apply custom preferences
         const activeSystemCollections = systemCollections

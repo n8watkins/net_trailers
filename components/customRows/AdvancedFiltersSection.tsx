@@ -1,13 +1,21 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
     ChevronDownIcon,
     ChevronUpIcon,
     SparklesIcon,
     XMarkIcon,
 } from '@heroicons/react/24/outline'
+import Image from 'next/image'
 import { AdvancedFilters } from '../../types/customRows'
+
+interface Person {
+    id: number
+    name: string
+    profile_path: string | null
+    known_for_department: string
+}
 
 interface AdvancedFiltersSectionProps {
     filters: AdvancedFilters
@@ -36,14 +44,44 @@ const VOTE_COUNT_SCALE = [
 /**
  * AdvancedFiltersSection Component
  *
- * Accordion-style advanced filtering with smooth animations.
- * Features sliders for ratings/popularity, and inputs for cast/directors.
+ * Accordion-style advanced filtering for collections with smooth animations.
+ * Features sliders for ratings/popularity, and searchable cast/director cards.
  */
 export function AdvancedFiltersSection({ filters, onChange }: AdvancedFiltersSectionProps) {
-    const [isExpanded, setIsExpanded] = useState(false)
-    const [castInput, setCastInput] = useState('')
+    const [peopleInput, setPeopleInput] = useState('')
+    const [peopleSearchResults, setPeopleSearchResults] = useState<Person[]>([])
+    const [selectedPeople, setSelectedPeople] = useState<Person[]>([])
+    const [isSearchingPeople, setIsSearchingPeople] = useState(false)
+    const [selectedIndex, setSelectedIndex] = useState(0)
+    const [showHint, setShowHint] = useState(true)
 
     const currentYear = new Date().getFullYear()
+
+    // Reset selectedPeople when filters are cleared
+    useEffect(() => {
+        if (!filters.withCast && !filters.withDirector) {
+            setSelectedPeople([])
+            setPeopleInput('')
+            setPeopleSearchResults([])
+        }
+    }, [filters.withCast, filters.withDirector])
+
+    // Search for people (actors/directors) using TMDB API
+    const searchPeople = async (query: string): Promise<Person[]> => {
+        if (query.trim().length < 2) return []
+
+        try {
+            const response = await fetch(
+                `/api/search?query=${encodeURIComponent(query)}&type=person`
+            )
+            if (!response.ok) throw new Error('Search failed')
+            const data = await response.json()
+            return data.results || []
+        } catch (error) {
+            console.error('Person search error:', error)
+            return []
+        }
+    }
 
     const updateFilter = (key: keyof AdvancedFilters, value: any) => {
         onChange({
@@ -52,70 +90,85 @@ export function AdvancedFiltersSection({ filters, onChange }: AdvancedFiltersSec
         })
     }
 
-    const hasActiveFilters =
-        filters.yearMin ||
-        filters.yearMax ||
-        filters.ratingMin !== undefined ||
-        filters.ratingMax !== undefined ||
-        filters.popularity !== undefined ||
-        filters.voteCount !== undefined ||
-        (filters.withCast && filters.withCast.length > 0) ||
-        filters.withDirector
+    // Handle people input change with search
+    const handlePeopleInputChange = async (value: string) => {
+        setPeopleInput(value)
+        setShowHint(false)
 
-    const clearAllFilters = () => {
-        onChange({})
+        // Extract search term (remove @ if present)
+        const searchTerm = value.startsWith('@') ? value.slice(1).trim() : value.trim()
+
+        if (searchTerm.length >= 2) {
+            setIsSearchingPeople(true)
+            const results = await searchPeople(searchTerm)
+            setPeopleSearchResults(results)
+            setSelectedIndex(0)
+            setIsSearchingPeople(false)
+        } else {
+            setPeopleSearchResults([])
+            setSelectedIndex(0)
+        }
     }
 
-    // Add cast member
-    const addCast = () => {
-        if (!castInput.trim()) return
-        const currentCast = filters.withCast || []
-        updateFilter('withCast', [...currentCast, castInput.trim()])
-        setCastInput('')
+    // Handle keyboard navigation
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (peopleSearchResults.length === 0) return
+
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault()
+                setSelectedIndex((prev) => (prev < peopleSearchResults.length - 1 ? prev + 1 : prev))
+                break
+            case 'ArrowUp':
+                e.preventDefault()
+                setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0))
+                break
+            case 'Enter':
+                e.preventDefault()
+                if (peopleSearchResults[selectedIndex]) {
+                    addPerson(peopleSearchResults[selectedIndex])
+                }
+                break
+            case 'Escape':
+                e.preventDefault()
+                setPeopleSearchResults([])
+                setSelectedIndex(0)
+                break
+        }
     }
 
-    // Remove cast member
-    const removeCast = (index: number) => {
-        const currentCast = filters.withCast || []
-        updateFilter(
-            'withCast',
-            currentCast.filter((_, i) => i !== index)
-        )
+    // Add person (actor or director)
+    const addPerson = (person: Person) => {
+        if (selectedPeople.find(p => p.id === person.id)) return
+        const newPeople = [...selectedPeople, person]
+        setSelectedPeople(newPeople)
+
+        // Separate actors and directors
+        const actors = newPeople.filter(p => p.known_for_department === 'Acting')
+        const directors = newPeople.filter(p => p.known_for_department === 'Directing')
+
+        updateFilter('withCast', actors.length > 0 ? actors.map(p => p.name) : undefined)
+        updateFilter('withDirector', directors.length > 0 ? directors[0].name : undefined)
+
+        setPeopleInput('')
+        setPeopleSearchResults([])
+    }
+
+    // Remove person
+    const removePerson = (personId: number) => {
+        const newPeople = selectedPeople.filter(p => p.id !== personId)
+        setSelectedPeople(newPeople)
+
+        // Separate actors and directors
+        const actors = newPeople.filter(p => p.known_for_department === 'Acting')
+        const directors = newPeople.filter(p => p.known_for_department === 'Directing')
+
+        updateFilter('withCast', actors.length > 0 ? actors.map(p => p.name) : undefined)
+        updateFilter('withDirector', directors.length > 0 ? directors[0].name : undefined)
     }
 
     return (
-        <div className="border border-gray-700 rounded-lg overflow-hidden">
-            {/* Header */}
-            <button
-                type="button"
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="w-full flex items-center justify-between p-4 bg-gray-800/50 hover:bg-gray-800 transition-colors"
-            >
-                <div className="flex items-center gap-2">
-                    <SparklesIcon className="w-5 h-5 text-red-400" />
-                    <span className="font-medium text-white">Advanced Filters</span>
-                    {hasActiveFilters && (
-                        <span className="px-2 py-0.5 bg-red-600/20 text-red-400 text-xs rounded-full">
-                            Active
-                        </span>
-                    )}
-                </div>
-                {isExpanded ? (
-                    <ChevronUpIcon className="w-5 h-5 text-gray-400" />
-                ) : (
-                    <ChevronDownIcon className="w-5 h-5 text-gray-400" />
-                )}
-            </button>
-
-            {/* Content with Accordion Animation */}
-            <div
-                className={`
-                    grid transition-all duration-300 ease-in-out
-                    ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}
-                `}
-            >
-                <div className="overflow-hidden">
-                    <div className="p-6 space-y-6 bg-[#1a1a1a]">
+        <div className="space-y-6">
                         {/* Year Range */}
                         <div>
                             <label className="block text-sm font-medium text-gray-200 mb-3">
@@ -236,138 +289,121 @@ export function AdvancedFiltersSection({ filters, onChange }: AdvancedFiltersSec
                             </div>
                         </div>
 
-                        {/* Popularity Slider */}
+                        {/* Cast & Crew Filter with Cards */}
                         <div>
-                            <div className="flex justify-between text-sm font-medium text-gray-200 mb-3">
-                                <span>Popularity</span>
-                                <span className="text-red-400">
-                                    {POPULARITY_SCALE[filters.popularity ?? 0]?.label}
-                                </span>
-                            </div>
-                            <input
-                                type="range"
-                                min="0"
-                                max="4"
-                                step="1"
-                                value={filters.popularity ?? 0}
-                                onChange={(e) =>
-                                    updateFilter('popularity', parseInt(e.target.value))
-                                }
-                                className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-red-600 [&::-webkit-slider-thumb]:cursor-pointer"
-                            />
-                            <div className="flex justify-between text-xs text-gray-500 mt-2">
-                                {POPULARITY_SCALE.map((scale, idx) => (
-                                    <span key={idx}>{scale.label}</span>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Vote Count Slider */}
-                        <div>
-                            <div className="flex justify-between text-sm font-medium text-gray-200 mb-3">
-                                <span>Vote Count</span>
-                                <span className="text-red-400">
-                                    {VOTE_COUNT_SCALE[filters.voteCount ?? 0]?.label}
-                                </span>
-                            </div>
-                            <input
-                                type="range"
-                                min="0"
-                                max="4"
-                                step="1"
-                                value={filters.voteCount ?? 3} // Default to "Many (5K+)" - good for cult classics
-                                onChange={(e) =>
-                                    updateFilter('voteCount', parseInt(e.target.value))
-                                }
-                                className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-red-600 [&::-webkit-slider-thumb]:cursor-pointer"
-                            />
-                            <div className="flex justify-between text-xs text-gray-500 mt-2">
-                                <span>Any</span>
-                                <span>Tons</span>
-                            </div>
-                            <p className="text-xs text-gray-500 mt-2">
-                                Default "Many (5K+)" is great for cult classics like Starship
-                                Troopers
-                            </p>
-                        </div>
-
-                        {/* Cast Filter */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-200 mb-3">
-                                With Actors
+                            <label className="block text-sm font-medium text-gray-200 mb-2">
+                                Cast & Crew
                             </label>
-                            <div className="flex gap-2 mb-2">
+                            {showHint && (
+                                <p className="text-xs text-gray-400 mb-2 flex items-center gap-1">
+                                    💡 Type <code className="px-1 py-0.5 bg-gray-700 rounded text-blue-400">@</code> to tag actors or directors
+                                </p>
+                            )}
+                            <div className="relative">
                                 <input
                                     type="text"
-                                    placeholder="e.g., Tom Hanks"
-                                    value={castInput}
-                                    onChange={(e) => setCastInput(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            e.preventDefault()
-                                            addCast()
-                                        }
-                                    }}
-                                    className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                                    placeholder="Type @ to search for people..."
+                                    value={peopleInput}
+                                    onChange={(e) => handlePeopleInputChange(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
                                 />
-                                <button
-                                    type="button"
-                                    onClick={addCast}
-                                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                                >
-                                    Add
-                                </button>
+
+                                {/* Search Results Dropdown */}
+                                {peopleSearchResults.length > 0 && (
+                                    <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden">
+                                        <div className="max-h-64 overflow-y-auto">
+                                            {peopleSearchResults.slice(0, 5).map((person, index) => (
+                                                <button
+                                                    key={person.id}
+                                                    type="button"
+                                                    onClick={() => addPerson(person)}
+                                                    className={`w-full flex items-center gap-3 p-3 transition-colors text-left ${
+                                                        index === selectedIndex
+                                                            ? 'bg-red-600/20 border-l-2 border-red-500'
+                                                            : 'hover:bg-gray-700'
+                                                    }`}
+                                                >
+                                                    <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-700 flex-shrink-0">
+                                                        {person.profile_path ? (
+                                                            <Image
+                                                                src={`https://image.tmdb.org/t/p/w185${person.profile_path}`}
+                                                                alt={person.name}
+                                                                width={40}
+                                                                height={40}
+                                                                className="object-cover"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs">
+                                                                ?
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-white font-medium truncate">{person.name}</p>
+                                                        <p className="text-xs text-gray-400">{person.known_for_department}</p>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                        {/* Keyboard Shortcuts Hint */}
+                                        <div className="px-3 py-2 bg-gray-900 border-t border-gray-700 flex items-center justify-between text-xs text-gray-400">
+                                            <span>↑↓ Navigate</span>
+                                            <span>Enter Select</span>
+                                            <span>Esc Close</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {isSearchingPeople && (
+                                    <div className="absolute right-3 top-2.5">
+                                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-600"></div>
+                                    </div>
+                                )}
                             </div>
-                            {filters.withCast && filters.withCast.length > 0 && (
-                                <div className="flex flex-wrap gap-2">
-                                    {filters.withCast.map((actor, idx) => (
-                                        <span
-                                            key={idx}
-                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600/20 text-red-400 rounded-full text-sm"
+
+                            {/* Selected People Cards */}
+                            {selectedPeople.length > 0 && (
+                                <div className="grid grid-cols-2 gap-2 mt-3">
+                                    {selectedPeople.map((person) => (
+                                        <div
+                                            key={person.id}
+                                            className="relative bg-gray-800/50 border border-gray-700 rounded-lg p-2 flex items-center gap-2 group"
                                         >
-                                            {actor}
+                                            <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-700 flex-shrink-0">
+                                                {person.profile_path ? (
+                                                    <Image
+                                                        src={`https://image.tmdb.org/t/p/w185${person.profile_path}`}
+                                                        alt={person.name}
+                                                        width={48}
+                                                        height={48}
+                                                        className="object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-gray-500">
+                                                        ?
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-white text-sm font-medium truncate">{person.name}</p>
+                                                <p className={`text-xs ${person.known_for_department === 'Acting' ? 'text-blue-400' : 'text-purple-400'}`}>
+                                                    {person.known_for_department === 'Acting' ? 'Actor' : 'Director'}
+                                                </p>
+                                            </div>
                                             <button
                                                 type="button"
-                                                onClick={() => removeCast(idx)}
-                                                className="hover:text-red-300"
+                                                onClick={() => removePerson(person.id)}
+                                                className="absolute top-1 right-1 p-1 bg-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                                             >
-                                                <XMarkIcon className="w-4 h-4" />
+                                                <XMarkIcon className="w-3 h-3 text-white" />
                                             </button>
-                                        </span>
+                                        </div>
                                     ))}
                                 </div>
                             )}
                         </div>
 
-                        {/* Director Filter */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-200 mb-3">
-                                Director
-                            </label>
-                            <input
-                                type="text"
-                                placeholder="e.g., Christopher Nolan"
-                                value={filters.withDirector || ''}
-                                onChange={(e) =>
-                                    updateFilter('withDirector', e.target.value || undefined)
-                                }
-                                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-                            />
-                        </div>
-
-                        {/* Clear Filters Button */}
-                        {hasActiveFilters && (
-                            <button
-                                type="button"
-                                onClick={clearAllFilters}
-                                className="w-full px-4 py-2.5 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
-                            >
-                                Clear All Filters
-                            </button>
-                        )}
-                    </div>
-                </div>
-            </div>
         </div>
     )
 }

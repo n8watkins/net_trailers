@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import {
     XMarkIcon,
     PlusIcon,
@@ -185,6 +186,7 @@ interface RowEditorModalProps {
 }
 
 export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProps) {
+    const router = useRouter()
     const [editingSystemRow, setEditingSystemRow] = useState<{
         id: string
         name: string
@@ -439,8 +441,9 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
             showToast('error', 'Sign in required', 'Please sign in to create custom collections')
             return
         }
-        // Open custom row modal for authenticated users
-        openCustomRowModal('create')
+        // Close this modal and navigate to /collections
+        onClose()
+        router.push('/collections')
     }
 
     // Reset default collections

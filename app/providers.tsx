@@ -7,8 +7,11 @@ import ListSelectionModal from '../components/modals/ListSelectionModal'
 import CustomRowModal from '../components/modals/CustomRowModal'
 import { RowEditorModal } from '../components/modals/RowEditorModal'
 import CollectionCreatorModal from '../components/modals/CollectionCreatorModal'
+import CollectionBuilderModal from '../components/modals/CollectionBuilderModal'
 import { SessionSyncManager } from '../components/utility/SessionSyncManager'
 import { useAppStore } from '../stores/appStore'
+import DebugControls from '../components/debug/DebugControls'
+import WebVitalsHUD from '../components/debug/WebVitalsHUD'
 
 /**
  * Providers component wraps the entire app with necessary context providers
@@ -31,6 +34,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
             <CustomRowModal />
             <RowEditorModalWrapper />
             <CollectionCreatorModal />
+            <CollectionBuilderModal />
+            {/* Debug components (only visible in development) */}
+            <DebugControls />
+            <WebVitalsHUD />
         </AuthProvider>
     )
 }

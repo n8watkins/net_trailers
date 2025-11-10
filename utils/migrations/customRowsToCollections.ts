@@ -70,9 +70,10 @@ export async function needsMigration(userId: string): Promise<boolean> {
 
 /**
  * Convert a CustomRow to a Collection (UserList)
+ * Filters out undefined values to prevent Firestore errors
  */
 function customRowToCollection(customRow: CustomRow): UserList {
-    return {
+    const collection: UserList = {
         id: customRow.id,
         name: customRow.name,
         description: `Migrated from custom row`,
@@ -87,13 +88,29 @@ function customRowToCollection(customRow: CustomRow): UserList {
         genres: customRow.genres,
         genreLogic: customRow.genreLogic,
         mediaType: customRow.mediaType,
-        advancedFilters: customRow.advancedFilters,
-        isSpecialCollection: customRow.isSpecialRow,
-        autoUpdateEnabled: customRow.autoUpdateEnabled,
-        updateFrequency: customRow.updateFrequency,
-        lastCheckedAt: customRow.lastCheckedAt,
-        lastUpdateCount: customRow.lastUpdateCount,
     }
+
+    // Only add optional fields if they're defined (Firestore doesn't allow undefined values)
+    if (customRow.advancedFilters !== undefined) {
+        collection.advancedFilters = customRow.advancedFilters
+    }
+    if (customRow.isSpecialRow !== undefined) {
+        collection.isSpecialCollection = customRow.isSpecialRow
+    }
+    if (customRow.autoUpdateEnabled !== undefined) {
+        collection.autoUpdateEnabled = customRow.autoUpdateEnabled
+    }
+    if (customRow.updateFrequency !== undefined) {
+        collection.updateFrequency = customRow.updateFrequency
+    }
+    if (customRow.lastCheckedAt !== undefined) {
+        collection.lastCheckedAt = customRow.lastCheckedAt
+    }
+    if (customRow.lastUpdateCount !== undefined) {
+        collection.lastUpdateCount = customRow.lastUpdateCount
+    }
+
+    return collection
 }
 
 /**

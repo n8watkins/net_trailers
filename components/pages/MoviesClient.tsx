@@ -21,10 +21,9 @@ export default function MoviesClient({ data }: MoviesClientProps) {
     const { modal } = useAppStore()
     const showModal = modal.isOpen
     const getUserId = useSessionStore((state) => state.getUserId)
-    const getSessionType = useSessionStore((state) => state.getSessionType)
+    const sessionType = useSessionStore((state) => state.sessionType)
     const isInitialized = useSessionStore((state) => state.isInitialized)
     const userId = getUserId()
-    const sessionType = getSessionType()
     const isGuest = sessionType === 'guest'
 
     // Get collections from appropriate store
@@ -54,7 +53,7 @@ export default function MoviesClient({ data }: MoviesClientProps) {
     // Combine system collections with user collections
     const allCollections = useMemo(() => {
         const systemCollections = getSystemCollectionsForPage('movies')
-        const userCollections = sessionType === 'auth' ? authCollections : guestCollections
+        const userCollections = sessionType === 'authenticated' ? authCollections : guestCollections
 
         // Apply custom preferences to system collections
         const enhancedSystemCollections = systemCollections.map((c) => {
