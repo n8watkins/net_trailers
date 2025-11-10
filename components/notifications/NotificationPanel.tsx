@@ -69,14 +69,9 @@ export default function NotificationPanel() {
     // Handle clear all
     const handleClearAll = async () => {
         if (!userId) return
-
-        if (
-            confirm(
-                `Are you sure you want to delete all ${notifications.length} notifications? This cannot be undone.`
-            )
-        ) {
-            await deleteAllNotifications(userId)
-        }
+        console.log('Clearing all notifications for user:', userId)
+        await deleteAllNotifications(userId)
+        console.log('All notifications cleared')
     }
 
     if (!isPanelOpen) return null

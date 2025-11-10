@@ -80,7 +80,7 @@ export default function NotificationBell() {
             {/* Bell Icon */}
             {hasUnread ? (
                 <BellIconSolid
-                    className="h-7 w-7 text-blue-400 transition-transform group-hover:scale-110"
+                    className="h-7 w-7 text-red-500 transition-transform group-hover:scale-110"
                     aria-hidden="true"
                 />
             ) : (
