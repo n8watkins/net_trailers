@@ -1,4 +1,5 @@
 /**
+import { notificationLog } from '../../utils/debugLogger'
  * NotificationPanel Component
  *
  * Dropdown panel showing all notifications
@@ -69,9 +70,9 @@ export default function NotificationPanel() {
     // Handle clear all
     const handleClearAll = async () => {
         if (!userId) return
-        console.log('Clearing all notifications for user:', userId)
+        notificationLog('Clearing all notifications for user:', userId)
         await deleteAllNotifications(userId)
-        console.log('All notifications cleared')
+        notificationLog('All notifications cleared')
     }
 
     if (!isPanelOpen) return null

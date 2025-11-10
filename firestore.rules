@@ -64,6 +64,17 @@ service cloud.firestore {
         // Only the authenticated user can read/write their own interaction summary
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
+
+      // Data subcollection - watch history document
+      match /data/watchHistory {
+        // Only the authenticated user can access their watch history
+        allow read, delete: if request.auth != null && request.auth.uid == userId;
+
+        // Validate watch history structure on create/update
+        allow create, update: if request.auth != null
+                              && request.auth.uid == userId
+                              && isValidWatchHistoryData(request.resource.data);
+      }
     }
 
     // Helper function to validate user data structure (NEW SCHEMA)
@@ -128,6 +139,13 @@ service cloud.firestore {
              && (!data.keys().hasAny(['searchQuery']) || data.searchQuery is string)
              && (!data.keys().hasAny(['collectionId']) || data.collectionId is string)
              && (!data.keys().hasAny(['source']) || data.source is string);
+    }
+
+    // Helper function to validate watch history document
+    function isValidWatchHistoryData(data) {
+      return data.keys().hasAll(['history', 'updatedAt'])
+             && data.history is list
+             && data.updatedAt is number;
     }
 
     // Deny all other access

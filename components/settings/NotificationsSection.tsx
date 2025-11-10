@@ -1,4 +1,5 @@
 'use client'
+import { devLog } from '../../utils/debugLogger'
 
 import React, { useState } from 'react'
 import { BellIcon, EnvelopeIcon } from '@heroicons/react/24/outline'
@@ -103,7 +104,7 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
                 },
             ]
 
-            console.log(`🎬 Generating fake trending notifications for user: ${user.uid}`)
+            devLog(`🎬 Generating fake trending notifications for user: ${user.uid}`)
 
             const results = []
 
@@ -125,7 +126,7 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
                         expiresIn: 7, // 7 days
                     })
 
-                    console.log(`✅ Created notification for: ${title}`)
+                    devLog(`✅ Created notification for: ${title}`)
                     results.push({ success: true, title, notificationId: notification.id })
                 } catch (error) {
                     console.error(
@@ -147,10 +148,10 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
                 throw new Error('Failed to create any notifications')
             }
 
-            console.log(`✅ Created ${successCount} trending notifications`)
+            devLog(`✅ Created ${successCount} trending notifications`)
 
             if (errorCount > 0) {
-                console.warn(`${errorCount} notifications failed to create`)
+                devLog(`${errorCount} notifications failed to create`)
             }
         } catch (error) {
             console.error('Error generating test notifications:', error)

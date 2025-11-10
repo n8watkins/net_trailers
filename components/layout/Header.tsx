@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { devLog } from '../../utils/debugLogger'
 import {
     MagnifyingGlassIcon,
     Bars3Icon,
@@ -53,7 +54,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
 
     const triggerTestToasts = () => {
         // Test all toast types with realistic messages
-        console.log('🧪 Testing all toast types...')
+        devLog('🧪 Testing all toast types...')
 
         // Success toast
         showSuccess(`Welcome back, ${user?.displayName || user?.email?.split('@')[0] || 'Guest'}!`)
@@ -61,32 +62,32 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
         // Watchlist add (1 second delay)
         setTimeout(() => {
             showWatchlistAdd('Inception', 'Added to Watchlist')
-            console.log('✅ Toast 1: Watchlist Add')
+            devLog('✅ Toast 1: Watchlist Add')
         }, 1000)
 
         // Error toast (2 seconds delay)
         setTimeout(() => {
             showError('Failed to load recommendations. Please try again.')
-            console.log('✅ Toast 2: Error')
+            devLog('✅ Toast 2: Error')
         }, 2000)
 
         // Watchlist remove (3 seconds delay)
         setTimeout(() => {
             showWatchlistRemove('The Dark Knight', 'Removed from Watchlist')
-            console.log('✅ Toast 3: Watchlist Remove')
+            devLog('✅ Toast 3: Watchlist Remove')
         }, 3000)
 
         // Another success (4 seconds delay)
         setTimeout(() => {
             showSuccess('Profile updated successfully!')
-            console.log('✅ Toast 4: Success')
+            devLog('✅ Toast 4: Success')
         }, 4000)
 
         // Final error to test stacking (5 seconds delay)
         setTimeout(() => {
             showError('Network connection lost. Some features may be unavailable.')
-            console.log('✅ Toast 5: Network Error')
-            console.log('🎉 All toast tests complete!')
+            devLog('✅ Toast 5: Network Error')
+            devLog('🎉 All toast tests complete!')
         }, 5000)
     }
     useEffect(() => {

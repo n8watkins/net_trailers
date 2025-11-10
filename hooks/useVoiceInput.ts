@@ -1,4 +1,5 @@
 'use client'
+import { devLog } from '../utils/debugLogger'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 
@@ -221,9 +222,9 @@ export function useVoiceInput({
             // Request microphone permission directly - this will show the browser prompt
             // We're NOT checking Permissions API first because it can return stale cached data
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                console.log('Requesting microphone permission via getUserMedia...')
+                devLog('Requesting microphone permission via getUserMedia...')
                 stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-                console.log('✅ Microphone permission granted!')
+                devLog('✅ Microphone permission granted!')
                 return true
             } else {
                 console.error('getUserMedia not supported')
@@ -301,7 +302,7 @@ export function useVoiceInput({
 
             try {
                 // Now start speech recognition with permission already granted
-                console.log('Starting speech recognition...')
+                devLog('Starting speech recognition...')
                 recognitionRef.current.start()
 
                 // Play start beep (higher frequency)

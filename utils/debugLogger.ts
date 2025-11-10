@@ -23,6 +23,27 @@ function isDebugEnabled(setting: string): boolean {
 }
 
 /**
+ * General-Purpose Dev Logging
+ * Only logs in development mode - production logs are stripped by Next.js
+ */
+export function devLog(...args: any[]): void {
+    if (process.env.NODE_ENV !== 'production') {
+        console.log(...args)
+    }
+}
+
+export function devWarn(...args: any[]): void {
+    if (process.env.NODE_ENV !== 'production') {
+        console.warn(...args)
+    }
+}
+
+export function devError(...args: any[]): void {
+    // Always log errors, even in production
+    console.error(...args)
+}
+
+/**
  * Auth Logging (Firebase auth, session initialization)
  */
 export function authLog(...args: any[]): void {
@@ -102,5 +123,45 @@ export function firebaseGroup(label: string): void {
 export function firebaseGroupEnd(): void {
     if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showFirebaseTracker')) {
         console.groupEnd()
+    }
+}
+
+/**
+ * UI Interaction Logging (infinite scroll, modals, dropdowns, etc.)
+ * Useful for debugging user interactions and UI behavior
+ */
+export function uiLog(...args: any[]): void {
+    if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showUIDebug')) {
+        console.log(...args)
+    }
+}
+
+export function uiWarn(...args: any[]): void {
+    if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showUIDebug')) {
+        console.warn(...args)
+    }
+}
+
+/**
+ * Tracking Logging (interaction tracking, analytics, recommendations)
+ */
+export function trackingLog(...args: any[]): void {
+    if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showTrackingDebug')) {
+        console.log(...args)
+    }
+}
+
+/**
+ * Notification Logging (notifications, toasts)
+ */
+export function notificationLog(...args: any[]): void {
+    if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showNotificationDebug')) {
+        console.log(...args)
+    }
+}
+
+export function notificationWarn(...args: any[]): void {
+    if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showNotificationDebug')) {
+        console.warn(...args)
     }
 }

@@ -1,4 +1,5 @@
 /**
+import { notificationWarn } from '../utils/debugLogger'
  * Notification Store (Zustand)
  *
  * Manages notification state with real-time Firestore sync
@@ -68,7 +69,7 @@ export const useNotificationStore = create<NotificationState>()(
             // Load all notifications
             loadNotifications: async (userId: string) => {
                 if (!userId) {
-                    console.warn('Cannot load notifications: No user ID')
+                    notificationWarn('Cannot load notifications: No user ID')
                     return
                 }
 
@@ -96,7 +97,7 @@ export const useNotificationStore = create<NotificationState>()(
             // Load only unread notifications
             loadUnreadNotifications: async (userId: string) => {
                 if (!userId) {
-                    console.warn('Cannot load unread notifications: No user ID')
+                    notificationWarn('Cannot load unread notifications: No user ID')
                     return
                 }
 
@@ -126,7 +127,7 @@ export const useNotificationStore = create<NotificationState>()(
             // Load notification statistics
             loadStats: async (userId: string) => {
                 if (!userId) {
-                    console.warn('Cannot load notification stats: No user ID')
+                    notificationWarn('Cannot load notification stats: No user ID')
                     return
                 }
 
@@ -141,7 +142,7 @@ export const useNotificationStore = create<NotificationState>()(
             // Create a new notification
             createNotification: async (userId: string, request: CreateNotificationRequest) => {
                 if (!userId) {
-                    console.warn('Cannot create notification: No user ID')
+                    notificationWarn('Cannot create notification: No user ID')
                     return
                 }
 
@@ -167,7 +168,7 @@ export const useNotificationStore = create<NotificationState>()(
             // Mark a notification as read
             markNotificationAsRead: async (userId: string, notificationId: string) => {
                 if (!userId) {
-                    console.warn('Cannot mark notification as read: No user ID')
+                    notificationWarn('Cannot mark notification as read: No user ID')
                     return
                 }
 
@@ -195,7 +196,7 @@ export const useNotificationStore = create<NotificationState>()(
             // Mark all notifications as read
             markAllNotificationsAsRead: async (userId: string) => {
                 if (!userId) {
-                    console.warn('Cannot mark all as read: No user ID')
+                    notificationWarn('Cannot mark all as read: No user ID')
                     return
                 }
 
@@ -225,7 +226,7 @@ export const useNotificationStore = create<NotificationState>()(
             // Delete a notification
             deleteNotification: async (userId: string, notificationId: string) => {
                 if (!userId) {
-                    console.warn('Cannot delete notification: No user ID')
+                    notificationWarn('Cannot delete notification: No user ID')
                     return
                 }
 
@@ -262,7 +263,7 @@ export const useNotificationStore = create<NotificationState>()(
             // Delete all notifications
             deleteAllNotifications: async (userId: string) => {
                 if (!userId) {
-                    console.warn('Cannot delete all notifications: No user ID')
+                    notificationWarn('Cannot delete all notifications: No user ID')
                     return
                 }
 
@@ -340,7 +341,7 @@ export const useNotificationStore = create<NotificationState>()(
             // Subscribe to real-time updates
             subscribe: (userId: string) => {
                 if (!userId) {
-                    console.warn('Cannot subscribe to notifications: No user ID')
+                    notificationWarn('Cannot subscribe to notifications: No user ID')
                     return
                 }
 

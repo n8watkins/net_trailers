@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { devLog } from '../utils/debugLogger'
 
 // Toast configuration constants
 export const MAX_TOASTS = 2 // Maximum 2 toasts displayed at once
@@ -119,7 +120,7 @@ export const useToastStore = create<ToastStore>((set, get) => ({
 
         // Note: Auto-dismiss is handled by Toast component for proper cleanup
         if (process.env.NODE_ENV === 'development') {
-            console.log('🍞 [ToastStore] Toast shown:', { type, title, message })
+            devLog('🍞 [ToastStore] Toast shown:', { type, title, message })
         }
     },
 

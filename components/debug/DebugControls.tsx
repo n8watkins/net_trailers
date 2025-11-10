@@ -16,6 +16,9 @@ interface DebugSettings {
     showApiResults: boolean
     showWebVitals: boolean
     showTestNotifications: boolean
+    showUIDebug: boolean
+    showTrackingDebug: boolean
+    showNotificationDebug: boolean
 }
 
 interface Position {
@@ -34,6 +37,9 @@ export default function DebugControls() {
         showApiResults: false,
         showWebVitals: false,
         showTestNotifications: false,
+        showUIDebug: false,
+        showTrackingDebug: false,
+        showNotificationDebug: false,
     })
 
     // Visibility state - load from localStorage, hidden by default
@@ -336,6 +342,51 @@ export default function DebugControls() {
                     <span className="text-xs">TestNotif</span>
                 </button>
             )}
+
+            {/* UI Debug Toggle */}
+            {shouldShowButton('showUIDebug') && (
+                <button
+                    onClick={() => toggleSetting('showUIDebug')}
+                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                        settings.showUIDebug
+                            ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
+                            : 'bg-gray-800 text-gray-500 border border-gray-700'
+                    }`}
+                    title="Toggle UI Interaction Logs (modals, infinite scroll, etc.)"
+                >
+                    <span className="text-xs">UI</span>
+                </button>
+            )}
+
+            {/* Tracking Debug Toggle */}
+            {shouldShowButton('showTrackingDebug') && (
+                <button
+                    onClick={() => toggleSetting('showTrackingDebug')}
+                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                        settings.showTrackingDebug
+                            ? 'bg-yellow-600/20 text-yellow-400 border border-yellow-500/30'
+                            : 'bg-gray-800 text-gray-500 border border-gray-700'
+                    }`}
+                    title="Toggle Interaction Tracking Logs"
+                >
+                    <span className="text-xs">Tracking</span>
+                </button>
+            )}
+
+            {/* Notification Debug Toggle */}
+            {shouldShowButton('showNotificationDebug') && (
+                <button
+                    onClick={() => toggleSetting('showNotificationDebug')}
+                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                        settings.showNotificationDebug
+                            ? 'bg-pink-600/20 text-pink-400 border border-pink-500/30'
+                            : 'bg-gray-800 text-gray-500 border border-gray-700'
+                    }`}
+                    title="Toggle Notification System Logs"
+                >
+                    <span className="text-xs">Notif</span>
+                </button>
+            )}
         </div>
     )
 }
@@ -352,6 +403,9 @@ export function useDebugSettings() {
         showApiResults: false,
         showWebVitals: false,
         showTestNotifications: false,
+        showUIDebug: false,
+        showTrackingDebug: false,
+        showNotificationDebug: false,
     })
 
     useEffect(() => {

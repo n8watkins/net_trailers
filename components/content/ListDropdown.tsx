@@ -6,6 +6,7 @@ import { useToast } from '../../hooks/useToast'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import { useAppStore } from '../../stores/appStore'
 import { EyeIcon, PlusIcon, CheckIcon, LockClosedIcon } from '@heroicons/react/24/solid'
+import { uiLog } from '../../utils/debugLogger'
 
 interface ListDropdownProps {
     content: Content
@@ -71,30 +72,30 @@ function ListDropdown({
 
     const handleWatchlistToggle = (e: React.MouseEvent) => {
         e.stopPropagation()
-        console.log('📋 [ListDropdown] handleWatchlistToggle called')
-        console.log('📋 [ListDropdown] Content:', content)
-        console.log('📋 [ListDropdown] Content ID:', content.id)
-        console.log('📋 [ListDropdown] Content Title:', getTitle(content))
-        console.log('📋 [ListDropdown] inWatchlist (cached):', inWatchlist)
-        console.log('📋 [ListDropdown] Current watchlist:', defaultWatchlist)
-        console.log('📋 [ListDropdown] Rechecking isInWatchlist:', isInWatchlist(content.id))
+        uiLog('📋 [ListDropdown] handleWatchlistToggle called')
+        uiLog('📋 [ListDropdown] Content:', content)
+        uiLog('📋 [ListDropdown] Content ID:', content.id)
+        uiLog('📋 [ListDropdown] Content Title:', getTitle(content))
+        uiLog('📋 [ListDropdown] inWatchlist (cached):', inWatchlist)
+        uiLog('📋 [ListDropdown] Current watchlist:', defaultWatchlist)
+        uiLog('📋 [ListDropdown] Rechecking isInWatchlist:', isInWatchlist(content.id))
 
         // Use fresh check instead of cached value
         const currentlyInWatchlist = isInWatchlist(content.id)
-        console.log('📋 [ListDropdown] Currently in watchlist:', currentlyInWatchlist)
+        uiLog('📋 [ListDropdown] Currently in watchlist:', currentlyInWatchlist)
 
         if (currentlyInWatchlist) {
-            console.log('📋 [ListDropdown] Removing from watchlist...')
+            uiLog('📋 [ListDropdown] Removing from watchlist...')
             removeFromWatchlist(content.id)
-            console.log(
+            uiLog(
                 '📋 [ListDropdown] After removeFromWatchlist, checking again:',
                 isInWatchlist(content.id)
             )
             showWatchlistRemove(`Removed ${getTitle(content)} from My List`)
         } else {
-            console.log('📋 [ListDropdown] Adding to watchlist...')
+            uiLog('📋 [ListDropdown] Adding to watchlist...')
             addToWatchlist(content)
-            console.log(
+            uiLog(
                 '📋 [ListDropdown] After addToWatchlist, checking again:',
                 isInWatchlist(content.id)
             )

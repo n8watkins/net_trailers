@@ -1,4 +1,5 @@
 'use client'
+import { uiLog } from '../../utils/debugLogger'
 
 import React, { useState } from 'react'
 import { XMarkIcon, CheckIcon, WrenchScrewdriverIcon } from '@heroicons/react/24/outline'
@@ -74,14 +75,19 @@ export function CustomRowWizard({
     const updateFormData = (updates: Partial<CustomRowFormData>) => {
         setFormData((prev) => {
             const updated = { ...prev, ...updates }
-            console.log('updateFormData - updating:', Object.keys(updates), 'new previewContent length:', updated.previewContent?.length || 0)
+            uiLog(
+                'updateFormData - updating:',
+                Object.keys(updates),
+                'new previewContent length:',
+                updated.previewContent?.length || 0
+            )
             return updated
         })
     }
 
     // Handle final creation
     const handleCreate = async () => {
-        console.log('handleCreate - formData before onComplete:', {
+        uiLog('handleCreate - formData before onComplete:', {
             name: formData.name,
             genres: formData.genres,
             previewContentLength: formData.previewContent?.length || 0,

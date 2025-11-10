@@ -6,9 +6,10 @@
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { WatchHistoryStore, WatchHistoryEntry, WatchHistoryDocument } from '../types/watchHistory'
+import { WatchHistoryStore, WatchHistoryEntry } from '../types/watchHistory'
 import { Content } from '../typings'
 import { getWatchHistory, saveWatchHistory } from '../utils/firestore/watchHistory'
+import { auth } from '../firebase'
 
 export const useWatchHistoryStore = create<WatchHistoryStore>()(
     persist(
@@ -99,6 +100,13 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()(
             syncWithFirestore: async (userId) => {
                 if (!userId) return
 
+                // CRITICAL: Ensure Firebase Auth is ready before attempting Firestore calls
+                // This prevents "Missing or insufficient permissions" errors during page load
+                if (!auth.currentUser || auth.currentUser.uid !== userId) {
+                    // Auth not ready yet or user ID mismatch - skip sync
+                    return
+                }
+
                 try {
                     set({ isLoading: true })
 
@@ -121,8 +129,9 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()(
                             await saveWatchHistory(userId, localHistory)
                         }
                     }
-                } catch (error) {
-                    console.error('Failed to sync watch history with Firestore:', error)
+                } catch (_error) {
+                    // Silently fail - watch history sync is not critical
+                    // User will still have local history available
                 } finally {
                     set({ isLoading: false })
                 }

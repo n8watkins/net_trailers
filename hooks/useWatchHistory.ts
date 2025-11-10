@@ -55,9 +55,8 @@ export function useWatchHistory() {
                 if (entry) {
                     await addWatchEntryToFirestore(userId, entry)
                 }
-            } catch (error) {
-                console.error('Failed to sync watch entry to Firestore:', error)
-                // Don't throw - local store already updated
+            } catch (_error) {
+                // Silently fail - local store already updated
             }
         }
     }

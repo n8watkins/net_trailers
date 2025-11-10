@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { Content, getTitle } from '../typings'
 import { startTransition } from 'react'
+import { uiLog } from '../utils/debugLogger'
 
 // Modal types
 export interface ModalContent {
@@ -208,9 +209,7 @@ export const useModalStore = create<ModalStore>((set, get) => ({
                     },
                 },
             })
-            if (process.env.NODE_ENV === 'development') {
-                console.log('🎬 [ModalStore] Modal opened:', getTitle(content))
-            }
+            uiLog('🎬 [ModalStore] Modal opened:', getTitle(content))
         })
     },
 
@@ -225,9 +224,7 @@ export const useModalStore = create<ModalStore>((set, get) => ({
                     content: null,
                 },
             })
-            if (process.env.NODE_ENV === 'development') {
-                console.log('❌ [ModalStore] Modal closed')
-            }
+            uiLog('❌ [ModalStore] Modal closed')
         })
     },
 
@@ -271,12 +268,10 @@ export const useModalStore = create<ModalStore>((set, get) => ({
                     mode: mode || 'add',
                 },
             })
-            if (process.env.NODE_ENV === 'development') {
-                console.log('📋 [ModalStore] List modal opened:', {
-                    contentTitle: content ? getTitle(content) : 'No content',
-                    mode: mode || 'add',
-                })
-            }
+            uiLog('📋 [ModalStore] List modal opened:', {
+                contentTitle: content ? getTitle(content) : 'No content',
+                mode: mode || 'add',
+            })
         })
     },
 
@@ -289,9 +284,7 @@ export const useModalStore = create<ModalStore>((set, get) => ({
                     mode: undefined,
                 },
             })
-            if (process.env.NODE_ENV === 'development') {
-                console.log('❌ [ModalStore] List modal closed')
-            }
+            uiLog('❌ [ModalStore] List modal closed')
         })
     },
 
@@ -314,12 +307,10 @@ export const useModalStore = create<ModalStore>((set, get) => ({
                     editingRowId: editingRowId || null,
                 },
             })
-            if (process.env.NODE_ENV === 'development') {
-                console.log('📊 [ModalStore] Custom row modal opened:', {
-                    mode,
-                    editingRowId: editingRowId || 'none',
-                })
-            }
+            uiLog('📊 [ModalStore] Custom row modal opened:', {
+                mode,
+                editingRowId: editingRowId || 'none',
+            })
         })
     },
 
@@ -332,9 +323,7 @@ export const useModalStore = create<ModalStore>((set, get) => ({
                     editingRowId: null,
                 },
             })
-            if (process.env.NODE_ENV === 'development') {
-                console.log('❌ [ModalStore] Custom row modal closed')
-            }
+            uiLog('❌ [ModalStore] Custom row modal closed')
         })
     },
 
@@ -347,9 +336,7 @@ export const useModalStore = create<ModalStore>((set, get) => ({
                     mode,
                 },
             })
-            if (process.env.NODE_ENV === 'development') {
-                console.log('✅ [ModalStore] Auth modal opened:', mode)
-            }
+            uiLog('✅ [ModalStore] Auth modal opened:', mode)
         })
     },
 
@@ -361,9 +348,7 @@ export const useModalStore = create<ModalStore>((set, get) => ({
                     mode: 'signin',
                 },
             })
-            if (process.env.NODE_ENV === 'development') {
-                console.log('❌ [ModalStore] Auth modal closed')
-            }
+            uiLog('❌ [ModalStore] Auth modal closed')
         })
     },
 
@@ -385,9 +370,7 @@ export const useModalStore = create<ModalStore>((set, get) => ({
                     pageType,
                 },
             })
-            if (process.env.NODE_ENV === 'development') {
-                console.log('📊 [ModalStore] Row editor modal opened:', pageType)
-            }
+            uiLog('📊 [ModalStore] Row editor modal opened:', pageType)
         })
     },
 
@@ -399,9 +382,7 @@ export const useModalStore = create<ModalStore>((set, get) => ({
                     pageType: 'home',
                 },
             })
-            if (process.env.NODE_ENV === 'development') {
-                console.log('❌ [ModalStore] Row editor modal closed')
-            }
+            uiLog('❌ [ModalStore] Row editor modal closed')
         })
     },
 
@@ -420,12 +401,10 @@ export const useModalStore = create<ModalStore>((set, get) => ({
                     mediaType,
                 },
             })
-            if (process.env.NODE_ENV === 'development') {
-                console.log('📋 [ModalStore] Collection creator modal opened:', {
-                    name,
-                    contentCount: content.length,
-                })
-            }
+            uiLog('📋 [ModalStore] Collection creator modal opened:', {
+                name,
+                contentCount: content.length,
+            })
         })
     },
 
@@ -439,9 +418,7 @@ export const useModalStore = create<ModalStore>((set, get) => ({
                     mediaType: 'all',
                 },
             })
-            if (process.env.NODE_ENV === 'development') {
-                console.log('❌ [ModalStore] Collection creator modal closed')
-            }
+            uiLog('❌ [ModalStore] Collection creator modal closed')
         })
     },
 
@@ -482,9 +459,7 @@ export const useModalStore = create<ModalStore>((set, get) => ({
                     isOpen: true,
                 },
             })
-            if (process.env.NODE_ENV === 'development') {
-                console.log('🎯 [ModalStore] Collection mode selection modal opened')
-            }
+            uiLog('🎯 [ModalStore] Collection mode selection modal opened')
         })
     },
 
@@ -495,9 +470,7 @@ export const useModalStore = create<ModalStore>((set, get) => ({
                     isOpen: false,
                 },
             })
-            if (process.env.NODE_ENV === 'development') {
-                console.log('❌ [ModalStore] Collection mode selection modal closed')
-            }
+            uiLog('❌ [ModalStore] Collection mode selection modal closed')
         })
     },
 
@@ -509,9 +482,7 @@ export const useModalStore = create<ModalStore>((set, get) => ({
                     isOpen: true,
                 },
             })
-            if (process.env.NODE_ENV === 'development') {
-                console.log('🎯 [ModalStore] Collection builder modal opened')
-            }
+            uiLog('🎯 [ModalStore] Collection builder modal opened')
         })
     },
 
@@ -522,9 +493,7 @@ export const useModalStore = create<ModalStore>((set, get) => ({
                     isOpen: false,
                 },
             })
-            if (process.env.NODE_ENV === 'development') {
-                console.log('❌ [ModalStore] Collection builder modal closed')
-            }
+            uiLog('❌ [ModalStore] Collection builder modal closed')
         })
     },
 }))

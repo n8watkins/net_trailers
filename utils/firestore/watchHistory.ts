@@ -4,7 +4,7 @@
  * Functions for persisting watch history to Firestore
  */
 
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { WatchHistoryEntry, WatchHistoryDocument } from '../../types/watchHistory'
 
@@ -22,9 +22,9 @@ export async function getWatchHistory(userId: string): Promise<WatchHistoryEntry
         }
 
         return null
-    } catch (error) {
-        console.error('Error fetching watch history from Firestore:', error)
-        throw error
+    } catch (_error) {
+        // Silently fail - permissions error may occur if auth isn't ready yet
+        return null
     }
 }
 
@@ -44,9 +44,9 @@ export async function saveWatchHistory(
         }
 
         await setDoc(docRef, data, { merge: true })
-    } catch (error) {
-        console.error('Error saving watch history to Firestore:', error)
-        throw error
+    } catch (_error) {
+        // Silently fail - watch history is not critical
+        // User will still have local history in browser storage
     }
 }
 
@@ -81,8 +81,7 @@ export async function addWatchEntryToFirestore(
 
         // Save back to Firestore
         await saveWatchHistory(userId, limitedHistory)
-    } catch (error) {
-        console.error('Error adding watch entry to Firestore:', error)
-        throw error
+    } catch (_error) {
+        // Silently fail - watch history is not critical
     }
 }

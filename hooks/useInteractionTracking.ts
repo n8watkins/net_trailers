@@ -1,4 +1,5 @@
 /**
+import { trackingLog } from '../utils/debugLogger'
  * useInteractionTracking Hook
  * Phase 7.1 - Simplified API for logging user interactions
  */
@@ -41,13 +42,13 @@ export function useInteractionTracking() {
 
             // Skip tracking for guest users (interactions require Firestore)
             if (!userId || sessionType !== 'authenticated') {
-                console.log('[Tracking] Skipping interaction (guest mode or no user ID)')
+                trackingLog('[Tracking] Skipping interaction (guest mode or no user ID)')
                 return
             }
 
             // Skip tracking if user has disabled recommendation improvements
             if (!improveRecommendations) {
-                console.log(
+                trackingLog(
                     '[Tracking] Skipping interaction (user disabled recommendation improvements)'
                 )
                 return
@@ -58,7 +59,7 @@ export function useInteractionTracking() {
 
                 await logInteraction(userId, interaction)
 
-                console.log(`[Tracking] Logged ${interactionType} for content ${content.id}`)
+                trackingLog(`[Tracking] Logged ${interactionType} for content ${content.id}`)
             } catch (error) {
                 // Fail silently - don't disrupt user experience
                 console.error('[Tracking] Failed to log interaction:', error)
