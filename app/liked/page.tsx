@@ -28,6 +28,7 @@ const Liked = () => {
 
     const [searchQuery, setSearchQuery] = useState('')
     const [showManageDropdown, setShowManageDropdown] = useState(false)
+    const [mediaFilter, setMediaFilter] = useState<'all' | 'movies' | 'tv'>('all')
     const manageDropdownRef = useRef<HTMLDivElement>(null)
 
     // Get liked content directly from likedMovies
@@ -38,18 +39,26 @@ const Liked = () => {
         content: item,
     }))
 
-    // Apply search filter
-    const filteredContent = searchQuery.trim()
-        ? likedContent.filter(
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (item: any) => {
-                  if (!item.content) return false
-                  const title = getTitle(item.content).toLowerCase()
-                  const query = searchQuery.toLowerCase()
-                  return title.includes(query)
-              }
-          )
-        : likedContent
+    // Apply search and media type filters
+    const filteredContent = likedContent.filter(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (item: any) => {
+            if (!item.content) return false
+
+            // Apply media type filter
+            if (mediaFilter === 'movies' && !isMovie(item.content)) return false
+            if (mediaFilter === 'tv' && !isTVShow(item.content)) return false
+
+            // Apply search filter
+            if (searchQuery.trim()) {
+                const title = getTitle(item.content).toLowerCase()
+                const query = searchQuery.toLowerCase()
+                return title.includes(query)
+            }
+
+            return true
+        }
+    )
 
     const handleExportCSV = () => {
         if (userSession?.preferences) {
@@ -77,38 +86,6 @@ const Liked = () => {
             document.removeEventListener('mousedown', handleClickOutside)
         }
     }, [showManageDropdown])
-
-    // Separate content by media type
-    const moviesContent = filteredContent.filter(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (item: any) => {
-            return item.content && isMovie(item.content)
-        }
-    )
-
-    const tvShowsContent = filteredContent.filter(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (item: any) => {
-            return item.content && isTVShow(item.content)
-        }
-    )
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const renderContentGrid = (items: any[], title: string) => (
-        <div>
-            <h3 className="text-2xl font-bold text-white mb-6">{title}</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {items.map(
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    (item: any) => (
-                        <div key={item.contentId}>
-                            <ContentCard content={item.content} />
-                        </div>
-                    )
-                )}
-            </div>
-        </div>
-    )
 
     // Show loading state while user data is initializing
     if (isLoading) {
@@ -152,6 +129,27 @@ const Liked = () => {
             {/* Stats */}
             <StatsBar count={likedContent.length} countLabel="items liked" />
 
+            {/* Media Type Filter Pills */}
+            <div className="flex flex-wrap gap-2">
+                {[
+                    { value: 'all', label: 'All' },
+                    { value: 'movies', label: 'Movies' },
+                    { value: 'tv', label: 'TV Shows' },
+                ].map((option) => (
+                    <button
+                        key={option.value}
+                        onClick={() => setMediaFilter(option.value as 'all' | 'movies' | 'tv')}
+                        className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                            mediaFilter === option.value
+                                ? 'bg-green-600 text-white shadow-lg scale-105'
+                                : 'bg-gray-800/80 text-gray-300 hover:bg-gray-700/80 hover:scale-105'
+                        }`}
+                    >
+                        {option.label}
+                    </button>
+                ))}
+            </div>
+
             {/* Search Bar */}
             <SearchBar
                 value={searchQuery}
@@ -187,10 +185,15 @@ const Liked = () => {
                     }
                 />
             ) : (
-                <div className="space-y-12">
-                    {moviesContent.length > 0 && renderContentGrid(moviesContent, 'Liked Movies')}
-                    {tvShowsContent.length > 0 &&
-                        renderContentGrid(tvShowsContent, 'Liked TV Shows')}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                    {filteredContent.map(
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        (item: any) => (
+                            <div key={item.contentId}>
+                                <ContentCard content={item.content} />
+                            </div>
+                        )
+                    )}
                 </div>
             )}
         </SubPageLayout>
