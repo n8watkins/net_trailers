@@ -8,8 +8,11 @@
 
 import { useEffect, useState } from 'react'
 import SubPageLayout from '../../components/layout/SubPageLayout'
-import { ClockIcon, MagnifyingGlassIcon, CalendarIcon } from '@heroicons/react/24/outline'
+import { ClockIcon, CalendarIcon } from '@heroicons/react/24/outline'
 import ContentCard from '../../components/common/ContentCard'
+import EmptyState from '../../components/common/EmptyState'
+import LoadingSpinner from '../../components/common/LoadingSpinner'
+import SearchBar from '../../components/common/SearchBar'
 import { useWatchHistory } from '../../hooks/useWatchHistory'
 import { getTitle } from '../../typings'
 
@@ -94,18 +97,12 @@ export default function WatchHistoryPage() {
             </div>
 
             {/* Search Bar */}
-            <div className="relative w-full sm:w-64">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                    type="text"
-                    placeholder="Search history..."
-                    className="w-full pl-10 pr-4 py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                />
-            </div>
+            <SearchBar
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Search history..."
+                focusColor="purple"
+            />
         </div>
     )
 
@@ -119,23 +116,21 @@ export default function WatchHistoryPage() {
         >
             {/* Content */}
             {isLoading ? (
-                <div className="flex items-center justify-center py-20">
-                    <div className="h-12 w-12 animate-spin rounded-full border-4 border-purple-600 border-t-transparent"></div>
-                </div>
+                <LoadingSpinner color="purple" />
             ) : searchFilteredHistory.length === 0 ? (
-                <div className="text-center py-20">
-                    <div className="text-6xl mb-4">🎬</div>
-                    <h2 className="text-2xl font-semibold text-white mb-2">
-                        {watchHistory.length === 0
+                <EmptyState
+                    emoji="🎬"
+                    title={
+                        watchHistory.length === 0
                             ? 'No watch history yet'
-                            : 'No matching content found'}
-                    </h2>
-                    <p className="text-gray-400">
-                        {watchHistory.length === 0
+                            : 'No matching content found'
+                    }
+                    description={
+                        watchHistory.length === 0
                             ? 'Start watching movies and TV shows to build your history.'
-                            : 'Try adjusting your filters or search terms.'}
-                    </p>
-                </div>
+                            : 'Try adjusting your filters or search terms.'
+                    }
+                />
             ) : (
                 <div className="space-y-8">
                     {/* Timeline View - Grouped by Date */}

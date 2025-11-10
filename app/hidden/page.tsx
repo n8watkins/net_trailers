@@ -3,10 +3,13 @@
 import { useState } from 'react'
 import SubPageLayout from '../../components/layout/SubPageLayout'
 import useUserData from '../../hooks/useUserData'
-import { EyeSlashIcon, MagnifyingGlassIcon, ArrowDownTrayIcon } from '@heroicons/react/24/solid'
+import { EyeSlashIcon, ArrowDownTrayIcon } from '@heroicons/react/24/solid'
 import { isMovie, isTVShow } from '../../typings'
 import { getTitle } from '../../typings'
 import ContentCard from '../../components/common/ContentCard'
+import EmptyState from '../../components/common/EmptyState'
+import SearchBar from '../../components/common/SearchBar'
+import StatsBar from '../../components/common/StatsBar'
 import { exportUserDataToCSV } from '../../utils/csvExport'
 import { GuestModeNotification } from '../../components/auth/GuestModeNotification'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
@@ -85,15 +88,11 @@ const Hidden = () => {
         <div className="space-y-4">
             {isInitialized && isGuest && <GuestModeNotification align="left" />}
 
-            {/* Action Buttons */}
-            {hiddenContent.length > 0 && (
-                <div className="flex items-center space-x-4 py-3 mb-4 border-b border-gray-700/30">
-                    {/* Stats */}
-                    <div className="text-lg font-semibold text-white">
-                        {hiddenContent.length} items hidden
-                    </div>
-
-                    {/* Export Button */}
+            {/* Stats and Actions */}
+            <StatsBar
+                count={hiddenContent.length}
+                countLabel="items hidden"
+                actions={
                     <button
                         onClick={handleExportCSV}
                         className="flex items-center space-x-2 px-5 py-2.5 bg-gray-800/50 hover:bg-white/10 text-white border border-gray-600 hover:border-gray-400 rounded-full text-sm font-medium transition-all duration-200"
@@ -101,22 +100,16 @@ const Hidden = () => {
                         <ArrowDownTrayIcon className="w-4 h-4" />
                         <span>Export to CSV</span>
                     </button>
-                </div>
-            )}
+                }
+            />
 
             {/* Search Bar */}
-            <div className="relative w-full sm:w-64">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                    type="text"
-                    placeholder="Search hidden content..."
-                    className="w-full pl-10 pr-4 py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all duration-200"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                />
-            </div>
+            <SearchBar
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Search hidden content..."
+                focusColor="gray"
+            />
         </div>
     )
 
@@ -130,19 +123,19 @@ const Hidden = () => {
         >
             {/* Content Sections */}
             {filteredContent.length === 0 ? (
-                <div className="text-center py-16">
-                    <div className="text-6xl mb-4">🙈</div>
-                    <h2 className="text-2xl font-semibold text-white mb-2">
-                        {hiddenContent.length === 0
+                <EmptyState
+                    emoji="🙈"
+                    title={
+                        hiddenContent.length === 0
                             ? 'No hidden content yet'
-                            : 'No matching content found'}
-                    </h2>
-                    <p className="text-gray-400">
-                        {hiddenContent.length === 0
-                            ? 'Content you mark as &quot;Not For Me&quot; will appear here.'
-                            : 'Try adjusting your search terms.'}
-                    </p>
-                </div>
+                            : 'No matching content found'
+                    }
+                    description={
+                        hiddenContent.length === 0
+                            ? 'Content you mark as "Not For Me" will appear here.'
+                            : 'Try adjusting your search terms.'
+                    }
+                />
             ) : (
                 <div className="space-y-12">
                     {moviesContent.length > 0 && renderContentGrid(moviesContent, 'Hidden Movies')}
