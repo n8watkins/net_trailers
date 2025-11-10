@@ -116,7 +116,7 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
                         title: `🔥 Now Trending: ${title}`,
                         message: `${title} (${mediaType}) just entered the trending list!`,
                         contentId: content.id,
-                        actionUrl: `/`,
+                        actionUrl: `/?contentId=${content.id}&media_type=${content.media_type}`,
                         imageUrl: posterPath
                             ? `https://image.tmdb.org/t/p/w500${posterPath}`
                             : undefined,

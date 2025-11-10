@@ -6,17 +6,21 @@
 
 'use client'
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
     SparklesIcon,
     FilmIcon,
     UserGroupIcon,
     BellIcon,
+    FireIcon,
     XMarkIcon,
 } from '@heroicons/react/24/outline'
 import { Notification, NOTIFICATION_META } from '../../types/notifications'
 import { useNotificationStore } from '../../stores/notificationStore'
 import { useSessionStore } from '../../stores/sessionStore'
+import { useAppStore } from '../../stores/appStore'
+import { Content } from '../../typings'
 
 interface NotificationItemProps {
     notification: Notification
@@ -27,6 +31,8 @@ export default function NotificationItem({ notification }: NotificationItemProps
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
     const { markNotificationAsRead, deleteNotification, closePanel } = useNotificationStore()
+    const { openModal } = useAppStore()
+    const [isLoading, setIsLoading] = useState(false)
 
     const meta = NOTIFICATION_META[notification.type]
 
@@ -39,6 +45,8 @@ export default function NotificationItem({ notification }: NotificationItemProps
                 return FilmIcon
             case 'share_activity':
                 return UserGroupIcon
+            case 'trending_update':
+                return FireIcon
             case 'system':
                 return BellIcon
             default:
@@ -65,14 +73,45 @@ export default function NotificationItem({ notification }: NotificationItemProps
 
     // Handle notification click
     const handleClick = async () => {
-        if (!userId) return
+        if (!userId || isLoading) return
 
         // Mark as read if unread
         if (!notification.isRead) {
             await markNotificationAsRead(userId, notification.id)
         }
 
-        // Navigate to action URL if provided
+        // Check if actionUrl contains contentId and media_type
+        if (notification.actionUrl && notification.contentId) {
+            try {
+                const url = new URL(notification.actionUrl, window.location.origin)
+                const contentId = url.searchParams.get('contentId')
+                const mediaType = url.searchParams.get('media_type')
+
+                if (contentId && mediaType && (mediaType === 'movie' || mediaType === 'tv')) {
+                    setIsLoading(true)
+
+                    // Fetch content details
+                    const response = await fetch(
+                        `/api/movies/details/${contentId}?media_type=${mediaType}`
+                    )
+
+                    if (response.ok) {
+                        const content: Content = await response.json()
+
+                        // Close notification panel and open modal
+                        closePanel()
+                        openModal(content, true, false) // autoPlay=true, autoPlayWithSound=false
+                        return
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to fetch content for notification:', error)
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        // Fallback: Navigate to action URL if provided
         if (notification.actionUrl) {
             closePanel()
             router.push(notification.actionUrl)
@@ -90,7 +129,11 @@ export default function NotificationItem({ notification }: NotificationItemProps
     return (
         <div
             className={`group relative flex gap-3 border-b border-gray-700/50 p-4 transition-colors ${
-                notification.actionUrl ? 'cursor-pointer hover:bg-gray-800/50' : 'cursor-default'
+                notification.actionUrl
+                    ? isLoading
+                        ? 'cursor-wait opacity-70'
+                        : 'cursor-pointer hover:bg-gray-800/50'
+                    : 'cursor-default'
             } ${!notification.isRead ? 'bg-blue-900/10' : ''}`}
             onClick={handleClick}
         >
