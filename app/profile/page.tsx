@@ -25,11 +25,13 @@ import useUserData from '../../hooks/useUserData'
 import { useWatchHistory } from '../../hooks/useWatchHistory'
 import { seedUserData } from '../../utils/seedData'
 import { useSessionStore } from '../../stores/sessionStore'
+import { useDebugSettings } from '../../components/debug/DebugControls'
 
 export default function ProfilePage() {
     const { user } = useAuth()
     const userData = useUserData()
     const { totalWatched, history: watchHistory } = useWatchHistory()
+    const debugSettings = useDebugSettings()
     const [isSeeding, setIsSeeding] = useState(false)
 
     useEffect(() => {
@@ -112,8 +114,8 @@ export default function ProfilePage() {
                             Edit Profile
                         </Link>
 
-                        {/* Seed Data Button - Only in dev mode */}
-                        {process.env.NODE_ENV === 'development' && (
+                        {/* Seed Data Button - Controlled by debug console toggle */}
+                        {process.env.NODE_ENV === 'development' && debugSettings.showSeedButton && (
                             <button
                                 onClick={handleSeedData}
                                 disabled={isSeeding}

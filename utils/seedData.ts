@@ -290,25 +290,35 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
     const watchContent = shuffled.slice(0, watchHistoryCount)
     const now = Date.now()
 
+    // Import watch history store dynamically
+    const { useWatchHistoryStore } = await import('../stores/watchHistoryStore')
+
     for (let i = 0; i < watchContent.length; i++) {
         const item = watchContent[i]
-        const watchedAt = now - i * 24 * 60 * 60 * 1000 // Spread over days
+        const progress = Math.random() > 0.5 ? 100 : Math.floor(Math.random() * 90) + 10
 
-        // Add to watch history via the store
-        if (isGuest) {
-            useGuestStore.getState().addWatchHistoryItem({
-                contentId: item.id,
-                mediaType: item.media_type,
-                watchedAt,
-                progress: Math.random() > 0.5 ? 100 : Math.floor(Math.random() * 90) + 10,
-            })
-        } else {
-            useAuthStore.getState().addWatchHistoryItem({
-                contentId: item.id,
-                mediaType: item.media_type,
-                watchedAt,
-                progress: Math.random() > 0.5 ? 100 : Math.floor(Math.random() * 90) + 10,
-            })
+        // Add to watch history via the watch history store
+        useWatchHistoryStore.getState().addWatchEntry(
+            item.id,
+            item.media_type,
+            item,
+            progress,
+            undefined, // duration
+            undefined // watchedDuration
+        )
+
+        // Manually update watchedAt for older entries to spread them over days
+        if (i > 0) {
+            const watchedAt = now - i * 24 * 60 * 60 * 1000
+            const history = useWatchHistoryStore.getState().history
+            const lastEntry = history[history.length - 1]
+            if (lastEntry) {
+                useWatchHistoryStore.setState({
+                    history: history.map((entry) =>
+                        entry.id === lastEntry.id ? { ...entry, watchedAt } : entry
+                    ),
+                })
+            }
         }
     }
 

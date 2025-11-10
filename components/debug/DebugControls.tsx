@@ -6,8 +6,6 @@ import {
     CodeBracketIcon,
     SparklesIcon,
 } from '@heroicons/react/24/outline'
-import { seedUserData } from '../../utils/seedData'
-import { useSessionStore } from '../../stores/sessionStore'
 
 interface DebugSettings {
     showFirebaseTracker: boolean
@@ -22,6 +20,7 @@ interface DebugSettings {
     showUIDebug: boolean
     showTrackingDebug: boolean
     showNotificationDebug: boolean
+    showSeedButton: boolean
 }
 
 interface Position {
@@ -43,6 +42,7 @@ export default function DebugControls() {
         showUIDebug: false,
         showTrackingDebug: false,
         showNotificationDebug: false,
+        showSeedButton: false,
     })
 
     // Visibility state - load from localStorage, hidden by default
@@ -186,29 +186,6 @@ export default function DebugControls() {
         setSettings((prev) => ({ ...prev, [key]: !prev[key] }))
     }
 
-    const handleSeedData = async () => {
-        const getUserId = useSessionStore.getState().getUserId
-        const userId = getUserId()
-
-        if (!userId) {
-            console.error('No user ID found')
-            return
-        }
-
-        try {
-            await seedUserData(userId, {
-                likedCount: 8,
-                hiddenCount: 4,
-                watchHistoryCount: 12,
-                createCollections: true,
-            })
-            // Force a page reload to show the new data
-            window.location.reload()
-        } catch (error) {
-            console.error('Failed to seed data:', error)
-        }
-    }
-
     // Only show in development
     if (process.env.NODE_ENV !== 'development') return null
 
@@ -217,217 +194,213 @@ export default function DebugControls() {
 
     return (
         <div
-            className={`fixed z-[9999] flex items-center space-x-2 bg-gray-900/95 rounded-lg border border-gray-700 px-3 py-2 select-none ${isDragging ? '' : 'transition-all duration-200'}`}
+            className={`fixed z-[9999] bg-gray-900/95 rounded-lg border border-gray-700 px-3 py-2 select-none ${isDragging ? '' : 'transition-all duration-200'} ${showAllControls ? 'max-w-3xl' : ''}`}
             style={{ left: `${position.x}px`, top: `${position.y}px` }}
             onMouseEnter={() => !isDragging && setIsHovered(true)}
             onMouseLeave={() => !isDragging && setIsHovered(false)}
         >
-            <div
-                ref={dragHandleRef}
-                className="cursor-move hover:bg-gray-800 rounded p-1 -m-1 transition-colors"
-                title="Drag to move · Hover to expand"
-                onMouseDown={handleDragStart}
-            >
-                <BugAntIcon className="w-6 h-6 text-gray-400" />
+            <div className="flex items-start gap-2">
+                {/* Drag Handle */}
+                <div
+                    ref={dragHandleRef}
+                    className="cursor-move hover:bg-gray-800 rounded p-1 -m-1 transition-colors flex-shrink-0"
+                    title="Drag to move · Hover to expand"
+                    onMouseDown={handleDragStart}
+                >
+                    <BugAntIcon className="w-6 h-6 text-gray-400" />
+                </div>
+
+                {/* Button Grid - Only shown when expanded */}
+                {showAllControls && (
+                    <div className="flex flex-col gap-2">
+                        {/* Row 1: Firebase & Auth */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                            {shouldShowButton('showFirebaseTracker') && (
+                                <button
+                                    onClick={() => toggleSetting('showFirebaseTracker')}
+                                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                                        settings.showFirebaseTracker
+                                            ? 'bg-orange-600/20 text-orange-400 border border-orange-500/30'
+                                            : 'bg-gray-800 text-gray-500 border border-gray-700'
+                                    }`}
+                                    title="Toggle Firebase Call Tracker"
+                                >
+                                    <FireIcon className="w-3 h-3" />
+                                    <span className="text-xs">Firebase</span>
+                                </button>
+                            )}
+                            {shouldShowButton('showFirebaseDebug') && (
+                                <button
+                                    onClick={() => toggleSetting('showFirebaseDebug')}
+                                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                                        settings.showFirebaseDebug
+                                            ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
+                                            : 'bg-gray-800 text-gray-500 border border-gray-700'
+                                    }`}
+                                    title="Toggle Auth Flow Logs"
+                                >
+                                    <span className="text-xs">Auth</span>
+                                </button>
+                            )}
+                            {shouldShowButton('showSessionDebug') && (
+                                <button
+                                    onClick={() => toggleSetting('showSessionDebug')}
+                                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                                        settings.showSessionDebug
+                                            ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30'
+                                            : 'bg-gray-800 text-gray-500 border border-gray-700'
+                                    }`}
+                                    title="Toggle Session Logs"
+                                >
+                                    <span className="text-xs">Session</span>
+                                </button>
+                            )}
+                            {shouldShowButton('showGuestDebug') && (
+                                <button
+                                    onClick={() => toggleSetting('showGuestDebug')}
+                                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                                        settings.showGuestDebug
+                                            ? 'bg-teal-600/20 text-teal-400 border border-teal-500/30'
+                                            : 'bg-gray-800 text-gray-500 border border-gray-700'
+                                    }`}
+                                    title="Toggle Guest Logs"
+                                >
+                                    <span className="text-xs">Guest</span>
+                                </button>
+                            )}
+                            {shouldShowButton('showCacheDebug') && (
+                                <button
+                                    onClick={() => toggleSetting('showCacheDebug')}
+                                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                                        settings.showCacheDebug
+                                            ? 'bg-cyan-600/20 text-cyan-400 border border-cyan-500/30'
+                                            : 'bg-gray-800 text-gray-500 border border-gray-700'
+                                    }`}
+                                    title="Toggle Cache Logs"
+                                >
+                                    <span className="text-xs">Cache</span>
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Row 2: UI & Interaction */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                            {shouldShowButton('showToastDebug') && (
+                                <button
+                                    onClick={() => toggleSetting('showToastDebug')}
+                                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                                        settings.showToastDebug
+                                            ? 'bg-green-600/20 text-green-400 border border-green-500/30'
+                                            : 'bg-gray-800 text-gray-500 border border-gray-700'
+                                    }`}
+                                    title="Toggle Toast Debug"
+                                >
+                                    <ChatBubbleBottomCenterTextIcon className="w-3 h-3" />
+                                    <span className="text-xs">Toast</span>
+                                </button>
+                            )}
+                            {shouldShowButton('showApiResults') && (
+                                <button
+                                    onClick={() => toggleSetting('showApiResults')}
+                                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                                        settings.showApiResults
+                                            ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30'
+                                            : 'bg-gray-800 text-gray-500 border border-gray-700'
+                                    }`}
+                                    title="Toggle API Results Button"
+                                >
+                                    <CodeBracketIcon className="w-3 h-3" />
+                                    <span className="text-xs">API Results</span>
+                                </button>
+                            )}
+                            {shouldShowButton('showWebVitals') && (
+                                <button
+                                    onClick={() => toggleSetting('showWebVitals')}
+                                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                                        settings.showWebVitals
+                                            ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30'
+                                            : 'bg-gray-800 text-gray-500 border border-gray-700'
+                                    }`}
+                                    title="Toggle Web Vitals HUD (Alt+Shift+V)"
+                                >
+                                    <span className="text-xs">Vitals</span>
+                                </button>
+                            )}
+                            {shouldShowButton('showUIDebug') && (
+                                <button
+                                    onClick={() => toggleSetting('showUIDebug')}
+                                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                                        settings.showUIDebug
+                                            ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
+                                            : 'bg-gray-800 text-gray-500 border border-gray-700'
+                                    }`}
+                                    title="Toggle UI Interaction Logs (modals, infinite scroll, etc.)"
+                                >
+                                    <span className="text-xs">UI</span>
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Row 3: Features & Tools */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                            {shouldShowButton('showTrackingDebug') && (
+                                <button
+                                    onClick={() => toggleSetting('showTrackingDebug')}
+                                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                                        settings.showTrackingDebug
+                                            ? 'bg-yellow-600/20 text-yellow-400 border border-yellow-500/30'
+                                            : 'bg-gray-800 text-gray-500 border border-gray-700'
+                                    }`}
+                                    title="Toggle Interaction Tracking Logs"
+                                >
+                                    <span className="text-xs">Tracking</span>
+                                </button>
+                            )}
+                            {shouldShowButton('showNotificationDebug') && (
+                                <button
+                                    onClick={() => toggleSetting('showNotificationDebug')}
+                                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                                        settings.showNotificationDebug
+                                            ? 'bg-pink-600/20 text-pink-400 border border-pink-500/30'
+                                            : 'bg-gray-800 text-gray-500 border border-gray-700'
+                                    }`}
+                                    title="Toggle Notification System Logs"
+                                >
+                                    <span className="text-xs">Notif</span>
+                                </button>
+                            )}
+                            {shouldShowButton('showTestNotifications') && (
+                                <button
+                                    onClick={() => toggleSetting('showTestNotifications')}
+                                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                                        settings.showTestNotifications
+                                            ? 'bg-red-600/20 text-red-400 border border-red-500/30'
+                                            : 'bg-gray-800 text-gray-500 border border-gray-700'
+                                    }`}
+                                    title="Toggle Test Notification Button"
+                                >
+                                    <span className="text-xs">TestNotif</span>
+                                </button>
+                            )}
+                            <div className="w-px h-6 bg-gray-700" />
+                            {shouldShowButton('showSeedButton') && (
+                                <button
+                                    onClick={() => toggleSetting('showSeedButton')}
+                                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                                        settings.showSeedButton
+                                            ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30'
+                                            : 'bg-gray-800 text-gray-500 border border-gray-700'
+                                    }`}
+                                    title="Toggle Seed Data Button on Profile"
+                                >
+                                    <SparklesIcon className="w-3 h-3" />
+                                    <span className="text-xs">Seed Btn</span>
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
-
-            {/* Firebase Tracker Toggle */}
-            {shouldShowButton('showFirebaseTracker') && (
-                <button
-                    onClick={() => toggleSetting('showFirebaseTracker')}
-                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                        settings.showFirebaseTracker
-                            ? 'bg-orange-600/20 text-orange-400 border border-orange-500/30'
-                            : 'bg-gray-800 text-gray-500 border border-gray-700'
-                    }`}
-                    title="Toggle Firebase Call Tracker"
-                >
-                    <FireIcon className="w-3 h-3" />
-                    <span className="text-xs">Firebase</span>
-                </button>
-            )}
-
-            {/* Firebase Debug Toggle */}
-            {shouldShowButton('showFirebaseDebug') && (
-                <button
-                    onClick={() => toggleSetting('showFirebaseDebug')}
-                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                        settings.showFirebaseDebug
-                            ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
-                            : 'bg-gray-800 text-gray-500 border border-gray-700'
-                    }`}
-                    title="Toggle Auth Flow Logs"
-                >
-                    <span className="text-xs">Auth</span>
-                </button>
-            )}
-
-            {/* Session Debug Toggle */}
-            {shouldShowButton('showSessionDebug') && (
-                <button
-                    onClick={() => toggleSetting('showSessionDebug')}
-                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                        settings.showSessionDebug
-                            ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30'
-                            : 'bg-gray-800 text-gray-500 border border-gray-700'
-                    }`}
-                    title="Toggle Session Logs"
-                >
-                    <span className="text-xs">Session</span>
-                </button>
-            )}
-
-            {/* Guest Debug Toggle */}
-            {shouldShowButton('showGuestDebug') && (
-                <button
-                    onClick={() => toggleSetting('showGuestDebug')}
-                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                        settings.showGuestDebug
-                            ? 'bg-teal-600/20 text-teal-400 border border-teal-500/30'
-                            : 'bg-gray-800 text-gray-500 border border-gray-700'
-                    }`}
-                    title="Toggle Guest Logs"
-                >
-                    <span className="text-xs">Guest</span>
-                </button>
-            )}
-
-            {/* Cache Debug Toggle */}
-            {shouldShowButton('showCacheDebug') && (
-                <button
-                    onClick={() => toggleSetting('showCacheDebug')}
-                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                        settings.showCacheDebug
-                            ? 'bg-cyan-600/20 text-cyan-400 border border-cyan-500/30'
-                            : 'bg-gray-800 text-gray-500 border border-gray-700'
-                    }`}
-                    title="Toggle Cache Logs"
-                >
-                    <span className="text-xs">Cache</span>
-                </button>
-            )}
-
-            {/* Toast Debug Toggle */}
-            {shouldShowButton('showToastDebug') && (
-                <button
-                    onClick={() => toggleSetting('showToastDebug')}
-                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                        settings.showToastDebug
-                            ? 'bg-green-600/20 text-green-400 border border-green-500/30'
-                            : 'bg-gray-800 text-gray-500 border border-gray-700'
-                    }`}
-                    title="Toggle Toast Debug"
-                >
-                    <ChatBubbleBottomCenterTextIcon className="w-3 h-3" />
-                    <span className="text-xs">Toast</span>
-                </button>
-            )}
-
-            {/* API Results Toggle */}
-            {shouldShowButton('showApiResults') && (
-                <button
-                    onClick={() => toggleSetting('showApiResults')}
-                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                        settings.showApiResults
-                            ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30'
-                            : 'bg-gray-800 text-gray-500 border border-gray-700'
-                    }`}
-                    title="Toggle API Results Button"
-                >
-                    <CodeBracketIcon className="w-3 h-3" />
-                    <span className="text-xs">API Results</span>
-                </button>
-            )}
-
-            {/* Web Vitals Toggle */}
-            {shouldShowButton('showWebVitals') && (
-                <button
-                    onClick={() => toggleSetting('showWebVitals')}
-                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                        settings.showWebVitals
-                            ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30'
-                            : 'bg-gray-800 text-gray-500 border border-gray-700'
-                    }`}
-                    title="Toggle Web Vitals HUD (Alt+Shift+V)"
-                >
-                    <span className="text-xs">Vitals</span>
-                </button>
-            )}
-
-            {/* Test Notifications Toggle */}
-            {shouldShowButton('showTestNotifications') && (
-                <button
-                    onClick={() => toggleSetting('showTestNotifications')}
-                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                        settings.showTestNotifications
-                            ? 'bg-red-600/20 text-red-400 border border-red-500/30'
-                            : 'bg-gray-800 text-gray-500 border border-gray-700'
-                    }`}
-                    title="Toggle Test Notification Button"
-                >
-                    <span className="text-xs">TestNotif</span>
-                </button>
-            )}
-
-            {/* UI Debug Toggle */}
-            {shouldShowButton('showUIDebug') && (
-                <button
-                    onClick={() => toggleSetting('showUIDebug')}
-                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                        settings.showUIDebug
-                            ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
-                            : 'bg-gray-800 text-gray-500 border border-gray-700'
-                    }`}
-                    title="Toggle UI Interaction Logs (modals, infinite scroll, etc.)"
-                >
-                    <span className="text-xs">UI</span>
-                </button>
-            )}
-
-            {/* Tracking Debug Toggle */}
-            {shouldShowButton('showTrackingDebug') && (
-                <button
-                    onClick={() => toggleSetting('showTrackingDebug')}
-                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                        settings.showTrackingDebug
-                            ? 'bg-yellow-600/20 text-yellow-400 border border-yellow-500/30'
-                            : 'bg-gray-800 text-gray-500 border border-gray-700'
-                    }`}
-                    title="Toggle Interaction Tracking Logs"
-                >
-                    <span className="text-xs">Tracking</span>
-                </button>
-            )}
-
-            {/* Notification Debug Toggle */}
-            {shouldShowButton('showNotificationDebug') && (
-                <button
-                    onClick={() => toggleSetting('showNotificationDebug')}
-                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                        settings.showNotificationDebug
-                            ? 'bg-pink-600/20 text-pink-400 border border-pink-500/30'
-                            : 'bg-gray-800 text-gray-500 border border-gray-700'
-                    }`}
-                    title="Toggle Notification System Logs"
-                >
-                    <span className="text-xs">Notif</span>
-                </button>
-            )}
-
-            {/* Seed Data Button - Always visible when hovered */}
-            {showAllControls && (
-                <>
-                    <div className="w-px h-6 bg-gray-700" />
-                    <button
-                        onClick={handleSeedData}
-                        className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-gradient-to-r from-purple-600/20 to-pink-600/20 text-purple-400 border border-purple-500/30 hover:from-purple-600/30 hover:to-pink-600/30"
-                        title="Seed test data (liked, hidden, collections, watch history)"
-                    >
-                        <SparklesIcon className="w-3 h-3" />
-                        <span className="text-xs">Seed Data</span>
-                    </button>
-                </>
-            )}
         </div>
     )
 }
@@ -447,6 +420,7 @@ export function useDebugSettings() {
         showUIDebug: false,
         showTrackingDebug: false,
         showNotificationDebug: false,
+        showSeedButton: false,
     })
 
     useEffect(() => {
