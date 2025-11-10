@@ -6,6 +6,7 @@ import { NotificationPreferences } from '../../types/notifications'
 import { useToast } from '../../hooks/useToast'
 import useAuth from '../../hooks/useAuth'
 import { createNotification } from '../../utils/firestore/notifications'
+import { useDebugSettings } from '../debug/DebugControls'
 
 interface NotificationsSectionProps {
     notifications: NotificationPreferences
@@ -22,6 +23,7 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
 }) => {
     const { user } = useAuth()
     const { showSuccess, showError } = useToast()
+    const debugSettings = useDebugSettings()
     const [isSendingEmail, setIsSendingEmail] = useState(false)
     const [isGeneratingNotifications, setIsGeneratingNotifications] = useState(false)
 
@@ -113,7 +115,7 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
 
                     const notification = await createNotification(user.uid, {
                         type: 'trending_update',
-                        title: `🔥 Now Trending: ${title}`,
+                        title: title, // Just the content title, no prefix
                         message: `${title} (${mediaType}) just entered the trending list!`,
                         contentId: content.id,
                         actionUrl: `/?contentId=${content.id}&media_type=${content.media_type}`,
@@ -145,9 +147,7 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
                 throw new Error('Failed to create any notifications')
             }
 
-            showSuccess(
-                `Created ${successCount} trending notifications! Check the notification bell.`
-            )
+            console.log(`✅ Created ${successCount} trending notifications`)
 
             if (errorCount > 0) {
                 console.warn(`${errorCount} notifications failed to create`)
@@ -293,24 +293,26 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
                                 </label>
                             </div>
 
-                            {/* Generate Test Notifications Button */}
-                            {notifications.types.trending_update && user?.uid && (
-                                <div className="pt-4 border-t border-[#313131]">
-                                    <button
-                                        onClick={handleGenerateTestNotifications}
-                                        disabled={isGeneratingNotifications}
-                                        className="px-4 py-2 bg-[#1a1a1a] border border-[#313131] text-white rounded-lg hover:bg-[#2a2a2a] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                    >
-                                        <BellIcon className="w-4 h-4" />
-                                        {isGeneratingNotifications
-                                            ? 'Generating...'
-                                            : 'Generate Test Notifications'}
-                                    </button>
-                                    <p className="text-xs text-[#b3b3b3] mt-2">
-                                        Creates 5 fake trending notifications for testing
-                                    </p>
-                                </div>
-                            )}
+                            {/* Generate Test Notifications Button - Controlled by debug console */}
+                            {debugSettings.showTestNotifications &&
+                                notifications.types.trending_update &&
+                                user?.uid && (
+                                    <div className="pt-4 border-t border-[#313131]">
+                                        <button
+                                            onClick={handleGenerateTestNotifications}
+                                            disabled={isGeneratingNotifications}
+                                            className="px-4 py-2 bg-[#1a1a1a] border border-[#313131] text-white rounded-lg hover:bg-[#2a2a2a] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                        >
+                                            <BellIcon className="w-4 h-4" />
+                                            {isGeneratingNotifications
+                                                ? 'Generating...'
+                                                : 'Generate Test Notifications'}
+                                        </button>
+                                        <p className="text-xs text-[#b3b3b3] mt-2">
+                                            Creates 5 fake trending notifications for testing
+                                        </p>
+                                    </div>
+                                )}
                         </div>
 
                         {/* System Notifications */}

@@ -12,6 +12,7 @@ export type NotificationType =
     | 'collection_update' // New content added to followed collection
     | 'new_release' // Movie/show from watchlist released
     | 'share_activity' // Someone viewed your shared link
+    | 'trending_update' // New content entered trending
     | 'system' // App updates, announcements
 
 /**
@@ -91,6 +92,7 @@ export interface NotificationStats {
         collection_update: number
         new_release: number
         share_activity: number
+        trending_update: number
         system: number
     }
 
@@ -116,6 +118,7 @@ export interface NotificationPreferences {
         collection_update: boolean
         new_release: boolean
         share_activity: boolean
+        trending_update: boolean
         system: boolean
     }
 
@@ -134,6 +137,7 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
         collection_update: true,
         new_release: true,
         share_activity: true,
+        trending_update: true,
         system: true,
     },
     emailDigest: 'never',
@@ -174,6 +178,11 @@ export const NOTIFICATION_META = {
         icon: 'UserGroupIcon',
         color: 'text-green-500',
         bgColor: 'bg-green-600/20',
+    },
+    trending_update: {
+        icon: 'FireIcon',
+        color: 'text-orange-500',
+        bgColor: 'bg-orange-600/20',
     },
     system: {
         icon: 'BellIcon',

@@ -28,6 +28,7 @@ import { useToast } from '../../hooks/useToast'
 import { useDebugSettings } from '../debug/DebugControls'
 import { useInteractionTracking } from '../../hooks/useInteractionTracking'
 import { getCachedMovieDetails } from '../../utils/prefetchCache'
+import { useWatchHistory } from '../../hooks/useWatchHistory'
 import InlineWatchlistDropdown from './modal-sections/InlineWatchlistDropdown'
 import VideoControls from './modal-sections/VideoControls'
 import ModalVideoPlayer from './modal-sections/ModalVideoPlayer'
@@ -93,6 +94,9 @@ function Modal() {
 
     // Interaction tracking
     const trackInteraction = useInteractionTracking()
+
+    // Watch history tracking
+    const { addWatchEntry } = useWatchHistory()
 
     // User data hooks for inline dropdown (NEW SCHEMA)
     const {
@@ -298,6 +302,10 @@ function Modal() {
         // Track modal view interaction
         if (currentMovie) {
             trackInteraction.viewModal(currentMovie as Content, 'modal')
+
+            // Track in watch history when user opens content
+            const mediaType = currentMovie.media_type === 'tv' ? 'tv' : 'movie'
+            addWatchEntry(currentMovie.id, mediaType, currentMovie as Content)
         }
 
         async function fetchMovie() {

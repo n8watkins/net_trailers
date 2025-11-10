@@ -46,7 +46,16 @@ interface SmartInputProps {
     size?: 'default' | 'large'
     className?: string
     variant?: 'solid' | 'transparent'
-    shimmer?: 'none' | 'subtle' | 'bold' | 'border' | 'pulse' | 'wave' | 'rainbow' | 'fast' | 'double'
+    shimmer?:
+        | 'none'
+        | 'subtle'
+        | 'bold'
+        | 'border'
+        | 'pulse'
+        | 'wave'
+        | 'rainbow'
+        | 'fast'
+        | 'double'
     showSurpriseMe?: boolean
     onSurpriseMe?: () => void
 }
@@ -326,15 +335,19 @@ export function SmartInput({
                     }
                 }
                 @keyframes glow-pulse {
-                    0%, 100% {
+                    0%,
+                    100% {
                         box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
                     }
                     50% {
-                        box-shadow: 0 0 40px rgba(239, 68, 68, 0.8), 0 0 60px rgba(239, 68, 68, 0.4);
+                        box-shadow:
+                            0 0 40px rgba(239, 68, 68, 0.8),
+                            0 0 60px rgba(239, 68, 68, 0.4);
                     }
                 }
                 @keyframes pulse-slow {
-                    0%, 100% {
+                    0%,
+                    100% {
                         opacity: 1;
                     }
                     50% {
@@ -391,13 +404,13 @@ export function SmartInput({
                         135deg,
                         transparent 0%,
                         transparent 25%,
-                        rgba(220, 38, 38, 0.10) 35%,
+                        rgba(220, 38, 38, 0.1) 35%,
                         rgba(239, 68, 68, 0.15) 40%,
                         rgba(248, 113, 113, 0.18) 45%,
-                        rgba(252, 165, 165, 0.20) 50%,
+                        rgba(252, 165, 165, 0.2) 50%,
                         rgba(248, 113, 113, 0.18) 55%,
                         rgba(239, 68, 68, 0.15) 60%,
-                        rgba(220, 38, 38, 0.10) 65%,
+                        rgba(220, 38, 38, 0.1) 65%,
                         transparent 75%,
                         transparent 100%
                     );
@@ -436,7 +449,12 @@ export function SmartInput({
                     content: '';
                     position: absolute;
                     inset: 0;
-                    background: linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.6), transparent);
+                    background: linear-gradient(
+                        90deg,
+                        transparent,
+                        rgba(239, 68, 68, 0.6),
+                        transparent
+                    );
                     pointer-events: none;
                     z-index: 10;
                 }
@@ -525,7 +543,10 @@ export function SmartInput({
                         ${currentSize.input}
                     `}
                     style={{
-                        overflowY: localValue.split('\n').length > 3 || localValue.length > 200 ? 'auto' : 'hidden',
+                        overflowY:
+                            localValue.split('\n').length > 3 || localValue.length > 200
+                                ? 'auto'
+                                : 'hidden',
                         minHeight: '1.5em',
                         maxHeight: 'calc(1.75em * 3 + 1rem)', // 3 lines with relaxed line-height plus padding
                     }}
@@ -549,7 +570,9 @@ export function SmartInput({
                             className="p-1 rounded-full hover:bg-black/20 transition-colors"
                             aria-label="Clear"
                         >
-                            <XMarkIcon className={`${currentSize.button} text-gray-400 hover:text-white transition-colors`} />
+                            <XMarkIcon
+                                className={`${currentSize.button} text-gray-400 hover:text-white transition-colors`}
+                            />
                         </button>
                     )}
 
@@ -560,15 +583,25 @@ export function SmartInput({
                             onClick={handleVoiceToggle}
                             disabled={disabled}
                             className={`
-                                p-1 rounded-full transition-all
-                                ${isListening ? 'bg-red-500/20 animate-pulse' : 'hover:bg-black/20'}
+                                relative p-1 rounded-full transition-all
+                                ${isListening ? 'bg-red-500/20' : 'hover:bg-black/20'}
                             `}
                             aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
                         >
+                            {/* Animated pulsing rings when listening */}
+                            {isListening && (
+                                <>
+                                    <span className="absolute inset-0 rounded-full bg-red-500/30 animate-ping" />
+                                    <span
+                                        className="absolute inset-0 rounded-full bg-red-500/20 animate-pulse"
+                                        style={{ animationDuration: '1.5s' }}
+                                    />
+                                </>
+                            )}
                             <MicrophoneIcon
                                 className={`
-                                    ${currentSize.button} transition-colors
-                                    ${isListening ? 'text-red-400' : 'text-red-400 hover:text-red-300'}
+                                    ${currentSize.button} transition-all relative z-10
+                                    ${isListening ? 'text-red-400 scale-110' : 'text-red-400 hover:text-red-300'}
                                 `}
                             />
                         </button>
@@ -582,9 +615,13 @@ export function SmartInput({
                         aria-label="Submit search"
                     >
                         {disabled ? (
-                            <MagnifyingGlassIcon className={`${currentSize.button} text-red-400 animate-spin`} />
+                            <MagnifyingGlassIcon
+                                className={`${currentSize.button} text-red-400 animate-spin`}
+                            />
                         ) : (
-                            <MagnifyingGlassIcon className={`${currentSize.button} text-red-400 hover:text-red-300 transition-colors`} />
+                            <MagnifyingGlassIcon
+                                className={`${currentSize.button} text-red-400 hover:text-red-300 transition-colors`}
+                            />
                         )}
                     </button>
                 </div>

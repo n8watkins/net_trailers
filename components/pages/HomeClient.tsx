@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import Header from '../layout/Header'
 import Banner from '../layout/Banner'
 import { HomeData } from '../../lib/serverData'
@@ -14,6 +14,8 @@ import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
 import { useCustomRowsStore } from '../../stores/customRowsStore'
 import { SystemRowStorage } from '../../utils/systemRowStorage'
+import { useCacheStore } from '../../stores/cacheStore'
+import { processTrendingUpdates } from '../../utils/trendingNotifications'
 
 interface HomeClientProps {
     data: HomeData
@@ -49,6 +51,63 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
     }, [userId, systemRowPreferencesMap])
 
     const { trending } = data
+
+    // Get cached trending data and notification preferences
+    const mainPageData = useCacheStore((state) => state.mainPageData)
+    const authNotificationPreferences = useAuthStore((state) => state.notifications)
+    const guestNotificationPreferences = useGuestStore((state) => state.notifications)
+    const notificationPreferences =
+        sessionType === 'authenticated' ? authNotificationPreferences : guestNotificationPreferences
+
+    // Use ref to track if we've already processed this trending data
+    const hasProcessedRef = useRef(false)
+
+    // Check for trending changes and create notifications
+    useEffect(() => {
+        // Only process for authenticated users who are initialized and haven't processed this data yet
+        if (
+            !userId ||
+            !isInitialized ||
+            isGuest ||
+            sessionType !== 'authenticated' ||
+            hasProcessedRef.current
+        ) {
+            return
+        }
+
+        // Check if user has trending notifications enabled
+        const trendingNotificationsEnabled =
+            notificationPreferences?.inApp && notificationPreferences?.types?.trending_update
+
+        // Process trending updates
+        const checkTrendingUpdates = async () => {
+            try {
+                const oldTrending = mainPageData?.trending || null
+
+                await processTrendingUpdates(
+                    userId,
+                    oldTrending,
+                    trending,
+                    trendingNotificationsEnabled || false
+                )
+
+                // Mark as processed
+                hasProcessedRef.current = true
+            } catch (error) {
+                console.error('Error processing trending updates:', error)
+            }
+        }
+
+        checkTrendingUpdates()
+    }, [
+        userId,
+        isInitialized,
+        isGuest,
+        sessionType,
+        trending,
+        mainPageData,
+        notificationPreferences,
+    ])
 
     // Load deleted system rows from localStorage/Firebase on mount
     useEffect(() => {

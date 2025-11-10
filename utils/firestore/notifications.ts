@@ -65,20 +65,33 @@ export async function createNotification(
         const expirationDays = request.expiresIn || NOTIFICATION_CONSTRAINTS.DEFAULT_EXPIRATION_DAYS
         const expiresAt = now + expirationDays * 24 * 60 * 60 * 1000
 
+        // Build notification object, only including defined optional fields
         const notification: Notification = {
             id: notificationId,
             userId,
             type: request.type,
             title: request.title,
             message: request.message,
-            contentId: request.contentId,
-            collectionId: request.collectionId,
-            shareId: request.shareId,
-            actionUrl: request.actionUrl,
-            imageUrl: request.imageUrl,
             isRead: false,
             createdAt: now,
             expiresAt,
+        }
+
+        // Only add optional fields if they're defined (Firestore doesn't allow undefined)
+        if (request.contentId !== undefined) {
+            notification.contentId = request.contentId
+        }
+        if (request.collectionId !== undefined) {
+            notification.collectionId = request.collectionId
+        }
+        if (request.shareId !== undefined) {
+            notification.shareId = request.shareId
+        }
+        if (request.actionUrl !== undefined) {
+            notification.actionUrl = request.actionUrl
+        }
+        if (request.imageUrl !== undefined) {
+            notification.imageUrl = request.imageUrl
         }
 
         const notificationRef = getNotificationDocRef(userId, notificationId)
@@ -137,7 +150,6 @@ export async function getUnreadNotifications(userId: string): Promise<Notificati
         const q = query(
             notificationsRef,
             where('isRead', '==', false),
-            orderBy('createdAt', 'desc'),
             limit(NOTIFICATION_CONSTRAINTS.FETCH_LIMIT)
         )
 
@@ -148,7 +160,8 @@ export async function getUnreadNotifications(userId: string): Promise<Notificati
             notifications.push(doc.data() as Notification)
         })
 
-        return notifications
+        // Sort locally to keep newest first without needing a composite index
+        return notifications.sort((a, b) => b.createdAt - a.createdAt)
     } catch (error) {
         console.error('Error fetching unread notifications:', error)
         return []
@@ -295,6 +308,7 @@ export async function getNotificationStats(userId: string): Promise<Notification
                     .length,
                 new_release: notifications.filter((n) => n.type === 'new_release').length,
                 share_activity: notifications.filter((n) => n.type === 'share_activity').length,
+                trending_update: notifications.filter((n) => n.type === 'trending_update').length,
                 system: notifications.filter((n) => n.type === 'system').length,
             },
             mostRecent: notifications.length > 0 ? notifications[0] : undefined,
@@ -310,6 +324,7 @@ export async function getNotificationStats(userId: string): Promise<Notification
                 collection_update: 0,
                 new_release: 0,
                 share_activity: 0,
+                trending_update: 0,
                 system: 0,
             },
         }

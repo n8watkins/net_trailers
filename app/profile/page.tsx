@@ -23,12 +23,14 @@ import {
 import { useAppStore } from '../../stores/appStore'
 import useAuth from '../../hooks/useAuth'
 import useUserData from '../../hooks/useUserData'
+import { useWatchHistory } from '../../hooks/useWatchHistory'
 
 export default function ProfilePage() {
     const { modal } = useAppStore()
     const showModal = modal.isOpen
     const { user } = useAuth()
     const userData = useUserData()
+    const { totalWatched, history: watchHistory } = useWatchHistory()
 
     useEffect(() => {
         document.title = 'Profile - NetTrailers'
@@ -36,12 +38,14 @@ export default function ProfilePage() {
 
     // Calculate stats
     const stats = {
-        totalWatched: 0, // TODO: Implement watch history tracking
+        totalWatched,
         totalCollections: userData.getAllLists().length,
         totalLiked: userData.likedMovies.length,
         totalHidden: userData.hiddenMovies.length,
         moviesLiked: userData.likedMovies.filter((item) => item.media_type === 'movie').length,
         tvShowsLiked: userData.likedMovies.filter((item) => item.media_type === 'tv').length,
+        moviesWatched: watchHistory.filter((item) => item.mediaType === 'movie').length,
+        tvShowsWatched: watchHistory.filter((item) => item.mediaType === 'tv').length,
     }
 
     const userName = user?.displayName || user?.email?.split('@')[0] || 'User'
@@ -111,7 +115,7 @@ export default function ProfilePage() {
                                 <p className="text-3xl font-bold text-white">
                                     {stats.totalWatched}
                                 </p>
-                                <p className="text-xs text-gray-500 mt-1">Coming soon</p>
+                                <p className="text-xs text-gray-500 mt-1">Total items</p>
                             </Link>
 
                             {/* Total Collections */}
@@ -164,7 +168,7 @@ export default function ProfilePage() {
                                 </h2>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <div className="flex items-center gap-4 bg-gray-800/50 rounded-lg p-4">
                                     <FilmIcon className="w-8 h-8 text-blue-400" />
                                     <div>
@@ -181,6 +185,26 @@ export default function ProfilePage() {
                                         <p className="text-sm text-gray-400">TV Shows Liked</p>
                                         <p className="text-2xl font-bold text-white">
                                             {stats.tvShowsLiked}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-4 bg-gray-800/50 rounded-lg p-4">
+                                    <FilmIcon className="w-8 h-8 text-green-400" />
+                                    <div>
+                                        <p className="text-sm text-gray-400">Movies Watched</p>
+                                        <p className="text-2xl font-bold text-white">
+                                            {stats.moviesWatched}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-4 bg-gray-800/50 rounded-lg p-4">
+                                    <TvIcon className="w-8 h-8 text-orange-400" />
+                                    <div>
+                                        <p className="text-sm text-gray-400">TV Shows Watched</p>
+                                        <p className="text-2xl font-bold text-white">
+                                            {stats.tvShowsWatched}
                                         </p>
                                     </div>
                                 </div>

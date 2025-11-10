@@ -12,16 +12,8 @@ import SubHeader from '../../components/common/SubHeader'
 import { ClockIcon, MagnifyingGlassIcon, CalendarIcon } from '@heroicons/react/24/outline'
 import { useAppStore } from '../../stores/appStore'
 import ContentCard from '../../components/common/ContentCard'
-import { useSessionStore } from '../../stores/sessionStore'
-
-// TODO: This will be replaced with actual watch history tracking
-// For now showing placeholder
-interface WatchHistoryItem {
-    contentId: number
-    watchedAt: number
-    progress?: number // percentage watched
-    content: any
-}
+import { useWatchHistory } from '../../hooks/useWatchHistory'
+import { getTitle } from '../../typings'
 
 export default function WatchHistoryPage() {
     const { modal } = useAppStore()
@@ -33,8 +25,8 @@ export default function WatchHistoryPage() {
         document.title = 'Watch History - NetTrailers'
     }, [])
 
-    // TODO: Get actual watch history from store
-    const watchHistory: WatchHistoryItem[] = []
+    // Get actual watch history from store
+    const { history: watchHistory, isLoading } = useWatchHistory()
 
     // Filter by date
     const filteredHistory = watchHistory.filter((item) => {
@@ -56,7 +48,7 @@ export default function WatchHistoryPage() {
     // Apply search filter
     const searchFilteredHistory = searchQuery.trim()
         ? filteredHistory.filter((item) => {
-              const title = item.content?.title || item.content?.name || ''
+              const title = getTitle(item.content)
               return title.toLowerCase().includes(searchQuery.toLowerCase())
           })
         : filteredHistory
@@ -142,7 +134,11 @@ export default function WatchHistoryPage() {
                     </div>
 
                     {/* Content */}
-                    {searchFilteredHistory.length === 0 ? (
+                    {isLoading ? (
+                        <div className="flex items-center justify-center py-20">
+                            <div className="h-12 w-12 animate-spin rounded-full border-4 border-purple-600 border-t-transparent"></div>
+                        </div>
+                    ) : searchFilteredHistory.length === 0 ? (
                         <div className="text-center py-20">
                             <div className="text-6xl mb-4">🎬</div>
                             <h2 className="text-2xl font-semibold text-white mb-2">

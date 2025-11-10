@@ -15,6 +15,7 @@ interface DebugSettings {
     showToastDebug: boolean
     showApiResults: boolean
     showWebVitals: boolean
+    showTestNotifications: boolean
 }
 
 interface Position {
@@ -32,6 +33,7 @@ export default function DebugControls() {
         showToastDebug: false,
         showApiResults: false,
         showWebVitals: false,
+        showTestNotifications: false,
     })
 
     // Visibility state - load from localStorage, hidden by default
@@ -319,6 +321,21 @@ export default function DebugControls() {
                     <span className="text-xs">Vitals</span>
                 </button>
             )}
+
+            {/* Test Notifications Toggle */}
+            {shouldShowButton('showTestNotifications') && (
+                <button
+                    onClick={() => toggleSetting('showTestNotifications')}
+                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
+                        settings.showTestNotifications
+                            ? 'bg-red-600/20 text-red-400 border border-red-500/30'
+                            : 'bg-gray-800 text-gray-500 border border-gray-700'
+                    }`}
+                    title="Toggle Test Notification Button"
+                >
+                    <span className="text-xs">TestNotif</span>
+                </button>
+            )}
         </div>
     )
 }
@@ -334,6 +351,7 @@ export function useDebugSettings() {
         showToastDebug: false,
         showApiResults: false,
         showWebVitals: false,
+        showTestNotifications: false,
     })
 
     useEffect(() => {

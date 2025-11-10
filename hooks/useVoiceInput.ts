@@ -85,6 +85,46 @@ export function useVoiceInput({
     const mountedRef = useRef(true)
     const onResultRef = useRef(onResult)
     const onErrorRef = useRef(onError)
+    const audioContextRef = useRef<AudioContext | null>(null)
+
+    // Initialize audio context
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            audioContextRef.current = new (window.AudioContext ||
+                (window as any).webkitAudioContext)()
+        }
+        return () => {
+            if (audioContextRef.current) {
+                audioContextRef.current.close()
+            }
+        }
+    }, [])
+
+    // Function to play a beep sound
+    const playBeep = useCallback((frequency: number, duration: number) => {
+        if (!audioContextRef.current) return
+
+        try {
+            const oscillator = audioContextRef.current.createOscillator()
+            const gainNode = audioContextRef.current.createGain()
+
+            oscillator.connect(gainNode)
+            gainNode.connect(audioContextRef.current.destination)
+
+            oscillator.frequency.value = frequency
+            oscillator.type = 'sine'
+
+            // Fade in/out to avoid clicks
+            gainNode.gain.setValueAtTime(0, audioContextRef.current.currentTime)
+            gainNode.gain.linearRampToValueAtTime(0.3, audioContextRef.current.currentTime + 0.01)
+            gainNode.gain.linearRampToValueAtTime(0, audioContextRef.current.currentTime + duration)
+
+            oscillator.start(audioContextRef.current.currentTime)
+            oscillator.stop(audioContextRef.current.currentTime + duration)
+        } catch (error) {
+            console.error('Error playing beep:', error)
+        }
+    }, [])
 
     // Keep callback refs up to date
     useEffect(() => {
@@ -264,6 +304,9 @@ export function useVoiceInput({
                 console.log('Starting speech recognition...')
                 recognitionRef.current.start()
 
+                // Play start beep (higher frequency)
+                playBeep(800, 0.1)
+
                 // Only update state if still mounted
                 if (mountedRef.current) {
                     setIsListening(true)
@@ -289,16 +332,20 @@ export function useVoiceInput({
                 }
             }
         }
-    }, [isSupported, isListening, checkMicrophonePermission])
+    }, [isSupported, isListening, checkMicrophonePermission, playBeep])
 
     const stopListening = useCallback(() => {
         if (recognitionRef.current && isListening) {
             recognitionRef.current.stop()
+
+            // Play stop beep (lower frequency)
+            playBeep(400, 0.1)
+
             if (mountedRef.current) {
                 setIsListening(false)
             }
         }
-    }, [isListening])
+    }, [isListening, playBeep])
 
     const resetTranscript = useCallback(() => {
         if (mountedRef.current) {

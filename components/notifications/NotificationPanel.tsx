@@ -79,20 +79,20 @@ export default function NotificationPanel() {
     return (
         <div
             ref={panelRef}
-            className="absolute right-0 top-full z-50 mt-2 w-96 rounded-lg border border-gray-700 bg-gray-900 shadow-2xl"
+            className="absolute right-0 top-full z-50 mt-2 w-[420px] rounded-lg border border-red-900/30 bg-gray-900 shadow-2xl shadow-red-950/20"
             role="dialog"
             aria-label="Notifications"
         >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-gray-700 px-4 py-3">
-                <h2 className="text-lg font-semibold text-white">
-                    Notifications
+            <div className="flex items-center justify-between border-b border-red-900/30 bg-gradient-to-r from-red-950/20 to-transparent px-4 py-3">
+                <div className="flex items-center gap-2">
+                    <h2 className="text-base font-semibold text-white">Notifications</h2>
                     {unreadCount > 0 && (
-                        <span className="ml-2 inline-flex items-center rounded-full bg-red-600 px-2 py-0.5 text-xs font-medium text-white">
+                        <span className="inline-flex items-center rounded-full bg-red-600 px-2 py-0.5 text-xs font-medium text-white">
                             {unreadCount} new
                         </span>
                     )}
-                </h2>
+                </div>
 
                 {/* Actions */}
                 <div className="flex items-center gap-2">
@@ -100,7 +100,7 @@ export default function NotificationPanel() {
                     {unreadCount > 0 && (
                         <button
                             onClick={handleMarkAllAsRead}
-                            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+                            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-gray-300 transition-colors hover:bg-red-950/40 hover:text-white"
                             aria-label="Mark all as read"
                         >
                             <CheckIcon className="h-4 w-4" aria-hidden="true" />
@@ -112,7 +112,7 @@ export default function NotificationPanel() {
                     {notifications.length > 0 && (
                         <button
                             onClick={handleClearAll}
-                            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-gray-400 transition-colors hover:bg-gray-800 hover:text-red-400"
+                            className="flex items-center gap-1 rounded px-2 py-1 text-xs text-gray-400 transition-colors hover:bg-red-950/40 hover:text-red-400"
                             aria-label="Clear all notifications"
                         >
                             <TrashIcon className="h-4 w-4" aria-hidden="true" />
@@ -145,11 +145,20 @@ export default function NotificationPanel() {
 
             {/* Footer */}
             {notifications.length > 0 && (
-                <div className="border-t border-gray-700 px-4 py-2 text-center">
-                    <p className="text-xs text-gray-500">
-                        Showing {notifications.length} notification
-                        {notifications.length !== 1 ? 's' : ''}
-                    </p>
+                <div className="border-t border-red-900/30 bg-gradient-to-r from-red-950/10 to-transparent px-4 py-3">
+                    <div className="flex items-center justify-between text-xs">
+                        <span className="text-gray-500">
+                            Showing {notifications.length} notification
+                            {notifications.length !== 1 ? 's' : ''}
+                        </span>
+                        <a
+                            href="/notifications"
+                            className="text-red-400 hover:text-red-300 transition-colors font-medium"
+                            onClick={closePanel}
+                        >
+                            View All →
+                        </a>
+                    </div>
                 </div>
             )}
         </div>

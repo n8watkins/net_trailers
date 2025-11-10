@@ -269,13 +269,34 @@ export const useNotificationStore = create<NotificationState>()(
                 set({ isLoading: true, error: null })
 
                 try {
-                    await deleteAllNotifications(userId)
+                    // Temporarily unsubscribe to prevent race conditions during deletion
+                    const currentUnsubscribe = get().unsubscribe
+                    if (currentUnsubscribe) {
+                        currentUnsubscribe()
+                        set({ unsubscribe: null })
+                    }
 
+                    // Clear local state immediately for instant UI feedback
                     set({
                         notifications: [],
                         unreadCount: 0,
-                        isLoading: false,
                     })
+
+                    // Delete from Firestore
+                    await deleteAllNotifications(userId)
+
+                    // Re-subscribe after deletion completes
+                    const unsubscribe = subscribeToNotifications(userId, (notifications) => {
+                        const unreadCount = notifications.filter((n) => !n.isRead).length
+
+                        set({
+                            notifications,
+                            unreadCount,
+                            isLoading: false,
+                        })
+                    })
+
+                    set({ unsubscribe, isLoading: false })
                 } catch (error) {
                     console.error('Error deleting all notifications:', error)
                     set({
@@ -285,6 +306,19 @@ export const useNotificationStore = create<NotificationState>()(
                                 : 'Failed to delete all notifications',
                         isLoading: false,
                     })
+
+                    // Re-subscribe even on error to restore real-time updates
+                    const unsubscribe = subscribeToNotifications(userId, (notifications) => {
+                        const unreadCount = notifications.filter((n) => !n.isRead).length
+
+                        set({
+                            notifications,
+                            unreadCount,
+                            isLoading: false,
+                        })
+                    })
+
+                    set({ unsubscribe })
                 }
             },
 
