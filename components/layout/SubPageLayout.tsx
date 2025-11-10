@@ -22,6 +22,8 @@ interface SubPageLayoutProps {
     iconColor?: string
     /** Description text below title */
     description?: string
+    /** Optional actions to show in the same row as title (e.g., manage dropdown) */
+    titleActions?: ReactNode
     /** Optional actions/controls to show in header (search, filters, etc.) */
     headerActions?: ReactNode
     /** Main page content */
@@ -35,6 +37,7 @@ export default function SubPageLayout({
     icon,
     iconColor = 'text-white',
     description,
+    titleActions,
     headerActions,
     children,
     contentClassName = '',
@@ -53,10 +56,16 @@ export default function SubPageLayout({
                 <div className="max-w-[1600px] mx-auto flex flex-col space-y-6 py-8">
                     {/* Page Header */}
                     <div className="space-y-4">
-                        {/* Title Section */}
-                        <div className="flex items-center space-x-3">
-                            <div className={`w-8 h-8 ${iconColor}`}>{icon}</div>
-                            <h1 className="text-3xl font-bold text-white md:text-4xl">{title}</h1>
+                        {/* Title Section with Actions */}
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                                <div className={`w-8 h-8 ${iconColor}`}>{icon}</div>
+                                <h1 className="text-3xl font-bold text-white md:text-4xl">
+                                    {title}
+                                </h1>
+                            </div>
+                            {/* Title Actions (e.g., manage dropdown) */}
+                            {titleActions && <div>{titleActions}</div>}
                         </div>
 
                         {/* Description */}

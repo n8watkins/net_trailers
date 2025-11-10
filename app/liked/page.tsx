@@ -115,39 +115,38 @@ const Liked = () => {
         return <LoadingSpinner color="green" />
     }
 
+    const titleActions = (
+        <div className="relative" ref={manageDropdownRef}>
+            <button
+                onClick={() => setShowManageDropdown(!showManageDropdown)}
+                className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 text-gray-400 hover:text-white transition-all duration-200"
+            >
+                <Cog6ToothIcon className="w-5 h-5" />
+                <span className="font-medium">Manage</span>
+                <ChevronDownIcon
+                    className={`w-4 h-4 transition-transform ${
+                        showManageDropdown ? 'rotate-180' : ''
+                    }`}
+                />
+            </button>
+
+            {/* Dropdown Menu */}
+            {showManageDropdown && (
+                <div className="absolute top-full mt-2 right-0 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-xl z-50 min-w-[200px] overflow-hidden">
+                    <button
+                        onClick={handleExportCSV}
+                        className="w-full flex items-center space-x-3 px-4 py-3 text-white hover:bg-gray-800 transition-colors text-left"
+                    >
+                        <ArrowDownTrayIcon className="w-5 h-5 text-gray-400" />
+                        <span>Export to CSV</span>
+                    </button>
+                </div>
+            )}
+        </div>
+    )
+
     const headerActions = (
         <div className="space-y-4">
-            {/* Manage Dropdown - Top Right */}
-            <div className="flex justify-end">
-                <div className="relative" ref={manageDropdownRef}>
-                    <button
-                        onClick={() => setShowManageDropdown(!showManageDropdown)}
-                        className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 text-gray-400 hover:text-white transition-all duration-200"
-                    >
-                        <Cog6ToothIcon className="w-5 h-5" />
-                        <span className="font-medium">Manage</span>
-                        <ChevronDownIcon
-                            className={`w-4 h-4 transition-transform ${
-                                showManageDropdown ? 'rotate-180' : ''
-                            }`}
-                        />
-                    </button>
-
-                    {/* Dropdown Menu */}
-                    {showManageDropdown && (
-                        <div className="absolute top-full mt-2 right-0 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-xl z-50 min-w-[200px] overflow-hidden">
-                            <button
-                                onClick={handleExportCSV}
-                                className="w-full flex items-center space-x-3 px-4 py-3 text-white hover:bg-gray-800 transition-colors text-left"
-                            >
-                                <ArrowDownTrayIcon className="w-5 h-5 text-gray-400" />
-                                <span>Export to CSV</span>
-                            </button>
-                        </div>
-                    )}
-                </div>
-            </div>
-
             {isInitialized && isGuest && <GuestModeNotification align="left" />}
 
             {/* Stats */}
@@ -169,6 +168,7 @@ const Liked = () => {
             icon={<CheckCircleIcon />}
             iconColor="text-green-400"
             description="Movies and TV shows you've rated positively."
+            titleActions={titleActions}
             headerActions={headerActions}
         >
             {/* Content Sections */}

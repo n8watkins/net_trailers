@@ -216,52 +216,51 @@ const Collections = () => {
         return list ? list.items.length : 0
     }
 
+    const titleActions = (
+        <div className="relative" ref={manageDropdownRef}>
+            <button
+                onClick={() => setShowManageDropdown(!showManageDropdown)}
+                className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 text-gray-400 hover:text-white transition-all duration-200"
+            >
+                <Cog6ToothIcon className="w-5 h-5" />
+                <span className="font-medium">Manage</span>
+                <ChevronDownIcon
+                    className={`w-4 h-4 transition-transform ${
+                        showManageDropdown ? 'rotate-180' : ''
+                    }`}
+                />
+            </button>
+
+            {/* Dropdown Menu */}
+            {showManageDropdown && (
+                <div className="absolute top-full mt-2 right-0 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-xl z-50 min-w-[200px] overflow-hidden">
+                    <button
+                        onClick={() => {
+                            openListModal(undefined)
+                            setShowManageDropdown(false)
+                        }}
+                        className="w-full flex items-center space-x-3 px-4 py-3 text-white hover:bg-gray-800 transition-colors text-left"
+                    >
+                        <RectangleStackIcon className="w-5 h-5 text-gray-400" />
+                        <span>Manage Collections</span>
+                    </button>
+                    <button
+                        onClick={() => {
+                            handleExportCSV()
+                            setShowManageDropdown(false)
+                        }}
+                        className="w-full flex items-center space-x-3 px-4 py-3 text-white hover:bg-gray-800 transition-colors text-left"
+                    >
+                        <ArrowDownTrayIcon className="w-5 h-5 text-gray-400" />
+                        <span>Export to CSV</span>
+                    </button>
+                </div>
+            )}
+        </div>
+    )
+
     const headerActions = (
         <div className="space-y-6">
-            {/* Manage Collections Dropdown - Top Right */}
-            <div className="flex justify-end">
-                <div className="relative" ref={manageDropdownRef}>
-                    <button
-                        onClick={() => setShowManageDropdown(!showManageDropdown)}
-                        className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 text-gray-400 hover:text-white transition-all duration-200"
-                    >
-                        <Cog6ToothIcon className="w-5 h-5" />
-                        <span className="font-medium">Manage</span>
-                        <ChevronDownIcon
-                            className={`w-4 h-4 transition-transform ${
-                                showManageDropdown ? 'rotate-180' : ''
-                            }`}
-                        />
-                    </button>
-
-                    {/* Dropdown Menu */}
-                    {showManageDropdown && (
-                        <div className="absolute top-full mt-2 right-0 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-xl z-50 min-w-[200px] overflow-hidden">
-                            <button
-                                onClick={() => {
-                                    openListModal(undefined)
-                                    setShowManageDropdown(false)
-                                }}
-                                className="w-full flex items-center space-x-3 px-4 py-3 text-white hover:bg-gray-800 transition-colors text-left"
-                            >
-                                <RectangleStackIcon className="w-5 h-5 text-gray-400" />
-                                <span>Manage Collections</span>
-                            </button>
-                            <button
-                                onClick={() => {
-                                    handleExportCSV()
-                                    setShowManageDropdown(false)
-                                }}
-                                className="w-full flex items-center space-x-3 px-4 py-3 text-white hover:bg-gray-800 transition-colors text-left"
-                            >
-                                <ArrowDownTrayIcon className="w-5 h-5 text-gray-400" />
-                                <span>Export to CSV</span>
-                            </button>
-                        </div>
-                    )}
-                </div>
-            </div>
-
             {/* Debug Button - controlled by Auth Flow Logs toggle */}
             {process.env.NODE_ENV === 'development' && debugSettings.showFirebaseDebug && (
                 <button
@@ -377,6 +376,7 @@ const Collections = () => {
             icon={<RectangleStackIcon />}
             iconColor="text-blue-400"
             description="Keep track of the content you love!"
+            titleActions={titleActions}
             headerActions={headerActions}
         >
             {/* Content Sections */}
