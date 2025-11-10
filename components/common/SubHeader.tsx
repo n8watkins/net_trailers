@@ -82,12 +82,14 @@ const navItems: NavItem[] = [
 
 export default function SubHeader() {
     const pathname = usePathname()
-    const { sessionType } = useSessionStore()
+    const sessionType = useSessionStore((state) => state.sessionType)
 
     // Get user's name from session store
     const userName = useSessionStore((state) => {
         if (state.sessionType === 'authenticated') {
-            return state.authStore.userPreferences.displayName || 'User'
+            // Safely access nested properties
+            const displayName = state.authStore?.userPreferences?.displayName
+            return displayName || 'User'
         }
         return 'Guest'
     })
