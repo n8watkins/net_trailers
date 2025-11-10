@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { BellIcon, FunnelIcon, CheckIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { BellIcon, CheckIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { useNotificationStore } from '../../stores/notificationStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { Notification, NotificationType } from '../../types/notifications'
@@ -29,7 +29,6 @@ export default function NotificationsPageClient() {
     const showModal = modal.isOpen
 
     const [filter, setFilter] = useState<FilterType>('all')
-    const [showFilters, setShowFilters] = useState(false)
 
     // Subscribe to real-time notifications
     useEffect(() => {
@@ -77,19 +76,6 @@ export default function NotificationsPageClient() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-2">
-                    {/* Filter toggle */}
-                    <button
-                        onClick={() => setShowFilters(!showFilters)}
-                        className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
-                            showFilters
-                                ? 'bg-red-600/20 text-red-400 border border-red-500/30'
-                                : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50 border border-gray-600'
-                        }`}
-                    >
-                        <FunnelIcon className="h-4 w-4" />
-                        <span>Filter</span>
-                    </button>
-
                     {/* Mark all as read */}
                     {unreadCount > 0 && (
                         <button
@@ -114,71 +100,69 @@ export default function NotificationsPageClient() {
                 </div>
             </div>
 
-            {/* Filters */}
-            {showFilters && (
-                <div className="flex flex-wrap gap-2 bg-[#1a1a1a] border border-gray-800 rounded-2xl p-6">
-                    <button
-                        onClick={() => setFilter('all')}
-                        className={`rounded-full px-5 py-2.5 text-sm font-medium transition-all duration-200 ${
-                            filter === 'all'
-                                ? 'bg-white text-black shadow-lg scale-105 border-2 border-white'
-                                : 'bg-gray-800/80 text-white hover:bg-gray-700/80 border border-gray-600 hover:border-gray-400 hover:scale-105'
-                        }`}
-                    >
-                        All ({notifications.length})
-                    </button>
-                    <button
-                        onClick={() => setFilter('trending_update')}
-                        className={`rounded-full px-4 py-2 text-sm transition-colors ${
-                            filter === 'trending_update'
-                                ? 'bg-red-600 text-white'
-                                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                        }`}
-                    >
-                        Trending ({getTypeCount('trending_update')})
-                    </button>
-                    <button
-                        onClick={() => setFilter('new_release')}
-                        className={`rounded-full px-4 py-2 text-sm transition-colors ${
-                            filter === 'new_release'
-                                ? 'bg-red-600 text-white'
-                                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                        }`}
-                    >
-                        New Releases ({getTypeCount('new_release')})
-                    </button>
-                    <button
-                        onClick={() => setFilter('collection_update')}
-                        className={`rounded-full px-4 py-2 text-sm transition-colors ${
-                            filter === 'collection_update'
-                                ? 'bg-red-600 text-white'
-                                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                        }`}
-                    >
-                        Collections ({getTypeCount('collection_update')})
-                    </button>
-                    <button
-                        onClick={() => setFilter('share_activity')}
-                        className={`rounded-full px-4 py-2 text-sm transition-colors ${
-                            filter === 'share_activity'
-                                ? 'bg-red-600 text-white'
-                                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                        }`}
-                    >
-                        Shares ({getTypeCount('share_activity')})
-                    </button>
-                    <button
-                        onClick={() => setFilter('system')}
-                        className={`rounded-full px-4 py-2 text-sm transition-colors ${
-                            filter === 'system'
-                                ? 'bg-red-600 text-white'
-                                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                        }`}
-                    >
-                        System ({getTypeCount('system')})
-                    </button>
-                </div>
-            )}
+            {/* Filters - Always visible */}
+            <div className="flex flex-wrap gap-2 bg-[#1a1a1a] border border-gray-800 rounded-2xl p-6">
+                <button
+                    onClick={() => setFilter('all')}
+                    className={`rounded-full px-5 py-2.5 text-sm font-medium transition-all duration-200 ${
+                        filter === 'all'
+                            ? 'bg-white text-black shadow-lg scale-105 border-2 border-white'
+                            : 'bg-gray-800/80 text-white hover:bg-gray-700/80 border border-gray-600 hover:border-gray-400 hover:scale-105'
+                    }`}
+                >
+                    All ({notifications.length})
+                </button>
+                <button
+                    onClick={() => setFilter('trending_update')}
+                    className={`rounded-full px-4 py-2 text-sm transition-colors ${
+                        filter === 'trending_update'
+                            ? 'bg-red-600 text-white'
+                            : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                    }`}
+                >
+                    Trending ({getTypeCount('trending_update')})
+                </button>
+                <button
+                    onClick={() => setFilter('new_release')}
+                    className={`rounded-full px-4 py-2 text-sm transition-colors ${
+                        filter === 'new_release'
+                            ? 'bg-red-600 text-white'
+                            : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                    }`}
+                >
+                    New Releases ({getTypeCount('new_release')})
+                </button>
+                <button
+                    onClick={() => setFilter('collection_update')}
+                    className={`rounded-full px-4 py-2 text-sm transition-colors ${
+                        filter === 'collection_update'
+                            ? 'bg-red-600 text-white'
+                            : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                    }`}
+                >
+                    Collections ({getTypeCount('collection_update')})
+                </button>
+                <button
+                    onClick={() => setFilter('share_activity')}
+                    className={`rounded-full px-4 py-2 text-sm transition-colors ${
+                        filter === 'share_activity'
+                            ? 'bg-red-600 text-white'
+                            : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                    }`}
+                >
+                    Shares ({getTypeCount('share_activity')})
+                </button>
+                <button
+                    onClick={() => setFilter('system')}
+                    className={`rounded-full px-4 py-2 text-sm transition-colors ${
+                        filter === 'system'
+                            ? 'bg-red-600 text-white'
+                            : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                    }`}
+                >
+                    System ({getTypeCount('system')})
+                </button>
+            </div>
         </div>
     )
 

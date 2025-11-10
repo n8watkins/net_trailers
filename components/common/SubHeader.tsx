@@ -104,13 +104,8 @@ export default function SubHeader() {
 
     return (
         <div className="w-full border-b border-gray-800 bg-gradient-to-b from-gray-900 to-black pt-24">
-            {/* User greeting */}
-            <div className="mx-auto max-w-7xl px-4 py-8">
-                <h1 className="text-3xl font-semibold text-white">Hi, {userName}</h1>
-            </div>
-
             {/* Navigation tabs */}
-            <nav className="mx-auto max-w-7xl px-4" aria-label="User navigation">
+            <nav className="mx-auto max-w-7xl px-4 py-3" aria-label="User navigation">
                 <div className="flex gap-8 overflow-x-auto scrollbar-hide">
                     {navItems.map((item) => {
                         const isActive = pathname === item.href
@@ -122,7 +117,7 @@ export default function SubHeader() {
                                 href={item.href}
                                 className={`group relative flex items-center gap-2 whitespace-nowrap border-b-2 px-1 py-3 text-sm font-medium transition-colors ${
                                     isActive
-                                        ? 'border-pink-500 text-pink-500'
+                                        ? 'border-red-600 text-red-600'
                                         : 'border-transparent text-gray-400 hover:text-gray-200'
                                 }`}
                             >

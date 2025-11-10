@@ -247,6 +247,16 @@ const Collections = () => {
                                 <RectangleStackIcon className="w-5 h-5 text-gray-400" />
                                 <span>Manage Collections</span>
                             </button>
+                            <button
+                                onClick={() => {
+                                    handleExportCSV()
+                                    setShowManageDropdown(false)
+                                }}
+                                className="w-full flex items-center space-x-3 px-4 py-3 text-white hover:bg-gray-800 transition-colors text-left"
+                            >
+                                <ArrowDownTrayIcon className="w-5 h-5 text-gray-400" />
+                                <span>Export to CSV</span>
+                            </button>
                         </div>
                     )}
                 </div>
@@ -264,22 +274,12 @@ const Collections = () => {
 
             {isInitialized && isGuest && <GuestModeNotification align="left" />}
 
-            {/* Action Buttons Row - Above List Filter Buttons */}
+            {/* Stats */}
             {allLists.some((list) => list.items.length > 0) && (
-                <div className="flex items-center space-x-4 py-3 mb-4 border-b border-gray-700/30">
-                    {/* Stats */}
+                <div className="py-3 mb-4 border-b border-gray-700/30">
                     <div className="text-lg font-semibold text-white">
                         {allLists.reduce((total, list) => total + list.items.length, 0)} items total
                     </div>
-
-                    {/* Export Button */}
-                    <button
-                        onClick={handleExportCSV}
-                        className="flex items-center space-x-2 px-5 py-2.5 bg-gray-800/50 hover:bg-white/10 text-white border border-gray-600 hover:border-gray-400 rounded-full text-sm font-medium transition-all duration-200"
-                    >
-                        <ArrowDownTrayIcon className="w-4 h-4" />
-                        <span>Export to CSV</span>
-                    </button>
                 </div>
             )}
 

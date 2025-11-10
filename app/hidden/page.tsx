@@ -1,9 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import SubPageLayout from '../../components/layout/SubPageLayout'
 import useUserData from '../../hooks/useUserData'
-import { EyeSlashIcon, ArrowDownTrayIcon } from '@heroicons/react/24/solid'
+import {
+    EyeSlashIcon,
+    ArrowDownTrayIcon,
+    Cog6ToothIcon,
+    ChevronDownIcon,
+} from '@heroicons/react/24/solid'
 import { isMovie, isTVShow } from '../../typings'
 import { getTitle } from '../../typings'
 import ContentCard from '../../components/common/ContentCard'
@@ -21,6 +26,8 @@ const Hidden = () => {
     const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
 
     const [searchQuery, setSearchQuery] = useState('')
+    const [showManageDropdown, setShowManageDropdown] = useState(false)
+    const manageDropdownRef = useRef<HTMLDivElement>(null)
 
     // Get hidden content directly from hiddenMovies
     const hiddenContent = hiddenMovies.map((item) => ({
@@ -47,7 +54,28 @@ const Hidden = () => {
         if (userSession?.preferences) {
             exportUserDataToCSV(userSession.preferences)
         }
+        setShowManageDropdown(false)
     }
+
+    // Handle click outside to close dropdown
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                manageDropdownRef.current &&
+                !manageDropdownRef.current.contains(event.target as Node)
+            ) {
+                setShowManageDropdown(false)
+            }
+        }
+
+        if (showManageDropdown) {
+            document.addEventListener('mousedown', handleClickOutside)
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [showManageDropdown])
 
     // Separate content by media type
     const moviesContent = filteredContent.filter(
@@ -86,22 +114,41 @@ const Hidden = () => {
 
     const headerActions = (
         <div className="space-y-4">
+            {/* Manage Dropdown - Top Right */}
+            <div className="flex justify-end">
+                <div className="relative" ref={manageDropdownRef}>
+                    <button
+                        onClick={() => setShowManageDropdown(!showManageDropdown)}
+                        className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 text-gray-400 hover:text-white transition-all duration-200"
+                    >
+                        <Cog6ToothIcon className="w-5 h-5" />
+                        <span className="font-medium">Manage</span>
+                        <ChevronDownIcon
+                            className={`w-4 h-4 transition-transform ${
+                                showManageDropdown ? 'rotate-180' : ''
+                            }`}
+                        />
+                    </button>
+
+                    {/* Dropdown Menu */}
+                    {showManageDropdown && (
+                        <div className="absolute top-full mt-2 right-0 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-xl z-50 min-w-[200px] overflow-hidden">
+                            <button
+                                onClick={handleExportCSV}
+                                className="w-full flex items-center space-x-3 px-4 py-3 text-white hover:bg-gray-800 transition-colors text-left"
+                            >
+                                <ArrowDownTrayIcon className="w-5 h-5 text-gray-400" />
+                                <span>Export to CSV</span>
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+
             {isInitialized && isGuest && <GuestModeNotification align="left" />}
 
-            {/* Stats and Actions */}
-            <StatsBar
-                count={hiddenContent.length}
-                countLabel="items hidden"
-                actions={
-                    <button
-                        onClick={handleExportCSV}
-                        className="flex items-center space-x-2 px-5 py-2.5 bg-gray-800/50 hover:bg-white/10 text-white border border-gray-600 hover:border-gray-400 rounded-full text-sm font-medium transition-all duration-200"
-                    >
-                        <ArrowDownTrayIcon className="w-4 h-4" />
-                        <span>Export to CSV</span>
-                    </button>
-                }
-            />
+            {/* Stats */}
+            <StatsBar count={hiddenContent.length} countLabel="items hidden" />
 
             {/* Search Bar */}
             <SearchBar
