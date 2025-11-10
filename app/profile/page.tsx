@@ -6,7 +6,7 @@
 
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import SubPageLayout from '../../components/layout/SubPageLayout'
 import {
@@ -18,19 +18,48 @@ import {
     ChartBarIcon,
     FilmIcon,
     TvIcon,
+    SparklesIcon,
 } from '@heroicons/react/24/outline'
 import useAuth from '../../hooks/useAuth'
 import useUserData from '../../hooks/useUserData'
 import { useWatchHistory } from '../../hooks/useWatchHistory'
+import { seedUserData } from '../../utils/seedData'
+import { useSessionStore } from '../../stores/sessionStore'
 
 export default function ProfilePage() {
     const { user } = useAuth()
     const userData = useUserData()
     const { totalWatched, history: watchHistory } = useWatchHistory()
+    const [isSeeding, setIsSeeding] = useState(false)
 
     useEffect(() => {
         document.title = 'Profile - NetTrailers'
     }, [])
+
+    const handleSeedData = async () => {
+        const getUserId = useSessionStore.getState().getUserId
+        const userId = getUserId()
+
+        if (!userId) {
+            console.error('No user ID found')
+            return
+        }
+
+        setIsSeeding(true)
+        try {
+            await seedUserData(userId, {
+                likedCount: 8,
+                hiddenCount: 4,
+                watchHistoryCount: 12,
+                createCollections: true,
+            })
+            // Force a page reload to show the new data
+            window.location.reload()
+        } catch (error) {
+            console.error('Failed to seed data:', error)
+            setIsSeeding(false)
+        }
+    }
 
     // Calculate stats
     const stats = {
@@ -75,13 +104,26 @@ export default function ProfilePage() {
                 <div className="flex-1">
                     <h1 className="text-3xl font-bold text-white mb-2">{userName}</h1>
                     <p className="text-gray-400">{userEmail}</p>
-                    <div className="mt-3">
+                    <div className="mt-3 flex items-center gap-3">
                         <Link
                             href="/settings"
                             className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 text-white rounded-lg transition-colors text-sm font-medium"
                         >
                             Edit Profile
                         </Link>
+
+                        {/* Seed Data Button - Only in dev mode */}
+                        {process.env.NODE_ENV === 'development' && (
+                            <button
+                                onClick={handleSeedData}
+                                disabled={isSeeding}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600/20 to-pink-600/20 hover:from-purple-600/30 hover:to-pink-600/30 text-purple-400 border border-purple-500/30 rounded-lg transition-all text-sm font-medium disabled:opacity-50"
+                                title="Populate with test data (8 liked, 4 hidden, 12 watch history, 2 collections)"
+                            >
+                                <SparklesIcon className="w-4 h-4" />
+                                {isSeeding ? 'Seeding...' : 'Seed Test Data'}
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>

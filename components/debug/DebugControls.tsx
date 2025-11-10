@@ -4,7 +4,10 @@ import {
     FireIcon,
     ChatBubbleBottomCenterTextIcon,
     CodeBracketIcon,
+    SparklesIcon,
 } from '@heroicons/react/24/outline'
+import { seedUserData } from '../../utils/seedData'
+import { useSessionStore } from '../../stores/sessionStore'
 
 interface DebugSettings {
     showFirebaseTracker: boolean
@@ -181,6 +184,29 @@ export default function DebugControls() {
 
     const toggleSetting = (key: keyof DebugSettings) => {
         setSettings((prev) => ({ ...prev, [key]: !prev[key] }))
+    }
+
+    const handleSeedData = async () => {
+        const getUserId = useSessionStore.getState().getUserId
+        const userId = getUserId()
+
+        if (!userId) {
+            console.error('No user ID found')
+            return
+        }
+
+        try {
+            await seedUserData(userId, {
+                likedCount: 8,
+                hiddenCount: 4,
+                watchHistoryCount: 12,
+                createCollections: true,
+            })
+            // Force a page reload to show the new data
+            window.location.reload()
+        } catch (error) {
+            console.error('Failed to seed data:', error)
+        }
     }
 
     // Only show in development
@@ -386,6 +412,21 @@ export default function DebugControls() {
                 >
                     <span className="text-xs">Notif</span>
                 </button>
+            )}
+
+            {/* Seed Data Button - Always visible when hovered */}
+            {showAllControls && (
+                <>
+                    <div className="w-px h-6 bg-gray-700" />
+                    <button
+                        onClick={handleSeedData}
+                        className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-gradient-to-r from-purple-600/20 to-pink-600/20 text-purple-400 border border-purple-500/30 hover:from-purple-600/30 hover:to-pink-600/30"
+                        title="Seed test data (liked, hidden, collections, watch history)"
+                    >
+                        <SparklesIcon className="w-3 h-3" />
+                        <span className="text-xs">Seed Data</span>
+                    </button>
+                </>
             )}
         </div>
     )
