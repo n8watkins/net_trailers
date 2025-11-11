@@ -172,7 +172,7 @@ export default function WatchHistoryPage() {
                             </div>
 
                             {/* Content Cards */}
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-8">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
                                 {items.map((item) => (
                                     <div key={`${item.contentId}-${item.watchedAt}`}>
                                         <ContentCard content={item.content} />
