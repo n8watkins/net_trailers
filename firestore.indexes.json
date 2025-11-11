@@ -45,6 +45,48 @@
                     "order": "DESCENDING"
                 }
             ]
+        },
+        {
+            "collectionGroup": "rankings",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "isPublic",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "createdAt",
+                    "order": "DESCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "rankings",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "isPublic",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "likes",
+                    "order": "DESCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "rankings",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "isPublic",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "views",
+                    "order": "DESCENDING"
+                }
+            ]
         }
     ],
     "fieldOverrides": []
