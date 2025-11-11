@@ -47,19 +47,23 @@ export function useGuestData() {
 
         // Clear watch history from store and localStorage
         const { useWatchHistoryStore } = await import('../stores/watchHistoryStore')
+        const guestId = guestStore.guestId
 
-        // Clear watch history in store
+        // First, clear watch history in localStorage for guest
+        if (guestId) {
+            useWatchHistoryStore.getState().clearGuestSession(guestId)
+        }
+
+        // Then clear watch history in store
         const watchStore = useWatchHistoryStore.getState()
         watchStore.clearHistory()
 
-        // Clear watch history in localStorage for guest and restore session
-        const guestId = guestStore.guestId
+        // Restore session ID after clearing (clearHistory sets it to null)
         if (guestId) {
-            useWatchHistoryStore.getState().clearGuestSession(guestId)
-            // Restore session ID after clearing
             useWatchHistoryStore.setState({
                 currentSessionId: guestId,
-                lastSyncedAt: null,
+                lastSyncedAt: Date.now(), // Use Date.now() instead of null to prevent reload
+                syncError: null,
             })
         }
 
