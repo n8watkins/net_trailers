@@ -65,6 +65,10 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
     const [rankedItems, setRankedItems] = useState<Array<{ content: Content; note: string }>>([])
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
 
+    // Pagination for Step 2
+    const [currentPage, setCurrentPage] = useState(1)
+    const [itemsPerPage, setItemsPerPage] = useState(10)
+
     // Step 1 validation (Pick Content)
     const isStep1Valid = selectedItems.length >= RANKING_CONSTRAINTS.MIN_ITEM_COUNT
 
@@ -460,143 +464,278 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
             )}
 
             {/* Step 2: Order & Notes */}
-            {currentStep === 2 && (
-                <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-800">
-                    <div className="mb-6">
-                        <h2 className="text-2xl font-bold text-white mb-2">Order Your Ranking</h2>
-                        <div className="flex items-start gap-3 p-4 bg-zinc-800/50 border border-zinc-700 rounded-lg">
-                            <div className="flex-shrink-0 w-8 h-8 bg-yellow-500/10 rounded-full flex items-center justify-center">
-                                <Bars3Icon className="w-5 h-5 text-yellow-500" />
-                            </div>
-                            <div className="flex-1 text-sm">
-                                <p className="text-gray-300 mb-1">
-                                    <strong>Drag the handle</strong> to reorder items. Your #1 pick
-                                    should be at the top.
-                                </p>
-                                <p className="text-gray-500">
-                                    Add optional notes to explain your choices (e.g., &quot;Best
-                                    plot twist of all time&quot;)
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+            {currentStep === 2 &&
+                (() => {
+                    // Pagination calculations
+                    const totalPages = Math.ceil(rankedItems.length / itemsPerPage)
+                    const startIndex = (currentPage - 1) * itemsPerPage
+                    const endIndex = startIndex + itemsPerPage
+                    const paginatedItems = rankedItems.slice(startIndex, endIndex)
 
-                    <div className="space-y-4">
-                        {rankedItems.map((item, index) => (
-                            <div
-                                key={item.content.id}
-                                draggable
-                                onDragStart={() => handleDragStart(index)}
-                                onDragOver={(e) => handleDragOver(e, index)}
-                                onDragEnd={handleDragEnd}
-                                className={`group relative flex items-start gap-4 rounded-lg p-5 transition-all duration-200 ${
-                                    draggedIndex === index
-                                        ? 'opacity-50 scale-95 bg-yellow-500/10 border-2 border-yellow-500 border-dashed'
-                                        : 'bg-zinc-800 hover:bg-zinc-750 border-2 border-transparent cursor-move'
-                                }`}
-                            >
-                                {/* Drag handle */}
-                                <div className="flex flex-col items-center gap-2 flex-shrink-0">
-                                    <Bars3Icon className="w-7 h-7 text-gray-500 group-hover:text-yellow-500 transition-colors" />
-                                    <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 text-black font-bold rounded-full flex items-center justify-center text-xl shadow-lg ring-2 ring-black/20">
-                                        #{index + 1}
+                    return (
+                        <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-800">
+                            <div className="mb-6">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-2xl font-bold text-white">
+                                        Order Your Ranking
+                                    </h2>
+                                    <div className="text-sm text-gray-400">
+                                        Showing {startIndex + 1}-
+                                        {Math.min(endIndex, rankedItems.length)} of{' '}
+                                        {rankedItems.length}
                                     </div>
                                 </div>
-
-                                {/* Poster - Much Larger */}
-                                <div className="relative w-24 h-36 flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
-                                    <Image
-                                        src={getPosterPath(item.content)}
-                                        alt={getTitle(item.content)}
-                                        fill
-                                        className="object-cover rounded-lg shadow-lg"
-                                    />
-                                    {/* Media type badge */}
-                                    <div className="absolute top-2 right-2">
-                                        <span
-                                            className={`px-2 py-1 text-xs font-bold rounded backdrop-blur-sm ${
-                                                item.content.media_type === 'movie'
-                                                    ? 'bg-white/90 text-black'
-                                                    : 'bg-black/90 text-white'
-                                            }`}
-                                        >
-                                            {item.content.media_type === 'movie' ? 'Movie' : 'TV'}
-                                        </span>
+                                <div className="flex items-start gap-3 p-4 bg-zinc-800/50 border border-zinc-700 rounded-lg">
+                                    <div className="flex-shrink-0 w-8 h-8 bg-yellow-500/10 rounded-full flex items-center justify-center">
+                                        <Bars3Icon className="w-5 h-5 text-yellow-500" />
                                     </div>
-                                </div>
-
-                                {/* Content info and note */}
-                                <div className="flex-1 min-w-0 space-y-3">
-                                    <div>
-                                        <h3 className="text-xl font-bold text-white group-hover:text-yellow-400 transition-colors line-clamp-2">
-                                            {getTitle(item.content)}
-                                        </h3>
-                                        <div className="flex items-center gap-3 mt-1">
-                                            <p className="text-sm text-gray-400">
-                                                {getYear(item.content)}
-                                            </p>
-                                            {item.content.vote_average && (
-                                                <div className="flex items-center gap-1">
-                                                    <span className="text-yellow-400">★</span>
-                                                    <span className="text-sm font-medium text-gray-300">
-                                                        {item.content.vote_average.toFixed(1)}
-                                                    </span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Note input */}
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-400 mb-1">
-                                            Note (optional)
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={item.note}
-                                            onChange={(e) =>
-                                                handleUpdateNote(index, e.target.value)
-                                            }
-                                            placeholder="Why did you rank this here?"
-                                            maxLength={RANKING_CONSTRAINTS.MAX_NOTE_LENGTH}
-                                            className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all"
-                                            onClick={(e) => e.stopPropagation()}
-                                            onDragStart={(e) => e.stopPropagation()}
-                                        />
-                                        <p className="text-xs text-gray-600 mt-1">
-                                            {item.note.length}/{RANKING_CONSTRAINTS.MAX_NOTE_LENGTH}
+                                    <div className="flex-1 text-sm">
+                                        <p className="text-gray-300 mb-1">
+                                            <strong>Drag the handle</strong> to reorder items. Your
+                                            #1 pick should be at the top.
+                                        </p>
+                                        <p className="text-gray-500">
+                                            Add optional notes to explain your choices (e.g.,
+                                            &quot;Best plot twist of all time&quot;)
                                         </p>
                                     </div>
                                 </div>
-
-                                {/* Remove button */}
-                                <button
-                                    onClick={() => {
-                                        const newItems = rankedItems.filter((_, i) => i !== index)
-                                        setRankedItems(newItems)
-                                        // Also remove from selectedItems
-                                        setSelectedItems(
-                                            selectedItems.filter((c) => c.id !== item.content.id)
-                                        )
-                                    }}
-                                    className="flex-shrink-0 w-8 h-8 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
-                                    title="Remove from ranking"
-                                >
-                                    <XMarkIcon className="w-5 h-5" />
-                                </button>
                             </div>
-                        ))}
-                    </div>
 
-                    {/* Empty state */}
-                    {rankedItems.length === 0 && (
-                        <div className="text-center py-12 text-gray-500">
-                            <p className="text-lg mb-2">No items to order yet</p>
-                            <p className="text-sm">Go back to Step 1 to select content</p>
+                            <div className="space-y-4">
+                                {paginatedItems.map((item, paginatedIndex) => {
+                                    const actualIndex = startIndex + paginatedIndex
+                                    return (
+                                        <div
+                                            key={item.content.id}
+                                            draggable
+                                            onDragStart={() => handleDragStart(actualIndex)}
+                                            onDragOver={(e) => handleDragOver(e, actualIndex)}
+                                            onDragEnd={handleDragEnd}
+                                            className={`group relative flex items-start gap-4 rounded-lg p-5 transition-all duration-200 ${
+                                                draggedIndex === actualIndex
+                                                    ? 'opacity-50 scale-95 bg-yellow-500/10 border-2 border-yellow-500 border-dashed'
+                                                    : 'bg-zinc-800 hover:bg-zinc-750 border-2 border-transparent cursor-move'
+                                            }`}
+                                        >
+                                            {/* Drag handle */}
+                                            <div className="flex flex-col items-center gap-2 flex-shrink-0">
+                                                <Bars3Icon className="w-7 h-7 text-gray-500 group-hover:text-yellow-500 transition-colors" />
+                                                <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 text-black font-bold rounded-full flex items-center justify-center text-xl shadow-lg ring-2 ring-black/20">
+                                                    #{actualIndex + 1}
+                                                </div>
+                                            </div>
+
+                                            {/* Poster - Much Larger */}
+                                            <div className="relative w-24 h-36 flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
+                                                <Image
+                                                    src={getPosterPath(item.content)}
+                                                    alt={getTitle(item.content)}
+                                                    fill
+                                                    className="object-cover rounded-lg shadow-lg"
+                                                />
+                                                {/* Media type badge */}
+                                                <div className="absolute top-2 right-2">
+                                                    <span
+                                                        className={`px-2 py-1 text-xs font-bold rounded backdrop-blur-sm ${
+                                                            item.content.media_type === 'movie'
+                                                                ? 'bg-white/90 text-black'
+                                                                : 'bg-black/90 text-white'
+                                                        }`}
+                                                    >
+                                                        {item.content.media_type === 'movie'
+                                                            ? 'Movie'
+                                                            : 'TV'}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Content info and note */}
+                                            <div className="flex-1 min-w-0 space-y-3">
+                                                <div>
+                                                    <h3 className="text-xl font-bold text-white group-hover:text-yellow-400 transition-colors line-clamp-2">
+                                                        {getTitle(item.content)}
+                                                    </h3>
+                                                    <div className="flex items-center gap-3 mt-1">
+                                                        <p className="text-sm text-gray-400">
+                                                            {getYear(item.content)}
+                                                        </p>
+                                                        {item.content.vote_average && (
+                                                            <div className="flex items-center gap-1">
+                                                                <span className="text-yellow-400">
+                                                                    ★
+                                                                </span>
+                                                                <span className="text-sm font-medium text-gray-300">
+                                                                    {item.content.vote_average.toFixed(
+                                                                        1
+                                                                    )}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Note input */}
+                                                <div>
+                                                    <label className="block text-xs font-medium text-gray-400 mb-1">
+                                                        Note (optional)
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={item.note}
+                                                        onChange={(e) =>
+                                                            handleUpdateNote(
+                                                                actualIndex,
+                                                                e.target.value
+                                                            )
+                                                        }
+                                                        placeholder="Why did you rank this here?"
+                                                        maxLength={
+                                                            RANKING_CONSTRAINTS.MAX_NOTE_LENGTH
+                                                        }
+                                                        className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        onDragStart={(e) => e.stopPropagation()}
+                                                    />
+                                                    <p className="text-xs text-gray-600 mt-1">
+                                                        {item.note.length}/
+                                                        {RANKING_CONSTRAINTS.MAX_NOTE_LENGTH}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Remove button */}
+                                            <button
+                                                onClick={() => {
+                                                    const newItems = rankedItems.filter(
+                                                        (_, i) => i !== actualIndex
+                                                    )
+                                                    setRankedItems(newItems)
+                                                    // Also remove from selectedItems
+                                                    setSelectedItems(
+                                                        selectedItems.filter(
+                                                            (c) => c.id !== item.content.id
+                                                        )
+                                                    )
+                                                }}
+                                                className="flex-shrink-0 w-8 h-8 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                                                title="Remove from ranking"
+                                            >
+                                                <XMarkIcon className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+
+                            {/* Pagination Controls */}
+                            {rankedItems.length > 0 && (
+                                <div className="flex items-center justify-between px-4 py-6 border-t border-zinc-800">
+                                    {/* Items per page selector */}
+                                    <div className="flex items-center gap-3">
+                                        <label className="text-sm text-gray-400">
+                                            Items per page:
+                                        </label>
+                                        <select
+                                            value={itemsPerPage}
+                                            onChange={(e) => {
+                                                setItemsPerPage(Number(e.target.value))
+                                                setCurrentPage(1) // Reset to first page
+                                            }}
+                                            className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20"
+                                        >
+                                            <option value={5}>5</option>
+                                            <option value={10}>10</option>
+                                            <option value={20}>20</option>
+                                            <option value={50}>50</option>
+                                        </select>
+                                    </div>
+
+                                    {/* Page navigation */}
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() =>
+                                                setCurrentPage((p) => Math.max(1, p - 1))
+                                            }
+                                            disabled={currentPage === 1}
+                                            className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 disabled:bg-zinc-900 disabled:text-gray-600 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-all"
+                                        >
+                                            Previous
+                                        </button>
+
+                                        <div className="flex items-center gap-1">
+                                            {Array.from(
+                                                { length: totalPages },
+                                                (_, i) => i + 1
+                                            ).map((page) => {
+                                                // Show first page, last page, current page, and pages around current
+                                                const showPage =
+                                                    page === 1 ||
+                                                    page === totalPages ||
+                                                    Math.abs(page - currentPage) <= 1
+
+                                                if (!showPage) {
+                                                    // Show ellipsis for gaps
+                                                    if (
+                                                        page === currentPage - 2 ||
+                                                        page === currentPage + 2
+                                                    ) {
+                                                        return (
+                                                            <span
+                                                                key={page}
+                                                                className="px-2 text-gray-600"
+                                                            >
+                                                                ...
+                                                            </span>
+                                                        )
+                                                    }
+                                                    return null
+                                                }
+
+                                                return (
+                                                    <button
+                                                        key={page}
+                                                        onClick={() => setCurrentPage(page)}
+                                                        className={`min-w-[40px] h-10 rounded-lg text-sm font-medium transition-all ${
+                                                            page === currentPage
+                                                                ? 'bg-yellow-500 text-black'
+                                                                : 'bg-zinc-800 hover:bg-zinc-700 text-white'
+                                                        }`}
+                                                    >
+                                                        {page}
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
+
+                                        <button
+                                            onClick={() =>
+                                                setCurrentPage((p) => Math.min(totalPages, p + 1))
+                                            }
+                                            disabled={currentPage === totalPages}
+                                            className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 disabled:bg-zinc-900 disabled:text-gray-600 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-all"
+                                        >
+                                            Next
+                                        </button>
+                                    </div>
+
+                                    {/* Page info */}
+                                    <div className="text-sm text-gray-400">
+                                        Page {currentPage} of {totalPages}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Empty state */}
+                            {rankedItems.length === 0 && (
+                                <div className="text-center py-12 text-gray-500">
+                                    <p className="text-lg mb-2">No items to order yet</p>
+                                    <p className="text-sm">Go back to Step 1 to select content</p>
+                                </div>
+                            )}
                         </div>
-                    )}
-                </div>
-            )}
+                    )
+                })()}
 
             {/* Step 3: Name & Share */}
             {currentStep === 3 && (
