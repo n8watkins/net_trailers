@@ -85,6 +85,17 @@ export default function SubHeader() {
     const pathname = usePathname()
     const { user } = useAuth()
     const sessionType = useSessionStore((state) => state.sessionType)
+    const [isScrolled, setIsScrolled] = React.useState(false)
+
+    // Detect scroll to change background opacity
+    React.useEffect(() => {
+        const handleScroll = () => {
+            setIsScrolled(window.scrollY > 0)
+        }
+
+        window.addEventListener('scroll', handleScroll)
+        return () => window.removeEventListener('scroll', handleScroll)
+    }, [])
 
     // Get user's name - prioritize Firebase user displayName
     const userName = (() => {
@@ -103,7 +114,13 @@ export default function SubHeader() {
     })()
 
     return (
-        <div className="sticky top-0 z-40 w-full border-b border-gray-800 bg-gradient-to-b from-gray-900 to-black pt-32">
+        <div
+            className={`sticky top-0 z-40 w-full border-b pt-32 transition-all duration-300 ${
+                isScrolled
+                    ? 'border-gray-800 bg-black/95 backdrop-blur-md'
+                    : 'border-gray-800 bg-gradient-to-b from-gray-900 to-black'
+            }`}
+        >
             {/* Navigation tabs */}
             <nav className="mx-auto max-w-7xl px-4 py-4" aria-label="User navigation">
                 <div className="flex gap-8 overflow-x-auto scrollbar-hide">
