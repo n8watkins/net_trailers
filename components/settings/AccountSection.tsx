@@ -9,6 +9,7 @@ interface DataSummary {
     likedCount: number
     hiddenCount: number
     listsCount: number
+    watchHistoryCount: number
     totalItems: number
     isEmpty: boolean
     accountCreated?: Date
@@ -51,7 +52,7 @@ const AccountSection: React.FC<AccountSectionProps> = ({
                     </h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                         <div className="bg-[#141414] rounded-lg p-4 border border-[#313131]">
-                            <p className="text-[#b3b3b3] text-sm">Watchlist</p>
+                            <p className="text-[#b3b3b3] text-sm">Watch Later</p>
                             <p className="text-white text-2xl font-bold mt-1">
                                 {dataSummary.watchlistCount}
                             </p>
@@ -68,14 +69,14 @@ const AccountSection: React.FC<AccountSectionProps> = ({
                                 {dataSummary.hiddenCount}
                             </p>
                         </div>
-                        {!isGuest && (
-                            <div className="bg-[#141414] rounded-lg p-4 border border-[#313131]">
-                                <p className="text-[#b3b3b3] text-sm">Lists</p>
-                                <p className="text-white text-2xl font-bold mt-1">
-                                    {dataSummary.listsCount}
-                                </p>
-                            </div>
-                        )}
+                        <div className="bg-[#141414] rounded-lg p-4 border border-[#313131]">
+                            <p className="text-[#b3b3b3] text-sm">
+                                {isGuest ? 'Watch History' : 'Collections'}
+                            </p>
+                            <p className="text-white text-2xl font-bold mt-1">
+                                {isGuest ? dataSummary.watchHistoryCount : dataSummary.listsCount}
+                            </p>
+                        </div>
                     </div>
 
                     <div className="space-y-3">
@@ -96,7 +97,8 @@ const AccountSection: React.FC<AccountSectionProps> = ({
                                         Export Data
                                     </span>
                                     <p className="text-[#b3b3b3] text-sm mt-1">
-                                        Download your watchlists and preferences as CSV
+                                        Download your collections, watch history, and preferences as
+                                        CSV
                                     </p>
                                 </div>
                             </div>
@@ -119,7 +121,8 @@ const AccountSection: React.FC<AccountSectionProps> = ({
                                         Clear Data
                                     </span>
                                     <p className="text-[#b3b3b3] text-sm mt-1">
-                                        Remove all saved watchlists, likes, and preferences
+                                        Remove all collections, watch history, ratings, and
+                                        preferences
                                     </p>
                                 </div>
                             </div>

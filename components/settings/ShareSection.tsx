@@ -9,6 +9,7 @@ interface DataSummary {
     likedCount: number
     hiddenCount: number
     listsCount: number
+    watchHistoryCount: number
     totalItems: number
     isEmpty: boolean
     accountCreated?: Date
@@ -29,8 +30,8 @@ const ShareSection: React.FC<ShareSectionProps> = ({ isGuest, dataSummary, onExp
                 <h2 className="text-2xl font-bold text-white mb-2">Share & Export</h2>
                 <p className="text-[#b3b3b3]">
                     {isGuest
-                        ? 'Export your data to keep a backup of your watchlists and preferences.'
-                        : 'Share your watchlists with others or export your data.'}
+                        ? 'Export your data to keep a backup of your collections and preferences.'
+                        : 'Share your collections with others or export your data.'}
                 </p>
             </div>
 
@@ -40,10 +41,11 @@ const ShareSection: React.FC<ShareSectionProps> = ({ isGuest, dataSummary, onExp
                         <div className="bg-[#0a0a0a] rounded-xl p-6 border border-[#313131]">
                             <ShareIcon className="w-8 h-8 text-blue-500 mb-4" />
                             <h3 className="text-lg font-semibold text-white mb-2">
-                                Share Watchlists
+                                Share Collections
                             </h3>
                             <p className="text-[#b3b3b3] mb-4">
-                                Generate shareable links for your watchlists and custom lists.
+                                Generate shareable links for your Watch Later and custom
+                                collections.
                             </p>
                             <button
                                 onClick={() => setIsManageSharesOpen(true)}
@@ -60,17 +62,19 @@ const ShareSection: React.FC<ShareSectionProps> = ({ isGuest, dataSummary, onExp
                         <ArrowDownTrayIcon className="w-8 h-8 text-green-500 mb-4" />
                         <h3 className="text-lg font-semibold text-white mb-2">Export Data</h3>
                         <p className="text-[#b3b3b3] mb-4">
-                            Download your watchlists, liked items, and hidden content as CSV file.
+                            Download your collections, watch history, ratings, and preferences as
+                            CSV.
                         </p>
 
                         {/* Data Summary */}
                         <div className="mb-4 p-4 bg-[#141414] rounded-lg border border-[#313131]">
                             <p className="text-[#e5e5e5] text-sm mb-2">Your data includes:</p>
                             <ul className="text-[#b3b3b3] text-sm space-y-1">
-                                <li>• {dataSummary.watchlistCount} watchlist items</li>
+                                <li>• {dataSummary.watchlistCount} Watch Later items</li>
                                 <li>• {dataSummary.likedCount} liked items</li>
                                 <li>• {dataSummary.hiddenCount} hidden items</li>
-                                {!isGuest && <li>• {dataSummary.listsCount} custom lists</li>}
+                                <li>• {dataSummary.watchHistoryCount} watch history entries</li>
+                                {!isGuest && <li>• {dataSummary.listsCount} custom collections</li>}
                             </ul>
                         </div>
 

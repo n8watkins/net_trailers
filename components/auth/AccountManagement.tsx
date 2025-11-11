@@ -13,6 +13,7 @@ interface DataSummary {
     likedCount: number
     hiddenCount: number
     listsCount: number
+    watchHistoryCount: number
     totalItems: number
     isEmpty: boolean
     accountCreated?: Date
@@ -43,6 +44,7 @@ export default function AccountManagement() {
                         likedCount: 0,
                         hiddenCount: 0,
                         listsCount: 0,
+                        watchHistoryCount: 0,
                         totalItems: 0,
                         isEmpty: true,
                     }
@@ -59,6 +61,7 @@ export default function AccountManagement() {
                         likedCount: 0,
                         hiddenCount: 0,
                         listsCount: 0,
+                        watchHistoryCount: 0,
                         totalItems: 0,
                         isEmpty: true,
                     }
@@ -73,6 +76,7 @@ export default function AccountManagement() {
                     likedCount: 0,
                     hiddenCount: 0,
                     listsCount: 0,
+                    watchHistoryCount: 0,
                     totalItems: 0,
                     isEmpty: true,
                 })

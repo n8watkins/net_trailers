@@ -271,8 +271,8 @@ const PreferencesControls = React.memo<PreferencesControlsProps>(
                                     personalized recommendations
                                 </p>
                                 <p className="text-xs text-[#999]">
-                                    When enabled, we track which content you view, add to your
-                                    watchlist, like, and hide. This data helps us recommend movies
+                                    When enabled, we track which content you view, add to
+                                    collections, like, and hide. This data helps us recommend movies
                                     and shows you'll enjoy.
                                 </p>
                             </div>

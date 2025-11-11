@@ -958,7 +958,7 @@ const Settings: React.FC = () => {
                 onClose={() => setShowClearConfirm(false)}
                 onConfirm={handleClearData}
                 title="Clear All Data?"
-                message="This will permanently delete all your watchlists, liked items, hidden content, and preferences. This action cannot be undone."
+                message="This will permanently delete all your collections, watch history, ratings, and preferences. This action cannot be undone."
                 confirmText={`You currently have ${dataSummary.totalItems} items that will be deleted.`}
                 confirmButtonText="Clear All Data"
                 cancelButtonText="Cancel"
@@ -973,7 +973,7 @@ const Settings: React.FC = () => {
                 onClose={() => setShowDeleteConfirm(false)}
                 onConfirm={handleDeleteAccount}
                 title="Delete Account?"
-                message="This will permanently delete your account, all your data, and cannot be undone. You will lose access to all your watchlists, custom lists, and preferences."
+                message="This will permanently delete your account, all your data, and cannot be undone. You will lose access to all your collections, watch history, ratings, and preferences."
                 confirmText="This action is irreversible. Your account will be deleted immediately."
                 confirmButtonText="Delete My Account"
                 cancelButtonText="Cancel"
