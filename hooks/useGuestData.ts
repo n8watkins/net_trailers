@@ -49,13 +49,23 @@ export function useGuestData() {
         const { useWatchHistoryStore } = await import('../stores/watchHistoryStore')
 
         // Clear watch history in store
-        useWatchHistoryStore.getState().clearHistory()
+        const watchStore = useWatchHistoryStore.getState()
+        watchStore.clearHistory()
 
-        // Clear watch history in localStorage for guest
+        // Clear watch history in localStorage for guest and restore session
         const guestId = guestStore.guestId
         if (guestId) {
             useWatchHistoryStore.getState().clearGuestSession(guestId)
+            // Restore session ID after clearing
+            useWatchHistoryStore.setState({
+                currentSessionId: guestId,
+                lastSyncedAt: null,
+            })
         }
+
+        // Clear notifications (guest notifications are local only)
+        const { useNotificationStore } = await import('../stores/notificationStore')
+        useNotificationStore.getState().clearNotifications()
     }
 
     const getAccountDataSummary = async () => {

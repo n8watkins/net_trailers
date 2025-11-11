@@ -61,12 +61,25 @@ export function useAuthData(userId: string) {
         const { useWatchHistoryStore } = await import('../stores/watchHistoryStore')
         const { saveWatchHistory } = await import('../utils/firestore/watchHistory')
 
-        // Clear watch history in store
-        useWatchHistoryStore.getState().clearHistory()
+        // Clear watch history in store while maintaining session
+        const watchStore = useWatchHistoryStore.getState()
+        watchStore.clearHistory()
+
+        // Restore session ID after clearing (clearHistory sets it to null)
+        useWatchHistoryStore.setState({
+            currentSessionId: userId,
+            lastSyncedAt: Date.now(),
+        })
 
         // Clear watch history in Firestore
         if (userId) {
             await saveWatchHistory(userId, [])
+        }
+
+        // Clear notifications from store and Firestore
+        const { useNotificationStore } = await import('../stores/notificationStore')
+        if (userId) {
+            await useNotificationStore.getState().deleteAllNotifications(userId)
         }
     }
 
