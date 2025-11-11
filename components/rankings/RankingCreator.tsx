@@ -108,7 +108,7 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
         try {
             // Fetch movies by IDs
             const moviePromises = tag.movieIds.map(async (id) => {
-                const response = await fetch(`/api/movies/${id}`)
+                const response = await fetch(`/api/movies/details/${id}?media_type=movie`)
                 if (response.ok) {
                     const data = await response.json()
                     return { ...data, media_type: 'movie' as const }
@@ -118,7 +118,7 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
 
             // Fetch TV shows by IDs
             const tvPromises = tag.tvShowIds.map(async (id) => {
-                const response = await fetch(`/api/tv/${id}`)
+                const response = await fetch(`/api/movies/details/${id}?media_type=tv`)
                 if (response.ok) {
                     const data = await response.json()
                     return { ...data, media_type: 'tv' as const }
