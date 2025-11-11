@@ -698,24 +698,24 @@ const Settings: React.FC = () => {
 
     // Load data summary (handles both sync and async cases)
     React.useEffect(() => {
-        if (userData.isInitializing) {
-            setDataSummary({
-                watchlistCount: 0,
-                likedCount: 0,
-                hiddenCount: 0,
-                listsCount: 0,
-                totalItems: 0,
-                isEmpty: true,
-            })
-        } else {
-            const summary = userData.getAccountDataSummary()
-            // Check if it's a Promise (authenticated) or sync value (guest)
-            if (summary instanceof Promise) {
-                summary.then(setDataSummary)
+        const loadSummary = async () => {
+            if (userData.isInitializing) {
+                setDataSummary({
+                    watchlistCount: 0,
+                    likedCount: 0,
+                    hiddenCount: 0,
+                    listsCount: 0,
+                    watchHistoryCount: 0,
+                    totalItems: 0,
+                    isEmpty: true,
+                })
             } else {
+                // getAccountDataSummary is now async for both auth and guest
+                const summary = await userData.getAccountDataSummary()
                 setDataSummary(summary)
             }
         }
+        loadSummary()
     }, [
         userData.isInitializing,
         userData.defaultWatchlist.length,
