@@ -638,12 +638,12 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
                                                                 key={content.id}
                                                                 className="flex items-center gap-3 bg-zinc-900 rounded-lg p-2 group hover:bg-zinc-750 transition-colors"
                                                             >
-                                                                <div className="relative w-12 h-18 flex-shrink-0">
+                                                                <div className="relative w-16 h-24 flex-shrink-0">
                                                                     <Image
                                                                         src={getPosterPath(content)}
                                                                         alt={getTitle(content)}
                                                                         fill
-                                                                        className="object-cover rounded"
+                                                                        className="object-cover rounded shadow-md"
                                                                     />
                                                                 </div>
                                                                 <div className="flex-1 min-w-0">
