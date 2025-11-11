@@ -55,26 +55,44 @@ export function RankingDetail({ ranking, onEdit, onDelete, onShare }: RankingDet
 
     // Track view on mount
     useEffect(() => {
+        let isMounted = true
+
         if (userId) {
             incrementView(ranking.id, userId).then(() => {
-                setLocalViews((prev) => prev + 1)
+                if (isMounted) {
+                    setLocalViews((prev) => prev + 1)
+                }
             })
+        }
+
+        return () => {
+            isMounted = false
         }
     }, [userId, ranking.id, incrementView])
 
     // Load comments
     useEffect(() => {
+        let isMounted = true
+
         const loadData = async () => {
-            setIsLoadingComments(true)
+            if (isMounted) {
+                setIsLoadingComments(true)
+            }
             try {
                 await loadComments(ranking.id)
             } catch (error) {
                 console.error('Failed to load comments:', error)
             } finally {
-                setIsLoadingComments(false)
+                if (isMounted) {
+                    setIsLoadingComments(false)
+                }
             }
         }
         loadData()
+
+        return () => {
+            isMounted = false
+        }
     }, [ranking.id, loadComments])
 
     const handleLike = async () => {

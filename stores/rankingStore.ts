@@ -62,6 +62,7 @@ interface RankingState {
     currentRanking: Ranking | null // Currently viewed ranking
     comments: RankingComment[] // Comments for current ranking
     likes: RankingLike[] // User's likes
+    viewedRankings: Set<string> // Track viewed rankings to prevent duplicate view tracking
     isLoading: boolean
     error: string | null
 
@@ -121,6 +122,7 @@ export const useRankingStore = create<RankingState>()(
             currentRanking: null,
             comments: [],
             likes: [],
+            viewedRankings: new Set<string>(),
             isLoading: false,
             error: null,
             sortBy: 'recent',
@@ -334,6 +336,9 @@ export const useRankingStore = create<RankingState>()(
                     return
                 }
 
+                // Save original state for rollback
+                const originalLikes = get().currentRanking?.likes || 0
+
                 try {
                     // Optimistic update
                     set((state) => ({
@@ -348,9 +353,16 @@ export const useRankingStore = create<RankingState>()(
                     await likeRankingInFirestore(userId, rankingId)
                 } catch (error) {
                     console.error('Error liking ranking:', error)
-                    set({
+                    // Rollback on failure
+                    set((state) => ({
+                        currentRanking: state.currentRanking
+                            ? {
+                                  ...state.currentRanking,
+                                  likes: originalLikes,
+                              }
+                            : null,
                         error: error instanceof Error ? error.message : 'Failed to like ranking',
-                    })
+                    }))
                 }
             },
 
@@ -360,6 +372,9 @@ export const useRankingStore = create<RankingState>()(
                     set({ error: 'Authentication required' })
                     return
                 }
+
+                // Save original state for rollback
+                const originalLikes = get().currentRanking?.likes || 0
 
                 try {
                     // Optimistic update
@@ -375,15 +390,33 @@ export const useRankingStore = create<RankingState>()(
                     await unlikeRankingInFirestore(userId, rankingId)
                 } catch (error) {
                     console.error('Error unliking ranking:', error)
-                    set({
+                    // Rollback on failure
+                    set((state) => ({
+                        currentRanking: state.currentRanking
+                            ? {
+                                  ...state.currentRanking,
+                                  likes: originalLikes,
+                              }
+                            : null,
                         error: error instanceof Error ? error.message : 'Failed to unlike ranking',
-                    })
+                    }))
                 }
             },
 
             // Increment view count
             incrementView: async (rankingId: string, userId?: string | null) => {
+                // Check if already viewed in this session
+                const state = get()
+                if (state.viewedRankings.has(rankingId)) {
+                    return // Already viewed, skip
+                }
+
                 try {
+                    // Mark as viewed before API call to prevent race conditions
+                    set((state) => ({
+                        viewedRankings: new Set(state.viewedRankings).add(rankingId),
+                    }))
+
                     await incrementRankingView(rankingId, userId || undefined)
 
                     // Update local state
@@ -397,6 +430,12 @@ export const useRankingStore = create<RankingState>()(
                     }))
                 } catch (error) {
                     console.error('Error incrementing view:', error)
+                    // On failure, remove from viewedRankings to allow retry
+                    set((state) => {
+                        const newSet = new Set(state.viewedRankings)
+                        newSet.delete(rankingId)
+                        return { viewedRankings: newSet }
+                    })
                 }
             },
 
@@ -463,18 +502,8 @@ export const useRankingStore = create<RankingState>()(
                 }
 
                 try {
-                    // Check permission: comment owner or ranking owner
-                    const comment = get().comments.find((c) => c.id === commentId)
-                    if (!comment) {
-                        set({ error: 'Comment not found' })
-                        return
-                    }
-
-                    if (comment.userId !== userId && rankingOwnerId !== userId) {
-                        set({ error: 'Not authorized to delete this comment' })
-                        return
-                    }
-
+                    // Authorization is handled server-side in Firestore function
+                    // Client-side checks use potentially stale data and create false sense of security
                     await deleteCommentInFirestore(userId, commentId, rankingOwnerId)
 
                     // Update local state

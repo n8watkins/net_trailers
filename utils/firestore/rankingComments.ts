@@ -207,15 +207,18 @@ export async function deleteComment(
         // Delete comment
         transaction.delete(commentRef)
 
-        // If this is a reply, remove from parent's replies array using arrayRemove (atomic)
+        // If this is a reply, remove from parent's replies array
         if (comment.parentCommentId) {
             const parentRef = getCommentDocRef(comment.parentCommentId)
             const parentDoc = await transaction.get(parentRef)
 
             if (parentDoc.exists()) {
-                // Use arrayRemove for atomic array updates (prevents race conditions)
+                const parent = parentDoc.data() as RankingComment
+                // Filter by ID instead of using arrayRemove to handle modified objects
+                // arrayRemove fails if the comment object has been updated (e.g., likes changed)
+                const updatedReplies = (parent.replies || []).filter((r) => r.id !== comment.id)
                 transaction.update(parentRef, {
-                    replies: arrayRemove(comment),
+                    replies: updatedReplies,
                 })
             }
         }

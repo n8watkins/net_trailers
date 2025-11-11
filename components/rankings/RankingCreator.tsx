@@ -146,6 +146,24 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
     const handleSubmit = async () => {
         if (!userId || !profile || !isStep3Valid) return
 
+        // Extract values to ensure they're stable
+        const username = profile.username
+        const avatarUrl = profile.avatarUrl
+
+        if (!username) {
+            console.error('Profile missing username')
+            return
+        }
+
+        // Validate note lengths before submission
+        const invalidNotes = rankedItems.filter(
+            (item) => item.note.trim().length > RANKING_CONSTRAINTS.MAX_NOTE_LENGTH
+        )
+        if (invalidNotes.length > 0) {
+            console.error('Some notes exceed maximum length')
+            return
+        }
+
         try {
             // Step 1: Create the ranking with basic info
             const createRequest: CreateRankingRequest = {
@@ -156,12 +174,7 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
                 tags: tags.length > 0 ? tags : undefined,
             }
 
-            const rankingId = await createRanking(
-                userId,
-                profile.username,
-                profile.avatarUrl,
-                createRequest
-            )
+            const rankingId = await createRanking(userId, username, avatarUrl, createRequest)
 
             if (!rankingId) {
                 throw new Error('Failed to create ranking')
@@ -559,7 +572,7 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
                                         value={item.note}
                                         onChange={(e) => handleUpdateNote(index, e.target.value)}
                                         placeholder="Add a note (optional)..."
-                                        maxLength={200}
+                                        maxLength={RANKING_CONSTRAINTS.MAX_NOTE_LENGTH}
                                         className="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500"
                                         onClick={(e) => e.stopPropagation()}
                                     />

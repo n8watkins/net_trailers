@@ -12,10 +12,15 @@ import { UpdateProfileRequest, PROFILE_CONSTRAINTS } from '../../types/profile'
 
 /**
  * Sanitize text input by removing potential XSS vectors
+ *
+ * Note: This function provides basic sanitization by trimming whitespace.
+ * React automatically escapes text content when rendering, providing XSS protection.
+ * For user-generated HTML content (not used here), use a library like DOMPurify.
  */
 export function sanitizeText(text: string): string {
-    // Remove any HTML tags
-    return text.replace(/<[^>]*>/g, '')
+    // React handles XSS prevention by automatically escaping text content
+    // We only need to trim whitespace and normalize line breaks
+    return text.trim().replace(/\r\n/g, '\n')
 }
 
 /**

@@ -50,9 +50,18 @@ export function CommentSection({
 
         if (!userId || !profile || !newCommentText.trim()) return
 
+        // Extract values to ensure they're stable
+        const username = profile.username
+        const avatarUrl = profile.avatarUrl
+
+        if (!username) {
+            console.error('Profile missing username')
+            return
+        }
+
         setIsSubmitting(true)
         try {
-            await createComment(userId, profile.username, profile.avatarUrl, {
+            await createComment(userId, username, avatarUrl, {
                 rankingId,
                 type: 'ranking',
                 text: newCommentText.trim(),
@@ -68,9 +77,18 @@ export function CommentSection({
     const handleSubmitReply = async (parentCommentId: string) => {
         if (!userId || !profile || !replyText.trim()) return
 
+        // Extract values to ensure they're stable
+        const username = profile.username
+        const avatarUrl = profile.avatarUrl
+
+        if (!username) {
+            console.error('Profile missing username')
+            return
+        }
+
         setIsSubmitting(true)
         try {
-            await createComment(userId, profile.username, profile.avatarUrl, {
+            await createComment(userId, username, avatarUrl, {
                 rankingId,
                 type: 'ranking',
                 text: replyText.trim(),
