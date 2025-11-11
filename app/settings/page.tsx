@@ -35,6 +35,7 @@ import ChildSafetyPINModal from '../../components/settings/ChildSafetyPINModal'
 import { useChildSafetyPINStore } from '../../stores/childSafetyStore'
 import { DEFAULT_NOTIFICATION_PREFERENCES } from '../../types/notifications'
 import SearchBar from '../../components/common/SearchBar'
+import { useWatchHistory } from '../../hooks/useWatchHistory'
 
 type SettingsSection =
     | 'profile'
@@ -62,6 +63,7 @@ const Settings: React.FC = () => {
     const { user } = useAuth()
     const { isGuest } = useAuthStatus()
     const userData = useUserData()
+    const { totalWatched } = useWatchHistory()
     const { showSuccess, showError } = useToast()
     const { openAuthModal } = useAppStore()
 
@@ -712,7 +714,11 @@ const Settings: React.FC = () => {
             } else {
                 // getAccountDataSummary is now async for both auth and guest
                 const summary = await userData.getAccountDataSummary()
-                setDataSummary(summary)
+                // Override watchHistoryCount with the value from useWatchHistory hook
+                setDataSummary({
+                    ...summary,
+                    watchHistoryCount: totalWatched,
+                })
             }
         }
         loadSummary()
@@ -722,6 +728,7 @@ const Settings: React.FC = () => {
         userData.likedMovies.length,
         userData.hiddenMovies.length,
         userData.userCreatedWatchlists.length,
+        totalWatched, // Add watch history as dependency
     ])
 
     // Handle saving preferences
