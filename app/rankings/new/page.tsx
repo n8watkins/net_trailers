@@ -71,24 +71,5 @@ export default function NewRankingPage() {
         )
     }
 
-    return (
-        <SubPageLayout
-            title="Create Ranking"
-            icon={<TrophyIcon className="w-8 h-8" />}
-            iconColor="text-yellow-500"
-            headerActions={
-                <button
-                    onClick={handleCancel}
-                    className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors"
-                >
-                    <ArrowLeftIcon className="w-5 h-5" />
-                    <span className="hidden sm:inline">Cancel</span>
-                </button>
-            }
-        >
-            <div className="max-w-4xl mx-auto">
-                <RankingCreator onComplete={handleComplete} onCancel={handleCancel} />
-            </div>
-        </SubPageLayout>
-    )
+    return <RankingCreator onComplete={handleComplete} onCancel={handleCancel} />
 }
