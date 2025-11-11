@@ -15,17 +15,21 @@ type FilterType = 'all' | NotificationType
 export default function NotificationsPageClient() {
     const getUserId = useSessionStore((state) => state.getUserId)
     const sessionType = useSessionStore((state) => state.sessionType)
+    const isInitialized = useSessionStore((state) => state.isInitialized)
     const userId = getUserId()
     const isGuest = sessionType === 'guest'
     const {
         notifications,
         unreadCount,
-        isLoading,
+        isLoading: isLoadingNotifications,
         subscribe,
         unsubscribeFromNotifications,
         markAllNotificationsAsRead,
         deleteAllNotifications,
     } = useNotificationStore()
+
+    // Show loading state while initializing or loading notifications
+    const isLoading = !isInitialized || isLoadingNotifications
 
     const [filter, setFilter] = useState<FilterType>('all')
 
