@@ -110,7 +110,7 @@ export default function ProfilePage() {
         tvShowsWatched: watchHistory.filter((item) => item.mediaType === 'tv').length,
     }
 
-    const userName = user?.displayName || user?.email?.split('@')[0] || 'User'
+    const userName = isGuest ? 'Guest' : user?.displayName || user?.email?.split('@')[0] || 'User'
     const userEmail = user?.email || ''
     const userInitials = userName
         .split(' ')
@@ -122,7 +122,7 @@ export default function ProfilePage() {
     const profileHeader = (
         <div className="space-y-6">
             {/* Guest Mode Notification */}
-            {isInitialized && isGuest && <GuestModeNotification />}
+            {isInitialized && isGuest && <GuestModeNotification align="left" />}
 
             <div className="flex items-center gap-6">
                 {/* Avatar */}
