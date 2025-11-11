@@ -16,6 +16,7 @@ import {
     BellIcon,
     Cog6ToothIcon,
     RectangleStackIcon,
+    TrophyIcon,
 } from '@heroicons/react/24/outline'
 import {
     UserIcon as UserIconSolid,
@@ -25,6 +26,7 @@ import {
     Cog6ToothIcon as Cog6ToothIconSolid,
     RectangleStackIcon as RectangleStackIconSolid,
     EyeSlashIcon as EyeSlashIconSolid,
+    TrophyIcon as TrophyIconSolid,
 } from '@heroicons/react/24/solid'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
@@ -70,6 +72,12 @@ const subNavItems: NavItem[] = [
         href: '/watch-history',
         icon: ClockIcon,
         iconSolid: ClockIconSolid,
+    },
+    {
+        label: 'Rankings',
+        href: '/rankings',
+        icon: TrophyIcon,
+        iconSolid: TrophyIconSolid,
     },
     {
         label: 'Collections',
@@ -123,7 +131,16 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
     const sessionType = useSessionStore((state) => state.sessionType)
 
     // Determine if we should show sub-navigation based on current path
-    const subNavPaths = ['/profile', '/watch-history', '/collections', '/liked', '/hidden', '/notifications', '/settings']
+    const subNavPaths = [
+        '/profile',
+        '/watch-history',
+        '/rankings',
+        '/collections',
+        '/liked',
+        '/hidden',
+        '/notifications',
+        '/settings',
+    ]
     const showSubNav = subNavPaths.includes(pathname)
 
     const triggerTestToasts = () => {
@@ -281,46 +298,46 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
 
                     {/* Right side: Mobile menu, Avatar, Notifications */}
                     <div className="flex items-center space-x-4 text-sm font-light">
-                    {/* Mobile Layout: Search + Hamburger + Avatar */}
-                    <div className="lg:hidden flex items-center space-x-3">
-                        {/* Mobile Search Icon */}
-                        <MagnifyingGlassIcon
-                            className="h-6 w-6 cursor-pointer text-white"
-                            onClick={() => setShowSearch(!showSearch)}
+                        {/* Mobile Layout: Search + Hamburger + Avatar */}
+                        <div className="lg:hidden flex items-center space-x-3">
+                            {/* Mobile Search Icon */}
+                            <MagnifyingGlassIcon
+                                className="h-6 w-6 cursor-pointer text-white"
+                                onClick={() => setShowSearch(!showSearch)}
+                            />
+
+                            {/* Mobile Menu Toggle */}
+                            <button
+                                className="h-6 w-6"
+                                onClick={() => setShowMobileMenu(!showMobileMenu)}
+                            >
+                                {showMobileMenu ? (
+                                    <XMarkIcon className="h-6 w-6 text-white" />
+                                ) : (
+                                    <Bars3Icon className="h-6 w-6 text-white" />
+                                )}
+                            </button>
+                        </div>
+
+                        {/* Guest Mode Indicator - Desktop only */}
+                        <div className="hidden lg:block">
+                            <GuestModeIndicator />
+                        </div>
+
+                        {/* Notification Bell with Panel */}
+                        <div className="relative">
+                            <NotificationBell />
+                            <NotificationPanel />
+                        </div>
+
+                        {/* Avatar Dropdown */}
+                        <AvatarDropdown
+                            onOpenAuthModal={() => openAuthModal('signin')}
+                            onOpenSignUpModal={() => openAuthModal('signup')}
+                            onOpenAboutModal={handleOpenAboutModal}
+                            onOpenTutorial={handleOpenTutorial}
+                            onOpenKeyboardShortcuts={handleOpenKeyboardShortcuts}
                         />
-
-                        {/* Mobile Menu Toggle */}
-                        <button
-                            className="h-6 w-6"
-                            onClick={() => setShowMobileMenu(!showMobileMenu)}
-                        >
-                            {showMobileMenu ? (
-                                <XMarkIcon className="h-6 w-6 text-white" />
-                            ) : (
-                                <Bars3Icon className="h-6 w-6 text-white" />
-                            )}
-                        </button>
-                    </div>
-
-                    {/* Guest Mode Indicator - Desktop only */}
-                    <div className="hidden lg:block">
-                        <GuestModeIndicator />
-                    </div>
-
-                    {/* Notification Bell with Panel */}
-                    <div className="relative">
-                        <NotificationBell />
-                        <NotificationPanel />
-                    </div>
-
-                    {/* Avatar Dropdown */}
-                    <AvatarDropdown
-                        onOpenAuthModal={() => openAuthModal('signin')}
-                        onOpenSignUpModal={() => openAuthModal('signup')}
-                        onOpenAboutModal={handleOpenAboutModal}
-                        onOpenTutorial={handleOpenTutorial}
-                        onOpenKeyboardShortcuts={handleOpenKeyboardShortcuts}
-                    />
                     </div>
                 </div>
 

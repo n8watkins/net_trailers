@@ -13,6 +13,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 import ContentCard from '../common/ContentCard'
 import { useSessionData } from '../../hooks/useSessionData'
 import { useSessionStore } from '../../stores/sessionStore'
+import { auth } from '../../firebase'
 
 export default function RecommendedForYouRow() {
     const [recommendations, setRecommendations] = useState<Recommendation[]>([])
@@ -42,12 +43,21 @@ export default function RecommendedForYouRow() {
             setError(null)
 
             try {
+                // Get Firebase ID token for authentication
+                const currentUser = auth.currentUser
+                if (!currentUser) {
+                    setIsLoading(false)
+                    return
+                }
+
+                const idToken = await currentUser.getIdToken()
+
                 // Use POST with body instead of GET with URL params to avoid 431 header size error
                 const response = await fetch(`/api/recommendations/personalized`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'x-user-id': userId,
+                        Authorization: `Bearer ${idToken}`,
                     },
                     body: JSON.stringify({
                         likedMovies: sessionData.likedMovies.slice(0, 10),

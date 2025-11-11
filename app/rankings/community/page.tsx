@@ -1,40 +1,34 @@
 /**
- * Rankings Dashboard Page
+ * Community Rankings Page
  *
- * Displays user's created rankings with filtering and sorting options
- * Allows creating new rankings and managing existing ones
+ * Displays public rankings from all users with filtering and sorting options
  */
 
 'use client'
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import SubPageLayout from '../../components/layout/SubPageLayout'
-import { RankingGrid } from '../../components/rankings/RankingGrid'
-import { useRankingStore } from '../../stores/rankingStore'
-import { useSessionStore } from '../../stores/sessionStore'
-import { useAuthStatus } from '../../hooks/useAuthStatus'
-import { GuestModeNotification } from '../../components/auth/GuestModeNotification'
-import NetflixLoader from '../../components/common/NetflixLoader'
+import SubPageLayout from '../../../components/layout/SubPageLayout'
+import { RankingGrid } from '../../../components/rankings/RankingGrid'
+import { useRankingStore } from '../../../stores/rankingStore'
+import { useAuthStatus } from '../../../hooks/useAuthStatus'
+import NetflixLoader from '../../../components/common/NetflixLoader'
 import {
     TrophyIcon,
-    PlusIcon,
+    UsersIcon,
     AdjustmentsHorizontalIcon,
     FunnelIcon,
-    UsersIcon,
 } from '@heroicons/react/24/outline'
 
-export default function RankingsPage() {
+export default function CommunityRankingsPage() {
     const router = useRouter()
-    const getUserId = useSessionStore((state) => state.getUserId)
-    const userId = getUserId()
-    const { isGuest, isInitialized } = useAuthStatus()
+    const { isInitialized } = useAuthStatus()
 
     const {
-        rankings,
+        communityRankings,
         isLoading,
         error,
-        loadUserRankings,
+        loadCommunityRankings,
         sortBy,
         setSortBy,
         filterByMediaType,
@@ -43,16 +37,19 @@ export default function RankingsPage() {
 
     const [showFilters, setShowFilters] = useState(false)
 
-    // Load rankings on mount
+    // Load community rankings on mount
     useEffect(() => {
-        if (isInitialized && userId) {
-            loadUserRankings(userId)
+        if (isInitialized) {
+            loadCommunityRankings(50)
         }
-    }, [isInitialized, userId, loadUserRankings])
+    }, [isInitialized, loadCommunityRankings])
 
-    const handleCreateNew = () => {
-        router.push('/rankings/new')
-    }
+    // Reload when sort changes
+    useEffect(() => {
+        if (isInitialized) {
+            loadCommunityRankings(50)
+        }
+    }, [sortBy, isInitialized, loadCommunityRankings])
 
     const handleRankingClick = (rankingId: string) => {
         router.push(`/rankings/${rankingId}`)
@@ -61,8 +58,8 @@ export default function RankingsPage() {
     // Filter rankings by media type
     const filteredRankings =
         filterByMediaType === 'all'
-            ? rankings
-            : rankings.filter((ranking) => {
+            ? communityRankings
+            : communityRankings.filter((ranking) => {
                   // Check if all items in ranking match the filter
                   return ranking.rankedItems.every(
                       (item) => item.content.media_type === filterByMediaType
@@ -72,8 +69,8 @@ export default function RankingsPage() {
     if (!isInitialized || isLoading) {
         return (
             <SubPageLayout
-                title="My Rankings"
-                icon={<TrophyIcon className="w-8 h-8" />}
+                title="Community Rankings"
+                icon={<UsersIcon className="w-8 h-8" />}
                 iconColor="text-yellow-500"
             >
                 <NetflixLoader />
@@ -83,45 +80,36 @@ export default function RankingsPage() {
 
     return (
         <SubPageLayout
-            title="My Rankings"
-            icon={<TrophyIcon className="w-8 h-8" />}
+            title="Community Rankings"
+            icon={<UsersIcon className="w-8 h-8" />}
             iconColor="text-yellow-500"
             headerActions={
-                <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => setShowFilters(!showFilters)}
-                        className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors"
-                    >
-                        <AdjustmentsHorizontalIcon className="w-5 h-5" />
-                        <span className="hidden sm:inline">Filters</span>
-                    </button>
-                    <button
-                        onClick={handleCreateNew}
-                        className="flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-black font-medium rounded-lg transition-colors"
-                    >
-                        <PlusIcon className="w-5 h-5" />
-                        <span>Create Ranking</span>
-                    </button>
-                </div>
+                <button
+                    onClick={() => setShowFilters(!showFilters)}
+                    className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors"
+                >
+                    <AdjustmentsHorizontalIcon className="w-5 h-5" />
+                    <span className="hidden sm:inline">Filters</span>
+                </button>
             }
         >
-            {/* Guest Mode Notification */}
-            {isGuest && (
-                <div className="mb-6">
-                    <GuestModeNotification />
-                </div>
-            )}
+            {/* Description */}
+            <div className="mb-6 text-center">
+                <p className="text-gray-400 max-w-2xl mx-auto">
+                    Discover and explore public rankings created by the community
+                </p>
+            </div>
 
             {/* Tabs for My Rankings vs Community */}
             <div className="flex items-center justify-center gap-4 mb-6">
-                <button className="flex items-center gap-2 px-6 py-3 bg-yellow-500 text-black font-medium rounded-lg transition-colors">
+                <button
+                    onClick={() => router.push('/rankings')}
+                    className="flex items-center gap-2 px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors"
+                >
                     <TrophyIcon className="w-5 h-5" />
                     My Rankings
                 </button>
-                <button
-                    onClick={() => router.push('/rankings/community')}
-                    className="flex items-center gap-2 px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors"
-                >
+                <button className="flex items-center gap-2 px-6 py-3 bg-yellow-500 text-black font-medium rounded-lg transition-colors">
                     <UsersIcon className="w-5 h-5" />
                     Community
                 </button>
@@ -139,7 +127,8 @@ export default function RankingsPage() {
                             {[
                                 { value: 'recent', label: 'Most Recent' },
                                 { value: 'popular', label: 'Most Popular' },
-                                { value: 'liked', label: 'Most Liked' },
+                                { value: 'most-liked', label: 'Most Liked' },
+                                { value: 'most-viewed', label: 'Most Viewed' },
                             ].map((option) => (
                                 <button
                                     key={option.value}
@@ -199,29 +188,26 @@ export default function RankingsPage() {
             <RankingGrid
                 rankings={filteredRankings}
                 isLoading={isLoading}
-                emptyMessage={
-                    isGuest
-                        ? 'Sign in to create your first ranking!'
-                        : 'No rankings yet. Create your first ranking to get started!'
-                }
-                showAuthor={false}
+                emptyMessage="No public rankings found. Be the first to create one!"
+                showAuthor={true}
                 onLike={handleRankingClick}
             />
 
             {/* Stats Footer */}
-            {!isLoading && rankings.length > 0 && (
+            {!isLoading && communityRankings.length > 0 && (
                 <div className="mt-8 flex items-center justify-center gap-8 text-sm text-gray-400">
                     <div className="flex items-center gap-2">
                         <TrophyIcon className="w-5 h-5 text-yellow-500" />
                         <span>
-                            {rankings.length} {rankings.length === 1 ? 'ranking' : 'rankings'}
+                            {communityRankings.length}{' '}
+                            {communityRankings.length === 1 ? 'ranking' : 'rankings'}
                         </span>
                     </div>
-                    {filteredRankings.length !== rankings.length && (
+                    {filteredRankings.length !== communityRankings.length && (
                         <div className="flex items-center gap-2">
                             <FunnelIcon className="w-5 h-5 text-gray-500" />
                             <span>
-                                Showing {filteredRankings.length} of {rankings.length}
+                                Showing {filteredRankings.length} of {communityRankings.length}
                             </span>
                         </div>
                     )}
