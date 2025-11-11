@@ -9,10 +9,13 @@ import NotificationItem from '../../components/notifications/NotificationItem'
 import SubPageLayout from '../../components/layout/SubPageLayout'
 import EmptyState from '../../components/common/EmptyState'
 import NetflixLoader from '../../components/common/NetflixLoader'
+import { GuestModeNotification } from '../../components/auth/GuestModeNotification'
+import { useRouter } from 'next/navigation'
 
 type FilterType = 'all' | NotificationType
 
 export default function NotificationsPageClient() {
+    const router = useRouter()
     const getUserId = useSessionStore((state) => state.getUserId)
     const sessionType = useSessionStore((state) => state.sessionType)
     const isInitialized = useSessionStore((state) => state.isInitialized)
@@ -74,10 +77,7 @@ export default function NotificationsPageClient() {
 
     const headerActions = !isLoading ? (
         isGuest ? (
-            <div className="rounded-2xl border border-gray-800 bg-[#1a1a1a] p-6 text-sm text-gray-300">
-                Guest sessions keep notifications locally only. Sign in or create an account to sync
-                alerts across devices.
-            </div>
+            <GuestModeNotification align="left" />
         ) : (
             <div className="space-y-6">
                 {/* Stats and Actions */}
@@ -197,11 +197,22 @@ export default function NotificationsPageClient() {
             {isLoading ? (
                 <NetflixLoader message="Loading your notifications..." inline />
             ) : isGuest ? (
-                <EmptyState
-                    emoji="🔒"
-                    title="Sign in to view notifications"
-                    description="Guest sessions keep notifications on this device only. Create a free account to sync alerts everywhere."
-                />
+                <div className="text-center py-20">
+                    <div className="text-6xl mb-4">🔒</div>
+                    <h2 className="text-2xl font-semibold text-white mb-2">
+                        Sign in to view notifications
+                    </h2>
+                    <p className="text-gray-400 mb-6">
+                        Guest sessions keep notifications on this device only. Create a free account
+                        to sync alerts everywhere.
+                    </p>
+                    <button
+                        onClick={() => router.push('/auth')}
+                        className="inline-flex items-center px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
+                    >
+                        Create Account
+                    </button>
+                </div>
             ) : filteredNotifications.length === 0 ? (
                 <EmptyState
                     emoji="🔔"
