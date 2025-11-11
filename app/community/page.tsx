@@ -13,11 +13,13 @@ import { RankingGrid } from '../../components/rankings/RankingGrid'
 import { useRankingStore } from '../../stores/rankingStore'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import NetflixLoader from '../../components/common/NetflixLoader'
+import { POPULAR_TAGS } from '../../utils/popularTags'
 import {
     TrophyIcon,
     UsersIcon,
     AdjustmentsHorizontalIcon,
     FunnelIcon,
+    XMarkIcon,
 } from '@heroicons/react/24/outline'
 
 export default function CommunityPage() {
@@ -36,6 +38,7 @@ export default function CommunityPage() {
     } = useRankingStore()
 
     const [showFilters, setShowFilters] = useState(false)
+    const [filterByTag, setFilterByTag] = useState<string | null>(null)
 
     // Load community rankings on mount
     useEffect(() => {
@@ -55,16 +58,25 @@ export default function CommunityPage() {
         router.push(`/rankings/${rankingId}`)
     }
 
-    // Filter rankings by media type
-    const filteredRankings =
-        filterByMediaType === 'all'
-            ? communityRankings
-            : communityRankings.filter((ranking) => {
-                  // Check if all items in ranking match the filter
-                  return ranking.rankedItems.every(
-                      (item) => item.content.media_type === filterByMediaType
-                  )
-              })
+    // Filter rankings by media type and tag
+    const filteredRankings = communityRankings.filter((ranking) => {
+        // Filter by media type
+        if (filterByMediaType !== 'all') {
+            const matchesMediaType = ranking.rankedItems.every(
+                (item) => item.content.media_type === filterByMediaType
+            )
+            if (!matchesMediaType) return false
+        }
+
+        // Filter by tag
+        if (filterByTag) {
+            if (!ranking.tags || !ranking.tags.includes(filterByTag)) {
+                return false
+            }
+        }
+
+        return true
+    })
 
     if (!isInitialized || isLoading) {
         return (
@@ -155,6 +167,43 @@ export default function CommunityPage() {
                                     }`}
                                 >
                                     {option.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Filter by Tag */}
+                    <div>
+                        <div className="flex items-center justify-between mb-2">
+                            <label className="block text-sm font-medium text-gray-300">
+                                Filter by Tag
+                            </label>
+                            {filterByTag && (
+                                <button
+                                    onClick={() => setFilterByTag(null)}
+                                    className="text-xs text-gray-400 hover:text-white flex items-center gap-1 transition-colors"
+                                >
+                                    <XMarkIcon className="w-4 h-4" />
+                                    Clear
+                                </button>
+                            )}
+                        </div>
+                        <div className="flex flex-wrap gap-2 max-h-64 overflow-y-auto pr-2">
+                            {POPULAR_TAGS.map((tag) => (
+                                <button
+                                    key={tag.id}
+                                    onClick={() =>
+                                        setFilterByTag(filterByTag === tag.name ? null : tag.name)
+                                    }
+                                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                                        filterByTag === tag.name
+                                            ? 'bg-yellow-500 text-black'
+                                            : 'bg-zinc-800 text-gray-300 hover:bg-zinc-700'
+                                    }`}
+                                    title={tag.description}
+                                >
+                                    <span className="mr-1">{tag.emoji}</span>
+                                    {tag.name}
                                 </button>
                             ))}
                         </div>
