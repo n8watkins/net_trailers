@@ -8,6 +8,24 @@ import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { WatchHistoryEntry, WatchHistoryDocument } from '../../types/watchHistory'
 
+const removeUndefinedValues = <T>(value: T): T => {
+    if (Array.isArray(value)) {
+        return value.map((item) => removeUndefinedValues(item)) as unknown as T
+    }
+
+    if (value !== null && typeof value === 'object') {
+        const cleaned: Record<string, unknown> = {}
+        for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
+            if (val !== undefined) {
+                cleaned[key] = removeUndefinedValues(val)
+            }
+        }
+        return cleaned as T
+    }
+
+    return value
+}
+
 /**
  * Get watch history from Firestore
  */
@@ -47,10 +65,10 @@ export async function saveWatchHistory(
     try {
         const docRef = doc(db, 'users', userId, 'data', 'watchHistory')
 
-        const data: WatchHistoryDocument = {
+        const data: WatchHistoryDocument = removeUndefinedValues({
             history,
             updatedAt: Date.now(),
-        }
+        })
 
         await setDoc(docRef, data, { merge: true })
         console.log('[Firestore Watch History] ✅ Successfully saved to Firestore')
