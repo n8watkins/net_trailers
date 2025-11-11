@@ -99,7 +99,7 @@ export default function WatchHistoryPage() {
     )
 
     const headerActions = (
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <div className="flex flex-col gap-4">
             {/* Date Filter Pills */}
             <div className="flex flex-wrap gap-2">
                 {[
@@ -130,6 +130,7 @@ export default function WatchHistoryPage() {
                 onChange={setSearchQuery}
                 placeholder="Search history..."
                 focusColor="purple"
+                voiceInput
             />
         </div>
     )
