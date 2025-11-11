@@ -715,9 +715,26 @@ const Settings: React.FC = () => {
                 // getAccountDataSummary is now async for both auth and guest
                 const summary = await userData.getAccountDataSummary()
                 // Override watchHistoryCount with the value from useWatchHistory hook
+                // and recalculate totalItems and isEmpty
+                const watchHistoryCount = totalWatched
+                const totalItems =
+                    summary.watchlistCount +
+                    summary.likedCount +
+                    summary.hiddenCount +
+                    watchHistoryCount +
+                    summary.listsCount
+                const isEmpty =
+                    summary.watchlistCount === 0 &&
+                    summary.likedCount === 0 &&
+                    summary.hiddenCount === 0 &&
+                    watchHistoryCount === 0 &&
+                    summary.listsCount === 0
+
                 setDataSummary({
                     ...summary,
-                    watchHistoryCount: totalWatched,
+                    watchHistoryCount,
+                    totalItems,
+                    isEmpty,
                 })
             }
         }
