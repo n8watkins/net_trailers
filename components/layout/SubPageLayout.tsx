@@ -53,7 +53,7 @@ export default function SubPageLayout({
             <SubHeader />
 
             <main className="relative pb-24 px-4 sm:px-6 lg:px-8">
-                <div className="max-w-[1600px] mx-auto flex flex-col space-y-6 py-8">
+                <div className="max-w-[1920px] mx-auto flex flex-col space-y-6 py-8">
                     {/* Page Header */}
                     <div className="space-y-4">
                         {/* Title Section with Actions */}
