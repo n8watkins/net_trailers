@@ -177,44 +177,48 @@ async function processCollection(userId: string, collection: CustomRow): Promise
 /**
  * Get all user IDs that have custom rows
  *
- * Note: This is a simplified implementation that returns a sample of users.
- * In production, you should:
- * 1. Query Firestore for all users with customRows collection
- * 2. Implement pagination for large user bases
- * 3. Consider using Firebase Cloud Functions for better scalability
+ * This implementation uses Firebase Admin SDK for server-side access.
+ * For large user bases, consider implementing pagination and processing users in batches.
  */
 async function getAllUserIds(): Promise<string[]> {
-    // TODO: Implement proper user enumeration from Firestore
-    // For now, this is a placeholder that would need to be replaced with
-    // actual Firestore queries to get users with auto-updating collections
+    try {
+        // Use Firebase Admin SDK for server-side access
+        const { getAdminDb } = await import('@/lib/firebase-admin')
+        const db = getAdminDb()
 
-    // Temporary implementation - in production you would query Firestore
-    // to get all users who have collections with autoUpdateEnabled: true
+        // Get all users
+        const usersSnapshot = await db.collection('users').get()
 
-    console.warn('[Cron] getAllUserIds() needs production implementation')
-    return []
+        const userIds: string[] = []
 
-    // Production implementation would look like:
-    /*
-    import { db } from '@/firebase'
-    import { collection, getDocs, query, where } from 'firebase/firestore'
+        // Check each user for custom rows
+        for (const userDoc of usersSnapshot.docs) {
+            try {
+                const userData = userDoc.data()
 
-    const usersRef = collection(db, 'users')
-    const snapshot = await getDocs(usersRef)
+                // Check if user has custom rows with auto-update enabled
+                // Note: Adjust this logic based on your actual schema
+                // You may need to check for customRows subcollection or a field in the user document
+                const customRowsSnapshot = await db
+                    .collection(`users/${userDoc.id}/customRows`)
+                    .limit(1)
+                    .get()
 
-    const userIds: string[] = []
-    for (const doc of snapshot.docs) {
-        // Check if user has any custom rows (could optimize with subcollection query)
-        const customRowsRef = collection(db, `users/${doc.id}/customRows`)
-        const rowsSnapshot = await getDocs(customRowsRef)
-
-        if (!rowsSnapshot.empty) {
-            userIds.push(doc.id)
+                if (!customRowsSnapshot.empty) {
+                    userIds.push(userDoc.id)
+                }
+            } catch (error) {
+                console.error(`[Cron] Error checking user ${userDoc.id}:`, error)
+                // Continue with next user
+            }
         }
-    }
 
-    return userIds
-    */
+        console.log(`[Cron] Found ${userIds.length} users with custom rows`)
+        return userIds
+    } catch (error) {
+        console.error('[Cron] Error in getAllUserIds:', error)
+        return []
+    }
 }
 
 /**

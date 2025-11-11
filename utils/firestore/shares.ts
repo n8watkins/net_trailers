@@ -44,10 +44,58 @@ function getShareDocRef(shareId: string) {
 }
 
 /**
- * Get Firestore collection reference for user's collection
+ * Get user's collection from their userCreatedWatchlists array
+ *
+ * IMPORTANT: Collections are stored in the userCreatedWatchlists array
+ * on the user document, NOT in a separate subcollection.
  */
-function getUserCollectionDocRef(userId: string, collectionId: string) {
-    return doc(db, `users/${userId}/collections/${collectionId}`)
+async function getUserCollection(userId: string, collectionId: string): Promise<UserList | null> {
+    try {
+        const userRef = doc(db, `users/${userId}`)
+        const userSnap = await getDoc(userRef)
+
+        if (!userSnap.exists()) {
+            return null
+        }
+
+        const userData = userSnap.data()
+        const collections: UserList[] = userData.userCreatedWatchlists || []
+
+        // Find the collection by ID
+        const collection = collections.find((c) => c.id === collectionId)
+        return collection || null
+    } catch (error) {
+        console.error('Error fetching user collection:', error)
+        return null
+    }
+}
+
+/**
+ * Update a specific collection in the user's userCreatedWatchlists array
+ */
+async function updateUserCollection(
+    userId: string,
+    collectionId: string,
+    updates: Partial<UserList>
+): Promise<void> {
+    const userRef = doc(db, `users/${userId}`)
+    const userSnap = await getDoc(userRef)
+
+    if (!userSnap.exists()) {
+        throw new Error('User not found')
+    }
+
+    const userData = userSnap.data()
+    const collections: UserList[] = userData.userCreatedWatchlists || []
+
+    // Find and update the collection
+    const updatedCollections = collections.map((c) =>
+        c.id === collectionId ? { ...c, ...updates } : c
+    )
+
+    await updateDoc(userRef, {
+        userCreatedWatchlists: updatedCollections,
+    })
 }
 
 /**
@@ -96,14 +144,11 @@ export async function createShareLink(
 ): Promise<CreateShareResponse> {
     try {
         // Fetch the collection to get metadata
-        const collectionRef = getUserCollectionDocRef(userId, collectionId)
-        const collectionSnap = await getDoc(collectionRef)
+        const collection = await getUserCollection(userId, collectionId)
 
-        if (!collectionSnap.exists()) {
+        if (!collection) {
             throw new Error('Collection not found')
         }
-
-        const collection = collectionSnap.data() as UserList
 
         // Check user's share limit
         const userShares = await getUserShares(userId)
@@ -155,7 +200,7 @@ export async function createShareLink(
         await setDoc(shareRef, shareLink)
 
         // Update collection with share link reference
-        await updateDoc(collectionRef, {
+        await updateUserCollection(userId, collectionId, {
             sharedLinkId: shareId,
             shareSettings: settings,
         })
@@ -254,14 +299,11 @@ export async function getSharedCollectionData(
         const share = validation.share
 
         // Fetch collection data
-        const collectionRef = getUserCollectionDocRef(share.userId, share.collectionId)
-        const collectionSnap = await getDoc(collectionRef)
+        const collection = await getUserCollection(share.userId, share.collectionId)
 
-        if (!collectionSnap.exists()) {
+        if (!collection) {
             throw new Error('Collection not found')
         }
-
-        const collection = collectionSnap.data() as UserList
 
         // Get owner name if settings allow
         let ownerName: string | undefined
@@ -351,9 +393,8 @@ export async function deactivateShare(shareId: string, userId: string): Promise<
         })
 
         // Remove from collection
-        const collectionRef = getUserCollectionDocRef(userId, share.collectionId)
-        await updateDoc(collectionRef, {
-            sharedLinkId: null,
+        await updateUserCollection(userId, share.collectionId, {
+            sharedLinkId: undefined,
         })
     } catch (error) {
         console.error('Error deactivating share:', error)
@@ -394,8 +435,7 @@ export async function reactivateShare(shareId: string, userId: string): Promise<
         })
 
         // Update collection
-        const collectionRef = getUserCollectionDocRef(userId, share.collectionId)
-        await updateDoc(collectionRef, {
+        await updateUserCollection(userId, share.collectionId, {
             sharedLinkId: shareId,
         })
     } catch (error) {
@@ -430,16 +470,12 @@ export async function deleteShare(shareId: string, userId: string): Promise<void
         await deleteDoc(shareRef)
 
         // Remove from collection if it's the active share
-        const collectionRef = getUserCollectionDocRef(userId, share.collectionId)
-        const collectionSnap = await getDoc(collectionRef)
+        const collection = await getUserCollection(userId, share.collectionId)
 
-        if (collectionSnap.exists()) {
-            const collection = collectionSnap.data() as UserList
-            if (collection.sharedLinkId === shareId) {
-                await updateDoc(collectionRef, {
-                    sharedLinkId: null,
-                })
-            }
+        if (collection && collection.sharedLinkId === shareId) {
+            await updateUserCollection(userId, share.collectionId, {
+                sharedLinkId: undefined,
+            })
         }
     } catch (error) {
         console.error('Error deleting share:', error)

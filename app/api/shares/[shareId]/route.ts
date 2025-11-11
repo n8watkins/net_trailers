@@ -7,6 +7,7 @@
  * DELETE /api/shares/[shareId]
  *
  * Delete a share link (requires ownership)
+ * SECURITY: DELETE requires valid Firebase ID token in Authorization header
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -15,6 +16,7 @@ import {
     incrementViewCount,
     deleteShare,
 } from '../../../../utils/firestore/shares'
+import { withAuth } from '../../../../lib/auth-middleware'
 
 interface RouteContext {
     params: Promise<{
@@ -71,22 +73,23 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     }
 }
 
-export async function DELETE(request: NextRequest, { params }: RouteContext) {
+async function handleDeleteShare(
+    request: NextRequest,
+    userId: string,
+    context?: RouteContext
+): Promise<NextResponse> {
     try {
-        const { shareId } = await params
-
-        // Get user ID from headers
-        const userId = request.headers.get('x-user-id')
-
-        if (!userId) {
+        if (!context) {
             return NextResponse.json(
                 {
                     success: false,
-                    error: 'Authentication required',
+                    error: 'Invalid request context',
                 },
-                { status: 401 }
+                { status: 400 }
             )
         }
+
+        const { shareId } = await context.params
 
         if (!shareId) {
             return NextResponse.json(
@@ -122,3 +125,6 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
         )
     }
 }
+
+// Export authenticated handler for DELETE
+export const DELETE = withAuth(handleDeleteShare)

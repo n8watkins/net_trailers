@@ -3,6 +3,8 @@
  *
  * Create a shareable link for a collection
  *
+ * SECURITY: Requires valid Firebase ID token in Authorization header
+ *
  * Request body:
  * {
  *   collectionId: string
@@ -24,22 +26,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createShareLink } from '../../../../utils/firestore/shares'
 import { CreateShareRequest, CreateShareResponse } from '../../../../types/sharing'
+import { withAuth } from '../../../../lib/auth-middleware'
 
-export async function POST(request: NextRequest) {
+async function handleCreateShare(request: NextRequest, userId: string): Promise<NextResponse> {
     try {
-        // Get user ID from headers (set by middleware or auth)
-        const userId = request.headers.get('x-user-id')
-
-        if (!userId) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error: 'Authentication required. Please sign in to share collections.',
-                },
-                { status: 401 }
-            )
-        }
-
         // Parse request body
         const body = (await request.json()) as CreateShareRequest
 
@@ -75,3 +65,6 @@ export async function POST(request: NextRequest) {
         )
     }
 }
+
+// Export authenticated handler
+export const POST = withAuth(handleCreateShare)

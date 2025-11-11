@@ -3,6 +3,8 @@
  *
  * Duplicate a shared collection to the user's account
  *
+ * SECURITY: Requires valid Firebase ID token in Authorization header
+ *
  * Request body:
  * {
  *   name: string
@@ -11,27 +13,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { doc, getDoc, updateDoc } from 'firebase/firestore'
-import { db } from '../../../../firebase'
 import { UserList } from '../../../../types/userLists'
 import { Content } from '../../../../typings'
 import { nanoid } from 'nanoid'
+import { withAuth } from '../../../../lib/auth-middleware'
+import { getAdminDb } from '../../../../lib/firebase-admin'
 
-export async function POST(request: NextRequest) {
+async function handleDuplicate(request: NextRequest, userId: string): Promise<NextResponse> {
     try {
-        // Get user ID from headers
-        const userId = request.headers.get('x-user-id')
-
-        if (!userId) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error: 'Authentication required',
-                },
-                { status: 401 }
-            )
-        }
-
         // Parse request body
         const body = await request.json()
         const { name, items } = body as { name: string; items: Content[] }
@@ -46,11 +35,12 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Get user document
-        const userRef = doc(db, `users/${userId}`)
-        const userSnap = await getDoc(userRef)
+        // Use Admin SDK to interact with Firestore
+        const db = getAdminDb()
+        const userRef = db.collection('users').doc(userId)
+        const userSnap = await userRef.get()
 
-        if (!userSnap.exists()) {
+        if (!userSnap.exists) {
             return NextResponse.json(
                 {
                     success: false,
@@ -61,7 +51,7 @@ export async function POST(request: NextRequest) {
         }
 
         const userData = userSnap.data()
-        const existingLists: UserList[] = userData.userCreatedWatchlists || []
+        const existingLists: UserList[] = userData?.userCreatedWatchlists || []
 
         // Create new collection
         const newCollection: UserList = {
@@ -72,13 +62,16 @@ export async function POST(request: NextRequest) {
             createdAt: Date.now(),
             updatedAt: Date.now(),
             collectionType: 'manual',
+            displayAsRow: false, // Don't display duplicated collections as rows by default
+            order: existingLists.length, // Place at end
+            enabled: true,
         }
 
         // Add to user's collections
         const updatedLists = [...existingLists, newCollection]
 
         // Update Firestore
-        await updateDoc(userRef, {
+        await userRef.update({
             userCreatedWatchlists: updatedLists,
         })
 
@@ -102,3 +95,6 @@ export async function POST(request: NextRequest) {
         )
     }
 }
+
+// Export authenticated handler
+export const POST = withAuth(handleDuplicate)
