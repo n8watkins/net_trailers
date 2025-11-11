@@ -70,6 +70,15 @@ export function useAuthData(userId: string) {
         if (userId) {
             await saveWatchHistory(userId, [])
             console.log('[useAuthData] ✅ Cleared watch history from Firestore')
+
+            // Verify it was cleared (debug)
+            const { getWatchHistory } = await import('../utils/firestore/watchHistory')
+            const verifyEmpty = await getWatchHistory(userId)
+            console.log(
+                '[useAuthData] 🔍 Verification: Firestore has',
+                verifyEmpty?.length || 0,
+                'entries'
+            )
         }
 
         // Then clear watch history in store while maintaining session
