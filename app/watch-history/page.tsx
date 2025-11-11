@@ -181,11 +181,6 @@ export default function WatchHistoryPage() {
                                                 hour: 'numeric',
                                                 minute: '2-digit',
                                             })}
-                                            {item.progress && item.progress < 100 && (
-                                                <span className="ml-2 text-purple-400">
-                                                    ({Math.round(item.progress)}% watched)
-                                                </span>
-                                            )}
                                         </div>
                                     </div>
                                 ))}

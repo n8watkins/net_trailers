@@ -20,6 +20,7 @@ export interface WatchHistoryEntry {
 export interface WatchHistoryState {
     history: WatchHistoryEntry[]
     isLoading: boolean
+    currentSessionId: string | null // Track active session to prevent data mixing
 }
 
 export interface WatchHistoryActions {
@@ -51,8 +52,17 @@ export interface WatchHistoryActions {
     // Set loading state
     setLoading: (loading: boolean) => void
 
-    // Sync with Firestore (for authenticated users)
+    // Load watch history from Firestore (authenticated users only)
+    loadFromFirestore: (userId: string) => Promise<void>
+
+    // Sync local history with Firestore (for authenticated users)
     syncWithFirestore: (userId: string) => Promise<void>
+
+    // Migrate guest history to authenticated user account
+    migrateGuestToAuth: (userId: string) => Promise<void>
+
+    // Switch between sessions (guest <-> auth or between different users)
+    switchSession: (sessionType: 'guest' | 'authenticated', sessionId: string) => Promise<void>
 }
 
 export type WatchHistoryStore = WatchHistoryState & WatchHistoryActions

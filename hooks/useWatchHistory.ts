@@ -1,25 +1,29 @@
 /**
  * Watch History Hook
  *
- * Hook that manages watch history for both authenticated and guest users
- * - Authenticated users: Synced with Firestore
- * - Guest users: Stored in localStorage (via Zustand persist)
+ * Hook that manages watch history for both authenticated and guest users with proper session isolation:
+ * - Authenticated users: Firestore-backed with no localStorage persistence
+ * - Guest users: localStorage with session-scoped keys
+ * - Automatic session transitions with proper data migration
  */
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useWatchHistoryStore } from '../stores/watchHistoryStore'
 import { useSessionStore } from '../stores/sessionStore'
 import { Content } from '../typings'
 import { addWatchEntryToFirestore } from '../utils/firestore/watchHistory'
+import { auth } from '../firebase'
 
 export function useWatchHistory() {
     const sessionType = useSessionStore((state) => state.sessionType)
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
+    const guestId = useSessionStore((state) => state.guestId)
 
     const {
         history,
         isLoading,
+        currentSessionId,
         addWatchEntry: addToStore,
         getAllHistory,
         getHistoryByDateRange,
@@ -27,14 +31,73 @@ export function useWatchHistory() {
         clearHistory,
         removeEntry,
         syncWithFirestore,
+        loadFromFirestore,
+        migrateGuestToAuth,
+        switchSession,
     } = useWatchHistoryStore()
 
-    // Sync with Firestore on mount for authenticated users
+    // Track previous session to detect transitions
+    const prevSessionRef = useRef<{ type: typeof sessionType; id: string | null }>({
+        type: sessionType,
+        id: userId || guestId,
+    })
+
+    // Handle session transitions
     useEffect(() => {
-        if (sessionType === 'authenticated' && userId) {
-            syncWithFirestore(userId)
+        const currentSessionTypeId = userId || guestId
+        const prevSession = prevSessionRef.current
+
+        // Skip if no session ID yet
+        if (!currentSessionTypeId) {
+            return
         }
-    }, [sessionType, userId, syncWithFirestore])
+
+        // Detect session type change or session ID change
+        const sessionChanged =
+            prevSession.type !== sessionType || prevSession.id !== currentSessionTypeId
+
+        if (sessionChanged) {
+            console.log(
+                `[Watch History] Session transition detected: ${prevSession.type}(${prevSession.id}) -> ${sessionType}(${currentSessionTypeId})`
+            )
+
+            // Special case: Guest to Auth transition - migrate data
+            if (prevSession.type === 'guest' && sessionType === 'authenticated' && userId) {
+                console.log('[Watch History] Migrating guest data to authenticated user')
+                // Wait for Firebase Auth to be ready
+                const unsubscribe = auth.onAuthStateChanged((user) => {
+                    if (user && user.uid === userId) {
+                        migrateGuestToAuth(userId)
+                        unsubscribe()
+                    }
+                })
+            } else {
+                // Normal session switch - clear and reload
+                switchSession(sessionType, currentSessionTypeId)
+            }
+
+            // Update ref
+            prevSessionRef.current = { type: sessionType, id: currentSessionTypeId }
+        } else if (sessionType === 'authenticated' && userId && currentSessionId !== userId) {
+            // Authenticated user, but store hasn't loaded their data yet
+            console.log('[Watch History] Loading authenticated user data from Firestore')
+            // Wait for Firebase Auth to be ready
+            const unsubscribe = auth.onAuthStateChanged((user) => {
+                if (user && user.uid === userId) {
+                    loadFromFirestore(userId)
+                    unsubscribe()
+                }
+            })
+        }
+    }, [
+        sessionType,
+        userId,
+        guestId,
+        currentSessionId,
+        switchSession,
+        migrateGuestToAuth,
+        loadFromFirestore,
+    ])
 
     // Add watch entry with automatic Firestore sync for authenticated users
     const addWatchEntry = async (
