@@ -649,9 +649,9 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
 
     for (const item of likedContent) {
         if (isGuest) {
-            useGuestStore.getState().addLikedMovie(item)
+            await useGuestStore.getState().addLikedMovie(item)
         } else {
-            useAuthStore.getState().addLikedMovie(item)
+            await useAuthStore.getState().addLikedMovie(item)
         }
     }
 
@@ -661,9 +661,9 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
 
     for (const item of hiddenContent) {
         if (isGuest) {
-            useGuestStore.getState().addHiddenMovie(item)
+            await useGuestStore.getState().addHiddenMovie(item)
         } else {
-            useAuthStore.getState().addHiddenMovie(item)
+            await useAuthStore.getState().addHiddenMovie(item)
         }
     }
 
@@ -676,9 +676,9 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
 
     for (const item of watchLaterContent) {
         if (isGuest) {
-            useGuestStore.getState().addToWatchlist(item)
+            await useGuestStore.getState().addToWatchlist(item)
         } else {
-            useAuthStore.getState().addToWatchlist(item)
+            await useAuthStore.getState().addToWatchlist(item)
         }
     }
 
@@ -782,47 +782,32 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
         ]
 
         for (const collection of collections) {
-            const listId = `list_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-
-            // Add items to the collection
-            for (const item of collection.items) {
-                if (isGuest) {
-                    useGuestStore.getState().addToList(listId, item)
-                } else {
-                    useAuthStore.getState().addToList(listId, item)
-                }
+            // Create the list first
+            let listId: string
+            if (isGuest) {
+                listId = await useGuestStore.getState().createList({
+                    name: collection.name,
+                    emoji: collection.emoji,
+                    color: collection.color,
+                    collectionType: 'manual',
+                    isPublic: false,
+                })
+            } else {
+                listId = await useAuthStore.getState().createList({
+                    name: collection.name,
+                    emoji: collection.emoji,
+                    color: collection.color,
+                    collectionType: 'manual',
+                    isPublic: false,
+                })
             }
 
-            // Set list metadata after adding all items
-            if (isGuest) {
-                const lists = useGuestStore.getState().lists
-                if (lists && lists[listId]) {
-                    useGuestStore.setState({
-                        lists: {
-                            ...lists,
-                            [listId]: {
-                                ...lists[listId],
-                                name: collection.name,
-                                emoji: collection.emoji,
-                                color: collection.color,
-                            },
-                        },
-                    })
-                }
-            } else {
-                const lists = useAuthStore.getState().lists
-                if (lists && lists[listId]) {
-                    useAuthStore.setState({
-                        lists: {
-                            ...lists,
-                            [listId]: {
-                                ...lists[listId],
-                                name: collection.name,
-                                emoji: collection.emoji,
-                                color: collection.color,
-                            },
-                        },
-                    })
+            // Add items to the created collection
+            for (const item of collection.items) {
+                if (isGuest) {
+                    await useGuestStore.getState().addToList(listId, item)
+                } else {
+                    await useAuthStore.getState().addToList(listId, item)
                 }
             }
 
@@ -914,6 +899,10 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
             }
         }
     }
+
+    // Wait a bit to ensure all async saves complete before page reload
+    console.log('⏳ Waiting for all saves to complete...')
+    await new Promise((resolve) => setTimeout(resolve, 2000))
 
     console.log('✨ Seed data complete!')
 }
