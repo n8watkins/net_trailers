@@ -278,131 +278,184 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
 
             {/* Step 1: Pick Content */}
             {currentStep === 1 && (
-                <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-800 space-y-6">
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-2xl font-bold text-white">Pick Content</h2>
-                        <span className="text-gray-400">{selectedItems.length} selected</span>
+                <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-800">
+                    <div className="mb-6">
+                        <h2 className="text-2xl font-bold text-white mb-2">Pick Content</h2>
+                        <p className="text-gray-400 text-sm">
+                            Search for movies and TV shows. You need at least 3 items to continue.
+                        </p>
                     </div>
 
-                    {/* Search */}
-                    <div className="relative">
-                        <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
-                        <input
-                            type="text"
-                            value={query}
-                            onChange={(e) => updateQuery(e.target.value)}
-                            placeholder="Search for movies and TV shows..."
-                            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-12 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500"
-                        />
-                    </div>
-
-                    {/* Selected items */}
-                    {selectedItems.length > 0 && (
-                        <div className="border-t border-zinc-800 pt-4">
-                            <h3 className="text-lg font-bold text-white mb-3">Selected Items</h3>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                                {selectedItems.map((content) => (
-                                    <div key={content.id} className="relative group">
-                                        <div className="relative aspect-[2/3]">
-                                            <Image
-                                                src={getPosterPath(content)}
-                                                alt={getTitle(content)}
-                                                fill
-                                                className="object-cover rounded-lg"
-                                            />
-                                            <button
-                                                onClick={() => handleToggleItem(content)}
-                                                className="absolute top-2 right-2 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors"
-                                            >
-                                                <XMarkIcon className="w-5 h-5" />
-                                            </button>
-                                        </div>
-                                        <p className="text-sm text-gray-300 mt-1 truncate">
-                                            {getTitle(content)}
-                                        </p>
-                                    </div>
-                                ))}
+                    {/* Two-column layout */}
+                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+                        {/* Left: Search and Results */}
+                        <div className="space-y-6">
+                            {/* Search */}
+                            <div className="relative">
+                                <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
+                                <input
+                                    type="text"
+                                    value={query}
+                                    onChange={(e) => updateQuery(e.target.value)}
+                                    placeholder="Search for movies and TV shows..."
+                                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-12 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500"
+                                />
                             </div>
-                        </div>
-                    )}
 
-                    {/* Search results */}
-                    {query.length >= 2 && (
-                        <div className="border-t border-zinc-800 pt-4">
-                            <h3 className="text-lg font-bold text-white mb-3">Search Results</h3>
-                            {isSearchLoading ? (
-                                <div className="text-center py-8 text-gray-500">Searching...</div>
-                            ) : results.length === 0 ? (
-                                <div className="text-center py-8 text-gray-500">
-                                    No results found
+                            {/* Search results */}
+                            {query.length >= 2 ? (
+                                <div>
+                                    <h3 className="text-lg font-bold text-white mb-3">
+                                        Search Results
+                                    </h3>
+                                    {isSearchLoading ? (
+                                        <div className="text-center py-8 text-gray-500">
+                                            Searching...
+                                        </div>
+                                    ) : results.length === 0 ? (
+                                        <div className="text-center py-8 text-gray-500">
+                                            No results found
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                            {results.slice(0, 20).map((content) => {
+                                                const isSelected = selectedItems.find(
+                                                    (item) => item.id === content.id
+                                                )
+                                                const canSelect =
+                                                    selectedItems.length <
+                                                    RANKING_CONSTRAINTS.MAX_ITEM_COUNT
+
+                                                return (
+                                                    <div
+                                                        key={content.id}
+                                                        className="relative group cursor-pointer"
+                                                        onClick={() => handleToggleItem(content)}
+                                                    >
+                                                        <div className="relative aspect-[2/3]">
+                                                            <Image
+                                                                src={getPosterPath(content)}
+                                                                alt={getTitle(content)}
+                                                                fill
+                                                                className={`object-cover rounded-lg transition-opacity ${
+                                                                    isSelected
+                                                                        ? 'opacity-50'
+                                                                        : 'group-hover:opacity-75'
+                                                                }`}
+                                                            />
+                                                            {isSelected ? (
+                                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                                    <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                                                                        <CheckIcon className="w-8 h-8 text-white" />
+                                                                    </div>
+                                                                </div>
+                                                            ) : canSelect ? (
+                                                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center">
+                                                                        <PlusIcon className="w-8 h-8 text-black" />
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                                                    <span className="text-white text-sm font-medium">
+                                                                        Limit reached
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-sm text-gray-300 mt-1 truncate">
+                                                            {getTitle(content)}
+                                                        </p>
+                                                        <p className="text-xs text-gray-500">
+                                                            {getYear(content)}
+                                                        </p>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                                    {results.slice(0, 20).map((content) => {
-                                        const isSelected = selectedItems.find(
-                                            (item) => item.id === content.id
-                                        )
-                                        const canSelect =
-                                            selectedItems.length <
-                                            RANKING_CONSTRAINTS.MAX_ITEM_COUNT
-
-                                        return (
-                                            <div
-                                                key={content.id}
-                                                className="relative group cursor-pointer"
-                                                onClick={() => handleToggleItem(content)}
-                                            >
-                                                <div className="relative aspect-[2/3]">
-                                                    <Image
-                                                        src={getPosterPath(content)}
-                                                        alt={getTitle(content)}
-                                                        fill
-                                                        className={`object-cover rounded-lg transition-opacity ${
-                                                            isSelected
-                                                                ? 'opacity-50'
-                                                                : 'group-hover:opacity-75'
-                                                        }`}
-                                                    />
-                                                    {isSelected ? (
-                                                        <div className="absolute inset-0 flex items-center justify-center">
-                                                            <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                                                                <CheckIcon className="w-8 h-8 text-white" />
-                                                            </div>
-                                                        </div>
-                                                    ) : canSelect ? (
-                                                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center">
-                                                                <PlusIcon className="w-8 h-8 text-black" />
-                                                            </div>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                                                            <span className="text-white text-sm font-medium">
-                                                                Limit reached
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <p className="text-sm text-gray-300 mt-1 truncate">
-                                                    {getTitle(content)}
-                                                </p>
-                                                <p className="text-xs text-gray-500">
-                                                    {getYear(content)}
-                                                </p>
-                                            </div>
-                                        )
-                                    })}
+                                <div className="text-center py-12 text-gray-500">
+                                    <MagnifyingGlassIcon className="w-16 h-16 mx-auto mb-4 text-gray-600" />
+                                    <p className="text-lg mb-2">Search for movies and TV shows</p>
+                                    <p className="text-sm">
+                                        Type at least 2 characters to start searching
+                                    </p>
                                 </div>
                             )}
                         </div>
-                    )}
 
-                    {query.length < 2 && selectedItems.length === 0 && (
-                        <div className="text-center py-12 text-gray-500">
-                            <MagnifyingGlassIcon className="w-16 h-16 mx-auto mb-4 text-gray-600" />
-                            <p>Search for movies and TV shows to add to your ranking</p>
+                        {/* Right: Selected Items Panel */}
+                        <div className="lg:sticky lg:top-6 lg:self-start">
+                            <div className="bg-zinc-800 rounded-lg p-4 border border-zinc-700">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-lg font-bold text-white">Selected</h3>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm font-medium text-gray-400">
+                                            {selectedItems.length} /{' '}
+                                            {RANKING_CONSTRAINTS.MAX_ITEM_COUNT}
+                                        </span>
+                                        <div className="w-16 h-2 bg-zinc-900 rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-yellow-500 transition-all duration-300"
+                                                style={{
+                                                    width: `${(selectedItems.length / RANKING_CONSTRAINTS.MAX_ITEM_COUNT) * 100}%`,
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {selectedItems.length > 0 ? (
+                                    <>
+                                        <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2">
+                                            {selectedItems.map((content) => (
+                                                <div
+                                                    key={content.id}
+                                                    className="flex items-center gap-3 bg-zinc-900 rounded-lg p-2 group hover:bg-zinc-750 transition-colors"
+                                                >
+                                                    <div className="relative w-12 h-18 flex-shrink-0">
+                                                        <Image
+                                                            src={getPosterPath(content)}
+                                                            alt={getTitle(content)}
+                                                            fill
+                                                            className="object-cover rounded"
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm font-medium text-white truncate">
+                                                            {getTitle(content)}
+                                                        </p>
+                                                        <p className="text-xs text-gray-400">
+                                                            {getYear(content)}
+                                                        </p>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => handleToggleItem(content)}
+                                                        className="flex-shrink-0 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100"
+                                                    >
+                                                        <XMarkIcon className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <button
+                                            onClick={() => setSelectedItems([])}
+                                            className="w-full mt-4 px-4 py-2 text-sm bg-zinc-900 hover:bg-zinc-950 text-gray-400 hover:text-red-400 rounded-lg transition-colors"
+                                        >
+                                            Clear All
+                                        </button>
+                                    </>
+                                ) : (
+                                    <div className="text-center py-8 text-gray-500">
+                                        <p className="text-sm">No items selected yet</p>
+                                        <p className="text-xs mt-1">Search and click to add</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    )}
+                    </div>
                 </div>
             )}
 
