@@ -151,6 +151,15 @@ export function getYear(content: Content): string {
     return 'Unknown'
 }
 
+export function getPosterPath(content: Content): string {
+    const posterPath = content.poster_path
+    if (posterPath) {
+        return `https://image.tmdb.org/t/p/w500${posterPath}`
+    }
+    // Return a placeholder image if no poster is available
+    return '/placeholder-poster.png'
+}
+
 export function getContentType(content: Content): string {
     return isMovie(content) ? 'Movie' : 'TV Show'
 }
