@@ -720,6 +720,16 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
         }
     }
 
+    // Persist watch history to storage
+    if (!isGuest) {
+        console.log('  💾 Syncing watch history to Firestore...')
+        await useWatchHistoryStore.getState().syncWithFirestore(userId)
+    } else {
+        // Save to localStorage for guest users
+        console.log('  💾 Saving watch history to localStorage...')
+        useWatchHistoryStore.getState().saveGuestSession(userId)
+    }
+
     // Seed collections
     if (createCollections) {
         console.log('  📚 Creating sample collections')
