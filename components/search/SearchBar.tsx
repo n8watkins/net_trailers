@@ -494,16 +494,41 @@ export default function SearchBar({
                         {isSupported && (
                             <button
                                 onClick={handleVoiceToggle}
-                                className={`px-3 py-2 transition-all ${
-                                    isListening
-                                        ? 'text-red-400 animate-pulse'
-                                        : 'text-gray-400 hover:text-white'
+                                className={`px-3 py-2 transition-all duration-200 ${
+                                    isListening ? 'text-red-500' : 'text-gray-400 hover:text-white'
                                 }`}
                                 type="button"
                                 title={isListening ? 'Stop voice input' : 'Start voice input'}
                                 aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
+                                aria-pressed={isListening}
                             >
-                                <MicrophoneIcon className="h-5 w-5" aria-hidden="true" />
+                                <div className="relative">
+                                    {/* Animated pulsing rings when listening */}
+                                    {isListening && (
+                                        <>
+                                            <span className="absolute inset-0 rounded-full bg-red-500/40 animate-ping" />
+                                            <span
+                                                className="absolute inset-0 rounded-full bg-red-500/30 animate-pulse"
+                                                style={{ animationDuration: '1s' }}
+                                            />
+                                            <span
+                                                className="absolute inset-0 rounded-full bg-red-500/20 animate-pulse"
+                                                style={{
+                                                    animationDuration: '1.5s',
+                                                    animationDelay: '0.3s',
+                                                }}
+                                            />
+                                        </>
+                                    )}
+                                    <MicrophoneIcon
+                                        className={`h-5 w-5 relative z-10 transition-all ${
+                                            isListening
+                                                ? 'scale-110 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]'
+                                                : ''
+                                        }`}
+                                        aria-hidden="true"
+                                    />
+                                </div>
                             </button>
                         )}
 

@@ -166,14 +166,39 @@ export default function InlineSearchBar({
                     {isSupported && (
                         <button
                             onClick={handleVoiceToggle}
-                            className={`transition-all ${
-                                isListening
-                                    ? 'text-blue-400 animate-pulse'
-                                    : 'text-gray-400 hover:text-white'
+                            className={`transition-all duration-200 ${
+                                isListening ? 'text-blue-500' : 'text-gray-400 hover:text-white'
                             }`}
                             title={isListening ? 'Stop voice input' : 'Start voice input'}
+                            aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
+                            aria-pressed={isListening}
                         >
-                            <MicrophoneIcon className="h-5 w-5" />
+                            <div className="relative">
+                                {/* Animated pulsing rings when listening */}
+                                {isListening && (
+                                    <>
+                                        <span className="absolute inset-0 rounded-full bg-blue-500/40 animate-ping" />
+                                        <span
+                                            className="absolute inset-0 rounded-full bg-blue-500/30 animate-pulse"
+                                            style={{ animationDuration: '1s' }}
+                                        />
+                                        <span
+                                            className="absolute inset-0 rounded-full bg-blue-500/20 animate-pulse"
+                                            style={{
+                                                animationDuration: '1.5s',
+                                                animationDelay: '0.3s',
+                                            }}
+                                        />
+                                    </>
+                                )}
+                                <MicrophoneIcon
+                                    className={`h-5 w-5 relative z-10 transition-all ${
+                                        isListening
+                                            ? 'scale-110 drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]'
+                                            : ''
+                                    }`}
+                                />
+                            </div>
                         </button>
                     )}
                     {/* Clear Button */}

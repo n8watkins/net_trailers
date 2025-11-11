@@ -47,11 +47,11 @@ export default function SearchBar({
         gray: 'focus:ring-gray-400',
     }
 
-    const handleVoiceClick = () => {
+    const handleVoiceClick = async () => {
         if (isListening) {
             stopListening()
         } else {
-            startListening()
+            await startListening()
         }
     }
 
@@ -71,14 +71,36 @@ export default function SearchBar({
                 <button
                     type="button"
                     onClick={handleVoiceClick}
-                    className={`absolute inset-y-0 right-0 pr-3 flex items-center transition-colors duration-200 ${
-                        isListening
-                            ? 'text-red-500 animate-pulse'
-                            : 'text-gray-400 hover:text-gray-200'
+                    className={`absolute inset-y-0 right-0 pr-3 flex items-center transition-all duration-200 ${
+                        isListening ? 'text-red-500' : 'text-gray-400 hover:text-gray-200'
                     }`}
                     title={isListening ? 'Stop listening' : 'Start voice input'}
+                    aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
+                    aria-pressed={isListening}
                 >
-                    <MicrophoneIcon className="h-5 w-5" />
+                    <div className="relative">
+                        {/* Animated pulsing rings when listening */}
+                        {isListening && (
+                            <>
+                                <span className="absolute inset-0 rounded-full bg-red-500/40 animate-ping" />
+                                <span
+                                    className="absolute inset-0 rounded-full bg-red-500/30 animate-pulse"
+                                    style={{ animationDuration: '1s' }}
+                                />
+                                <span
+                                    className="absolute inset-0 rounded-full bg-red-500/20 animate-pulse"
+                                    style={{ animationDuration: '1.5s', animationDelay: '0.3s' }}
+                                />
+                            </>
+                        )}
+                        <MicrophoneIcon
+                            className={`h-5 w-5 relative z-10 transition-all ${
+                                isListening
+                                    ? 'scale-110 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]'
+                                    : ''
+                            }`}
+                        />
+                    </div>
                 </button>
             )}
         </div>
