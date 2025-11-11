@@ -284,8 +284,15 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
             />
 
             {/* Modal */}
-            <div className="relative min-h-screen flex items-center justify-center p-4">
-                <div className="relative bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-lg shadow-2xl max-w-6xl w-full border border-gray-700">
+            <div
+                className="relative min-h-screen flex items-center justify-center p-4"
+                onMouseDown={handleBackdropMouseDown}
+                onClick={handleBackdropClick}
+            >
+                <div
+                    className="relative bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-lg shadow-2xl max-w-7xl w-full border border-gray-700"
+                    onClick={(e) => e.stopPropagation()}
+                >
                     {/* Header */}
                     <div className="flex items-center justify-between p-6 border-b border-gray-700">
                         <div className="flex-1">
@@ -458,7 +465,7 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
                                                         No content found
                                                     </div>
                                                 ) : (
-                                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                                                         {tagContent.map((content) => {
                                                             const isSelected = selectedItems.find(
                                                                 (item) => item.id === content.id
@@ -527,7 +534,7 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
                                                         No results found
                                                     </div>
                                                 ) : (
-                                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                                                         {results.slice(0, 20).map((content) => {
                                                             const isSelected = selectedItems.find(
                                                                 (item) => item.id === content.id
