@@ -16,6 +16,8 @@ import SearchBar from '../../components/common/SearchBar'
 import { useWatchHistory } from '../../hooks/useWatchHistory'
 import { getTitle } from '../../typings'
 import { useSessionStore } from '../../stores/sessionStore'
+import { GuestModeNotification } from '../../components/auth/GuestModeNotification'
+import { useAuthStatus } from '../../hooks/useAuthStatus'
 
 export default function WatchHistoryPage() {
     const [searchQuery, setSearchQuery] = useState('')
@@ -28,6 +30,7 @@ export default function WatchHistoryPage() {
     // Get actual watch history from store
     const { history: watchHistory, isLoading: isLoadingHistory } = useWatchHistory()
     const isInitialized = useSessionStore((state) => state.isInitialized)
+    const { isGuest } = useAuthStatus()
 
     // Show loading state while initializing or loading history
     const isLoading = !isInitialized || isLoadingHistory
@@ -104,7 +107,10 @@ export default function WatchHistoryPage() {
     )
 
     const headerActions = !isLoading ? (
-        <div className="flex flex-col gap-4">
+        <div className="space-y-4">
+            {/* Guest Mode Notification */}
+            {isInitialized && isGuest && <GuestModeNotification align="left" />}
+
             {/* Date Filter Pills */}
             <div className="flex flex-wrap gap-2">
                 {[
