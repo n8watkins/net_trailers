@@ -201,34 +201,78 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
         <div className="max-w-4xl mx-auto">
             {/* Progress indicator */}
             <div className="mb-8">
-                <div className="flex items-center justify-between mb-4">
+                {/* Step circles and connectors */}
+                <div className="flex items-center mb-4">
                     {[1, 2, 3].map((step) => (
-                        <div key={step} className="flex items-center flex-1">
-                            <div
-                                className={`flex items-center justify-center w-10 h-10 rounded-full font-bold ${
-                                    step === currentStep
-                                        ? 'bg-yellow-500 text-black'
-                                        : step < currentStep
-                                          ? 'bg-green-500 text-white'
-                                          : 'bg-zinc-800 text-gray-500'
-                                }`}
-                            >
-                                {step < currentStep ? <CheckIcon className="w-6 h-6" /> : step}
-                            </div>
-                            {step < 3 && (
+                        <div key={step} className="flex items-center flex-1 last:flex-initial">
+                            {/* Step circle */}
+                            <div className="relative flex items-center justify-center">
                                 <div
-                                    className={`flex-1 h-1 mx-2 ${
-                                        step < currentStep ? 'bg-green-500' : 'bg-zinc-800'
+                                    className={`relative flex items-center justify-center w-12 h-12 rounded-full font-bold text-lg transition-all duration-300 ${
+                                        step === currentStep
+                                            ? 'bg-yellow-500 text-black scale-110 ring-4 ring-yellow-500/20'
+                                            : step < currentStep
+                                              ? 'bg-green-500 text-white'
+                                              : 'bg-zinc-800 text-gray-500'
                                     }`}
-                                />
+                                >
+                                    {step < currentStep ? (
+                                        <CheckIcon className="w-7 h-7 animate-in zoom-in duration-200" />
+                                    ) : (
+                                        step
+                                    )}
+                                    {/* Pulse animation for active step */}
+                                    {step === currentStep && (
+                                        <div className="absolute inset-0 rounded-full bg-yellow-500 animate-ping opacity-25" />
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Connector line */}
+                            {step < 3 && (
+                                <div className="flex-1 h-1 mx-3 bg-zinc-800 rounded-full overflow-hidden">
+                                    <div
+                                        className={`h-full transition-all duration-500 rounded-full ${
+                                            step < currentStep
+                                                ? 'bg-green-500 w-full'
+                                                : 'bg-transparent w-0'
+                                        }`}
+                                    />
+                                </div>
                             )}
                         </div>
                     ))}
                 </div>
-                <div className="flex justify-between text-sm text-gray-400">
-                    <span>Pick Content</span>
-                    <span>Order & Notes</span>
-                    <span>Name & Share</span>
+
+                {/* Step labels */}
+                <div className="flex items-start">
+                    <div className="flex-1 text-left">
+                        <span
+                            className={`text-sm font-medium transition-colors duration-200 ${
+                                currentStep === 1 ? 'text-yellow-400' : 'text-gray-400'
+                            }`}
+                        >
+                            Pick Content
+                        </span>
+                    </div>
+                    <div className="flex-1 text-center">
+                        <span
+                            className={`text-sm font-medium transition-colors duration-200 ${
+                                currentStep === 2 ? 'text-yellow-400' : 'text-gray-400'
+                            }`}
+                        >
+                            Order & Notes
+                        </span>
+                    </div>
+                    <div className="flex-1 text-right">
+                        <span
+                            className={`text-sm font-medium transition-colors duration-200 ${
+                                currentStep === 3 ? 'text-yellow-400' : 'text-gray-400'
+                            }`}
+                        >
+                            Name & Share
+                        </span>
+                    </div>
                 </div>
             </div>
 
