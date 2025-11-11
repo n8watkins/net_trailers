@@ -461,15 +461,27 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
 
             {/* Step 2: Order & Notes */}
             {currentStep === 2 && (
-                <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-800 space-y-6">
-                    <div className="mb-4">
+                <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-800">
+                    <div className="mb-6">
                         <h2 className="text-2xl font-bold text-white mb-2">Order Your Ranking</h2>
-                        <p className="text-gray-400">
-                            Drag and drop to reorder. Add optional notes for each item.
-                        </p>
+                        <div className="flex items-start gap-3 p-4 bg-zinc-800/50 border border-zinc-700 rounded-lg">
+                            <div className="flex-shrink-0 w-8 h-8 bg-yellow-500/10 rounded-full flex items-center justify-center">
+                                <Bars3Icon className="w-5 h-5 text-yellow-500" />
+                            </div>
+                            <div className="flex-1 text-sm">
+                                <p className="text-gray-300 mb-1">
+                                    <strong>Drag the handle</strong> to reorder items. Your #1 pick
+                                    should be at the top.
+                                </p>
+                                <p className="text-gray-500">
+                                    Add optional notes to explain your choices (e.g., &quot;Best
+                                    plot twist of all time&quot;)
+                                </p>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                         {rankedItems.map((item, index) => (
                             <div
                                 key={item.content.id}
@@ -477,50 +489,112 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
                                 onDragStart={() => handleDragStart(index)}
                                 onDragOver={(e) => handleDragOver(e, index)}
                                 onDragEnd={handleDragEnd}
-                                className={`flex items-start gap-4 bg-zinc-800 rounded-lg p-4 cursor-move transition-all ${
-                                    draggedIndex === index ? 'opacity-50' : 'hover:bg-zinc-750'
+                                className={`group relative flex items-start gap-4 rounded-lg p-5 transition-all duration-200 ${
+                                    draggedIndex === index
+                                        ? 'opacity-50 scale-95 bg-yellow-500/10 border-2 border-yellow-500 border-dashed'
+                                        : 'bg-zinc-800 hover:bg-zinc-750 border-2 border-transparent cursor-move'
                                 }`}
                             >
                                 {/* Drag handle */}
-                                <div className="flex items-center gap-3">
-                                    <Bars3Icon className="w-6 h-6 text-gray-500" />
-                                    <div className="flex-shrink-0 w-10 h-10 bg-yellow-500 text-black font-bold rounded-full flex items-center justify-center text-lg">
-                                        {index + 1}
+                                <div className="flex flex-col items-center gap-2 flex-shrink-0">
+                                    <Bars3Icon className="w-7 h-7 text-gray-500 group-hover:text-yellow-500 transition-colors" />
+                                    <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 text-black font-bold rounded-full flex items-center justify-center text-xl shadow-lg ring-2 ring-black/20">
+                                        #{index + 1}
                                     </div>
                                 </div>
 
-                                {/* Poster */}
-                                <div className="relative w-12 h-18 flex-shrink-0">
+                                {/* Poster - Much Larger */}
+                                <div className="relative w-24 h-36 flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
                                     <Image
                                         src={getPosterPath(item.content)}
                                         alt={getTitle(item.content)}
                                         fill
-                                        className="object-cover rounded-md"
+                                        className="object-cover rounded-lg shadow-lg"
                                     />
+                                    {/* Media type badge */}
+                                    <div className="absolute top-2 right-2">
+                                        <span
+                                            className={`px-2 py-1 text-xs font-bold rounded backdrop-blur-sm ${
+                                                item.content.media_type === 'movie'
+                                                    ? 'bg-white/90 text-black'
+                                                    : 'bg-black/90 text-white'
+                                            }`}
+                                        >
+                                            {item.content.media_type === 'movie' ? 'Movie' : 'TV'}
+                                        </span>
+                                    </div>
                                 </div>
 
                                 {/* Content info and note */}
-                                <div className="flex-1 min-w-0">
-                                    <h3 className="text-white font-bold truncate">
-                                        {getTitle(item.content)}
-                                    </h3>
-                                    <p className="text-sm text-gray-400 mb-2">
-                                        {getYear(item.content)} •{' '}
-                                        {item.content.media_type === 'movie' ? 'Movie' : 'TV Show'}
-                                    </p>
-                                    <input
-                                        type="text"
-                                        value={item.note}
-                                        onChange={(e) => handleUpdateNote(index, e.target.value)}
-                                        placeholder="Add a note (optional)..."
-                                        maxLength={RANKING_CONSTRAINTS.MAX_NOTE_LENGTH}
-                                        className="w-full bg-zinc-900 border border-zinc-700 rounded px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500"
-                                        onClick={(e) => e.stopPropagation()}
-                                    />
+                                <div className="flex-1 min-w-0 space-y-3">
+                                    <div>
+                                        <h3 className="text-xl font-bold text-white group-hover:text-yellow-400 transition-colors line-clamp-2">
+                                            {getTitle(item.content)}
+                                        </h3>
+                                        <div className="flex items-center gap-3 mt-1">
+                                            <p className="text-sm text-gray-400">
+                                                {getYear(item.content)}
+                                            </p>
+                                            {item.content.vote_average && (
+                                                <div className="flex items-center gap-1">
+                                                    <span className="text-yellow-400">★</span>
+                                                    <span className="text-sm font-medium text-gray-300">
+                                                        {item.content.vote_average.toFixed(1)}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Note input */}
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-400 mb-1">
+                                            Note (optional)
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={item.note}
+                                            onChange={(e) =>
+                                                handleUpdateNote(index, e.target.value)
+                                            }
+                                            placeholder="Why did you rank this here?"
+                                            maxLength={RANKING_CONSTRAINTS.MAX_NOTE_LENGTH}
+                                            className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition-all"
+                                            onClick={(e) => e.stopPropagation()}
+                                            onDragStart={(e) => e.stopPropagation()}
+                                        />
+                                        <p className="text-xs text-gray-600 mt-1">
+                                            {item.note.length}/{RANKING_CONSTRAINTS.MAX_NOTE_LENGTH}
+                                        </p>
+                                    </div>
                                 </div>
+
+                                {/* Remove button */}
+                                <button
+                                    onClick={() => {
+                                        const newItems = rankedItems.filter((_, i) => i !== index)
+                                        setRankedItems(newItems)
+                                        // Also remove from selectedItems
+                                        setSelectedItems(
+                                            selectedItems.filter((c) => c.id !== item.content.id)
+                                        )
+                                    }}
+                                    className="flex-shrink-0 w-8 h-8 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                                    title="Remove from ranking"
+                                >
+                                    <XMarkIcon className="w-5 h-5" />
+                                </button>
                             </div>
                         ))}
                     </div>
+
+                    {/* Empty state */}
+                    {rankedItems.length === 0 && (
+                        <div className="text-center py-12 text-gray-500">
+                            <p className="text-lg mb-2">No items to order yet</p>
+                            <p className="text-sm">Go back to Step 1 to select content</p>
+                        </div>
+                    )}
                 </div>
             )}
 
