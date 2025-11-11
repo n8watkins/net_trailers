@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
+import { useWatchHistoryStore } from '../../stores/watchHistoryStore'
 import useAuth from '../../hooks/useAuth'
 import { getCachedUserId } from '../../utils/authCache'
 import { authLog, authError } from '../../utils/debugLogger'
@@ -24,6 +25,7 @@ export function SessionSyncManager() {
 
     const authStore = useAuthStore()
     const guestStore = useGuestStore()
+    const watchHistoryStore = useWatchHistoryStore()
 
     // CRITICAL: Check cache directly (synchronous) to avoid guest mode flicker
     // This runs immediately on mount, before any async state updates
@@ -183,8 +185,24 @@ export function SessionSyncManager() {
             if (needsSync) {
                 authLog('📥 [SessionSyncManager] Syncing auth data for:', user.uid)
                 authStore.syncWithFirebase!(user.uid)
+
+                // Also load watch history from Firestore
+                authLog('📥 [SessionSyncManager] Loading watch history from Firestore:', user.uid)
+                watchHistoryStore.loadFromFirestore(user.uid).catch((error) => {
+                    authError('[SessionSyncManager] Failed to load watch history:', error)
+                })
             } else {
                 authLog('✅ [SessionSyncManager] Auth data already synced, skipping')
+
+                // Check if watch history needs loading
+                if (watchHistoryStore.currentSessionId !== user.uid) {
+                    authLog(
+                        '📥 [SessionSyncManager] Auth synced but watch history not loaded, loading now'
+                    )
+                    watchHistoryStore.loadFromFirestore(user.uid).catch((error) => {
+                        authError('[SessionSyncManager] Failed to load watch history:', error)
+                    })
+                }
             }
         } else if (sessionType === 'guest') {
             // FIXED: Sync guest data from localStorage using the correct guestId
@@ -206,8 +224,23 @@ export function SessionSyncManager() {
                 guestStore.syncFromLocalStorage!(activeSessionId).catch((error) => {
                     authError('[SessionSyncManager] Failed to sync guest data:', error)
                 })
+
+                // Also load guest watch history from localStorage
+                authLog(
+                    '📥 [SessionSyncManager] Loading guest watch history from localStorage:',
+                    activeSessionId
+                )
+                watchHistoryStore.loadGuestSession(activeSessionId)
             } else {
                 authLog('✅ [SessionSyncManager] Guest data already synced, skipping')
+
+                // Check if watch history needs loading
+                if (watchHistoryStore.currentSessionId !== activeSessionId) {
+                    authLog(
+                        '📥 [SessionSyncManager] Guest synced but watch history not loaded, loading now'
+                    )
+                    watchHistoryStore.loadGuestSession(activeSessionId)
+                }
             }
         }
     }, [isInitialized, sessionType, activeSessionId, user, authLoading])
