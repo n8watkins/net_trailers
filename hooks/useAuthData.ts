@@ -49,6 +49,8 @@ export function useAuthData(userId: string) {
 
     // Wrapper for account management functions
     const clearAccountData = async () => {
+        console.log('[useAuthData] 🗑️ Starting clearAccountData for user:', userId)
+
         // Clear all data in the store
         await authStore.updatePreferences({
             likedMovies: [],
@@ -56,14 +58,18 @@ export function useAuthData(userId: string) {
             defaultWatchlist: [],
             userCreatedWatchlists: [],
         })
+        console.log('[useAuthData] ✅ Cleared collections and ratings')
 
         // Clear watch history from store and Firestore
         const { useWatchHistoryStore } = await import('../stores/watchHistoryStore')
         const { saveWatchHistory } = await import('../utils/firestore/watchHistory')
 
+        console.log('[useAuthData] 🗑️ Clearing watch history...')
         // Clear watch history in store while maintaining session
         const watchStore = useWatchHistoryStore.getState()
+        const historyCountBefore = watchStore.history.length
         watchStore.clearHistory()
+        console.log(`[useAuthData] Cleared ${historyCountBefore} watch history entries from store`)
 
         // Restore session ID after clearing (clearHistory sets it to null)
         useWatchHistoryStore.setState({
@@ -74,13 +80,19 @@ export function useAuthData(userId: string) {
         // Clear watch history in Firestore
         if (userId) {
             await saveWatchHistory(userId, [])
+            console.log('[useAuthData] ✅ Cleared watch history from Firestore')
         }
 
         // Clear notifications from store and Firestore
         const { useNotificationStore } = await import('../stores/notificationStore')
         if (userId) {
+            console.log('[useAuthData] 🗑️ Clearing notifications...')
+            const notifCountBefore = useNotificationStore.getState().notifications.length
             await useNotificationStore.getState().deleteAllNotifications(userId)
+            console.log(`[useAuthData] ✅ Cleared ${notifCountBefore} notifications from Firestore`)
         }
+
+        console.log('[useAuthData] ✅ clearAccountData completed')
     }
 
     const getAccountDataSummary = async () => {
