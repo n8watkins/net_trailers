@@ -895,147 +895,157 @@ const Settings: React.FC = () => {
             description="Manage your account preferences and data"
         >
             {/* Unified Settings Container */}
-            <div className="bg-[#141414] rounded-lg border border-[#313131] overflow-hidden">
-                <div className="flex flex-col lg:flex-row">
-                    {/* Sidebar */}
-                    <div className="lg:w-96 flex-shrink-0 border-b lg:border-b-0 lg:border-r border-[#313131]">
-                        <nav className="p-6">
-                            {/* Search Bar */}
-                            <div className="mb-4">
-                                <SearchBar
-                                    value={searchQuery}
-                                    onChange={setSearchQuery}
-                                    placeholder="Search settings..."
-                                    focusColor="gray"
-                                    voiceInput
+            {isLoading ? (
+                <NetflixLoader message="Loading settings..." inline />
+            ) : (
+                <div className="bg-[#141414] rounded-lg border border-[#313131] overflow-hidden">
+                    <div className="flex flex-col lg:flex-row">
+                        {/* Sidebar */}
+                        <div className="lg:w-96 flex-shrink-0 border-b lg:border-b-0 lg:border-r border-[#313131]">
+                            <nav className="p-6">
+                                {/* Search Bar */}
+                                <div className="mb-4">
+                                    <SearchBar
+                                        value={searchQuery}
+                                        onChange={setSearchQuery}
+                                        placeholder="Search settings..."
+                                        focusColor="gray"
+                                        voiceInput
+                                    />
+                                </div>
+
+                                <ul className="space-y-2">
+                                    {sidebarItems.map((item) => {
+                                        const isActive = activeSection === item.id
+                                        const Icon = item.icon
+
+                                        return (
+                                            <li key={item.id}>
+                                                <button
+                                                    onClick={() => setActiveSection(item.id)}
+                                                    className={`w-full flex items-center p-4 rounded-lg border-l-4 transition-all duration-200 text-left ${
+                                                        isActive
+                                                            ? 'bg-[#313131] border-l-red-600 shadow-lg'
+                                                            : `hover:bg-[#1a1a1a] ${getPriorityColor(item.priority)} bg-[#0a0a0a]`
+                                                    }`}
+                                                >
+                                                    <Icon
+                                                        className={`w-6 h-6 mr-4 ${getIconColor(item.priority, isActive)}`}
+                                                    />
+                                                    <div className="flex-1">
+                                                        <h3
+                                                            className={`font-medium ${isActive ? 'text-white' : 'text-[#e5e5e5]'}`}
+                                                        >
+                                                            {item.title}
+                                                        </h3>
+                                                        <p className="text-[#b3b3b3] text-sm mt-1">
+                                                            {item.description}
+                                                        </p>
+                                                    </div>
+                                                    <ChevronRightIcon
+                                                        className={`w-5 h-5 ${isActive ? 'text-white' : 'text-[#b3b3b3]'}`}
+                                                    />
+                                                </button>
+                                            </li>
+                                        )
+                                    })}
+                                </ul>
+                            </nav>
+                        </div>
+
+                        {/* Main Content */}
+                        <div className="flex-1">
+                            {activeSection === 'profile' && !isGuest && (
+                                <ProfileSection
+                                    user={user}
+                                    isGoogleAuth={isGoogleAuth}
+                                    isEmailAuth={isEmailAuth}
+                                    displayName={displayName}
+                                    setDisplayName={setDisplayName}
+                                    isSavingProfile={isSavingProfile}
+                                    onSaveProfile={handleSaveProfile}
                                 />
-                            </div>
-
-                            <ul className="space-y-2">
-                                {sidebarItems.map((item) => {
-                                    const isActive = activeSection === item.id
-                                    const Icon = item.icon
-
-                                    return (
-                                        <li key={item.id}>
-                                            <button
-                                                onClick={() => setActiveSection(item.id)}
-                                                className={`w-full flex items-center p-4 rounded-lg border-l-4 transition-all duration-200 text-left ${
-                                                    isActive
-                                                        ? 'bg-[#313131] border-l-red-600 shadow-lg'
-                                                        : `hover:bg-[#1a1a1a] ${getPriorityColor(item.priority)} bg-[#0a0a0a]`
-                                                }`}
-                                            >
-                                                <Icon
-                                                    className={`w-6 h-6 mr-4 ${getIconColor(item.priority, isActive)}`}
-                                                />
-                                                <div className="flex-1">
-                                                    <h3
-                                                        className={`font-medium ${isActive ? 'text-white' : 'text-[#e5e5e5]'}`}
-                                                    >
-                                                        {item.title}
-                                                    </h3>
-                                                    <p className="text-[#b3b3b3] text-sm mt-1">
-                                                        {item.description}
-                                                    </p>
-                                                </div>
-                                                <ChevronRightIcon
-                                                    className={`w-5 h-5 ${isActive ? 'text-white' : 'text-[#b3b3b3]'}`}
-                                                />
-                                            </button>
-                                        </li>
-                                    )
-                                })}
-                            </ul>
-                        </nav>
-                    </div>
-
-                    {/* Main Content */}
-                    <div className="flex-1">
-                        {isLoading ? (
-                            <NetflixLoader message="Loading settings..." inline />
-                        ) : activeSection === 'profile' && !isGuest ? (
-                            <ProfileSection
-                                user={user}
-                                isGoogleAuth={isGoogleAuth}
-                                isEmailAuth={isEmailAuth}
-                                displayName={displayName}
-                                setDisplayName={setDisplayName}
-                                isSavingProfile={isSavingProfile}
-                                onSaveProfile={handleSaveProfile}
-                            />
-                        ) : activeSection === 'email' && !isGuest ? (
-                            <EmailSection
-                                user={user}
-                                isGoogleAuth={isGoogleAuth}
-                                newEmail={newEmail}
-                                setNewEmail={setNewEmail}
-                                emailPassword={emailPassword}
-                                setEmailPassword={setEmailPassword}
-                                isUpdatingEmail={isUpdatingEmail}
-                                onUpdateEmail={handleUpdateEmail}
-                            />
-                        ) : activeSection === 'password' && !isGuest ? (
-                            <PasswordSection
-                                user={user}
-                                isGoogleAuth={isGoogleAuth}
-                                currentPassword={currentPassword}
-                                setCurrentPassword={setCurrentPassword}
-                                newPassword={newPassword}
-                                setNewPassword={setNewPassword}
-                                confirmPassword={confirmPassword}
-                                setConfirmPassword={setConfirmPassword}
-                                isUpdatingPassword={isUpdatingPassword}
-                                onUpdatePassword={handleUpdatePassword}
-                            />
-                        ) : activeSection === 'preferences' ? (
-                            <PreferencesSection
-                                isGuest={isGuest}
-                                isInitializing={userData.isInitializing}
-                                childSafetyMode={childSafetyMode}
-                                autoMute={autoMute}
-                                defaultVolume={defaultVolume}
-                                improveRecommendations={improveRecommendations}
-                                showRecommendations={showRecommendations}
-                                preferencesChanged={preferencesChanged}
-                                hasPIN={pinSettings.hasPIN}
-                                pinEnabled={pinSettings.enabled}
-                                onChildSafetyModeChange={handleChildSafetyModeChange}
-                                onAutoMuteChange={handleAutoMuteChange}
-                                onDefaultVolumeChange={handleDefaultVolumeChange}
-                                onImproveRecommendationsChange={handleImproveRecommendationsChange}
-                                onShowRecommendationsChange={handleShowRecommendationsChange}
-                                onSave={handleSavePreferences}
-                                onShowChildSafetyModal={handleShowChildSafetyModal}
-                                onSetupPIN={handleSetupPIN}
-                                onChangePIN={handleChangePIN}
-                                onRemovePIN={handleRemovePIN}
-                            />
-                        ) : activeSection === 'notifications' ? (
-                            <NotificationsSection
-                                notifications={notifications}
-                                notificationsChanged={notificationsChanged}
-                                onNotificationsChange={handleNotificationsChange}
-                                onSave={handleSaveNotifications}
-                            />
-                        ) : activeSection === 'share' ? (
-                            <ShareSection
-                                isGuest={isGuest}
-                                dataSummary={dataSummary}
-                                onExportData={handleExportData}
-                            />
-                        ) : activeSection === 'account' ? (
-                            <AccountSection
-                                isGuest={isGuest}
-                                dataSummary={dataSummary}
-                                onExportData={handleExportData}
-                                onShowClearConfirm={() => setShowClearConfirm(true)}
-                                onShowDeleteConfirm={() => setShowDeleteConfirm(true)}
-                            />
-                        ) : null}
+                            )}
+                            {activeSection === 'email' && !isGuest && (
+                                <EmailSection
+                                    user={user}
+                                    isGoogleAuth={isGoogleAuth}
+                                    newEmail={newEmail}
+                                    setNewEmail={setNewEmail}
+                                    emailPassword={emailPassword}
+                                    setEmailPassword={setEmailPassword}
+                                    isUpdatingEmail={isUpdatingEmail}
+                                    onUpdateEmail={handleUpdateEmail}
+                                />
+                            )}
+                            {activeSection === 'password' && !isGuest && (
+                                <PasswordSection
+                                    user={user}
+                                    isGoogleAuth={isGoogleAuth}
+                                    currentPassword={currentPassword}
+                                    setCurrentPassword={setCurrentPassword}
+                                    newPassword={newPassword}
+                                    setNewPassword={setNewPassword}
+                                    confirmPassword={confirmPassword}
+                                    setConfirmPassword={setConfirmPassword}
+                                    isUpdatingPassword={isUpdatingPassword}
+                                    onUpdatePassword={handleUpdatePassword}
+                                />
+                            )}
+                            {activeSection === 'preferences' && (
+                                <PreferencesSection
+                                    isGuest={isGuest}
+                                    isInitializing={userData.isInitializing}
+                                    childSafetyMode={childSafetyMode}
+                                    autoMute={autoMute}
+                                    defaultVolume={defaultVolume}
+                                    improveRecommendations={improveRecommendations}
+                                    showRecommendations={showRecommendations}
+                                    preferencesChanged={preferencesChanged}
+                                    hasPIN={pinSettings.hasPIN}
+                                    pinEnabled={pinSettings.enabled}
+                                    onChildSafetyModeChange={handleChildSafetyModeChange}
+                                    onAutoMuteChange={handleAutoMuteChange}
+                                    onDefaultVolumeChange={handleDefaultVolumeChange}
+                                    onImproveRecommendationsChange={
+                                        handleImproveRecommendationsChange
+                                    }
+                                    onShowRecommendationsChange={handleShowRecommendationsChange}
+                                    onSave={handleSavePreferences}
+                                    onShowChildSafetyModal={handleShowChildSafetyModal}
+                                    onSetupPIN={handleSetupPIN}
+                                    onChangePIN={handleChangePIN}
+                                    onRemovePIN={handleRemovePIN}
+                                />
+                            )}
+                            {activeSection === 'notifications' && (
+                                <NotificationsSection
+                                    notifications={notifications}
+                                    notificationsChanged={notificationsChanged}
+                                    onNotificationsChange={handleNotificationsChange}
+                                    onSave={handleSaveNotifications}
+                                />
+                            )}
+                            {activeSection === 'share' && (
+                                <ShareSection
+                                    isGuest={isGuest}
+                                    dataSummary={dataSummary}
+                                    onExportData={handleExportData}
+                                />
+                            )}
+                            {activeSection === 'account' && (
+                                <AccountSection
+                                    isGuest={isGuest}
+                                    dataSummary={dataSummary}
+                                    onExportData={handleExportData}
+                                    onShowClearConfirm={() => setShowClearConfirm(true)}
+                                    onShowDeleteConfirm={() => setShowDeleteConfirm(true)}
+                                />
+                            )}
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* Confirmation Modals */}
             <ConfirmationModal
