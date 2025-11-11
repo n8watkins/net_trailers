@@ -28,8 +28,12 @@ export function GuestModeNotification({
     }
 
     return (
-        <div className={`mb-8 flex ${align === 'center' ? 'justify-center' : 'justify-start'}`}>
-            <div className="max-w-3xl w-full bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-lg p-4">
+        <div className="mb-8">
+            <div
+                className={`w-full bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-lg p-4 ${
+                    align === 'center' ? 'max-w-3xl mx-auto' : ''
+                }`}
+            >
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex flex-col flex-1">
                         <div className="flex items-center gap-2 mb-1">
