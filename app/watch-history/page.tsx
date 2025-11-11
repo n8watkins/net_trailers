@@ -52,22 +52,50 @@ export default function WatchHistoryPage() {
           })
         : filteredHistory
 
-    // Group by date
+    // Group by date - format changes based on filter
     const groupedHistory = searchFilteredHistory.reduce(
         (groups, item) => {
-            const date = new Date(item.watchedAt).toLocaleDateString('en-US', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-            })
+            let date: string
+            const itemDate = new Date(item.watchedAt)
+
+            // Format date based on current filter
+            switch (filter) {
+                case 'today':
+                    // Show just the time for today
+                    date = 'Today'
+                    break
+                case 'week':
+                    // Show weekday for this week
+                    date = itemDate.toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        month: 'long',
+                        day: 'numeric',
+                    })
+                    break
+                case 'month':
+                    // Show week grouping for this month
+                    date = itemDate.toLocaleDateString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                    })
+                    break
+                default:
+                    // Show full date for all time
+                    date = itemDate.toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                    })
+            }
+
             if (!groups[date]) {
                 groups[date] = []
             }
             groups[date].push(item)
             return groups
         },
-        {} as Record<string, WatchHistoryItem[]>
+        {} as Record<string, typeof searchFilteredHistory>
     )
 
     const headerActions = (

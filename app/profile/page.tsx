@@ -52,6 +52,7 @@ export default function ProfilePage() {
             await seedUserData(userId, {
                 likedCount: 15,
                 hiddenCount: 8,
+                watchLaterCount: 12,
                 watchHistoryCount: 20,
                 createCollections: true,
                 notificationCount: 8,
@@ -121,7 +122,7 @@ export default function ProfilePage() {
                                 onClick={handleSeedData}
                                 disabled={isSeeding}
                                 className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600/20 to-pink-600/20 hover:from-purple-600/30 hover:to-pink-600/30 text-purple-400 border border-purple-500/30 rounded-lg transition-all text-sm font-medium disabled:opacity-50"
-                                title="Populate with test data (15 liked, 8 hidden, 20 watch history, 8 collections, 8 notifications)"
+                                title="Populate with test data (15 liked, 8 hidden, 12 watch later, 20 watch history, 8 collections, 8 notifications)"
                             >
                                 <SparklesIcon className="w-4 h-4" />
                                 {isSeeding ? 'Seeding...' : 'Seed Test Data'}

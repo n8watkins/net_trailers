@@ -608,6 +608,7 @@ export interface SeedDataOptions {
     likedCount?: number
     hiddenCount?: number
     watchHistoryCount?: number
+    watchLaterCount?: number
     createCollections?: boolean
     notificationCount?: number
 }
@@ -620,6 +621,7 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
         likedCount = 10,
         hiddenCount = 5,
         watchHistoryCount = 15,
+        watchLaterCount = 12,
         createCollections = true,
         notificationCount = 8,
     } = options
@@ -662,6 +664,21 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
             useGuestStore.getState().addHiddenMovie(item)
         } else {
             useAuthStore.getState().addHiddenMovie(item)
+        }
+    }
+
+    // Seed Watch Later (default watchlist)
+    const watchLaterContent = shuffled.slice(
+        likedCount + hiddenCount,
+        likedCount + hiddenCount + watchLaterCount
+    )
+    console.log(`  📺 Adding ${watchLaterCount} items to Watch Later`)
+
+    for (const item of watchLaterContent) {
+        if (isGuest) {
+            useGuestStore.getState().addToWatchlist(item)
+        } else {
+            useAuthStore.getState().addToWatchlist(item)
         }
     }
 
