@@ -190,14 +190,14 @@ export default function NotificationsPageClient() {
             headerActions={headerActions}
         >
             {/* Content */}
-            {isGuest ? (
+            {isLoading ? (
+                <NetflixLoader message="Loading your notifications..." inline />
+            ) : isGuest ? (
                 <EmptyState
                     emoji="🔒"
                     title="Sign in to view notifications"
                     description="Guest sessions keep notifications on this device only. Create a free account to sync alerts everywhere."
                 />
-            ) : isLoading ? (
-                <NetflixLoader message="Loading your notifications..." inline />
             ) : filteredNotifications.length === 0 ? (
                 <EmptyState
                     emoji="🔔"
