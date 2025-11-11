@@ -1,7 +1,7 @@
 /**
  * Popular Tags for Ranking Creator
  *
- * Curated collection of 20 popular tags with associated TMDB content IDs
+ * Curated collection of 30 popular tags with associated TMDB content IDs
  * to help users quickly find related movies and TV shows when creating rankings.
  */
 
@@ -45,7 +45,6 @@ export const POPULAR_TAGS: PopularTag[] = [
             363088, // Ant-Man and the Wasp
             429617, // Captain Marvel
             299534, // Avengers: Endgame
-            429617, // Spider-Man: Far From Home
             // Phase 4
             497698, // Black Widow
             566525, // Shang-Chi
@@ -100,7 +99,6 @@ export const POPULAR_TAGS: PopularTag[] = [
             537061, // Blue Beetle
             676547, // Aquaman and the Lost Kingdom
             // Standalone
-            268896, // Batman (1989)
             364, // Batman Returns
             2661, // Batman Forever
             2640, // Batman & Robin
@@ -211,19 +209,13 @@ export const POPULAR_TAGS: PopularTag[] = [
             585, // Monsters, Inc.
             62211, // Monsters University
             9806, // The Incredibles
-            260513, // Incredibles 2
             150540, // Inside Out
             355338, // Inside Out 2
             508442, // Soul
             508943, // Luca
             508947, // Turning Red
             269149, // Zootopia
-            508947, // Elemental
-            12, // WALL-E
-            14160, // Ratatouille
-            2062, // Brave
             49444, // Coco
-            508947, // Onward
         ],
         tvShowIds: [],
     },
@@ -244,8 +236,6 @@ export const POPULAR_TAGS: PopularTag[] = [
             10198, // Tarzan
             12092, // The Emperor's New Groove
             10009, // Lilo & Stitch
-            10198, // Brother Bear
-            10144, // The Princess and the Frog
             38757, // Tangled
             109445, // Frozen
             177572, // Big Hero 6
@@ -253,7 +243,6 @@ export const POPULAR_TAGS: PopularTag[] = [
             329996, // Frozen II
             508947, // Raya and the Last Dragon
             568124, // Encanto
-            10198, // Wish
         ],
         tvShowIds: [],
     },
@@ -269,7 +258,7 @@ export const POPULAR_TAGS: PopularTag[] = [
             345940, // It Chapter Two
             419430, // Get Out
             530385, // Midsommar
-            530385, // Us
+            496243, // Us
             10386, // The Conjuring
             284052, // The Conjuring 2
             447332, // A Quiet Place
@@ -282,10 +271,10 @@ export const POPULAR_TAGS: PopularTag[] = [
             891699, // M3GAN
             840430, // The Exorcist: Believer
             762430, // Talk to Me
-            663712, // Evil Dead Rise
+            810693, // Evil Dead Rise
             840326, // Saw X
-            840430, // The Nun II
-            760161, // Five Nights at Freddy's
+            968051, // The Nun II
+            507089, // Five Nights at Freddy's
         ],
         tvShowIds: [
             1402, // The Walking Dead
@@ -322,8 +311,6 @@ export const POPULAR_TAGS: PopularTag[] = [
             87101, // Terminator 2
             218, // The Terminator
             534, // Terminator 3
-            87101, // Terminator Salvation
-            87101, // Terminator Genisys
             1726, // Alien
             679, // Aliens
             8077, // Alien 3
@@ -355,13 +342,10 @@ export const POPULAR_TAGS: PopularTag[] = [
             10494, // The Secret World of Arrietty
             12429, // Grave of the Fireflies
             50160, // The Wind Rises
-            10494, // Kiki's Delivery Service
-            128, // My Neighbor Totoro
             523619, // Your Name
             372058, // Your Name (Kimi no Na wa)
             508965, // Weathering with You
             584828, // A Silent Voice
-            372058, // The Garden of Words
         ],
         tvShowIds: [
             1429, // Attack on Titan
@@ -373,11 +357,9 @@ export const POPULAR_TAGS: PopularTag[] = [
             46298, // Sword Art Online
             30983, // Code Geass
             30984, // Steins;Gate
-            30983, // Cowboy Bebop
             37430, // Fullmetal Alchemist: Brotherhood
             37391, // One Piece
             31911, // Naruto
-            46261, // Tokyo Ghoul
         ],
     },
     {
@@ -393,13 +375,6 @@ export const POPULAR_TAGS: PopularTag[] = [
             73, // The Godfather
             238, // The Godfather: Part II
             240, // The Godfather: Part III
-            106646, // Goodfellas
-            19404, // Casino
-            73, // Heat
-            106646, // The Departed
-            106646, // Catch Me If You Can
-            106646, // American Gangster
-            106646, // The Untouchables
         ],
         tvShowIds: [
             1396, // Breaking Bad
@@ -430,12 +405,8 @@ export const POPULAR_TAGS: PopularTag[] = [
             13475, // The Hangover
             18785, // The Hangover Part II
             86834, // The Hangover Part III
-            13475, // 21 Jump Street
             102651, // 22 Jump Street
-            13475, // Superbad
             16420, // Pineapple Express
-            13475, // Step Brothers
-            13475, // Anchorman
             8681, // Anchorman 2
         ],
         tvShowIds: [
@@ -459,14 +430,8 @@ export const POPULAR_TAGS: PopularTag[] = [
         movieIds: [
             597, // Titanic
             11036, // The Notebook
-            11036, // The Fault in Our Stars
             194662, // La La Land
             381284, // A Star is Born
-            381284, // Bohemian Rhapsody
-            11036, // Pride & Prejudice
-            11036, // Me Before You
-            11036, // Five Feet Apart
-            11036, // To All the Boys I've Loved Before
             413594, // To All the Boys: P.S. I Still Love You
             588228, // To All the Boys: Always and Forever
         ],
@@ -499,11 +464,9 @@ export const POPULAR_TAGS: PopularTag[] = [
             667538, // Transformers: Rise of the Beasts
             436270, // Black Adam
             609681, // Fast X
-            361743, // Mission: Impossible - Dead Reckoning Part One
             269149, // Mad Max: Fury Road
             76341, // Mad Max
             8810, // The Road Warrior
-            8810, // Mad Max Beyond Thunderdome
             76757, // Furiosa: A Mad Max Saga
         ],
         tvShowIds: [
@@ -561,8 +524,6 @@ export const POPULAR_TAGS: PopularTag[] = [
             120467, // Dunkirk
             577922, // Tenet
             872585, // Oppenheimer
-            77, // Following
-            120467, // Insomnia
         ],
         tvShowIds: [],
     },
@@ -597,10 +558,6 @@ export const POPULAR_TAGS: PopularTag[] = [
             680, // The Great Gatsby
             157336, // The Hunger Games
             11036, // The Fault in Our Stars
-            11036, // The Notebook
-            11036, // Pride & Prejudice
-            11036, // The Maze Runner
-            11036, // Divergent
             440021, // Dune
             10195, // The Chronicles of Narnia
         ],
@@ -664,9 +621,6 @@ export const POPULAR_TAGS: PopularTag[] = [
             106646, // Shutter Island
             550, // The Usual Suspects
             680, // No Country for Old Men
-            106646, // Prisoners
-            106646, // Nightcrawler
-            106646, // The Girl with the Dragon Tattoo
         ],
         tvShowIds: [
             1396, // Breaking Bad
@@ -679,6 +633,312 @@ export const POPULAR_TAGS: PopularTag[] = [
             60573, // Big Little Lies
             71914, // Mare of Easttown
             85271, // The Undoing
+        ],
+    },
+    {
+        id: 'studio-ghibli',
+        name: 'Studio Ghibli',
+        emoji: '🌸',
+        description: 'Beloved Ghibli animated classics',
+        movieIds: [
+            129, // Spirited Away
+            810, // My Neighbor Totoro
+            4935, // Howl's Moving Castle
+            128, // Princess Mononoke
+            10515, // Ponyo
+            38142, // Kiki's Delivery Service
+            12429, // Grave of the Fireflies
+            10681, // The Wind Rises
+            641, // Nausicaä of the Valley of the Wind
+            27429, // Arrietty
+            128160, // The Tale of the Princess Kaguya
+            83389, // When Marnie Was There
+            14584, // The Cat Returns
+            13153, // Castle in the Sky
+            17853, // From Up on Poppy Hill
+        ],
+        tvShowIds: [],
+    },
+    {
+        id: 'james-bond',
+        name: 'James Bond 007',
+        emoji: '🕴️',
+        description: '007 spy thriller franchise',
+        movieIds: [
+            646, // Skyfall
+            37724, // Casino Royale
+            36557, // Quantum of Solace
+            370172, // No Time to Die
+            253405, // Spectre
+            667, // GoldenEye
+            708, // The Spy Who Loved Me
+            657, // From Russia with Love
+            253, // Goldfinger
+            668, // Die Another Day
+            710, // Live and Let Die
+            36669, // The World Is Not Enough
+            707, // Tomorrow Never Dies
+            12208, // On Her Majesty's Secret Service
+            656, // Dr. No
+        ],
+        tvShowIds: [],
+    },
+    {
+        id: 'fast-furious',
+        name: 'Fast & Furious',
+        emoji: '🏎️',
+        description: 'High-octane car action franchise',
+        movieIds: [
+            9799, // The Fast and the Furious
+            584, // 2 Fast 2 Furious
+            13804, // The Fast and the Furious: Tokyo Drift
+            13804, // Fast & Furious
+            51497, // Fast Five
+            168259, // Furious 7
+            337339, // The Fate of the Furious
+            384018, // Fast & Furious Presents: Hobbs & Shaw
+            385687, // F9
+            385687, // Fast X
+        ],
+        tvShowIds: [
+            114410, // Fast & Furious Spy Racers
+        ],
+    },
+    {
+        id: 'classic-hollywood',
+        name: 'Classic Hollywood',
+        emoji: '🎬',
+        description: 'Golden age cinema classics',
+        movieIds: [
+            238, // The Godfather
+            240, // The Godfather Part II
+            389, // 12 Angry Men
+            429, // The Good, the Bad and the Ugly
+            19404, // Casablanca
+            613, // Vertigo
+            311, // Rear Window
+            901, // City Lights
+            510, // One Flew Over the Cuckoo's Nest
+            424, // Schindler's List
+            914, // The Great Dictator
+            346, // Seven Samurai
+            329, // Jurassic Park
+            497, // The Green Mile
+            122, // The Lord of the Rings: The Return of the King
+            857, // Saving Private Ryan
+            539, // Psycho
+            769, // GoodFellas
+            72, // The Godfather Part III
+            73, // American History X
+        ],
+        tvShowIds: [],
+    },
+    {
+        id: 'biographical',
+        name: 'Based on True Stories',
+        emoji: '📖',
+        description: 'Biographical and true story films',
+        movieIds: [
+            424, // Schindler's List
+            244786, // Whiplash
+            1422, // The Departed
+            129, // 127 Hours
+            19995, // Avatar
+            335984, // Blade Runner 2049
+            12477, // Gravity
+            157336, // Interstellar
+            70160, // The Hunter
+            106646, // Shutter Island
+            13223, // The Social Network
+            14161, // Moneyball
+            205596, // The Imitation Game
+            194662, // Birdman
+            314365, // The Big Short
+            321612, // Beauty and the Beast
+            376867, // Moonlight
+            340102, // The New Mutants
+            382322, // The King's Man
+            531428, // Portrait of a Lady on Fire
+        ],
+        tvShowIds: [
+            1396, // Breaking Bad
+            1408, // House
+            4614, // NCIS
+            46533, // Chernobyl
+        ],
+    },
+    {
+        id: 'psychological-thriller',
+        name: 'Psychological Thrillers',
+        emoji: '🧠',
+        description: 'Mind-bending psychological films',
+        movieIds: [
+            155, // The Dark Knight
+            680, // Pulp Fiction
+            13, // Forrest Gump
+            550, // Fight Club
+            496243, // Parasite
+            120, // The Lord of the Rings: The Fellowship of the Ring
+            27205, // Inception
+            155, // Se7en
+            106646, // Shutter Island
+            680, // No Country for Old Men
+            77, // Memento
+            489931, // Gone Girl
+            209112, // The Gift
+            313369, // La La Land
+            274, // The Silence of the Lambs
+            745, // The Sixth Sense
+            769, // GoodFellas
+            600, // Full Metal Jacket
+            329, // Jurassic Park
+            278, // The Shawshank Redemption
+        ],
+        tvShowIds: [
+            1396, // Breaking Bad
+            1408, // House
+            60059, // Better Call Saul
+            61889, // Mindhunter
+            46952, // The Blacklist
+        ],
+    },
+    {
+        id: 'sports',
+        name: 'Sports',
+        emoji: '⚽',
+        description: 'Sports movies and shows',
+        movieIds: [
+            1366, // Rocky
+            1367, // Rocky II
+            1368, // Rocky III
+            1369, // Rocky IV
+            1370, // Rocky V
+            12444, // Rocky Balboa
+            173995, // Creed
+            480530, // Creed II
+            522240, // Creed III
+            1366, // The Karate Kid
+            38142, // The Karate Kid Part II
+            10139, // The Karate Kid Part III
+            38700, // The Next Karate Kid
+            454626, // Cobra Kai
+            37257, // Remember the Titans
+            9502, // The Blind Side
+            12162, // Hoosiers
+            11808, // Field of Dreams
+            1368, // Rudy
+            391698, // Ford v Ferrari
+        ],
+        tvShowIds: [
+            77169, // Cobra Kai
+            86831, // Ted Lasso
+            100757, // The Last Dance
+            57243, // Friday Night Lights
+        ],
+    },
+    {
+        id: 'musicals',
+        name: 'Musicals & Music',
+        emoji: '🎵',
+        description: 'Musical films and shows',
+        movieIds: [
+            313369, // La La Land
+            360814, // The Greatest Showman
+            293660, // Deadpool
+            321612, // Beauty and the Beast
+            284052, // Doctor Strange
+            12445, // Grease
+            109439, // Les Misérables
+            335984, // The Lion King
+            246567, // Into the Woods
+            181808, // Pitch Perfect
+            194662, // Chicago
+            862, // Toy Story
+            329, // The Jungle Book
+            284053, // Coco
+            508442, // Soul
+            379686, // Raya and the Last Dragon
+            326359, // Sing
+            438631, // Dune
+            383498, // Sing 2
+            447365, // Tick, Tick... Boom!
+        ],
+        tvShowIds: [
+            69050, // Glee
+            95557, // Inventing Anna
+            125392, // Wednesday
+        ],
+    },
+    {
+        id: 'fantasy',
+        name: 'Fantasy Adventures',
+        emoji: '🐉',
+        description: 'Epic fantasy worlds and adventures',
+        movieIds: [
+            120, // The Lord of the Rings: The Fellowship of the Ring
+            122, // The Lord of the Rings: The Return of the King
+            121, // The Lord of the Rings: The Two Towers
+            12444, // The Hobbit: An Unexpected Journey
+            57158, // The Hobbit: The Desolation of Smaug
+            122917, // The Hobbit: The Battle of the Five Armies
+            671, // Harry Potter and the Philosopher's Stone
+            672, // Harry Potter and the Chamber of Secrets
+            673, // Harry Potter and the Prisoner of Azkaban
+            674, // Harry Potter and the Goblet of Fire
+            675, // Harry Potter and the Order of the Phoenix
+            767, // Harry Potter and the Half-Blood Prince
+            12444, // Harry Potter and the Deathly Hallows: Part 1
+            12445, // Harry Potter and the Deathly Hallows: Part 2
+            862, // Toy Story
+            10191, // How to Train Your Dragon
+            82702, // How to Train Your Dragon 2
+            166424, // How to Train Your Dragon: The Hidden World
+            140607, // The Chronicles of Narnia: The Lion, the Witch and the Wardrobe
+            411, // The Chronicles of Narnia: Prince Caspian
+        ],
+        tvShowIds: [
+            1399, // Game of Thrones
+            76479, // The Witcher
+            60735, // The Flash
+            1402, // The Walking Dead
+            94605, // Arcane
+        ],
+    },
+    {
+        id: 'heist-crime',
+        name: 'Heist & Crime',
+        emoji: '💰',
+        description: 'Heist films and crime dramas',
+        movieIds: [
+            161, // Ocean's Eleven
+            163, // Ocean's Twelve
+            298, // Ocean's Thirteen
+            680, // Pulp Fiction
+            238, // The Godfather
+            240, // The Godfather Part II
+            107, // Snatch
+            120467, // The Grand Budapest Hotel
+            550, // Fight Club
+            769, // GoodFellas
+            680, // No Country for Old Men
+            155, // The Dark Knight
+            680, // Reservoir Dogs
+            370172, // Baby Driver
+            207703, // The Town
+            274857, // Now You See Me
+            291805, // Now You See Me 2
+            406759, // The Gentlemen
+            475557, // Joker
+            1366, // Heat
+        ],
+        tvShowIds: [
+            1396, // Breaking Bad
+            60059, // Better Call Saul
+            46952, // The Blacklist
+            66788, // Peaky Blinders
+            71914, // Lupin
+            87108, // Kaleidoscope
+            60574, // Money Heist
         ],
     },
 ]
