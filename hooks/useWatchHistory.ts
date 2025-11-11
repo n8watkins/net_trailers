@@ -24,6 +24,8 @@ export function useWatchHistory() {
         history,
         isLoading,
         currentSessionId,
+        lastSyncedAt,
+        syncError,
         addWatchEntry: addToStore,
         getAllHistory,
         getHistoryByDateRange,
@@ -124,14 +126,22 @@ export function useWatchHistory() {
         }
     }
 
-    // Get storage type for display purposes
-    const storageType = sessionType === 'authenticated' ? 'firestore' : 'localStorage'
+    // Determine actual storage type based on sync status
+    // - For authenticated users, only report "firestore" if we've successfully synced
+    // - For guest users, always report "localStorage"
+    const storageType =
+        sessionType === 'authenticated' && lastSyncedAt !== null ? 'firestore' : 'localStorage'
 
     return {
         // Data
         history,
         isLoading,
         storageType,
+
+        // Sync tracking (for authenticated users)
+        lastSyncedAt,
+        syncError,
+        isSynced: sessionType === 'authenticated' && lastSyncedAt !== null && !syncError,
 
         // Actions
         addWatchEntry,

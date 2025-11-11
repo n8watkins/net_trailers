@@ -54,6 +54,8 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()(
             history: [],
             isLoading: false,
             currentSessionId: null,
+            lastSyncedAt: null,
+            syncError: null,
 
             addWatchEntry: (
                 contentId,
@@ -122,7 +124,7 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()(
             },
 
             clearHistory: () => {
-                set({ history: [], currentSessionId: null })
+                set({ history: [], currentSessionId: null, lastSyncedAt: null, syncError: null })
             },
 
             removeEntry: (id) => {
@@ -139,7 +141,7 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()(
                 if (!userId) return
 
                 try {
-                    set({ isLoading: true })
+                    set({ isLoading: true, syncError: null })
 
                     // Load history from Firestore
                     const firestoreHistory = await getWatchHistory(userId)
@@ -148,16 +150,24 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()(
                         set({
                             history: firestoreHistory,
                             currentSessionId: userId,
+                            lastSyncedAt: Date.now(),
+                            syncError: null,
                         })
                     } else {
                         // No history in Firestore yet
                         set({
                             history: [],
                             currentSessionId: userId,
+                            lastSyncedAt: Date.now(),
+                            syncError: null,
                         })
                     }
                 } catch (error) {
                     console.error('Failed to load watch history from Firestore:', error)
+                    set({
+                        syncError:
+                            error instanceof Error ? error.message : 'Failed to load watch history',
+                    })
                 } finally {
                     set({ isLoading: false })
                 }
@@ -169,11 +179,12 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()(
                 // CRITICAL: Ensure Firebase Auth is ready before attempting Firestore calls
                 if (!auth.currentUser || auth.currentUser.uid !== userId) {
                     // Auth not ready yet - this will be called again by useWatchHistory
+                    set({ syncError: 'Waiting for authentication...' })
                     return
                 }
 
                 try {
-                    set({ isLoading: true })
+                    set({ isLoading: true, syncError: null })
 
                     const localHistory = get().history
 
@@ -182,10 +193,18 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()(
                         await saveWatchHistory(userId, localHistory)
                     }
 
-                    // Update session ID
-                    set({ currentSessionId: userId })
+                    // Update session ID and sync timestamp
+                    set({
+                        currentSessionId: userId,
+                        lastSyncedAt: Date.now(),
+                        syncError: null,
+                    })
                 } catch (error) {
                     console.error('Failed to sync watch history with Firestore:', error)
+                    set({
+                        syncError:
+                            error instanceof Error ? error.message : 'Failed to sync watch history',
+                    })
                 } finally {
                     set({ isLoading: false })
                 }
@@ -195,7 +214,7 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()(
                 if (!userId) return
 
                 try {
-                    set({ isLoading: true })
+                    set({ isLoading: true, syncError: null })
 
                     const guestHistory = get().history
 
@@ -209,6 +228,8 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()(
                     set({
                         history: mergedHistory,
                         currentSessionId: userId,
+                        lastSyncedAt: Date.now(),
+                        syncError: null,
                     })
 
                     // Save merged history to Firestore
@@ -221,6 +242,12 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()(
                     }
                 } catch (error) {
                     console.error('Failed to migrate guest watch history:', error)
+                    set({
+                        syncError:
+                            error instanceof Error
+                                ? error.message
+                                : 'Failed to migrate watch history',
+                    })
                 } finally {
                     set({ isLoading: false })
                 }
@@ -228,7 +255,13 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()(
 
             switchSession: async (sessionType: 'guest' | 'authenticated', sessionId: string) => {
                 // Clear current history when switching sessions
-                set({ history: [], currentSessionId: null, isLoading: true })
+                set({
+                    history: [],
+                    currentSessionId: null,
+                    lastSyncedAt: null,
+                    syncError: null,
+                    isLoading: true,
+                })
 
                 try {
                     if (sessionType === 'authenticated') {
@@ -240,7 +273,11 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()(
                     }
                 } catch (error) {
                     console.error('Failed to switch session:', error)
-                    set({ isLoading: false })
+                    set({
+                        isLoading: false,
+                        syncError:
+                            error instanceof Error ? error.message : 'Failed to switch session',
+                    })
                 }
             },
         }),

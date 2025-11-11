@@ -21,6 +21,8 @@ export interface WatchHistoryState {
     history: WatchHistoryEntry[]
     isLoading: boolean
     currentSessionId: string | null // Track active session to prevent data mixing
+    lastSyncedAt: number | null // Timestamp of last successful Firestore sync
+    syncError: string | null // Last sync error message
 }
 
 export interface WatchHistoryActions {
