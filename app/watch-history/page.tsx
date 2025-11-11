@@ -11,10 +11,11 @@ import SubPageLayout from '../../components/layout/SubPageLayout'
 import { ClockIcon, CalendarIcon } from '@heroicons/react/24/outline'
 import ContentCard from '../../components/common/ContentCard'
 import EmptyState from '../../components/common/EmptyState'
-import LoadingSpinner from '../../components/common/LoadingSpinner'
+import NetflixLoader from '../../components/common/NetflixLoader'
 import SearchBar from '../../components/common/SearchBar'
 import { useWatchHistory } from '../../hooks/useWatchHistory'
 import { getTitle } from '../../typings'
+import { useSessionStore } from '../../stores/sessionStore'
 
 export default function WatchHistoryPage() {
     const [searchQuery, setSearchQuery] = useState('')
@@ -25,7 +26,11 @@ export default function WatchHistoryPage() {
     }, [])
 
     // Get actual watch history from store
-    const { history: watchHistory, isLoading } = useWatchHistory()
+    const { history: watchHistory, isLoading: isLoadingHistory } = useWatchHistory()
+    const isInitialized = useSessionStore((state) => state.isInitialized)
+
+    // Show loading state while initializing or loading history
+    const isLoading = !isInitialized || isLoadingHistory
 
     // Filter by date
     const filteredHistory = watchHistory.filter((item) => {
@@ -145,7 +150,7 @@ export default function WatchHistoryPage() {
         >
             {/* Content */}
             {isLoading ? (
-                <LoadingSpinner color="purple" />
+                <NetflixLoader message="Loading your watch history..." inline />
             ) : searchFilteredHistory.length === 0 ? (
                 <EmptyState
                     emoji="🎬"

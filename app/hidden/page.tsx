@@ -13,6 +13,7 @@ import { isMovie, isTVShow } from '../../typings'
 import { getTitle } from '../../typings'
 import ContentCard from '../../components/common/ContentCard'
 import EmptyState from '../../components/common/EmptyState'
+import NetflixLoader from '../../components/common/NetflixLoader'
 import SearchBar from '../../components/common/SearchBar'
 import StatsBar from '../../components/common/StatsBar'
 import { exportUserDataToCSV } from '../../utils/csvExport'
@@ -22,7 +23,7 @@ import { useAuthStatus } from '../../hooks/useAuthStatus'
 const Hidden = () => {
     const userData = useUserData()
     const { hiddenMovies } = userData
-    const { isGuest, isInitialized } = useAuthStatus()
+    const { isGuest, isInitialized, isLoading } = useAuthStatus()
     const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
 
     const [searchQuery, setSearchQuery] = useState('')
@@ -85,6 +86,11 @@ const Hidden = () => {
             document.removeEventListener('mousedown', handleClickOutside)
         }
     }, [showManageDropdown])
+
+    // Show loading state while user data is initializing
+    if (isLoading) {
+        return <NetflixLoader message="Loading hidden content..." inline />
+    }
 
     const titleActions = (
         <div className="relative" ref={manageDropdownRef}>

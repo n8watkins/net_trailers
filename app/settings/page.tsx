@@ -36,6 +36,8 @@ import { useChildSafetyPINStore } from '../../stores/childSafetyStore'
 import { DEFAULT_NOTIFICATION_PREFERENCES } from '../../types/notifications'
 import SearchBar from '../../components/common/SearchBar'
 import { useWatchHistory } from '../../hooks/useWatchHistory'
+import NetflixLoader from '../../components/common/NetflixLoader'
+import { useSessionStore } from '../../stores/sessionStore'
 
 type SettingsSection =
     | 'profile'
@@ -61,11 +63,15 @@ interface SidebarItem {
 const Settings: React.FC = () => {
     // Get hooks first
     const { user } = useAuth()
-    const { isGuest } = useAuthStatus()
+    const { isGuest, isLoading: isAuthLoading } = useAuthStatus()
     const userData = useUserData()
     const { totalWatched } = useWatchHistory()
     const { showSuccess, showError } = useToast()
     const { openAuthModal } = useAppStore()
+    const isInitialized = useSessionStore((state) => state.isInitialized)
+
+    // Show loading state while initializing
+    const isLoading = !isInitialized || isAuthLoading
 
     // Get direct store access for preferences updates
     const authStoreUpdatePrefs = useAuthStore((state) => state.updatePreferences)
@@ -456,14 +462,20 @@ const Settings: React.FC = () => {
         // Prevent double-submission
         if (isClearingData) return
 
+        console.log('[Settings] 🗑️ handleClearData called')
+        console.log('[Settings] Session type:', userData.sessionType)
+        console.log('[Settings] clearAccountData function:', typeof userData.clearAccountData)
+
         setIsClearingData(true)
         try {
             // clearAccountData is async for authenticated users, sync for guests
+            console.log('[Settings] Calling userData.clearAccountData()...')
             await userData.clearAccountData()
+            console.log('[Settings] ✅ clearAccountData completed')
             setShowClearConfirm(false)
             showSuccess('All data cleared successfully!')
         } catch (error) {
-            console.error('Error clearing data:', error)
+            console.error('[Settings] ❌ Error clearing data:', error)
             showError('Failed to clear data. Please try again.')
         } finally {
             setIsClearingData(false)
@@ -874,6 +886,11 @@ const Settings: React.FC = () => {
     const handleSaveNotifications = React.useCallback(async () => {
         await handleSavePreferences()
     }, [handleSavePreferences])
+
+    // Show loading state while user data is initializing
+    if (isLoading) {
+        return <NetflixLoader message="Loading settings..." inline />
+    }
 
     return (
         <SubPageLayout

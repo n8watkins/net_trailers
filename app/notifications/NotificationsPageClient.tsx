@@ -4,63 +4,76 @@ import { useState, useEffect } from 'react'
 import { BellIcon, CheckIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { useNotificationStore } from '../../stores/notificationStore'
 import { useSessionStore } from '../../stores/sessionStore'
-import { Notification, NotificationType } from '../../types/notifications'
+import { NotificationType } from '../../types/notifications'
 import NotificationItem from '../../components/notifications/NotificationItem'
 import SubPageLayout from '../../components/layout/SubPageLayout'
 import EmptyState from '../../components/common/EmptyState'
-import LoadingSpinner from '../../components/common/LoadingSpinner'
-import { useAppStore } from '../../stores/appStore'
+import NetflixLoader from '../../components/common/NetflixLoader'
 
 type FilterType = 'all' | NotificationType
 
 export default function NotificationsPageClient() {
     const getUserId = useSessionStore((state) => state.getUserId)
+    const sessionType = useSessionStore((state) => state.sessionType)
     const userId = getUserId()
+    const isGuest = sessionType === 'guest'
     const {
         notifications,
         unreadCount,
         isLoading,
         subscribe,
+        unsubscribeFromNotifications,
         markAllNotificationsAsRead,
         deleteAllNotifications,
     } = useNotificationStore()
-
-    const { modal } = useAppStore()
-    const showModal = modal.isOpen
 
     const [filter, setFilter] = useState<FilterType>('all')
 
     // Subscribe to real-time notifications
     useEffect(() => {
-        if (userId) {
+        if (userId && !isGuest) {
             subscribe(userId)
+        } else {
+            unsubscribeFromNotifications()
         }
-    }, [userId, subscribe])
+
+        return () => {
+            unsubscribeFromNotifications()
+        }
+    }, [userId, isGuest, subscribe, unsubscribeFromNotifications])
 
     // Filter notifications based on selected filter
-    const filteredNotifications = notifications.filter((notification) => {
-        if (filter === 'all') return true
-        return notification.type === filter
-    })
+    const filteredNotifications = isGuest
+        ? []
+        : notifications.filter((notification) => {
+              if (filter === 'all') return true
+              return notification.type === filter
+          })
 
     // Get count by type
     const getTypeCount = (type: NotificationType) => {
+        if (isGuest) return 0
         return notifications.filter((n) => n.type === type).length
     }
 
     const handleMarkAllAsRead = async () => {
-        if (!userId) return
+        if (!userId || isGuest) return
         await markAllNotificationsAsRead(userId)
     }
 
     const handleClearAll = async () => {
-        if (!userId) return
+        if (!userId || isGuest) return
         if (confirm('Are you sure you want to delete all notifications? This cannot be undone.')) {
             await deleteAllNotifications(userId)
         }
     }
 
-    const headerActions = (
+    const headerActions = isGuest ? (
+        <div className="rounded-2xl border border-gray-800 bg-[#1a1a1a] p-6 text-sm text-gray-300">
+            Guest sessions keep notifications locally only. Sign in or create an account to sync
+            alerts across devices.
+        </div>
+    ) : (
         <div className="space-y-6">
             {/* Stats and Actions */}
             <div className="flex items-center justify-between">
@@ -175,8 +188,14 @@ export default function NotificationsPageClient() {
             headerActions={headerActions}
         >
             {/* Content */}
-            {isLoading ? (
-                <LoadingSpinner color="red" />
+            {isGuest ? (
+                <EmptyState
+                    emoji="🔒"
+                    title="Sign in to view notifications"
+                    description="Guest sessions keep notifications on this device only. Create a free account to sync alerts everywhere."
+                />
+            ) : isLoading ? (
+                <NetflixLoader message="Loading your notifications..." inline />
             ) : filteredNotifications.length === 0 ? (
                 <EmptyState
                     emoji="🔔"

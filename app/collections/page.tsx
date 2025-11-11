@@ -18,6 +18,7 @@ import { isMovie, isTVShow } from '../../typings'
 import { getTitle } from '../../typings'
 import ContentCard from '../../components/common/ContentCard'
 import EmptyState from '../../components/common/EmptyState'
+import NetflixLoader from '../../components/common/NetflixLoader'
 import SearchBar from '../../components/common/SearchBar'
 import { useAppStore } from '../../stores/appStore'
 import { useModalStore } from '../../stores/modalStore'
@@ -31,7 +32,7 @@ const Collections = () => {
     const router = useRouter()
     const userData = useUserData()
     const { user } = useAuth()
-    const { isGuest, isInitialized } = useAuthStatus()
+    const { isGuest, isInitialized, isLoading } = useAuthStatus()
     const { getAllLists } = userData
     const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
     const debugSettings = useDebugSettings()
@@ -140,6 +141,11 @@ const Collections = () => {
             document.removeEventListener('mousedown', handleClickOutside)
         }
     }, [showManageDropdown])
+
+    // Show loading state while user data is initializing
+    if (isLoading) {
+        return <NetflixLoader message="Loading your collections..." inline />
+    }
 
     // Filter content based on selected list
     const getFilteredContent = () => {

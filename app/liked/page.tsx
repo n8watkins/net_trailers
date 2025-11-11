@@ -13,7 +13,7 @@ import { isMovie, isTVShow } from '../../typings'
 import { getTitle } from '../../typings'
 import ContentCard from '../../components/common/ContentCard'
 import EmptyState from '../../components/common/EmptyState'
-import LoadingSpinner from '../../components/common/LoadingSpinner'
+import NetflixLoader from '../../components/common/NetflixLoader'
 import SearchBar from '../../components/common/SearchBar'
 import StatsBar from '../../components/common/StatsBar'
 import { exportUserDataToCSV } from '../../utils/csvExport'
@@ -89,7 +89,7 @@ const Liked = () => {
 
     // Show loading state while user data is initializing
     if (isLoading) {
-        return <LoadingSpinner color="green" />
+        return <NetflixLoader message="Loading your liked content..." inline />
     }
 
     const titleActions = (
