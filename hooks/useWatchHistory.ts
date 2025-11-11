@@ -18,7 +18,9 @@ export function useWatchHistory() {
     const sessionType = useSessionStore((state) => state.sessionType)
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
-    const guestId = useSessionStore((state) => state.guestId)
+    const activeSessionId = useSessionStore((state) => state.activeSessionId)
+    // For guest sessions, activeSessionId is the guest ID
+    const guestId = sessionType === 'guest' ? activeSessionId : null
 
     const {
         history,
@@ -36,6 +38,8 @@ export function useWatchHistory() {
         loadFromFirestore,
         migrateGuestToAuth,
         switchSession,
+        loadGuestSession,
+        saveGuestSession,
     } = useWatchHistoryStore()
 
     // Track previous session to detect transitions
@@ -75,7 +79,9 @@ export function useWatchHistory() {
                 })
             } else {
                 // Normal session switch - clear and reload
-                switchSession(sessionType, currentSessionTypeId)
+                if (sessionType === 'guest' || sessionType === 'authenticated') {
+                    switchSession(sessionType, currentSessionTypeId)
+                }
             }
 
             // Update ref
@@ -101,7 +107,7 @@ export function useWatchHistory() {
         loadFromFirestore,
     ])
 
-    // Add watch entry with automatic Firestore sync for authenticated users
+    // Add watch entry with automatic persistence
     const addWatchEntry = async (
         contentId: number,
         mediaType: 'movie' | 'tv',
@@ -113,8 +119,9 @@ export function useWatchHistory() {
         // Add to local store first (for immediate UI update)
         addToStore(contentId, mediaType, content, progress, duration, watchedDuration)
 
-        // If authenticated, also save to Firestore
+        // Persist based on session type
         if (sessionType === 'authenticated' && userId) {
+            // Authenticated: save to Firestore
             try {
                 const entry = useWatchHistoryStore.getState().getWatchEntry(contentId, mediaType)
                 if (entry) {
@@ -123,6 +130,9 @@ export function useWatchHistory() {
             } catch (_error) {
                 // Silently fail - local store already updated
             }
+        } else if (sessionType === 'guest' && guestId) {
+            // Guest: save to localStorage
+            saveGuestSession(guestId)
         }
     }
 

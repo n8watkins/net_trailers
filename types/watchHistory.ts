@@ -65,6 +65,11 @@ export interface WatchHistoryActions {
 
     // Switch between sessions (guest <-> auth or between different users)
     switchSession: (sessionType: 'guest' | 'authenticated', sessionId: string) => Promise<void>
+
+    // Manual persistence for guest sessions (no Zustand persist middleware)
+    loadGuestSession: (guestId: string) => void
+    saveGuestSession: (guestId: string) => void
+    clearGuestSession: (guestId: string) => void
 }
 
 export type WatchHistoryStore = WatchHistoryState & WatchHistoryActions
