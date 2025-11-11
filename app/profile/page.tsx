@@ -26,13 +26,19 @@ import { useWatchHistory } from '../../hooks/useWatchHistory'
 import { seedUserData } from '../../utils/seedData'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useDebugSettings } from '../../components/debug/DebugControls'
+import NetflixLoader from '../../components/common/NetflixLoader'
 
 export default function ProfilePage() {
     const { user } = useAuth()
     const userData = useUserData()
-    const { totalWatched, history: watchHistory } = useWatchHistory()
+    const { totalWatched, history: watchHistory, isLoading: isLoadingHistory } = useWatchHistory()
     const debugSettings = useDebugSettings()
     const [isSeeding, setIsSeeding] = useState(false)
+    const sessionType = useSessionStore((state) => state.sessionType)
+    const isInitialized = useSessionStore((state) => state.isInitialized)
+
+    // Show loading state while data is being fetched
+    const isLoading = !isInitialized || isLoadingHistory
 
     useEffect(() => {
         document.title = 'Profile - NetTrailers'
@@ -255,6 +261,20 @@ export default function ProfilePage() {
             </div>
         </div>
     )
+
+    // Show loading screen while data is being fetched
+    if (isLoading) {
+        return (
+            <SubPageLayout
+                title="Profile"
+                icon={<UserIcon />}
+                iconColor="text-blue-400"
+                description={userEmail}
+            >
+                <NetflixLoader inline message="Loading your profile data..." />
+            </SubPageLayout>
+        )
+    }
 
     return (
         <SubPageLayout
