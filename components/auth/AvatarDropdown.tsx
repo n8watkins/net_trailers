@@ -66,7 +66,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
 
     const handleProfileClick = () => {
         setIsOpen(false)
-        // TODO: Navigate to profile page when implemented
+        router.push('/profile')
     }
 
     const handleSettingsClick = () => {
