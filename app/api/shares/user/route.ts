@@ -3,26 +3,16 @@
  *
  * Get all shares for the authenticated user
  * Includes statistics and share list
+ *
+ * SECURITY: Requires valid Firebase ID token in Authorization header
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserShares, getShareStats } from '../../../../utils/firestore/shares'
+import { withAuth } from '../../../../lib/auth-middleware'
 
-export async function GET(request: NextRequest) {
+async function handleGetUserShares(request: NextRequest, userId: string): Promise<NextResponse> {
     try {
-        // Get user ID from headers
-        const userId = request.headers.get('x-user-id')
-
-        if (!userId) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error: 'Authentication required',
-                },
-                { status: 401 }
-            )
-        }
-
         // Get user's shares
         const shares = await getUserShares(userId)
 
@@ -46,3 +36,6 @@ export async function GET(request: NextRequest) {
         )
     }
 }
+
+// Export authenticated handler
+export const GET = withAuth(handleGetUserShares)

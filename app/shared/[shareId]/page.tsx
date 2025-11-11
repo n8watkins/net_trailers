@@ -15,6 +15,7 @@ import { Content } from '../../../typings'
 import ContentCard from '../../../components/common/ContentCard'
 import { useToast } from '../../../hooks/useToast'
 import { useSessionStore } from '../../../stores/sessionStore'
+import { getAuthHeaders } from '../../../utils/auth'
 
 /**
  * SharedCollectionView Page
@@ -120,13 +121,15 @@ export default function SharedCollectionViewPage() {
         setIsDuplicating(true)
 
         try {
+            // Get authenticated headers with Firebase token
+            const headers = await getAuthHeaders({
+                'Content-Type': 'application/json',
+            })
+
             // Create new collection from shared data
             const response = await fetch('/api/collections/duplicate', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-user-id': userId,
-                },
+                headers,
                 body: JSON.stringify({
                     name: `${shareData.share.collectionName} (Copy)`,
                     items: collectionItems,

@@ -6,6 +6,7 @@ import { ShareableLink, ShareStats } from '../../types/sharing'
 import { useToast } from '../../hooks/useToast'
 import { useSessionStore } from '../../stores/sessionStore'
 import ShareModal from './ShareModal'
+import { getAuthHeaders } from '../../utils/auth'
 
 interface ManageSharesModalProps {
     /** Whether modal is open */
@@ -45,10 +46,11 @@ export default function ManageSharesModal({ isOpen, onClose }: ManageSharesModal
 
         setIsLoading(true)
         try {
+            // Get authenticated headers with Firebase token
+            const headers = await getAuthHeaders()
+
             const response = await fetch('/api/shares/user', {
-                headers: {
-                    'x-user-id': userId,
-                },
+                headers,
             })
 
             const data = await response.json()

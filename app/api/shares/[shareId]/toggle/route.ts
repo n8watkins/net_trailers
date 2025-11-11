@@ -3,6 +3,8 @@
  *
  * Toggle share active status (activate/deactivate)
  *
+ * SECURITY: Requires valid Firebase ID token in Authorization header
+ *
  * Request body:
  * {
  *   isActive: boolean
@@ -11,6 +13,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { deactivateShare, reactivateShare } from '../../../../../utils/firestore/shares'
+import { withAuth } from '../../../../../lib/auth-middleware'
 
 interface RouteContext {
     params: Promise<{
@@ -18,22 +21,23 @@ interface RouteContext {
     }>
 }
 
-export async function PATCH(request: NextRequest, { params }: RouteContext) {
+async function handleToggleShare(
+    request: NextRequest,
+    userId: string,
+    context?: RouteContext
+): Promise<NextResponse> {
     try {
-        const { shareId } = await params
-
-        // Get user ID from headers
-        const userId = request.headers.get('x-user-id')
-
-        if (!userId) {
+        if (!context) {
             return NextResponse.json(
                 {
                     success: false,
-                    error: 'Authentication required',
+                    error: 'Invalid request context',
                 },
-                { status: 401 }
+                { status: 400 }
             )
         }
+
+        const { shareId } = await context.params
 
         if (!shareId) {
             return NextResponse.json(
@@ -88,3 +92,6 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
         )
     }
 }
+
+// Export authenticated handler
+export const PATCH = withAuth(handleToggleShare)

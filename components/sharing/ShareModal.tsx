@@ -10,6 +10,7 @@ import {
 } from '../../types/sharing'
 import { useToast } from '../../hooks/useToast'
 import { useSessionStore } from '../../stores/sessionStore'
+import { getAuthHeaders } from '../../utils/auth'
 
 interface ShareModalProps {
     /** Whether modal is open */
@@ -61,11 +62,12 @@ export default function ShareModal({
 
     const loadExistingShare = async () => {
         try {
+            // Get authenticated headers with Firebase token
+            const headers = await getAuthHeaders()
+
             // Get user's shares and find one for this collection
             const response = await fetch('/api/shares/user', {
-                headers: {
-                    'x-user-id': userId || '',
-                },
+                headers,
             })
 
             if (!response.ok) return
@@ -94,12 +96,14 @@ export default function ShareModal({
         setIsCreating(true)
 
         try {
+            // Get authenticated headers with Firebase token
+            const headers = await getAuthHeaders({
+                'Content-Type': 'application/json',
+            })
+
             const response = await fetch('/api/shares/create', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-user-id': userId,
-                },
+                headers,
                 body: JSON.stringify({
                     collectionId,
                     expiresIn,
@@ -147,12 +151,14 @@ export default function ShareModal({
         if (!shareLink || !userId) return
 
         try {
+            // Get authenticated headers with Firebase token
+            const headers = await getAuthHeaders({
+                'Content-Type': 'application/json',
+            })
+
             const response = await fetch(`/api/shares/${shareLink.id}/toggle`, {
                 method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-user-id': userId,
-                },
+                headers,
                 body: JSON.stringify({
                     isActive: !shareLink.isActive,
                 }),
@@ -183,11 +189,12 @@ export default function ShareModal({
         }
 
         try {
+            // Get authenticated headers with Firebase token
+            const headers = await getAuthHeaders()
+
             const response = await fetch(`/api/shares/${shareLink.id}`, {
                 method: 'DELETE',
-                headers: {
-                    'x-user-id': userId,
-                },
+                headers,
             })
 
             const data = await response.json()
