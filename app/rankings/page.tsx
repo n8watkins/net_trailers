@@ -112,21 +112,6 @@ export default function RankingsPage() {
                 </div>
             )}
 
-            {/* Tabs for My Rankings vs Community */}
-            <div className="flex items-center justify-center gap-4 mb-6">
-                <button className="flex items-center gap-2 px-6 py-3 bg-yellow-500 text-black font-medium rounded-lg transition-colors">
-                    <TrophyIcon className="w-5 h-5" />
-                    My Rankings
-                </button>
-                <button
-                    onClick={() => router.push('/rankings/community')}
-                    className="flex items-center gap-2 px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors"
-                >
-                    <UsersIcon className="w-5 h-5" />
-                    Community
-                </button>
-            </div>
-
             {/* Filters Panel */}
             {showFilters && (
                 <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 mb-6 space-y-4">

@@ -264,13 +264,6 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                             <li>
                                 <MyListsDropdown />
                             </li>
-                            <li
-                                className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${pathname === '/community' ? 'text-white hover:text-white font-semibold' : ''}`}
-                                onClick={() => router.push('/community')}
-                            >
-                                <UsersIcon className="h-5 w-5" />
-                                <span>Community</span>
-                            </li>
                             {process.env.NODE_ENV === 'development' &&
                                 debugSettings.showToastDebug && (
                                     <li>
@@ -298,7 +291,16 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                             </div>
                         </div>
 
-                        {/* Child Safety Indicator - After Search Bar */}
+                        {/* Community Link - After Search Bar */}
+                        <div
+                            className={`headerLink cursor-pointer flex items-center space-x-1 select-none ml-4 ${pathname === '/community' ? 'text-white hover:text-white font-semibold' : ''}`}
+                            onClick={() => router.push('/community')}
+                        >
+                            <UsersIcon className="h-5 w-5" />
+                            <span>Community</span>
+                        </div>
+
+                        {/* Child Safety Indicator - After Community */}
                         <div className="flex items-center ml-4">
                             <ChildSafetyIndicator />
                         </div>

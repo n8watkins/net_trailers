@@ -144,6 +144,104 @@ service cloud.firestore {
              && data.updatedAt is number;
     }
 
+    // Rankings collection (public and private rankings)
+    match /rankings/{rankingId} {
+      // Allow read if public OR if authenticated user is the owner
+      allow read: if resource.data.isPublic == true
+                  || (request.auth != null && request.auth.uid == resource.data.userId);
+
+      // Allow create if authenticated and userId matches auth
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid
+                    && isValidRankingData(request.resource.data);
+
+      // Allow update if authenticated user is the owner
+      allow update: if request.auth != null
+                    && request.auth.uid == resource.data.userId
+                    && request.resource.data.userId == resource.data.userId
+                    && isValidRankingData(request.resource.data);
+
+      // Allow delete if authenticated user is the owner
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // Ranking comments collection
+    match /ranking_comments/{commentId} {
+      // Allow read for all authenticated users
+      allow read: if request.auth != null;
+
+      // Allow create if authenticated and userId matches auth
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid
+                    && isValidCommentData(request.resource.data);
+
+      // Allow update if authenticated user is the comment owner (for replies array)
+      allow update: if request.auth != null
+                    && request.auth.uid == resource.data.userId;
+
+      // Allow delete if authenticated user is the comment owner
+      // OR if authenticated user is the ranking owner
+      allow delete: if request.auth != null
+                    && (request.auth.uid == resource.data.userId
+                    || request.auth.uid == get(/databases/$(database)/documents/rankings/$(resource.data.rankingId)).data.userId);
+    }
+
+    // Comment likes collection
+    match /comment_likes/{likeId} {
+      // Allow read for all authenticated users
+      allow read: if request.auth != null;
+
+      // Allow create if authenticated and userId in document matches auth
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid;
+
+      // Allow delete if authenticated user owns the like
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // Ranking likes collection
+    match /ranking_likes/{likeId} {
+      // Allow read for all authenticated users
+      allow read: if request.auth != null;
+
+      // Allow create if authenticated and userId in document matches auth
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid;
+
+      // Allow delete if authenticated user owns the like
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // Helper function to validate ranking data structure
+    function isValidRankingData(data) {
+      return data.keys().hasAll(['id', 'userId', 'userName', 'title', 'itemCount', 'isPublic', 'rankedItems', 'likes', 'views', 'comments', 'createdAt', 'updatedAt'])
+             && data.id is string
+             && data.userId is string
+             && data.userName is string
+             && data.title is string
+             && data.itemCount is number
+             && data.isPublic is bool
+             && data.rankedItems is list
+             && data.likes is number
+             && data.views is number
+             && data.comments is number
+             && data.createdAt is number
+             && data.updatedAt is number;
+    }
+
+    // Helper function to validate comment data structure
+    function isValidCommentData(data) {
+      return data.keys().hasAll(['id', 'rankingId', 'userId', 'userName', 'type', 'text', 'createdAt', 'likes'])
+             && data.id is string
+             && data.rankingId is string
+             && data.userId is string
+             && data.userName is string
+             && data.type is string
+             && data.text is string
+             && data.createdAt is number
+             && data.likes is number;
+    }
+
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;
