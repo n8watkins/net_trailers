@@ -142,11 +142,6 @@ const Collections = () => {
         }
     }, [showManageDropdown])
 
-    // Show loading state while user data is initializing
-    if (isLoading) {
-        return <NetflixLoader message="Loading your collections..." inline />
-    }
-
     // Filter content based on selected list
     const getFilteredContent = () => {
         // Show content from selected list
@@ -387,7 +382,9 @@ const Collections = () => {
             headerActions={headerActions}
         >
             {/* Content Sections */}
-            {filteredContent.length === 0 ? (
+            {isLoading ? (
+                <NetflixLoader message="Loading your collections..." inline />
+            ) : filteredContent.length === 0 ? (
                 <EmptyState
                     emoji="🍿"
                     title={`No content in ${

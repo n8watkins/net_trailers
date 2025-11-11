@@ -887,11 +887,6 @@ const Settings: React.FC = () => {
         await handleSavePreferences()
     }, [handleSavePreferences])
 
-    // Show loading state while user data is initializing
-    if (isLoading) {
-        return <NetflixLoader message="Loading settings..." inline />
-    }
-
     return (
         <SubPageLayout
             title="Settings"
@@ -957,7 +952,9 @@ const Settings: React.FC = () => {
 
                     {/* Main Content */}
                     <div className="flex-1">
-                        {activeSection === 'profile' && !isGuest && (
+                        {isLoading ? (
+                            <NetflixLoader message="Loading settings..." inline />
+                        ) : activeSection === 'profile' && !isGuest ? (
                             <ProfileSection
                                 user={user}
                                 isGoogleAuth={isGoogleAuth}
@@ -967,9 +964,7 @@ const Settings: React.FC = () => {
                                 isSavingProfile={isSavingProfile}
                                 onSaveProfile={handleSaveProfile}
                             />
-                        )}
-
-                        {activeSection === 'email' && !isGuest && (
+                        ) : activeSection === 'email' && !isGuest ? (
                             <EmailSection
                                 user={user}
                                 isGoogleAuth={isGoogleAuth}
@@ -980,9 +975,7 @@ const Settings: React.FC = () => {
                                 isUpdatingEmail={isUpdatingEmail}
                                 onUpdateEmail={handleUpdateEmail}
                             />
-                        )}
-
-                        {activeSection === 'password' && !isGuest && (
+                        ) : activeSection === 'password' && !isGuest ? (
                             <PasswordSection
                                 user={user}
                                 isGoogleAuth={isGoogleAuth}
@@ -995,9 +988,7 @@ const Settings: React.FC = () => {
                                 isUpdatingPassword={isUpdatingPassword}
                                 onUpdatePassword={handleUpdatePassword}
                             />
-                        )}
-
-                        {activeSection === 'preferences' && (
+                        ) : activeSection === 'preferences' ? (
                             <PreferencesSection
                                 isGuest={isGuest}
                                 isInitializing={userData.isInitializing}
@@ -1020,26 +1011,20 @@ const Settings: React.FC = () => {
                                 onChangePIN={handleChangePIN}
                                 onRemovePIN={handleRemovePIN}
                             />
-                        )}
-
-                        {activeSection === 'notifications' && (
+                        ) : activeSection === 'notifications' ? (
                             <NotificationsSection
                                 notifications={notifications}
                                 notificationsChanged={notificationsChanged}
                                 onNotificationsChange={handleNotificationsChange}
                                 onSave={handleSaveNotifications}
                             />
-                        )}
-
-                        {activeSection === 'share' && (
+                        ) : activeSection === 'share' ? (
                             <ShareSection
                                 isGuest={isGuest}
                                 dataSummary={dataSummary}
                                 onExportData={handleExportData}
                             />
-                        )}
-
-                        {activeSection === 'account' && (
+                        ) : activeSection === 'account' ? (
                             <AccountSection
                                 isGuest={isGuest}
                                 dataSummary={dataSummary}
@@ -1047,7 +1032,7 @@ const Settings: React.FC = () => {
                                 onShowClearConfirm={() => setShowClearConfirm(true)}
                                 onShowDeleteConfirm={() => setShowDeleteConfirm(true)}
                             />
-                        )}
+                        ) : null}
                     </div>
                 </div>
             </div>

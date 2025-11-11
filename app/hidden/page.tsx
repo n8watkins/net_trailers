@@ -87,11 +87,6 @@ const Hidden = () => {
         }
     }, [showManageDropdown])
 
-    // Show loading state while user data is initializing
-    if (isLoading) {
-        return <NetflixLoader message="Loading hidden content..." inline />
-    }
-
     const titleActions = (
         <div className="relative" ref={manageDropdownRef}>
             <button
@@ -171,7 +166,9 @@ const Hidden = () => {
             headerActions={headerActions}
         >
             {/* Content Sections */}
-            {filteredContent.length === 0 ? (
+            {isLoading ? (
+                <NetflixLoader message="Loading hidden content..." inline />
+            ) : filteredContent.length === 0 ? (
                 <EmptyState
                     emoji="🙈"
                     title={
