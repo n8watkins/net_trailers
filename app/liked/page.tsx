@@ -117,7 +117,7 @@ const Liked = () => {
         </div>
     )
 
-    const headerActions = (
+    const headerActions = !isLoading ? (
         <div className="space-y-4">
             {isInitialized && isGuest && <GuestModeNotification align="left" />}
 
@@ -154,7 +154,7 @@ const Liked = () => {
                 voiceInput
             />
         </div>
-    )
+    ) : undefined
 
     return (
         <SubPageLayout

@@ -260,7 +260,7 @@ const Collections = () => {
         </div>
     )
 
-    const headerActions = (
+    const headerActions = !isLoading ? (
         <div className="space-y-6">
             {/* Debug Button - controlled by Auth Flow Logs toggle */}
             {process.env.NODE_ENV === 'development' && debugSettings.showFirebaseDebug && (
@@ -370,7 +370,7 @@ const Collections = () => {
                     })()}
             </div>
         </div>
-    )
+    ) : undefined
 
     return (
         <SubPageLayout

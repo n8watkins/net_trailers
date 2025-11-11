@@ -103,7 +103,7 @@ export default function WatchHistoryPage() {
         {} as Record<string, typeof searchFilteredHistory>
     )
 
-    const headerActions = (
+    const headerActions = !isLoading ? (
         <div className="flex flex-col gap-4">
             {/* Date Filter Pills */}
             <div className="flex flex-wrap gap-2">
@@ -138,7 +138,7 @@ export default function WatchHistoryPage() {
                 voiceInput
             />
         </div>
-    )
+    ) : undefined
 
     return (
         <SubPageLayout
