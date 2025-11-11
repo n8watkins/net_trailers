@@ -65,12 +65,14 @@ export async function GET(request: NextRequest) {
             // Genre-based recommendations (60% weight)
             getGenreBasedRecommendations(profile, Math.ceil(limit * 0.6), excludeIds),
 
-            // TMDB similar content (40% weight)
-            getBatchSimilarContent(
-                userData.likedMovies.slice(0, 3).map((c) => c.id),
-                'movie',
-                Math.ceil(limit * 0.4)
-            ).then((results) => results.filter((c) => !excludeIds.includes(c.id))),
+            // TMDB similar content (40% weight) - only if user has liked movies
+            userData.likedMovies.length > 0
+                ? getBatchSimilarContent(
+                      userData.likedMovies.slice(0, 3).map((c) => c.id),
+                      'movie',
+                      Math.ceil(limit * 0.4)
+                  ).then((results) => results.filter((c) => !excludeIds.includes(c.id)))
+                : Promise.resolve([]),
         ])
 
         // Merge recommendations with diversity

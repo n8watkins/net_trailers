@@ -57,7 +57,12 @@ export default function RecommendedForYouRow() {
                 })
 
                 if (!response.ok) {
-                    throw new Error('Failed to fetch recommendations')
+                    // Get error details from response
+                    const errorData = await response.json().catch(() => ({}))
+                    const errorMsg =
+                        errorData.error || `HTTP ${response.status}: ${response.statusText}`
+                    console.error('Recommendations API error:', errorMsg, errorData)
+                    throw new Error(errorMsg)
                 }
 
                 const data = await response.json()
@@ -72,7 +77,10 @@ export default function RecommendedForYouRow() {
                 }
             } catch (err) {
                 console.error('Error fetching personalized recommendations:', err)
-                setError('Unable to load recommendations')
+                // Don't show error to user - just silently fail and hide the row
+                // Recommendations are optional and shouldn't break the experience
+                setRecommendations([])
+                setError(null) // Clear error so row is hidden
             } finally {
                 setIsLoading(false)
             }
