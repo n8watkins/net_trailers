@@ -66,13 +66,16 @@ service cloud.firestore {
       }
 
       // Data subcollection - watch history document
-      match /data/watchHistory {
+      match /data/{document} {
         // Only the authenticated user can access their watch history
-        allow read, delete: if request.auth != null && request.auth.uid == userId;
+        allow read, delete: if request.auth != null
+                            && request.auth.uid == userId
+                            && document == 'watchHistory';
 
         // Validate watch history structure on create/update
         allow create, update: if request.auth != null
                               && request.auth.uid == userId
+                              && document == 'watchHistory'
                               && isValidWatchHistoryData(request.resource.data);
       }
     }
