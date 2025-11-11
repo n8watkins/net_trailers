@@ -74,13 +74,27 @@ const Collections = () => {
         })
     }
 
-    const [selectedListId, setSelectedListId] = useState<string | 'all'>('all')
+    // Load persisted selection from localStorage, fallback to 'all'
+    const [selectedListId, setSelectedListId] = useState<string | 'all'>(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('nettrailer_selected_collection')
+            return saved || 'all'
+        }
+        return 'all'
+    })
     const [searchQuery, setSearchQuery] = useState('')
     const [showManageDropdown, setShowManageDropdown] = useState(false)
     const manageDropdownRef = useRef<HTMLDivElement>(null)
     const { modal } = useAppStore()
     const { openCollectionBuilderModal, openListModal } = useModalStore()
     const showModal = modal.isOpen
+
+    // Persist selected collection to localStorage whenever it changes
+    useEffect(() => {
+        if (selectedListId !== 'all') {
+            localStorage.setItem('nettrailer_selected_collection', selectedListId)
+        }
+    }, [selectedListId])
 
     // Force refresh when navigating to this page
     const [refreshKey, setRefreshKey] = useState(0)
@@ -110,17 +124,31 @@ const Collections = () => {
         return getAllLists()
     }, [getAllLists, refreshKey]) // Recreate when refreshKey changes
 
-    // Set default to Watch Later when lists are loaded
+    // Validate and set default selection when lists are loaded
     useEffect(() => {
-        if (selectedListId === 'all' && allLists.length > 0) {
-            const watchlistDefault = allLists.find((list) => list.name === 'Watch Later')
-            if (watchlistDefault) {
-                setSelectedListId(watchlistDefault.id)
-            } else {
-                setSelectedListId(allLists[0].id)
+        if (allLists.length > 0) {
+            // Check if the current selection is valid
+            const isValidSelection = allLists.some((list) => list.id === selectedListId)
+
+            if (!isValidSelection || selectedListId === 'all') {
+                // Try to restore from localStorage first
+                const savedId = localStorage.getItem('nettrailer_selected_collection')
+                const savedListExists = savedId && allLists.some((list) => list.id === savedId)
+
+                if (savedListExists) {
+                    setSelectedListId(savedId)
+                } else {
+                    // Fall back to Watch Later or first list
+                    const watchlistDefault = allLists.find((list) => list.name === 'Watch Later')
+                    if (watchlistDefault) {
+                        setSelectedListId(watchlistDefault.id)
+                    } else {
+                        setSelectedListId(allLists[0].id)
+                    }
+                }
             }
         }
-    }, [allLists, selectedListId])
+    }, [allLists]) // Only depend on allLists to avoid infinite loop
 
     // Handle click outside to close dropdown
     useEffect(() => {
@@ -186,14 +214,14 @@ const Collections = () => {
         }
 
         // Default icons for system lists
-        const iconClass = `w-5 h-5 ${isSelected ? 'text-black' : 'text-white'}`
+        const iconClass = `w-5 h-5 text-white`
         return <EyeIcon className={iconClass} />
     }
 
     const getListStyle = (list: UserList, isSelected: boolean) => {
-        // If selected, always use white background
+        // If selected, use a more solid/opaque version of the collection color
         if (isSelected) {
-            return 'bg-white text-black shadow-lg scale-105 border-2'
+            return 'shadow-lg scale-105 border-2 text-white font-semibold'
         }
 
         // Default styling
@@ -308,7 +336,10 @@ const Collections = () => {
                                     )}`}
                                     style={
                                         isSelected
-                                            ? { borderColor: 'white' }
+                                            ? {
+                                                  borderColor: listColor,
+                                                  backgroundColor: hexToRgba(listColor, 0.85),
+                                              }
                                             : {
                                                   borderColor: listColor,
                                                   backgroundColor: hexToRgba(listColor, 0.15),
