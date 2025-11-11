@@ -87,6 +87,7 @@ export function useVoiceInput({
     const onResultRef = useRef(onResult)
     const onErrorRef = useRef(onError)
     const audioContextRef = useRef<AudioContext | null>(null)
+    const isStartingRef = useRef(false) // Prevent multiple simultaneous starts
 
     // Initialize audio context
     useEffect(() => {
@@ -275,6 +276,12 @@ export function useVoiceInput({
             return
         }
 
+        // Prevent starting if already listening or in the process of starting
+        if (isListening || isStartingRef.current) {
+            devLog('Already listening or starting, ignoring duplicate start request')
+            return
+        }
+
         // Check if site is using HTTPS (required for microphone access)
         if (
             typeof window !== 'undefined' &&
@@ -289,7 +296,9 @@ export function useVoiceInput({
             return
         }
 
-        if (recognitionRef.current && !isListening) {
+        if (recognitionRef.current) {
+            isStartingRef.current = true
+
             if (mountedRef.current) {
                 setTranscript('')
             }
@@ -297,6 +306,7 @@ export function useVoiceInput({
             // Check and request microphone permission first
             const hasPermission = await checkMicrophonePermission()
             if (!hasPermission) {
+                isStartingRef.current = false
                 return // Error already shown by checkMicrophonePermission
             }
 
@@ -313,24 +323,26 @@ export function useVoiceInput({
                     setIsListening(true)
                 }
             } catch (error: unknown) {
-                const err = error as { message?: string }
+                const err = error as { message?: string; name?: string }
                 console.error('Failed to start speech recognition:', err)
 
-                if (mountedRef.current) {
-                    setIsListening(false)
-                }
-
                 // Handle specific error cases
-                if (err.message?.includes('already started')) {
-                    // Recognition already running, set listening to true
+                if (err.message?.includes('already started') || err.name === 'InvalidStateError') {
+                    // Recognition already running, just update state
+                    devLog('Recognition already started, updating state')
                     if (mountedRef.current) {
                         setIsListening(true)
                     }
                 } else {
+                    if (mountedRef.current) {
+                        setIsListening(false)
+                    }
                     if (onErrorRef.current) {
                         onErrorRef.current('Failed to start voice input. Please try again.')
                     }
                 }
+            } finally {
+                isStartingRef.current = false
             }
         }
     }, [isSupported, isListening, checkMicrophonePermission, playBeep])

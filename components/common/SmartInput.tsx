@@ -583,25 +583,33 @@ export function SmartInput({
                             onClick={handleVoiceToggle}
                             disabled={disabled}
                             className={`
-                                relative p-1 rounded-full transition-all
-                                ${isListening ? 'bg-red-500/20' : 'hover:bg-black/20'}
+                                relative p-1 rounded-full transition-all duration-200
+                                ${isListening ? 'bg-red-500/20 ring-2 ring-red-500/50' : 'hover:bg-black/20'}
                             `}
                             aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
+                            aria-pressed={isListening}
                         >
                             {/* Animated pulsing rings when listening */}
                             {isListening && (
                                 <>
-                                    <span className="absolute inset-0 rounded-full bg-red-500/30 animate-ping" />
+                                    <span className="absolute inset-0 rounded-full bg-red-500/40 animate-ping" />
+                                    <span
+                                        className="absolute inset-0 rounded-full bg-red-500/30 animate-pulse"
+                                        style={{ animationDuration: '1s' }}
+                                    />
                                     <span
                                         className="absolute inset-0 rounded-full bg-red-500/20 animate-pulse"
-                                        style={{ animationDuration: '1.5s' }}
+                                        style={{
+                                            animationDuration: '1.5s',
+                                            animationDelay: '0.3s',
+                                        }}
                                     />
                                 </>
                             )}
                             <MicrophoneIcon
                                 className={`
                                     ${currentSize.button} transition-all relative z-10
-                                    ${isListening ? 'text-red-400 scale-110' : 'text-red-400 hover:text-red-300'}
+                                    ${isListening ? 'text-red-500 scale-110 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'text-red-400 hover:text-red-300'}
                                 `}
                             />
                         </button>
