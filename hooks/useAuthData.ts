@@ -56,22 +56,42 @@ export function useAuthData(userId: string) {
             defaultWatchlist: [],
             userCreatedWatchlists: [],
         })
+
+        // Clear watch history from store and Firestore
+        const { useWatchHistoryStore } = await import('../stores/watchHistoryStore')
+        const { saveWatchHistory } = await import('../utils/firestore/watchHistory')
+
+        // Clear watch history in store
+        useWatchHistoryStore.getState().clearHistory()
+
+        // Clear watch history in Firestore
+        if (userId) {
+            await saveWatchHistory(userId, [])
+        }
     }
 
     const getAccountDataSummary = async () => {
+        const { useWatchHistoryStore } = await import('../stores/watchHistoryStore')
+        const watchHistoryCount = useWatchHistoryStore.getState().history.length
+
         return {
             watchlistCount: authStore.defaultWatchlist.length,
+            likedCount: authStore.likedMovies.length,
+            hiddenCount: authStore.hiddenMovies.length,
             ratingsCount: authStore.likedMovies.length + authStore.hiddenMovies.length,
             listsCount: authStore.userCreatedWatchlists.length,
+            watchHistoryCount,
             totalItems:
                 authStore.defaultWatchlist.length +
                 authStore.likedMovies.length +
                 authStore.hiddenMovies.length +
+                watchHistoryCount +
                 authStore.userCreatedWatchlists.reduce((sum, list) => sum + list.items.length, 0),
             isEmpty:
                 authStore.defaultWatchlist.length === 0 &&
                 authStore.likedMovies.length === 0 &&
                 authStore.hiddenMovies.length === 0 &&
+                watchHistoryCount === 0 &&
                 authStore.userCreatedWatchlists.length === 0,
         }
     }

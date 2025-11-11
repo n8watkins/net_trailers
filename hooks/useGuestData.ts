@@ -37,29 +37,49 @@ export function useGuestData() {
     }
 
     // Account management functions
-    const clearAccountData = () => {
+    const clearAccountData = async () => {
         guestStore.updatePreferences({
             likedMovies: [],
             hiddenMovies: [],
             defaultWatchlist: [],
             userCreatedWatchlists: [],
         })
+
+        // Clear watch history from store and localStorage
+        const { useWatchHistoryStore } = await import('../stores/watchHistoryStore')
+
+        // Clear watch history in store
+        useWatchHistoryStore.getState().clearHistory()
+
+        // Clear watch history in localStorage for guest
+        const guestId = guestStore.guestId
+        if (guestId) {
+            useWatchHistoryStore.getState().clearGuestSession(guestId)
+        }
     }
 
-    const getAccountDataSummary = () => {
+    const getAccountDataSummary = async () => {
+        const { useWatchHistoryStore } = await import('../stores/watchHistoryStore')
+        const watchHistoryCount = useWatchHistoryStore.getState().history.length
+
         return {
             watchlistCount: guestStore.defaultWatchlist.length,
+            likedCount: guestStore.likedMovies.length,
+            hiddenCount: guestStore.hiddenMovies.length,
             ratingsCount: guestStore.likedMovies.length + guestStore.hiddenMovies.length,
             listsCount: guestStore.userCreatedWatchlists.length,
+            watchHistoryCount,
             totalItems:
                 guestStore.defaultWatchlist.length +
                 guestStore.likedMovies.length +
                 guestStore.hiddenMovies.length +
+                watchHistoryCount +
                 guestStore.userCreatedWatchlists.reduce((sum, list) => sum + list.items.length, 0),
             isEmpty:
                 guestStore.defaultWatchlist.length === 0 &&
                 guestStore.likedMovies.length === 0 &&
                 guestStore.hiddenMovies.length === 0 &&
+                watchHistoryCount === 0 &&
                 guestStore.userCreatedWatchlists.length === 0,
         }
     }
