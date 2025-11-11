@@ -209,8 +209,10 @@ async function getAllUserIds(): Promise<string[]> {
                     Object.keys(customRows).length > 0
                 ) {
                     // Check if any custom row has auto-update enabled
+                    // Schema: CustomRow has flat autoUpdateEnabled field and updateFrequency
                     const hasAutoUpdateRows = Object.values(customRows).some(
-                        (row: any) => row?.autoUpdate?.enabled === true
+                        (row: any) =>
+                            row?.autoUpdateEnabled === true && row?.updateFrequency !== 'never'
                     )
 
                     if (hasAutoUpdateRows) {
