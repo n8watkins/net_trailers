@@ -3,6 +3,8 @@
  *
  * POST /api/recommendations/personalized
  * Returns personalized content recommendations based on user's preferences
+ *
+ * SECURITY: Requires valid Firebase ID token in Authorization header
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -16,18 +18,13 @@ import {
 import { getBatchSimilarContent } from '@/utils/tmdb/recommendations'
 import { Recommendation, RECOMMENDATION_CONSTRAINTS } from '@/types/recommendations'
 import { Content, getTitle } from '@/typings'
+import { withAuth } from '@/lib/auth-middleware'
 
-export async function POST(request: NextRequest) {
+async function handlePersonalizedRecommendations(
+    request: NextRequest,
+    userId: string
+): Promise<NextResponse> {
     try {
-        // Get user ID from header
-        const userId = request.headers.get('x-user-id')
-        if (!userId) {
-            return NextResponse.json(
-                { success: false, error: 'Authentication required' },
-                { status: 401 }
-            )
-        }
-
         // Get user data from request body
         const body = await request.json()
         const limit = Math.min(body.limit || 20, RECOMMENDATION_CONSTRAINTS.MAX_LIMIT)
@@ -124,3 +121,6 @@ export async function POST(request: NextRequest) {
         )
     }
 }
+
+// Export authenticated handler
+export const POST = withAuth(handlePersonalizedRecommendations)

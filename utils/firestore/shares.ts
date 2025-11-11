@@ -6,6 +6,11 @@
  * - View count tracking with spam prevention
  * - Share validation and expiration
  * - User share management
+ *
+ * ARCHITECTURE NOTE:
+ * These functions accept a Firestore instance parameter to support both:
+ * - Client-side usage: Pass `db` from firebase.ts
+ * - Server-side usage: Pass admin db from getAdminDb()
  */
 
 import { nanoid } from 'nanoid'
@@ -21,8 +26,12 @@ import {
     getDocs,
     serverTimestamp,
     increment,
+    Firestore as ClientFirestore,
 } from 'firebase/firestore'
-import { db } from '../../firebase'
+import type { Firestore as AdminFirestore } from 'firebase-admin/firestore'
+
+// Type that accepts both client and admin Firestore instances
+type FirestoreInstance = ClientFirestore | AdminFirestore
 import {
     ShareableLink,
     CreateShareRequest,
@@ -39,8 +48,8 @@ import { UserList } from '../../types/userLists'
 /**
  * Get Firestore document reference for a share link
  */
-function getShareDocRef(shareId: string) {
-    return doc(db, `shares/${shareId}`)
+function getShareDocRef(db: FirestoreInstance, shareId: string) {
+    return doc(db as any, `shares/${shareId}`)
 }
 
 /**
@@ -49,10 +58,14 @@ function getShareDocRef(shareId: string) {
  * IMPORTANT: Collections are stored in the userCreatedWatchlists array
  * on the user document, NOT in a separate subcollection.
  */
-async function getUserCollection(userId: string, collectionId: string): Promise<UserList | null> {
+async function getUserCollection(
+    db: FirestoreInstance,
+    userId: string,
+    collectionId: string
+): Promise<UserList | null> {
     try {
-        const userRef = doc(db, `users/${userId}`)
-        const userSnap = await getDoc(userRef)
+        const userRef = doc(db as any, `users/${userId}`)
+        const userSnap = await getDoc(userRef as any)
 
         if (!userSnap.exists()) {
             return null
@@ -74,12 +87,13 @@ async function getUserCollection(userId: string, collectionId: string): Promise<
  * Update a specific collection in the user's userCreatedWatchlists array
  */
 async function updateUserCollection(
+    db: FirestoreInstance,
     userId: string,
     collectionId: string,
     updates: Partial<UserList>
 ): Promise<void> {
-    const userRef = doc(db, `users/${userId}`)
-    const userSnap = await getDoc(userRef)
+    const userRef = doc(db as any, `users/${userId}`)
+    const userSnap = await getDoc(userRef as any)
 
     if (!userSnap.exists()) {
         throw new Error('User not found')
@@ -93,7 +107,7 @@ async function updateUserCollection(
         c.id === collectionId ? { ...c, ...updates } : c
     )
 
-    await updateDoc(userRef, {
+    await updateDoc(userRef as any, {
         userCreatedWatchlists: updatedCollections,
     })
 }
@@ -132,26 +146,28 @@ function isShareExpired(share: ShareableLink): boolean {
 /**
  * Create a shareable link for a collection
  *
+ * @param db - Firestore instance (client or admin)
  * @param userId - Owner user ID
  * @param collectionId - Collection to share
  * @param request - Share creation options
  * @returns Created share link with URL
  */
 export async function createShareLink(
+    db: FirestoreInstance,
     userId: string,
     collectionId: string,
     request: CreateShareRequest
 ): Promise<CreateShareResponse> {
     try {
         // Fetch the collection to get metadata
-        const collection = await getUserCollection(userId, collectionId)
+        const collection = await getUserCollection(db, userId, collectionId)
 
         if (!collection) {
             throw new Error('Collection not found')
         }
 
         // Check user's share limit
-        const userShares = await getUserShares(userId)
+        const userShares = await getUserShares(db, userId)
         const activeShares = userShares.filter((s) => s.isActive)
 
         if (userShares.length >= SHARE_CONSTRAINTS.MAX_SHARES_PER_USER) {
@@ -196,11 +212,11 @@ export async function createShareLink(
         }
 
         // Save to Firestore
-        const shareRef = getShareDocRef(shareId)
-        await setDoc(shareRef, shareLink)
+        const shareRef = getShareDocRef(db, shareId)
+        await setDoc(shareRef as any, shareLink)
 
         // Update collection with share link reference
-        await updateUserCollection(userId, collectionId, {
+        await updateUserCollection(db, userId, collectionId, {
             sharedLinkId: shareId,
             shareSettings: settings,
         })
@@ -225,10 +241,14 @@ export async function createShareLink(
 /**
  * Get share link by ID with validation
  *
+ * @param db - Firestore instance (client or admin)
  * @param shareId - Share ID to retrieve
  * @returns Validation result with share data if valid
  */
-export async function getShareById(shareId: string): Promise<ShareValidationResult> {
+export async function getShareById(
+    db: FirestoreInstance,
+    shareId: string
+): Promise<ShareValidationResult> {
     try {
         // Validate share ID format
         if (!isValidShareId(shareId)) {
@@ -239,8 +259,8 @@ export async function getShareById(shareId: string): Promise<ShareValidationResu
         }
 
         // Fetch share from Firestore
-        const shareRef = getShareDocRef(shareId)
-        const shareSnap = await getDoc(shareRef)
+        const shareRef = getShareDocRef(db, shareId)
+        const shareSnap = await getDoc(shareRef as any)
 
         if (!shareSnap.exists()) {
             return {
@@ -283,15 +303,17 @@ export async function getShareById(shareId: string): Promise<ShareValidationResu
 /**
  * Get shared collection data for public view
  *
+ * @param db - Firestore instance (client or admin)
  * @param shareId - Share ID
  * @returns Collection data with owner info (if allowed)
  */
 export async function getSharedCollectionData(
+    db: FirestoreInstance,
     shareId: string
 ): Promise<SharedCollectionData | null> {
     try {
         // Validate and get share
-        const validation = await getShareById(shareId)
+        const validation = await getShareById(db, shareId)
         if (!validation.valid || !validation.share) {
             return null
         }
@@ -299,7 +321,7 @@ export async function getSharedCollectionData(
         const share = validation.share
 
         // Fetch collection data
-        const collection = await getUserCollection(share.userId, share.collectionId)
+        const collection = await getUserCollection(db, share.userId, share.collectionId)
 
         if (!collection) {
             throw new Error('Collection not found')
@@ -308,8 +330,8 @@ export async function getSharedCollectionData(
         // Get owner name if settings allow
         let ownerName: string | undefined
         if (share.settings.showOwnerName) {
-            const userRef = doc(db, `users/${share.userId}`)
-            const userSnap = await getDoc(userRef)
+            const userRef = doc(db as any, `users/${share.userId}`)
+            const userSnap = await getDoc(userRef as any)
             if (userSnap.exists()) {
                 const userData = userSnap.data()
                 ownerName = userData.displayName || userData.email || 'Anonymous'
@@ -331,33 +353,36 @@ export async function getSharedCollectionData(
 /**
  * Increment view count for a share link (with spam prevention)
  *
- * Uses a simple localStorage-based cooldown to prevent spam.
+ * Uses a simple localStorage-based cooldown to prevent spam (client-side only).
  * Server-side rate limiting should be added for production.
  *
+ * @param db - Firestore instance (client or admin)
  * @param shareId - Share ID to increment
  */
-export async function incrementViewCount(shareId: string): Promise<void> {
+export async function incrementViewCount(db: FirestoreInstance, shareId: string): Promise<void> {
     try {
-        // Client-side spam prevention
-        const viewKey = `share_view_${shareId}`
-        const lastView = localStorage.getItem(viewKey)
+        // Client-side spam prevention (only works in browser)
+        if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+            const viewKey = `share_view_${shareId}`
+            const lastView = localStorage.getItem(viewKey)
 
-        if (lastView) {
-            const timeSinceLastView = Date.now() - parseInt(lastView, 10)
-            if (timeSinceLastView < SHARE_CONSTRAINTS.VIEW_COUNT_COOLDOWN) {
-                // Don't increment if within cooldown period
-                return
+            if (lastView) {
+                const timeSinceLastView = Date.now() - parseInt(lastView, 10)
+                if (timeSinceLastView < SHARE_CONSTRAINTS.VIEW_COUNT_COOLDOWN) {
+                    // Don't increment if within cooldown period
+                    return
+                }
             }
+
+            // Update last view timestamp
+            localStorage.setItem(viewKey, Date.now().toString())
         }
 
         // Increment view count in Firestore
-        const shareRef = getShareDocRef(shareId)
-        await updateDoc(shareRef, {
+        const shareRef = getShareDocRef(db, shareId)
+        await updateDoc(shareRef as any, {
             viewCount: increment(1),
         })
-
-        // Update last view timestamp
-        localStorage.setItem(viewKey, Date.now().toString())
     } catch (error) {
         console.error('Error incrementing view count:', error)
         // Don't throw - view count is not critical
@@ -367,14 +392,19 @@ export async function incrementViewCount(shareId: string): Promise<void> {
 /**
  * Deactivate a share link (without deleting)
  *
+ * @param db - Firestore instance (client or admin)
  * @param shareId - Share ID to deactivate
  * @param userId - User ID (must be owner)
  */
-export async function deactivateShare(shareId: string, userId: string): Promise<void> {
+export async function deactivateShare(
+    db: FirestoreInstance,
+    shareId: string,
+    userId: string
+): Promise<void> {
     try {
         // Fetch share to verify ownership
-        const shareRef = getShareDocRef(shareId)
-        const shareSnap = await getDoc(shareRef)
+        const shareRef = getShareDocRef(db, shareId)
+        const shareSnap = await getDoc(shareRef as any)
 
         if (!shareSnap.exists()) {
             throw new Error('Share link not found')
@@ -388,12 +418,12 @@ export async function deactivateShare(shareId: string, userId: string): Promise<
         }
 
         // Deactivate
-        await updateDoc(shareRef, {
+        await updateDoc(shareRef as any, {
             isActive: false,
         })
 
         // Remove from collection
-        await updateUserCollection(userId, share.collectionId, {
+        await updateUserCollection(db, userId, share.collectionId, {
             sharedLinkId: undefined,
         })
     } catch (error) {
@@ -405,13 +435,18 @@ export async function deactivateShare(shareId: string, userId: string): Promise<
 /**
  * Reactivate a previously deactivated share link
  *
+ * @param db - Firestore instance (client or admin)
  * @param shareId - Share ID to reactivate
  * @param userId - User ID (must be owner)
  */
-export async function reactivateShare(shareId: string, userId: string): Promise<void> {
+export async function reactivateShare(
+    db: FirestoreInstance,
+    shareId: string,
+    userId: string
+): Promise<void> {
     try {
-        const shareRef = getShareDocRef(shareId)
-        const shareSnap = await getDoc(shareRef)
+        const shareRef = getShareDocRef(db, shareId)
+        const shareSnap = await getDoc(shareRef as any)
 
         if (!shareSnap.exists()) {
             throw new Error('Share link not found')
@@ -430,12 +465,12 @@ export async function reactivateShare(shareId: string, userId: string): Promise<
         }
 
         // Reactivate
-        await updateDoc(shareRef, {
+        await updateDoc(shareRef as any, {
             isActive: true,
         })
 
         // Update collection
-        await updateUserCollection(userId, share.collectionId, {
+        await updateUserCollection(db, userId, share.collectionId, {
             sharedLinkId: shareId,
         })
     } catch (error) {
@@ -447,13 +482,18 @@ export async function reactivateShare(shareId: string, userId: string): Promise<
 /**
  * Delete a share link permanently
  *
+ * @param db - Firestore instance (client or admin)
  * @param shareId - Share ID to delete
  * @param userId - User ID (must be owner)
  */
-export async function deleteShare(shareId: string, userId: string): Promise<void> {
+export async function deleteShare(
+    db: FirestoreInstance,
+    shareId: string,
+    userId: string
+): Promise<void> {
     try {
-        const shareRef = getShareDocRef(shareId)
-        const shareSnap = await getDoc(shareRef)
+        const shareRef = getShareDocRef(db, shareId)
+        const shareSnap = await getDoc(shareRef as any)
 
         if (!shareSnap.exists()) {
             throw new Error('Share link not found')
@@ -467,13 +507,13 @@ export async function deleteShare(shareId: string, userId: string): Promise<void
         }
 
         // Delete from Firestore
-        await deleteDoc(shareRef)
+        await deleteDoc(shareRef as any)
 
         // Remove from collection if it's the active share
-        const collection = await getUserCollection(userId, share.collectionId)
+        const collection = await getUserCollection(db, userId, share.collectionId)
 
         if (collection && collection.sharedLinkId === shareId) {
-            await updateUserCollection(userId, share.collectionId, {
+            await updateUserCollection(db, userId, share.collectionId, {
                 sharedLinkId: undefined,
             })
         }
@@ -486,14 +526,18 @@ export async function deleteShare(shareId: string, userId: string): Promise<void
 /**
  * Get all shares for a user
  *
+ * @param db - Firestore instance (client or admin)
  * @param userId - User ID
  * @returns Array of user's share links
  */
-export async function getUserShares(userId: string): Promise<ShareableLink[]> {
+export async function getUserShares(
+    db: FirestoreInstance,
+    userId: string
+): Promise<ShareableLink[]> {
     try {
-        const sharesRef = collection(db, 'shares')
+        const sharesRef = collection(db as any, 'shares')
         const q = query(sharesRef, where('userId', '==', userId))
-        const querySnapshot = await getDocs(q)
+        const querySnapshot = await getDocs(q as any)
 
         const shares: ShareableLink[] = []
         querySnapshot.forEach((doc) => {
@@ -511,12 +555,13 @@ export async function getUserShares(userId: string): Promise<ShareableLink[]> {
 /**
  * Get share statistics for a user
  *
+ * @param db - Firestore instance (client or admin)
  * @param userId - User ID
  * @returns Share statistics
  */
-export async function getShareStats(userId: string): Promise<ShareStats> {
+export async function getShareStats(db: FirestoreInstance, userId: string): Promise<ShareStats> {
     try {
-        const shares = await getUserShares(userId)
+        const shares = await getUserShares(db, userId)
 
         const activeShares = shares.filter((s) => s.isActive)
         const totalViews = shares.reduce((sum, s) => sum + s.viewCount, 0)

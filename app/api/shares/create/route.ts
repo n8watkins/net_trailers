@@ -27,6 +27,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createShareLink } from '../../../../utils/firestore/shares'
 import { CreateShareRequest, CreateShareResponse } from '../../../../types/sharing'
 import { withAuth } from '../../../../lib/auth-middleware'
+import { getAdminDb } from '../../../../lib/firebase-admin'
 
 async function handleCreateShare(request: NextRequest, userId: string): Promise<NextResponse> {
     try {
@@ -44,8 +45,16 @@ async function handleCreateShare(request: NextRequest, userId: string): Promise<
             )
         }
 
+        // Get admin Firestore instance
+        const db = getAdminDb()
+
         // Create share link
-        const response: CreateShareResponse = await createShareLink(userId, body.collectionId, body)
+        const response: CreateShareResponse = await createShareLink(
+            db,
+            userId,
+            body.collectionId,
+            body
+        )
 
         return NextResponse.json({
             success: true,

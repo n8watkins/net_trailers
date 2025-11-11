@@ -10,14 +10,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserShares, getShareStats } from '../../../../utils/firestore/shares'
 import { withAuth } from '../../../../lib/auth-middleware'
+import { getAdminDb } from '../../../../lib/firebase-admin'
 
 async function handleGetUserShares(request: NextRequest, userId: string): Promise<NextResponse> {
     try {
+        // Get admin Firestore instance
+        const db = getAdminDb()
+
         // Get user's shares
-        const shares = await getUserShares(userId)
+        const shares = await getUserShares(db, userId)
 
         // Get share statistics
-        const stats = await getShareStats(userId)
+        const stats = await getShareStats(db, userId)
 
         return NextResponse.json({
             success: true,

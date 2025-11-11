@@ -5,7 +5,7 @@
  * Uses service account credentials to interact with Firebase securely.
  */
 
-import { initializeApp, getApps, cert, App } from 'firebase-admin/app'
+import { initializeApp, getApps, cert, App, applicationDefault } from 'firebase-admin/app'
 import { getAuth, Auth } from 'firebase-admin/auth'
 import { getFirestore, Firestore } from 'firebase-admin/firestore'
 
@@ -17,32 +17,61 @@ let adminDb: Firestore | undefined
  * Initialize Firebase Admin SDK
  *
  * Safe for hot module reloading - only initializes once
+ *
+ * Credentials Priority:
+ * 1. Environment variables (FIREBASE_ADMIN_PRIVATE_KEY, FIREBASE_ADMIN_CLIENT_EMAIL)
+ * 2. Application Default Credentials (for local dev with gcloud or Vercel/GCP)
+ *
+ * @throws Error if credentials are not properly configured
  */
 function initializeFirebaseAdmin() {
     if (getApps().length > 0) {
         adminApp = getApps()[0]
     } else {
-        // Initialize with service account credentials
-        // For production: Use service account key JSON file
-        // For development: Firebase automatically uses Application Default Credentials
         const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+        const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY
+        const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL
 
         if (!projectId) {
-            throw new Error('Firebase project ID not configured')
+            throw new Error(
+                'Firebase project ID not configured. Set NEXT_PUBLIC_FIREBASE_PROJECT_ID.'
+            )
         }
 
-        // In production, you should use a service account key
-        // For now, we'll use the project ID which works with local emulator
-        // and can work with Application Default Credentials in production
-        adminApp = initializeApp({
-            credential: cert({
+        // Use explicit credentials if available (production)
+        if (privateKey && clientEmail) {
+            console.log('[Firebase Admin] Initializing with service account credentials')
+            adminApp = initializeApp({
+                credential: cert({
+                    projectId,
+                    privateKey: privateKey.replace(/\\n/g, '\n'), // Handle escaped newlines
+                    clientEmail,
+                }),
                 projectId,
-                // These would come from a service account key file in production:
-                // privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-                // clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
-            }),
-            projectId,
-        })
+            })
+        }
+        // Fallback to Application Default Credentials (local dev with gcloud)
+        else if (process.env.NODE_ENV === 'development') {
+            console.log(
+                '[Firebase Admin] Initializing with Application Default Credentials (local dev)'
+            )
+            try {
+                adminApp = initializeApp({
+                    credential: applicationDefault(),
+                    projectId,
+                })
+            } catch (_error) {
+                throw new Error(
+                    'Firebase Admin initialization failed. For local development, run `gcloud auth application-default login` or set FIREBASE_ADMIN_PRIVATE_KEY and FIREBASE_ADMIN_CLIENT_EMAIL environment variables.'
+                )
+            }
+        }
+        // Production without credentials
+        else {
+            throw new Error(
+                'Firebase Admin credentials not configured. Set FIREBASE_ADMIN_PRIVATE_KEY and FIREBASE_ADMIN_CLIENT_EMAIL environment variables in your deployment settings.'
+            )
+        }
     }
 
     adminAuth = getAuth(adminApp)

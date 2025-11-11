@@ -14,6 +14,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { deactivateShare, reactivateShare } from '../../../../../utils/firestore/shares'
 import { withAuth } from '../../../../../lib/auth-middleware'
+import { getAdminDb } from '../../../../../lib/firebase-admin'
 
 interface RouteContext {
     params: Promise<{
@@ -63,11 +64,14 @@ async function handleToggleShare(
             )
         }
 
+        // Get admin Firestore instance
+        const db = getAdminDb()
+
         // Toggle active status
         if (isActive) {
-            await reactivateShare(shareId, userId)
+            await reactivateShare(db, shareId, userId)
         } else {
-            await deactivateShare(shareId, userId)
+            await deactivateShare(db, shareId, userId)
         }
 
         return NextResponse.json({

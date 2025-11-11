@@ -17,6 +17,7 @@ import {
     deleteShare,
 } from '../../../../utils/firestore/shares'
 import { withAuth } from '../../../../lib/auth-middleware'
+import { getAdminDb } from '../../../../lib/firebase-admin'
 
 interface RouteContext {
     params: Promise<{
@@ -38,8 +39,11 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
             )
         }
 
+        // Get admin Firestore instance
+        const db = getAdminDb()
+
         // Get shared collection data (includes validation)
-        const data = await getSharedCollectionData(shareId)
+        const data = await getSharedCollectionData(db, shareId)
 
         if (!data) {
             return NextResponse.json(
@@ -52,7 +56,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
         }
 
         // Increment view count asynchronously (don't wait)
-        incrementViewCount(shareId).catch((err) =>
+        incrementViewCount(db, shareId).catch((err) =>
             console.error('Failed to increment view count:', err)
         )
 
@@ -101,8 +105,11 @@ async function handleDeleteShare(
             )
         }
 
+        // Get admin Firestore instance
+        const db = getAdminDb()
+
         // Delete share (validates ownership)
-        await deleteShare(shareId, userId)
+        await deleteShare(db, shareId, userId)
 
         return NextResponse.json({
             success: true,

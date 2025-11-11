@@ -177,7 +177,10 @@ async function processCollection(userId: string, collection: CustomRow): Promise
 /**
  * Get all user IDs that have custom rows
  *
- * This implementation uses Firebase Admin SDK for server-side access.
+ * ARCHITECTURE NOTE:
+ * Custom rows are stored in the user document's customRows field (map),
+ * NOT in a subcollection. This matches the CustomRowsFirestore implementation.
+ *
  * For large user bases, consider implementing pagination and processing users in batches.
  */
 async function getAllUserIds(): Promise<string[]> {
@@ -196,16 +199,23 @@ async function getAllUserIds(): Promise<string[]> {
             try {
                 const userData = userDoc.data()
 
-                // Check if user has custom rows with auto-update enabled
-                // Note: Adjust this logic based on your actual schema
-                // You may need to check for customRows subcollection or a field in the user document
-                const customRowsSnapshot = await db
-                    .collection(`users/${userDoc.id}/customRows`)
-                    .limit(1)
-                    .get()
+                // Check if user has custom rows stored in the customRows field (map)
+                const customRows = userData.customRows
 
-                if (!customRowsSnapshot.empty) {
-                    userIds.push(userDoc.id)
+                // Custom rows are stored as a map: { [rowId]: CustomRow }
+                if (
+                    customRows &&
+                    typeof customRows === 'object' &&
+                    Object.keys(customRows).length > 0
+                ) {
+                    // Check if any custom row has auto-update enabled
+                    const hasAutoUpdateRows = Object.values(customRows).some(
+                        (row: any) => row?.autoUpdate?.enabled === true
+                    )
+
+                    if (hasAutoUpdateRows) {
+                        userIds.push(userDoc.id)
+                    }
                 }
             } catch (error) {
                 console.error(`[Cron] Error checking user ${userDoc.id}:`, error)
@@ -213,7 +223,7 @@ async function getAllUserIds(): Promise<string[]> {
             }
         }
 
-        console.log(`[Cron] Found ${userIds.length} users with custom rows`)
+        console.log(`[Cron] Found ${userIds.length} users with auto-update enabled custom rows`)
         return userIds
     } catch (error) {
         console.error('[Cron] Error in getAllUserIds:', error)
