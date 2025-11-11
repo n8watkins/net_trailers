@@ -70,6 +70,10 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
     const [rankedItems, setRankedItems] = useState<Array<{ content: Content; note: string }>>([])
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
 
+    // Pagination for Step 1 (content browsing)
+    const [step1Page, setStep1Page] = useState(1)
+    const step1ItemsPerPage = 20
+
     // Pagination for Step 2
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage, setItemsPerPage] = useState(10)
@@ -145,11 +149,19 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
         } else {
             // Select new tag
             setSelectedTag(tagId)
+            setStep1Page(1) // Reset pagination
             fetchTagContent(tagId)
             // Clear search when selecting a tag
             updateQuery('')
         }
     }
+
+    // Reset pagination when search query changes
+    useEffect(() => {
+        if (query.length >= 2) {
+            setStep1Page(1)
+        }
+    }, [query])
 
     const handleToggleItem = (content: Content) => {
         if (selectedItems.find((item) => item.id === content.id)) {
@@ -285,35 +297,30 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
 
             {/* Modal */}
             <div
-                className="relative min-h-screen flex items-center justify-center p-4"
+                className="relative min-h-screen flex items-center justify-center p-2"
                 onMouseDown={handleBackdropMouseDown}
                 onClick={handleBackdropClick}
             >
                 <div
-                    className="relative bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-lg shadow-2xl max-w-7xl w-full border border-gray-700"
+                    className="relative bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-lg shadow-2xl max-w-[96vw] w-full max-h-[94vh] border border-gray-700 flex flex-col"
                     onClick={(e) => e.stopPropagation()}
                 >
-                    {/* Header */}
-                    <div className="flex items-center justify-between p-6 border-b border-gray-700">
-                        <div className="flex-1">
-                            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                                <TrophyIcon className="w-6 h-6 text-yellow-500" />
-                                Create Ranking
-                            </h2>
-                            <p className="text-gray-400 text-sm mt-1">
-                                Build your ranked list of movies and TV shows
-                            </p>
+                    {/* Header - Compact */}
+                    <div className="flex items-center justify-between px-6 py-3 border-b border-gray-700 flex-shrink-0">
+                        <div className="flex items-center gap-3">
+                            <TrophyIcon className="w-5 h-5 text-yellow-500" />
+                            <h2 className="text-xl font-bold text-white">Create Ranking</h2>
                         </div>
                         <button
                             onClick={onCancel}
-                            className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg"
+                            className="text-gray-400 hover:text-white transition-colors p-1.5 hover:bg-white/10 rounded-lg"
                         >
-                            <XMarkIcon className="w-6 h-6" />
+                            <XMarkIcon className="w-5 h-5" />
                         </button>
                     </div>
 
-                    {/* Content */}
-                    <div className="p-6">
+                    {/* Content - Scrollable */}
+                    <div className="p-4 overflow-y-auto flex-1">
                         {/* Progress indicator */}
                         <div className="mb-8">
                             {/* Step circles and connectors */}
@@ -453,9 +460,16 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
                                         {/* Tag content */}
                                         {selectedTag && !query ? (
                                             <div>
-                                                <h3 className="text-lg font-bold text-white mb-3">
-                                                    {getTagById(selectedTag)?.name}
-                                                </h3>
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <h3 className="text-lg font-bold text-white">
+                                                        {getTagById(selectedTag)?.name}
+                                                    </h3>
+                                                    {tagContent.length > 0 && (
+                                                        <span className="text-sm text-gray-400">
+                                                            {tagContent.length} items
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 {isLoadingTag ? (
                                                     <div className="text-center py-8 text-gray-500">
                                                         Loading...
@@ -465,66 +479,137 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
                                                         No content found
                                                     </div>
                                                 ) : (
-                                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                                                        {tagContent.map((content) => {
-                                                            const isSelected = selectedItems.find(
-                                                                (item) => item.id === content.id
-                                                            )
-                                                            const canSelect =
-                                                                selectedItems.length <
-                                                                RANKING_CONSTRAINTS.MAX_ITEM_COUNT
+                                                    <>
+                                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                                                            {tagContent
+                                                                .slice(
+                                                                    (step1Page - 1) *
+                                                                        step1ItemsPerPage,
+                                                                    step1Page * step1ItemsPerPage
+                                                                )
+                                                                .map((content) => {
+                                                                    const isSelected =
+                                                                        selectedItems.find(
+                                                                            (item) =>
+                                                                                item.id ===
+                                                                                content.id
+                                                                        )
+                                                                    const canSelect =
+                                                                        selectedItems.length <
+                                                                        RANKING_CONSTRAINTS.MAX_ITEM_COUNT
 
-                                                            return (
-                                                                <div
-                                                                    key={content.id}
-                                                                    className="relative group cursor-pointer"
-                                                                    onClick={() =>
-                                                                        handleToggleItem(content)
-                                                                    }
-                                                                >
-                                                                    <div className="relative aspect-[2/3]">
-                                                                        <Image
-                                                                            src={getPosterPath(
-                                                                                content
-                                                                            )}
-                                                                            alt={getTitle(content)}
-                                                                            fill
-                                                                            className={`object-cover rounded-lg transition-opacity ${
-                                                                                isSelected
-                                                                                    ? 'opacity-50'
-                                                                                    : 'group-hover:opacity-75'
-                                                                            }`}
-                                                                        />
-                                                                        {isSelected ? (
-                                                                            <div className="absolute inset-0 flex items-center justify-center">
-                                                                                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                                                                                    <CheckIcon className="w-8 h-8 text-white" />
-                                                                                </div>
-                                                                            </div>
-                                                                        ) : (
-                                                                            canSelect && (
-                                                                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                                    <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center">
-                                                                                        <PlusIcon className="w-8 h-8 text-black" />
+                                                                    return (
+                                                                        <div
+                                                                            key={content.id}
+                                                                            className="relative group cursor-pointer"
+                                                                            onClick={() =>
+                                                                                handleToggleItem(
+                                                                                    content
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            <div className="relative aspect-[2/3]">
+                                                                                <Image
+                                                                                    src={getPosterPath(
+                                                                                        content
+                                                                                    )}
+                                                                                    alt={getTitle(
+                                                                                        content
+                                                                                    )}
+                                                                                    fill
+                                                                                    className={`object-cover rounded-lg transition-opacity ${
+                                                                                        isSelected
+                                                                                            ? 'opacity-50'
+                                                                                            : 'group-hover:opacity-75'
+                                                                                    }`}
+                                                                                />
+                                                                                {isSelected ? (
+                                                                                    <div className="absolute inset-0 flex items-center justify-center">
+                                                                                        <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                                                                                            <CheckIcon className="w-8 h-8 text-white" />
+                                                                                        </div>
                                                                                     </div>
-                                                                                </div>
+                                                                                ) : (
+                                                                                    canSelect && (
+                                                                                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                                            <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center">
+                                                                                                <PlusIcon className="w-8 h-8 text-black" />
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    )
+                                                                                )}
+                                                                            </div>
+                                                                            <p className="mt-2 text-xs text-white text-center line-clamp-2">
+                                                                                {getTitle(content)}
+                                                                            </p>
+                                                                        </div>
+                                                                    )
+                                                                })}
+                                                        </div>
+                                                        {/* Pagination controls */}
+                                                        {tagContent.length > step1ItemsPerPage && (
+                                                            <div className="flex items-center justify-center gap-2 mt-6">
+                                                                <button
+                                                                    onClick={() =>
+                                                                        setStep1Page(
+                                                                            Math.max(
+                                                                                1,
+                                                                                step1Page - 1
                                                                             )
-                                                                        )}
-                                                                    </div>
-                                                                    <p className="mt-2 text-xs text-white text-center line-clamp-2">
-                                                                        {getTitle(content)}
-                                                                    </p>
-                                                                </div>
-                                                            )
-                                                        })}
-                                                    </div>
+                                                                        )
+                                                                    }
+                                                                    disabled={step1Page === 1}
+                                                                    className="px-3 py-2 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                                >
+                                                                    <ChevronLeftIcon className="w-5 h-5" />
+                                                                </button>
+                                                                <span className="text-sm text-gray-400 min-w-[100px] text-center">
+                                                                    Page {step1Page} of{' '}
+                                                                    {Math.ceil(
+                                                                        tagContent.length /
+                                                                            step1ItemsPerPage
+                                                                    )}
+                                                                </span>
+                                                                <button
+                                                                    onClick={() =>
+                                                                        setStep1Page(
+                                                                            Math.min(
+                                                                                Math.ceil(
+                                                                                    tagContent.length /
+                                                                                        step1ItemsPerPage
+                                                                                ),
+                                                                                step1Page + 1
+                                                                            )
+                                                                        )
+                                                                    }
+                                                                    disabled={
+                                                                        step1Page >=
+                                                                        Math.ceil(
+                                                                            tagContent.length /
+                                                                                step1ItemsPerPage
+                                                                        )
+                                                                    }
+                                                                    className="px-3 py-2 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                                >
+                                                                    <ChevronRightIcon className="w-5 h-5" />
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </>
                                                 )}
                                             </div>
                                         ) : query.length >= 2 ? (
                                             <div>
-                                                <h3 className="text-lg font-bold text-white mb-3">
-                                                    Search Results
-                                                </h3>
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <h3 className="text-lg font-bold text-white">
+                                                        Search Results
+                                                    </h3>
+                                                    {results.length > 0 && (
+                                                        <span className="text-sm text-gray-400">
+                                                            {results.length} results
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 {isSearchLoading ? (
                                                     <div className="text-center py-8 text-gray-500">
                                                         Searching...
@@ -534,66 +619,131 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
                                                         No results found
                                                     </div>
                                                 ) : (
-                                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                                                        {results.slice(0, 20).map((content) => {
-                                                            const isSelected = selectedItems.find(
-                                                                (item) => item.id === content.id
-                                                            )
-                                                            const canSelect =
-                                                                selectedItems.length <
-                                                                RANKING_CONSTRAINTS.MAX_ITEM_COUNT
+                                                    <>
+                                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                                                            {results
+                                                                .slice(
+                                                                    (step1Page - 1) *
+                                                                        step1ItemsPerPage,
+                                                                    step1Page * step1ItemsPerPage
+                                                                )
+                                                                .map((content) => {
+                                                                    const isSelected =
+                                                                        selectedItems.find(
+                                                                            (item) =>
+                                                                                item.id ===
+                                                                                content.id
+                                                                        )
+                                                                    const canSelect =
+                                                                        selectedItems.length <
+                                                                        RANKING_CONSTRAINTS.MAX_ITEM_COUNT
 
-                                                            return (
-                                                                <div
-                                                                    key={content.id}
-                                                                    className="relative group cursor-pointer"
+                                                                    return (
+                                                                        <div
+                                                                            key={content.id}
+                                                                            className="relative group cursor-pointer"
+                                                                            onClick={() =>
+                                                                                handleToggleItem(
+                                                                                    content
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            <div className="relative aspect-[2/3]">
+                                                                                <Image
+                                                                                    src={getPosterPath(
+                                                                                        content
+                                                                                    )}
+                                                                                    alt={getTitle(
+                                                                                        content
+                                                                                    )}
+                                                                                    fill
+                                                                                    className={`object-cover rounded-lg transition-opacity ${
+                                                                                        isSelected
+                                                                                            ? 'opacity-50'
+                                                                                            : 'group-hover:opacity-75'
+                                                                                    }`}
+                                                                                />
+                                                                                {isSelected ? (
+                                                                                    <div className="absolute inset-0 flex items-center justify-center">
+                                                                                        <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                                                                                            <CheckIcon className="w-8 h-8 text-white" />
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ) : canSelect ? (
+                                                                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                                        <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center">
+                                                                                            <PlusIcon className="w-8 h-8 text-black" />
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                                                                        <span className="text-white text-sm font-medium">
+                                                                                            Limit
+                                                                                            reached
+                                                                                        </span>
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                            <p className="text-sm text-gray-300 mt-1 truncate">
+                                                                                {getTitle(content)}
+                                                                            </p>
+                                                                            <p className="text-xs text-gray-500">
+                                                                                {getYear(content)}
+                                                                            </p>
+                                                                        </div>
+                                                                    )
+                                                                })}
+                                                        </div>
+                                                        {/* Pagination controls */}
+                                                        {results.length > step1ItemsPerPage && (
+                                                            <div className="flex items-center justify-center gap-2 mt-6">
+                                                                <button
                                                                     onClick={() =>
-                                                                        handleToggleItem(content)
+                                                                        setStep1Page(
+                                                                            Math.max(
+                                                                                1,
+                                                                                step1Page - 1
+                                                                            )
+                                                                        )
                                                                     }
+                                                                    disabled={step1Page === 1}
+                                                                    className="px-3 py-2 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                                                 >
-                                                                    <div className="relative aspect-[2/3]">
-                                                                        <Image
-                                                                            src={getPosterPath(
-                                                                                content
-                                                                            )}
-                                                                            alt={getTitle(content)}
-                                                                            fill
-                                                                            className={`object-cover rounded-lg transition-opacity ${
-                                                                                isSelected
-                                                                                    ? 'opacity-50'
-                                                                                    : 'group-hover:opacity-75'
-                                                                            }`}
-                                                                        />
-                                                                        {isSelected ? (
-                                                                            <div className="absolute inset-0 flex items-center justify-center">
-                                                                                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                                                                                    <CheckIcon className="w-8 h-8 text-white" />
-                                                                                </div>
-                                                                            </div>
-                                                                        ) : canSelect ? (
-                                                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                                <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center">
-                                                                                    <PlusIcon className="w-8 h-8 text-black" />
-                                                                                </div>
-                                                                            </div>
-                                                                        ) : (
-                                                                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                                                                                <span className="text-white text-sm font-medium">
-                                                                                    Limit reached
-                                                                                </span>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                    <p className="text-sm text-gray-300 mt-1 truncate">
-                                                                        {getTitle(content)}
-                                                                    </p>
-                                                                    <p className="text-xs text-gray-500">
-                                                                        {getYear(content)}
-                                                                    </p>
-                                                                </div>
-                                                            )
-                                                        })}
-                                                    </div>
+                                                                    <ChevronLeftIcon className="w-5 h-5" />
+                                                                </button>
+                                                                <span className="text-sm text-gray-400 min-w-[100px] text-center">
+                                                                    Page {step1Page} of{' '}
+                                                                    {Math.ceil(
+                                                                        results.length /
+                                                                            step1ItemsPerPage
+                                                                    )}
+                                                                </span>
+                                                                <button
+                                                                    onClick={() =>
+                                                                        setStep1Page(
+                                                                            Math.min(
+                                                                                Math.ceil(
+                                                                                    results.length /
+                                                                                        step1ItemsPerPage
+                                                                                ),
+                                                                                step1Page + 1
+                                                                            )
+                                                                        )
+                                                                    }
+                                                                    disabled={
+                                                                        step1Page >=
+                                                                        Math.ceil(
+                                                                            results.length /
+                                                                                step1ItemsPerPage
+                                                                        )
+                                                                    }
+                                                                    className="px-3 py-2 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                                >
+                                                                    <ChevronRightIcon className="w-5 h-5" />
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </>
                                                 )}
                                             </div>
                                         ) : (
