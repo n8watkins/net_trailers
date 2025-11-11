@@ -50,7 +50,9 @@ const AccountSection: React.FC<AccountSectionProps> = ({
                     <h3 className="text-lg font-semibold text-white mb-4">
                         {isGuest ? 'Session Data' : 'Account Data'}
                     </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div
+                        className={`grid grid-cols-2 ${isGuest ? 'md:grid-cols-4' : 'md:grid-cols-5'} gap-4 mb-6`}
+                    >
                         <div className="bg-[#141414] rounded-lg p-4 border border-[#313131]">
                             <p className="text-[#b3b3b3] text-sm">Watch Later</p>
                             <p className="text-white text-2xl font-bold mt-1">
@@ -70,13 +72,19 @@ const AccountSection: React.FC<AccountSectionProps> = ({
                             </p>
                         </div>
                         <div className="bg-[#141414] rounded-lg p-4 border border-[#313131]">
-                            <p className="text-[#b3b3b3] text-sm">
-                                {isGuest ? 'Watch History' : 'Collections'}
-                            </p>
+                            <p className="text-[#b3b3b3] text-sm">Watch History</p>
                             <p className="text-white text-2xl font-bold mt-1">
-                                {isGuest ? dataSummary.watchHistoryCount : dataSummary.listsCount}
+                                {dataSummary.watchHistoryCount}
                             </p>
                         </div>
+                        {!isGuest && (
+                            <div className="bg-[#141414] rounded-lg p-4 border border-[#313131]">
+                                <p className="text-[#b3b3b3] text-sm">Collections</p>
+                                <p className="text-white text-2xl font-bold mt-1">
+                                    {dataSummary.listsCount}
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     <div className="space-y-3">

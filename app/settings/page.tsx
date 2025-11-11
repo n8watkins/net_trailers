@@ -54,6 +54,7 @@ interface SidebarItem {
     priority: 'low' | 'medium' | 'high' | 'danger'
     guestOnly?: boolean
     authenticatedOnly?: boolean
+    searchKeywords?: string[] // Additional keywords for searching section content
 }
 
 const Settings: React.FC = () => {
@@ -255,6 +256,7 @@ const Settings: React.FC = () => {
             icon: UserCircleIcon,
             priority: 'medium',
             authenticatedOnly: true,
+            searchKeywords: ['display name', 'name', 'photo', 'avatar', 'picture'],
         },
         {
             id: 'email',
@@ -263,6 +265,7 @@ const Settings: React.FC = () => {
             icon: EnvelopeIcon,
             priority: 'medium',
             authenticatedOnly: true,
+            searchKeywords: ['email', 'address', 'contact', 'update email', 'change email'],
         },
         {
             id: 'password',
@@ -271,6 +274,7 @@ const Settings: React.FC = () => {
             icon: KeyIcon,
             priority: 'medium',
             authenticatedOnly: true,
+            searchKeywords: ['password', 'security', 'change password', 'reset', 'authentication'],
         },
         {
             id: 'preferences',
@@ -278,6 +282,19 @@ const Settings: React.FC = () => {
             description: 'Content filters and playback settings',
             icon: Cog6ToothIcon,
             priority: 'low',
+            searchKeywords: [
+                'child safety',
+                'parental controls',
+                'family friendly',
+                'mute',
+                'volume',
+                'autoplay',
+                'recommendations',
+                'personalized',
+                'tracking',
+                'pin',
+                'lock',
+            ],
         },
         {
             id: 'notifications',
@@ -285,6 +302,14 @@ const Settings: React.FC = () => {
             description: 'Manage notification preferences',
             icon: BellIcon,
             priority: 'low',
+            searchKeywords: [
+                'alerts',
+                'email notifications',
+                'push notifications',
+                'updates',
+                'newsletter',
+                'marketing',
+            ],
         },
         {
             id: 'share',
@@ -293,6 +318,15 @@ const Settings: React.FC = () => {
             icon: ShareIcon,
             priority: 'low',
             authenticatedOnly: true,
+            searchKeywords: [
+                'share',
+                'export',
+                'download',
+                'csv',
+                'backup',
+                'collections',
+                'shareable links',
+            ],
         },
         {
             id: 'account',
@@ -300,6 +334,17 @@ const Settings: React.FC = () => {
             description: 'Export, clear, or manage your data',
             icon: TrashIcon,
             priority: 'danger',
+            searchKeywords: [
+                'delete',
+                'clear',
+                'remove',
+                'erase',
+                'delete account',
+                'clear data',
+                'export',
+                'download',
+                'backup',
+            ],
         },
     ]
 
@@ -313,11 +358,25 @@ const Settings: React.FC = () => {
             const query = searchQuery.toLowerCase()
             const matchesTitle = item.title.toLowerCase().includes(query)
             const matchesDescription = item.description.toLowerCase().includes(query)
-            return matchesTitle || matchesDescription
+            const matchesKeywords = item.searchKeywords?.some((keyword) =>
+                keyword.toLowerCase().includes(query)
+            )
+            return matchesTitle || matchesDescription || matchesKeywords
         }
 
         return true
     })
+
+    // Auto-navigate to first matching section when searching
+    React.useEffect(() => {
+        if (searchQuery.trim() && sidebarItems.length > 0) {
+            // If current section is not in filtered results, switch to first match
+            const isCurrentInResults = sidebarItems.some((item) => item.id === activeSection)
+            if (!isCurrentInResults) {
+                setActiveSection(sidebarItems[0].id)
+            }
+        }
+    }, [searchQuery, sidebarItems, activeSection])
 
     const getUserName = () => {
         if (user?.displayName) {
