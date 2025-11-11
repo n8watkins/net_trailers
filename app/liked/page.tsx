@@ -156,6 +156,7 @@ const Liked = () => {
                 onChange={setSearchQuery}
                 placeholder="Search liked content..."
                 focusColor="green"
+                voiceInput
             />
         </div>
     )

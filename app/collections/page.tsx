@@ -362,6 +362,7 @@ const Collections = () => {
                                     onChange={setSearchQuery}
                                     placeholder="Search your favorites..."
                                     focusColor="blue"
+                                    voiceInput
                                 />
                             </div>
                         )

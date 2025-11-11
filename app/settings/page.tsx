@@ -34,6 +34,7 @@ import NotificationsSection from '../../components/settings/NotificationsSection
 import ChildSafetyPINModal from '../../components/settings/ChildSafetyPINModal'
 import { useChildSafetyPINStore } from '../../stores/childSafetyStore'
 import { DEFAULT_NOTIFICATION_PREFERENCES } from '../../types/notifications'
+import SearchBar from '../../components/common/SearchBar'
 
 type SettingsSection =
     | 'profile'
@@ -83,6 +84,9 @@ const Settings: React.FC = () => {
 
     const isGoogleAuth = authProvider === 'google'
     const isEmailAuth = authProvider === 'email'
+
+    // Search state
+    const [searchQuery, setSearchQuery] = useState('')
 
     // Modal states
     const [activeSection, setActiveSection] = useState<SettingsSection>('preferences')
@@ -299,10 +303,19 @@ const Settings: React.FC = () => {
         },
     ]
 
-    // Filter sidebar items based on authentication status
+    // Filter sidebar items based on authentication status and search query
     const sidebarItems = allSidebarItems.filter((item) => {
         if (isGuest && item.authenticatedOnly) return false
         if (!isGuest && item.guestOnly) return false
+
+        // Apply search filter
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase()
+            const matchesTitle = item.title.toLowerCase().includes(query)
+            const matchesDescription = item.description.toLowerCase().includes(query)
+            return matchesTitle || matchesDescription
+        }
+
         return true
     })
 
@@ -792,6 +805,17 @@ const Settings: React.FC = () => {
                     {/* Sidebar */}
                     <div className="lg:w-96 flex-shrink-0 border-b lg:border-b-0 lg:border-r border-[#313131]">
                         <nav className="p-6">
+                            {/* Search Bar */}
+                            <div className="mb-4">
+                                <SearchBar
+                                    value={searchQuery}
+                                    onChange={setSearchQuery}
+                                    placeholder="Search settings..."
+                                    focusColor="gray"
+                                    voiceInput
+                                />
+                            </div>
+
                             <ul className="space-y-2">
                                 {sidebarItems.map((item) => {
                                     const isActive = activeSection === item.id

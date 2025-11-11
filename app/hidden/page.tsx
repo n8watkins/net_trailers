@@ -150,6 +150,7 @@ const Hidden = () => {
                 onChange={setSearchQuery}
                 placeholder="Search hidden content..."
                 focusColor="gray"
+                voiceInput
             />
         </div>
     )
