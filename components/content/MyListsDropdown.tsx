@@ -7,6 +7,7 @@ import {
     EyeSlashIcon,
     CheckCircleIcon,
     RectangleStackIcon,
+    TrophyIcon,
 } from '@heroicons/react/24/outline'
 
 function MyListsDropdown() {
@@ -31,7 +32,9 @@ function MyListsDropdown() {
     }
 
     const isAnyListPath = () => {
-        return pathname ? ['/collections', '/liked', '/hidden'].includes(pathname) : false
+        return pathname
+            ? ['/collections', '/rankings', '/liked', '/hidden'].includes(pathname)
+            : false
     }
 
     const handleLinkClick = () => {
@@ -47,7 +50,7 @@ function MyListsDropdown() {
                 }`}
             >
                 <RectangleStackIcon className="h-5 w-5" />
-                <span>Collections</span>
+                <span>My Stuff</span>
                 <ChevronDownIcon
                     className={`h-5 w-5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
                 />
@@ -66,6 +69,19 @@ function MyListsDropdown() {
                             >
                                 <RectangleStackIcon className="h-4 w-4" />
                                 <span>My Collections</span>
+                            </div>
+                        </Link>
+
+                        <Link href="/rankings" onClick={handleLinkClick}>
+                            <div
+                                className={`w-full text-left px-4 py-3 hover:bg-white/10 transition-colors flex items-center space-x-3 ${
+                                    isCurrentPath('/rankings')
+                                        ? 'bg-white/10 text-white font-semibold'
+                                        : 'text-gray-300'
+                                }`}
+                            >
+                                <TrophyIcon className="h-4 w-4" />
+                                <span>My Rankings</span>
                             </div>
                         </Link>
 
