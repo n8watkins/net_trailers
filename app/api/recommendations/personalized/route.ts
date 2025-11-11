@@ -1,7 +1,7 @@
 /**
  * Personalized Recommendations API
  *
- * GET /api/recommendations/personalized
+ * POST /api/recommendations/personalized
  * Returns personalized content recommendations based on user's preferences
  */
 
@@ -17,7 +17,7 @@ import { getBatchSimilarContent } from '@/utils/tmdb/recommendations'
 import { Recommendation, RECOMMENDATION_CONSTRAINTS } from '@/types/recommendations'
 import { Content, getTitle } from '@/typings'
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
     try {
         // Get user ID from header
         const userId = request.headers.get('x-user-id')
@@ -28,19 +28,15 @@ export async function GET(request: NextRequest) {
             )
         }
 
-        // Get query parameters
-        const searchParams = request.nextUrl.searchParams
-        const limit = Math.min(
-            parseInt(searchParams.get('limit') || '20', 10),
-            RECOMMENDATION_CONSTRAINTS.MAX_LIMIT
-        )
+        // Get user data from request body
+        const body = await request.json()
+        const limit = Math.min(body.limit || 20, RECOMMENDATION_CONSTRAINTS.MAX_LIMIT)
 
-        // Get user data from request body (passed from client)
         const userData = {
             userId,
-            likedMovies: JSON.parse(searchParams.get('likedMovies') || '[]') as Content[],
-            defaultWatchlist: JSON.parse(searchParams.get('watchlist') || '[]') as Content[],
-            hiddenMovies: JSON.parse(searchParams.get('hiddenMovies') || '[]') as Content[],
+            likedMovies: (body.likedMovies || []) as Content[],
+            defaultWatchlist: (body.watchlist || []) as Content[],
+            hiddenMovies: (body.hiddenMovies || []) as Content[],
         }
 
         // Check if user has enough data

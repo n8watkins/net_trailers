@@ -42,18 +42,19 @@ export default function RecommendedForYouRow() {
             setError(null)
 
             try {
-                // Build query params with user data
-                const params = new URLSearchParams({
-                    likedMovies: JSON.stringify(sessionData.likedMovies.slice(0, 10)),
-                    watchlist: JSON.stringify(sessionData.defaultWatchlist.slice(0, 10)),
-                    hiddenMovies: JSON.stringify(sessionData.hiddenMovies.slice(0, 10)),
-                    limit: '20',
-                })
-
-                const response = await fetch(`/api/recommendations/personalized?${params}`, {
+                // Use POST with body instead of GET with URL params to avoid 431 header size error
+                const response = await fetch(`/api/recommendations/personalized`, {
+                    method: 'POST',
                     headers: {
+                        'Content-Type': 'application/json',
                         'x-user-id': userId,
                     },
+                    body: JSON.stringify({
+                        likedMovies: sessionData.likedMovies.slice(0, 10),
+                        watchlist: sessionData.defaultWatchlist.slice(0, 10),
+                        hiddenMovies: sessionData.hiddenMovies.slice(0, 10),
+                        limit: 20,
+                    }),
                 })
 
                 if (!response.ok) {
