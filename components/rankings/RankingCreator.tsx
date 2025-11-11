@@ -65,6 +65,7 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
     const [selectedTag, setSelectedTag] = useState<string | null>(null)
     const [tagContent, setTagContent] = useState<Content[]>([])
     const [isLoadingTag, setIsLoadingTag] = useState(false)
+    const [tagSearchQuery, setTagSearchQuery] = useState('')
 
     // Step 3: Ordering and notes
     const [rankedItems, setRankedItems] = useState<Array<{ content: Content; note: string }>>([])
@@ -88,6 +89,11 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
     const isStep3Valid =
         title.trim().length >= RANKING_CONSTRAINTS.MIN_TITLE_LENGTH &&
         title.trim().length <= RANKING_CONSTRAINTS.MAX_TITLE_LENGTH
+
+    // Filter tags based on search query
+    const filteredTags = POPULAR_TAGS.filter((tag) =>
+        tag.name.toLowerCase().includes(tagSearchQuery.toLowerCase())
+    )
 
     const handleAddTag = () => {
         const newTag = tagInput.trim()
@@ -416,26 +422,61 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
                                     <div className="space-y-6 min-h-[600px]">
                                         {/* Popular Tags */}
                                         <div>
-                                            <h3 className="text-sm font-medium text-gray-400 mb-3">
-                                                Browse by Popular Tags
-                                            </h3>
-                                            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto pr-2">
-                                                {POPULAR_TAGS.map((tag) => (
-                                                    <button
-                                                        key={tag.id}
-                                                        onClick={() => handleSelectTag(tag.id)}
-                                                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                                                            selectedTag === tag.id
-                                                                ? 'bg-yellow-500 text-black'
-                                                                : 'bg-zinc-800 text-gray-300 hover:bg-zinc-700'
-                                                        }`}
-                                                        title={tag.description}
-                                                    >
-                                                        <span className="mr-1">{tag.emoji}</span>
-                                                        {tag.name}
-                                                    </button>
-                                                ))}
+                                            <div className="flex items-center justify-between mb-3">
+                                                <h3 className="text-sm font-medium text-gray-400">
+                                                    Browse by Popular Tags
+                                                </h3>
+                                                <span className="text-xs text-gray-500">
+                                                    {filteredTags.length} tags
+                                                </span>
                                             </div>
+                                            {/* Tag search input */}
+                                            <div className="relative mb-3">
+                                                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
+                                                <input
+                                                    type="text"
+                                                    value={tagSearchQuery}
+                                                    onChange={(e) =>
+                                                        setTagSearchQuery(e.target.value)
+                                                    }
+                                                    placeholder="Search tags..."
+                                                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
+                                                />
+                                                {tagSearchQuery && (
+                                                    <button
+                                                        onClick={() => setTagSearchQuery('')}
+                                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+                                                    >
+                                                        <XMarkIcon className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                            {/* Tags */}
+                                            {filteredTags.length > 0 ? (
+                                                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto pr-2">
+                                                    {filteredTags.map((tag) => (
+                                                        <button
+                                                            key={tag.id}
+                                                            onClick={() => handleSelectTag(tag.id)}
+                                                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                                                                selectedTag === tag.id
+                                                                    ? 'bg-yellow-500 text-black'
+                                                                    : 'bg-zinc-800 text-gray-300 hover:bg-zinc-700'
+                                                            }`}
+                                                            title={tag.description}
+                                                        >
+                                                            <span className="mr-1">
+                                                                {tag.emoji}
+                                                            </span>
+                                                            {tag.name}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="text-center py-4 text-gray-500 text-sm">
+                                                    No tags found
+                                                </div>
+                                            )}
                                         </div>
 
                                         {/* Search */}
