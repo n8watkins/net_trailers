@@ -29,7 +29,7 @@ import { useDebugSettings } from '../../components/debug/DebugControls'
 import NetflixLoader from '../../components/common/NetflixLoader'
 
 export default function ProfilePage() {
-    const { user } = useAuth()
+    const { user, loading: authLoading } = useAuth()
     const userData = useUserData()
     const { totalWatched, history: watchHistory, isLoading: isLoadingHistory } = useWatchHistory()
     const debugSettings = useDebugSettings()
@@ -38,7 +38,7 @@ export default function ProfilePage() {
     const isInitialized = useSessionStore((state) => state.isInitialized)
 
     // Show loading state while data is being fetched
-    const isLoading = !isInitialized || isLoadingHistory
+    const isLoading = !isInitialized || isLoadingHistory || authLoading
 
     useEffect(() => {
         document.title = 'Profile - NetTrailers'
@@ -101,13 +101,23 @@ export default function ProfilePage() {
                         <img
                             src={user.photoURL}
                             alt={userName}
-                            className="w-24 h-24 rounded-full ring-4 ring-blue-500/30"
+                            className="w-24 h-24 rounded-full ring-4 ring-blue-500/30 object-cover"
+                            referrerPolicy="no-referrer"
+                            onError={(e) => {
+                                // Fallback to initials if image fails to load
+                                e.currentTarget.style.display = 'none'
+                                const fallbackDiv = e.currentTarget
+                                    .nextElementSibling as HTMLElement
+                                if (fallbackDiv) fallbackDiv.style.display = 'flex'
+                            }}
                         />
-                    ) : (
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center ring-4 ring-blue-500/30">
-                            <span className="text-3xl font-bold text-white">{userInitials}</span>
-                        </div>
-                    )}
+                    ) : null}
+                    <div
+                        className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center ring-4 ring-blue-500/30"
+                        style={{ display: user?.photoURL ? 'none' : 'flex' }}
+                    >
+                        <span className="text-3xl font-bold text-white">{userInitials}</span>
+                    </div>
                 </div>
 
                 {/* User Info */}
@@ -265,12 +275,7 @@ export default function ProfilePage() {
     // Show loading screen while data is being fetched
     if (isLoading) {
         return (
-            <SubPageLayout
-                title="Profile"
-                icon={<UserIcon />}
-                iconColor="text-blue-400"
-                description={userEmail}
-            >
+            <SubPageLayout title="Profile" icon={<UserIcon />} iconColor="text-blue-400">
                 <NetflixLoader inline message="Loading your profile data..." />
             </SubPageLayout>
         )
@@ -281,7 +286,6 @@ export default function ProfilePage() {
             title="Profile"
             icon={<UserIcon />}
             iconColor="text-blue-400"
-            description={userEmail}
             headerActions={profileHeader}
         >
             {/* Page content handled by header */}
