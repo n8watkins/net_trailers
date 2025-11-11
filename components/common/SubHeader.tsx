@@ -103,7 +103,7 @@ export default function SubHeader() {
     })()
 
     return (
-        <div className="w-full border-b border-gray-800 bg-gradient-to-b from-gray-900 to-black pt-32">
+        <div className="sticky top-0 z-40 w-full border-b border-gray-800 bg-gradient-to-b from-gray-900 to-black pt-32">
             {/* Navigation tabs */}
             <nav className="mx-auto max-w-7xl px-4 py-4" aria-label="User navigation">
                 <div className="flex gap-8 overflow-x-auto scrollbar-hide">
