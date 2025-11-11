@@ -274,10 +274,6 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
                                                 ) : (
                                                     step
                                                 )}
-                                                {/* Pulse animation for active step */}
-                                                {step === currentStep && (
-                                                    <div className="absolute inset-0 rounded-full bg-yellow-500 animate-ping opacity-25" />
-                                                )}
                                             </div>
                                         </div>
 
@@ -455,20 +451,18 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
                                                 <h3 className="text-lg font-bold text-white">
                                                     Selected
                                                 </h3>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-sm font-medium text-gray-400">
-                                                        {selectedItems.length} /{' '}
-                                                        {RANKING_CONSTRAINTS.MAX_ITEM_COUNT}
-                                                    </span>
-                                                    <div className="w-16 h-2 bg-zinc-900 rounded-full overflow-hidden">
-                                                        <div
-                                                            className="h-full bg-yellow-500 transition-all duration-300"
-                                                            style={{
-                                                                width: `${(selectedItems.length / RANKING_CONSTRAINTS.MAX_ITEM_COUNT) * 100}%`,
-                                                            }}
-                                                        />
+                                                {selectedItems.length > 0 && (
+                                                    <div
+                                                        className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                                            selectedItems.length >=
+                                                            RANKING_CONSTRAINTS.MIN_ITEM_COUNT
+                                                                ? 'bg-green-500/20 text-green-400'
+                                                                : 'bg-yellow-500/20 text-yellow-400'
+                                                        }`}
+                                                    >
+                                                        {selectedItems.length}
                                                     </div>
-                                                </div>
+                                                )}
                                             </div>
 
                                             {selectedItems.length > 0 ? (
