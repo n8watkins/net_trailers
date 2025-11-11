@@ -403,20 +403,15 @@ const Collections = () => {
 
                         // No need to separate by media type - ContentCard shows the type
                         return (
-                            <div>
-                                <div className="flex flex-wrap gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 md:gap-x-8 md:gap-y-12">
-                                    {watchlistContent.map(
-                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                        (item: any) => (
-                                            <div
-                                                key={`${item.contentId}-${item.listId}`}
-                                                className="relative mb-12 sm:mb-16 md:mb-20"
-                                            >
-                                                <ContentCard content={item.content} className="" />
-                                            </div>
-                                        )
-                                    )}
-                                </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                                {watchlistContent.map(
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                    (item: any) => (
+                                        <div key={`${item.contentId}-${item.listId}`}>
+                                            <ContentCard content={item.content} />
+                                        </div>
+                                    )
+                                )}
                             </div>
                         )
                     })()}

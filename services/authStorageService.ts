@@ -269,9 +269,19 @@ export class AuthStorageService {
             })
             authLog('✅ [AuthStorageService] Successfully saved to Firestore for user:', userId)
 
-            // Invalidate cache after save
-            userDataCache.delete(userId)
-            authLog('🔄 [AuthStorageService] Cleared cache for user after save:', userId)
+            // Update cache with saved data instead of invalidating it
+            const cachedData: AuthPreferences = {
+                likedMovies: preferences.likedMovies || [],
+                hiddenMovies: preferences.hiddenMovies || [],
+                defaultWatchlist: preferences.defaultWatchlist || [],
+                userCreatedWatchlists: preferences.userCreatedWatchlists || [],
+                lastActive: preferences.lastActive || Date.now(),
+                autoMute: preferences.autoMute ?? true,
+                defaultVolume: preferences.defaultVolume ?? 50,
+                childSafetyMode: preferences.childSafetyMode ?? false,
+            }
+            userDataCache.set(userId, { data: cachedData, timestamp: Date.now() })
+            authLog('💾 [AuthStorageService] Updated cache with saved data for user:', userId)
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error)
 
