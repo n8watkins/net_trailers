@@ -1,7 +1,15 @@
 'use client'
 
 import React from 'react'
-import { ArrowDownTrayIcon, TrashIcon } from '@heroicons/react/24/outline'
+import {
+    ArrowDownTrayIcon,
+    TrashIcon,
+    BookmarkIcon,
+    HeartIcon,
+    EyeSlashIcon,
+    ClockIcon,
+    RectangleStackIcon,
+} from '@heroicons/react/24/outline'
 import { UpgradeAccountBanner } from '../auth/UpgradeAccountBanner'
 
 interface DataSummary {
@@ -54,33 +62,48 @@ const AccountSection: React.FC<AccountSectionProps> = ({
                         className={`grid grid-cols-2 ${isGuest ? 'md:grid-cols-4' : 'md:grid-cols-5'} gap-4 mb-6`}
                     >
                         <div className="bg-[#141414] rounded-lg p-4 border border-[#313131]">
-                            <p className="text-[#b3b3b3] text-sm">Watch Later</p>
-                            <p className="text-white text-2xl font-bold mt-1">
+                            <div className="flex items-center gap-2 mb-2">
+                                <BookmarkIcon className="w-5 h-5 text-amber-400" />
+                                <p className="text-[#b3b3b3] text-sm">Watch Later</p>
+                            </div>
+                            <p className="text-white text-2xl font-bold">
                                 {dataSummary.watchlistCount}
                             </p>
                         </div>
                         <div className="bg-[#141414] rounded-lg p-4 border border-[#313131]">
-                            <p className="text-[#b3b3b3] text-sm">Liked</p>
-                            <p className="text-white text-2xl font-bold mt-1">
+                            <div className="flex items-center gap-2 mb-2">
+                                <HeartIcon className="w-5 h-5 text-green-400" />
+                                <p className="text-[#b3b3b3] text-sm">Liked</p>
+                            </div>
+                            <p className="text-white text-2xl font-bold">
                                 {dataSummary.likedCount}
                             </p>
                         </div>
                         <div className="bg-[#141414] rounded-lg p-4 border border-[#313131]">
-                            <p className="text-[#b3b3b3] text-sm">Hidden</p>
-                            <p className="text-white text-2xl font-bold mt-1">
+                            <div className="flex items-center gap-2 mb-2">
+                                <EyeSlashIcon className="w-5 h-5 text-red-400" />
+                                <p className="text-[#b3b3b3] text-sm">Hidden</p>
+                            </div>
+                            <p className="text-white text-2xl font-bold">
                                 {dataSummary.hiddenCount}
                             </p>
                         </div>
                         <div className="bg-[#141414] rounded-lg p-4 border border-[#313131]">
-                            <p className="text-[#b3b3b3] text-sm">Watch History</p>
-                            <p className="text-white text-2xl font-bold mt-1">
+                            <div className="flex items-center gap-2 mb-2">
+                                <ClockIcon className="w-5 h-5 text-purple-400" />
+                                <p className="text-[#b3b3b3] text-sm">Watch History</p>
+                            </div>
+                            <p className="text-white text-2xl font-bold">
                                 {dataSummary.watchHistoryCount}
                             </p>
                         </div>
                         {!isGuest && (
                             <div className="bg-[#141414] rounded-lg p-4 border border-[#313131]">
-                                <p className="text-[#b3b3b3] text-sm">Collections</p>
-                                <p className="text-white text-2xl font-bold mt-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <RectangleStackIcon className="w-5 h-5 text-blue-400" />
+                                    <p className="text-[#b3b3b3] text-sm">Collections</p>
+                                </div>
+                                <p className="text-white text-2xl font-bold">
                                     {dataSummary.listsCount}
                                 </p>
                             </div>

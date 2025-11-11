@@ -1,10 +1,10 @@
 /**
-import { notificationWarn } from '../utils/debugLogger'
  * Notification Store (Zustand)
  *
  * Manages notification state with real-time Firestore sync
  */
 
+import { notificationWarn } from '../utils/debugLogger'
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { Notification, CreateNotificationRequest, NotificationStats } from '../types/notifications'
@@ -20,6 +20,28 @@ import {
     subscribeToNotifications,
 } from '../utils/firestore/notifications'
 
+const GUEST_ID_PREFIX = 'guest_'
+
+const isGuestUserId = (userId?: string | null): boolean =>
+    Boolean(userId && userId.startsWith(GUEST_ID_PREFIX))
+
+function ensureAuthUser(
+    userId: string | null | undefined,
+    action: string
+): userId is string {
+    if (!userId) {
+        notificationWarn(`Cannot ${action}: No user ID`)
+        return false
+    }
+
+    if (isGuestUserId(userId)) {
+        notificationWarn(`Cannot ${action}: Guest sessions use local notifications only`)
+        return false
+    }
+
+    return true
+}
+
 interface NotificationState {
     // State
     notifications: Notification[]
@@ -33,20 +55,20 @@ interface NotificationState {
     unsubscribe: (() => void) | null
 
     // Actions
-    loadNotifications: (userId: string) => Promise<void>
-    loadUnreadNotifications: (userId: string) => Promise<void>
-    loadStats: (userId: string) => Promise<void>
-    createNotification: (userId: string, request: CreateNotificationRequest) => Promise<void>
-    markNotificationAsRead: (userId: string, notificationId: string) => Promise<void>
-    markAllNotificationsAsRead: (userId: string) => Promise<void>
-    deleteNotification: (userId: string, notificationId: string) => Promise<void>
-    deleteAllNotifications: (userId: string) => Promise<void>
+    loadNotifications: (userId: string | null) => Promise<void>
+    loadUnreadNotifications: (userId: string | null) => Promise<void>
+    loadStats: (userId: string | null) => Promise<void>
+    createNotification: (userId: string | null, request: CreateNotificationRequest) => Promise<void>
+    markNotificationAsRead: (userId: string | null, notificationId: string) => Promise<void>
+    markAllNotificationsAsRead: (userId: string | null) => Promise<void>
+    deleteNotification: (userId: string | null, notificationId: string) => Promise<void>
+    deleteAllNotifications: (userId: string | null) => Promise<void>
     togglePanel: () => void
     openPanel: () => void
     closePanel: () => void
 
     // Real-time subscription
-    subscribe: (userId: string) => void
+    subscribe: (userId: string | null) => void
     unsubscribeFromNotifications: () => void
 
     // Utility
@@ -67,9 +89,14 @@ export const useNotificationStore = create<NotificationState>()(
             unsubscribe: null,
 
             // Load all notifications
-            loadNotifications: async (userId: string) => {
-                if (!userId) {
-                    notificationWarn('Cannot load notifications: No user ID')
+            loadNotifications: async (userId: string | null) => {
+                if (!ensureAuthUser(userId, 'load notifications')) {
+                    set({
+                        notifications: [],
+                        unreadCount: 0,
+                        isLoading: false,
+                        error: null,
+                    })
                     return
                 }
 
@@ -95,9 +122,14 @@ export const useNotificationStore = create<NotificationState>()(
             },
 
             // Load only unread notifications
-            loadUnreadNotifications: async (userId: string) => {
-                if (!userId) {
-                    notificationWarn('Cannot load unread notifications: No user ID')
+            loadUnreadNotifications: async (userId: string | null) => {
+                if (!ensureAuthUser(userId, 'load unread notifications')) {
+                    set({
+                        notifications: [],
+                        unreadCount: 0,
+                        isLoading: false,
+                        error: null,
+                    })
                     return
                 }
 
@@ -125,9 +157,9 @@ export const useNotificationStore = create<NotificationState>()(
             },
 
             // Load notification statistics
-            loadStats: async (userId: string) => {
-                if (!userId) {
-                    notificationWarn('Cannot load notification stats: No user ID')
+            loadStats: async (userId: string | null) => {
+                if (!ensureAuthUser(userId, 'load notification stats')) {
+                    set({ stats: null })
                     return
                 }
 
@@ -140,9 +172,11 @@ export const useNotificationStore = create<NotificationState>()(
             },
 
             // Create a new notification
-            createNotification: async (userId: string, request: CreateNotificationRequest) => {
-                if (!userId) {
-                    notificationWarn('Cannot create notification: No user ID')
+            createNotification: async (
+                userId: string | null,
+                request: CreateNotificationRequest
+            ) => {
+                if (!ensureAuthUser(userId, 'create notification')) {
                     return
                 }
 
@@ -166,9 +200,8 @@ export const useNotificationStore = create<NotificationState>()(
             },
 
             // Mark a notification as read
-            markNotificationAsRead: async (userId: string, notificationId: string) => {
-                if (!userId) {
-                    notificationWarn('Cannot mark notification as read: No user ID')
+            markNotificationAsRead: async (userId: string | null, notificationId: string) => {
+                if (!ensureAuthUser(userId, 'mark notification as read')) {
                     return
                 }
 
@@ -194,9 +227,8 @@ export const useNotificationStore = create<NotificationState>()(
             },
 
             // Mark all notifications as read
-            markAllNotificationsAsRead: async (userId: string) => {
-                if (!userId) {
-                    notificationWarn('Cannot mark all as read: No user ID')
+            markAllNotificationsAsRead: async (userId: string | null) => {
+                if (!ensureAuthUser(userId, 'mark all notifications as read')) {
                     return
                 }
 
@@ -224,9 +256,8 @@ export const useNotificationStore = create<NotificationState>()(
             },
 
             // Delete a notification
-            deleteNotification: async (userId: string, notificationId: string) => {
-                if (!userId) {
-                    notificationWarn('Cannot delete notification: No user ID')
+            deleteNotification: async (userId: string | null, notificationId: string) => {
+                if (!ensureAuthUser(userId, 'delete notification')) {
                     return
                 }
 
@@ -261,9 +292,8 @@ export const useNotificationStore = create<NotificationState>()(
             },
 
             // Delete all notifications
-            deleteAllNotifications: async (userId: string) => {
-                if (!userId) {
-                    notificationWarn('Cannot delete all notifications: No user ID')
+            deleteAllNotifications: async (userId: string | null) => {
+                if (!ensureAuthUser(userId, 'delete all notifications')) {
                     return
                 }
 
@@ -339,9 +369,8 @@ export const useNotificationStore = create<NotificationState>()(
             },
 
             // Subscribe to real-time updates
-            subscribe: (userId: string) => {
-                if (!userId) {
-                    notificationWarn('Cannot subscribe to notifications: No user ID')
+            subscribe: (userId: string | null) => {
+                if (!ensureAuthUser(userId, 'subscribe to notifications')) {
                     return
                 }
 

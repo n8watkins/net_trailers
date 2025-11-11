@@ -1,16 +1,18 @@
 /**
- * SubPageLayout - Standardized layout for SubHeader pages
+ * SubPageLayout - Standardized layout for user account pages
  *
  * Provides consistent spacing, alignment, and structure for:
+ * - Profile
  * - Watch History
+ * - Collections
  * - Liked Content
  * - Hidden Content
- * - Profile
+ * - Notifications
+ * - Settings
  */
 
 import React, { ReactNode } from 'react'
 import Header from './Header'
-import SubHeader from '../common/SubHeader'
 import { useAppStore } from '../../stores/appStore'
 
 interface SubPageLayoutProps {
@@ -50,9 +52,9 @@ export default function SubPageLayout({
             className={`relative min-h-screen overflow-x-clip ${showModal && 'overflow-y-hidden'} bg-gradient-to-b from-black to-gray-900`}
         >
             <Header />
-            <SubHeader />
 
-            <main className="relative pb-24 px-4 sm:px-6 lg:px-8">
+            {/* Main content with top padding to account for taller fixed header (includes sub-nav) */}
+            <main className="relative pb-24 px-4 sm:px-6 lg:px-8 pt-44">
                 <div className="max-w-[1800px] mx-auto flex flex-col space-y-6 py-8">
                     {/* Page Header */}
                     <div className="space-y-4">

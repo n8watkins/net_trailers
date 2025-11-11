@@ -10,8 +10,24 @@ import {
     EyeIcon,
     EyeSlashIcon,
     CheckCircleIcon,
+    UserIcon,
+    ClockIcon,
+    HeartIcon,
+    BellIcon,
+    Cog6ToothIcon,
+    RectangleStackIcon,
 } from '@heroicons/react/24/outline'
+import {
+    UserIcon as UserIconSolid,
+    ClockIcon as ClockIconSolid,
+    HeartIcon as HeartIconSolid,
+    BellIcon as BellIconSolid,
+    Cog6ToothIcon as Cog6ToothIconSolid,
+    RectangleStackIcon as RectangleStackIconSolid,
+    EyeSlashIcon as EyeSlashIconSolid,
+} from '@heroicons/react/24/solid'
 import { useRouter, usePathname } from 'next/navigation'
+import Link from 'next/link'
 import Image from 'next/image'
 import SearchBar from '../search/SearchBar'
 import useAuth from '../../hooks/useAuth'
@@ -27,12 +43,65 @@ import { GuestModeIndicator } from '../auth/GuestModeIndicator'
 import { useLayoutContext } from '../../contexts/LayoutContext'
 import NotificationBell from '../notifications/NotificationBell'
 import NotificationPanel from '../notifications/NotificationPanel'
+import { useSessionStore } from '../../stores/sessionStore'
 
 interface HeaderProps {
     onOpenAboutModal?: () => void
     onOpenTutorial?: () => void
     onOpenKeyboardShortcuts?: () => void
 }
+
+interface NavItem {
+    label: string
+    href: string
+    icon: React.ComponentType<{ className?: string }>
+    iconSolid: React.ComponentType<{ className?: string }>
+}
+
+const subNavItems: NavItem[] = [
+    {
+        label: 'Profile',
+        href: '/profile',
+        icon: UserIcon,
+        iconSolid: UserIconSolid,
+    },
+    {
+        label: 'Watch History',
+        href: '/watch-history',
+        icon: ClockIcon,
+        iconSolid: ClockIconSolid,
+    },
+    {
+        label: 'Collections',
+        href: '/collections',
+        icon: RectangleStackIcon,
+        iconSolid: RectangleStackIconSolid,
+    },
+    {
+        label: 'Liked Content',
+        href: '/liked',
+        icon: HeartIcon,
+        iconSolid: HeartIconSolid,
+    },
+    {
+        label: 'Hidden Content',
+        href: '/hidden',
+        icon: EyeSlashIcon,
+        iconSolid: EyeSlashIconSolid,
+    },
+    {
+        label: 'Notifications',
+        href: '/notifications',
+        icon: BellIcon,
+        iconSolid: BellIconSolid,
+    },
+    {
+        label: 'Settings',
+        href: '/settings',
+        icon: Cog6ToothIcon,
+        iconSolid: Cog6ToothIconSolid,
+    },
+]
 
 function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: HeaderProps = {}) {
     // Get handlers from context, fallback to props for backwards compatibility
@@ -51,6 +120,11 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
     const { user } = useAuth()
     const { showSuccess, showError, showWatchlistAdd, showWatchlistRemove } = useToast()
     const debugSettings = useDebugSettings()
+    const sessionType = useSessionStore((state) => state.sessionType)
+
+    // Determine if we should show sub-navigation based on current path
+    const subNavPaths = ['/profile', '/watch-history', '/collections', '/liked', '/hidden', '/notifications', '/settings']
+    const showSubNav = subNavPaths.includes(pathname)
 
     const triggerTestToasts = () => {
         // Test all toast types with realistic messages
@@ -125,9 +199,14 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
     return (
         <>
             <header
-                className={`fixed top-0 left-0 right-0 z-[200] transition-all duration-300 ${isScrolled ? 'bg-[#141414]/95 backdrop-blur-sm' : 'bg-gradient-to-b from-black/50 to-transparent'}`}
+                className={`fixed top-0 left-0 right-0 z-[200] flex flex-col transition-all duration-300 ${
+                    isScrolled
+                        ? 'bg-[#141414]/80 backdrop-blur-md'
+                        : 'bg-gradient-to-b from-black/50 via-black/30 to-transparent'
+                }`}
             >
-                <div className="flex w-full items-center space-x-2 md:space-x-6 px-4 py-4">
+                {/* Main Navigation Bar */}
+                <div className="flex w-full items-center justify-between space-x-2 md:space-x-6 px-4 py-4">
                     <Image
                         src="/nettrailers-logo.png"
                         width={140}
@@ -199,9 +278,9 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                             <ChildSafetyIndicator />
                         </div>
                     </div>
-                </div>
 
-                <div className="flex items-center space-x-4 text-sm font-light">
+                    {/* Right side: Mobile menu, Avatar, Notifications */}
+                    <div className="flex items-center space-x-4 text-sm font-light">
                     {/* Mobile Layout: Search + Hamburger + Avatar */}
                     <div className="lg:hidden flex items-center space-x-3">
                         {/* Mobile Search Icon */}
@@ -223,7 +302,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                         </button>
                     </div>
 
-                    {/* Guest Mode Indicator - Hidden on mobile */}
+                    {/* Guest Mode Indicator - Desktop only */}
                     <div className="hidden lg:block">
                         <GuestModeIndicator />
                     </div>
@@ -242,7 +321,37 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                         onOpenTutorial={handleOpenTutorial}
                         onOpenKeyboardShortcuts={handleOpenKeyboardShortcuts}
                     />
+                    </div>
                 </div>
+
+                {/* Sub-Navigation - Conditionally rendered on user pages */}
+                {showSubNav && (
+                    <div className="w-full border-t border-gray-800/30">
+                        <nav className="mx-auto max-w-7xl px-4 py-4" aria-label="User navigation">
+                            <div className="flex gap-8 overflow-x-auto scrollbar-hide">
+                                {subNavItems.map((item) => {
+                                    const isActive = pathname === item.href
+                                    const Icon = isActive ? item.iconSolid : item.icon
+
+                                    return (
+                                        <Link
+                                            key={item.href}
+                                            href={item.href}
+                                            className={`group relative flex items-center gap-2 whitespace-nowrap border-b-2 px-1 py-3 text-sm font-medium transition-colors ${
+                                                isActive
+                                                    ? 'border-red-600 text-red-600'
+                                                    : 'border-transparent text-gray-400 hover:text-gray-200'
+                                            }`}
+                                        >
+                                            <Icon className="h-5 w-5" aria-hidden="true" />
+                                            <span>{item.label}</span>
+                                        </Link>
+                                    )
+                                })}
+                            </div>
+                        </nav>
+                    </div>
+                )}
 
                 {/* Mobile Search Bar with Slide Animation */}
                 <div

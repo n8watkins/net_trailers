@@ -16,7 +16,6 @@ import {
     getDocs,
     setDoc,
     updateDoc,
-    deleteDoc,
     query,
     where,
     orderBy,
@@ -24,17 +23,13 @@ import {
     increment,
     runTransaction,
     QueryConstraint,
-    writeBatch,
 } from 'firebase/firestore'
 import { db } from '../../firebase'
 import {
     Ranking,
     RankedItem,
-    RankingComment,
     CreateRankingRequest,
     UpdateRankingRequest,
-    CreateCommentRequest,
-    RANKING_CONSTRAINTS,
 } from '../../types/rankings'
 
 /**
@@ -102,7 +97,7 @@ export async function createRanking(
         const ranking: Ranking = {
             id: rankingId,
             userId,
-            username,
+            userName: username,
             userAvatar,
             title: request.title,
             description: request.description,

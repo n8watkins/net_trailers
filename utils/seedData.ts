@@ -637,6 +637,32 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
 
     console.log('🌱 Seeding data...', { userId, sessionType, isGuest })
 
+    // CRITICAL: Verify session isolation before proceeding
+    const { useWatchHistoryStore } = await import('../stores/watchHistoryStore')
+    const currentWatchSessionId = useWatchHistoryStore.getState().currentSessionId
+
+    // Validate that we're seeding for the correct session
+    if (currentWatchSessionId && currentWatchSessionId !== userId) {
+        console.error('❌ Session mismatch detected!', {
+            seedingFor: userId,
+            currentSession: currentWatchSessionId,
+        })
+        throw new Error(
+            `Session isolation violation: Cannot seed data for ${userId} while session ${currentWatchSessionId} is active`
+        )
+    }
+
+    // Clear watch history store to prevent cross-contamination from previous sessions
+    console.log('🧹 Clearing existing watch history to ensure clean seed...')
+    useWatchHistoryStore.getState().clearHistory()
+
+    // Re-establish session after clearing
+    useWatchHistoryStore.setState({
+        currentSessionId: userId,
+        lastSyncedAt: null,
+        syncError: null,
+    })
+
     // Combine all content
     const allContent = [...sampleMovies, ...sampleTVShows]
 
@@ -688,8 +714,15 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
     const watchContent = shuffled.slice(0, watchHistoryCount)
     const now = Date.now()
 
-    // Import watch history store dynamically
-    const { useWatchHistoryStore } = await import('../stores/watchHistoryStore')
+    // Verify session hasn't changed during seeding
+    const currentSessionCheck = useWatchHistoryStore.getState().currentSessionId
+    if (currentSessionCheck !== userId) {
+        console.error('❌ Session changed during seeding!', {
+            expected: userId,
+            actual: currentSessionCheck,
+        })
+        throw new Error('Session isolation violation: Session changed during data seeding')
+    }
 
     for (let i = 0; i < watchContent.length; i++) {
         const item = watchContent[i]
@@ -720,13 +753,14 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
         }
     }
 
-    // Persist watch history to storage
+    // Persist watch history to storage (CRITICAL: Different storage per session type)
     if (!isGuest) {
-        console.log('  💾 Syncing watch history to Firestore...')
+        console.log('  💾 Syncing watch history to Firestore (authenticated user)...')
         // Import saveWatchHistory to bypass auth wait logic during seeding
         const { saveWatchHistory } = await import('../utils/firestore/watchHistory')
         const currentHistory = useWatchHistoryStore.getState().history
         console.log(`  📊 Saving ${currentHistory.length} watch history entries to Firestore`)
+        console.log(`  🔑 User ID: ${userId}`)
         await saveWatchHistory(userId, currentHistory)
         // Update store to mark as synced
         useWatchHistoryStore.setState({
@@ -737,8 +771,36 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
         console.log('  ✅ Watch history saved to Firestore successfully')
     } else {
         // Save to localStorage for guest users
-        console.log('  💾 Saving watch history to localStorage...')
+        console.log('  💾 Saving watch history to localStorage (guest user)...')
+        console.log(`  🔑 Guest ID: ${userId}`)
+        const storageKey = `nettrailer-watch-history_guest_${userId}`
+        console.log(`  🗂️  Storage key: ${storageKey}`)
+
+        const currentHistory = useWatchHistoryStore.getState().history
+        console.log(`  📊 Saving ${currentHistory.length} watch history entries to localStorage`)
+
+        // Save via store method
         useWatchHistoryStore.getState().saveGuestSession(userId)
+
+        // Verify save succeeded
+        const savedData = localStorage.getItem(storageKey)
+        if (savedData) {
+            const parsed = JSON.parse(savedData)
+            console.log(`  ✅ Watch history saved to localStorage: ${parsed.length} entries`)
+        } else {
+            console.error('  ❌ Failed to save watch history to localStorage!')
+        }
+
+        // Update store to mark as synced
+        useWatchHistoryStore.setState({
+            currentSessionId: userId,
+            lastSyncedAt: Date.now(),
+            syncError: null,
+        })
+
+        // Force a small delay to ensure localStorage write completes before any page reload
+        await new Promise((resolve) => setTimeout(resolve, 100))
+        console.log('  ⏱️  Wait complete - localStorage should be flushed')
     }
 
     // Seed collections

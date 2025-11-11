@@ -192,8 +192,47 @@ export default function useUserData() {
                     sessionData.likedMovies.length === 0 &&
                     sessionData.hiddenMovies.length === 0,
             }),
-            clearAccountData: () => {
+            clearAccountData: async () => {
+                const guestId = sessionData.activeSessionId
+                console.log('[useUserData] 🗑️ Starting clearAccountData for guest:', guestId)
+
+                // Clear guest data from store
                 sessionData.clearAllData!()
+                console.log('[useUserData] ✅ Cleared collections and ratings from store')
+
+                // Clear watch history from store and localStorage
+                const { useWatchHistoryStore } = await import('../stores/watchHistoryStore')
+
+                // First, clear watch history in localStorage for guest
+                if (guestId) {
+                    useWatchHistoryStore.getState().clearGuestSession(guestId)
+                    console.log('[useUserData] ✅ Cleared watch history from localStorage')
+                }
+
+                // Then clear watch history in store
+                const watchStore = useWatchHistoryStore.getState()
+                const historyCountBefore = watchStore.history.length
+                watchStore.clearHistory()
+                console.log(
+                    `[useUserData] ✅ Cleared ${historyCountBefore} watch history entries from store`
+                )
+
+                // Restore session ID after clearing (clearHistory sets it to null)
+                if (guestId) {
+                    useWatchHistoryStore.setState({
+                        currentSessionId: guestId,
+                        lastSyncedAt: Date.now(),
+                        syncError: null,
+                    })
+                }
+
+                // Clear notifications (guest notifications are local only)
+                const { useNotificationStore } = await import('../stores/notificationStore')
+                const notifCountBefore = useNotificationStore.getState().notifications.length
+                useNotificationStore.getState().clearNotifications()
+                console.log(`[useUserData] ✅ Cleared ${notifCountBefore} notifications from store`)
+
+                console.log('[useUserData] ✅ clearAccountData completed for guest')
             },
             exportAccountData: () => ({
                 defaultWatchlist: sessionData.defaultWatchlist,
@@ -286,6 +325,8 @@ export default function useUserData() {
 
                 const userId = auth.currentUser.uid
 
+                console.log('[useUserData] 🗑️ Starting clearAccountData for user:', userId)
+
                 // Clear Firestore data first
                 try {
                     const userDocRef = doc(db, 'users', userId)
@@ -302,13 +343,54 @@ export default function useUserData() {
                         },
                         { merge: true }
                     )
+                    console.log('[useUserData] ✅ Cleared collections and ratings from Firestore')
+
+                    // Also clear watch history document
+                    const watchHistoryDocRef = doc(db, 'users', userId, 'data', 'watchHistory')
+                    await setDoc(
+                        watchHistoryDocRef,
+                        {
+                            history: [],
+                            updatedAt: Date.now(),
+                        },
+                        { merge: true }
+                    )
+                    console.log('[useUserData] ✅ Cleared watch history from Firestore')
                 } catch (firestoreError) {
                     authError('Error clearing Firestore data:', firestoreError)
                     throw new Error('Failed to clear data from server. Please try again.')
                 }
 
+                // Clear local watch history store
+                const { useWatchHistoryStore } = await import('../stores/watchHistoryStore')
+                const watchHistoryStore = useWatchHistoryStore.getState()
+                const historyCountBefore = watchHistoryStore.history.length
+                watchHistoryStore.clearHistory()
+                console.log(
+                    `[useUserData] ✅ Cleared ${historyCountBefore} watch history entries from store`
+                )
+
+                // Restore session ID after clearing (clearHistory sets it to null)
+                // Set lastSyncedAt to now so it doesn't try to reload from Firestore
+                useWatchHistoryStore.setState({
+                    currentSessionId: userId,
+                    lastSyncedAt: Date.now(),
+                    syncError: null,
+                })
+
+                // Clear notifications from store and Firestore
+                const { useNotificationStore } = await import('../stores/notificationStore')
+                console.log('[useUserData] 🗑️ Clearing notifications...')
+                const notifCountBefore = useNotificationStore.getState().notifications.length
+                await useNotificationStore.getState().deleteAllNotifications(userId)
+                console.log(
+                    `[useUserData] ✅ Cleared ${notifCountBefore} notifications from Firestore`
+                )
+
                 // Then clear local cache
                 sessionData.clearLocalCache()
+
+                console.log('[useUserData] ✅ clearAccountData completed')
             },
             exportAccountData: async () => ({
                 defaultWatchlist: sessionData.defaultWatchlist,

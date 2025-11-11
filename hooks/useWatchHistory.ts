@@ -11,7 +11,7 @@ import { useEffect, useRef } from 'react'
 import { useWatchHistoryStore } from '../stores/watchHistoryStore'
 import { useSessionStore } from '../stores/sessionStore'
 import { Content } from '../typings'
-import { addWatchEntryToFirestore } from '../utils/firestore/watchHistory'
+import { addWatchEntryToFirestore, saveWatchHistory } from '../utils/firestore/watchHistory'
 import { auth } from '../firebase'
 
 export function useWatchHistory() {
@@ -32,14 +32,14 @@ export function useWatchHistory() {
         getAllHistory,
         getHistoryByDateRange,
         getWatchEntry,
-        clearHistory,
-        removeEntry,
+        clearHistory: clearHistoryInStore,
+        removeEntry: removeEntryFromStore,
         syncWithFirestore,
         loadFromFirestore,
-        migrateGuestToAuth,
         switchSession,
         loadGuestSession,
         saveGuestSession,
+        clearGuestSession,
     } = useWatchHistoryStore()
 
     // Track previous session to detect transitions
@@ -67,21 +67,10 @@ export function useWatchHistory() {
                 `[Watch History] Session transition detected: ${prevSession.type}(${prevSession.id}) -> ${sessionType}(${currentSessionTypeId})`
             )
 
-            // Special case: Guest to Auth transition - migrate data
-            if (prevSession.type === 'guest' && sessionType === 'authenticated' && userId) {
-                console.log('[Watch History] Migrating guest data to authenticated user')
-                // Wait for Firebase Auth to be ready
-                const unsubscribe = auth.onAuthStateChanged((user) => {
-                    if (user && user.uid === userId) {
-                        migrateGuestToAuth(userId)
-                        unsubscribe()
-                    }
+            if (sessionType === 'guest' || sessionType === 'authenticated') {
+                switchSession(sessionType, currentSessionTypeId).catch((error) => {
+                    console.error('[Watch History] Failed to switch session:', error)
                 })
-            } else {
-                // Normal session switch - clear and reload
-                if (sessionType === 'guest' || sessionType === 'authenticated') {
-                    switchSession(sessionType, currentSessionTypeId)
-                }
             }
 
             // Update ref
@@ -103,9 +92,27 @@ export function useWatchHistory() {
         guestId,
         currentSessionId,
         switchSession,
-        migrateGuestToAuth,
         loadFromFirestore,
     ])
+
+    const persistAuthHistory = async (userIdToPersist: string) => {
+        try {
+            const updatedHistory = useWatchHistoryStore.getState().history
+            await saveWatchHistory(userIdToPersist, updatedHistory)
+
+            useWatchHistoryStore.setState({
+                currentSessionId: userIdToPersist,
+                lastSyncedAt: Date.now(),
+                syncError: null,
+            })
+        } catch (error) {
+            console.error('Failed to persist watch history to Firestore:', error)
+            useWatchHistoryStore.setState({
+                syncError:
+                    error instanceof Error ? error.message : 'Failed to sync watch history',
+            })
+        }
+    }
 
     // Add watch entry with automatic persistence
     const addWatchEntry = async (
@@ -133,6 +140,31 @@ export function useWatchHistory() {
         } else if (sessionType === 'guest' && guestId) {
             // Guest: save to localStorage
             saveGuestSession(guestId)
+        }
+    }
+
+    const removeEntry = async (id: string) => {
+        removeEntryFromStore(id)
+
+        if (sessionType === 'authenticated' && userId) {
+            await persistAuthHistory(userId)
+        } else if (sessionType === 'guest' && guestId) {
+            saveGuestSession(guestId)
+        }
+    }
+
+    const clearHistory = async () => {
+        clearHistoryInStore()
+
+        if (sessionType === 'authenticated' && userId) {
+            await persistAuthHistory(userId)
+        } else if (sessionType === 'guest' && guestId) {
+            clearGuestSession(guestId)
+            useWatchHistoryStore.setState({
+                currentSessionId: guestId,
+                lastSyncedAt: null,
+                syncError: null,
+            })
         }
     }
 

@@ -17,6 +17,24 @@ import {
     CreateCommentRequest,
     canCreateRankings,
 } from '../types/rankings'
+import {
+    getUserRankings,
+    getPublicRankings,
+    getRanking,
+    createRanking as createRankingInFirestore,
+    updateRanking as updateRankingInFirestore,
+    deleteRanking as deleteRankingInFirestore,
+    likeRanking as likeRankingInFirestore,
+    unlikeRanking as unlikeRankingInFirestore,
+    incrementRankingView,
+} from '../utils/firestore/rankings'
+import {
+    getRankingComments,
+    createComment as createCommentInFirestore,
+    deleteComment as deleteCommentInFirestore,
+    likeComment as likeCommentInFirestore,
+    unlikeComment as unlikeCommentInFirestore,
+} from '../utils/firestore/rankingComments'
 
 const GUEST_ID_PREFIX = 'guest_'
 
@@ -55,7 +73,12 @@ interface RankingState {
     loadUserRankings: (userId: string | null) => Promise<void>
     loadCommunityRankings: (limit?: number) => Promise<void>
     loadRanking: (rankingId: string, userId?: string | null) => Promise<void>
-    createRanking: (userId: string | null, request: CreateRankingRequest) => Promise<string | null>
+    createRanking: (
+        userId: string | null,
+        username: string,
+        userAvatar: string | undefined,
+        request: CreateRankingRequest
+    ) => Promise<string | null>
     updateRanking: (userId: string | null, request: UpdateRankingRequest) => Promise<void>
     reorderRanking: (userId: string | null, request: ReorderRankingRequest) => Promise<void>
     deleteRanking: (userId: string | null, rankingId: string) => Promise<void>
@@ -67,7 +90,12 @@ interface RankingState {
 
     // Actions - Comments
     loadComments: (rankingId: string, limit?: number) => Promise<void>
-    createComment: (userId: string | null, request: CreateCommentRequest) => Promise<void>
+    createComment: (
+        userId: string | null,
+        username: string,
+        userAvatar: string | undefined,
+        request: CreateCommentRequest
+    ) => Promise<void>
     deleteComment: (
         userId: string | null,
         commentId: string,
@@ -108,10 +136,7 @@ export const useRankingStore = create<RankingState>()(
                 set({ isLoading: true, error: null })
 
                 try {
-                    // TODO: Implement Firestore query
-                    // const rankings = await getUserRankings(userId)
-                    const rankings: Ranking[] = [] // Placeholder
-
+                    const rankings = await getUserRankings(userId)
                     set({ rankings, isLoading: false })
                 } catch (error) {
                     console.error('Error loading user rankings:', error)
@@ -127,10 +152,7 @@ export const useRankingStore = create<RankingState>()(
                 set({ isLoading: true, error: null })
 
                 try {
-                    // TODO: Implement Firestore query
-                    // const rankings = await getPublicRankings(limit, get().sortBy)
-                    const rankings: Ranking[] = [] // Placeholder
-
+                    const rankings = await getPublicRankings(get().sortBy, limit)
                     set({ communityRankings: rankings, isLoading: false })
                 } catch (error) {
                     console.error('Error loading community rankings:', error)
@@ -149,9 +171,7 @@ export const useRankingStore = create<RankingState>()(
                 set({ isLoading: true, error: null })
 
                 try {
-                    // TODO: Implement Firestore query
-                    // const ranking = await getRanking(rankingId)
-                    const ranking: Ranking | null = null // Placeholder
+                    const ranking = await getRanking(rankingId)
 
                     if (!ranking) {
                         set({ error: 'Ranking not found', isLoading: false })
@@ -175,7 +195,12 @@ export const useRankingStore = create<RankingState>()(
             },
 
             // Create new ranking
-            createRanking: async (userId: string | null, request: CreateRankingRequest) => {
+            createRanking: async (
+                userId: string | null,
+                username: string,
+                userAvatar: string | undefined,
+                request: CreateRankingRequest
+            ) => {
                 if (!ensureAuthUser(userId, 'create ranking')) {
                     set({ error: 'Authentication required to create rankings' })
                     return null
@@ -189,9 +214,12 @@ export const useRankingStore = create<RankingState>()(
                 set({ isLoading: true, error: null })
 
                 try {
-                    // TODO: Implement Firestore creation
-                    // const rankingId = await createRankingInFirestore(userId, request)
-                    const rankingId: string = 'placeholder-id' // Placeholder
+                    const rankingId = await createRankingInFirestore(
+                        userId,
+                        username,
+                        userAvatar,
+                        request
+                    )
 
                     // Reload user rankings
                     await get().loadUserRankings(userId)
@@ -218,8 +246,7 @@ export const useRankingStore = create<RankingState>()(
                 set({ isLoading: true, error: null })
 
                 try {
-                    // TODO: Implement Firestore update
-                    // await updateRankingInFirestore(userId, request)
+                    await updateRankingInFirestore(userId, request.id, request)
 
                     // Update local state
                     set((state) => ({
@@ -260,11 +287,10 @@ export const useRankingStore = create<RankingState>()(
                             : null,
                     }))
 
-                    // TODO: Implement Firestore update
-                    // await updateRankingInFirestore(userId, {
-                    //     id: request.rankingId,
-                    //     rankedItems: request.rankedItems,
-                    // })
+                    await updateRankingInFirestore(userId, request.rankingId, {
+                        id: request.rankingId,
+                        rankedItems: request.rankedItems,
+                    })
                 } catch (error) {
                     console.error('Error reordering ranking:', error)
                     set({
@@ -283,8 +309,7 @@ export const useRankingStore = create<RankingState>()(
                 set({ isLoading: true, error: null })
 
                 try {
-                    // TODO: Implement Firestore deletion
-                    // await deleteRankingFromFirestore(userId, rankingId)
+                    await deleteRankingInFirestore(userId, rankingId)
 
                     // Update local state
                     set((state) => ({
@@ -320,8 +345,7 @@ export const useRankingStore = create<RankingState>()(
                             : null,
                     }))
 
-                    // TODO: Implement Firestore like
-                    // await likeRankingInFirestore(userId, rankingId)
+                    await likeRankingInFirestore(userId, rankingId)
                 } catch (error) {
                     console.error('Error liking ranking:', error)
                     set({
@@ -348,8 +372,7 @@ export const useRankingStore = create<RankingState>()(
                             : null,
                     }))
 
-                    // TODO: Implement Firestore unlike
-                    // await unlikeRankingInFirestore(userId, rankingId)
+                    await unlikeRankingInFirestore(userId, rankingId)
                 } catch (error) {
                     console.error('Error unliking ranking:', error)
                     set({
@@ -361,8 +384,7 @@ export const useRankingStore = create<RankingState>()(
             // Increment view count
             incrementView: async (rankingId: string, userId?: string | null) => {
                 try {
-                    // TODO: Implement Firestore view tracking
-                    // await incrementRankingView(rankingId, userId)
+                    await incrementRankingView(rankingId, userId || undefined)
 
                     // Update local state
                     set((state) => ({
@@ -383,10 +405,7 @@ export const useRankingStore = create<RankingState>()(
                 set({ isLoading: true, error: null })
 
                 try {
-                    // TODO: Implement Firestore query
-                    // const comments = await getRankingComments(rankingId, limit)
-                    const comments: RankingComment[] = [] // Placeholder
-
+                    const comments = await getRankingComments(rankingId, limit)
                     set({ comments, isLoading: false })
                 } catch (error) {
                     console.error('Error loading comments:', error)
@@ -398,15 +417,19 @@ export const useRankingStore = create<RankingState>()(
             },
 
             // Create comment
-            createComment: async (userId: string | null, request: CreateCommentRequest) => {
+            createComment: async (
+                userId: string | null,
+                username: string,
+                userAvatar: string | undefined,
+                request: CreateCommentRequest
+            ) => {
                 if (!ensureAuthUser(userId, 'comment on ranking')) {
                     set({ error: 'Authentication required to comment' })
                     return
                 }
 
                 try {
-                    // TODO: Implement Firestore comment creation
-                    // const comment = await createCommentInFirestore(userId, request)
+                    await createCommentInFirestore(userId, username, userAvatar, request)
 
                     // Update local state
                     set((state) => ({
@@ -452,8 +475,7 @@ export const useRankingStore = create<RankingState>()(
                         return
                     }
 
-                    // TODO: Implement Firestore comment deletion
-                    // await deleteCommentFromFirestore(userId, commentId)
+                    await deleteCommentInFirestore(userId, commentId, rankingOwnerId)
 
                     // Update local state
                     set((state) => ({
@@ -481,8 +503,7 @@ export const useRankingStore = create<RankingState>()(
                 }
 
                 try {
-                    // TODO: Implement Firestore comment like
-                    // await likeCommentInFirestore(userId, commentId)
+                    await likeCommentInFirestore(userId, commentId)
 
                     // Update local state
                     set((state) => ({
@@ -503,8 +524,7 @@ export const useRankingStore = create<RankingState>()(
                 }
 
                 try {
-                    // TODO: Implement Firestore comment unlike
-                    // await unlikeCommentInFirestore(userId, commentId)
+                    await unlikeCommentInFirestore(userId, commentId)
 
                     // Update local state
                     set((state) => ({

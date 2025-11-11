@@ -19,6 +19,12 @@ import {
 import { createNotification } from '@/utils/firestore/notifications'
 import { CustomRow } from '@/types/customRows'
 
+/**
+ * TEMPORARY: Auto-update cron is paused while the feature is de-scoped.
+ * Set to true once we are ready to re-enable the scheduled job.
+ */
+const AUTO_UPDATE_CRON_ENABLED = false
+
 export const runtime = 'nodejs' // Use Node.js runtime for longer execution time
 export const maxDuration = 60 // Maximum 60 seconds execution (Vercel limit)
 
@@ -31,6 +37,17 @@ export async function POST(request: NextRequest) {
         if (authHeader !== `Bearer ${cronSecret}`) {
             console.warn('Unauthorized cron job attempt')
             return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+        }
+
+        if (!AUTO_UPDATE_CRON_ENABLED) {
+            console.warn('[Cron] Auto-update cron is currently disabled.')
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: 'Collection auto-update cron is temporarily disabled.',
+                },
+                { status: 503 }
+            )
         }
 
         console.log('[Cron] Starting collection auto-update job...')

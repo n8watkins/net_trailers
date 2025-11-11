@@ -13,11 +13,16 @@ import {
     UsernameAvailability,
     createDefaultProfile,
 } from '../types/profile'
+import { validateUsername, generateRandomUsername } from '../utils/usernameValidation'
 import {
-    validateUsername,
-    generateRandomUsername,
-    suggestAlternativeUsernames,
-} from '../utils/usernameValidation'
+    getProfile,
+    getProfileByUsername,
+    createProfile as createProfileInFirestore,
+    updateProfile as updateProfileInFirestore,
+    checkUsernameAvailability as checkUsernameAvailabilityInFirestore,
+    uploadAvatar as uploadAvatarToStorage,
+    deleteAvatar as deleteAvatarFromStorage,
+} from '../utils/firestore/profiles'
 
 const GUEST_ID_PREFIX = 'guest_'
 
@@ -75,9 +80,7 @@ export const useProfileStore = create<ProfileState>()(
                 set({ isLoading: true, error: null })
 
                 try {
-                    // TODO: Implement Firestore query
-                    // const profile = await getUserProfile(userId)
-                    const profile: UserProfile | null = null // Placeholder
+                    const profile = await getProfile(userId)
 
                     if (!profile) {
                         set({ error: 'Profile not found', isLoading: false })
@@ -99,9 +102,7 @@ export const useProfileStore = create<ProfileState>()(
                 set({ isLoading: true, error: null })
 
                 try {
-                    // TODO: Implement Firestore query
-                    // const profile = await getUserProfileByUsername(username)
-                    const profile: UserProfile | null = null // Placeholder
+                    const profile = await getProfileByUsername(username)
 
                     if (!profile) {
                         set({ error: 'User not found', isLoading: false })
@@ -150,8 +151,8 @@ export const useProfileStore = create<ProfileState>()(
                     // Create default profile
                     const profile = createDefaultProfile(userId, email, username, googlePhotoUrl)
 
-                    // TODO: Save to Firestore
-                    // await saveProfileToFirestore(profile)
+                    // Save to Firestore
+                    await createProfileInFirestore(profile)
 
                     set({ profile, isLoading: false })
                     return profile
@@ -194,8 +195,7 @@ export const useProfileStore = create<ProfileState>()(
                         }
                     }
 
-                    // TODO: Implement Firestore update
-                    // await updateProfileInFirestore(userId, request)
+                    await updateProfileInFirestore(userId, request)
 
                     // Update local state
                     set((state) => ({
@@ -227,14 +227,8 @@ export const useProfileStore = create<ProfileState>()(
                 set({ isLoading: true, error: null })
 
                 try {
-                    // TODO: Implement Firebase Storage upload
-                    // const avatarUrl = await uploadAvatarToStorage(userId, file)
-                    const avatarUrl = 'placeholder-url' // Placeholder
-
-                    // Update profile
-                    await get().updateProfile(userId, {
-                        avatarSource: 'custom',
-                    })
+                    // Upload to Firebase Storage (updates profile in Firestore too)
+                    const avatarUrl = await uploadAvatarToStorage(userId, file)
 
                     set((state) => ({
                         profile: state.profile
@@ -283,10 +277,10 @@ export const useProfileStore = create<ProfileState>()(
                         ? 'google'
                         : 'generated'
 
-                    // TODO: Delete from Firebase Storage if custom avatar exists
-                    // if (profile.customAvatarUrl) {
-                    //     await deleteAvatarFromStorage(userId, profile.customAvatarUrl)
-                    // }
+                    // Delete from Firebase Storage if custom avatar exists
+                    if (profile.customAvatarUrl) {
+                        await deleteAvatarFromStorage(userId, profile.customAvatarUrl)
+                    }
 
                     // Update profile
                     await get().updateProfile(userId, {
@@ -315,37 +309,9 @@ export const useProfileStore = create<ProfileState>()(
 
             // Check if username is available
             checkUsernameAvailability: async (username: string): Promise<UsernameAvailability> => {
-                // Validate format first
-                const validation = validateUsername(username)
-                if (!validation.isValid) {
-                    return {
-                        available: false,
-                        error: validation.error,
-                    }
-                }
-
-                try {
-                    // TODO: Check Firestore for existing username
-                    // const exists = await checkUsernameExists(username)
-                    const exists = false // Placeholder
-
-                    if (exists) {
-                        const suggestions = suggestAlternativeUsernames(username)
-                        return {
-                            available: false,
-                            suggestions,
-                            error: 'Username is already taken',
-                        }
-                    }
-
-                    return { available: true }
-                } catch (error) {
-                    console.error('Error checking username availability:', error)
-                    return {
-                        available: false,
-                        error: 'Could not verify username availability',
-                    }
-                }
+                // Check Firestore with current user ID to allow keeping current username
+                const currentUserId = get().profile?.userId
+                return await checkUsernameAvailabilityInFirestore(username, currentUserId)
             },
 
             // Update username (with all necessary cascading updates)
@@ -367,8 +333,6 @@ export const useProfileStore = create<ProfileState>()(
                         })
                         return
                     }
-
-                    const oldUsername = get().profile?.username
 
                     // TODO: Implement cascading updates
                     // 1. Update profile

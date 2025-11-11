@@ -1,15 +1,10 @@
-/**
-import { trackingLog } from '../utils/debugLogger'
- * useInteractionTracking Hook
- * Phase 7.1 - Simplified API for logging user interactions
- */
-
 import { useCallback } from 'react'
 import { useSessionStore } from '@/stores/sessionStore'
 import { useSessionData } from './useSessionData'
 import { logInteraction, createInteractionFromContent } from '@/utils/firestore/interactions'
 import type { Content } from '@/typings'
 import type { InteractionType, InteractionSource } from '@/types/interactions'
+import { trackingLog } from '@/utils/debugLogger'
 
 /**
  * Hook for tracking user interactions

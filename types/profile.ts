@@ -138,7 +138,11 @@ export function validateAvatarFile(file: File): {
     }
 
     // Check file type
-    if (!PROFILE_CONSTRAINTS.ALLOWED_AVATAR_TYPES.includes(file.type)) {
+    if (
+        !PROFILE_CONSTRAINTS.ALLOWED_AVATAR_TYPES.includes(
+            file.type as (typeof PROFILE_CONSTRAINTS.ALLOWED_AVATAR_TYPES)[number]
+        )
+    ) {
         return {
             isValid: false,
             error: 'AVATAR_INVALID_TYPE',
