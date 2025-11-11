@@ -19,6 +19,8 @@ import {
     FilmIcon,
     TvIcon,
     SparklesIcon,
+    TrashIcon,
+    BookmarkIcon,
 } from '@heroicons/react/24/outline'
 import useAuth from '../../hooks/useAuth'
 import useUserData from '../../hooks/useUserData'
@@ -27,13 +29,17 @@ import { seedUserData } from '../../utils/seedData'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useDebugSettings } from '../../components/debug/DebugControls'
 import NetflixLoader from '../../components/common/NetflixLoader'
+import { GuestModeNotification } from '../../components/auth/GuestModeNotification'
+import { useAuthStatus } from '../../hooks/useAuthStatus'
 
 export default function ProfilePage() {
     const { user, loading: authLoading } = useAuth()
     const userData = useUserData()
     const { totalWatched, history: watchHistory, isLoading: isLoadingHistory } = useWatchHistory()
+    const { isGuest } = useAuthStatus()
     const debugSettings = useDebugSettings()
     const [isSeeding, setIsSeeding] = useState(false)
+    const [isDeleting, setIsDeleting] = useState(false)
     const sessionType = useSessionStore((state) => state.sessionType)
     const isInitialized = useSessionStore((state) => state.isInitialized)
 
@@ -71,10 +77,31 @@ export default function ProfilePage() {
         }
     }
 
+    const handleQuickDelete = async () => {
+        if (!confirm('🗑️ Delete all data? This will clear everything for the current session.')) {
+            return
+        }
+
+        setIsDeleting(true)
+        try {
+            console.log('[Profile] 🗑️ Starting quick delete...')
+            await userData.clearAccountData()
+            console.log('[Profile] ✅ Quick delete completed')
+
+            // Force a page reload to show empty state
+            window.location.reload()
+        } catch (error) {
+            console.error('[Profile] ❌ Failed to delete data:', error)
+            alert('Failed to delete data. Please try again or use Settings > Clear All Data.')
+            setIsDeleting(false)
+        }
+    }
+
     // Calculate stats
     const stats = {
         totalWatched,
-        totalCollections: userData.getAllLists().length,
+        watchLater: userData.defaultWatchlist.length, // Separate Watch Later from collections
+        totalCollections: userData.userCreatedWatchlists.length, // Only user-created collections
         totalLiked: userData.likedMovies.length,
         totalHidden: userData.hiddenMovies.length,
         moviesLiked: userData.likedMovies.filter((item) => item.media_type === 'movie').length,
@@ -94,6 +121,9 @@ export default function ProfilePage() {
 
     const profileHeader = (
         <div className="space-y-6">
+            {/* Guest Mode Notification */}
+            {isInitialized && isGuest && <GuestModeNotification />}
+
             <div className="flex items-center gap-6">
                 {/* Avatar */}
                 <div className="flex-shrink-0">
@@ -132,50 +162,51 @@ export default function ProfilePage() {
                             Edit Profile
                         </Link>
 
-                        {/* Seed Data Button - Controlled by debug console toggle */}
+                        {/* Dev Tools - Controlled by debug console toggle */}
                         {process.env.NODE_ENV === 'development' && debugSettings.showSeedButton && (
-                            <button
-                                onClick={handleSeedData}
-                                disabled={isSeeding}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600/20 to-pink-600/20 hover:from-purple-600/30 hover:to-pink-600/30 text-purple-400 border border-purple-500/30 rounded-lg transition-all text-sm font-medium disabled:opacity-50"
-                                title="Populate with test data (15 liked, 8 hidden, 12 watch later, 20 watch history, 8 collections, 8 notifications)"
-                            >
-                                <SparklesIcon className="w-4 h-4" />
-                                {isSeeding ? 'Seeding...' : 'Seed Test Data'}
-                            </button>
+                            <div className="flex items-center gap-2">
+                                {/* Seed Data Button */}
+                                <button
+                                    onClick={handleSeedData}
+                                    disabled={isSeeding || isDeleting}
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600/20 to-pink-600/20 hover:from-purple-600/30 hover:to-pink-600/30 text-purple-400 border border-purple-500/30 rounded-lg transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Populate with test data (15 liked, 8 hidden, 12 watch later, 20 watch history, 8 collections, 8 notifications)"
+                                >
+                                    <SparklesIcon className="w-4 h-4" />
+                                    {isSeeding ? 'Seeding...' : 'Seed Test Data'}
+                                </button>
+
+                                {/* Quick Delete Button */}
+                                <button
+                                    onClick={handleQuickDelete}
+                                    disabled={isSeeding || isDeleting}
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-600/20 to-orange-600/20 hover:from-red-600/30 hover:to-orange-600/30 text-red-400 border border-red-500/30 rounded-lg transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Clear all data for current session (collections, ratings, watch history, notifications)"
+                                >
+                                    <TrashIcon className="w-4 h-4" />
+                                    {isDeleting ? 'Deleting...' : 'Quick Delete'}
+                                </button>
+                            </div>
                         )}
                     </div>
                 </div>
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {/* Total Watched */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                {/* Watch Later */}
                 <Link
-                    href="/watch-history"
-                    className="bg-gradient-to-br from-purple-900/30 to-purple-800/20 border border-purple-700/30 rounded-xl p-6 hover:border-purple-600/50 transition-all duration-200 group"
+                    href="/watch-later"
+                    className="bg-gradient-to-br from-amber-900/30 to-yellow-800/20 border border-amber-700/30 rounded-xl p-6 hover:border-amber-600/50 transition-all duration-200 group"
                 >
                     <div className="flex items-center gap-3 mb-2">
-                        <ClockIcon className="w-6 h-6 text-purple-400 group-hover:scale-110 transition-transform" />
-                        <h3 className="text-sm font-medium text-gray-400">Watched</h3>
+                        <BookmarkIcon className="w-6 h-6 text-amber-400 group-hover:scale-110 transition-transform" />
+                        <h3 className="text-sm font-medium text-gray-400">Watch Later</h3>
                     </div>
-                    <p className="text-3xl font-bold text-white">{stats.totalWatched}</p>
-                    <p className="text-xs text-gray-500 mt-1">Total items</p>
+                    <p className="text-3xl font-bold text-white">{stats.watchLater}</p>
                 </Link>
 
-                {/* Total Collections */}
-                <Link
-                    href="/collections"
-                    className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 border border-blue-700/30 rounded-xl p-6 hover:border-blue-600/50 transition-all duration-200 group"
-                >
-                    <div className="flex items-center gap-3 mb-2">
-                        <RectangleStackIcon className="w-6 h-6 text-blue-400 group-hover:scale-110 transition-transform" />
-                        <h3 className="text-sm font-medium text-gray-400">Collections</h3>
-                    </div>
-                    <p className="text-3xl font-bold text-white">{stats.totalCollections}</p>
-                </Link>
-
-                {/* Total Liked */}
+                {/* Liked */}
                 <Link
                     href="/liked"
                     className="bg-gradient-to-br from-green-900/30 to-green-800/20 border border-green-700/30 rounded-xl p-6 hover:border-green-600/50 transition-all duration-200 group"
@@ -187,7 +218,7 @@ export default function ProfilePage() {
                     <p className="text-3xl font-bold text-white">{stats.totalLiked}</p>
                 </Link>
 
-                {/* Total Hidden */}
+                {/* Hidden */}
                 <Link
                     href="/hidden"
                     className="bg-gradient-to-br from-red-900/30 to-red-800/20 border border-red-700/30 rounded-xl p-6 hover:border-red-600/50 transition-all duration-200 group"
@@ -197,6 +228,30 @@ export default function ProfilePage() {
                         <h3 className="text-sm font-medium text-gray-400">Hidden</h3>
                     </div>
                     <p className="text-3xl font-bold text-white">{stats.totalHidden}</p>
+                </Link>
+
+                {/* Watch History */}
+                <Link
+                    href="/watch-history"
+                    className="bg-gradient-to-br from-purple-900/30 to-purple-800/20 border border-purple-700/30 rounded-xl p-6 hover:border-purple-600/50 transition-all duration-200 group"
+                >
+                    <div className="flex items-center gap-3 mb-2">
+                        <ClockIcon className="w-6 h-6 text-purple-400 group-hover:scale-110 transition-transform" />
+                        <h3 className="text-sm font-medium text-gray-400">Watch History</h3>
+                    </div>
+                    <p className="text-3xl font-bold text-white">{stats.totalWatched}</p>
+                </Link>
+
+                {/* Collections */}
+                <Link
+                    href="/collections"
+                    className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 border border-blue-700/30 rounded-xl p-6 hover:border-blue-600/50 transition-all duration-200 group"
+                >
+                    <div className="flex items-center gap-3 mb-2">
+                        <RectangleStackIcon className="w-6 h-6 text-blue-400 group-hover:scale-110 transition-transform" />
+                        <h3 className="text-sm font-medium text-gray-400">Collections</h3>
+                    </div>
+                    <p className="text-3xl font-bold text-white">{stats.totalCollections}</p>
                 </Link>
             </div>
 
