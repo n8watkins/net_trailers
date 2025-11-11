@@ -22,9 +22,13 @@ import {
     limit as firestoreLimit,
     increment,
     runTransaction,
+    arrayUnion,
+    arrayRemove,
 } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { RankingComment, CreateCommentRequest } from '../../types/rankings'
+import { NotFoundError, UnauthorizedError, ValidationError } from './errors'
+import { validateCommentText, validateUserId, validateRankingId } from './validation'
 
 const COLLECTIONS = {
     comments: 'ranking_comments',
@@ -48,55 +52,65 @@ export async function createComment(
     userAvatar: string | undefined,
     request: CreateCommentRequest
 ): Promise<RankingComment> {
-    try {
-        const commentId = nanoid(12)
-        const now = Date.now()
+    // Validate inputs
+    validateUserId(userId)
+    validateRankingId(request.rankingId)
+    validateCommentText(request.text)
 
-        const comment: RankingComment = {
-            id: commentId,
-            rankingId: request.rankingId,
-            userId,
-            userName: username,
-            userAvatar,
-            type: request.type,
-            positionNumber: request.positionNumber,
-            text: request.text,
-            createdAt: now,
-            likes: 0,
-            parentCommentId: request.parentCommentId,
-        }
+    const commentId = nanoid(12)
+    const now = Date.now()
 
-        await runTransaction(db, async (transaction) => {
-            // Create comment
-            const commentRef = getCommentDocRef(commentId)
-            transaction.set(commentRef, comment)
+    const comment: RankingComment = {
+        id: commentId,
+        rankingId: request.rankingId,
+        userId,
+        userName: username,
+        userAvatar,
+        type: request.type,
+        positionNumber: request.positionNumber,
+        text: request.text,
+        createdAt: now,
+        likes: 0,
+        parentCommentId: request.parentCommentId,
+    }
 
-            // If reply, add to parent's replies array
-            if (request.parentCommentId) {
-                const parentRef = getCommentDocRef(request.parentCommentId)
-                const parentDoc = await transaction.get(parentRef)
+    await runTransaction(db, async (transaction) => {
+        // Create comment
+        const commentRef = getCommentDocRef(commentId)
+        transaction.set(commentRef, comment)
 
-                if (parentDoc.exists()) {
-                    const parent = parentDoc.data() as RankingComment
-                    const replies = parent.replies || []
-                    replies.push(comment)
+        // If reply, add to parent's replies array using arrayUnion (atomic operation)
+        if (request.parentCommentId) {
+            const parentRef = getCommentDocRef(request.parentCommentId)
+            const parentDoc = await transaction.get(parentRef)
 
-                    transaction.update(parentRef, { replies })
-                }
+            if (!parentDoc.exists()) {
+                throw new NotFoundError('Parent comment', request.parentCommentId)
             }
 
-            // Increment ranking comment count
-            const rankingRef = doc(db, COLLECTIONS.rankings, request.rankingId)
-            transaction.update(rankingRef, {
-                comments: increment(1),
-            })
-        })
+            const parent = parentDoc.data() as RankingComment
 
-        return comment
-    } catch (error) {
-        console.error('Error creating comment:', error)
-        throw error
-    }
+            // Prevent nested replies (only one level deep)
+            if (parent.parentCommentId) {
+                throw new ValidationError(
+                    'Cannot reply to a reply. Only one level of replies is supported.'
+                )
+            }
+
+            // Use arrayUnion for atomic array updates (prevents race conditions)
+            transaction.update(parentRef, {
+                replies: arrayUnion(comment),
+            })
+        }
+
+        // Increment ranking comment count
+        const rankingRef = doc(db, COLLECTIONS.rankings, request.rankingId)
+        transaction.update(rankingRef, {
+            comments: increment(1),
+        })
+    })
+
+    return comment
 }
 
 /**
@@ -173,47 +187,49 @@ export async function deleteComment(
     commentId: string,
     rankingOwnerId: string
 ): Promise<void> {
-    try {
-        await runTransaction(db, async (transaction) => {
-            const commentRef = getCommentDocRef(commentId)
-            const commentDoc = await transaction.get(commentRef)
+    validateUserId(userId)
 
-            if (!commentDoc.exists()) {
-                throw new Error('Comment not found')
+    await runTransaction(db, async (transaction) => {
+        const commentRef = getCommentDocRef(commentId)
+        const commentDoc = await transaction.get(commentRef)
+
+        if (!commentDoc.exists()) {
+            throw new NotFoundError('Comment', commentId)
+        }
+
+        const comment = commentDoc.data() as RankingComment
+
+        // Check permissions: comment owner or ranking owner can delete
+        if (comment.userId !== userId && rankingOwnerId !== userId) {
+            throw new UnauthorizedError('delete this comment')
+        }
+
+        // Delete comment
+        transaction.delete(commentRef)
+
+        // If this is a reply, remove from parent's replies array using arrayRemove (atomic)
+        if (comment.parentCommentId) {
+            const parentRef = getCommentDocRef(comment.parentCommentId)
+            const parentDoc = await transaction.get(parentRef)
+
+            if (parentDoc.exists()) {
+                // Use arrayRemove for atomic array updates (prevents race conditions)
+                transaction.update(parentRef, {
+                    replies: arrayRemove(comment),
+                })
             }
+        }
 
-            const comment = commentDoc.data() as RankingComment
+        // Decrement ranking comment count (but don't go below 0)
+        const rankingRef = doc(db, COLLECTIONS.rankings, comment.rankingId)
+        const rankingDoc = await transaction.get(rankingRef)
 
-            // Check permissions
-            if (comment.userId !== userId && rankingOwnerId !== userId) {
-                throw new Error('Not authorized to delete this comment')
-            }
-
-            // Delete comment
-            transaction.delete(commentRef)
-
-            // If this is a reply, remove from parent's replies array
-            if (comment.parentCommentId) {
-                const parentRef = getCommentDocRef(comment.parentCommentId)
-                const parentDoc = await transaction.get(parentRef)
-
-                if (parentDoc.exists()) {
-                    const parent = parentDoc.data() as RankingComment
-                    const replies = (parent.replies || []).filter((r) => r.id !== commentId)
-                    transaction.update(parentRef, { replies })
-                }
-            }
-
-            // Decrement ranking comment count
-            const rankingRef = doc(db, COLLECTIONS.rankings, comment.rankingId)
+        if (rankingDoc.exists()) {
             transaction.update(rankingRef, {
                 comments: increment(-1),
             })
-        })
-    } catch (error) {
-        console.error('Error deleting comment:', error)
-        throw error
-    }
+        }
+    })
 }
 
 /**

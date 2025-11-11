@@ -34,6 +34,8 @@ import {
     validateAvatarDimensions,
 } from '../../types/profile'
 import { validateUsername } from '../usernameValidation'
+import { NotFoundError, AlreadyExistsError } from './errors'
+import { validateProfileUpdate, validateUserId } from './validation'
 
 /**
  * Get Firestore document reference for a profile
@@ -53,37 +55,34 @@ function getUsernameDocRef(username: string) {
  * Create a new profile
  */
 export async function createProfile(profile: UserProfile): Promise<void> {
-    try {
-        await runTransaction(db, async (transaction) => {
-            // 1. Check if profile already exists
-            const profileRef = getProfileDocRef(profile.userId)
-            const profileDoc = await transaction.get(profileRef)
+    validateUserId(profile.userId)
 
-            if (profileDoc.exists()) {
-                throw new Error('Profile already exists')
-            }
+    await runTransaction(db, async (transaction) => {
+        // 1. Check if profile already exists
+        const profileRef = getProfileDocRef(profile.userId)
+        const profileDoc = await transaction.get(profileRef)
 
-            // 2. Check if username is available
-            const usernameRef = getUsernameDocRef(profile.username)
-            const usernameDoc = await transaction.get(usernameRef)
+        if (profileDoc.exists()) {
+            throw new AlreadyExistsError('Profile', profile.userId)
+        }
 
-            if (usernameDoc.exists()) {
-                throw new Error('Username is already taken')
-            }
+        // 2. Check if username is available
+        const usernameRef = getUsernameDocRef(profile.username)
+        const usernameDoc = await transaction.get(usernameRef)
 
-            // 3. Create profile document
-            transaction.set(profileRef, profile)
+        if (usernameDoc.exists()) {
+            throw new AlreadyExistsError('Username', profile.username)
+        }
 
-            // 4. Create username mapping
-            transaction.set(usernameRef, {
-                userId: profile.userId,
-                createdAt: Date.now(),
-            })
+        // 3. Create profile document
+        transaction.set(profileRef, profile)
+
+        // 4. Create username mapping
+        transaction.set(usernameRef, {
+            userId: profile.userId,
+            createdAt: Date.now(),
         })
-    } catch (error) {
-        console.error('Error creating profile:', error)
-        throw error
-    }
+    })
 }
 
 /**
@@ -132,58 +131,68 @@ export async function getProfileByUsername(username: string): Promise<UserProfil
  * Update profile
  */
 export async function updateProfile(userId: string, updates: UpdateProfileRequest): Promise<void> {
-    try {
-        const profileRef = getProfileDocRef(userId)
+    validateUserId(userId)
+    validateProfileUpdate(updates)
 
-        // If updating username, need transaction for atomicity
-        if (updates.username) {
-            await runTransaction(db, async (transaction) => {
-                // Get current profile
-                const profileDoc = await transaction.get(profileRef)
-                if (!profileDoc.exists()) {
-                    throw new Error('Profile not found')
-                }
+    const profileRef = getProfileDocRef(userId)
 
-                const currentProfile = profileDoc.data() as UserProfile
-                const oldUsername = currentProfile.username
+    // If updating username, need transaction for atomicity
+    if (updates.username) {
+        await runTransaction(db, async (transaction) => {
+            // Get current profile
+            const profileDoc = await transaction.get(profileRef)
+            if (!profileDoc.exists()) {
+                throw new NotFoundError('Profile', userId)
+            }
 
-                // Check if new username is available
-                const newUsernameRef = getUsernameDocRef(updates.username!)
-                const newUsernameDoc = await transaction.get(newUsernameRef)
+            const currentProfile = profileDoc.data() as UserProfile
+            const oldUsername = currentProfile.username
 
-                if (newUsernameDoc.exists() && updates.username !== oldUsername) {
-                    throw new Error('Username is already taken')
-                }
+            // Check if new username is available
+            const newUsernameRef = getUsernameDocRef(updates.username!)
+            const newUsernameDoc = await transaction.get(newUsernameRef)
 
-                // Update profile
-                transaction.update(profileRef, {
-                    ...updates,
-                    updatedAt: Date.now(),
-                })
+            if (newUsernameDoc.exists() && updates.username !== oldUsername) {
+                throw new AlreadyExistsError('Username', updates.username)
+            }
 
-                // Update username mapping if changed
-                if (updates.username !== oldUsername) {
-                    // Delete old username mapping
-                    const oldUsernameRef = getUsernameDocRef(oldUsername)
-                    transaction.delete(oldUsernameRef)
-
-                    // Create new username mapping
-                    transaction.set(newUsernameRef, {
-                        userId,
-                        createdAt: Date.now(),
-                    })
-                }
-            })
-        } else {
-            // Simple update without username change
-            await updateDoc(profileRef, {
+            // Trim text fields
+            const sanitizedUpdates = {
                 ...updates,
+                description: updates.description?.trim(),
+            }
+
+            // Update profile
+            transaction.update(profileRef, {
+                ...sanitizedUpdates,
                 updatedAt: Date.now(),
             })
+
+            // Update username mapping if changed
+            if (updates.username !== oldUsername) {
+                // Delete old username mapping
+                const oldUsernameRef = getUsernameDocRef(oldUsername)
+                transaction.delete(oldUsernameRef)
+
+                // Create new username mapping
+                transaction.set(newUsernameRef, {
+                    userId,
+                    createdAt: Date.now(),
+                })
+            }
+        })
+    } else {
+        // Simple update without username change
+        // Trim text fields
+        const sanitizedUpdates = {
+            ...updates,
+            description: updates.description?.trim(),
         }
-    } catch (error) {
-        console.error('Error updating profile:', error)
-        throw error
+
+        await updateDoc(profileRef, {
+            ...sanitizedUpdates,
+            updatedAt: Date.now(),
+        })
     }
 }
 

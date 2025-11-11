@@ -31,6 +31,13 @@ import {
     CreateRankingRequest,
     UpdateRankingRequest,
 } from '../../types/rankings'
+import { NotFoundError, UnauthorizedError } from './errors'
+import {
+    validateRankingCreation,
+    validateRankingUpdate,
+    validateUserId,
+    validateRankingId,
+} from './validation'
 
 /**
  * Collection references
@@ -90,38 +97,37 @@ export async function createRanking(
     userAvatar: string | undefined,
     request: CreateRankingRequest
 ): Promise<string> {
-    try {
-        const rankingId = nanoid(12)
-        const now = Date.now()
+    // Validate inputs
+    validateUserId(userId)
+    validateRankingCreation(request)
 
-        const ranking: Ranking = {
-            id: rankingId,
-            userId,
-            userName: username,
-            userAvatar,
-            title: request.title,
-            description: request.description,
-            rankedItems: [],
-            isPublic: request.isPublic ?? true,
-            itemCount: request.itemCount,
-            createdAt: now,
-            updatedAt: now,
-            likes: 0,
-            comments: 0,
-            views: 0,
-            contentIds: [],
-            contentTitles: [],
-            tags: request.tags,
-        }
+    const rankingId = nanoid(12)
+    const now = Date.now()
 
-        const rankingRef = getRankingDocRef(rankingId)
-        await setDoc(rankingRef, ranking)
-
-        return rankingId
-    } catch (error) {
-        console.error('Error creating ranking:', error)
-        throw error
+    const ranking: Ranking = {
+        id: rankingId,
+        userId,
+        userName: username,
+        userAvatar,
+        title: request.title.trim(),
+        description: request.description?.trim(),
+        rankedItems: [],
+        isPublic: request.isPublic ?? true,
+        itemCount: request.itemCount,
+        createdAt: now,
+        updatedAt: now,
+        likes: 0,
+        comments: 0,
+        views: 0,
+        contentIds: [],
+        contentTitles: [],
+        tags: request.tags,
     }
+
+    const rankingRef = getRankingDocRef(rankingId)
+    await setDoc(rankingRef, ranking)
+
+    return rankingId
 }
 
 /**
@@ -220,18 +226,23 @@ export async function updateRanking(
     rankingId: string,
     updates: UpdateRankingRequest
 ): Promise<void> {
-    try {
-        const rankingRef = getRankingDocRef(rankingId)
+    // Validate inputs
+    validateUserId(userId)
+    validateRankingId(rankingId)
+    validateRankingUpdate(updates)
 
-        // Verify ownership
-        const rankingDoc = await getDoc(rankingRef)
+    // Use transaction to prevent TOCTOU vulnerability
+    await runTransaction(db, async (transaction) => {
+        const rankingRef = getRankingDocRef(rankingId)
+        const rankingDoc = await transaction.get(rankingRef)
+
         if (!rankingDoc.exists()) {
-            throw new Error('Ranking not found')
+            throw new NotFoundError('Ranking', rankingId)
         }
 
         const ranking = rankingDoc.data() as Ranking
         if (ranking.userId !== userId) {
-            throw new Error('Not authorized to update this ranking')
+            throw new UnauthorizedError('update this ranking')
         }
 
         // If updating rankedItems, extract metadata
@@ -240,45 +251,47 @@ export async function updateRanking(
             metadata = extractContentMetadata(updates.rankedItems)
         }
 
-        await updateDoc(rankingRef, {
+        // Trim text fields
+        const sanitizedUpdates = {
             ...updates,
+            title: updates.title?.trim(),
+            description: updates.description?.trim(),
+        }
+
+        transaction.update(rankingRef, {
+            ...sanitizedUpdates,
             ...metadata,
             updatedAt: Date.now(),
         })
-    } catch (error) {
-        console.error('Error updating ranking:', error)
-        throw error
-    }
+    })
 }
 
 /**
  * Delete ranking
  */
 export async function deleteRanking(userId: string, rankingId: string): Promise<void> {
-    try {
-        await runTransaction(db, async (transaction) => {
-            const rankingRef = getRankingDocRef(rankingId)
-            const rankingDoc = await transaction.get(rankingRef)
+    validateUserId(userId)
+    validateRankingId(rankingId)
 
-            if (!rankingDoc.exists()) {
-                throw new Error('Ranking not found')
-            }
+    await runTransaction(db, async (transaction) => {
+        const rankingRef = getRankingDocRef(rankingId)
+        const rankingDoc = await transaction.get(rankingRef)
 
-            const ranking = rankingDoc.data() as Ranking
-            if (ranking.userId !== userId) {
-                throw new Error('Not authorized to delete this ranking')
-            }
+        if (!rankingDoc.exists()) {
+            throw new NotFoundError('Ranking', rankingId)
+        }
 
-            // Delete ranking
-            transaction.delete(rankingRef)
+        const ranking = rankingDoc.data() as Ranking
+        if (ranking.userId !== userId) {
+            throw new UnauthorizedError('delete this ranking')
+        }
 
-            // Note: Comments, likes, and views will be orphaned but that's OK
-            // Could add cleanup job later, or use Firestore security rules to cascade
-        })
-    } catch (error) {
-        console.error('Error deleting ranking:', error)
-        throw error
-    }
+        // Delete ranking
+        transaction.delete(rankingRef)
+
+        // Note: Comments, likes, and views will be orphaned but that's OK
+        // Could add cleanup job later, or use Firestore security rules to cascade
+    })
 }
 
 /**
