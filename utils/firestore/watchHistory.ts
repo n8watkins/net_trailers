@@ -12,17 +12,25 @@ import { WatchHistoryEntry, WatchHistoryDocument } from '../../types/watchHistor
  * Get watch history from Firestore
  */
 export async function getWatchHistory(userId: string): Promise<WatchHistoryEntry[] | null> {
+    console.log('[Firestore Watch History] 🔍 Fetching watch history for user:', userId)
     try {
         const docRef = doc(db, 'users', userId, 'data', 'watchHistory')
         const docSnap = await getDoc(docRef)
 
         if (docSnap.exists()) {
             const data = docSnap.data() as WatchHistoryDocument
+            console.log(
+                '[Firestore Watch History] 📥 Found',
+                data.history?.length || 0,
+                'entries in Firestore'
+            )
             return data.history || []
         }
 
+        console.log('[Firestore Watch History] ⚠️ No document found in Firestore')
         return null
-    } catch (_error) {
+    } catch (error) {
+        console.error('[Firestore Watch History] ❌ Error fetching:', error)
         // Silently fail - permissions error may occur if auth isn't ready yet
         return null
     }
@@ -35,6 +43,7 @@ export async function saveWatchHistory(
     userId: string,
     history: WatchHistoryEntry[]
 ): Promise<void> {
+    console.log('[Firestore Watch History] 💾 Saving', history.length, 'entries for user:', userId)
     try {
         const docRef = doc(db, 'users', userId, 'data', 'watchHistory')
 
@@ -44,9 +53,10 @@ export async function saveWatchHistory(
         }
 
         await setDoc(docRef, data, { merge: true })
-    } catch (_error) {
-        // Silently fail - watch history is not critical
-        // User will still have local history in browser storage
+        console.log('[Firestore Watch History] ✅ Successfully saved to Firestore')
+    } catch (error) {
+        console.error('[Firestore Watch History] ❌ Failed to save:', error)
+        throw error // Re-throw so seeding knows it failed
     }
 }
 

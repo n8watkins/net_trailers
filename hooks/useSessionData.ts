@@ -49,6 +49,7 @@ export const useSessionData = () => {
     const guestDefaultVolume = useGuestStore((state) => state.defaultVolume)
     const guestChildSafetyMode = useGuestStore((state) => state.childSafetyMode)
     const guestImproveRecommendations = useGuestStore((state) => state.improveRecommendations)
+    const guestShowRecommendations = useGuestStore((state) => state.showRecommendations)
 
     // Select actions from guest store
     const guestAddToWatchlist = useGuestStore((state) => state.addToWatchlist)
@@ -74,6 +75,7 @@ export const useSessionData = () => {
     const authDefaultVolume = useAuthStore((state) => state.defaultVolume)
     const authChildSafetyMode = useAuthStore((state) => state.childSafetyMode)
     const authImproveRecommendations = useAuthStore((state) => state.improveRecommendations)
+    const authShowRecommendations = useAuthStore((state) => state.showRecommendations)
 
     // Select actions from auth store
     const authAddToWatchlist = useAuthStore((state) => state.addToWatchlist)
@@ -110,6 +112,8 @@ export const useSessionData = () => {
     const childSafetyMode = (isAuth ? authChildSafetyMode : guestChildSafetyMode) ?? false
     const improveRecommendations =
         (isAuth ? authImproveRecommendations : guestImproveRecommendations) ?? true
+    const showRecommendations =
+        (isAuth ? authShowRecommendations : guestShowRecommendations) ?? false
 
     const addToWatchlist = isAuth ? authAddToWatchlist : guestAddToWatchlist
     const removeFromWatchlist = isAuth ? authRemoveFromWatchlist : guestRemoveFromWatchlist
@@ -142,6 +146,7 @@ export const useSessionData = () => {
         defaultVolume,
         childSafetyMode,
         improveRecommendations,
+        showRecommendations,
 
         // Actions (unified interface - NEW SCHEMA)
         addToWatchlist,

@@ -45,6 +45,39 @@ const clearGuestHistory = (guestId: string) => {
     }
 }
 
+const waitForAuthUser = async (userId: string, timeout = 5000): Promise<boolean> => {
+    if (!userId) return false
+    if (auth.currentUser && auth.currentUser.uid === userId) {
+        return true
+    }
+
+    if (typeof window === 'undefined' || typeof auth.onAuthStateChanged !== 'function') {
+        return false
+    }
+
+    return new Promise((resolve) => {
+        let resolved = false
+        let unsubscribe = () => {}
+
+        const timer = setTimeout(() => {
+            if (!resolved) {
+                resolved = true
+                unsubscribe()
+                resolve(false)
+            }
+        }, timeout)
+
+        unsubscribe = auth.onAuthStateChanged((user) => {
+            if (!resolved && user && user.uid === userId) {
+                resolved = true
+                clearTimeout(timer)
+                unsubscribe()
+                resolve(true)
+            }
+        })
+    })
+}
+
 export const useWatchHistoryStore = create<WatchHistoryStore>()((set, get) => ({
     history: [],
     isLoading: false,
@@ -126,11 +159,19 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()((set, get) => ({
     loadFromFirestore: async (userId: string) => {
         if (!userId) return
 
+        console.log('[Watch History Store] 🔍 Loading from Firestore for user:', userId)
+
         try {
             set({ isLoading: true, syncError: null })
 
             // Load history from Firestore
             const firestoreHistory = await getWatchHistory(userId)
+
+            console.log(
+                '[Watch History Store] 📥 Loaded from Firestore:',
+                firestoreHistory?.length || 0,
+                'entries'
+            )
 
             if (firestoreHistory && firestoreHistory.length > 0) {
                 set({
@@ -139,6 +180,7 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()((set, get) => ({
                     lastSyncedAt: Date.now(),
                     syncError: null,
                 })
+                console.log('[Watch History Store] ✅ Watch history loaded successfully')
             } else {
                 // No history in Firestore yet
                 set({
@@ -147,9 +189,13 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()((set, get) => ({
                     lastSyncedAt: Date.now(),
                     syncError: null,
                 })
+                console.log('[Watch History Store] ⚠️ No watch history found in Firestore')
             }
         } catch (error) {
-            console.error('Failed to load watch history from Firestore:', error)
+            console.error(
+                '[Watch History Store] ❌ Failed to load watch history from Firestore:',
+                error
+            )
             set({
                 syncError: error instanceof Error ? error.message : 'Failed to load watch history',
             })
@@ -160,11 +206,12 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()((set, get) => ({
 
     syncWithFirestore: async (userId) => {
         if (!userId) return
-
-        // CRITICAL: Ensure Firebase Auth is ready before attempting Firestore calls
-        if (!auth.currentUser || auth.currentUser.uid !== userId) {
-            // Auth not ready yet - this will be called again by useWatchHistory
-            set({ syncError: 'Waiting for authentication...' })
+        const authReady = await waitForAuthUser(userId)
+        if (!authReady) {
+            set({
+                syncError: 'Waiting for authentication...',
+                isLoading: false,
+            })
             return
         }
 

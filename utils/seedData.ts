@@ -723,7 +723,18 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
     // Persist watch history to storage
     if (!isGuest) {
         console.log('  💾 Syncing watch history to Firestore...')
-        await useWatchHistoryStore.getState().syncWithFirestore(userId)
+        // Import saveWatchHistory to bypass auth wait logic during seeding
+        const { saveWatchHistory } = await import('../utils/firestore/watchHistory')
+        const currentHistory = useWatchHistoryStore.getState().history
+        console.log(`  📊 Saving ${currentHistory.length} watch history entries to Firestore`)
+        await saveWatchHistory(userId, currentHistory)
+        // Update store to mark as synced
+        useWatchHistoryStore.setState({
+            currentSessionId: userId,
+            lastSyncedAt: Date.now(),
+            syncError: null,
+        })
+        console.log('  ✅ Watch history saved to Firestore successfully')
     } else {
         // Save to localStorage for guest users
         console.log('  💾 Saving watch history to localStorage...')
