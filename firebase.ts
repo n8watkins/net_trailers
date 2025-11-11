@@ -2,6 +2,7 @@
 import { initializeApp, getApp, getApps } from 'firebase/app'
 import { initializeFirestore, getFirestore, persistentLocalCache } from 'firebase/firestore'
 import { getAuth } from 'firebase/auth'
+import { getStorage } from 'firebase/storage'
 import { z } from 'zod'
 
 // Zod schema for Firebase configuration validation
@@ -60,6 +61,7 @@ if (typeof window !== 'undefined') {
 }
 
 const auth = getAuth(app)
+const storage = getStorage(app)
 
 export default app
-export { auth, db }
+export { auth, db, storage }
