@@ -68,116 +68,118 @@ export default function NotificationsPageClient() {
         }
     }
 
-    const headerActions = isGuest ? (
-        <div className="rounded-2xl border border-gray-800 bg-[#1a1a1a] p-6 text-sm text-gray-300">
-            Guest sessions keep notifications locally only. Sign in or create an account to sync
-            alerts across devices.
-        </div>
-    ) : (
-        <div className="space-y-6">
-            {/* Stats and Actions */}
-            <div className="flex items-center justify-between">
-                <p className="text-sm text-gray-400">
-                    {unreadCount > 0 ? (
-                        <span>
-                            {unreadCount} unread · {notifications.length} total
-                        </span>
-                    ) : (
-                        <span>{notifications.length} notifications</span>
-                    )}
-                </p>
+    const headerActions = !isLoading ? (
+        isGuest ? (
+            <div className="rounded-2xl border border-gray-800 bg-[#1a1a1a] p-6 text-sm text-gray-300">
+                Guest sessions keep notifications locally only. Sign in or create an account to sync
+                alerts across devices.
+            </div>
+        ) : (
+            <div className="space-y-6">
+                {/* Stats and Actions */}
+                <div className="flex items-center justify-between">
+                    <p className="text-sm text-gray-400">
+                        {unreadCount > 0 ? (
+                            <span>
+                                {unreadCount} unread · {notifications.length} total
+                            </span>
+                        ) : (
+                            <span>{notifications.length} notifications</span>
+                        )}
+                    </p>
 
-                {/* Actions */}
-                <div className="flex items-center gap-2">
-                    {/* Mark all as read */}
-                    {unreadCount > 0 && (
-                        <button
-                            onClick={handleMarkAllAsRead}
-                            className="flex items-center gap-2 rounded-lg bg-gray-800/50 px-4 py-2.5 text-sm font-medium text-gray-300 transition-all duration-200 hover:bg-gray-700/50 hover:text-white border border-gray-600 hover:border-gray-400"
-                        >
-                            <CheckIcon className="h-4 w-4" />
-                            <span>Mark all read</span>
-                        </button>
-                    )}
+                    {/* Actions */}
+                    <div className="flex items-center gap-2">
+                        {/* Mark all as read */}
+                        {unreadCount > 0 && (
+                            <button
+                                onClick={handleMarkAllAsRead}
+                                className="flex items-center gap-2 rounded-lg bg-gray-800/50 px-4 py-2.5 text-sm font-medium text-gray-300 transition-all duration-200 hover:bg-gray-700/50 hover:text-white border border-gray-600 hover:border-gray-400"
+                            >
+                                <CheckIcon className="h-4 w-4" />
+                                <span>Mark all read</span>
+                            </button>
+                        )}
 
-                    {/* Clear all */}
-                    {notifications.length > 0 && (
-                        <button
-                            onClick={handleClearAll}
-                            className="flex items-center gap-2 rounded-lg bg-gray-800/50 px-4 py-2.5 text-sm font-medium text-gray-400 transition-all duration-200 hover:bg-gray-700/50 hover:text-red-400 border border-gray-600"
-                        >
-                            <TrashIcon className="h-4 w-4" />
-                            <span>Clear all</span>
-                        </button>
-                    )}
+                        {/* Clear all */}
+                        {notifications.length > 0 && (
+                            <button
+                                onClick={handleClearAll}
+                                className="flex items-center gap-2 rounded-lg bg-gray-800/50 px-4 py-2.5 text-sm font-medium text-gray-400 transition-all duration-200 hover:bg-gray-700/50 hover:text-red-400 border border-gray-600"
+                            >
+                                <TrashIcon className="h-4 w-4" />
+                                <span>Clear all</span>
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Filters - Always visible */}
+                <div className="flex flex-wrap gap-2 bg-[#1a1a1a] border border-gray-800 rounded-2xl p-6">
+                    <button
+                        onClick={() => setFilter('all')}
+                        className={`rounded-full px-5 py-2.5 text-sm font-medium transition-all duration-200 ${
+                            filter === 'all'
+                                ? 'bg-white text-black shadow-lg scale-105 border-2 border-white'
+                                : 'bg-gray-800/80 text-white hover:bg-gray-700/80 border border-gray-600 hover:border-gray-400 hover:scale-105'
+                        }`}
+                    >
+                        All ({notifications.length})
+                    </button>
+                    <button
+                        onClick={() => setFilter('trending_update')}
+                        className={`rounded-full px-4 py-2 text-sm transition-colors ${
+                            filter === 'trending_update'
+                                ? 'bg-red-600 text-white'
+                                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                        }`}
+                    >
+                        Trending ({getTypeCount('trending_update')})
+                    </button>
+                    <button
+                        onClick={() => setFilter('new_release')}
+                        className={`rounded-full px-4 py-2 text-sm transition-colors ${
+                            filter === 'new_release'
+                                ? 'bg-red-600 text-white'
+                                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                        }`}
+                    >
+                        New Releases ({getTypeCount('new_release')})
+                    </button>
+                    <button
+                        onClick={() => setFilter('collection_update')}
+                        className={`rounded-full px-4 py-2 text-sm transition-colors ${
+                            filter === 'collection_update'
+                                ? 'bg-red-600 text-white'
+                                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                        }`}
+                    >
+                        Collections ({getTypeCount('collection_update')})
+                    </button>
+                    <button
+                        onClick={() => setFilter('share_activity')}
+                        className={`rounded-full px-4 py-2 text-sm transition-colors ${
+                            filter === 'share_activity'
+                                ? 'bg-red-600 text-white'
+                                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                        }`}
+                    >
+                        Shares ({getTypeCount('share_activity')})
+                    </button>
+                    <button
+                        onClick={() => setFilter('system')}
+                        className={`rounded-full px-4 py-2 text-sm transition-colors ${
+                            filter === 'system'
+                                ? 'bg-red-600 text-white'
+                                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                        }`}
+                    >
+                        System ({getTypeCount('system')})
+                    </button>
                 </div>
             </div>
-
-            {/* Filters - Always visible */}
-            <div className="flex flex-wrap gap-2 bg-[#1a1a1a] border border-gray-800 rounded-2xl p-6">
-                <button
-                    onClick={() => setFilter('all')}
-                    className={`rounded-full px-5 py-2.5 text-sm font-medium transition-all duration-200 ${
-                        filter === 'all'
-                            ? 'bg-white text-black shadow-lg scale-105 border-2 border-white'
-                            : 'bg-gray-800/80 text-white hover:bg-gray-700/80 border border-gray-600 hover:border-gray-400 hover:scale-105'
-                    }`}
-                >
-                    All ({notifications.length})
-                </button>
-                <button
-                    onClick={() => setFilter('trending_update')}
-                    className={`rounded-full px-4 py-2 text-sm transition-colors ${
-                        filter === 'trending_update'
-                            ? 'bg-red-600 text-white'
-                            : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                    }`}
-                >
-                    Trending ({getTypeCount('trending_update')})
-                </button>
-                <button
-                    onClick={() => setFilter('new_release')}
-                    className={`rounded-full px-4 py-2 text-sm transition-colors ${
-                        filter === 'new_release'
-                            ? 'bg-red-600 text-white'
-                            : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                    }`}
-                >
-                    New Releases ({getTypeCount('new_release')})
-                </button>
-                <button
-                    onClick={() => setFilter('collection_update')}
-                    className={`rounded-full px-4 py-2 text-sm transition-colors ${
-                        filter === 'collection_update'
-                            ? 'bg-red-600 text-white'
-                            : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                    }`}
-                >
-                    Collections ({getTypeCount('collection_update')})
-                </button>
-                <button
-                    onClick={() => setFilter('share_activity')}
-                    className={`rounded-full px-4 py-2 text-sm transition-colors ${
-                        filter === 'share_activity'
-                            ? 'bg-red-600 text-white'
-                            : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                    }`}
-                >
-                    Shares ({getTypeCount('share_activity')})
-                </button>
-                <button
-                    onClick={() => setFilter('system')}
-                    className={`rounded-full px-4 py-2 text-sm transition-colors ${
-                        filter === 'system'
-                            ? 'bg-red-600 text-white'
-                            : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                    }`}
-                >
-                    System ({getTypeCount('system')})
-                </button>
-            </div>
-        </div>
-    )
+        )
+    ) : undefined
 
     return (
         <SubPageLayout
