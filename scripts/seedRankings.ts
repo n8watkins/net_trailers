@@ -51,8 +51,9 @@ const SEED_USERS = [
     },
 ]
 
-// Sample rankings to create
+// Sample rankings to create - EXPANDED for interesting community display
 const SEED_RANKINGS = [
+    // MCU
     {
         title: 'Top 10 MCU Movies',
         description: 'The best Marvel Cinematic Universe films ranked',
@@ -61,12 +62,25 @@ const SEED_RANKINGS = [
         itemCount: 10,
     },
     {
+        title: 'MCU Villains Ranked',
+        description: 'Best antagonists in the Marvel Cinematic Universe',
+        tags: ['Marvel Cinematic Universe', 'Action'],
+        contentIds: [
+            299536, 284054, 299534, 271110, 497698, 453395, 616037, 640146, 505642, 447365,
+        ],
+        itemCount: 10,
+    },
+
+    // Nolan
+    {
         title: 'Christopher Nolan Masterpieces',
         description: 'Ranking the genius works of Christopher Nolan',
         tags: ['Christopher Nolan', 'Psychological Thrillers'],
         contentIds: [27205, 155, 157336, 272, 49026, 1124, 77, 16869],
         itemCount: 8,
     },
+
+    // Studio Ghibli
     {
         title: 'Studio Ghibli Must-Watch',
         description: 'Essential Studio Ghibli films everyone should see',
@@ -75,6 +89,15 @@ const SEED_RANKINGS = [
         itemCount: 10,
     },
     {
+        title: 'Ghibli for Beginners',
+        description: 'Perfect introduction to Studio Ghibli magic',
+        tags: ['Studio Ghibli'],
+        contentIds: [129, 810, 4935, 128, 10515],
+        itemCount: 5,
+    },
+
+    // Horror
+    {
         title: 'Horror Movies That Actually Scare',
         description: 'The most terrifying horror films',
         tags: ['Horror'],
@@ -82,12 +105,30 @@ const SEED_RANKINGS = [
         itemCount: 10,
     },
     {
+        title: 'Supernatural Horror Classics',
+        description: 'Ghost stories and supernatural terrors',
+        tags: ['Horror', 'Mystery & Thriller'],
+        contentIds: [423108, 745, 274, 419430, 760741, 346364, 530385],
+        itemCount: 7,
+    },
+
+    // Sci-Fi
+    {
         title: 'Best Sci-Fi of All Time',
         description: 'Mind-bending science fiction masterpieces',
         tags: ['Sci-Fi'],
-        contentIds: [603, 62, 12, 329865, 335984, 424, 1891, 424, 157336, 27205],
+        contentIds: [603, 62, 12, 329865, 335984, 157336, 27205, 1891, 122, 424],
         itemCount: 10,
     },
+    {
+        title: 'Space Exploration Epics',
+        description: 'Journey through the cosmos',
+        tags: ['Sci-Fi'],
+        contentIds: [157336, 62, 335984, 131631, 286217, 329865],
+        itemCount: 6,
+    },
+
+    // Heist & Crime
     {
         title: 'Top Heist Movies',
         description: 'The greatest heist and crime films',
@@ -96,12 +137,37 @@ const SEED_RANKINGS = [
         itemCount: 10,
     },
     {
+        title: 'Tarantino Universe Ranked',
+        description: 'All Tarantino films from best to brilliant',
+        tags: ['Quentin Tarantino', 'Heist & Crime'],
+        contentIds: [680, 24, 16869, 111, 72976, 106646, 429617, 238, 278],
+        itemCount: 9,
+    },
+
+    // Fantasy
+    {
         title: 'Fantasy Adventures for the Whole Family',
         description: 'Epic fantasy films perfect for family viewing',
         tags: ['Fantasy Adventures'],
         contentIds: [120, 122, 121, 12444, 57158, 122917, 671, 672, 673, 674],
         itemCount: 10,
     },
+    {
+        title: 'Middle-earth Journey',
+        description: 'LOTR and Hobbit trilogy ranked',
+        tags: ['Fantasy Adventures', 'Based on Books'],
+        contentIds: [122, 120, 121, 122917, 57158, 12444],
+        itemCount: 6,
+    },
+    {
+        title: 'Harry Potter Ranked',
+        description: 'All 8 magical films ordered by wizardry',
+        tags: ['Fantasy Adventures', 'Based on Books'],
+        contentIds: [674, 767, 673, 675, 671, 672, 12445, 12444],
+        itemCount: 8,
+    },
+
+    // James Bond
     {
         title: 'James Bond Rankings',
         description: 'All-time best 007 films ranked',
@@ -110,18 +176,158 @@ const SEED_RANKINGS = [
         itemCount: 10,
     },
     {
+        title: 'Daniel Craig Bond Era',
+        description: 'Ranking the Craig 007 films',
+        tags: ['James Bond 007'],
+        contentIds: [370172, 646, 37724, 253405, 36557],
+        itemCount: 5,
+    },
+
+    // Classic Hollywood
+    {
         title: 'Classic Hollywood Gold',
         description: 'Timeless classics from the golden age of cinema',
         tags: ['Classic Hollywood', 'Based on True Stories'],
         contentIds: [238, 240, 389, 429, 19404, 613, 311, 901, 510, 424],
         itemCount: 10,
     },
+
+    // Sports
     {
         title: 'Sports Movies That Inspire',
         description: 'Motivational sports films that touch the heart',
         tags: ['Sports'],
         contentIds: [1366, 1367, 1368, 1369, 1370, 12444, 173995, 480530, 522240, 37257],
         itemCount: 10,
+    },
+    {
+        title: 'Underdog Sports Stories',
+        description: 'The greatest comeback stories in sports cinema',
+        tags: ['Sports'],
+        contentIds: [1366, 37257, 9502, 12162, 11808, 391698],
+        itemCount: 6,
+    },
+
+    // Musicals
+    {
+        title: 'Modern Musical Masterpieces',
+        description: 'Contemporary films that make you want to sing',
+        tags: ['Musicals & Music'],
+        contentIds: [313369, 360814, 12445, 109439, 508442, 284053, 326359, 383498],
+        itemCount: 8,
+    },
+
+    // Anime
+    {
+        title: 'Anime Films Beyond Ghibli',
+        description: 'Essential anime movies outside Studio Ghibli',
+        tags: ['Anime'],
+        contentIds: [129, 810, 4935, 128, 10515, 38142],
+        itemCount: 6,
+    },
+
+    // DC Universe
+    {
+        title: 'DC Universe Ranked',
+        description: 'Best superhero films from DC Comics',
+        tags: ['DC Universe', 'Action'],
+        contentIds: [155, 268896, 453405, 436270, 297761, 209112],
+        itemCount: 6,
+    },
+
+    // True Crime
+    {
+        title: 'True Crime Thrillers',
+        description: 'Based on real events that shocked the world',
+        tags: ['True Crime', 'Based on True Stories'],
+        contentIds: [489931, 680, 155, 106646, 1422, 13223, 14161, 205596],
+        itemCount: 8,
+    },
+
+    // Comedy
+    {
+        title: 'Comedy Classics That Still Hit',
+        description: 'Timeless comedies that never get old',
+        tags: ['Comedy'],
+        contentIds: [109439, 862, 863, 920, 597, 118, 10661, 9691],
+        itemCount: 8,
+    },
+    {
+        title: 'Dark Comedy Gems',
+        description: 'Humor with a twisted edge',
+        tags: ['Comedy', 'Psychological Thrillers'],
+        contentIds: [120467, 107, 640, 496243, 24, 77],
+        itemCount: 6,
+    },
+
+    // Romance
+    {
+        title: 'Modern Romance Favorites',
+        description: 'Contemporary love stories that make you believe',
+        tags: ['Romance'],
+        contentIds: [313369, 522627, 559969, 398181, 576845, 502356],
+        itemCount: 6,
+    },
+
+    // Fast & Furious
+    {
+        title: 'Fast & Furious Ranked',
+        description: 'All F&F films by adrenaline level',
+        tags: ['Fast & Furious', 'Action'],
+        contentIds: [51497, 337339, 168259, 384018, 385687, 9799, 13804, 584],
+        itemCount: 8,
+    },
+
+    // Pixar
+    {
+        title: 'Pixar Perfection',
+        description: 'The animation studio that makes adults cry',
+        tags: ['Pixar'],
+        contentIds: [862, 863, 585, 508442, 284053, 10681, 920, 568124],
+        itemCount: 8,
+    },
+
+    // Netflix Originals
+    {
+        title: 'Best Netflix Original Films',
+        description: 'Netflix movies worth your time',
+        tags: ['Netflix Originals'],
+        contentIds: [376867, 489931, 447365, 531434, 573680, 564950],
+        itemCount: 6,
+    },
+
+    // Oscars
+    {
+        title: 'Oscar Winners of the 2020s',
+        description: 'Best Picture winners this decade',
+        tags: ['Oscar Winners', 'Classic Hollywood'],
+        contentIds: [496243, 508442, 545611, 615457, 640146],
+        itemCount: 5,
+    },
+
+    // Mystery
+    {
+        title: 'Mystery Thrillers',
+        description: 'Keep you guessing until the end',
+        tags: ['Mystery & Thriller'],
+        contentIds: [550, 77, 489931, 745, 274, 155, 106646, 680],
+        itemCount: 8,
+    },
+    {
+        title: 'Detective Stories',
+        description: 'The best whodunits and investigations',
+        tags: ['Mystery & Thriller'],
+        contentIds: [274, 680, 106646, 155, 550, 77],
+        itemCount: 6,
+    },
+
+    // Action
+    {
+        title: 'Pure Action Adrenaline',
+        description: 'Non-stop action from start to finish',
+        tags: ['Action'],
+        contentIds: [383498, 370172, 646, 337339, 168259, 524434, 566525, 505642],
+        itemCount: 8,
     },
 ]
 
