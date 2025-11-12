@@ -118,7 +118,7 @@
 .custom-scrollbar {
     position: fixed;
     top: 0;
-    right: 8px;
+    right: 0;
     bottom: 0;
     width: 8px;
     pointer-events: none;
