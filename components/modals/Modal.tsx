@@ -14,6 +14,7 @@ import {
     EyeSlashIcon,
     EyeIcon,
 } from '@heroicons/react/24/solid'
+import { SparklesIcon } from '@heroicons/react/24/outline'
 
 import type ReactPlayerType from 'react-player'
 import ContentMetadata from '../common/ContentMetadata'
@@ -783,6 +784,25 @@ function Modal() {
                                                     </button>
                                                 </ToolTipMod>
                                             )}
+                                            <ToolTipMod title="Surprise Me">
+                                                <button
+                                                    className={`group relative p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-colors duration-200 ${
+                                                        isRandomLoading
+                                                            ? 'cursor-wait opacity-80'
+                                                            : ''
+                                                    }`}
+                                                    onClick={handleRandomContent}
+                                                    disabled={isRandomLoading}
+                                                >
+                                                    <SparklesIcon
+                                                        className={`h-4 w-4 sm:h-6 sm:w-6 text-white/70 transition-colors ${
+                                                            isRandomLoading
+                                                                ? 'animate-spin text-red-400'
+                                                                : 'group-hover:text-red-400'
+                                                        }`}
+                                                    />
+                                                </button>
+                                            </ToolTipMod>
 
                                             {/* Like Button */}
                                             <SimpleLikeButton />
@@ -848,8 +868,6 @@ function Modal() {
                                                 onShowVolumeSlider={setShowVolumeSlider}
                                                 volumeButtonRef={volumeButtonRef}
                                                 volumeSliderRef={volumeSliderRef}
-                                                onRandomize={handleRandomContent}
-                                                isRandomizing={isRandomLoading}
                                             />
                                         )}
                                     </div>

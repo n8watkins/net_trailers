@@ -24,11 +24,14 @@ import {
     runTransaction,
     arrayUnion,
     arrayRemove,
+    DocumentSnapshot,
+    startAfter,
 } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { RankingComment, CreateCommentRequest, RANKING_CONSTRAINTS } from '../../types/rankings'
 import { NotFoundError, UnauthorizedError, ValidationError } from './errors'
 import { validateCommentText, validateUserId, validateRankingId } from './validation'
+import { PaginatedResult, createPaginatedResult } from '../../types/pagination'
 
 const COLLECTIONS = {
     comments: 'ranking_comments',
@@ -156,24 +159,28 @@ export async function createComment(
 }
 
 /**
- * Get comments for a ranking
+ * Get comments for a ranking (with pagination support)
  */
 export async function getRankingComments(
     rankingId: string,
-    limit: number = 50
-): Promise<RankingComment[]> {
+    limit: number = 50,
+    startAfterDoc?: DocumentSnapshot | null
+): Promise<PaginatedResult<RankingComment>> {
     try {
         const commentsRef = collection(db, COLLECTIONS.comments)
-
-        // Get top-level comments only (no parentCommentId)
-        const q = query(
-            commentsRef,
+        const constraints: any[] = [
             where('rankingId', '==', rankingId),
             where('parentCommentId', '==', null),
             orderBy('createdAt', 'desc'),
-            firestoreLimit(limit)
-        )
+            firestoreLimit(limit),
+        ]
 
+        // Add cursor if provided
+        if (startAfterDoc) {
+            constraints.push(startAfter(startAfterDoc))
+        }
+
+        const q = query(commentsRef, ...constraints)
         const snapshot = await getDocs(q)
         const comments: RankingComment[] = []
 
@@ -181,7 +188,9 @@ export async function getRankingComments(
             comments.push(doc.data() as RankingComment)
         })
 
-        return comments
+        // Return with cursor
+        const lastDoc = snapshot.docs[snapshot.docs.length - 1] || null
+        return createPaginatedResult(comments, lastDoc, limit)
     } catch (error) {
         console.error('Error getting ranking comments:', error)
         throw error
@@ -189,23 +198,31 @@ export async function getRankingComments(
 }
 
 /**
- * Get comments for a specific position in ranking
+ * Get comments for a specific position in ranking (with pagination support)
  */
 export async function getPositionComments(
     rankingId: string,
-    position: number
-): Promise<RankingComment[]> {
+    position: number,
+    limit: number = 50,
+    startAfterDoc?: DocumentSnapshot | null
+): Promise<PaginatedResult<RankingComment>> {
     try {
         const commentsRef = collection(db, COLLECTIONS.comments)
-        const q = query(
-            commentsRef,
+        const constraints: any[] = [
             where('rankingId', '==', rankingId),
             where('type', '==', 'position'),
             where('positionNumber', '==', position),
             where('parentCommentId', '==', null),
-            orderBy('createdAt', 'desc')
-        )
+            orderBy('createdAt', 'desc'),
+            firestoreLimit(limit),
+        ]
 
+        // Add cursor if provided
+        if (startAfterDoc) {
+            constraints.push(startAfter(startAfterDoc))
+        }
+
+        const q = query(commentsRef, ...constraints)
         const snapshot = await getDocs(q)
         const comments: RankingComment[] = []
 
@@ -213,7 +230,9 @@ export async function getPositionComments(
             comments.push(doc.data() as RankingComment)
         })
 
-        return comments
+        // Return with cursor
+        const lastDoc = snapshot.docs[snapshot.docs.length - 1] || null
+        return createPaginatedResult(comments, lastDoc, limit)
     } catch (error) {
         console.error('Error getting position comments:', error)
         throw error
@@ -359,21 +378,27 @@ export async function hasUserLikedComment(userId: string, commentId: string): Pr
 }
 
 /**
- * Get all comments by a specific user across all rankings
+ * Get all comments by a specific user across all rankings (with pagination support)
  */
 export async function getUserComments(
     userId: string,
-    limit: number = 50
-): Promise<RankingComment[]> {
+    limit: number = 50,
+    startAfterDoc?: DocumentSnapshot | null
+): Promise<PaginatedResult<RankingComment>> {
     try {
         const commentsRef = collection(db, COLLECTIONS.comments)
-        const q = query(
-            commentsRef,
+        const constraints: any[] = [
             where('userId', '==', userId),
             orderBy('createdAt', 'desc'),
-            firestoreLimit(limit)
-        )
+            firestoreLimit(limit),
+        ]
 
+        // Add cursor if provided
+        if (startAfterDoc) {
+            constraints.push(startAfter(startAfterDoc))
+        }
+
+        const q = query(commentsRef, ...constraints)
         const snapshot = await getDocs(q)
         const comments: RankingComment[] = []
 
@@ -381,7 +406,9 @@ export async function getUserComments(
             comments.push(doc.data() as RankingComment)
         })
 
-        return comments
+        // Return with cursor
+        const lastDoc = snapshot.docs[snapshot.docs.length - 1] || null
+        return createPaginatedResult(comments, lastDoc, limit)
     } catch (error) {
         console.error('Error getting user comments:', error)
         throw error

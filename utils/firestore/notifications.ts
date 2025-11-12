@@ -24,6 +24,8 @@ import {
     onSnapshot,
     Timestamp,
     writeBatch,
+    DocumentSnapshot,
+    startAfter,
 } from 'firebase/firestore'
 import { db } from '../../firebase'
 import {
@@ -32,6 +34,7 @@ import {
     NotificationStats,
     NOTIFICATION_CONSTRAINTS,
 } from '../../types/notifications'
+import { PaginatedResult, createPaginatedResult } from '../../types/pagination'
 
 /**
  * Get Firestore collection reference for user's notifications
@@ -111,20 +114,28 @@ export async function createNotification(
 }
 
 /**
- * Get all notifications for a user
+ * Get all notifications for a user (with pagination support)
  *
  * @param userId - User ID
  * @param fetchLimit - Maximum notifications to fetch
- * @returns Array of notifications (sorted by createdAt desc)
+ * @param startAfterDoc - Cursor for pagination
+ * @returns Paginated notifications (sorted by createdAt desc)
  */
 export async function getAllNotifications(
     userId: string,
-    fetchLimit: number = NOTIFICATION_CONSTRAINTS.FETCH_LIMIT
-): Promise<Notification[]> {
+    fetchLimit: number = NOTIFICATION_CONSTRAINTS.FETCH_LIMIT,
+    startAfterDoc?: DocumentSnapshot | null
+): Promise<PaginatedResult<Notification>> {
     try {
         const notificationsRef = getNotificationsCollection(userId)
-        const q = query(notificationsRef, orderBy('createdAt', 'desc'), limit(fetchLimit))
+        const constraints: any[] = [orderBy('createdAt', 'desc'), limit(fetchLimit)]
 
+        // Add cursor if provided
+        if (startAfterDoc) {
+            constraints.push(startAfter(startAfterDoc))
+        }
+
+        const q = query(notificationsRef, ...constraints)
         const querySnapshot = await getDocs(q)
         const notifications: Notification[] = []
 
@@ -132,28 +143,39 @@ export async function getAllNotifications(
             notifications.push(doc.data() as Notification)
         })
 
-        return notifications
+        // Return with cursor
+        const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1] || null
+        return createPaginatedResult(notifications, lastDoc, fetchLimit)
     } catch (error) {
         console.error('Error fetching notifications:', error)
-        return []
+        // Return empty paginated result on error
+        return createPaginatedResult([], null, fetchLimit)
     }
 }
 
 /**
- * Get unread notifications for a user
+ * Get unread notifications for a user (with pagination support)
  *
  * @param userId - User ID
- * @returns Array of unread notifications
+ * @param fetchLimit - Maximum notifications to fetch
+ * @param startAfterDoc - Cursor for pagination
+ * @returns Paginated unread notifications (sorted by createdAt desc)
  */
-export async function getUnreadNotifications(userId: string): Promise<Notification[]> {
+export async function getUnreadNotifications(
+    userId: string,
+    fetchLimit: number = NOTIFICATION_CONSTRAINTS.FETCH_LIMIT,
+    startAfterDoc?: DocumentSnapshot | null
+): Promise<PaginatedResult<Notification>> {
     try {
         const notificationsRef = getNotificationsCollection(userId)
-        const q = query(
-            notificationsRef,
-            where('isRead', '==', false),
-            limit(NOTIFICATION_CONSTRAINTS.FETCH_LIMIT)
-        )
+        const constraints: any[] = [where('isRead', '==', false), limit(fetchLimit)]
 
+        // Add cursor if provided
+        if (startAfterDoc) {
+            constraints.push(startAfter(startAfterDoc))
+        }
+
+        const q = query(notificationsRef, ...constraints)
         const querySnapshot = await getDocs(q)
         const notifications: Notification[] = []
 
@@ -162,10 +184,15 @@ export async function getUnreadNotifications(userId: string): Promise<Notificati
         })
 
         // Sort locally to keep newest first without needing a composite index
-        return notifications.sort((a, b) => b.createdAt - a.createdAt)
+        const sortedNotifications = notifications.sort((a, b) => b.createdAt - a.createdAt)
+
+        // Return with cursor
+        const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1] || null
+        return createPaginatedResult(sortedNotifications, lastDoc, fetchLimit)
     } catch (error) {
         console.error('Error fetching unread notifications:', error)
-        return []
+        // Return empty paginated result on error
+        return createPaginatedResult([], null, fetchLimit)
     }
 }
 
@@ -194,7 +221,8 @@ export async function markAsRead(userId: string, notificationId: string): Promis
  */
 export async function markAllAsRead(userId: string): Promise<void> {
     try {
-        const unreadNotifications = await getUnreadNotifications(userId)
+        const result = await getUnreadNotifications(userId)
+        const unreadNotifications = result.data
 
         // Update all unread notifications in parallel
         const updatePromises = unreadNotifications.map((notification) =>
@@ -231,7 +259,8 @@ export async function deleteNotification(userId: string, notificationId: string)
  */
 export async function deleteAllNotifications(userId: string): Promise<void> {
     try {
-        const notifications = await getAllNotifications(userId, 1000) // Get all
+        const result = await getAllNotifications(userId, 1000) // Get all
+        const notifications = result.data
 
         // Use writeBatch for atomic delete operations (max 500 per batch)
         const batches: any[] = []
@@ -267,7 +296,8 @@ export async function cleanupOldNotifications(
     olderThanDays: number = NOTIFICATION_CONSTRAINTS.CLEANUP_THRESHOLD_DAYS
 ): Promise<void> {
     try {
-        const notifications = await getAllNotifications(userId, 1000) // Get all
+        const result = await getAllNotifications(userId, 1000) // Get all
+        const notifications = result.data
         const now = Date.now()
         const threshold = now - olderThanDays * 24 * 60 * 60 * 1000
 
@@ -310,7 +340,8 @@ export async function cleanupOldNotifications(
  */
 export async function getNotificationStats(userId: string): Promise<NotificationStats> {
     try {
-        const notifications = await getAllNotifications(userId, 1000) // Get all for stats
+        const result = await getAllNotifications(userId, 1000) // Get all for stats
+        const notifications = result.data
 
         const stats: NotificationStats = {
             total: notifications.length,

@@ -23,8 +23,11 @@ import {
     increment,
     runTransaction,
     QueryConstraint,
+    DocumentSnapshot,
+    startAfter,
 } from 'firebase/firestore'
 import { db } from '../../firebase'
+import { PaginatedResult, createPaginatedResult } from '../../types/pagination'
 import {
     Ranking,
     RankedItem,
@@ -190,12 +193,13 @@ export async function getUserRankings(userId: string): Promise<Ranking[]> {
 }
 
 /**
- * Get public rankings for community page
+ * Get public rankings for community page (with pagination support)
  */
 export async function getPublicRankings(
     sortBy: 'recent' | 'popular' | 'most-liked' | 'most-viewed',
-    limit: number = 50
-): Promise<Ranking[]> {
+    limit: number = 50,
+    startAfterDoc?: DocumentSnapshot | null
+): Promise<PaginatedResult<Ranking>> {
     try {
         const rankingsRef = collection(db, COLLECTIONS.rankings)
         const constraints: QueryConstraint[] = [
@@ -221,6 +225,11 @@ export async function getPublicRankings(
                 break
         }
 
+        // Add pagination cursor if provided
+        if (startAfterDoc) {
+            constraints.push(startAfter(startAfterDoc))
+        }
+
         const q = query(rankingsRef, ...constraints)
         const snapshot = await getDocs(q)
         const rankings: Ranking[] = []
@@ -229,7 +238,10 @@ export async function getPublicRankings(
             rankings.push(doc.data() as Ranking)
         })
 
-        return rankings
+        // Get last document for pagination cursor
+        const lastDoc = snapshot.docs[snapshot.docs.length - 1] || null
+
+        return createPaginatedResult(rankings, lastDoc, limit)
     } catch (error) {
         console.error('Error getting public rankings:', error)
         throw error
@@ -489,14 +501,25 @@ export async function searchRankings(searchQuery: string, limit: number = 20): P
 }
 
 /**
- * Get rankings liked by a specific user
+ * Get rankings liked by a specific user (with pagination support)
+ * NOTE: Pagination cursor is based on the likes collection, not rankings
  */
-export async function getUserLikedRankings(userId: string, limit: number = 50): Promise<Ranking[]> {
+export async function getUserLikedRankings(
+    userId: string,
+    limit: number = 50,
+    startAfterDoc?: DocumentSnapshot | null
+): Promise<PaginatedResult<Ranking>> {
     try {
-        // Get all ranking likes by this user
+        // Get ranking likes by this user (with pagination)
         const likesRef = collection(db, COLLECTIONS.likes)
-        const likesQuery = query(likesRef, where('userId', '==', userId), firestoreLimit(limit))
+        const constraints: any[] = [where('userId', '==', userId), firestoreLimit(limit)]
 
+        // Add cursor if provided
+        if (startAfterDoc) {
+            constraints.push(startAfter(startAfterDoc))
+        }
+
+        const likesQuery = query(likesRef, ...constraints)
         const likesSnapshot = await getDocs(likesQuery)
         const rankingIds: string[] = []
 
@@ -506,10 +529,11 @@ export async function getUserLikedRankings(userId: string, limit: number = 50): 
         })
 
         if (rankingIds.length === 0) {
-            return []
+            // Return empty paginated result
+            return createPaginatedResult([], null, limit)
         }
 
-        // Fetch the actual rankings
+        // Fetch the actual rankings in batches
         // Firestore 'in' query supports up to 10 items at a time
         const rankings: Ranking[] = []
         const batchSize = 10
@@ -525,7 +549,9 @@ export async function getUserLikedRankings(userId: string, limit: number = 50): 
             })
         }
 
-        return rankings
+        // Return with cursor from likes collection (not rankings)
+        const lastDoc = likesSnapshot.docs[likesSnapshot.docs.length - 1] || null
+        return createPaginatedResult(rankings, lastDoc, limit)
     } catch (error) {
         console.error('Error getting user liked rankings:', error)
         throw error
