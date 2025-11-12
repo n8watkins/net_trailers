@@ -2,25 +2,16 @@
  * Seed Rankings Script
  *
  * Creates example public rankings to populate the community page
- * Run with: npx ts-node scripts/seedRankings.ts
+ * Run with: npm run seed:rankings
  */
 
-import { initializeApp, cert, getApps } from 'firebase-admin/app'
-import { getFirestore } from 'firebase-admin/firestore'
+// IMPORTANT: Load environment variables FIRST
+import './load-env'
+
+import { db, auth } from '../firebase'
+import { collection, addDoc } from 'firebase/firestore'
+import { signInWithEmailAndPassword } from 'firebase/auth'
 import { POPULAR_TAGS } from '../utils/popularTags'
-
-// Initialize Firebase Admin
-if (getApps().length === 0) {
-    initializeApp({
-        credential: cert({
-            projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-        }),
-    })
-}
-
-const db = getFirestore()
 
 // Sample user data for seed rankings
 const SEED_USERS = [
@@ -349,15 +340,19 @@ async function fetchContentDetails(tmdbId: number, mediaType: 'movie' | 'tv' = '
 
     return {
         id: data.id,
-        title: data.title || data.name,
-        poster_path: data.poster_path,
+        title: data.title || data.name || 'Unknown',
+        poster_path: data.poster_path || '',
         media_type: mediaType,
-        vote_average: data.vote_average,
-        release_date: data.release_date || data.first_air_date,
+        vote_average: data.vote_average || 0,
+        release_date: data.release_date || data.first_air_date || '',
     }
 }
 
-async function createSeedRanking(rankingData: (typeof SEED_RANKINGS)[0], userIndex: number) {
+async function createSeedRanking(
+    rankingData: (typeof SEED_RANKINGS)[0],
+    userIndex: number,
+    authenticatedUserId: string
+) {
     const user = SEED_USERS[userIndex % SEED_USERS.length]
     const now = Date.now()
 
@@ -373,24 +368,36 @@ async function createSeedRanking(rankingData: (typeof SEED_RANKINGS)[0], userInd
     }
 
     // Create ranked items
-    const rankedItems = validContent.map((content, index) => ({
-        position: index + 1,
-        content: {
-            id: content.id,
-            title: content.title,
-            poster_path: content.poster_path,
-            media_type: content.media_type,
-            vote_average: content.vote_average,
-            release_date: content.release_date,
-        },
-        note: index === 0 ? 'Absolute favorite!' : index === 1 ? 'Close second' : undefined,
-        addedAt: now,
-    }))
+    const rankedItems = validContent.map((content, index) => {
+        const item: any = {
+            position: index + 1,
+            content: {
+                id: content.id,
+                title: content.title,
+                poster_path: content.poster_path,
+                media_type: content.media_type,
+                vote_average: content.vote_average,
+                release_date: content.release_date,
+            },
+            addedAt: now,
+        }
+        // Only add note for first two items
+        if (index === 0) {
+            item.note = 'Absolute favorite!'
+        } else if (index === 1) {
+            item.note = 'Close second'
+        }
+        return item
+    })
+
+    // Generate unique ranking ID
+    const rankingId = `${authenticatedUserId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
     const ranking = {
-        userId: user.userId,
-        userName: user.userName,
-        userAvatar: user.userAvatar,
+        id: rankingId,
+        userId: authenticatedUserId, // Use authenticated user's ID for permissions
+        userName: user.userName, // Use varied display name
+        userAvatar: user.userAvatar, // Use varied display avatar
         title: rankingData.title,
         description: rankingData.description,
         rankedItems,
@@ -413,7 +420,16 @@ async function seedRankings() {
     console.log('🌱 Starting rankings seed...\n')
 
     try {
-        const rankingsRef = db.collection('rankings')
+        // Authenticate with test user
+        console.log('🔐 Authenticating...')
+        const email = 'test@nettrailer.dev'
+        const password = 'TestPassword123!'
+
+        const userCredential = await signInWithEmailAndPassword(auth, email, password)
+        const userId = userCredential.user.uid
+        console.log(`✅ Authenticated as: ${email} (${userId})\n`)
+
+        const rankingsRef = collection(db, 'rankings')
 
         for (let i = 0; i < SEED_RANKINGS.length; i++) {
             const rankingData = SEED_RANKINGS[i]
@@ -421,10 +437,10 @@ async function seedRankings() {
                 `\n📝 Creating ranking ${i + 1}/${SEED_RANKINGS.length}: "${rankingData.title}"`
             )
 
-            const ranking = await createSeedRanking(rankingData, i)
+            const ranking = await createSeedRanking(rankingData, i, userId)
 
             if (ranking) {
-                const docRef = await rankingsRef.add(ranking)
+                const docRef = await addDoc(rankingsRef, ranking)
                 console.log(`✅ Created ranking with ID: ${docRef.id}`)
             }
 
