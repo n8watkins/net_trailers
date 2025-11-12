@@ -35,9 +35,10 @@ export default function ColorPickerButton({
 
             {showPicker && (
                 <ColorPickerModal
-                    onSelect={handleSelectColor}
+                    isOpen={showPicker}
+                    selectedColor={selectedColor}
+                    onSelectColor={handleSelectColor}
                     onClose={() => setShowPicker(false)}
-                    currentColor={selectedColor}
                 />
             )}
         </>

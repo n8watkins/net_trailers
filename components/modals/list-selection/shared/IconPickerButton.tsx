@@ -36,9 +36,10 @@ export default function IconPickerButton({
 
             {showPicker && (
                 <IconPickerModal
-                    onSelect={handleSelectIcon}
+                    isOpen={showPicker}
+                    selectedIcon={selectedIcon}
+                    onSelectIcon={handleSelectIcon}
                     onClose={() => setShowPicker(false)}
-                    currentIcon={selectedIcon}
                 />
             )}
         </>

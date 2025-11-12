@@ -62,40 +62,68 @@ function ListItemsContainer({
     handleCancelEdit,
     handleDeleteList,
 }: ListItemsContainerProps) {
+    // Create edit state handler
+    const handleUpdateEditState = (
+        updates: Partial<{
+            name: string
+            emoji: string
+            color: string
+            isPublic: boolean
+            displayAsRow: boolean
+        }>
+    ) => {
+        if (updates.name !== undefined) setEditingListName(updates.name)
+        if (updates.emoji !== undefined) setEditingListEmoji(updates.emoji)
+        if (updates.color !== undefined) setEditingListColor(updates.color)
+        if (updates.isPublic !== undefined) setEditingIsPublic(updates.isPublic)
+        if (updates.displayAsRow !== undefined) setEditingDisplayAsRow(updates.displayAsRow)
+    }
+
     return (
         <div className="space-y-2">
-            {allLists.map((list) => (
-                <ListItem
-                    key={list.id}
-                    list={list}
-                    isManagementMode={isManagementMode}
-                    targetContent={targetContent}
-                    isContentInList={isContentInList}
-                    isInWatchlist={isInWatchlist}
-                    getListIcon={getListIcon}
-                    hexToRgba={hexToRgba}
-                    editingListId={editingListId}
-                    editingListName={editingListName}
-                    editingListEmoji={editingListEmoji}
-                    editingListColor={editingListColor}
-                    editingIsPublic={editingIsPublic}
-                    editingDisplayAsRow={editingDisplayAsRow}
-                    setEditingListName={setEditingListName}
-                    setEditingListEmoji={setEditingListEmoji}
-                    setEditingListColor={setEditingListColor}
-                    setEditingIsPublic={setEditingIsPublic}
-                    setEditingDisplayAsRow={setEditingDisplayAsRow}
-                    showEditIconPicker={showEditIconPicker}
-                    showEditColorPicker={showEditColorPicker}
-                    setShowEditIconPicker={setShowEditIconPicker}
-                    setShowEditColorPicker={setShowEditColorPicker}
-                    handleToggleList={handleToggleList}
-                    handleEditList={handleEditList}
-                    handleSaveEdit={handleSaveEdit}
-                    handleCancelEdit={handleCancelEdit}
-                    handleDeleteList={handleDeleteList}
-                />
-            ))}
+            {allLists.map((list) => {
+                const isEditing = editingListId === list.id
+                const isDefaultList = list.id === 'default-watchlist'
+                const mode = isManagementMode ? 'management' : 'content-addition'
+
+                // Calculate isInList for content-addition mode
+                const isInList =
+                    !isManagementMode && targetContent
+                        ? list.id === 'default-watchlist'
+                            ? isInWatchlist(targetContent.id)
+                            : isContentInList(list.id, targetContent.id)
+                        : false
+
+                return (
+                    <ListItem
+                        key={list.id}
+                        list={list}
+                        mode={mode}
+                        isEditing={isEditing}
+                        isDefaultList={isDefaultList}
+                        isInList={isInList}
+                        editingState={
+                            isEditing
+                                ? {
+                                      name: editingListName,
+                                      emoji: editingListEmoji,
+                                      color: editingListColor,
+                                      isPublic: editingIsPublic,
+                                      displayAsRow: editingDisplayAsRow,
+                                  }
+                                : undefined
+                        }
+                        onToggle={!isManagementMode ? handleToggleList : undefined}
+                        onEdit={handleEditList}
+                        onDelete={handleDeleteList}
+                        onSaveEdit={handleSaveEdit}
+                        onCancelEdit={handleCancelEdit}
+                        onUpdateEditState={isEditing ? handleUpdateEditState : undefined}
+                        hexToRgba={hexToRgba}
+                        getListIcon={getListIcon}
+                    />
+                )
+            })}
         </div>
     )
 }
