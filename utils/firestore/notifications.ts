@@ -23,6 +23,7 @@ import {
     limit,
     onSnapshot,
     Timestamp,
+    writeBatch,
 } from 'firebase/firestore'
 import { db } from '../../firebase'
 import {
@@ -232,12 +233,23 @@ export async function deleteAllNotifications(userId: string): Promise<void> {
     try {
         const notifications = await getAllNotifications(userId, 1000) // Get all
 
-        // Delete all in parallel
-        const deletePromises = notifications.map((notification) =>
-            deleteNotification(userId, notification.id)
-        )
+        // Use writeBatch for atomic delete operations (max 500 per batch)
+        const batches: any[] = []
+        const batchSize = 500
 
-        await Promise.all(deletePromises)
+        for (let i = 0; i < notifications.length; i += batchSize) {
+            const batch = writeBatch(db)
+            const batchNotifications = notifications.slice(i, i + batchSize)
+
+            batchNotifications.forEach((notification) => {
+                const notificationRef = getNotificationDocRef(userId, notification.id)
+                batch.delete(notificationRef)
+            })
+
+            batches.push(batch.commit())
+        }
+
+        await Promise.all(batches)
     } catch (error) {
         console.error('Error deleting all notifications:', error)
         throw error instanceof Error ? error : new Error('Failed to delete all notifications')

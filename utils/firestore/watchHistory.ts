@@ -4,7 +4,7 @@
  * Functions for persisting watch history to Firestore
  */
 
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc, runTransaction } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { WatchHistoryEntry, WatchHistoryDocument } from '../../types/watchHistory'
 
@@ -79,37 +79,54 @@ export async function saveWatchHistory(
 }
 
 /**
- * Add a single watch entry to Firestore
- * This is more efficient than saving the entire history array
+ * Add a single watch entry to Firestore using transaction
+ * Prevents race conditions and ensures atomic updates
  */
 export async function addWatchEntryToFirestore(
     userId: string,
     entry: WatchHistoryEntry
 ): Promise<void> {
     try {
-        // Get existing history
-        const existingHistory = await getWatchHistory(userId)
-        const history = existingHistory || []
+        const docRef = doc(db, 'users', userId, 'data', 'watchHistory')
 
-        // Check if entry already exists
-        const existingIndex = history.findIndex(
-            (e) => e.contentId === entry.contentId && e.mediaType === entry.mediaType
-        )
+        await runTransaction(db, async (transaction) => {
+            // Read current history
+            const docSnap = await transaction.get(docRef)
+            const existingHistory = docSnap.exists()
+                ? (docSnap.data() as WatchHistoryDocument).history || []
+                : []
 
-        if (existingIndex !== -1) {
-            // Update existing entry
-            history[existingIndex] = entry
-        } else {
-            // Add new entry
-            history.unshift(entry)
-        }
+            // Check if entry already exists
+            const existingIndex = existingHistory.findIndex(
+                (e) => e.contentId === entry.contentId && e.mediaType === entry.mediaType
+            )
 
-        // Limit to last 500 entries to prevent excessive storage
-        const limitedHistory = history.slice(0, 500)
+            let updatedHistory: WatchHistoryEntry[]
+            if (existingIndex !== -1) {
+                // Update existing entry (keep position)
+                updatedHistory = [...existingHistory]
+                updatedHistory[existingIndex] = entry
+            } else {
+                // Add new entry to beginning
+                updatedHistory = [entry, ...existingHistory]
+            }
 
-        // Save back to Firestore
-        await saveWatchHistory(userId, limitedHistory)
-    } catch (_error) {
+            // Limit to last 500 entries to prevent excessive storage
+            const limitedHistory = updatedHistory.slice(0, 500)
+
+            // Prepare data with undefined values removed
+            const data: WatchHistoryDocument = removeUndefinedValues({
+                history: limitedHistory,
+                updatedAt: Date.now(),
+            })
+
+            // Write atomically
+            transaction.set(docRef, data, { merge: true })
+        })
+
+        console.log('[Firestore Watch History] ✅ Successfully added/updated entry')
+    } catch (error) {
+        console.error('[Firestore Watch History] ❌ Failed to add entry:', error)
         // Silently fail - watch history is not critical
     }
 }

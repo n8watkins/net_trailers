@@ -26,7 +26,7 @@ import {
     arrayRemove,
 } from 'firebase/firestore'
 import { db } from '../../firebase'
-import { RankingComment, CreateCommentRequest } from '../../types/rankings'
+import { RankingComment, CreateCommentRequest, RANKING_CONSTRAINTS } from '../../types/rankings'
 import { NotFoundError, UnauthorizedError, ValidationError } from './errors'
 import { validateCommentText, validateUserId, validateRankingId } from './validation'
 
@@ -101,14 +101,13 @@ export async function createComment(
     const cleanedComment = removeUndefined(comment)
 
     await runTransaction(db, async (transaction) => {
-        // Create comment
-        const commentRef = getCommentDocRef(commentId)
-        transaction.set(commentRef, cleanedComment)
+        // IMPORTANT: All reads must happen before all writes in Firestore transactions
 
-        // If reply, add to parent's replies array using arrayUnion (atomic operation)
+        // Read parent comment if this is a reply (must be before any writes)
+        let parentDoc = null
         if (request.parentCommentId) {
             const parentRef = getCommentDocRef(request.parentCommentId)
-            const parentDoc = await transaction.get(parentRef)
+            parentDoc = await transaction.get(parentRef)
 
             if (!parentDoc.exists()) {
                 throw new NotFoundError('Parent comment', request.parentCommentId)
@@ -123,7 +122,24 @@ export async function createComment(
                 )
             }
 
-            // Use arrayUnion for atomic array updates (prevents race conditions)
+            // Check reply limit to prevent unbounded array growth
+            const currentReplyCount = parent.replies?.length || 0
+            if (currentReplyCount >= RANKING_CONSTRAINTS.MAX_REPLIES_PER_COMMENT) {
+                throw new ValidationError(
+                    `Comment has reached the maximum of ${RANKING_CONSTRAINTS.MAX_REPLIES_PER_COMMENT} replies.`
+                )
+            }
+        }
+
+        // Now perform all writes after reads are complete
+
+        // Create comment
+        const commentRef = getCommentDocRef(commentId)
+        transaction.set(commentRef, cleanedComment)
+
+        // If reply, add to parent's replies array using arrayUnion (atomic operation)
+        if (request.parentCommentId && parentDoc) {
+            const parentRef = getCommentDocRef(request.parentCommentId)
             transaction.update(parentRef, {
                 replies: arrayUnion(cleanedComment),
             })

@@ -18,6 +18,8 @@ import {
     RectangleStackIcon,
     TrophyIcon,
     UsersIcon,
+    SparklesIcon,
+    ArrowPathIcon,
 } from '@heroicons/react/24/outline'
 import {
     UserIcon as UserIconSolid,
@@ -47,6 +49,8 @@ import { useLayoutContext } from '../../contexts/LayoutContext'
 import NotificationBell from '../notifications/NotificationBell'
 import NotificationPanel from '../notifications/NotificationPanel'
 import { useSessionStore } from '../../stores/sessionStore'
+import { useChildSafety } from '../../hooks/useChildSafety'
+import type { Content } from '../../typings'
 
 interface HeaderProps {
     onOpenAboutModal?: () => void
@@ -123,13 +127,15 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
     const [showSearch, setShowSearch] = useState(false)
     const [showMobileMenu, setShowMobileMenu] = useState(false)
     const [isSearchExpanded, setIsSearchExpanded] = useState(false)
-    const { authModal, openAuthModal, closeAuthModal } = useAppStore()
+    const [isRandomLoading, setIsRandomLoading] = useState(false)
+    const { authModal, openAuthModal, closeAuthModal, openModal } = useAppStore()
     const router = useRouter()
     const pathname = usePathname()
     const { user } = useAuth()
     const { showSuccess, showError, showWatchlistAdd, showWatchlistRemove } = useToast()
     const debugSettings = useDebugSettings()
     const sessionType = useSessionStore((state) => state.sessionType)
+    const { isEnabled: childSafetyEnabled } = useChildSafety()
 
     // Determine if we should show sub-navigation based on current path
     const subNavPaths = [
@@ -182,6 +188,47 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
             devLog('🎉 All toast tests complete!')
         }, 5000)
     }
+    const handleRandomContent = async (options?: { closeMenu?: boolean }) => {
+        if (isRandomLoading) return
+
+        if (options?.closeMenu) {
+            setShowMobileMenu(false)
+        }
+
+        setIsRandomLoading(true)
+        try {
+            const response = await fetch(
+                `/api/random-content?childSafetyMode=${childSafetyEnabled ? 'true' : 'false'}`,
+                {
+                    cache: 'no-store',
+                }
+            )
+
+            if (!response.ok) {
+                throw new Error(`Random content request failed: ${response.status}`)
+            }
+
+            const data = await response.json()
+            const randomContent = data?.content as Content | undefined
+
+            if (!randomContent || !randomContent.id) {
+                throw new Error('Random content payload missing')
+            }
+
+            const normalizedContent = {
+                ...randomContent,
+                media_type: randomContent.media_type === 'tv' ? 'tv' : 'movie',
+            } as Content
+
+            openModal(normalizedContent, true, false)
+        } catch (error) {
+            console.error('Failed to load random content:', error)
+            showError('Unable to find something to watch', 'Please try again')
+        } finally {
+            setIsRandomLoading(false)
+        }
+    }
+
     useEffect(() => {
         const handleScroll = () => {
             if (window.scrollY > 0) {
@@ -299,6 +346,23 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                             <UsersIcon className="h-5 w-5" />
                             <span>Community</span>
                         </div>
+
+                        <button
+                            type="button"
+                            className={`headerLink flex items-center space-x-1 select-none px-3 py-1 rounded-md border border-white/10 hover:border-white/40 transition-colors ml-2 ${
+                                isRandomLoading ? 'cursor-wait opacity-80' : ''
+                            }`}
+                            onClick={() => handleRandomContent()}
+                            disabled={isRandomLoading}
+                            title="Jump to a random movie or TV show"
+                        >
+                            {isRandomLoading ? (
+                                <ArrowPathIcon className="h-5 w-5 animate-spin" />
+                            ) : (
+                                <SparklesIcon className="h-5 w-5" />
+                            )}
+                            <span>{isRandomLoading ? 'Finding...' : 'Random'}</span>
+                        </button>
 
                         {/* Child Safety Indicator - After Community */}
                         <div className="flex items-center ml-4">
@@ -535,6 +599,28 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                             >
                                                 <MagnifyingGlassIcon className="h-5 w-5" />
                                                 <span>Search</span>
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button
+                                                className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
+                                                    isRandomLoading
+                                                        ? 'opacity-80 cursor-wait'
+                                                        : 'hover:bg-white/10'
+                                                }`}
+                                                onClick={() =>
+                                                    handleRandomContent({ closeMenu: true })
+                                                }
+                                                disabled={isRandomLoading}
+                                            >
+                                                {isRandomLoading ? (
+                                                    <ArrowPathIcon className="h-5 w-5 animate-spin" />
+                                                ) : (
+                                                    <SparklesIcon className="h-5 w-5" />
+                                                )}
+                                                <span>
+                                                    {isRandomLoading ? 'Finding...' : 'Random'}
+                                                </span>
                                             </button>
                                         </li>
                                     </ul>

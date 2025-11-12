@@ -181,6 +181,7 @@ export const RANKING_CONSTRAINTS = {
     MAX_DESCRIPTION_LENGTH: 500,
     MAX_NOTE_LENGTH: 200,
     MAX_COMMENT_LENGTH: 500,
+    MAX_REPLIES_PER_COMMENT: 50, // Maximum replies per comment (prevents document size issues)
     MAX_TAGS: 10,
     MAX_TAG_LENGTH: 30,
 } as const

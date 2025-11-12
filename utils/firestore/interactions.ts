@@ -17,6 +17,7 @@ import {
     Timestamp,
     writeBatch,
     deleteDoc,
+    runTransaction,
 } from 'firebase/firestore'
 import { nanoid } from 'nanoid'
 import {
@@ -303,6 +304,7 @@ export async function calculateInteractionSummary(userId: string): Promise<UserI
 
 /**
  * Refresh interaction summary if it's stale
+ * Uses transaction to prevent race conditions from concurrent refresh attempts
  *
  * @param userId - User ID
  * @returns Promise<UserInteractionSummary | null>
@@ -311,20 +313,65 @@ export async function refreshInteractionSummaryIfNeeded(
     userId: string
 ): Promise<UserInteractionSummary | null> {
     try {
-        const existingSummary = await getInteractionSummary(userId)
+        const summaryRef = getInteractionSummaryRef(userId)
+        const now = Date.now()
+        const refreshThreshold = INTERACTION_CONSTRAINTS.SUMMARY_REFRESH_HOURS * 60 * 60 * 1000
 
-        // If no summary or summary is older than refresh interval, recalculate
-        if (
-            !existingSummary ||
-            Date.now() - existingSummary.lastUpdated >
-                INTERACTION_CONSTRAINTS.SUMMARY_REFRESH_HOURS * 60 * 60 * 1000
-        ) {
-            return await calculateInteractionSummary(userId)
+        // Use transaction to atomically check and set calculating flag
+        const needsRefresh = await runTransaction(db, async (transaction) => {
+            const summaryDoc = await transaction.get(summaryRef)
+            const existingSummary = summaryDoc.exists()
+                ? (summaryDoc.data() as UserInteractionSummary)
+                : null
+
+            // Check if refresh is needed
+            if (!existingSummary || now - existingSummary.lastUpdated > refreshThreshold) {
+                // Check if another process is already calculating
+                const isCalculating = (existingSummary as any)?.calculating === true
+
+                if (isCalculating) {
+                    // Another process is calculating, return false
+                    return false
+                }
+
+                // Set calculating flag to prevent concurrent updates
+                transaction.set(
+                    summaryRef,
+                    {
+                        ...existingSummary,
+                        calculating: true,
+                        lastUpdated: existingSummary?.lastUpdated || now,
+                    },
+                    { merge: true }
+                )
+                return true
+            }
+
+            // Summary is fresh, no refresh needed
+            return false
+        })
+
+        if (!needsRefresh) {
+            // Either fresh or already calculating, return existing
+            return await getInteractionSummary(userId)
         }
 
-        return existingSummary
+        // Perform the actual calculation outside the transaction
+        const newSummary = await calculateInteractionSummary(userId)
+
+        // Clear calculating flag (already done by calculateInteractionSummary via setDoc)
+        return newSummary
     } catch (error) {
         console.error('Failed to refresh interaction summary:', error)
+
+        // Clear calculating flag on error
+        try {
+            const summaryRef = getInteractionSummaryRef(userId)
+            await setDoc(summaryRef, { calculating: false }, { merge: true })
+        } catch (cleanupError) {
+            console.error('Failed to clear calculating flag:', cleanupError)
+        }
+
         return null
     }
 }
