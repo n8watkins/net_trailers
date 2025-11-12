@@ -54,7 +54,7 @@ function CustomRowModal() {
             showSuccess('Custom row created!')
             // Note: Modal close happens in Step 4 when user clicks "View on Homepage"
         } catch (error) {
-            console.error('Error creating custom row:', error)
+            // Error already shown to user via toast
             showError((error as Error).message || 'Failed to create custom row')
             throw error // Re-throw so wizard can handle the error state
         }

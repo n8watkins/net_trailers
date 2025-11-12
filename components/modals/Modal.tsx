@@ -173,7 +173,7 @@ function Modal() {
             if (targetElement && typeof (targetElement as any).requestFullscreen === 'function') {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 ;(targetElement as any).requestFullscreen().catch((err: Error) => {
-                    console.warn('Fullscreen request failed:', err)
+                    // Fullscreen errors are expected and not critical - silently ignore
                 })
             }
         }
@@ -297,7 +297,7 @@ function Modal() {
 
             openModal(normalizedContent, true, false)
         } catch (error) {
-            console.error('Failed to load random content:', error)
+            // Error already shown via toast
             showError('Unable to find something to watch', 'Please try again')
         } finally {
             setIsRandomLoading(false)
@@ -388,7 +388,7 @@ function Modal() {
                 setLoadedMovieId(currentMovie.id)
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } catch (error: any) {
-                console.error('Failed to fetch movie details:', error)
+                // Error already handled via errorHandler
                 errorHandler.handleApiError(error, 'load movie details')
                 setTrailer('')
                 setGenres([])

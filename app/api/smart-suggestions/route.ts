@@ -4,6 +4,7 @@ import { consumeGeminiRateLimit } from '@/lib/geminiRateLimiter'
 import { getRequestIdentity } from '@/lib/requestIdentity'
 import { TMDBApiClient } from '@/utils/tmdbApi'
 import { sanitizeInput } from '@/utils/inputSanitization'
+import { apiError, apiWarn } from '@/utils/debugLogger'
 
 export async function POST(request: NextRequest) {
     try {
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
                     }
                 }
             } catch (error) {
-                console.warn('Gemini analysis failed, continuing with TMDB only:', error)
+                apiWarn('Gemini analysis failed, continuing with TMDB only:', error)
             }
         }
 
@@ -96,12 +97,12 @@ export async function POST(request: NextRequest) {
                 mergedResult.rowNames = [nameResult, ...(mergedResult.rowNames || [])].slice(0, 3)
             }
         } catch (error) {
-            console.warn('Failed to generate creative name, using defaults:', error)
+            apiWarn('Failed to generate creative name, using defaults:', error)
         }
 
         return NextResponse.json(mergedResult)
     } catch (error) {
-        console.error('Smart suggestions error:', error)
+        apiError('Smart suggestions error:', error)
         return NextResponse.json({ error: 'Failed to generate suggestions' }, { status: 500 })
     }
 }
@@ -178,7 +179,7 @@ Response: Just the name, nothing else.`
                   .trim()
             : null
     } catch (error) {
-        console.error('Creative name generation error:', error)
+        apiError('Creative name generation error:', error)
         return null
     }
 }
@@ -219,7 +220,7 @@ async function mergeGeminiInsights(
                 })
             }
         } catch (error) {
-            console.warn('Failed to merge Gemini movie recommendations:', error)
+            apiWarn('Failed to merge Gemini movie recommendations:', error)
         }
     }
 
@@ -254,7 +255,7 @@ async function searchTMDBForTitles(recommendations: any[], mediaType: string): P
                 ids.push(match.id)
             }
         } catch (error) {
-            console.warn('TMDB title lookup failed for', rec.title, error)
+            apiWarn('TMDB title lookup failed for', rec.title, error)
         }
     }
 

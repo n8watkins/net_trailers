@@ -76,7 +76,7 @@ export default function NotificationItem({ notification }: NotificationItemProps
                     }
                 }
             } catch (error) {
-                console.error('Failed to fetch content for notification:', error)
+                // Silent fail - notification click falls back to navigation if content fetch fails
             } finally {
                 setIsLoading(false)
             }

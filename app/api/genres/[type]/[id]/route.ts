@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { filterMatureTVShows } from '../../../../../utils/tvContentRatings'
 import { filterMatureMovies as _filterMatureMovies } from '../../../../../utils/movieCertifications'
 import { csDebugTMDB, csDebugResponse, csDebugFilter } from '../../../../../utils/childSafetyDebug'
+import { apiError } from '../../../../../utils/debugLogger'
 
 export async function GET(
     request: NextRequest,
@@ -50,7 +51,7 @@ export async function GET(
 
     const API_KEY = process.env.TMDB_API_KEY
     if (!API_KEY) {
-        console.error('TMDB_API_KEY is not configured')
+        apiError('TMDB_API_KEY is not configured')
         return NextResponse.json({ error: 'API configuration error' }, { status: 500 })
     }
 
@@ -181,7 +182,7 @@ export async function GET(
         const response = await fetch(endpoint)
 
         if (!response.ok) {
-            console.error(`TMDB API error: ${response.status} ${response.statusText}`)
+            apiError(`TMDB API error: ${response.status} ${response.statusText}`)
             return NextResponse.json(
                 { error: 'Failed to fetch content from TMDB' },
                 { status: response.status }
@@ -251,7 +252,7 @@ export async function GET(
             { status: 200 }
         )
     } catch (error) {
-        console.error('Error fetching genre content:', error)
+        apiError('Error fetching genre content:', error)
         return NextResponse.json({ error: 'Failed to fetch genre content' }, { status: 500 })
     }
 }

@@ -46,13 +46,6 @@ function CollectionBuilderModal() {
     if (!isOpen) return null
 
     const handleComplete = async (formData: CustomRowFormData) => {
-        console.log('handleComplete called with formData:', {
-            name: formData.name,
-            genres: formData.genres,
-            previewContentLength: formData.previewContent?.length || 0,
-            hasPreviewContent: !!formData.previewContent,
-        })
-
         if (!userId) {
             showError('Authentication required')
             return
@@ -73,30 +66,12 @@ function CollectionBuilderModal() {
 
             // Handle both sync and async returns
             const listId = typeof newListResult === 'string' ? newListResult : await newListResult
-            console.log('Created list with ID:', listId)
 
             // Add preview content to the collection if it exists
             if (formData.previewContent && formData.previewContent.length > 0) {
-                console.log(
-                    'Adding preview content to collection:',
-                    formData.previewContent.length,
-                    'items'
-                )
                 await Promise.all(
-                    formData.previewContent.map((content) => {
-                        console.log('Adding content:', content.id, content.title || content.name)
-                        return addToList(listId, content)
-                    })
+                    formData.previewContent.map((content) => addToList(listId, content))
                 )
-            } else {
-                console.warn('No preview content to add!')
-            }
-
-            // If there are content IDs from advanced filters, add them to the collection
-            if (formData.advancedFilters?.contentIds) {
-                // Note: We would need to fetch the actual Content objects to add them
-                // For now, this is a placeholder
-                console.log('Would add content IDs:', formData.advancedFilters.contentIds)
             }
 
             const itemCount = formData.previewContent?.length || 0
@@ -110,7 +85,7 @@ function CollectionBuilderModal() {
             await router.push('/collections')
             router.refresh()
         } catch (error) {
-            console.error('Error creating collection:', error)
+            // Error already shown to user via toast
             showError((error as Error).message || 'Failed to create collection')
             throw error
         }

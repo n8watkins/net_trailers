@@ -3,6 +3,7 @@ import { withAuth } from '@/lib/auth-middleware'
 import { consumeGeminiRateLimit } from '@/lib/geminiRateLimiter'
 import { getTMDBHeaders } from '@/utils/tmdbFetch'
 import { sanitizeInput } from '@/utils/inputSanitization'
+import { apiLog, apiError, apiWarn } from '@/utils/debugLogger'
 
 /**
  * Simplified Smart Row Generator - Single API call does everything
@@ -32,7 +33,7 @@ async function handleGenerateRow(request: NextRequest, userId: string): Promise<
 
         const apiKey = process.env.GEMINI_API_KEY
         if (!apiKey) {
-            console.error('GEMINI_API_KEY not configured')
+            apiError('GEMINI_API_KEY not configured')
             return NextResponse.json({ error: 'AI service unavailable' }, { status: 503 })
         }
 
@@ -49,7 +50,7 @@ async function handleGenerateRow(request: NextRequest, userId: string): Promise<
 
         // Build prompt for Gemini, including excluded IDs if present
         const prompt = buildGenerateRowPrompt(sanitizedQuery, excludedIds)
-        console.log('[Generate Row] Request received', {
+        apiLog('[Generate Row] Request received', {
             queryLength: sanitizedQuery.length,
             userId,
         })
@@ -73,7 +74,7 @@ async function handleGenerateRow(request: NextRequest, userId: string): Promise<
 
         if (!response.ok) {
             const errorText = await response.text()
-            console.error('Gemini API error response:', errorText)
+            apiError('Gemini API error response:', errorText)
             throw new Error(`Gemini API error: ${response.status}`)
         }
 
@@ -82,7 +83,7 @@ async function handleGenerateRow(request: NextRequest, userId: string): Promise<
         const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text
 
         if (!resultText) {
-            console.error('❌ Gemini response structure:', data)
+            apiError('❌ Gemini response structure:', data)
             throw new Error('No response from Gemini')
         }
 
@@ -111,14 +112,14 @@ async function handleGenerateRow(request: NextRequest, userId: string): Promise<
             genreFallback: geminiResult.genreFallback || [],
         }
 
-        console.log('[Generate Row] Completed', {
+        apiLog('[Generate Row] Completed', {
             movies: filteredMovies.length,
             mediaType: finalResult.mediaType,
             userId,
         })
         return NextResponse.json(finalResult)
     } catch (error) {
-        console.error('Generate row error:', error)
+        apiError('Generate row error:', error)
         return NextResponse.json(
             { error: 'Failed to generate row', details: (error as Error).message },
             { status: 500 }
@@ -335,7 +336,7 @@ async function enrichMoviesWithTMDB(
 
             return null
         } catch (error) {
-            console.warn(`Failed to enrich movie "${movie.title}":`, error)
+            apiWarn(`Failed to enrich movie "${movie.title}":`, error)
             return null
         }
     })

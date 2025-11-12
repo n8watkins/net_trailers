@@ -109,7 +109,7 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
                 // Mark as processed
                 hasProcessedRef.current = true
             } catch (error) {
-                console.error('Error processing trending updates:', error)
+                // Silently fail - trending updates are non-critical
             }
         }
 
@@ -133,7 +133,7 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
                 const deletedRows = await SystemRowStorage.getDeletedSystemRows(userId, isGuest)
                 setDeletedSystemRows(userId, deletedRows)
             } catch (error) {
-                console.error('Error loading deleted system rows:', error)
+                // Silently fail - will use defaults
             }
         }
 
@@ -146,7 +146,7 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
         if (!userId || !isInitialized || isGuest) return
 
         autoMigrateIfNeeded(userId).catch((error) => {
-            console.error('Error during auto-migration:', error)
+            // Silently fail - migration is non-critical
         })
     }, [userId, isInitialized, isGuest])
 

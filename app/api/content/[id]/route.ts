@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchTVContentRatings, hasMatureRating } from '../../../../utils/tvContentRatings'
 import { tmdbContentCache } from '../../../../utils/apiCache'
+import { apiError } from '../../../../utils/debugLogger'
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const API_KEY = process.env.TMDB_API_KEY
     if (!API_KEY) {
-        console.error('TMDB_API_KEY is not configured')
+        apiError('TMDB_API_KEY is not configured')
         return NextResponse.json({ error: 'API configuration error' }, { status: 500 })
     }
 
@@ -101,7 +102,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         // If both failed, the content doesn't exist
         return NextResponse.json({ error: 'Content not found' }, { status: 404 })
     } catch (error) {
-        console.error('Error fetching content details:', error)
+        apiError('Error fetching content details:', error)
         return NextResponse.json({ error: 'Failed to fetch content details' }, { status: 500 })
     }
 }

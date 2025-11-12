@@ -220,7 +220,7 @@ export default function CollectionCreatorModal() {
             // Navigate to collections page
             router.push('/collections')
         } catch (error: any) {
-            console.error('Create collection error:', error)
+            // Error already shown to user via toast
             showError('Failed to create collection', error.message)
         } finally {
             setIsCreating(false)
@@ -305,7 +305,7 @@ export default function CollectionCreatorModal() {
             if (error instanceof AuthRequiredError) {
                 showError('Please sign in', 'Smart Search requires a Net Trailers account.')
             } else {
-                console.error('Ask for more error:', error)
+                // Error already shown to user via toast
                 showError('Failed to get more suggestions')
             }
         } finally {

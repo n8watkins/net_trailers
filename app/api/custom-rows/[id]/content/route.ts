@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { filterContentByAdultFlag } from '../../../../../utils/contentFilter'
 import { filterMatureTVShows } from '../../../../../utils/tvContentRatings'
+import { apiError, apiWarn } from '../../../../../utils/debugLogger'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -125,7 +126,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                         media_type: mediaType,
                     }
                 } catch (error) {
-                    console.warn(`Failed to fetch content ${tmdbId}:`, error)
+                    apiWarn(`Failed to fetch content ${tmdbId}:`, error)
                     return null
                 }
             })
@@ -236,7 +237,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             const [movieResponse, tvResponse] = await Promise.all([fetch(movieUrl), fetch(tvUrl)])
 
             if (!movieResponse.ok || !tvResponse.ok) {
-                console.error('[Custom Rows API] TMDB fetch error:', {
+                apiError('[Custom Rows API] TMDB fetch error:', {
                     movieStatus: movieResponse.status,
                     movieOk: movieResponse.ok,
                     tvStatus: tvResponse.status,
@@ -358,7 +359,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             }
         )
     } catch (error) {
-        console.error('[Custom Rows API] GET content error:', error)
+        apiError('[Custom Rows API] GET content error:', error)
 
         const errorMessage = (error as Error).message
 

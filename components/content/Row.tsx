@@ -95,11 +95,7 @@ function Row({ title, content, apiEndpoint, pageType }: Props) {
                     response.status === 408 // Request timeout
 
                 if (isPermanentError) {
-                    // Always log errors
-                    console.error(
-                        '❌ [Infinite Row Loading] Permanent error, stopping load:',
-                        response.status
-                    )
+                    // Permanent error (404/410) - stop loading more content
                     setHasMore(false)
                     return
                 }
@@ -118,11 +114,7 @@ function Row({ title, content, apiEndpoint, pageType }: Props) {
                     return
                 }
 
-                // After 3 retries or other errors, stop
-                console.error(
-                    '❌ [Infinite Row Loading] Failed to fetch after retries:',
-                    response.status
-                )
+                // After 3 retries or other errors, stop loading more content
                 setHasMore(false)
                 return
             }
@@ -238,8 +230,7 @@ function Row({ title, content, apiEndpoint, pageType }: Props) {
                 return
             }
 
-            // After 3 retries, stop - always log errors
-            console.error('💥 [Infinite Row Loading] Error after retries:', title, error)
+            // After 3 retries, stop loading more content
             setHasMore(false)
         } finally {
             setIsLoading(false)

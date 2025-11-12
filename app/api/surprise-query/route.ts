@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { sanitizeInput } from '@/utils/inputSanitization'
+import { apiLog, apiError } from '@/utils/debugLogger'
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY
 
@@ -13,7 +14,7 @@ export async function POST() {
         const now = Date.now()
         const timeSinceLastRequest = now - lastRequestTime
         if (timeSinceLastRequest < RATE_LIMIT_MS) {
-            console.log('[Surprise Query] Rate limited - using fallback')
+            apiLog('[Surprise Query] Rate limited - using fallback')
             // Use fallback if rate limited
             const fallbackQueries = [
                 'mind-bending thrillers with plot twists',
@@ -52,7 +53,7 @@ export async function POST() {
             },
         }
 
-        console.log('[Surprise Query] Making Gemini API request:', {
+        apiLog('[Surprise Query] Making Gemini API request:', {
             model: 'gemini-2.0-flash-001',
             prompt: requestBody.contents[0].parts[0].text.substring(0, 100) + '...',
             temperature: requestBody.generationConfig.temperature,
@@ -71,11 +72,7 @@ export async function POST() {
         )
 
         if (!response.ok) {
-            console.error(
-                '[Surprise Query] Gemini API error:',
-                response.status,
-                response.statusText
-            )
+            apiError('[Surprise Query] Gemini API error:', response.status, response.statusText)
             throw new Error('Failed to generate query from Gemini')
         }
 
@@ -89,11 +86,11 @@ export async function POST() {
             .replace(/\.+$/, '') // Remove trailing periods
             .trim()
 
-        console.log('[Surprise Query] Generated query:', generatedQuery)
+        apiLog('[Surprise Query] Generated query:', generatedQuery)
 
         return NextResponse.json({ query: generatedQuery })
     } catch (error) {
-        console.error('Surprise query error:', error)
+        apiError('Surprise query error:', error)
         // Fallback to curated list if Gemini fails
         const fallbackQueries = [
             'mind-bending thrillers with plot twists',

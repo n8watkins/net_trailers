@@ -277,7 +277,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
                     setDeletedSystemRows(userId, deletedRows)
                 }
             } catch (error) {
-                console.error('Error loading collections:', error)
+                // Error already shown to user via toast
                 showToast('error', 'Failed to load collections')
                 setError((error as Error).message)
             } finally {
@@ -342,7 +342,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
                 await SystemRowStorage.updateSystemRowOrder(userId, r.id, i, isGuest)
             }
         } catch (error) {
-            console.error('Error reordering collections:', error)
+            // Error already shown to user via toast
             showToast('error', 'Failed to save collection order')
             // Reload to get correct order
             if (isGuest) {
@@ -375,7 +375,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
                 showToast('success', `"${row.name}" deleted successfully`)
             }
         } catch (error) {
-            console.error('Error deleting collection:', error)
+            // Error already shown to user via toast
             showToast('error', (error as Error).message)
         }
     }
@@ -430,7 +430,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
             showToast('success', 'Collection updated successfully')
             setEditingSystemRow(null)
         } catch (error) {
-            console.error('Error updating system row:', error)
+            // Error already shown to user via toast
             showToast('error', (error as Error).message)
         }
     }
@@ -474,7 +474,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
             }
             showToast('success', 'Default collections restored successfully')
         } catch (error) {
-            console.error('Error resetting default collections:', error)
+            // Error already shown to user via toast
             showToast('error', (error as Error).message)
         }
     }
@@ -518,7 +518,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
                 await SystemRowStorage.updateSystemRowOrder(userId, r.id, i, isGuest)
             }
         } catch (error) {
-            console.error('Error moving collection up:', error)
+            // Error already shown to user via toast
             showToast('error', 'Failed to save collection order')
         }
     }
@@ -562,7 +562,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
                 await SystemRowStorage.updateSystemRowOrder(userId, r.id, i, isGuest)
             }
         } catch (error) {
-            console.error('Error moving collection down:', error)
+            // Error already shown to user via toast
             showToast('error', 'Failed to save collection order')
         }
     }

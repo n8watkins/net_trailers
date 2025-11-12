@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { withAuth } from '@/lib/auth-middleware'
 import { consumeGeminiRateLimit } from '@/lib/geminiRateLimiter'
 import { sanitizeInput } from '@/utils/inputSanitization'
+import { apiError } from '@/utils/debugLogger'
 
 /**
  * POST /api/generate-row-name
@@ -181,7 +182,7 @@ Response: Just the name, nothing else. Make it LEGENDARY.`
 
         if (!response.ok) {
             const errorText = await response.text()
-            console.error('Gemini API error:', response.status, errorText)
+            apiError('Gemini API error:', response.status, errorText)
             return NextResponse.json(
                 {
                     error: 'AI service error',
@@ -207,7 +208,7 @@ Response: Just the name, nothing else. Make it LEGENDARY.`
             name: cleanedName,
         })
     } catch (error) {
-        console.error('Error generating row name:', error)
+        apiError('Error generating row name:', error)
         return NextResponse.json(
             {
                 error: 'Internal server error',

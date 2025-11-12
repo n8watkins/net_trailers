@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { apiError } from '../../../../utils/debugLogger'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -80,7 +81,7 @@ export async function GET(request: NextRequest) {
             }
         )
     } catch (error) {
-        console.error('TMDB API error:', error)
+        apiError('TMDB API error:', error)
         return NextResponse.json({ message: 'Failed to fetch trending movies' }, { status: 500 })
     }
 }

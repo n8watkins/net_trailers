@@ -220,7 +220,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
 
             openModal(normalizedContent, true, false)
         } catch (error) {
-            console.error('Failed to load random content:', error)
+            // Error already shown to user via toast
             showError('Unable to find something to watch', 'Please try again')
         } finally {
             setIsRandomLoading(false)
