@@ -2,7 +2,7 @@
  * Rankings Dashboard Page
  *
  * Displays user's created rankings, comments, and liked rankings
- * All sections displayed vertically with search functionality
+ * Tab-based layout with search functionality
  */
 
 'use client'
@@ -37,6 +37,7 @@ export default function RankingsPage() {
 
     const { rankings, isLoading, error, loadUserRankings } = useRankingStore()
 
+    const [activeTab, setActiveTab] = useState<'rankings' | 'comments' | 'liked'>('rankings')
     const [userComments, setUserComments] = useState<RankingComment[]>([])
     const [likedRankings, setLikedRankings] = useState<Ranking[]>([])
     const [isLoadingComments, setIsLoadingComments] = useState(false)
@@ -47,28 +48,34 @@ export default function RankingsPage() {
     const [commentsSearch, setCommentsSearch] = useState('')
     const [likedSearch, setLikedSearch] = useState('')
 
-    // Load all data on mount
+    // Load rankings on mount
     useEffect(() => {
         if (isInitialized && userId) {
             loadUserRankings(userId)
-
-            // Load comments if authenticated
-            if (!isGuest) {
-                setIsLoadingComments(true)
-                getUserComments(userId)
-                    .then((result) => setUserComments(result.data))
-                    .catch(console.error)
-                    .finally(() => setIsLoadingComments(false))
-
-                // Load liked rankings if authenticated
-                setIsLoadingLiked(true)
-                getUserLikedRankings(userId)
-                    .then((result) => setLikedRankings(result.data))
-                    .catch(console.error)
-                    .finally(() => setIsLoadingLiked(false))
-            }
         }
-    }, [isInitialized, userId, isGuest])
+    }, [isInitialized, userId])
+
+    // Load comments when comments tab is active
+    useEffect(() => {
+        if (activeTab === 'comments' && userId && !isGuest) {
+            setIsLoadingComments(true)
+            getUserComments(userId)
+                .then((result) => setUserComments(result.data))
+                .catch(console.error)
+                .finally(() => setIsLoadingComments(false))
+        }
+    }, [activeTab, userId, isGuest])
+
+    // Load liked rankings when liked tab is active
+    useEffect(() => {
+        if (activeTab === 'liked' && userId && !isGuest) {
+            setIsLoadingLiked(true)
+            getUserLikedRankings(userId)
+                .then((result) => setLikedRankings(result.data))
+                .catch(console.error)
+                .finally(() => setIsLoadingLiked(false))
+        }
+    }, [activeTab, userId, isGuest])
 
     const handleCreateNew = () => {
         router.push('/rankings/new')
@@ -119,27 +126,14 @@ export default function RankingsPage() {
         )
     }, [likedRankings, likedSearch])
 
-    if (!isInitialized) {
+    if (!isInitialized || isLoading) {
         return (
             <SubPageLayout
                 title="My Rankings"
                 icon={<TrophyIcon className="w-8 h-8" />}
                 iconColor="text-yellow-500"
             >
-                <div className="space-y-12">
-                    <div>
-                        <h2 className="text-2xl font-bold text-white mb-4">Your Rankings</h2>
-                        <NetflixLoader />
-                    </div>
-                    <div>
-                        <h2 className="text-2xl font-bold text-white mb-4">Your Comments</h2>
-                        <NetflixLoader />
-                    </div>
-                    <div>
-                        <h2 className="text-2xl font-bold text-white mb-4">Liked Rankings</h2>
-                        <NetflixLoader />
-                    </div>
-                </div>
+                <NetflixLoader />
             </SubPageLayout>
         )
     }
@@ -161,30 +155,66 @@ export default function RankingsPage() {
         >
             {/* Guest Mode Notification */}
             {isGuest && (
-                <div className="mb-8">
+                <div className="mb-6">
                     <GuestModeNotification />
                 </div>
             )}
 
-            {/* Error State */}
-            {error && (
-                <div className="bg-red-900/20 border border-red-800 rounded-lg p-4 mb-8">
-                    <p className="text-red-400">{error}</p>
-                </div>
-            )}
+            {/* Tabs */}
+            <div className="flex gap-2 mb-6 border-b border-zinc-800">
+                <button
+                    onClick={() => setActiveTab('rankings')}
+                    className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors border-b-2 ${
+                        activeTab === 'rankings'
+                            ? 'border-yellow-500 text-yellow-500'
+                            : 'border-transparent text-gray-400 hover:text-white'
+                    }`}
+                >
+                    <TrophyIcon className="w-5 h-5" />
+                    <span>Your Rankings</span>
+                    {rankings.length > 0 && (
+                        <span className="ml-1 text-sm text-gray-500">({rankings.length})</span>
+                    )}
+                </button>
+                <button
+                    onClick={() => setActiveTab('comments')}
+                    className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors border-b-2 ${
+                        activeTab === 'comments'
+                            ? 'border-yellow-500 text-yellow-500'
+                            : 'border-transparent text-gray-400 hover:text-white'
+                    }`}
+                >
+                    <ChatBubbleLeftIcon className="w-5 h-5" />
+                    <span>Your Comments</span>
+                    {userComments.length > 0 && (
+                        <span className="ml-1 text-sm text-gray-500">({userComments.length})</span>
+                    )}
+                </button>
+                <button
+                    onClick={() => setActiveTab('liked')}
+                    className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors border-b-2 ${
+                        activeTab === 'liked'
+                            ? 'border-yellow-500 text-yellow-500'
+                            : 'border-transparent text-gray-400 hover:text-white'
+                    }`}
+                >
+                    <HeartIcon className="w-5 h-5" />
+                    <span>Liked Rankings</span>
+                    {likedRankings.length > 0 && (
+                        <span className="ml-1 text-sm text-gray-500">({likedRankings.length})</span>
+                    )}
+                </button>
+            </div>
 
-            <div className="space-y-12">
-                {/* Your Rankings Section */}
-                <section>
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                            <TrophyIcon className="w-6 h-6 text-yellow-500" />
-                            <h2 className="text-2xl font-bold text-white">Your Rankings</h2>
-                            {rankings.length > 0 && (
-                                <span className="text-sm text-gray-500">({rankings.length})</span>
-                            )}
+            {/* Rankings Tab */}
+            {activeTab === 'rankings' && (
+                <>
+                    {/* Error State */}
+                    {error && (
+                        <div className="bg-red-900/20 border border-red-800 rounded-lg p-4 mb-6">
+                            <p className="text-red-400">{error}</p>
                         </div>
-                    </div>
+                    )}
 
                     {/* Search Input */}
                     {rankings.length > 0 && (
@@ -200,61 +230,48 @@ export default function RankingsPage() {
                         </div>
                     )}
 
-                    {isLoading ? (
-                        <NetflixLoader />
-                    ) : (
-                        <>
-                            <RankingGrid
-                                rankings={filteredRankings}
-                                isLoading={isLoading}
-                                emptyMessage={
-                                    rankingsSearch.trim()
-                                        ? 'No rankings match your search.'
-                                        : isGuest
-                                          ? 'Sign in to create your first ranking!'
-                                          : 'No rankings yet. Create your first ranking to get started!'
-                                }
-                                showAuthor={false}
-                                onLike={handleRankingClick}
-                            />
-                            {rankingsSearch.trim() && filteredRankings.length > 0 && (
-                                <p className="mt-4 text-sm text-gray-500 text-center">
-                                    Showing {filteredRankings.length} of {rankings.length} rankings
-                                </p>
-                            )}
-                        </>
+                    {/* Rankings Grid */}
+                    <RankingGrid
+                        rankings={filteredRankings}
+                        isLoading={isLoading}
+                        emptyMessage={
+                            rankingsSearch.trim()
+                                ? 'No rankings match your search.'
+                                : isGuest
+                                  ? 'Sign in to create your first ranking!'
+                                  : 'No rankings yet. Create your first ranking to get started!'
+                        }
+                        showAuthor={false}
+                        onLike={handleRankingClick}
+                    />
+
+                    {/* Search Results Count */}
+                    {rankingsSearch.trim() && filteredRankings.length > 0 && (
+                        <p className="mt-4 text-sm text-gray-500 text-center">
+                            Showing {filteredRankings.length} of {rankings.length} rankings
+                        </p>
                     )}
-                </section>
+                </>
+            )}
 
-                {/* Your Comments Section */}
-                {!isGuest && (
-                    <section>
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                                <ChatBubbleLeftIcon className="w-6 h-6 text-blue-500" />
-                                <h2 className="text-2xl font-bold text-white">Your Comments</h2>
-                                {userComments.length > 0 && (
-                                    <span className="text-sm text-gray-500">
-                                        ({userComments.length})
-                                    </span>
-                                )}
-                            </div>
+            {/* Comments Tab */}
+            {activeTab === 'comments' && (
+                <>
+                    {/* Search Input */}
+                    {userComments.length > 0 && (
+                        <div className="relative mb-6">
+                            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                            <input
+                                type="text"
+                                placeholder="Search your comments..."
+                                value={commentsSearch}
+                                onChange={(e) => setCommentsSearch(e.target.value)}
+                                className="w-full pl-10 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
+                            />
                         </div>
+                    )}
 
-                        {/* Search Input */}
-                        {userComments.length > 0 && (
-                            <div className="relative mb-6">
-                                <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                                <input
-                                    type="text"
-                                    placeholder="Search your comments..."
-                                    value={commentsSearch}
-                                    onChange={(e) => setCommentsSearch(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
-                                />
-                            </div>
-                        )}
-
+                    <div className="space-y-4">
                         {isLoadingComments ? (
                             <NetflixLoader />
                         ) : filteredComments.length === 0 ? (
@@ -268,36 +285,34 @@ export default function RankingsPage() {
                             </div>
                         ) : (
                             <>
-                                <div className="space-y-4">
-                                    {filteredComments.map((comment) => (
-                                        <Link
-                                            key={comment.id}
-                                            href={`/rankings/${comment.rankingId}`}
-                                            className="block bg-zinc-900 border border-zinc-800 rounded-lg p-4 hover:border-zinc-700 transition-colors"
-                                        >
-                                            <div className="flex justify-between items-start mb-2">
-                                                <span className="text-sm text-gray-500">
-                                                    {formatDistanceToNow(comment.createdAt, {
-                                                        addSuffix: true,
-                                                    })}
-                                                </span>
-                                                <div className="flex items-center gap-4 text-sm text-gray-500">
-                                                    <div className="flex items-center gap-1">
-                                                        <HeartIcon className="w-4 h-4" />
-                                                        <span>{comment.likes}</span>
-                                                    </div>
+                                {filteredComments.map((comment) => (
+                                    <Link
+                                        key={comment.id}
+                                        href={`/rankings/${comment.rankingId}`}
+                                        className="block bg-zinc-900 border border-zinc-800 rounded-lg p-4 hover:border-zinc-700 transition-colors"
+                                    >
+                                        <div className="flex justify-between items-start mb-2">
+                                            <span className="text-sm text-gray-500">
+                                                {formatDistanceToNow(comment.createdAt, {
+                                                    addSuffix: true,
+                                                })}
+                                            </span>
+                                            <div className="flex items-center gap-4 text-sm text-gray-500">
+                                                <div className="flex items-center gap-1">
+                                                    <HeartIcon className="w-4 h-4" />
+                                                    <span>{comment.likes}</span>
                                                 </div>
                                             </div>
-                                            <p className="text-white">{comment.text}</p>
-                                            <div className="mt-2 text-sm text-gray-400">
-                                                On:{' '}
-                                                <span className="text-yellow-500">
-                                                    View Ranking →
-                                                </span>
-                                            </div>
-                                        </Link>
-                                    ))}
-                                </div>
+                                        </div>
+                                        <p className="text-white">{comment.text}</p>
+                                        <div className="mt-2 text-sm text-gray-400">
+                                            On:{' '}
+                                            <span className="text-yellow-500">View Ranking →</span>
+                                        </div>
+                                    </Link>
+                                ))}
+
+                                {/* Search Results Count */}
                                 {commentsSearch.trim() && filteredComments.length > 0 && (
                                     <p className="mt-4 text-sm text-gray-500 text-center">
                                         Showing {filteredComments.length} of {userComments.length}{' '}
@@ -306,64 +321,54 @@ export default function RankingsPage() {
                                 )}
                             </>
                         )}
-                    </section>
-                )}
+                    </div>
+                </>
+            )}
 
-                {/* Liked Rankings Section */}
-                {!isGuest && (
-                    <section>
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                                <HeartIcon className="w-6 h-6 text-red-500" />
-                                <h2 className="text-2xl font-bold text-white">Liked Rankings</h2>
-                                {likedRankings.length > 0 && (
-                                    <span className="text-sm text-gray-500">
-                                        ({likedRankings.length})
-                                    </span>
-                                )}
-                            </div>
+            {/* Liked Rankings Tab */}
+            {activeTab === 'liked' && (
+                <>
+                    {/* Search Input */}
+                    {likedRankings.length > 0 && (
+                        <div className="relative mb-6">
+                            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                            <input
+                                type="text"
+                                placeholder="Search liked rankings..."
+                                value={likedSearch}
+                                onChange={(e) => setLikedSearch(e.target.value)}
+                                className="w-full pl-10 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
+                            />
                         </div>
+                    )}
 
-                        {/* Search Input */}
-                        {likedRankings.length > 0 && (
-                            <div className="relative mb-6">
-                                <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                                <input
-                                    type="text"
-                                    placeholder="Search liked rankings..."
-                                    value={likedSearch}
-                                    onChange={(e) => setLikedSearch(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-red-500 transition-colors"
-                                />
-                            </div>
-                        )}
+                    {isLoadingLiked ? (
+                        <NetflixLoader />
+                    ) : (
+                        <>
+                            <RankingGrid
+                                rankings={filteredLikedRankings}
+                                isLoading={isLoadingLiked}
+                                emptyMessage={
+                                    likedSearch.trim()
+                                        ? 'No liked rankings match your search.'
+                                        : 'No liked rankings yet. Start liking rankings you enjoy!'
+                                }
+                                showAuthor={true}
+                                onLike={handleRankingClick}
+                            />
 
-                        {isLoadingLiked ? (
-                            <NetflixLoader />
-                        ) : (
-                            <>
-                                <RankingGrid
-                                    rankings={filteredLikedRankings}
-                                    isLoading={isLoadingLiked}
-                                    emptyMessage={
-                                        likedSearch.trim()
-                                            ? 'No liked rankings match your search.'
-                                            : 'No liked rankings yet. Start liking rankings you enjoy!'
-                                    }
-                                    showAuthor={true}
-                                    onLike={handleRankingClick}
-                                />
-                                {likedSearch.trim() && filteredLikedRankings.length > 0 && (
-                                    <p className="mt-4 text-sm text-gray-500 text-center">
-                                        Showing {filteredLikedRankings.length} of{' '}
-                                        {likedRankings.length} rankings
-                                    </p>
-                                )}
-                            </>
-                        )}
-                    </section>
-                )}
-            </div>
+                            {/* Search Results Count */}
+                            {likedSearch.trim() && filteredLikedRankings.length > 0 && (
+                                <p className="mt-4 text-sm text-gray-500 text-center">
+                                    Showing {filteredLikedRankings.length} of {likedRankings.length}{' '}
+                                    rankings
+                                </p>
+                            )}
+                        </>
+                    )}
+                </>
+            )}
         </SubPageLayout>
     )
 }
