@@ -807,6 +807,12 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
     if (createCollections) {
         console.log('  📚 Creating sample collections')
 
+        // Get existing collections to prevent duplicates
+        const existingLists = isGuest
+            ? useGuestStore.getState().userCreatedWatchlists
+            : useAuthStore.getState().userCreatedWatchlists
+        const existingNames = new Set(existingLists.map((list) => list.name))
+
         const collections = [
             {
                 name: 'Epic Sci-Fi Adventures',
@@ -865,6 +871,12 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
         ]
 
         for (const collection of collections) {
+            // Skip if collection already exists
+            if (existingNames.has(collection.name)) {
+                console.log(`    ⏭️  Skipping duplicate collection: ${collection.name}`)
+                continue
+            }
+
             // Create the list first
             let listId: string
             if (isGuest) {
@@ -884,6 +896,8 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                     isPublic: false,
                 })
             }
+
+            console.log(`    ✅ Created collection: ${collection.name}`)
 
             // Add items to the created collection
             for (const item of collection.items) {
@@ -997,6 +1011,11 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
             avatar: profile?.avatarUrl || useAuthStore.getState().photoURL || undefined,
         }
 
+        // Load existing rankings to prevent duplicates
+        await useRankingStore.getState().loadUserRankings(userId)
+        const existingRankings = useRankingStore.getState().rankings
+        const existingTitles = new Set(existingRankings.map((r) => r.title))
+
         const sampleRankings = [
             {
                 title: 'Top 5 Mind-Bending Movies',
@@ -1038,29 +1057,47 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
 
         for (const rankingData of sampleRankings) {
             try {
-                await useRankingStore
+                // Skip if ranking already exists
+                if (existingTitles.has(rankingData.title)) {
+                    console.log(`    ⏭️  Skipping duplicate ranking: ${rankingData.title}`)
+                    continue
+                }
+
+                // Step 1: Create the ranking with basic info
+                const rankingId = await useRankingStore
                     .getState()
                     .createRanking(userProfile.id, userProfile.name, userProfile.avatar, {
                         title: rankingData.title,
                         description: rankingData.description,
                         isPublic: false, // Keep test rankings private
+                        itemCount: rankingData.items.length,
                         tags: rankingData.tags,
-                        rankedItems: rankingData.items.map((item, index) => ({
-                            position: index + 1,
-                            content: {
-                                id: item.id,
-                                title: item.title || (item as TVShow).name || '',
-                                poster_path: item.poster_path || '',
-                                media_type: item.media_type,
-                                vote_average: item.vote_average || 0,
-                                release_date:
-                                    (item as Movie).release_date ||
-                                    (item as TVShow).first_air_date ||
-                                    '',
-                            },
-                            addedAt: Date.now(),
-                        })),
                     })
+
+                if (!rankingId) {
+                    throw new Error('Failed to create ranking - no ID returned')
+                }
+
+                // Step 2: Update with ranked items
+                await useRankingStore.getState().updateRanking(userProfile.id, {
+                    id: rankingId,
+                    rankedItems: rankingData.items.map((item, index) => ({
+                        position: index + 1,
+                        content: {
+                            id: item.id,
+                            title: item.title || (item as TVShow).name || '',
+                            poster_path: item.poster_path || '',
+                            media_type: item.media_type,
+                            vote_average: item.vote_average || 0,
+                            release_date:
+                                (item as Movie).release_date ||
+                                (item as TVShow).first_air_date ||
+                                '',
+                        },
+                        addedAt: Date.now(),
+                    })),
+                })
+
                 console.log(`    ✅ Created ranking: ${rankingData.title}`)
                 // Small delay between rankings
                 await new Promise((resolve) => setTimeout(resolve, 200))
