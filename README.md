@@ -1,18 +1,18 @@
 # 🎬 NetTrailer
 
-**Full-Stack Movie & TV Show Discovery Platform**
+**Full-Stack Movie & TV Show Discovery Platform with AI-Powered Search**
 
-A Netflix-inspired streaming platform built with modern web technologies, featuring user authentication, comprehensive content discovery, custom watchlists, and a responsive design.
+A Netflix-inspired streaming discovery platform built with modern web technologies, featuring user authentication, AI-powered smart search, custom collections, community rankings, personalized recommendations, and child safety controls.
 
 ## 🚀 Tech Stack
 
 <div align="center">
 
-| Frontend          | Backend              | Database         | APIs        | Styling             | State Management | Monitoring              | Testing     |
-| ----------------- | -------------------- | ---------------- | ----------- | ------------------- | ---------------- | ----------------------- | ----------- |
-| ▲ **Next.js 16**  | 🔥 **Firebase**      | 🔥 **Firestore** | 🎬 **TMDB** | 🎨 **Tailwind CSS** | 🐻 **Zustand**   | 🛡️ **Sentry**           | 🧪 **Jest** |
-| **TS TypeScript** | 🔐 **Firebase Auth** |                  |             | 🎭 **Material-UI**  |                  | 📊 **GA4**              | 🧪 **RTL**  |
-| ⚛️ **React 19**   |                      |                  |             | 🦸 **Heroicons**    |                  | 📈 **Vercel Analytics** |             |
+| Frontend          | Backend              | Database         | APIs             | Styling             | State Management | Monitoring              | Testing     |
+| ----------------- | -------------------- | ---------------- | ---------------- | ------------------- | ---------------- | ----------------------- | ----------- |
+| ▲ **Next.js 16**  | 🔥 **Firebase**      | 🔥 **Firestore** | 🎬 **TMDB**      | 🎨 **Tailwind CSS** | 🐻 **Zustand**   | 🛡️ **Sentry**           | 🧪 **Jest** |
+| **TS TypeScript** | 🔐 **Firebase Auth** |                  | 🤖 **Gemini AI** | 🎭 **Material-UI**  |                  | 📊 **GA4**              | 🧪 **RTL**  |
+| ⚛️ **React 19**   |                      |                  |                  | 🦸 **Heroicons**    |                  | 📈 **Vercel Analytics** |             |
 
 </div>
 
@@ -26,6 +26,7 @@ A Netflix-inspired streaming platform built with modern web technologies, featur
     - Guest mode for demo access (no registration required)
     - Secure session management with localStorage persistence
     - Seamless user switching between authenticated and guest accounts
+    - Public user profiles with customizable username, avatar, and bio
 
 ### 🎬 Content Discovery
 
@@ -35,28 +36,131 @@ A Netflix-inspired streaming platform built with modern web technologies, featur
     - Dedicated pages for Movies (`/movies`) and TV Shows (`/tv`)
     - Genre browsing with dynamic filtering
     - High-quality trailer playback with YouTube integration
+    - "Surprise Me" random content discovery
 
 - **Advanced Search**
     - Real-time search with 300ms debounce
-    - Search suggestions dropdown
-    - Advanced filters (genre, year, rating, content type)
+    - Search suggestions dropdown with autocomplete
+    - Advanced filters (genre, year, rating, content type, popularity, vote count)
+    - Cast and crew filtering
     - URL synchronization for shareable search results
     - Minimum 2-character query with race condition prevention
 
+- **Smart Search (AI-Powered)** 🤖
+    - Natural language query understanding powered by Google Gemini AI
+    - Voice input with live transcription (Web Speech API)
+    - Semantic concept recognition ("rainy day vibes", "mind-bending thrillers")
+    - Entity recognition with autocomplete (`@actors`, `#directors`)
+    - Auto-detection of media type preferences
+    - Save AI search results as custom collections
+    - Live result count preview
+
 ### 📚 Content Management
 
-- **Custom Watchlists**
-    - Create unlimited custom watchlists
-    - Organize content with custom names, colors, and icons
-    - Drag-and-drop list management
-    - Quick add to multiple lists
-    - Export watchlist data to CSV
+- **Custom Collections** (up to 20 for authenticated users, 3 for guests)
+    - **Three Collection Types**:
+        - **Manual**: Hand-picked content with drag-and-drop reordering
+        - **TMDB Genre-Based**: Auto-updating collections based on genre filters
+        - **AI-Generated**: Created from natural language queries
+    - Advanced filters (year range, rating, cast, director, popularity)
+    - Auto-updating collections with daily cron jobs
+    - Custom colors and emoji icons for personalization
+    - Display as rows on home/movies/tv pages
+    - Duplicate collections for variations
 
-- **Content Organization**
-    - Like system with dedicated `/liked` page
-    - Hide unwanted content with `/hidden` page management
-    - Smart content filtering by preferences
-    - Persistent storage (Firestore for authenticated, localStorage for guests)
+- **Default Lists**
+    - Watchlist (primary collection)
+    - Liked content with dedicated `/liked` page
+    - Hidden content with `/hidden` page management
+
+- **Collection Sharing**
+    - Generate unique shareable links with public view pages
+    - Open Graph meta tags for rich social media previews
+    - View analytics (view count, timestamp)
+    - Revocable share links (toggle public/private)
+    - Manage all share links in one interface
+
+### 🏆 Rankings & Community
+
+- **Create Rankings**
+    - Drag-and-drop ranking creation with custom scores
+    - Support for movies, TV shows, or mixed content
+    - Public or private visibility controls
+    - Custom titles, descriptions, and cover images
+    - Edit existing rankings anytime
+
+- **Community Page** (`/community`)
+    - Browse public rankings from all users
+    - Sort by recent, popular, most-liked, most-viewed
+    - Filter by media type
+    - Search rankings by title/description
+
+- **Engagement Features**
+    - Like rankings (one per user)
+    - View count tracking
+    - Threaded comment system with nested replies
+    - Comment likes and engagement
+    - Delete comments (owner or ranking author)
+    - Public profile pages showing user's rankings
+
+### 👶 Child Safety Mode
+
+- **Content Filtering**
+    - MPAA ratings for movies (G, PG, PG-13, R, NC-17)
+    - TV ratings (TV-Y, TV-Y7, TV-G, TV-PG, TV-14, TV-MA)
+    - Configurable rating threshold in settings
+    - Server-side filtering across all API routes
+    - Cache invalidation when mode changes
+
+- **PIN Protection**
+    - 4-digit numeric PIN requirement
+    - Encrypted storage with bcrypt-style hashing
+    - Session-based verification
+    - PIN setup/change/remove in settings
+    - Visual "PIN Protected" badge
+    - Required to disable child safety mode
+    - Guest users cannot set PINs
+
+### 🎯 Personalization & Recommendations
+
+- **Interaction Tracking** (10 types)
+    - View modal, add/remove from watchlist, like/unlike
+    - Play trailer, hide/unhide content, search, voice search
+    - 90-day data retention with auto-cleanup
+
+- **Weighted Scoring Algorithm**
+    - Like (+5), Add to Watchlist (+3), Play Trailer (+2), View (+1)
+    - Hide Content (-5), Remove from Watchlist (-1)
+    - Genre preference calculation from weighted interactions
+    - Minimum 10 interactions for accurate recommendations
+
+- **"Recommended For You" Row**
+    - Personalized based on top 3 preferred genres
+    - Hybrid algorithm (genre + TMDB similar content)
+    - Minimum rating 7.0, sorted by popularity
+    - Excludes already-seen content
+    - 6-hour cache with smart refresh
+    - Opt-out via privacy controls
+
+### 🔔 Notification System
+
+- **In-App Notifications**
+    - Bell icon in header with unread badge
+    - Dropdown panel with recent notifications
+    - Real-time Firestore listeners
+
+- **Notification Types**
+    - Collection updates (new content added via auto-update)
+    - New releases (watchlist items released)
+    - System announcements
+    - Collection shares
+    - Ranking comments and likes
+
+- **Features**
+    - Mark as read (individual or bulk)
+    - Auto-dismiss after 30 days
+    - Click actions (navigate to content/collection)
+    - Future: Email notifications via Resend
 
 ### 👤 User Experience
 
@@ -66,31 +170,38 @@ A Netflix-inspired streaming platform built with modern web technologies, featur
     - Keyboard shortcuts for power users (press `?` to view)
     - Dark mode optimized interface
     - Lazy-loaded content rows for optimal performance
+    - Portfolio banner (toggleable in settings)
 
 - **Smart Features**
-    - Child safety mode with content filtering
     - Interactive tutorial for new users
     - Real-time data synchronization
     - Comprehensive error handling with user-friendly messages
     - Toast notification system (6 types: success, error, watchlist operations, content visibility)
+    - Watch history tracking
+    - Analytics integration (GA4, Vercel Analytics)
 
 ### 🛠 Developer Features
 
 - **Code Quality**
-    - TypeScript for type safety across the entire codebase
-    - ESLint with automatic fixes on commit (lint-staged + husky)
-    - Prettier for consistent code formatting
-    - Comprehensive Jest test suite with React Testing Library
+    - TypeScript 5.9 for type safety across the entire codebase
+    - ESLint 9 with automatic fixes on commit (lint-staged + Husky)
+    - Prettier 3 for consistent code formatting
+    - Comprehensive Jest 30 test suite with React Testing Library 16
     - Test coverage reporting
 
 - **Architecture**
-    - Zustand state management for all application state
+    - **17 Focused Zustand Stores**: Migrated from monolithic "god store" to granular stores
+        - appStore, authStore, guestStore, sessionStore, cacheStore
+        - searchStore, loadingStore, uiStore, childSafetyStore
+        - customRowsStore, smartSearchStore, modalStore, toastStore
+        - watchHistoryStore, rankingStore, notificationStore, profileStore
     - Next.js 16 with React 19 and App Router patterns
-    - Firebase Firestore with optimistic updates and caching
-    - API route architecture proxying TMDB API
+    - Firebase Firestore with optimistic updates and real-time sync
+    - **30+ API routes** organized by feature
     - Sentry error monitoring (client & server-side)
     - Google Analytics 4 integration
     - Vercel Analytics for performance insights
+    - Bundle analyzer for optimization
 
 ## 🎯 Live Demo
 
@@ -103,9 +214,10 @@ _Experience all features or continue as guest to explore the platform_
 ### Prerequisites
 
 - Node.js 18.x or higher
-- npm (pnpm is no longer supported - project migrated to npm)
+- npm (project migrated from pnpm to npm)
 - Firebase project (free tier available)
-- TMDB API key (free)
+- TMDB API key (free from themoviedb.org)
+- Google Gemini API key (free from ai.google.dev)
 
 ### Setup Steps
 
@@ -141,6 +253,13 @@ _Experience all features or continue as guest to explore the platform_
     # Get your free API key from: https://www.themoviedb.org/settings/api
     TMDB_API_KEY=your_tmdb_api_key
 
+    # Google Gemini AI (Required for Smart Search)
+    # Get your free API key from: https://ai.google.dev/
+    NEXT_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
+
+    # Cron Job Security (Required for auto-updating collections)
+    CRON_SECRET=your_random_secret_string
+
     # App Configuration (Optional)
     NEXT_PUBLIC_APP_NAME=NetTrailer
     NEXT_PUBLIC_APP_URL=http://localhost:3000
@@ -155,26 +274,46 @@ _Experience all features or continue as guest to explore the platform_
     # Google Analytics 4 (Optional)
     # Get from: https://analytics.google.com/
     NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
+
+    # Email Notifications (Optional - Future Feature)
+    # Get from: https://resend.com/
+    RESEND_API_KEY=your_resend_api_key
     ```
 
 4. **Firebase Setup**
 
     Enable the following in your Firebase project:
-    - Authentication > Sign-in method:
+    - **Authentication > Sign-in method**:
         - Email/Password
         - Google
-    - Firestore Database (in production mode)
-    - Set Firestore rules to allow authenticated read/write
+    - **Firestore Database** (in production mode)
+    - **Firestore Security Rules**: Deploy the rules from `firestore.rules`
+    - **Firestore Indexes**: Create composite indexes as needed (Firebase will prompt)
 
-5. **Run the development server**
+5. **Vercel Cron Job Setup** (Optional - for auto-updating collections)
+
+    In `vercel.json`, configure the cron job:
+
+    ```json
+    {
+        "crons": [
+            {
+                "path": "/api/cron/update-collections",
+                "schedule": "0 2 * * *"
+            }
+        ]
+    }
+    ```
+
+6. **Run the development server**
 
     ```bash
     npm run dev
     ```
 
-    The server will start on port 3000 (or 3004 if 3000 is occupied)
+    The server will start on port 3000 by default
 
-6. **Open your browser**
+7. **Open your browser**
 
     Navigate to [http://localhost:3000](http://localhost:3000)
 
@@ -236,119 +375,184 @@ npm run prepare       # Install Husky git hooks
 
 ```
 net_trailers/
-├── components/          # Reusable UI components
-│   ├── Header.tsx       # Main navigation header
-│   ├── Banner.tsx       # Hero banner with featured content
-│   ├── Row.tsx          # Horizontal content rows
-│   ├── ContentCard.tsx  # Individual content cards
-│   ├── Modal.tsx        # Content detail modal
-│   ├── InfoModal.tsx    # Detailed content information
-│   ├── Toast.tsx        # Toast notification component
-│   ├── SearchBar.tsx    # Search with suggestions
-│   └── ...              # 50+ other components
-│
-├── pages/               # Next.js pages and API routes
-│   ├── index.tsx        # Home page with trending content
-│   ├── movies.tsx       # Movies-only page
-│   ├── tv.tsx           # TV shows-only page
-│   ├── search.tsx       # Search results page
-│   ├── watchlists.tsx   # Custom watchlists management
-│   ├── liked.tsx        # Liked content page
-│   ├── hidden.tsx       # Hidden content page
-│   ├── settings.tsx     # User settings
-│   ├── genres/          # Genre browsing pages
-│   │   └── [type]/[id].tsx  # Dynamic genre pages
-│   └── api/             # API routes (TMDB proxy)
-│       ├── movies/      # Movie-related endpoints
-│       ├── tv/          # TV show-related endpoints
-│       ├── search.ts    # Search endpoint
+├── app/                  # Next.js 16 App Router
+│   ├── page.tsx          # Home page with trending content
+│   ├── movies/           # Movies-only page
+│   ├── tv/               # TV shows-only page
+│   ├── search/           # Search results page
+│   ├── smart-search/     # AI-powered smart search page
+│   ├── rankings/         # Rankings management
+│   │   ├── page.tsx      # User rankings dashboard
+│   │   ├── new/          # Create new ranking
+│   │   └── [id]/         # View/edit ranking
+│   ├── community/        # Browse public rankings
+│   ├── collections/      # Collection management
+│   ├── watchlists/       # Custom watchlists
+│   ├── liked/            # Liked content page
+│   ├── hidden/           # Hidden content page
+│   ├── settings/         # User settings
+│   ├── users/[userId]/   # Public user profiles
+│   ├── share/[shareId]/  # Shared collection view
+│   ├── genres/           # Genre browsing pages
+│   │   └── [type]/[id]/  # Dynamic genre pages
+│   └── api/              # API routes (30+ endpoints)
+│       ├── movies/       # Movie-related endpoints
+│       ├── tv/           # TV show-related endpoints
+│       ├── search/       # Search endpoint
+│       ├── gemini/       # Gemini AI endpoints
+│       ├── smart-search/ # AI search endpoints
+│       ├── recommendations/ # Personalized recommendations
+│       ├── collections/  # Collection management
+│       ├── shares/       # Sharing endpoints
+│       ├── cron/         # Cron job endpoints
 │       └── ...
 │
-├── stores/              # Zustand state stores
-│   ├── authStore.ts     # Authenticated user state
-│   ├── guestStore.ts    # Guest user state
-│   ├── sessionStore.ts  # Session management
-│   ├── appStore.ts      # App-wide state (modals, search, toasts)
-│   └── cacheStore.ts    # Client-side caching
+├── components/           # 100+ React components (30,225 lines)
+│   ├── auth/             # AuthModal, AccountManagement
+│   ├── collections/      # CollectionRowLoader, CollectionEditorModal
+│   ├── common/           # Toast, LoadingSpinner, EmptyState, ErrorBoundary
+│   ├── content/          # VideoPlayer, WatchLaterButton, MyListsDropdown
+│   ├── customRows/       # CustomRowWizard, SortableCustomRowCard
+│   │   └── smart/        # SmartRowBuilder, SmartInput, SmartStep3Preview
+│   ├── debug/            # DebugControls, WebVitalsHUD, FirebaseCallTracker
+│   ├── layout/           # PortfolioBanner, Footer, Header, ClientLayout
+│   ├── modal/            # MoreLikeThisSection
+│   ├── modals/           # InfoModal, AuthModal, CollectionEditorModal
+│   │   ├── list-selection/    # ListSelectionModal components (17 files)
+│   │   └── modal-sections/    # ModalVideoPlayer, VideoControls
+│   ├── notifications/    # NotificationPanel
+│   ├── pages/            # MoviesClient, TVClient, SmartSearchClient
+│   ├── rankings/         # RankingCreator, RankingDetail, RankingCard, CommentSection
+│   ├── recommendations/  # RecommendedForYouRow
+│   ├── search/           # SearchBar, SearchFilters, SearchSuggestionsDropdown
+│   ├── settings/         # ProfileSection, NotificationsSection, ChildSafetyPINModal
+│   ├── sharing/          # ShareModal, ManageSharesModal
+│   ├── smartSearch/      # SmartSearchOverlay, SmartSearchResults, SmartSearchInput
+│   └── utility/          # Analytics, SessionSyncManager, KeyboardShortcuts
 │
-├── hooks/               # Custom React hooks
-│   ├── useAuth.tsx      # Authentication hook
-│   ├── useUserData.ts   # User data management
-│   ├── useSearch.ts     # Search functionality
-│   ├── useToast.ts      # Toast notifications
+├── stores/               # 17 Focused Zustand Stores
+│   ├── appStore.ts       # Global UI state
+│   ├── authStore.ts      # Authenticated user data (Firestore sync)
+│   ├── guestStore.ts     # Guest user data (localStorage)
+│   ├── sessionStore.ts   # Session management & user switching
+│   ├── cacheStore.ts     # Client-side API response caching
+│   ├── searchStore.ts    # Search state and filters
+│   ├── loadingStore.ts   # Loading states across app
+│   ├── uiStore.ts        # UI preferences and modal state
+│   ├── childSafetyStore.ts    # Child safety PIN and settings
+│   ├── customRowsStore.ts     # Custom collections
+│   ├── smartSearchStore.ts    # AI search state and conversation
+│   ├── modalStore.ts     # Content modal state and video player
+│   ├── toastStore.ts     # Toast notification queue
+│   ├── watchHistoryStore.ts   # Watch history tracking
+│   ├── rankingStore.ts   # Rankings, comments, likes
+│   ├── notificationStore.ts   # In-app notifications
+│   └── profileStore.ts   # User profile data
+│
+├── hooks/                # Custom React hooks
+│   ├── useAuth.tsx       # Authentication hook
+│   ├── useUserData.ts    # User data management
+│   ├── useSearch.ts      # Search functionality
+│   ├── useToast.ts       # Toast notifications
+│   ├── useVoiceInput.ts  # Voice input for search
 │   └── ...
 │
-├── utils/               # Utility functions
-│   ├── tmdbApi.ts       # TMDB API integration
-│   ├── errorHandler.ts  # Error handling utilities
-│   ├── contentFilter.ts # Content filtering logic
-│   ├── csvExport.ts     # CSV export functionality
+├── utils/                # Utility functions
+│   ├── tmdbApi.ts        # TMDB API integration
+│   ├── tmdbFetch.ts      # Secure TMDB fetch utilities
+│   ├── errorHandler.ts   # Error handling utilities
+│   ├── contentFilter.ts  # Content filtering logic
+│   ├── csvExport.ts      # CSV export functionality
+│   ├── inputSanitization.ts   # XSS protection
+│   ├── gemini/           # Gemini AI utilities
+│   │   ├── promptBuilder.ts   # Construct semantic prompts
+│   │   └── responseParser.ts  # Parse AI responses
 │   └── ...
 │
-├── types/               # TypeScript type definitions
-│   ├── userLists.ts     # User list types
-│   └── atoms.ts         # Shared state type definitions
+├── types/                # TypeScript type definitions
+│   ├── userLists.ts      # User list and collection types
+│   ├── atoms.ts          # Shared state type definitions
+│   ├── rankings.ts       # Ranking and comment types
+│   └── ...
 │
-├── typings.d.ts         # Global TypeScript typings
+├── typings.d.ts          # Global TypeScript typings
 │   # Includes: Content, Movie, TVShow, Genre types
+│   # Type guards: isMovie(), isTVShow()
+│   # Utils: getTitle(), getYear(), getRating(), etc.
 │
-├── __tests__/           # Jest tests
-│   ├── components/      # Component tests
-│   ├── hooks/           # Hook tests
-│   └── stores/          # Store tests
+├── __tests__/            # Jest tests
+│   ├── components/       # Component tests
+│   ├── hooks/            # Hook tests
+│   ├── stores/           # Store tests
+│   └── app/api/          # API route tests
 │
-├── scripts/             # Development utility scripts
-│   ├── dev-safe.js      # Safe dev server startup
+├── scripts/              # Development utility scripts
+│   ├── dev-safe.js       # Safe dev server startup
 │   ├── create-test-user.ts
 │   └── ...
 │
-├── styles/              # Global styles
-│   └── globals.css      # Tailwind CSS imports
+├── styles/               # Global styles
+│   └── globals.css       # Tailwind CSS imports
 │
-├── public/              # Static assets
+├── public/               # Static assets
 │   ├── images/
 │   └── ...
 │
-├── firebase.ts          # Firebase initialization
-├── sentry.client.config.ts  # Sentry client config
-├── instrumentation.ts   # Sentry server config (Next.js 15+)
-├── next.config.mjs      # Next.js configuration
-├── tailwind.config.ts   # Tailwind CSS configuration
-├── jest.config.js       # Jest configuration
-└── tsconfig.json        # TypeScript configuration
+├── docs/                 # Documentation (55+ files)
+│   ├── features/         # Feature documentation
+│   ├── architecture/     # Architecture docs
+│   └── ...
+│
+├── firebase.ts           # Firebase initialization
+├── firestore.rules       # Firestore security rules
+├── sentry.client.config.ts   # Sentry client config
+├── instrumentation.ts    # Sentry server config (Next.js 15+)
+├── next.config.mjs       # Next.js configuration
+├── vercel.json           # Vercel deployment config (cron jobs)
+├── tailwind.config.ts    # Tailwind CSS configuration
+├── jest.config.js        # Jest configuration
+└── tsconfig.json         # TypeScript configuration
 ```
 
 ## 🔑 Key Technical Implementations
 
 ### State Management Architecture
 
-The app uses **Zustand** for all state management:
+The app uses **17 focused Zustand stores** (migrated from monolithic "god store"):
 
-- **Zustand stores** (`/stores/*.ts`) - All application state management
+- **Store Factory Pattern**: `createUserStore.ts` - Shared factory for auth and guest stores
+- **Storage Adapters**:
+    - `FirebaseStorageAdapter` - Real-time Firestore sync for authenticated users
+    - `LocalStorageAdapter` - Browser localStorage for guest users
 - **Direct store access**: Components use Zustand hooks (`useAppStore()`, `useSessionStore()`, etc.)
 - **No provider wrapper**: Zustand works without root provider components
 - **Type-safe selectors**: Optimized performance with granular subscriptions
+- **Optimistic updates**: Updates with rollback on failure
 
 ### Content Type System
 
-Unified type system for movies and TV shows:
+Unified type system for movies and TV shows using discriminated unions:
 
 ```typescript
 // Base interface with shared properties
 interface BaseContent { ... }
 
 // Discriminated unions with media_type
-interface Movie extends BaseContent { media_type: 'movie' }
-interface TVShow extends BaseContent { media_type: 'tv' }
+interface Movie extends BaseContent { media_type: 'movie', title, release_date }
+interface TVShow extends BaseContent { media_type: 'tv', name, first_air_date }
+
+type Content = Movie | TVShow
 
 // Type guards for runtime checking
-isMovie(content) // Type guard
-isTVShow(content) // Type guard
+isMovie(content): content is Movie
+isTVShow(content): content is TVShow
 
 // Utility functions for consistent access
-getTitle(content) // Works for both movies and TV shows
+getTitle(content)    // Works for both movies and TV shows
 getYear(content)
 getContentType(content)
+getRating(content)
+getReleaseDate(content)
 ```
 
 ### Authentication & User Data Isolation
@@ -358,13 +562,89 @@ getContentType(content)
 - **Session persistence**: localStorage maintains auth state across refreshes
 - **Auto-save**: `useSessionData` validates user ID match before persisting
 - **Timeout protection**: Firebase operations include 5-second timeout
+- **Race condition prevention**: Stores cleared when switching users
+
+### Firestore Data Structure
+
+```
+/users/{userId}
+  - Profile data, preferences, settings
+  - customRows (sub-collection)
+  - interactions (sub-collection, 90-day TTL)
+  - notifications (sub-collection, 30-day auto-dismiss)
+  - watchHistory (sub-collection)
+  - childSafetyPIN (sub-document)
+
+/rankings/{rankingId}
+  - Public and private rankings
+  - Indexed by userId, createdAt, likes, views
+
+/rankingComments/{commentId}
+  - Comments on rankings
+  - Indexed by rankingId, createdAt
+
+/rankingLikes/{likeId}
+  - User likes on rankings
+
+/sharedCollections/{linkId}
+  - Shared collection snapshots
+  - Public read access
+```
 
 ### API Architecture
 
-- **Internal routes** (`/api/movies/*`, `/api/search`) proxy TMDB API calls
+- **30+ API routes** organized by feature
+- **Internal routes** proxy TMDB API calls (API key hidden server-side)
+- **TMDB API v3**: Uses query parameter authentication (`?api_key=...`)
 - **Error handling** via `utils/errorHandler.ts` with user-friendly messages
 - **Rate limiting**: Respects TMDB's 40 requests/second limit
-- **Caching**: Client-side cache store for improved performance
+- **Input sanitization**: XSS protection on all Gemini AI routes
+- **Caching**: Client-side cache store + server-side caching for improved performance
+
+### AI Integration (Google Gemini 2.5 Flash)
+
+**Smart Search Flow**:
+
+1. User enters natural language query ("movies like Inception with time travel")
+2. Query sent to `/api/gemini/analyze` with semantic prompt
+3. Gemini extracts:
+    - Genres (sci-fi, thriller)
+    - Concepts (time travel, mind-bending)
+    - Media type (auto-detected: movies)
+    - Cast/crew if mentioned
+4. Results fetched from TMDB Discover API with extracted parameters
+5. Live preview shows result count as user types
+6. User can save results as custom collection
+
+**Other AI Features**:
+
+- Collection name generation
+- Row name suggestions
+- Style-based recommendations
+- Surprise query generation
+
+### Auto-Updating Collections
+
+**Cron Job Flow** (Daily at 2 AM UTC):
+
+```
+1. Vercel cron triggers /api/cron/update-collections
+2. Verify CRON_SECRET for security
+3. Query Firestore for collections with autoUpdateEnabled: true
+4. For each collection:
+   - Fetch TMDB Discover with collection filters
+   - Filter to releases after lastCheckedAt
+   - Append new content to collection.items
+   - Update lastUpdateCount, lastCheckedAt
+   - Create notification for user
+5. Batch commit to Firestore
+```
+
+**Visual Indicators**:
+
+- "Auto" badge on collection cards
+- "+5" badge showing new items count
+- "Updated 2 hours ago" timestamp
 
 ## 🧪 Testing
 
@@ -375,6 +655,7 @@ The project includes a comprehensive test suite using Jest and React Testing Lib
 - **Components**: UI component tests with user interaction simulation
 - **Hooks**: Custom hook tests with mock providers
 - **Stores**: Zustand store tests with state management validation
+- **API Routes**: API endpoint tests
 - **Integration**: End-to-end user flow testing
 
 ### Running Tests
@@ -390,26 +671,8 @@ npm run test:ci       # CI mode (used in GitHub Actions)
 
 - **Environment**: jsdom for browser simulation
 - **Setup files**: Automatic React Testing Library configuration
-- **Mocking**: TMDB API responses, Firebase services
+- **Mocking**: TMDB API responses, Firebase services, Gemini AI
 - **Coverage thresholds**: Configured in `jest.config.js`
-
-### Writing Tests
-
-Tests follow the pattern:
-
-```typescript
-import { render, screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
-
-describe('Component', () => {
-  it('should handle user interaction', async () => {
-    render(<Component />)
-    const button = screen.getByRole('button')
-    await userEvent.click(button)
-    await waitFor(() => expect(screen.getByText('Success')).toBeInTheDocument())
-  })
-})
-```
 
 ## 📊 Monitoring & Analytics
 
@@ -432,7 +695,8 @@ describe('Component', () => {
     - Page views
     - User authentication events
     - Content interactions (watchlist add/remove, likes, etc.)
-    - Search queries
+    - Search queries (standard and AI)
+    - Ranking engagement
 - **Privacy**: Anonymized IP, GDPR compliant
 
 ### Vercel Analytics
@@ -440,12 +704,6 @@ describe('Component', () => {
 - **Performance metrics**: Core Web Vitals tracking
 - **Real user monitoring**: Actual user experience data
 - **Integration**: Automatic with Vercel deployment
-
-### Firebase Analytics (Optional)
-
-- Can be enabled for additional insights
-- Automatic user engagement tracking
-- Cross-platform analytics capability
 
 ## 🎨 Toast Notification System
 
@@ -465,20 +723,30 @@ const { showSuccess, showError, showWatchlistAdd } = useToast()
 showSuccess('Operation completed', 'Optional description')
 ```
 
-**Components**: Toast.tsx (3s auto-dismiss), ToastContainer.tsx (positioning), ToastManager.tsx (state bridge), useToast.ts (hook API)
+**Components**: Toast.tsx (5s auto-dismiss), ToastContainer.tsx (positioning), ToastManager.tsx (state bridge), useToast.ts (hook API)
 
 ## 🚀 Performance Optimizations
 
-- **Lazy Loading**: Content rows and images load on demand
+- **Lazy Loading**: Content rows and images load on demand (Intersection Observer)
 - **Image Optimization**: Next.js Image component with TMDB CDN
 - **Code Splitting**: Dynamic imports for modals and heavy components
 - **Caching Strategy**:
-    - Client-side cache for API responses
+    - Client-side cache for API responses (10-minute TTL)
     - Firebase Firestore offline persistence
-    - Service worker ready (can be enabled)
+    - Recommendation cache (6-hour refresh)
+    - Interaction summary cache (24-hour)
 - **Bundle Analysis**: `npm run analyze` to inspect bundle size
 - **React 19 Features**: Automatic batching, concurrent rendering
 - **Debounced Search**: 300ms debounce prevents excessive API calls
+- **Zustand Granular Selectors**: Minimal re-renders
+
+**Performance Metrics**:
+
+- Component files: 30,225 lines
+- Build time: ~45s (Next.js 16 with caching)
+- API response time: <200ms (cached)
+- First Contentful Paint: <1.5s
+- Time to Interactive: <3s
 
 ## 🌐 Deployment
 
@@ -500,6 +768,25 @@ vercel --prod
 - Set environment variables in Vercel dashboard
 - Enable Vercel Analytics automatically
 - Configure custom domain in project settings
+- Set up cron job in `vercel.json` for auto-updating collections
+
+### Vercel Cron Job Setup
+
+In Vercel dashboard:
+
+1. Add `CRON_SECRET` environment variable
+2. Deploy `vercel.json` with cron configuration:
+
+```json
+{
+    "crons": [
+        {
+            "path": "/api/cron/update-collections",
+            "schedule": "0 2 * * *"
+        }
+    ]
+}
+```
 
 ### Other Platforms
 
@@ -510,16 +797,64 @@ The app is a standard Next.js application and can be deployed to:
 - **Docker**: Dockerfile can be created for containerization
 - **Self-hosted**: Build with `npm run build` and start with `npm start`
 
+### Security Headers
+
+Configured in `next.config.mjs`:
+
+- X-Frame-Options: DENY
+- X-Content-Type-Options: nosniff
+- Referrer-Policy: strict-origin-when-cross-origin
+- X-XSS-Protection: 1; mode=block
+- Permissions-Policy (camera, microphone, geolocation)
+- Content-Security-Policy (strict directives)
+- Strict-Transport-Security (HSTS)
+
 ### Pre-deployment Checklist
 
 - [ ] Set all required environment variables
 - [ ] Configure Firebase authentication providers
-- [ ] Set Firestore security rules
+- [ ] Deploy Firestore security rules from `firestore.rules`
 - [ ] Enable Sentry error monitoring
 - [ ] Configure Google Analytics (optional)
+- [ ] Set CRON_SECRET for auto-updating collections
 - [ ] Test guest mode functionality
 - [ ] Verify TMDB API key and rate limits
+- [ ] Test smart search with Gemini API
 - [ ] Update CORS settings if needed
+- [ ] Configure Resend for email notifications (optional)
+
+## 🎯 Key Metrics
+
+**Codebase Size**:
+
+- Total component lines: 30,225
+- Total commits: 378+
+- Features completed: 12 major feature sets
+- Documentation pages: 55+ markdown files
+- API routes: 30+
+- Zustand stores: 17 focused stores
+- Components created: 100+ components
+- Lines of code: ~50,000+ (estimated)
+
+**Development Time**:
+
+- Approximately 3 months of active development
+- Continuous improvements and polish
+
+## 🔮 Future Enhancements
+
+From roadmap and TODO.md:
+
+- [ ] Email notifications via Resend (setup required)
+- [ ] PWA implementation (offline support)
+- [ ] Analytics dashboard (user-facing)
+- [ ] Advanced search facets and sorting
+- [ ] Social features (follow users, activity feed)
+- [ ] Content reviews (user-written reviews and ratings)
+- [ ] Multi-language support (i18n)
+- [ ] Dark/light mode toggle
+- [ ] Export rankings as images (social media sharing)
+- [ ] Mobile app (React Native)
 
 ## 🤝 Contributing
 
@@ -536,9 +871,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - [TMDB](https://www.themoviedb.org/) for the comprehensive movie database API
+- [Google Gemini AI](https://ai.google.dev/) for natural language processing
 - [Firebase](https://firebase.google.com/) for backend services
 - [Next.js](https://nextjs.org/) for the React framework
 - [Tailwind CSS](https://tailwindcss.com/) for utility-first styling
+- [Zustand](https://github.com/pmndrs/zustand) for state management
 
 ---
 
