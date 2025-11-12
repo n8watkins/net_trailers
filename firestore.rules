@@ -146,9 +146,9 @@ service cloud.firestore {
 
     // Rankings collection (public and private rankings)
     match /rankings/{rankingId} {
-      // Allow read if public OR if authenticated user is the owner
-      allow read: if resource.data.isPublic == true
-                  || (request.auth != null && request.auth.uid == resource.data.userId);
+      // Allow read if authenticated (to view rankings in community and clone)
+      // Private rankings are filtered client-side in queries
+      allow read: if request.auth != null;
 
       // Allow create if authenticated and userId matches auth
       allow create: if request.auth != null
