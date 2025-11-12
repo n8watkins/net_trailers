@@ -25,10 +25,7 @@ const GUEST_ID_PREFIX = 'guest_'
 const isGuestUserId = (userId?: string | null): boolean =>
     Boolean(userId && userId.startsWith(GUEST_ID_PREFIX))
 
-function ensureAuthUser(
-    userId: string | null | undefined,
-    action: string
-): userId is string {
+function ensureAuthUser(userId: string | null | undefined, action: string): userId is string {
     if (!userId) {
         notificationWarn(`Cannot ${action}: No user ID`)
         return false
@@ -103,7 +100,8 @@ export const useNotificationStore = create<NotificationState>()(
                 set({ isLoading: true, error: null })
 
                 try {
-                    const notifications = await getAllNotifications(userId)
+                    const result = await getAllNotifications(userId)
+                    const notifications = result.data
                     const unreadCount = notifications.filter((n) => !n.isRead).length
 
                     set({
@@ -136,7 +134,8 @@ export const useNotificationStore = create<NotificationState>()(
                 set({ isLoading: true, error: null })
 
                 try {
-                    const unreadNotifications = await getUnreadNotifications(userId)
+                    const result = await getUnreadNotifications(userId)
+                    const unreadNotifications = result.data
                     const unreadCount = unreadNotifications.length
 
                     set({

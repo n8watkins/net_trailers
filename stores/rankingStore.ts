@@ -154,8 +154,8 @@ export const useRankingStore = create<RankingState>()(
                 set({ isLoading: true, error: null })
 
                 try {
-                    const rankings = await getPublicRankings(get().sortBy, limit)
-                    set({ communityRankings: rankings, isLoading: false })
+                    const result = await getPublicRankings(get().sortBy, limit)
+                    set({ communityRankings: result.data, isLoading: false })
                 } catch (error) {
                     console.error('Error loading community rankings:', error)
                     set({
@@ -444,8 +444,8 @@ export const useRankingStore = create<RankingState>()(
                 set({ error: null })
 
                 try {
-                    const comments = await getRankingComments(rankingId, limit)
-                    set({ comments })
+                    const result = await getRankingComments(rankingId, limit)
+                    set({ comments: result.data })
                 } catch (error) {
                     console.error('Error loading comments:', error)
                     set({

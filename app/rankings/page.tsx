@@ -67,7 +67,7 @@ export default function RankingsPage() {
         if (activeTab === 'comments' && userId && !isGuest) {
             setIsLoadingComments(true)
             getUserComments(userId)
-                .then(setUserComments)
+                .then((result) => setUserComments(result.data))
                 .catch(console.error)
                 .finally(() => setIsLoadingComments(false))
         }
@@ -78,7 +78,7 @@ export default function RankingsPage() {
         if (activeTab === 'liked' && userId && !isGuest) {
             setIsLoadingLiked(true)
             getUserLikedRankings(userId)
-                .then(setLikedRankings)
+                .then((result) => setLikedRankings(result.data))
                 .catch(console.error)
                 .finally(() => setIsLoadingLiked(false))
         }
