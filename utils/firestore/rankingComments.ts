@@ -26,6 +26,7 @@ import {
     arrayRemove,
     DocumentSnapshot,
     startAfter,
+    writeBatch,
 } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { RankingComment, CreateCommentRequest, RANKING_CONSTRAINTS } from '../../types/rankings'
@@ -411,6 +412,80 @@ export async function getUserComments(
         return createPaginatedResult(comments, lastDoc, limit)
     } catch (error) {
         console.error('Error getting user comments:', error)
+        throw error
+    }
+}
+
+/**
+ * Update denormalized username across all comments and replies authored by a user
+ */
+export async function updateRankingCommentsUsername(
+    userId: string,
+    newUsername: string
+): Promise<void> {
+    try {
+        const commentsRef = collection(db, COLLECTIONS.comments)
+        const commentsSnapshot = await getDocs(query(commentsRef, where('userId', '==', userId)))
+
+        if (commentsSnapshot.empty) {
+            return
+        }
+
+        let batch = writeBatch(db)
+        let operations = 0
+        const replyParentMap = new Map<string, Set<string>>()
+
+        for (const commentDoc of commentsSnapshot.docs) {
+            batch.update(commentDoc.ref, { userName: newUsername })
+            operations++
+
+            const commentData = commentDoc.data() as RankingComment
+            if (commentData.parentCommentId) {
+                if (!replyParentMap.has(commentData.parentCommentId)) {
+                    replyParentMap.set(commentData.parentCommentId, new Set<string>())
+                }
+                replyParentMap.get(commentData.parentCommentId)!.add(commentData.id)
+            }
+
+            if (operations === 500) {
+                await batch.commit()
+                batch = writeBatch(db)
+                operations = 0
+            }
+        }
+
+        if (operations > 0) {
+            await batch.commit()
+        }
+
+        // Update embedded reply entries on parent comments
+        for (const [parentId, replyIds] of replyParentMap.entries()) {
+            const parentRef = getCommentDocRef(parentId)
+            const parentSnap = await getDoc(parentRef)
+            if (!parentSnap.exists()) {
+                continue
+            }
+
+            const parentData = parentSnap.data() as RankingComment
+            const replies = parentData.replies || []
+            let hasChanges = false
+
+            const updatedReplies = replies.map((reply) => {
+                if (replyIds.has(reply.id)) {
+                    hasChanges = true
+                    return { ...reply, userName: newUsername }
+                }
+                return reply
+            })
+
+            if (hasChanges) {
+                await updateDoc(parentRef, {
+                    replies: updatedReplies,
+                })
+            }
+        }
+    } catch (error) {
+        console.error('Error updating ranking comment usernames:', error)
         throw error
     }
 }
