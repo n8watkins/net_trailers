@@ -64,10 +64,10 @@ function CollectionBuilderModal() {
             // Create collection from the form data
             const newListResult = createList({
                 name: formData.name,
-                isPublic: false,
+                isPublic: formData.isPublic ?? false,
                 emoji: '📺', // Default emoji for AI-generated collections
                 color: '#3b82f6', // Default blue color
-                displayAsRow: false, // Collections don't display as rows
+                displayAsRow: formData.displayAsRow ?? false,
                 collectionType: mode === 'smart' ? 'ai-generated' : 'manual',
                 autoUpdateEnabled: false, // Collections created here don't auto-update
                 updateFrequency: 'never',
@@ -84,10 +84,12 @@ function CollectionBuilderModal() {
                     formData.previewContent.length,
                     'items'
                 )
-                formData.previewContent.forEach((content) => {
-                    console.log('Adding content:', content.id, content.title || content.name)
-                    addToList(listId, content)
-                })
+                await Promise.all(
+                    formData.previewContent.map((content) => {
+                        console.log('Adding content:', content.id, content.title || content.name)
+                        return addToList(listId, content)
+                    })
+                )
             } else {
                 console.warn('No preview content to add!')
             }

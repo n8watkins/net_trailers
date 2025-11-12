@@ -45,9 +45,9 @@ const NetflixLoader: React.FC<Props> = ({
         setLoadingCounter(0)
         setLoadingMessage('🎬 Finding your favorite movies...')
 
-        // Counter animation - slower for Gemini requests, faster for regular loads
+        // Counter animation - much slower for Gemini requests (5 seconds), faster for regular loads
         const increment = slowCounter ? 1 : 2 // Slower increment for Gemini
-        const interval = slowCounter ? 25 : 15 // Slower interval for Gemini
+        const interval = slowCounter ? 50 : 15 // Much slower interval for Gemini (5 seconds total)
 
         const counterInterval = setInterval(() => {
             setLoadingCounter((prev) => {

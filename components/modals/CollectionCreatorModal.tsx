@@ -204,10 +204,10 @@ export default function CollectionCreatorModal() {
             // Handle both sync and async returns
             const listId = typeof newListResult === 'string' ? newListResult : await newListResult
 
-            // Add all content items to the list
-            collectionCreatorModal.content.forEach((contentItem) => {
-                addToList(listId, contentItem)
-            })
+            // Add all content items to the list and wait for completion
+            await Promise.all(
+                collectionCreatorModal.content.map((contentItem) => addToList(listId, contentItem))
+            )
 
             showSuccess(
                 'Collection saved!',

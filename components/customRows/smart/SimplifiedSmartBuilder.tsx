@@ -63,6 +63,10 @@ export function SimplifiedSmartBuilder({
     const [showInfiniteTooltip, setShowInfiniteTooltip] = useState(false)
     const [mouseDownOnBackdrop, setMouseDownOnBackdrop] = useState(false)
 
+    // Collection settings
+    const [isPublic, setIsPublic] = useState(false)
+    const [displayAsRow, setDisplayAsRow] = useState(true)
+
     // Track all content IDs seen in this session (both removed and kept)
     const [allSeenIds, setAllSeenIds] = useState<Set<number>>(new Set())
     // Track IDs that user explicitly removed
@@ -210,6 +214,9 @@ export function SimplifiedSmartBuilder({
                 updateFrequency: 'never',
                 // Include preview content for collection creation
                 previewContent,
+                // Collection visibility and display settings
+                isPublic,
+                displayAsRow,
             }
 
             console.log('Creating collection with preview content:', previewContent.length, 'items')
@@ -229,6 +236,8 @@ export function SimplifiedSmartBuilder({
         setError(null)
         setCurrentStep(1)
         setEnableInfiniteContent(false)
+        setIsPublic(false)
+        setDisplayAsRow(true)
         setAllSeenIds(new Set())
         setRemovedIds(new Set())
         setContentMap(new Map())
@@ -338,10 +347,14 @@ export function SimplifiedSmartBuilder({
                     </div>
 
                     {/* Content */}
-                    <div className="p-6 min-h-[600px] flex flex-col">
+                    <div className="p-6 min-h-[600px] flex flex-col relative">
                         {/* Query Input - Centered and Hero-style */}
                         <div
-                            className={`mb-6 transition-all duration-700 ease-out ${!generatedRow && !isGenerating ? 'w-full mx-auto mt-32 opacity-100' : 'opacity-100 transform translate-y-0'}`}
+                            className={`mb-6 transition-all duration-700 ease-out ${!generatedRow && !isGenerating ? 'w-full mx-auto mt-32' : 'mt-0'}`}
+                            style={{
+                                opacity: 1,
+                                transform: 'translateY(0)',
+                            }}
                         >
                             <label
                                 className={`block text-sm font-medium text-gray-300 mb-4 transition-all duration-500 ${!generatedRow && !isGenerating ? 'text-center' : ''}`}
@@ -408,8 +421,9 @@ export function SimplifiedSmartBuilder({
                                 </div>
 
                                 {/* Toggle Settings */}
-                                <div className="relative p-3 bg-gray-800/50 rounded-lg border border-gray-700">
-                                    <div className="flex items-center justify-between mb-2">
+                                <div className="relative p-3 bg-gray-800/50 rounded-lg border border-gray-700 space-y-3">
+                                    {/* Infinite Content Toggle */}
+                                    <div className="flex items-center justify-between">
                                         <label className="text-sm font-medium text-white flex items-center gap-1.5">
                                             <span>♾️</span>
                                             Infinite Content
@@ -452,6 +466,50 @@ export function SimplifiedSmartBuilder({
                                             </p>
                                         </div>
                                     )}
+
+                                    {/* Display as Row Toggle */}
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm font-medium text-white flex items-center gap-1.5">
+                                            <span>🏠</span>
+                                            Display as Row
+                                        </label>
+                                        <button
+                                            type="button"
+                                            onClick={() => setDisplayAsRow(!displayAsRow)}
+                                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                                                displayAsRow ? 'bg-blue-600' : 'bg-gray-600'
+                                            }`}
+                                        >
+                                            <span
+                                                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                                                    displayAsRow
+                                                        ? 'translate-x-5'
+                                                        : 'translate-x-0.5'
+                                                }`}
+                                            />
+                                        </button>
+                                    </div>
+
+                                    {/* Public Collection Toggle */}
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm font-medium text-white flex items-center gap-1.5">
+                                            <span>🌐</span>
+                                            Public Collection
+                                        </label>
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsPublic(!isPublic)}
+                                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                                                isPublic ? 'bg-green-600' : 'bg-gray-600'
+                                            }`}
+                                        >
+                                            <span
+                                                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                                                    isPublic ? 'translate-x-5' : 'translate-x-0.5'
+                                                }`}
+                                            />
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {/* Movie Grid */}
@@ -538,7 +596,7 @@ export function SimplifiedSmartBuilder({
 
                         {/* Loading state */}
                         {isGenerating && (
-                            <div className="py-8 -mt-24">
+                            <div className="absolute top-48 left-0 right-0 flex justify-center">
                                 <NetflixLoader
                                     inline
                                     slowCounter

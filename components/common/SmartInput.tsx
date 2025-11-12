@@ -622,15 +622,9 @@ export function SmartInput({
                         className="p-1 rounded-full hover:bg-black/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         aria-label="Submit search"
                     >
-                        {disabled ? (
-                            <MagnifyingGlassIcon
-                                className={`${currentSize.button} text-red-400 animate-spin`}
-                            />
-                        ) : (
-                            <MagnifyingGlassIcon
-                                className={`${currentSize.button} text-red-400 hover:text-red-300 transition-colors`}
-                            />
-                        )}
+                        <MagnifyingGlassIcon
+                            className={`${currentSize.button} text-red-400 hover:text-red-300 transition-colors`}
+                        />
                     </button>
                 </div>
             </div>

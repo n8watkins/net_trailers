@@ -6,7 +6,7 @@
 
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useMemo } from 'react'
 import { Content } from '../../types/userLists'
 import { Recommendation } from '../../types/recommendations'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
@@ -29,6 +29,19 @@ export default function RecommendedForYouRow() {
 
     // Check if recommendations are enabled in user preferences
     const showRecommendations = sessionData.showRecommendations ?? false
+
+    const likedIdsSignature = useMemo(
+        () => sessionData.likedMovies.map((item) => item.id).join(','),
+        [sessionData.likedMovies]
+    )
+    const watchlistIdsSignature = useMemo(
+        () => sessionData.defaultWatchlist.map((item) => item.id).join(','),
+        [sessionData.defaultWatchlist]
+    )
+    const hiddenIdsSignature = useMemo(
+        () => sessionData.hiddenMovies.map((item) => item.id).join(','),
+        [sessionData.hiddenMovies]
+    )
 
     // Fetch personalized recommendations
     useEffect(() => {
@@ -107,8 +120,9 @@ export default function RecommendedForYouRow() {
     }, [
         userId,
         sessionType,
-        sessionData.likedMovies.length,
-        sessionData.defaultWatchlist.length,
+        likedIdsSignature,
+        watchlistIdsSignature,
+        hiddenIdsSignature,
         showRecommendations,
     ])
 

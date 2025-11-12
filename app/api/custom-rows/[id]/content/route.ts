@@ -117,17 +117,21 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             // Apply child safety filtering if needed
             if (childSafeMode) {
                 const beforeCount = enrichedResults.length
-                enrichedResults = filterContentByAdultFlag(enrichedResults, true)
+                const filteredByAdultFlag = filterContentByAdultFlag(enrichedResults, true)
 
-                const tvItems = enrichedResults.filter((item: any) => item.media_type === 'tv')
-                const movieItems = enrichedResults.filter((item: any) => item.media_type !== 'tv')
-                let filteredTvItems = tvItems
-
+                const tvItems = filteredByAdultFlag.filter((item: any) => item.media_type === 'tv')
+                let safeTvIds: Set<number> | null = null
                 if (tvItems.length > 0) {
-                    filteredTvItems = await filterMatureTVShows(tvItems, API_KEY)
+                    const safeTv = await filterMatureTVShows(tvItems, API_KEY)
+                    safeTvIds = new Set(safeTv.map((item: any) => item.id))
                 }
 
-                enrichedResults = [...movieItems, ...filteredTvItems]
+                enrichedResults = filteredByAdultFlag.filter((item: any) => {
+                    if (item.media_type === 'tv') {
+                        return safeTvIds?.has(item.id)
+                    }
+                    return true
+                })
 
                 const hiddenCount = beforeCount - enrichedResults.length
 
@@ -293,17 +297,21 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             const beforeCount = enrichedResults.length
 
             // Filter by adult flag
-            enrichedResults = filterContentByAdultFlag(enrichedResults, true)
+            const filteredByAdultFlag = filterContentByAdultFlag(enrichedResults, true)
 
-            const tvItems = enrichedResults.filter((item: any) => item.media_type === 'tv')
-            const movieItems = enrichedResults.filter((item: any) => item.media_type !== 'tv')
-            let filteredTvItems = tvItems
-
+            const tvItems = filteredByAdultFlag.filter((item: any) => item.media_type === 'tv')
+            let safeTvIds: Set<number> | null = null
             if (tvItems.length > 0) {
-                filteredTvItems = await filterMatureTVShows(tvItems, API_KEY)
+                const safeTv = await filterMatureTVShows(tvItems, API_KEY)
+                safeTvIds = new Set(safeTv.map((item: any) => item.id))
             }
 
-            enrichedResults = [...movieItems, ...filteredTvItems]
+            enrichedResults = filteredByAdultFlag.filter((item: any) => {
+                if (item.media_type === 'tv') {
+                    return safeTvIds?.has(item.id)
+                }
+                return true
+            })
 
             const hiddenCount = beforeCount - enrichedResults.length
 
