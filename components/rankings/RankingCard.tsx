@@ -103,22 +103,28 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
                     {/* Author info */}
                     {showAuthor && (
                         <div className="flex items-center gap-2 text-sm">
-                            {ranking.userAvatar ? (
-                                <Image
-                                    src={ranking.userAvatar}
-                                    alt={ranking.userName || 'User'}
-                                    width={24}
-                                    height={24}
-                                    className="rounded-full"
-                                />
-                            ) : (
-                                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xs font-bold">
-                                    {ranking.userName?.[0]?.toUpperCase() || '?'}
-                                </div>
-                            )}
-                            <span className="text-gray-400">
-                                {ranking.userName || 'Unknown User'}
-                            </span>
+                            <Link
+                                href={`/users/${ranking.userId}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                            >
+                                {ranking.userAvatar ? (
+                                    <Image
+                                        src={ranking.userAvatar}
+                                        alt={ranking.userName || 'User'}
+                                        width={24}
+                                        height={24}
+                                        className="rounded-full"
+                                    />
+                                ) : (
+                                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xs font-bold">
+                                        {ranking.userName?.[0]?.toUpperCase() || '?'}
+                                    </div>
+                                )}
+                                <span className="text-gray-400 hover:text-gray-300">
+                                    {ranking.userName || 'Unknown User'}
+                                </span>
+                            </Link>
                             <span className="text-gray-600">•</span>
                             <span className="text-gray-500 text-xs">
                                 {formatDistanceToNow(ranking.createdAt, { addSuffix: true })}

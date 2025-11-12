@@ -68,7 +68,7 @@ export function RankingDetail({ ranking, onEdit, onDelete, onShare }: RankingDet
         return () => {
             isMounted = false
         }
-    }, [userId, ranking.id, incrementView])
+    }, [userId, ranking.id])
 
     // Load comments
     useEffect(() => {
@@ -93,7 +93,7 @@ export function RankingDetail({ ranking, onEdit, onDelete, onShare }: RankingDet
         return () => {
             isMounted = false
         }
-    }, [ranking.id, loadComments])
+    }, [ranking.id])
 
     const handleLike = async () => {
         if (!userId) return
@@ -199,7 +199,7 @@ export function RankingDetail({ ranking, onEdit, onDelete, onShare }: RankingDet
                     )}
                     <div>
                         <Link
-                            href={`/users/${ranking.userName || 'unknown'}`}
+                            href={`/users/${ranking.userId}`}
                             className="text-white font-medium hover:text-yellow-400 transition-colors"
                         >
                             {ranking.userName || 'Unknown User'}
