@@ -76,6 +76,7 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
                                     src={getPosterPath(item.content)}
                                     alt={getTitle(item.content)}
                                     fill
+                                    sizes="(max-width: 768px) 33vw, (max-width: 1200px) 25vw, 200px"
                                     className="object-cover rounded-md"
                                 />
                                 {/* Position badge */}

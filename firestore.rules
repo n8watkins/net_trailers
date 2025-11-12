@@ -155,11 +155,16 @@ service cloud.firestore {
                     && request.resource.data.userId == request.auth.uid
                     && isValidRankingData(request.resource.data);
 
-      // Allow update if authenticated user is the owner
-      allow update: if request.auth != null
-                    && request.auth.uid == resource.data.userId
-                    && request.resource.data.userId == resource.data.userId
-                    && isValidRankingData(request.resource.data);
+      // Allow update if authenticated user is the owner OR if only incrementing views/likes/comments
+      allow update: if request.auth != null && (
+                      // Owner can update anything
+                      (request.auth.uid == resource.data.userId
+                       && request.resource.data.userId == resource.data.userId
+                       && isValidRankingData(request.resource.data))
+                      ||
+                      // Anyone authenticated can increment views/likes/comments
+                      (isOnlyIncrementingStats(resource.data, request.resource.data))
+                    );
 
       // Allow delete if authenticated user is the owner
       allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
@@ -240,6 +245,21 @@ service cloud.firestore {
              && data.text is string
              && data.createdAt is number
              && data.likes is number;
+    }
+
+    // Helper function to check if only stats are being incremented
+    function isOnlyIncrementingStats(before, after) {
+      // Only views, likes, or comments changed, and they only increased
+      return after.id == before.id
+             && after.userId == before.userId
+             && after.userName == before.userName
+             && after.title == before.title
+             && after.itemCount == before.itemCount
+             && after.isPublic == before.isPublic
+             && after.rankedItems == before.rankedItems
+             && after.createdAt == before.createdAt
+             && after.updatedAt == before.updatedAt
+             && (after.views >= before.views || after.likes >= before.likes || after.comments >= before.comments);
     }
 
     // Deny all other access
