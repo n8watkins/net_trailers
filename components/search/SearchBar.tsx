@@ -20,6 +20,8 @@ interface SearchBarProps {
     className?: string
     onFocus?: () => void
     onBlur?: () => void
+    inputId?: string
+    voiceSourceId?: string
 }
 
 export default function SearchBar({
@@ -27,6 +29,8 @@ export default function SearchBar({
     className = '',
     onFocus,
     onBlur,
+    inputId,
+    voiceSourceId,
 }: SearchBarProps) {
     // Popular titles for typewriter effect
     const popularTitles = [
@@ -81,6 +85,7 @@ export default function SearchBar({
         onError: (error) => {
             showError('Voice input error', error)
         },
+        sourceId: voiceSourceId,
     })
 
     // Show live transcript while listening
@@ -440,7 +445,7 @@ export default function SearchBar({
 
                     <input
                         ref={inputRef}
-                        id="main-search-input"
+                        id={inputId}
                         type="search"
                         value={query}
                         onChange={handleInputChange}
@@ -459,7 +464,7 @@ export default function SearchBar({
                         aria-expanded={showSuggestions && quickResults.length > 0}
                         className={`
                             block w-full pl-10 pr-12 py-4
-                            bg-[#0a0a0a] border border-gray-600/50 rounded-lg
+                            bg-[#0a0a0a] border border-gray-600/30 rounded-lg
                             text-white placeholder-gray-400
                             focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent
                             transition-all duration-300 ease-in-out
@@ -467,35 +472,19 @@ export default function SearchBar({
                             text-base sm:text-lg select-none
                             autofill:bg-[#0a0a0a] autofill:text-white
                             autofill:shadow-[inset_0_0_0_1000px_#0a0a0a]
-                            ${isFocused ? 'bg-[#0a0a0a] shadow-xl shadow-red-500/30 border-red-500/50' : 'bg-[#0a0a0a]'}
+                            shadow-md shadow-red-500/20
+                            ${isFocused ? 'bg-[#0a0a0a] shadow-xl shadow-red-500/30 border-red-500/50' : 'hover:shadow-lg hover:shadow-red-500/25 bg-[#0a0a0a]'}
                         `}
                     />
 
-                    {/* Filter Button and Clear Button */}
+                    {/* Voice, Filter, and Clear Buttons */}
                     <div className="absolute inset-y-0 right-0 flex items-center">
-                        {/* Filter Button */}
-                        <button
-                            onClick={() => setShowFilters(!showFilters)}
-                            className={`px-3 py-2 transition-colors ${
-                                showFilters || hasActiveFilters
-                                    ? 'text-red-400 hover:text-red-300'
-                                    : 'text-gray-400 hover:text-white'
-                            }`}
-                            type="button"
-                            title={hasActiveFilters ? 'Active Filters' : 'Search Filters'}
-                            aria-label={
-                                hasActiveFilters ? 'Active search filters' : 'Search filters'
-                            }
-                        >
-                            <FunnelIcon className="h-5 w-5" aria-hidden="true" />
-                        </button>
-
                         {/* Voice Input Button */}
                         {isSupported && (
                             <button
                                 onClick={handleVoiceToggle}
                                 className={`px-3 py-2 transition-all duration-200 ${
-                                    isListening ? 'text-red-500' : 'text-gray-400 hover:text-white'
+                                    isListening ? '!text-red-500' : 'text-gray-400 hover:text-white'
                                 }`}
                                 type="button"
                                 title={isListening ? 'Stop voice input' : 'Start voice input'}
@@ -523,7 +512,7 @@ export default function SearchBar({
                                     <MicrophoneIcon
                                         className={`h-5 w-5 relative z-10 transition-all ${
                                             isListening
-                                                ? 'scale-110 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]'
+                                                ? 'scale-110 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)] !text-red-500'
                                                 : ''
                                         }`}
                                         aria-hidden="true"
@@ -531,6 +520,23 @@ export default function SearchBar({
                                 </div>
                             </button>
                         )}
+
+                        {/* Filter Button */}
+                        <button
+                            onClick={() => setShowFilters(!showFilters)}
+                            className={`px-3 py-2 transition-colors ${
+                                showFilters || hasActiveFilters
+                                    ? 'text-red-400 hover:text-red-300'
+                                    : 'text-gray-400 hover:text-white'
+                            }`}
+                            type="button"
+                            title={hasActiveFilters ? 'Active Filters' : 'Search Filters'}
+                            aria-label={
+                                hasActiveFilters ? 'Active search filters' : 'Search filters'
+                            }
+                        >
+                            <FunnelIcon className="h-5 w-5" aria-hidden="true" />
+                        </button>
 
                         {/* Clear Button */}
                         {query && (
