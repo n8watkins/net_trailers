@@ -349,14 +349,14 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
 
                         <button
                             type="button"
-                            className={`headerLink cursor-pointer flex items-center space-x-1 select-none group relative rounded-md px-2 py-1 ${
+                            className={`headerLink cursor-pointer flex items-center space-x-1 select-none group relative ${
                                 isRandomLoading ? 'cursor-wait opacity-80' : ''
                             }`}
                             onClick={() => handleRandomContent()}
                             disabled={isRandomLoading}
                             title="Jump to a random movie or TV show"
                         >
-                            <span className="absolute -inset-4 opacity-0 group-hover:opacity-40 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-400 via-pink-400 to-transparent rounded-md blur-md transition-opacity duration-400 bg-[length:200%_100%] group-hover:animate-[psychedelic-flow_3s_ease-in-out_infinite]" />
+                            <span className="absolute -inset-6 opacity-0 group-hover:opacity-50 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-500 via-pink-500/60 via-30% to-black rounded-md blur-xl transition-opacity duration-400 bg-[length:200%_100%] group-hover:animate-[psychedelic-flow_3s_ease-in-out_infinite]" />
                             {isRandomLoading ? (
                                 <ArrowPathIcon className="h-5 w-5 relative z-10" />
                             ) : (
@@ -608,7 +608,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                         </li>
                                         <li>
                                             <button
-                                                className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none group relative ${
+                                                className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none group relative overflow-hidden ${
                                                     isRandomLoading
                                                         ? 'opacity-80 cursor-wait'
                                                         : 'hover:bg-white/10'
@@ -618,7 +618,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                                 }
                                                 disabled={isRandomLoading}
                                             >
-                                                <span className="absolute -inset-4 opacity-0 group-hover:opacity-40 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-400 via-pink-400 to-transparent rounded-lg blur-md transition-opacity duration-400 bg-[length:200%_100%] group-hover:animate-[psychedelic-flow_3s_ease-in-out_infinite]" />
+                                                <span className="absolute -inset-6 opacity-0 group-hover:opacity-50 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-500 via-pink-500/60 via-30% to-black rounded-lg blur-xl transition-opacity duration-400 bg-[length:200%_100%] group-hover:animate-[psychedelic-flow_3s_ease-in-out_infinite]" />
                                                 {isRandomLoading ? (
                                                     <ArrowPathIcon className="h-5 w-5 animate-spin relative z-10" />
                                                 ) : (
