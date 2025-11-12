@@ -130,6 +130,7 @@ export default function RankingDetailPage() {
         >
             <RankingDetail
                 ranking={currentRanking}
+                rankingId={rankingId}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onShare={handleShare}

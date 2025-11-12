@@ -36,12 +36,19 @@ import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid'
 
 interface RankingDetailProps {
     ranking: Ranking
+    rankingId: string // Add rankingId prop to avoid re-renders from ranking object changes
     onEdit?: () => void
     onDelete?: () => void
     onShare?: () => void
 }
 
-export function RankingDetail({ ranking, onEdit, onDelete, onShare }: RankingDetailProps) {
+export function RankingDetail({
+    ranking,
+    rankingId,
+    onEdit,
+    onDelete,
+    onShare,
+}: RankingDetailProps) {
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
     const { likeRanking, unlikeRanking, incrementView, comments, loadComments } = useRankingStore()
@@ -53,12 +60,12 @@ export function RankingDetail({ ranking, onEdit, onDelete, onShare }: RankingDet
 
     const isOwner = userId && userId === ranking.userId
 
-    // Track view on mount
+    // Track view on mount - use rankingId prop instead of ranking.id to avoid infinite loop
     useEffect(() => {
         let isMounted = true
 
         if (userId) {
-            incrementView(ranking.id, userId).then(() => {
+            incrementView(rankingId, userId).then(() => {
                 if (isMounted) {
                     setLocalViews((prev) => prev + 1)
                 }
@@ -68,7 +75,7 @@ export function RankingDetail({ ranking, onEdit, onDelete, onShare }: RankingDet
         return () => {
             isMounted = false
         }
-    }, [userId, ranking.id])
+    }, [userId, rankingId])
 
     // Load comments
     useEffect(() => {
