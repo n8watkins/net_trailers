@@ -14,8 +14,6 @@ import {
     EyeSlashIcon,
     EyeIcon,
 } from '@heroicons/react/24/solid'
-import { SparklesIcon } from '@heroicons/react/24/outline'
-import { useRouter } from 'next/navigation'
 
 import type ReactPlayerType from 'react-player'
 import ContentMetadata from '../common/ContentMetadata'
@@ -34,17 +32,22 @@ import VideoControls from './modal-sections/VideoControls'
 import ModalVideoPlayer from './modal-sections/ModalVideoPlayer'
 import JsonDebugModal from './modal-sections/JsonDebugModal'
 import MoreLikeThisSection from '../modal/MoreLikeThisSection'
+import { useChildSafety } from '../../hooks/useChildSafety'
 
 function Modal() {
     // Debug settings
     const debugSettings = useDebugSettings()
 
-    // Router for navigation
-    const router = useRouter()
-
     // Zustand store
-    const { modal, closeModal, setAutoPlayWithSound, setLoading, openListModal, listModal } =
-        useAppStore()
+    const {
+        modal,
+        closeModal,
+        setAutoPlayWithSound,
+        setLoading,
+        openListModal,
+        listModal,
+        openModal,
+    } = useAppStore()
 
     // Extract modal state
     const showModal = modal.isOpen
@@ -126,6 +129,7 @@ function Modal() {
 
     const { showContentHidden, showContentShown, showError } = useToast()
     const errorHandler = createErrorHandler(showError)
+    const { isEnabled: childSafetyEnabled } = useChildSafety()
 
     function isFullScreen() {
         return !!document.fullscreenElement
@@ -266,25 +270,42 @@ function Modal() {
         setShowInlineListDropdown(false)
     }
 
-    const handleMoreLikeThis = () => {
-        if (!currentMovie) return
+    const [isRandomLoading, setIsRandomLoading] = useState(false)
+    const handleRandomContent = async () => {
+        if (isRandomLoading) return
 
-        // Use enhanced movie data if available for more accurate results
-        const content = (enhancedMovieData || currentMovie) as Content
-        const title = getTitle(content)
+        setIsRandomLoading(true)
+        try {
+            const response = await fetch(
+                `/api/random-content?childSafetyMode=${childSafetyEnabled ? 'true' : 'false'}`,
+                {
+                    cache: 'no-store',
+                }
+            )
 
-        // Build a smart query using title and genres
-        let query = `content like ${title}`
+            if (!response.ok) {
+                throw new Error(`Random content request failed: ${response.status}`)
+            }
 
-        // Add genres if available
-        if (content.genres && content.genres.length > 0) {
-            const genreNames = content.genres.map((g) => g.name).join(', ')
-            query = `${content.media_type === 'movie' ? 'movies' : 'shows'} similar to ${title} with ${genreNames} themes`
+            const data = await response.json()
+            const randomContent = data?.content as Content | undefined
+
+            if (!randomContent || !randomContent.id) {
+                throw new Error('Random content payload missing')
+            }
+
+            const normalizedContent = {
+                ...randomContent,
+                media_type: randomContent.media_type === 'tv' ? 'tv' : 'movie',
+            } as Content
+
+            openModal(normalizedContent, true, false)
+        } catch (error) {
+            console.error('Failed to load random content:', error)
+            showError('Unable to find something to watch', 'Please try again')
+        } finally {
+            setIsRandomLoading(false)
         }
-
-        // Close the modal and navigate to smart search
-        closeModal()
-        router.push(`/smartsearch?q=${encodeURIComponent(query)}`)
     }
 
     useEffect(() => {
@@ -811,18 +832,6 @@ function Modal() {
                                                         </ToolTipMod>
                                                     )
                                                 })()}
-
-                                            {/* More Like This Button */}
-                                            {currentMovie && 'media_type' in currentMovie && (
-                                                <ToolTipMod title="More Like This">
-                                                    <button
-                                                        className="group relative p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-colors duration-200"
-                                                        onClick={handleMoreLikeThis}
-                                                    >
-                                                        <SparklesIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-red-400 transition-colors" />
-                                                    </button>
-                                                </ToolTipMod>
-                                            )}
                                         </div>
 
                                         {/* Right side buttons - Video Controls */}
@@ -839,6 +848,8 @@ function Modal() {
                                                 onShowVolumeSlider={setShowVolumeSlider}
                                                 volumeButtonRef={volumeButtonRef}
                                                 volumeSliderRef={volumeSliderRef}
+                                                onRandomize={handleRandomContent}
+                                                isRandomizing={isRandomLoading}
                                             />
                                         )}
                                     </div>

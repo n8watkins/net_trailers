@@ -10,6 +10,8 @@ import { useEffect, useState } from 'react'
 import { Content, getTitle } from '../../typings'
 import { Recommendation } from '../../types/recommendations'
 import ContentCard from '../common/ContentCard'
+import { FolderPlusIcon } from '@heroicons/react/24/outline'
+import { useModalStore } from '../../stores/modalStore'
 
 interface MoreLikeThisSectionProps {
     /** Current content being viewed */
@@ -20,6 +22,7 @@ export default function MoreLikeThisSection({ content }: MoreLikeThisSectionProp
     const [recommendations, setRecommendations] = useState<Recommendation[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const openCollectionCreatorModal = useModalStore((state) => state.openCollectionCreatorModal)
 
     // Fetch similar content
     useEffect(() => {
@@ -79,11 +82,47 @@ export default function MoreLikeThisSection({ content }: MoreLikeThisSectionProp
         return null
     }
 
+    const handleCreateCollection = () => {
+        if (!openCollectionCreatorModal) return
+
+        // Include the current content plus all recommendations, deduplicated by ID
+        const itemsMap = new Map<number, Content>()
+        itemsMap.set(content.id, content)
+        recommendations.forEach((rec) => {
+            if (rec?.content?.id) {
+                itemsMap.set(rec.content.id, rec.content)
+            }
+        })
+
+        const uniqueItems = Array.from(itemsMap.values())
+        if (uniqueItems.length === 0) return
+
+        const hasMovies = uniqueItems.some((item) => item.media_type === 'movie')
+        const hasTv = uniqueItems.some((item) => item.media_type === 'tv')
+        const mediaType: 'movie' | 'tv' | 'all' =
+            hasMovies && hasTv ? 'all' : hasTv ? 'tv' : 'movie'
+
+        openCollectionCreatorModal(`More Like ${getTitle(content)}`, uniqueItems, mediaType)
+    }
+
     return (
         <div className="space-y-4 border-t border-gray-700 pt-6">
-            <h3 className="text-lg sm:text-xl font-semibold text-white">
-                More Like {getTitle(content)}
-            </h3>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <h3 className="text-lg sm:text-xl font-semibold text-white">
+                    More Like {getTitle(content)}
+                </h3>
+
+                <div className="flex flex-wrap gap-2">
+                    <button
+                        type="button"
+                        className="inline-flex items-center gap-1.5 rounded-full border border-red-500/40 px-3 py-1.5 text-sm font-medium text-red-200 hover:border-red-400 hover:bg-red-500/10 transition-colors"
+                        onClick={handleCreateCollection}
+                    >
+                        <FolderPlusIcon className="h-4 w-4" />
+                        <span>Create Collection</span>
+                    </button>
+                </div>
+            </div>
 
             {/* Grid of recommendations */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">

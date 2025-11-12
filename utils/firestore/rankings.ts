@@ -168,7 +168,12 @@ export async function getRanking(rankingId: string): Promise<Ranking | null> {
 export async function getUserRankings(userId: string): Promise<Ranking[]> {
     try {
         const rankingsRef = collection(db, COLLECTIONS.rankings)
-        const q = query(rankingsRef, where('userId', '==', userId), orderBy('updatedAt', 'desc'))
+        const q = query(
+            rankingsRef,
+            where('userId', '==', userId),
+            orderBy('updatedAt', 'desc'),
+            firestoreLimit(50) // Limit to prevent unbounded queries (max rankings per user)
+        )
 
         const snapshot = await getDocs(q)
         const rankings: Ranking[] = []
