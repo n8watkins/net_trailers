@@ -52,7 +52,7 @@ export default function NotificationBell() {
                 disabled
             >
                 <BellIcon
-                    className="h-7 w-7 text-gray-300 transition-transform group-hover:scale-110 group-hover:text-white"
+                    className="h-8 w-8 text-gray-300 transition-transform group-hover:scale-110 group-hover:text-white"
                     aria-hidden="true"
                 />
             </button>
@@ -80,12 +80,12 @@ export default function NotificationBell() {
             {/* Bell Icon */}
             {hasUnread ? (
                 <BellIconSolid
-                    className="h-7 w-7 text-red-500 transition-transform group-hover:scale-110"
+                    className="h-8 w-8 text-red-500 transition-transform group-hover:scale-110"
                     aria-hidden="true"
                 />
             ) : (
                 <BellIcon
-                    className="h-7 w-7 text-gray-300 transition-transform group-hover:scale-110 group-hover:text-white"
+                    className="h-8 w-8 text-gray-300 transition-transform group-hover:scale-110 group-hover:text-white"
                     aria-hidden="true"
                 />
             )}

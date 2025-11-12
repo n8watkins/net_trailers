@@ -98,7 +98,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                 {/* Avatar Button - Loading */}
                 <button
                     disabled
-                    className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-700 transition-colors duration-200 focus:outline-none cursor-wait"
+                    className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-700 transition-all duration-200 focus:outline-none cursor-wait"
                     aria-label="Loading user menu"
                 >
                     <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
@@ -115,7 +115,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                 {/* Avatar Button - Not Logged In */}
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-600 hover:bg-gray-500 transition-colors duration-200 focus:outline-none"
+                    className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-600 hover:bg-gray-500 hover:scale-110 transition-all duration-200 focus:outline-none"
                     aria-label="User menu"
                     aria-expanded={isOpen}
                 >
@@ -262,7 +262,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                 {/* Avatar Button - Loading user details */}
                 <button
                     disabled
-                    className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-red-600 transition-colors duration-200 focus:outline-none cursor-wait"
+                    className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-red-600 transition-all duration-200 focus:outline-none cursor-wait"
                     aria-label="Loading user details"
                 >
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -278,7 +278,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                 {/* Avatar Button - Not Logged In */}
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-600 hover:bg-gray-500 transition-colors duration-200 focus:outline-none"
+                    className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-600 hover:bg-gray-500 hover:scale-110 transition-all duration-200 focus:outline-none"
                     aria-label="User menu"
                     aria-expanded={isOpen}
                 >
@@ -293,7 +293,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
             {/* Avatar Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-red-600 hover:bg-red-700 transition-colors duration-200 focus:outline-none"
+                className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-red-600 hover:bg-red-700 hover:scale-110 transition-all duration-200 focus:outline-none"
                 aria-label="Profile menu"
                 aria-expanded={isOpen}
             >

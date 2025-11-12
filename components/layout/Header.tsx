@@ -349,7 +349,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
 
                         <button
                             type="button"
-                            className={`headerLink flex items-center space-x-1 select-none px-3 py-1 rounded-md border border-white/10 hover:border-white/40 transition-colors ml-2 ${
+                            className={`headerLink cursor-pointer flex items-center space-x-1 select-none group ${
                                 isRandomLoading ? 'cursor-wait opacity-80' : ''
                             }`}
                             onClick={() => handleRandomContent()}
@@ -359,9 +359,11 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                             {isRandomLoading ? (
                                 <ArrowPathIcon className="h-5 w-5 animate-spin" />
                             ) : (
-                                <SparklesIcon className="h-5 w-5" />
+                                <SparklesIcon className="h-5 w-5 group-hover:animate-[wiggle_0.5s_ease-in-out]" />
                             )}
-                            <span>{isRandomLoading ? 'Finding...' : 'Random'}</span>
+                            <span className="group-hover:animate-[wiggle_0.5s_ease-in-out]">
+                                {isRandomLoading ? 'Finding...' : 'Surprise Me!'}
+                            </span>
                         </button>
 
                         {/* Child Safety Indicator - After Community */}
@@ -605,7 +607,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                         </li>
                                         <li>
                                             <button
-                                                className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
+                                                className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none group ${
                                                     isRandomLoading
                                                         ? 'opacity-80 cursor-wait'
                                                         : 'hover:bg-white/10'
@@ -618,10 +620,12 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                                 {isRandomLoading ? (
                                                     <ArrowPathIcon className="h-5 w-5 animate-spin" />
                                                 ) : (
-                                                    <SparklesIcon className="h-5 w-5" />
+                                                    <SparklesIcon className="h-5 w-5 group-hover:animate-[wiggle_0.5s_ease-in-out]" />
                                                 )}
-                                                <span>
-                                                    {isRandomLoading ? 'Finding...' : 'Random'}
+                                                <span className="group-hover:animate-[wiggle_0.5s_ease-in-out]">
+                                                    {isRandomLoading
+                                                        ? 'Finding...'
+                                                        : 'Surprise Me!'}
                                                 </span>
                                             </button>
                                         </li>
