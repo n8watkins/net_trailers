@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { filterContentByAdultFlag } from '../../../../../utils/contentFilter'
 import { filterMatureTVShows } from '../../../../../utils/tvContentRatings'
-import { getTMDBHeaders } from '../../../../../utils/tmdbFetch'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -88,20 +87,18 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                     // For "both" media type, try movie first, then TV if it fails
                     if (mediaType === 'both') {
                         // Try movie endpoint first
-                        const movieUrl = new URL(`${BASE_URL}/movie/${tmdbId}`)
-                        movieUrl.searchParams.append('language', 'en-US')
+                        const movieUrl = `${BASE_URL}/movie/${tmdbId}?api_key=${API_KEY}&language=en-US`
 
-                        const movieResponse = await fetch(movieUrl.toString(), { headers: getTMDBHeaders() })
+                        const movieResponse = await fetch(movieUrl)
                         if (movieResponse.ok) {
                             const item = await movieResponse.json()
                             return { ...item, media_type: 'movie' }
                         }
 
                         // If movie fails, try TV endpoint
-                        const tvUrl = new URL(`${BASE_URL}/tv/${tmdbId}`)
-                        tvUrl.searchParams.append('language', 'en-US')
+                        const tvUrl = `${BASE_URL}/tv/${tmdbId}?api_key=${API_KEY}&language=en-US`
 
-                        const tvResponse = await fetch(tvUrl.toString(), { headers: getTMDBHeaders() })
+                        const tvResponse = await fetch(tvUrl)
                         if (tvResponse.ok) {
                             const item = await tvResponse.json()
                             return { ...item, media_type: 'tv' }
@@ -117,10 +114,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                             ? `${BASE_URL}/tv/${tmdbId}`
                             : `${BASE_URL}/movie/${tmdbId}`
 
-                    const url = new URL(endpoint)
-                    url.searchParams.append('language', 'en-US')
+                    const url = `${endpoint}?api_key=${API_KEY}&language=en-US`
 
-                    const response = await fetch(url.toString(), { headers: getTMDBHeaders() })
+                    const response = await fetch(url)
                     if (!response.ok) return null
 
                     const item = await response.json()
@@ -227,32 +223,30 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
         // Handle "both" media type by fetching from both endpoints
         if (mediaType === 'both') {
-            // Fetch movies
-            const movieUrl = new URL(`${BASE_URL}/discover/movie`)
-            movieUrl.searchParams.append('language', 'en-US')
-            movieUrl.searchParams.append('page', page)
-            movieUrl.searchParams.append('sort_by', 'popularity.desc')
-            movieUrl.searchParams.append('with_genres', genreParam)
+            // Build movie URL
+            let movieUrl = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&page=${page}&sort_by=popularity.desc&with_genres=${genreParam}`
             if (childSafeMode) {
-                movieUrl.searchParams.append('certification_country', 'US')
-                movieUrl.searchParams.append('certification.lte', 'PG-13')
+                movieUrl += '&certification_country=US&certification.lte=PG-13'
             }
 
-            // Fetch TV shows
-            const tvUrl = new URL(`${BASE_URL}/discover/tv`)
-            tvUrl.searchParams.append('language', 'en-US')
-            tvUrl.searchParams.append('page', page)
-            tvUrl.searchParams.append('sort_by', 'popularity.desc')
-            tvUrl.searchParams.append('with_genres', genreParam)
+            // Build TV URL
+            const tvUrl = `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&page=${page}&sort_by=popularity.desc&with_genres=${genreParam}`
 
             // Fetch both in parallel
-            const [movieResponse, tvResponse] = await Promise.all([
-                fetch(movieUrl.toString(), { headers: getTMDBHeaders() }),
-                fetch(tvUrl.toString(), { headers: getTMDBHeaders() }),
-            ])
+            const [movieResponse, tvResponse] = await Promise.all([fetch(movieUrl), fetch(tvUrl)])
 
             if (!movieResponse.ok || !tvResponse.ok) {
-                throw new Error('TMDB API error while fetching both media types')
+                console.error('[Custom Rows API] TMDB fetch error:', {
+                    movieStatus: movieResponse.status,
+                    movieOk: movieResponse.ok,
+                    tvStatus: tvResponse.status,
+                    tvOk: tvResponse.ok,
+                    movieUrl: movieUrl.replace(/api_key=[^&]+/, 'api_key=[REDACTED]'),
+                    tvUrl: tvUrl.replace(/api_key=[^&]+/, 'api_key=[REDACTED]'),
+                })
+                throw new Error(
+                    `TMDB API error while fetching both media types: movie=${movieResponse.status}, tv=${tvResponse.status}`
+                )
             }
 
             const [movieData, tvData] = await Promise.all([movieResponse.json(), tvResponse.json()])
@@ -281,20 +275,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         } else {
             // Single media type (movie or tv)
             const discoverEndpoint = mediaType === 'movie' ? 'discover/movie' : 'discover/tv'
-            const url = new URL(`${BASE_URL}/${discoverEndpoint}`)
-            url.searchParams.append('language', 'en-US')
-            url.searchParams.append('page', page)
-            url.searchParams.append('sort_by', 'popularity.desc')
-            url.searchParams.append('with_genres', genreParam)
+            let url = `${BASE_URL}/${discoverEndpoint}?api_key=${API_KEY}&language=en-US&page=${page}&sort_by=popularity.desc&with_genres=${genreParam}`
 
             // Apply child safety filtering
             if (childSafeMode && mediaType === 'movie') {
-                url.searchParams.append('certification_country', 'US')
-                url.searchParams.append('certification.lte', 'PG-13')
+                url += '&certification_country=US&certification.lte=PG-13'
             }
 
             // Fetch from TMDB
-            const response = await fetch(url.toString(), { headers: getTMDBHeaders() })
+            const response = await fetch(url)
 
             if (!response.ok) {
                 throw new Error(`TMDB API error: ${response.status} ${response.statusText}`)

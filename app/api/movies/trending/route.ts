@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getTMDBHeaders } from '../../../../utils/tmdbFetch'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -19,32 +18,20 @@ export async function GET(request: NextRequest) {
         const parsedPage = parseInt(rawPage, 10)
         const page = Math.max(1, Math.min(500, isNaN(parsedPage) ? 1 : parsedPage)).toString()
 
-        let urlObj: URL
+        let url: string
 
         if (childSafeMode) {
             // ✅ RATING-BASED FILTERING STRATEGY
             // Use discover endpoint with certification filter for all movies
             // certification.lte=PG-13 ensures only G, PG, and PG-13 rated movies
             // Sorted by popularity for trending content
-            urlObj = new URL(`${BASE_URL}/discover/movie`)
-            urlObj.searchParams.set('language', 'en-US')
-            urlObj.searchParams.set('page', page)
-            urlObj.searchParams.set('sort_by', 'popularity.desc')
-            urlObj.searchParams.set('certification_country', 'US')
-            urlObj.searchParams.set('certification.lte', 'PG-13')
-            urlObj.searchParams.set('include_adult', 'false')
-            urlObj.searchParams.set('vote_count.gte', '100')
+            url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&page=${page}&sort_by=popularity.desc&certification_country=US&certification.lte=PG-13&include_adult=false&vote_count.gte=100`
         } else {
             // Normal mode - use trending endpoint for movies only
-            urlObj = new URL(`${BASE_URL}/trending/movie/week`)
-            urlObj.searchParams.set('language', 'en-US')
-            urlObj.searchParams.set('page', page)
+            url = `${BASE_URL}/trending/movie/week?api_key=${API_KEY}&language=en-US&page=${page}`
         }
 
-        // Use Authorization header instead of query parameter for security
-        const response = await fetch(urlObj.toString(), {
-            headers: getTMDBHeaders(),
-        })
+        const response = await fetch(url)
 
         if (!response.ok) {
             throw new Error(`TMDB API error: ${response.status}`)
