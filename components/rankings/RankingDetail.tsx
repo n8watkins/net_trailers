@@ -20,6 +20,7 @@ import { getTitle, getPosterPath, getYear } from '@/typings'
 import { CommentSection } from './CommentSection'
 import { useRankingStore } from '@/stores/rankingStore'
 import { useSessionStore } from '@/stores/sessionStore'
+import { hasUserLikedRanking } from '@/utils/firestore/rankings'
 import { formatDistanceToNow } from 'date-fns'
 import {
     HeartIcon,
@@ -54,20 +55,53 @@ export function RankingDetail({
 }: RankingDetailProps) {
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
-    const { likeRanking, unlikeRanking, incrementView, comments, loadComments } = useRankingStore()
+    const comments = useRankingStore((state) => state.comments)
+    const { likeRanking, unlikeRanking, incrementView, loadComments } = useRankingStore()
 
     const [isLiked, setIsLiked] = useState(false)
+    const [isCheckingLike, setIsCheckingLike] = useState(true)
     const [localLikes, setLocalLikes] = useState(ranking.likes)
     const [localViews, setLocalViews] = useState(ranking.views)
     const [isLoadingComments, setIsLoadingComments] = useState(false)
 
     const isOwner = userId && userId === ranking.userId
 
-    // Track view on mount - use rankingId prop instead of ranking.id to avoid infinite loop
+    // Check if user has already liked this ranking
     useEffect(() => {
         let isMounted = true
 
-        if (userId) {
+        const checkLikeStatus = async () => {
+            if (userId) {
+                try {
+                    const liked = await hasUserLikedRanking(userId, rankingId)
+                    if (isMounted) {
+                        setIsLiked(liked)
+                    }
+                } catch (error) {
+                    console.error('Failed to check like status:', error)
+                } finally {
+                    if (isMounted) {
+                        setIsCheckingLike(false)
+                    }
+                }
+            } else {
+                setIsCheckingLike(false)
+            }
+        }
+
+        checkLikeStatus()
+
+        return () => {
+            isMounted = false
+        }
+    }, [userId, rankingId])
+
+    // Track view on mount - only increment if not owner
+    useEffect(() => {
+        let isMounted = true
+
+        // Only increment view if user is logged in and is not the owner
+        if (userId && userId !== ranking.userId) {
             incrementView(rankingId, userId).then(() => {
                 if (isMounted) {
                     setLocalViews((prev) => prev + 1)
@@ -78,7 +112,7 @@ export function RankingDetail({
         return () => {
             isMounted = false
         }
-    }, [userId, rankingId])
+    }, [userId, rankingId, ranking.userId])
 
     // Load comments
     useEffect(() => {

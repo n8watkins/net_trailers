@@ -56,8 +56,7 @@ export default function RankingDetailPage() {
     }, [isInitialized, rankingId, userId])
 
     const handleEdit = () => {
-        // TODO: Implement edit mode
-        showError('Edit mode not yet implemented')
+        router.push(`/rankings/${rankingId}/edit`)
     }
 
     const handleDelete = async () => {

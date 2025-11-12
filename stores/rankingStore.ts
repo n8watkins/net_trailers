@@ -441,16 +441,15 @@ export const useRankingStore = create<RankingState>()(
 
             // Load comments
             loadComments: async (rankingId: string, limit = 20) => {
-                set({ isLoading: true, error: null })
+                set({ error: null })
 
                 try {
                     const comments = await getRankingComments(rankingId, limit)
-                    set({ comments, isLoading: false })
+                    set({ comments })
                 } catch (error) {
                     console.error('Error loading comments:', error)
                     set({
                         error: error instanceof Error ? error.message : 'Failed to load comments',
-                        isLoading: false,
                     })
                 }
             },

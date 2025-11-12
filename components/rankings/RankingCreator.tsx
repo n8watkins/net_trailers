@@ -13,6 +13,7 @@ import { useState, useCallback, useEffect } from 'react'
 import Image from 'next/image'
 import { Content, getTitle, getPosterPath, getYear } from '@/typings'
 import {
+    Ranking,
     RankedItem,
     CreateRankingRequest,
     UpdateRankingRequest,
@@ -20,8 +21,9 @@ import {
 } from '@/types/rankings'
 import { useRankingStore } from '@/stores/rankingStore'
 import { useSessionStore } from '@/stores/sessionStore'
-import { useProfileStore } from '@/stores/profileStore'
 import { useSearch } from '@/hooks/useSearch'
+import { useToast } from '@/hooks/useToast'
+import { auth } from '@/firebase'
 import { POPULAR_TAGS, getTagById } from '@/utils/popularTags'
 import {
     TrophyIcon,
@@ -37,17 +39,19 @@ import {
 } from '@heroicons/react/24/outline'
 
 interface RankingCreatorProps {
+    existingRanking?: Ranking
     onComplete?: (rankingId: string) => void
     onCancel?: () => void
 }
 
-export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
+export function RankingCreator({ existingRanking, onComplete, onCancel }: RankingCreatorProps) {
+    const isEditMode = !!existingRanking
     const [mouseDownOnBackdrop, setMouseDownOnBackdrop] = useState(false)
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
-    const { profile } = useProfileStore()
     const { createRanking, updateRanking } = useRankingStore()
     const { query, updateQuery, results, isLoading: isSearchLoading } = useSearch()
+    const { showSuccess, showError } = useToast()
 
     // Step management
     const [currentStep, setCurrentStep] = useState(1)
@@ -64,6 +68,25 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
     const [selectedItems, setSelectedItems] = useState<Content[]>([])
     const [selectedTag, setSelectedTag] = useState<string | null>(null)
     const [tagContent, setTagContent] = useState<Content[]>([])
+
+    // Initialize form with existing ranking data (edit mode)
+    useEffect(() => {
+        if (existingRanking) {
+            setTitle(existingRanking.title)
+            setDescription(existingRanking.description || '')
+            setItemCount(existingRanking.itemCount)
+            setIsPublic(existingRanking.isPublic)
+            setTags(existingRanking.tags || [])
+
+            // Set selected items and ranked items from existing ranking
+            const contents = existingRanking.rankedItems.map((item) => item.content)
+            setSelectedItems(contents)
+            setRankedItems(existingRanking.rankedItems)
+
+            // Skip to step 3 in edit mode (already have items)
+            setCurrentStep(3)
+        }
+    }, [existingRanking])
     const [isLoadingTag, setIsLoadingTag] = useState(false)
     const [tagSearchQuery, setTagSearchQuery] = useState('')
 
@@ -173,7 +196,7 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
         if (selectedItems.find((item) => item.id === content.id)) {
             setSelectedItems(selectedItems.filter((item) => item.id !== content.id))
         } else {
-            if (selectedItems.length < itemCount) {
+            if (selectedItems.length < RANKING_CONSTRAINTS.MAX_ITEM_COUNT) {
                 setSelectedItems([...selectedItems, content])
             }
         }
@@ -223,58 +246,100 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
     }
 
     const handleSubmit = async () => {
-        if (!userId || !profile || !isStep3Valid) return
-
-        // Extract values to ensure they're stable
-        const username = profile.username
-        const avatarUrl = profile.avatarUrl
-
-        if (!username) {
-            console.error('Profile missing username')
+        // Validation checks with user feedback
+        if (!userId) {
+            showError('You must be logged in to create a ranking')
             return
         }
+
+        if (!isStep3Valid) {
+            showError('Please enter a valid ranking title')
+            return
+        }
+
+        // Get current user info from Firebase Auth
+        const currentUser = auth.currentUser
+        if (!currentUser) {
+            showError('You must be logged in to create a ranking')
+            return
+        }
+
+        const username = currentUser.displayName || 'Unknown User'
+        const avatarUrl = currentUser.photoURL || undefined
 
         // Validate note lengths before submission
         const invalidNotes = rankedItems.filter(
             (item) => item.note.trim().length > RANKING_CONSTRAINTS.MAX_NOTE_LENGTH
         )
         if (invalidNotes.length > 0) {
-            console.error('Some notes exceed maximum length')
+            showError(
+                `Some notes exceed the maximum length of ${RANKING_CONSTRAINTS.MAX_NOTE_LENGTH} characters`
+            )
             return
         }
 
         try {
-            // Step 1: Create the ranking with basic info
-            const createRequest: CreateRankingRequest = {
-                title: title.trim(),
-                description: description.trim() || undefined,
-                itemCount: rankedItems.length, // Dynamic item count based on selected items
-                isPublic,
-                tags: tags.length > 0 ? tags : undefined,
+            if (isEditMode && existingRanking) {
+                // Edit mode: Update existing ranking
+                const updateRequest: UpdateRankingRequest = {
+                    id: existingRanking.id,
+                    title: title.trim(),
+                    description: description.trim() || undefined,
+                    isPublic,
+                    tags: tags.length > 0 ? tags : undefined,
+                    rankedItems: rankedItems.map((item, index) => ({
+                        position: index + 1,
+                        content: item.content,
+                        note: item.note.trim() || undefined,
+                        addedAt: item.addedAt || Date.now(), // Preserve existing addedAt if available
+                    })),
+                }
+
+                await updateRanking(userId, updateRequest)
+
+                showSuccess('Ranking Updated!', 'Your ranking has been updated successfully')
+                onComplete?.(existingRanking.id)
+            } else {
+                // Create mode: Create new ranking
+                const createRequest: CreateRankingRequest = {
+                    title: title.trim(),
+                    itemCount: rankedItems.length, // Dynamic item count based on selected items
+                    isPublic,
+                }
+
+                // Only add optional fields if they have values (Firestore doesn't accept undefined)
+                if (description.trim()) {
+                    createRequest.description = description.trim()
+                }
+                if (tags.length > 0) {
+                    createRequest.tags = tags
+                }
+
+                const rankingId = await createRanking(userId, username, avatarUrl, createRequest)
+
+                if (!rankingId) {
+                    throw new Error('Failed to create ranking')
+                }
+
+                // Step 2: Update with ranked items
+                const updateRequest: UpdateRankingRequest = {
+                    id: rankingId,
+                    rankedItems: rankedItems.map((item, index) => ({
+                        position: index + 1,
+                        content: item.content,
+                        note: item.note.trim() || undefined,
+                        addedAt: Date.now(),
+                    })),
+                }
+
+                await updateRanking(userId, updateRequest)
+
+                showSuccess('Ranking Created!', 'Your ranking has been created successfully')
+                onComplete?.(rankingId)
             }
-
-            const rankingId = await createRanking(userId, username, avatarUrl, createRequest)
-
-            if (!rankingId) {
-                throw new Error('Failed to create ranking')
-            }
-
-            // Step 2: Update with ranked items
-            const updateRequest: UpdateRankingRequest = {
-                id: rankingId,
-                rankedItems: rankedItems.map((item, index) => ({
-                    position: index + 1,
-                    content: item.content,
-                    note: item.note.trim() || undefined,
-                    addedAt: Date.now(),
-                })),
-            }
-
-            await updateRanking(userId, updateRequest)
-
-            onComplete?.(rankingId)
         } catch (error) {
-            console.error('Failed to create ranking:', error)
+            console.error(`Failed to ${isEditMode ? 'update' : 'create'} ranking:`, error)
+            showError(`Failed to ${isEditMode ? 'update' : 'create'} ranking. Please try again.`)
         }
     }
 
@@ -521,7 +586,7 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
                                                     </div>
                                                 ) : (
                                                     <>
-                                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                                                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
                                                             {tagContent
                                                                 .slice(
                                                                     (step1Page - 1) *
@@ -558,6 +623,7 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
                                                                                         content
                                                                                     )}
                                                                                     fill
+                                                                                    sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, (max-width: 1280px) 16vw, 14vw"
                                                                                     className={`object-cover rounded-lg transition-opacity ${
                                                                                         isSelected
                                                                                             ? 'opacity-50'
@@ -661,7 +727,7 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
                                                     </div>
                                                 ) : (
                                                     <>
-                                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                                                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
                                                             {results
                                                                 .slice(
                                                                     (step1Page - 1) *
@@ -698,6 +764,7 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
                                                                                         content
                                                                                     )}
                                                                                     fill
+                                                                                    sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, (max-width: 1280px) 16vw, 14vw"
                                                                                     className={`object-cover rounded-lg transition-opacity ${
                                                                                         isSelected
                                                                                             ? 'opacity-50'
@@ -834,6 +901,7 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
                                                                         src={getPosterPath(content)}
                                                                         alt={getTitle(content)}
                                                                         fill
+                                                                        sizes="64px"
                                                                         className="object-cover rounded shadow-md"
                                                                     />
                                                                 </div>
@@ -951,6 +1019,7 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
                                                                 src={getPosterPath(item.content)}
                                                                 alt={getTitle(item.content)}
                                                                 fill
+                                                                sizes="96px"
                                                                 className="object-cover rounded-lg shadow-lg"
                                                             />
                                                             {/* Media type badge */}

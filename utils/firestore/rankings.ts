@@ -61,6 +61,10 @@ function getRankingDocRef(rankingId: string) {
  * Create denormalized content data for search
  */
 function extractContentMetadata(rankedItems: RankedItem[]) {
+    if (!rankedItems || rankedItems.length === 0) {
+        throw new Error('Ranking must have at least one content item')
+    }
+
     const contentIds: number[] = []
     const contentTitles: string[] = []
     const contentActors: string[] = []
@@ -69,9 +73,11 @@ function extractContentMetadata(rankedItems: RankedItem[]) {
     rankedItems.forEach((item) => {
         contentIds.push(item.content.id)
 
-        // Extract title
+        // Extract title and normalize for search
         const title = 'title' in item.content ? item.content.title : item.content.name
-        if (title) contentTitles.push(title)
+        if (title) {
+            contentTitles.push(title.toLowerCase())
+        }
 
         // Extract actors (if available in content data)
         // Note: TMDB content might not have full cast info in cached data
@@ -79,6 +85,10 @@ function extractContentMetadata(rankedItems: RankedItem[]) {
 
         // Extract directors (if available)
     })
+
+    if (contentIds.length === 0) {
+        throw new Error('Ranking must have valid content items')
+    }
 
     return {
         contentIds,
@@ -124,8 +134,11 @@ export async function createRanking(
         tags: request.tags,
     }
 
+    // Remove undefined values before saving to Firestore
+    const cleanedRanking = removeUndefined(ranking)
+
     const rankingRef = getRankingDocRef(rankingId)
-    await setDoc(rankingRef, ranking)
+    await setDoc(rankingRef, cleanedRanking)
 
     return rankingId
 }
@@ -466,6 +479,50 @@ export async function searchRankings(searchQuery: string, limit: number = 20): P
         return rankings.slice(0, limit)
     } catch (error) {
         console.error('Error searching rankings:', error)
+        throw error
+    }
+}
+
+/**
+ * Get rankings liked by a specific user
+ */
+export async function getUserLikedRankings(userId: string, limit: number = 50): Promise<Ranking[]> {
+    try {
+        // Get all ranking likes by this user
+        const likesRef = collection(db, COLLECTIONS.likes)
+        const likesQuery = query(likesRef, where('userId', '==', userId), firestoreLimit(limit))
+
+        const likesSnapshot = await getDocs(likesQuery)
+        const rankingIds: string[] = []
+
+        likesSnapshot.forEach((doc) => {
+            const like = doc.data()
+            rankingIds.push(like.rankingId)
+        })
+
+        if (rankingIds.length === 0) {
+            return []
+        }
+
+        // Fetch the actual rankings
+        // Firestore 'in' query supports up to 10 items at a time
+        const rankings: Ranking[] = []
+        const batchSize = 10
+
+        for (let i = 0; i < rankingIds.length; i += batchSize) {
+            const batch = rankingIds.slice(i, i + batchSize)
+            const rankingsRef = collection(db, COLLECTIONS.rankings)
+            const rankingsQuery = query(rankingsRef, where('__name__', 'in', batch))
+
+            const rankingsSnapshot = await getDocs(rankingsQuery)
+            rankingsSnapshot.forEach((doc) => {
+                rankings.push(doc.data() as Ranking)
+            })
+        }
+
+        return rankings
+    } catch (error) {
+        console.error('Error getting user liked rankings:', error)
         throw error
     }
 }

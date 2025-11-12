@@ -37,6 +37,29 @@ const COLLECTIONS = {
 }
 
 /**
+ * Remove undefined values from an object recursively
+ * Firestore doesn't accept undefined values
+ */
+function removeUndefined(obj: any): any {
+    if (obj === null || obj === undefined) {
+        return null
+    }
+    if (Array.isArray(obj)) {
+        return obj.map((item) => removeUndefined(item))
+    }
+    if (typeof obj === 'object') {
+        const cleaned: any = {}
+        for (const [key, value] of Object.entries(obj)) {
+            if (value !== undefined) {
+                cleaned[key] = removeUndefined(value)
+            }
+        }
+        return cleaned
+    }
+    return obj
+}
+
+/**
  * Get comment document reference
  */
 function getCommentDocRef(commentId: string) {
@@ -67,17 +90,20 @@ export async function createComment(
         userName: username,
         userAvatar: userAvatar || null,
         type: request.type,
-        positionNumber: request.positionNumber,
+        positionNumber: request.positionNumber ?? null,
         text: request.text,
         createdAt: now,
         likes: 0,
-        parentCommentId: request.parentCommentId,
+        parentCommentId: request.parentCommentId ?? null,
     }
+
+    // Remove undefined values before saving to Firestore
+    const cleanedComment = removeUndefined(comment)
 
     await runTransaction(db, async (transaction) => {
         // Create comment
         const commentRef = getCommentDocRef(commentId)
-        transaction.set(commentRef, comment)
+        transaction.set(commentRef, cleanedComment)
 
         // If reply, add to parent's replies array using arrayUnion (atomic operation)
         if (request.parentCommentId) {
@@ -99,7 +125,7 @@ export async function createComment(
 
             // Use arrayUnion for atomic array updates (prevents race conditions)
             transaction.update(parentRef, {
-                replies: arrayUnion(comment),
+                replies: arrayUnion(cleanedComment),
             })
         }
 
@@ -313,5 +339,35 @@ export async function hasUserLikedComment(userId: string, commentId: string): Pr
     } catch (error) {
         console.error('Error checking if user liked comment:', error)
         return false
+    }
+}
+
+/**
+ * Get all comments by a specific user across all rankings
+ */
+export async function getUserComments(
+    userId: string,
+    limit: number = 50
+): Promise<RankingComment[]> {
+    try {
+        const commentsRef = collection(db, COLLECTIONS.comments)
+        const q = query(
+            commentsRef,
+            where('userId', '==', userId),
+            orderBy('createdAt', 'desc'),
+            firestoreLimit(limit)
+        )
+
+        const snapshot = await getDocs(q)
+        const comments: RankingComment[] = []
+
+        snapshot.forEach((doc) => {
+            comments.push(doc.data() as RankingComment)
+        })
+
+        return comments
+    } catch (error) {
+        console.error('Error getting user comments:', error)
+        throw error
     }
 }

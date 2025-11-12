@@ -25,8 +25,8 @@ export interface Ranking {
     // Core identification
     id: string
     userId: string // Creator's user ID
-    userName?: string // Creator's display name (for community display)
-    userAvatar?: string // Creator's avatar URL (for community display)
+    userName: string // Creator's display name (for community display)
+    userAvatar: string | null // Creator's avatar URL (for community display)
 
     // Content
     title: string // e.g., "Top 10 Psychological Thrillers"
@@ -66,7 +66,7 @@ export interface RankingComment {
     rankingId: string
     userId: string
     userName: string // Display name
-    userAvatar?: string // Avatar URL
+    userAvatar: string | null // Avatar URL
 
     // Comment type and target
     type: 'ranking' | 'position' // Overall ranking or specific position

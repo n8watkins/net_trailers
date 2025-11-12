@@ -12,7 +12,7 @@ import Image from 'next/image'
 import { RankingComment } from '@/types/rankings'
 import { useRankingStore } from '@/stores/rankingStore'
 import { useSessionStore } from '@/stores/sessionStore'
-import { useProfileStore } from '@/stores/profileStore'
+import { auth } from '@/firebase'
 import { formatDistanceToNow } from 'date-fns'
 import {
     HeartIcon,
@@ -37,7 +37,6 @@ export function CommentSection({
 }: CommentSectionProps) {
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
-    const { profile } = useProfileStore()
     const { createComment, deleteComment, likeComment, unlikeComment } = useRankingStore()
 
     const [newCommentText, setNewCommentText] = useState('')
@@ -48,16 +47,17 @@ export function CommentSection({
     const handleSubmitComment = async (e: React.FormEvent) => {
         e.preventDefault()
 
-        if (!userId || !profile || !newCommentText.trim()) return
+        if (!userId || !newCommentText.trim()) return
 
-        // Extract values to ensure they're stable
-        const username = profile.username
-        const avatarUrl = profile.avatarUrl
-
-        if (!username) {
-            console.error('Profile missing username')
+        // Get current user info from Firebase Auth
+        const currentUser = auth.currentUser
+        if (!currentUser) {
+            console.error('User not authenticated')
             return
         }
+
+        const username = currentUser.displayName || 'Unknown User'
+        const avatarUrl = currentUser.photoURL || null
 
         setIsSubmitting(true)
         try {
@@ -75,16 +75,17 @@ export function CommentSection({
     }
 
     const handleSubmitReply = async (parentCommentId: string) => {
-        if (!userId || !profile || !replyText.trim()) return
+        if (!userId || !replyText.trim()) return
 
-        // Extract values to ensure they're stable
-        const username = profile.username
-        const avatarUrl = profile.avatarUrl
-
-        if (!username) {
-            console.error('Profile missing username')
+        // Get current user info from Firebase Auth
+        const currentUser = auth.currentUser
+        if (!currentUser) {
+            console.error('User not authenticated')
             return
         }
+
+        const username = currentUser.displayName || 'Unknown User'
+        const avatarUrl = currentUser.photoURL || null
 
         setIsSubmitting(true)
         try {
@@ -140,52 +141,6 @@ export function CommentSection({
 
     return (
         <div className="space-y-6">
-            {/* Comment input */}
-            {userId && profile ? (
-                <form onSubmit={handleSubmitComment} className="flex gap-3">
-                    {profile.avatarUrl ? (
-                        <Image
-                            src={profile.avatarUrl}
-                            alt={profile.username}
-                            width={40}
-                            height={40}
-                            className="rounded-full"
-                        />
-                    ) : (
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold">
-                            {profile.username[0].toUpperCase()}
-                        </div>
-                    )}
-                    <div className="flex-1">
-                        <textarea
-                            value={newCommentText}
-                            onChange={(e) => setNewCommentText(e.target.value)}
-                            placeholder="Add a comment..."
-                            className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 resize-none"
-                            rows={3}
-                            maxLength={500}
-                        />
-                        <div className="flex justify-between items-center mt-2">
-                            <span className="text-sm text-gray-500">
-                                {newCommentText.length}/500
-                            </span>
-                            <button
-                                type="submit"
-                                disabled={!newCommentText.trim() || isSubmitting}
-                                className="px-4 py-2 bg-yellow-500 text-black font-medium rounded-lg hover:bg-yellow-400 disabled:bg-zinc-800 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-                            >
-                                <PaperAirplaneIcon className="w-4 h-4" />
-                                {isSubmitting ? 'Posting...' : 'Post'}
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            ) : (
-                <div className="bg-zinc-900 border border-zinc-800 rounded-lg px-6 py-4 text-center">
-                    <p className="text-gray-400">Sign in to comment on this ranking</p>
-                </div>
-            )}
-
             {/* Comments list */}
             <div className="space-y-6">
                 {comments.length === 0 ? (
@@ -198,15 +153,17 @@ export function CommentSection({
                             {/* Main comment */}
                             <div className="flex gap-3">
                                 {comment.userAvatar ? (
-                                    <Image
-                                        src={comment.userAvatar}
-                                        alt={comment.userName}
-                                        width={40}
-                                        height={40}
-                                        className="rounded-full"
-                                    />
+                                    <div className="w-10 h-10 flex-shrink-0">
+                                        <Image
+                                            src={comment.userAvatar}
+                                            alt={comment.userName}
+                                            width={40}
+                                            height={40}
+                                            className="rounded-full object-cover w-full h-full"
+                                        />
+                                    </div>
                                 ) : (
-                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center font-bold">
+                                    <div className="w-10 h-10 flex-shrink-0 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center font-bold">
                                         {comment.userName[0].toUpperCase()}
                                     </div>
                                 )}
@@ -298,15 +255,17 @@ export function CommentSection({
                                     {comment.replies.map((reply) => (
                                         <div key={reply.id} className="flex gap-3">
                                             {reply.userAvatar ? (
-                                                <Image
-                                                    src={reply.userAvatar}
-                                                    alt={reply.userName}
-                                                    width={32}
-                                                    height={32}
-                                                    className="rounded-full"
-                                                />
+                                                <div className="w-8 h-8 flex-shrink-0">
+                                                    <Image
+                                                        src={reply.userAvatar}
+                                                        alt={reply.userName}
+                                                        width={32}
+                                                        height={32}
+                                                        className="rounded-full object-cover w-full h-full"
+                                                    />
+                                                </div>
                                             ) : (
-                                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-teal-500 flex items-center justify-center text-sm font-bold">
+                                                <div className="w-8 h-8 flex-shrink-0 rounded-full bg-gradient-to-br from-green-500 to-teal-500 flex items-center justify-center text-sm font-bold">
                                                     {reply.userName[0].toUpperCase()}
                                                 </div>
                                             )}
@@ -355,6 +314,54 @@ export function CommentSection({
                     ))
                 )}
             </div>
+
+            {/* Comment input */}
+            {userId ? (
+                <form onSubmit={handleSubmitComment} className="flex gap-3">
+                    {auth.currentUser?.photoURL ? (
+                        <div className="w-10 h-10 flex-shrink-0">
+                            <Image
+                                src={auth.currentUser.photoURL}
+                                alt={auth.currentUser.displayName || 'User'}
+                                width={40}
+                                height={40}
+                                className="rounded-full object-cover w-full h-full"
+                            />
+                        </div>
+                    ) : (
+                        <div className="w-10 h-10 flex-shrink-0 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center font-bold">
+                            {(auth.currentUser?.displayName?.[0] || 'U').toUpperCase()}
+                        </div>
+                    )}
+                    <div className="flex-1">
+                        <textarea
+                            value={newCommentText}
+                            onChange={(e) => setNewCommentText(e.target.value)}
+                            placeholder="Add a comment..."
+                            className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 resize-none"
+                            rows={3}
+                            maxLength={500}
+                        />
+                        <div className="flex justify-between items-center mt-2">
+                            <span className="text-sm text-gray-500">
+                                {newCommentText.length}/500
+                            </span>
+                            <button
+                                type="submit"
+                                disabled={!newCommentText.trim() || isSubmitting}
+                                className="px-4 py-2 bg-yellow-500 text-black font-medium rounded-lg hover:bg-yellow-400 disabled:bg-zinc-800 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                            >
+                                <PaperAirplaneIcon className="w-4 h-4" />
+                                {isSubmitting ? 'Posting...' : 'Post'}
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            ) : (
+                <div className="bg-zinc-900 border border-zinc-800 rounded-lg px-6 py-4 text-center">
+                    <p className="text-gray-400">Sign in to comment on this ranking</p>
+                </div>
+            )}
         </div>
     )
 }

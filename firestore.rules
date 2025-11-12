@@ -249,7 +249,8 @@ service cloud.firestore {
 
     // Helper function to check if only stats are being incremented
     function isOnlyIncrementingStats(before, after) {
-      // Only views, likes, or comments changed, and they only increased
+      // Only allow increment/decrement by exactly 1 for each stat
+      // This prevents users from manipulating stats by arbitrary amounts
       return after.id == before.id
              && after.userId == before.userId
              && after.userName == before.userName
@@ -259,7 +260,19 @@ service cloud.firestore {
              && after.rankedItems == before.rankedItems
              && after.createdAt == before.createdAt
              && after.updatedAt == before.updatedAt
-             && (after.views >= before.views || after.likes >= before.likes || after.comments >= before.comments);
+             // Only allow one stat to change at a time, by exactly 1 or -1
+             && (
+                 // Views increment by 1
+                 (after.views == before.views + 1 && after.likes == before.likes && after.comments == before.comments)
+                 // Likes increment by 1
+                 || (after.likes == before.likes + 1 && after.views == before.views && after.comments == before.comments)
+                 // Likes decrement by 1
+                 || (after.likes == before.likes - 1 && after.views == before.views && after.comments == before.comments)
+                 // Comments increment by 1
+                 || (after.comments == before.comments + 1 && after.views == before.views && after.likes == before.likes)
+                 // Comments decrement by 1
+                 || (after.comments == before.comments - 1 && after.views == before.views && after.likes == before.likes)
+             );
     }
 
     // Deny all other access
