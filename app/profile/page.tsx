@@ -21,6 +21,7 @@ import {
     SparklesIcon,
     TrashIcon,
     BookmarkIcon,
+    TrophyIcon,
 } from '@heroicons/react/24/outline'
 import useAuth from '../../hooks/useAuth'
 import useUserData from '../../hooks/useUserData'
@@ -31,6 +32,7 @@ import { useDebugSettings } from '../../components/debug/DebugControls'
 import NetflixLoader from '../../components/common/NetflixLoader'
 import { GuestModeNotification } from '../../components/auth/GuestModeNotification'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
+import { useRankingStore } from '../../stores/rankingStore'
 
 export default function ProfilePage() {
     const { user, loading: authLoading } = useAuth()
@@ -42,6 +44,7 @@ export default function ProfilePage() {
     const [isDeleting, setIsDeleting] = useState(false)
     const sessionType = useSessionStore((state) => state.sessionType)
     const isInitialized = useSessionStore((state) => state.isInitialized)
+    const { rankings, loadUserRankings } = useRankingStore()
 
     // Show loading state while data is being fetched
     const isLoading = !isInitialized || isLoadingHistory || authLoading
@@ -49,6 +52,16 @@ export default function ProfilePage() {
     useEffect(() => {
         document.title = 'Profile - NetTrailers'
     }, [])
+
+    // Load user rankings
+    useEffect(() => {
+        const getUserId = useSessionStore.getState().getUserId
+        const userId = getUserId()
+
+        if (userId && isInitialized) {
+            loadUserRankings(userId)
+        }
+    }, [isInitialized, loadUserRankings])
 
     const handleSeedData = async () => {
         const getUserId = useSessionStore.getState().getUserId
@@ -102,6 +115,7 @@ export default function ProfilePage() {
         totalWatched,
         watchLater: userData.defaultWatchlist.length, // Separate Watch Later from collections
         totalCollections: userData.userCreatedWatchlists.length, // Only user-created collections
+        totalRankings: rankings.length, // User's rankings
         totalLiked: userData.likedMovies.length,
         totalHidden: userData.hiddenMovies.length,
         moviesLiked: userData.likedMovies.filter((item) => item.media_type === 'movie').length,
@@ -193,7 +207,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 {/* Watch Later */}
                 <Link
                     href="/watch-later"
@@ -253,6 +267,18 @@ export default function ProfilePage() {
                     </div>
                     <p className="text-3xl font-bold text-white">{stats.totalCollections}</p>
                 </Link>
+
+                {/* Rankings */}
+                <Link
+                    href="/rankings"
+                    className="bg-gradient-to-br from-yellow-900/30 to-yellow-800/20 border border-yellow-700/30 rounded-xl p-6 hover:border-yellow-600/50 transition-all duration-200 group"
+                >
+                    <div className="flex items-center gap-3 mb-2">
+                        <TrophyIcon className="w-6 h-6 text-yellow-400 group-hover:scale-110 transition-transform" />
+                        <h3 className="text-sm font-medium text-gray-400">Rankings</h3>
+                    </div>
+                    <p className="text-3xl font-bold text-white">{stats.totalRankings}</p>
+                </Link>
             </div>
 
             {/* Content Breakdown */}
@@ -300,7 +326,7 @@ export default function ProfilePage() {
             {/* Quick Links */}
             <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-6">
                 <h2 className="text-xl font-semibold text-white mb-4">Quick Links</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                     <Link
                         href="/watch-history"
                         className="flex items-center gap-3 p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
@@ -314,6 +340,13 @@ export default function ProfilePage() {
                     >
                         <RectangleStackIcon className="w-5 h-5 text-blue-400" />
                         <span className="text-white font-medium">My Collections</span>
+                    </Link>
+                    <Link
+                        href="/rankings"
+                        className="flex items-center gap-3 p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
+                    >
+                        <TrophyIcon className="w-5 h-5 text-yellow-400" />
+                        <span className="text-white font-medium">My Rankings</span>
                     </Link>
                     <Link
                         href="/settings"
