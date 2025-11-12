@@ -302,6 +302,7 @@ export function RankingDetail({
                                     src={getPosterPath(item.content)}
                                     alt={getTitle(item.content)}
                                     fill
+                                    sizes="64px"
                                     className="object-cover rounded-md"
                                 />
                             </div>
