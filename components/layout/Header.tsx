@@ -356,7 +356,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                             disabled={isRandomLoading}
                             title="Jump to a random movie or TV show"
                         >
-                            <span className="absolute -inset-0.5 opacity-0 group-hover:opacity-40 bg-gradient-to-r from-purple-400 via-pink-400 to-red-400 rounded-md blur-md transition-opacity duration-400 bg-[length:200%_100%] group-hover:animate-[psychedelic-flow_3s_ease-in-out_infinite]" />
+                            <span className="absolute -inset-4 opacity-0 group-hover:opacity-40 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-400 via-pink-400 to-transparent rounded-md blur-md transition-opacity duration-400 bg-[length:200%_100%] group-hover:animate-[psychedelic-flow_3s_ease-in-out_infinite]" />
                             {isRandomLoading ? (
                                 <ArrowPathIcon className="h-5 w-5 relative z-10" />
                             ) : (
@@ -618,7 +618,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                                 }
                                                 disabled={isRandomLoading}
                                             >
-                                                <span className="absolute -inset-0.5 opacity-0 group-hover:opacity-40 bg-gradient-to-r from-purple-400 via-pink-400 to-red-400 rounded-lg blur-md transition-opacity duration-400 bg-[length:200%_100%] group-hover:animate-[psychedelic-flow_3s_ease-in-out_infinite]" />
+                                                <span className="absolute -inset-4 opacity-0 group-hover:opacity-40 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-400 via-pink-400 to-transparent rounded-lg blur-md transition-opacity duration-400 bg-[length:200%_100%] group-hover:animate-[psychedelic-flow_3s_ease-in-out_infinite]" />
                                                 {isRandomLoading ? (
                                                     <ArrowPathIcon className="h-5 w-5 animate-spin relative z-10" />
                                                 ) : (
