@@ -36,7 +36,7 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const [showHoverActions, setShowHoverActions] = useState(false) // Show hover menu above bookmark button
     const [isCardHovered, setIsCardHovered] = useState(false) // Track card hover state
-    const [isLikeAnimating, setIsLikeAnimating] = useState(false) // Track like button animation
+    const [likeAnimationType, setLikeAnimationType] = useState<'like' | 'unlike' | null>(null) // Track like button animation type
 
     // Check if content is liked, hidden, or in any lists
     const liked = content ? isLiked(content.id) : false
@@ -225,21 +225,21 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                         onClick={(e) => {
                                             e.stopPropagation()
                                             if (content) {
-                                                // Trigger animation
-                                                setIsLikeAnimating(true)
-                                                setTimeout(() => setIsLikeAnimating(false), 300)
-
+                                                // Trigger animation based on current state
                                                 if (liked) {
+                                                    setLikeAnimationType('unlike')
                                                     removeLikedMovie(content.id)
                                                     showSuccess(
                                                         `Removed ${getTitle(content)} from Liked`
                                                     )
                                                 } else {
+                                                    setLikeAnimationType('like')
                                                     addLikedMovie(content)
                                                     showSuccess(
                                                         `Added ${getTitle(content)} to Liked`
                                                     )
                                                 }
+                                                setTimeout(() => setLikeAnimationType(null), 300)
                                             }
                                         }}
                                         className={`group/like p-3 rounded-full border-2 transition-all duration-200 ${
@@ -252,10 +252,9 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                             <HandThumbUpIcon
                                                 className={`h-5 w-5 transition-all duration-200 text-white`}
                                                 style={
-                                                    isLikeAnimating
+                                                    likeAnimationType
                                                         ? {
-                                                              animation:
-                                                                  'scale-pulse 0.3s ease-in-out',
+                                                              animation: `scale-pulse-${likeAnimationType} 0.3s ease-in-out`,
                                                           }
                                                         : undefined
                                                 }
@@ -264,10 +263,9 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                             <HandThumbUpOutlineIcon
                                                 className={`h-5 w-5 transition-all duration-200 text-white/60 group-hover/like:text-white`}
                                                 style={
-                                                    isLikeAnimating
+                                                    likeAnimationType
                                                         ? {
-                                                              animation:
-                                                                  'scale-pulse 0.3s ease-in-out',
+                                                              animation: `scale-pulse-${likeAnimationType} 0.3s ease-in-out`,
                                                           }
                                                         : undefined
                                                 }
