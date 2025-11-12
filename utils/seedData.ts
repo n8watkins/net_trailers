@@ -17,6 +17,7 @@ const sampleMovies: Movie[] = [
     {
         id: 550,
         title: 'Fight Club',
+        original_title: 'Fight Club',
         overview:
             'A ticking-time-bomb insomniac and a slippery soap salesman channel primal male aggression into a shocking new form of therapy.',
         poster_path: '/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg',
@@ -26,10 +27,14 @@ const sampleMovies: Movie[] = [
         vote_count: 26280,
         genre_ids: [18],
         media_type: 'movie',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 680,
         title: 'Pulp Fiction',
+        original_title: 'Pulp Fiction',
         overview:
             "A burger-loving hit man, his philosophical partner, a drug-addled gangster's moll and a washed-up boxer converge in this sprawling, comedic crime caper.",
         poster_path: '/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg',
@@ -39,10 +44,14 @@ const sampleMovies: Movie[] = [
         vote_count: 26711,
         genre_ids: [53, 80],
         media_type: 'movie',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 13,
         title: 'Forrest Gump',
+        original_title: 'Forrest Gump',
         overview:
             'A man with a low IQ has accomplished great things in his life and been present during significant historic events—in each case, far exceeding what anyone imagined he could do.',
         poster_path: '/arw2vcBveWOVZr6pxd9XTd1TdQa.jpg',
@@ -52,10 +61,14 @@ const sampleMovies: Movie[] = [
         vote_count: 25844,
         genre_ids: [35, 18, 10749],
         media_type: 'movie',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 155,
         title: 'The Dark Knight',
+        original_title: 'The Dark Knight',
         overview:
             'Batman raises the stakes in his war on crime. With the help of Lt. Jim Gordon and District Attorney Harvey Dent, Batman sets out to dismantle the remaining criminal organizations.',
         poster_path: '/qJ2tW6WMUDux911r6m7haRef0WH.jpg',
@@ -65,10 +78,14 @@ const sampleMovies: Movie[] = [
         vote_count: 31233,
         genre_ids: [18, 28, 80, 53],
         media_type: 'movie',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 278,
         title: 'The Shawshank Redemption',
+        original_title: 'The Shawshank Redemption',
         overview:
             'Imprisoned in the 1940s for the double murder of his wife and her lover, upstanding banker Andy Dufresne begins a new life at the Shawshank prison.',
         poster_path: '/9cqNxx0GxF0bflZmeSMuL5tnGzr.jpg',
@@ -78,10 +95,14 @@ const sampleMovies: Movie[] = [
         vote_count: 24970,
         genre_ids: [18, 80],
         media_type: 'movie',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 238,
         title: 'The Godfather',
+        original_title: 'The Godfather',
         overview:
             'Spanning the years 1945 to 1955, a chronicle of the fictional Italian-American Corleone crime family.',
         poster_path: '/3bhkrj58Vtu7enYsRolD1fZdja1.jpg',
@@ -91,6 +112,9 @@ const sampleMovies: Movie[] = [
         vote_count: 18491,
         genre_ids: [18, 80],
         media_type: 'movie',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 424,
@@ -104,10 +128,14 @@ const sampleMovies: Movie[] = [
         vote_count: 14633,
         genre_ids: [18, 36, 10752],
         media_type: 'movie',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 372058,
         title: 'Your Name',
+        original_title: 'Your Name',
         overview:
             'High schoolers Mitsuha and Taki are complete strangers living separate lives. But one night, they suddenly switch places.',
         poster_path: '/q719jXXEzOoYaps6babgKnONONX.jpg',
@@ -117,10 +145,14 @@ const sampleMovies: Movie[] = [
         vote_count: 10245,
         genre_ids: [16, 10749, 18],
         media_type: 'movie',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 27205,
         title: 'Inception',
+        original_title: 'Inception',
         overview:
             'Cobb, a skilled thief who commits corporate espionage by infiltrating the subconscious of his targets is offered a chance to regain his old life.',
         poster_path: '/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg',
@@ -130,10 +162,14 @@ const sampleMovies: Movie[] = [
         vote_count: 34000,
         genre_ids: [28, 878, 12],
         media_type: 'movie',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 129,
         title: 'Spirited Away',
+        original_title: 'Spirited Away',
         overview:
             'A young girl, Chihiro, becomes trapped in a strange new world of spirits. When her parents undergo a mysterious transformation, she must call upon the courage she never knew she had to free her family.',
         poster_path: '/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg',
@@ -143,10 +179,14 @@ const sampleMovies: Movie[] = [
         vote_count: 15000,
         genre_ids: [16, 10751, 14],
         media_type: 'movie',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 122,
         title: 'The Lord of the Rings: The Return of the King',
+        original_title: 'The Lord of the Rings: The Return of the King',
         overview:
             "Aragorn is revealed as the heir to the ancient kings as he, Gandalf and the other members of the broken fellowship struggle to save Gondor from Sauron's forces.",
         poster_path: '/rCzpDGLbOoPwLjy3OAm5NUPOTrC.jpg',
@@ -156,10 +196,14 @@ const sampleMovies: Movie[] = [
         vote_count: 23000,
         genre_ids: [12, 14, 28],
         media_type: 'movie',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 497,
         title: 'The Green Mile',
+        original_title: 'The Green Mile',
         overview:
             "A supernatural tale set on death row in a Southern prison, where gentle giant John Coffey possesses the mysterious power to heal people's ailments.",
         poster_path: '/velWPhVMQeQKcxggNEU8YmIo52R.jpg',
@@ -169,10 +213,14 @@ const sampleMovies: Movie[] = [
         vote_count: 16000,
         genre_ids: [14, 18, 80],
         media_type: 'movie',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 11216,
         title: 'Cinema Paradiso',
+        original_title: 'Cinema Paradiso',
         overview:
             "A filmmaker recalls his childhood, when he fell in love with the movies at his village's theater and formed a deep friendship with the theater's projectionist.",
         poster_path: '/gCI2AeMV4IHSewhJkzsur5MEp6R.jpg',
@@ -182,10 +230,14 @@ const sampleMovies: Movie[] = [
         vote_count: 4000,
         genre_ids: [18, 10749],
         media_type: 'movie',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 769,
         title: 'GoodFellas',
+        original_title: 'GoodFellas',
         overview:
             'The story of Henry Hill and his life in the mob, covering his relationship with his wife Karen Hill and his mob partners Jimmy Conway and Tommy DeVito.',
         poster_path: '/aKuFiU82s5ISJpGZp7YkIr3kCUd.jpg',
@@ -195,10 +247,14 @@ const sampleMovies: Movie[] = [
         vote_count: 12000,
         genre_ids: [18, 80],
         media_type: 'movie',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 24428,
         title: 'The Avengers',
+        original_title: 'The Avengers',
         overview:
             'When an unexpected enemy emerges and threatens global safety and security, Nick Fury assembles a team of superheroes to save the world.',
         poster_path: '/RYMX2wcKCBAr24UyPD7xwmjaTn.jpg',
@@ -208,10 +264,14 @@ const sampleMovies: Movie[] = [
         vote_count: 28000,
         genre_ids: [878, 28, 12],
         media_type: 'movie',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 299536,
         title: 'Avengers: Infinity War',
+        original_title: 'Avengers: Infinity War',
         overview:
             'As the Avengers and their allies have continued to protect the world from threats too large for any one hero to handle, a new danger has emerged from the cosmic shadows: Thanos.',
         poster_path: '/7WsyChQLEftFiDOVTGkv3hFpyyt.jpg',
@@ -221,10 +281,14 @@ const sampleMovies: Movie[] = [
         vote_count: 27000,
         genre_ids: [12, 28, 14],
         media_type: 'movie',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 603,
         title: 'The Matrix',
+        original_title: 'The Matrix',
         overview:
             'Set in the 22nd century, The Matrix tells the story of a computer hacker who joins a group of underground insurgents fighting the vast and powerful computers who now rule the earth.',
         poster_path: '/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg',
@@ -234,10 +298,14 @@ const sampleMovies: Movie[] = [
         vote_count: 24000,
         genre_ids: [28, 878],
         media_type: 'movie',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 120,
         title: 'The Lord of the Rings: The Fellowship of the Ring',
+        original_title: 'The Lord of the Rings: The Fellowship of the Ring',
         overview:
             'Young hobbit Frodo Baggins, after inheriting a mysterious ring from his uncle Bilbo, must leave his home in order to keep it from falling into the hands of its evil creator.',
         poster_path: '/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg',
@@ -247,10 +315,14 @@ const sampleMovies: Movie[] = [
         vote_count: 23000,
         genre_ids: [12, 14, 28],
         media_type: 'movie',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 157336,
         title: 'Interstellar',
+        original_title: 'Interstellar',
         overview:
             'The adventures of a group of explorers who make use of a newly discovered wormhole to surpass the limitations on human space travel and conquer the vast distances involved in an interstellar voyage.',
         poster_path: '/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
@@ -260,10 +332,14 @@ const sampleMovies: Movie[] = [
         vote_count: 32000,
         genre_ids: [12, 18, 878],
         media_type: 'movie',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 389,
         title: '12 Angry Men',
+        original_title: '12 Angry Men',
         overview:
             'The defense and the prosecution have rested and the jury is filing into the jury room to decide if a young Spanish-American is guilty or innocent of murdering his father.',
         poster_path: '/ow3wq89wM8qd5X7hWKxiRfsFf9C.jpg',
@@ -273,10 +349,14 @@ const sampleMovies: Movie[] = [
         vote_count: 8000,
         genre_ids: [18],
         media_type: 'movie',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 539,
         title: 'Psycho',
+        original_title: 'Psycho',
         overview:
             'When larcenous real estate clerk Marion Crane goes on the lam with a wad of cash and hopes of starting a new life, she ends up at the notorious Bates Motel.',
         poster_path: '/yz4QVqPx3h1hD1DfqqQkCq3rmxW.jpg',
@@ -286,10 +366,14 @@ const sampleMovies: Movie[] = [
         vote_count: 11000,
         genre_ids: [27, 53],
         media_type: 'movie',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 19404,
         title: 'Dilwale Dulhania Le Jayenge',
+        original_title: 'Dilwale Dulhania Le Jayenge',
         overview:
             'Raj is a rich, carefree, happy-go-lucky second generation NRI. Simran is the daughter of Chaudhary Baldev Singh.',
         poster_path: '/lfRkUr7DYdHldAqi3PwdQGBRBPM.jpg',
@@ -299,10 +383,14 @@ const sampleMovies: Movie[] = [
         vote_count: 4000,
         genre_ids: [35, 18, 10749],
         media_type: 'movie',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 346,
         title: 'Seven Samurai',
+        original_title: 'Seven Samurai',
         overview:
             'A samurai answers a village request for protection after he falls on hard times.',
         poster_path: '/8OKmBV5BUFzmozIC3pPWKHy17kx.jpg',
@@ -312,6 +400,9 @@ const sampleMovies: Movie[] = [
         vote_count: 3300,
         genre_ids: [28, 18],
         media_type: 'movie',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 510,
@@ -325,10 +416,14 @@ const sampleMovies: Movie[] = [
         vote_count: 15000,
         genre_ids: [18],
         media_type: 'movie',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 429,
         title: 'The Good, the Bad and the Ugly',
+        original_title: 'The Good, the Bad and the Ugly',
         overview:
             'While the Civil War rages on, three men comb the American Southwest in search of a strongbox containing $200,000 in stolen gold.',
         poster_path: '/bX2xnavhMYjWDoZp1VM6VnU1xwe.jpg',
@@ -338,6 +433,9 @@ const sampleMovies: Movie[] = [
         vote_count: 7500,
         genre_ids: [37],
         media_type: 'movie',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
 ]
 
@@ -1022,40 +1120,83 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
 
         const sampleRankings = [
             {
-                title: 'Top 5 Mind-Bending Movies',
-                description: 'Films that make you question reality',
+                title: 'Top 10 Mind-Bending Movies',
+                description: 'Films that make you question reality and challenge your perception',
                 items: [
-                    sampleMovies[8],
-                    sampleMovies[0],
-                    sampleMovies[16],
-                    sampleMovies[3],
-                    sampleMovies[20],
-                ], // Inception, Fight Club, Matrix, Dark Knight, Psycho
-                tags: ['Psychological Thrillers'],
+                    sampleMovies[8], // Inception
+                    sampleMovies[16], // The Matrix
+                    sampleMovies[0], // Fight Club
+                    sampleMovies[18], // Interstellar
+                    sampleMovies[3], // The Dark Knight
+                    sampleMovies[20], // Psycho
+                    sampleMovies[19], // 12 Angry Men
+                    sampleMovies[24], // One Flew Over the Cuckoo's Nest
+                    sampleMovies[6], // Schindler's List
+                    sampleMovies[11], // The Green Mile
+                ],
+                tags: ['Psychological', 'Thrillers', 'Sci-Fi'],
             },
             {
-                title: 'Best Animated Films Ever',
-                description: 'My favorite animated masterpieces',
+                title: 'Best Animated Masterpieces',
+                description: 'The most beautiful and emotionally powerful animated films ever made',
                 items: [
-                    sampleMovies[7],
-                    sampleMovies[9],
-                    sampleMovies[11],
-                    sampleMovies[21],
-                    sampleMovies[22],
-                ], // Your Name, Spirited Away, Toy Story, Lion King, Wall-E
-                tags: ['Anime', 'Pixar'],
+                    sampleMovies[9], // Spirited Away
+                    sampleMovies[7], // Your Name
+                    sampleMovies[11], // Cinema Paradiso (not animated, will skip)
+                    sampleMovies[21], // Dilwale (not animated, will skip)
+                    sampleMovies[10], // LOTR Return (not animated, will skip)
+                ]
+                    .slice(0, 2)
+                    .concat(sampleTVShows.slice(0, 3)), // Add some TV shows for variety
+                tags: ['Animation', 'Anime', 'Family'],
             },
             {
-                title: 'Epic Sagas to Binge',
-                description: 'Long-form storytelling at its finest',
+                title: 'Epic Sagas You Must Watch',
+                description:
+                    'Long-form storytelling at its finest - prepare for an emotional journey',
                 items: [
-                    sampleMovies[10],
-                    sampleMovies[17],
-                    sampleMovies[5],
-                    sampleMovies[4],
-                    sampleMovies[13],
-                ], // LOTR Return, LOTR Fellowship, Godfather, Shawshank, GoodFellas
-                tags: ['Fantasy Adventures', 'Classic Hollywood'],
+                    sampleMovies[10], // LOTR: Return of the King
+                    sampleMovies[17], // LOTR: Fellowship
+                    sampleMovies[5], // The Godfather
+                    sampleMovies[4], // The Shawshank Redemption
+                    sampleMovies[13], // GoodFellas
+                    sampleMovies[6], // Schindler's List
+                    sampleMovies[11], // The Green Mile
+                    sampleMovies[18], // Interstellar
+                ],
+                tags: ['Epic', 'Drama', 'Adventure'],
+            },
+            {
+                title: 'Best TV Shows of All Time',
+                description: 'Television shows that changed the game',
+                items: [
+                    sampleTVShows[0], // Breaking Bad
+                    sampleTVShows[1], // Game of Thrones
+                    sampleTVShows[2], // Stranger Things
+                    sampleTVShows[3], // The Sopranos
+                    sampleTVShows[4], // The Wire
+                    sampleTVShows[5], // True Detective
+                    sampleTVShows[6], // Sherlock
+                    sampleTVShows[7], // Westworld
+                    sampleTVShows[8], // Chernobyl
+                    sampleTVShows[9], // Band of Brothers
+                ],
+                tags: ['TV', 'Drama', 'Must-Watch'],
+            },
+            {
+                title: 'Classic Cinema Essentials',
+                description: 'Timeless classics every film lover should see',
+                items: [
+                    sampleMovies[5], // The Godfather
+                    sampleMovies[4], // The Shawshank Redemption
+                    sampleMovies[19], // 12 Angry Men
+                    sampleMovies[25], // The Good, the Bad and the Ugly
+                    sampleMovies[22], // Seven Samurai
+                    sampleMovies[20], // Psycho
+                    sampleMovies[6], // Schindler's List
+                    sampleMovies[12], // Cinema Paradiso
+                ],
+                tags: ['Classics', 'Film History', 'Masterpieces'],
             },
         ]
 
