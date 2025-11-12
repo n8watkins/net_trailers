@@ -2,12 +2,12 @@
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
-import { useAutoHideScrollbar } from '../../hooks/useAutoHideScrollbar'
 import KeyboardShortcutsModal from '../modals/KeyboardShortcutsModal'
 import TutorialModal from '../modals/TutorialModal'
 import Footer from './Footer'
 import AboutModal from '../modals/AboutModal'
 import ScrollToTopButton from '../common/ScrollToTopButton'
+import CustomScrollbar from '../common/CustomScrollbar'
 import { markAsVisited } from '../../utils/firstVisitTracker'
 import { useAppStore } from '../../stores/appStore'
 import { shouldShowAboutModal, markAboutModalShown } from '../../utils/aboutModalTimer'
@@ -34,9 +34,6 @@ function ClientLayout({ children }: ClientLayoutProps) {
     const { modal } = useAppStore()
     const isModalOpen = modal.isOpen
     const searchInputRef = useRef<HTMLInputElement>(null)
-
-    // Enable auto-hiding scrollbar (hides after 1 second of no scrolling)
-    useAutoHideScrollbar(1000)
 
     const handleOpenShortcuts = useCallback(() => {
         setShowKeyboardShortcuts(!showKeyboardShortcuts)
@@ -142,6 +139,7 @@ function ClientLayout({ children }: ClientLayoutProps) {
                 onClose={() => setShowKeyboardShortcuts(false)}
             />
             <ScrollToTopButton />
+            <CustomScrollbar />
         </LayoutProvider>
     )
 }

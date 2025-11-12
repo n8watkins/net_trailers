@@ -3,14 +3,20 @@
 @tailwind utilities;
 
 @layer body {
+    html,
     body {
-        /**/
+        height: 100%;
+        margin: 0;
         @apply bg-[#0a0a0a] text-white;
-        /* CSS variables for scrollbar auto-hide */
-        --scrollbar-opacity: 0;
     }
-    body.scrolling {
-        --scrollbar-opacity: 1;
+    body {
+        overflow: auto;
+        /* Hide native scrollbars */
+        scrollbar-width: none; /* Firefox */
+    }
+    body::-webkit-scrollbar {
+        width: 0;
+        height: 0;
     }
     header {
         @apply fixed top-0 z-30 flex  w-full justify-between items-center px-4 py-4 transition-all duration-[1s] lg:px-10 lg:py-6 bg-gradient-to-b from-[rgba(0,0,0,.7)] to-transparent;
@@ -108,30 +114,34 @@
     }
 }
 
-/* Red-themed scrollbar styling with auto-hide */
-::-webkit-scrollbar {
+/* Custom overlay scrollbar styles */
+.custom-scrollbar {
+    position: fixed;
+    top: 0;
+    right: 8px;
+    bottom: 0;
     width: 8px;
-    height: 8px;
-    opacity: var(--scrollbar-opacity, 0);
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0;
     transition: opacity 0.3s ease;
 }
 
-::-webkit-scrollbar-track {
-    background: transparent;
-    border-radius: 9999px;
+.custom-scrollbar.visible {
+    opacity: 1;
 }
 
-::-webkit-scrollbar-thumb {
+.custom-scrollbar-thumb {
+    position: absolute;
+    left: 0;
+    right: 0;
+    border-radius: 9999px;
     background: rgb(220, 38, 38); /* red-600 */
-    border-radius: 9999px;
+    transition: background 0.2s ease;
 }
 
-::-webkit-scrollbar-thumb:hover {
+.custom-scrollbar-thumb:hover {
     background: rgb(239, 68, 68); /* red-500 */
-}
-
-::-webkit-scrollbar-corner {
-    background: transparent;
 }
 
 .backGround {
