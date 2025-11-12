@@ -392,6 +392,9 @@ export default function useUserData() {
                 // Clear rankings from store and Firestore
                 const { useRankingStore } = await import('../stores/rankingStore')
                 console.log('[useUserData] 🗑️ Clearing user rankings...')
+
+                // First load user rankings to ensure we have them
+                await useRankingStore.getState().loadUserRankings(userId)
                 const userRankings = useRankingStore.getState().rankings
                 console.log(`[useUserData] Found ${userRankings.length} rankings to delete`)
 

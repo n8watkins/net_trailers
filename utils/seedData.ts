@@ -988,13 +988,14 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
         console.log('  🏆 Creating sample rankings')
 
         const { useRankingStore } = await import('../stores/rankingStore')
-        const userProfile = isGuest
-            ? { id: userId, name: 'Guest User', avatar: undefined }
-            : {
-                  id: userId,
-                  name: useAuthStore.getState().email || 'User',
-                  avatar: useAuthStore.getState().photoURL || undefined,
-              }
+        const { useProfileStore } = await import('../stores/profileStore')
+
+        const profile = useProfileStore.getState().profile
+        const userProfile = {
+            id: userId,
+            name: profile?.username || useAuthStore.getState().email || 'User',
+            avatar: profile?.avatarUrl || useAuthStore.getState().photoURL || undefined,
+        }
 
         const sampleRankings = [
             {
