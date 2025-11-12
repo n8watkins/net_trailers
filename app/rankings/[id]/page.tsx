@@ -17,6 +17,7 @@ import { useAuthStatus } from '../../../hooks/useAuthStatus'
 import NetflixLoader from '../../../components/common/NetflixLoader'
 import { TrophyIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
 import { useToast } from '../../../hooks/useToast'
+import { auth } from '../../../firebase'
 
 export default function RankingDetailPage() {
     const router = useRouter()
@@ -81,17 +82,30 @@ export default function RankingDetailPage() {
     const handleClone = async () => {
         if (!userId || !currentRanking) return
 
+        // Get current user's display name and photo
+        const currentUser = auth.currentUser
+        if (!currentUser) {
+            showError('You must be logged in to clone rankings')
+            return
+        }
+
+        const username = currentUser.displayName || 'Unknown User'
+        const userAvatar = currentUser.photoURL || undefined
+
         setIsCloning(true)
         try {
             // Create a new ranking with cloned data
-            const clonedRankingId = await createRanking(
-                userId,
-                `${currentRanking.title} (Copy)`,
-                currentRanking.description || undefined,
-                currentRanking.itemCount,
-                currentRanking.isPublic,
-                currentRanking.tags
-            )
+            const clonedRankingId = await createRanking(userId, username, userAvatar, {
+                title: `${currentRanking.title} (Copy)`,
+                description: currentRanking.description,
+                isPublic: currentRanking.isPublic,
+                itemCount: currentRanking.itemCount,
+                tags: currentRanking.tags,
+            })
+
+            if (!clonedRankingId) {
+                throw new Error('Failed to create ranking')
+            }
 
             // Update with the ranked items
             await updateRanking(userId, {
