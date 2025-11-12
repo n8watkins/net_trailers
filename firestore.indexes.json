@@ -101,6 +101,24 @@
                     "order": "DESCENDING"
                 }
             ]
+        },
+        {
+            "collectionGroup": "ranking_comments",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "parentCommentId",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "rankingId",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "createdAt",
+                    "order": "DESCENDING"
+                }
+            ]
         }
     ],
     "fieldOverrides": []
