@@ -472,8 +472,8 @@ export default function SearchBar({
                             text-base sm:text-lg select-none
                             autofill:bg-[#0a0a0a] autofill:text-white
                             autofill:shadow-[inset_0_0_0_1000px_#0a0a0a]
-                            shadow-md shadow-red-500/20
-                            ${isFocused ? 'bg-[#0a0a0a] shadow-xl shadow-red-500/30 border-red-500/50' : 'hover:shadow-lg hover:shadow-red-500/25 bg-[#0a0a0a]'}
+                            shadow-xl shadow-red-500/50
+                            ${isFocused ? 'bg-[#0a0a0a] shadow-2xl shadow-red-500/70 border-red-500/70' : 'hover:shadow-2xl hover:shadow-red-500/60 bg-[#0a0a0a]'}
                         `}
                     />
 
