@@ -48,7 +48,6 @@ import { GuestModeIndicator } from '../auth/GuestModeIndicator'
 import { useLayoutContext } from '../../contexts/LayoutContext'
 import NotificationBell from '../notifications/NotificationBell'
 import NotificationPanel from '../notifications/NotificationPanel'
-import { useSessionStore } from '../../stores/sessionStore'
 import { useChildSafety } from '../../hooks/useChildSafety'
 import type { Content } from '../../typings'
 
@@ -134,7 +133,6 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
     const { user } = useAuth()
     const { showSuccess, showError, showWatchlistAdd, showWatchlistRemove } = useToast()
     const debugSettings = useDebugSettings()
-    const sessionType = useSessionStore((state) => state.sessionType)
     const { isEnabled: childSafetyEnabled } = useChildSafety()
 
     // Determine if we should show sub-navigation based on current path
@@ -334,6 +332,8 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                 <SearchBar
                                     placeholder="Search movies and shows..."
                                     className="w-full"
+                                    inputId="navbar-search-input"
+                                    voiceSourceId="header-desktop-search"
                                 />
                             </div>
                         </div>
@@ -457,6 +457,8 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                             placeholder="Search movies and TV shows..."
                             className="w-full"
                             onBlur={() => setShowSearch(false)}
+                            inputId="navbar-mobile-search-input"
+                            voiceSourceId="header-mobile-search"
                         />
                     </div>
                 </div>

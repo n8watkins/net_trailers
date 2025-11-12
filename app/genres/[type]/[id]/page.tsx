@@ -245,10 +245,10 @@ function GenrePageContent() {
             <Header />
 
             <main className="relative pl-4 pb-16 lg:space-y-24 lg:pl-16">
-                <div className="flex flex-col space-y-8 py-16 md:space-y-12 md:py-20 lg:py-24">
+                <div className="flex flex-col space-y-6 py-16 md:space-y-10 md:py-20 lg:py-24">
                     {/* Header Section */}
-                    <div className="space-y-6">
-                        <h1 className="text-3xl font-bold text-white md:text-4xl lg:text-5xl pt-8 sm:pt-10 md:pt-12">
+                    <div className="space-y-3">
+                        <h1 className="text-3xl font-bold text-white md:text-4xl lg:text-5xl pt-3 sm:pt-4 md:pt-6">
                             {pageTitle ||
                                 `${genreName} ${mediaType === 'movie' ? 'Movies' : 'TV Shows'}`}
                         </h1>
@@ -262,7 +262,7 @@ function GenrePageContent() {
                     {content.length > 0 ? (
                         <div className="space-y-8">
                             {/* Flex Layout */}
-                            <div className="flex flex-wrap gap-x-4 gap-y-20 sm:gap-x-6 sm:gap-y-24 md:gap-x-8 md:gap-y-28 overflow-visible">
+                            <div className="flex flex-wrap gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 md:gap-x-8 md:gap-y-12 overflow-visible">
                                 {contentToRender.map((item) => (
                                     <div
                                         key={`${item.media_type || 'unknown'}-${item.id}`}

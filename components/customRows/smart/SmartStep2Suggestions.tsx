@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { PlusIcon, XMarkIcon, SparklesIcon } from '@heroicons/react/24/solid'
 import type { Entity } from './SmartInput'
+import { useToast } from '@/hooks/useToast'
+import { authenticatedFetch, AuthRequiredError } from '@/lib/authenticatedFetch'
 
 interface SmartStep2SuggestionsProps {
     inputData: {
@@ -72,6 +74,7 @@ export function SmartStep2Suggestions({
     const [isRefreshingName, setIsRefreshingName] = useState(false)
     const [showGenreModal, setShowGenreModal] = useState(false)
     const [nameSeed, setNameSeed] = useState(0)
+    const { showError } = useToast()
 
     useEffect(() => {
         loadInitialData()
@@ -81,13 +84,27 @@ export function SmartStep2Suggestions({
         setIsLoading(true)
         try {
             // Call Gemini to analyze and get genre IDs
-            const response = await fetch('/api/smart-suggestions', {
+            const response = await authenticatedFetch('/api/smart-suggestions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...inputData, seed: 0 }),
             })
 
-            if (!response.ok) throw new Error('Failed to generate suggestions')
+            if (!response.ok) {
+                if (response.status === 429) {
+                    const data = await response.json().catch(() => ({}))
+                    showError(
+                        'AI limit reached',
+                        data.error || 'Daily Gemini limit reached. Please try again tomorrow.'
+                    )
+                    throw new Error('AI limit reached')
+                }
+                if (response.status === 401) {
+                    showError('Session expired', 'Please sign in again to continue.')
+                    throw new Error('Authentication required')
+                }
+                throw new Error('Failed to generate suggestions')
+            }
 
             const data = await response.json()
 
@@ -113,7 +130,11 @@ export function SmartStep2Suggestions({
             setPeople(taggedPeople)
             setMediaType(data.mediaType || 'both')
         } catch (error) {
-            console.error('Load error:', error)
+            if (error instanceof AuthRequiredError) {
+                showError('Please sign in', 'Smart suggestions require a Net Trailers account.')
+            } else {
+                console.error('Load error:', error)
+            }
         } finally {
             setIsLoading(false)
         }
@@ -125,18 +146,36 @@ export function SmartStep2Suggestions({
         setNameSeed(newSeed)
 
         try {
-            const response = await fetch('/api/smart-suggestions', {
+            const response = await authenticatedFetch('/api/smart-suggestions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...inputData, seed: newSeed }),
             })
 
-            if (!response.ok) throw new Error('Failed to generate name')
+            if (!response.ok) {
+                if (response.status === 429) {
+                    const data = await response.json().catch(() => ({}))
+                    showError(
+                        'AI limit reached',
+                        data.error || 'Daily Gemini limit reached. Please try again tomorrow.'
+                    )
+                    throw new Error('AI limit reached')
+                }
+                if (response.status === 401) {
+                    showError('Session expired', 'Please sign in again to continue.')
+                    throw new Error('Authentication required')
+                }
+                throw new Error('Failed to generate name')
+            }
 
             const data = await response.json()
             setRowName(data.rowNames?.[0] || rowName)
         } catch (error) {
-            console.error('Name refresh error:', error)
+            if (error instanceof AuthRequiredError) {
+                showError('Please sign in', 'Smart suggestions require a Net Trailers account.')
+            } else {
+                console.error('Name refresh error:', error)
+            }
         } finally {
             setIsRefreshingName(false)
         }

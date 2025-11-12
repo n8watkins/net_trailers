@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { withAuth } from '@/lib/auth-middleware'
+import { consumeGeminiRateLimit } from '@/lib/geminiRateLimiter'
 
 /**
  * POST /api/generate-row-name
@@ -18,7 +20,7 @@ import { NextRequest, NextResponse } from 'next/server'
  *   alternatives?: string[]     // Optional alternative suggestions
  * }
  */
-export async function POST(request: NextRequest) {
+async function handleGenerateRowName(request: NextRequest, userId: string): Promise<NextResponse> {
     try {
         const apiKey = process.env.GEMINI_API_KEY
 
@@ -54,6 +56,17 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(
                 { error: 'Bad request', message: 'mediaType must be movie, tv, or both' },
                 { status: 400 }
+            )
+        }
+
+        const rateStatus = consumeGeminiRateLimit(userId)
+        if (!rateStatus.allowed) {
+            return NextResponse.json(
+                {
+                    error: 'AI naming limit reached. Please try again later.',
+                    retryAfterMs: rateStatus.retryAfterMs,
+                },
+                { status: 429 }
             )
         }
 
@@ -203,3 +216,5 @@ Response: Just the name, nothing else. Make it LEGENDARY.`
         )
     }
 }
+
+export const POST = withAuth(handleGenerateRowName)

@@ -5,10 +5,13 @@ import { useSmartSearchStore } from '../../stores/smartSearchStore'
 import SmartSearchModeBar from './SmartSearchModeBar'
 import SmartSearchResults from './SmartSearchResults'
 import SmartSearchActions from './SmartSearchActions'
+import { useToast } from '@/hooks/useToast'
+import { fetchWithOptionalAuth } from '@/lib/authenticatedFetch'
 
 export default function SmartSearchOverlay() {
     const { query, results, isLoading, setLoading, setResults, addToConversation } =
         useSmartSearchStore()
+    const { showError } = useToast()
 
     // Trigger search when query changes
     useEffect(() => {
@@ -17,7 +20,7 @@ export default function SmartSearchOverlay() {
         const performSearch = async () => {
             setLoading(true)
             try {
-                const response = await fetch('/api/ai-suggestions', {
+                const response = await fetchWithOptionalAuth('/api/ai-suggestions', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -30,6 +33,14 @@ export default function SmartSearchOverlay() {
                 })
 
                 if (!response.ok) {
+                    if (response.status === 429) {
+                        const data = await response.json().catch(() => ({}))
+                        showError(
+                            'AI limit reached',
+                            data.error || 'Daily Gemini limit reached. Try again tomorrow.'
+                        )
+                        throw new Error('AI limit reached')
+                    }
                     throw new Error('Search failed')
                 }
 
@@ -55,7 +66,7 @@ export default function SmartSearchOverlay() {
         }
 
         performSearch()
-    }, [query]) // Only trigger on query change
+    }, [query, showError]) // Only trigger on query change
 
     // Don't show overlay if no query or no results
     if (!query.trim() || results.length === 0) {

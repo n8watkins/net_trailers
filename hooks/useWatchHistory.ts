@@ -50,6 +50,8 @@ export function useWatchHistory() {
 
     // Handle session transitions
     useEffect(() => {
+        let authStateCleanup: (() => void) | null = null
+
         const currentSessionTypeId = userId || guestId
         const prevSession = prevSessionRef.current
 
@@ -82,18 +84,26 @@ export function useWatchHistory() {
             const unsubscribe = auth.onAuthStateChanged((user) => {
                 if (user && user.uid === userId) {
                     loadFromFirestore(userId)
-                    unsubscribe()
+                    if (authStateCleanup) {
+                        authStateCleanup()
+                        authStateCleanup = null
+                    } else {
+                        unsubscribe()
+                    }
                 }
             })
+            authStateCleanup = () => {
+                unsubscribe()
+            }
         }
-    }, [
-        sessionType,
-        userId,
-        guestId,
-        currentSessionId,
-        switchSession,
-        loadFromFirestore,
-    ])
+
+        return () => {
+            if (authStateCleanup) {
+                authStateCleanup()
+                authStateCleanup = null
+            }
+        }
+    }, [sessionType, userId, guestId, currentSessionId, switchSession, loadFromFirestore])
 
     const persistAuthHistory = async (userIdToPersist: string) => {
         try {
@@ -108,8 +118,7 @@ export function useWatchHistory() {
         } catch (error) {
             console.error('Failed to persist watch history to Firestore:', error)
             useWatchHistoryStore.setState({
-                syncError:
-                    error instanceof Error ? error.message : 'Failed to sync watch history',
+                syncError: error instanceof Error ? error.message : 'Failed to sync watch history',
             })
         }
     }

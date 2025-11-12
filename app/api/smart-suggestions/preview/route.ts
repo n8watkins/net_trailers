@@ -1,11 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { TMDBApiClient } from '@/utils/tmdbApi'
+import { MemoryRateLimiter } from '@/lib/rateLimiter'
+import { getRequestIdentity } from '@/lib/requestIdentity'
+
+const previewLimiter = new MemoryRateLimiter(
+    Number(process.env.SMART_PREVIEW_MAX_REQUESTS || 60),
+    Number(process.env.SMART_PREVIEW_WINDOW_MS || 60_000)
+)
 
 /**
  * Preview endpoint - fetch sample content based on selected suggestions
  */
 export async function POST(request: NextRequest) {
     try {
+        const { rateLimitKey } = await getRequestIdentity(request)
+        const rateStatus = previewLimiter.consume(rateLimitKey)
+        if (!rateStatus.allowed) {
+            return NextResponse.json(
+                {
+                    error: 'Preview limit reached. Please slow down.',
+                    retryAfterMs: rateStatus.retryAfterMs,
+                },
+                { status: 429 }
+            )
+        }
+
         const { suggestions, mediaType } = await request.json()
 
         if (!suggestions || !Array.isArray(suggestions) || suggestions.length === 0) {

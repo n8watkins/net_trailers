@@ -9,6 +9,8 @@ import SmartSearchResults from '../smartSearch/SmartSearchResults'
 import SmartSearchActions from '../smartSearch/SmartSearchActions'
 import NetflixLoader from '../common/NetflixLoader'
 import { useSmartSearchStore } from '../../stores/smartSearchStore'
+import { useToast } from '@/hooks/useToast'
+import { fetchWithOptionalAuth } from '@/lib/authenticatedFetch'
 
 export default function SmartSearchClient() {
     const router = useRouter()
@@ -25,6 +27,7 @@ export default function SmartSearchClient() {
         addToConversation,
         reset,
     } = useSmartSearchStore()
+    const { showError } = useToast()
 
     // Reset store on unmount to clear old search results and query
     useEffect(() => {
@@ -49,7 +52,7 @@ export default function SmartSearchClient() {
         const performSearch = async () => {
             setLoading(true)
             try {
-                const response = await fetch('/api/ai-suggestions', {
+                const response = await fetchWithOptionalAuth('/api/ai-suggestions', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -62,6 +65,14 @@ export default function SmartSearchClient() {
                 })
 
                 if (!response.ok) {
+                    if (response.status === 429) {
+                        const data = await response.json().catch(() => ({}))
+                        showError(
+                            'AI limit reached',
+                            data.error || 'Daily Gemini limit reached. Try again tomorrow.'
+                        )
+                        throw new Error('AI limit reached')
+                    }
                     throw new Error('Search failed')
                 }
 
@@ -81,15 +92,13 @@ export default function SmartSearchClient() {
                 })
             } catch (error) {
                 console.error('Smart search error:', error)
-                // Optionally redirect back on error
-                // router.push('/')
             } finally {
                 setLoading(false)
             }
         }
 
         performSearch()
-    }, [queryParam]) // Only trigger on query param change
+    }, [queryParam, showError]) // Only trigger on query param change
 
     return (
         <div className="relative min-h-screen bg-gradient-to-b from-black via-gray-900 to-black">

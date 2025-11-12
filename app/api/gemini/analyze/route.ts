@@ -1,21 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { consumeGeminiRateLimit } from '@/lib/geminiRateLimiter'
+import { getRequestIdentity } from '@/lib/requestIdentity'
 
 /**
  * Gemini API endpoint for semantic analysis of user input
- *
- * Analyzes natural language text to extract:
- * - Genre mentions (sci-fi, thriller, comedy, etc.)
- * - Style/tone (dark, lighthearted, gritty, family-friendly)
- * - Themes (revenge, coming-of-age, time travel)
- * - Era/time period (80s, modern, classic)
- * - Rating preferences (R-rated, family-friendly)
- * - Smart recommendations based on context
  */
 export async function POST(request: NextRequest) {
     try {
+        const { rateLimitKey } = await getRequestIdentity(request)
         const { text, entities, mediaType } = await request.json()
 
-        // Validate input
         if (!text || text.trim().length < 5) {
             return NextResponse.json({ error: 'Text too short for analysis' }, { status: 400 })
         }
@@ -26,10 +20,19 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'AI analysis unavailable' }, { status: 503 })
         }
 
-        // Build the prompt for Gemini
+        const rateStatus = consumeGeminiRateLimit(rateLimitKey)
+        if (!rateStatus.allowed) {
+            return NextResponse.json(
+                {
+                    error: 'AI analysis limit reached. Please try again later.',
+                    retryAfterMs: rateStatus.retryAfterMs,
+                },
+                { status: 429 }
+            )
+        }
+
         const prompt = buildAnalysisPrompt(text, entities, mediaType)
 
-        // Call Gemini API
         const response = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
             {
@@ -38,9 +41,9 @@ export async function POST(request: NextRequest) {
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: prompt }] }],
                     generationConfig: {
-                        temperature: 0.3, // Lower for more consistent results
+                        temperature: 0.3,
                         maxOutputTokens: 1000,
-                        responseMimeType: 'application/json', // Force JSON output without markdown
+                        responseMimeType: 'application/json',
                     },
                 }),
             }
@@ -57,23 +60,21 @@ export async function POST(request: NextRequest) {
             throw new Error('No analysis returned from Gemini')
         }
 
-        // Strip markdown code blocks if present (Gemini 2.5 wraps JSON in ```json...```)
         const cleanedText = analysisText
-            .replace(/^```json\s*\n?/i, '') // Remove opening ```json
-            .replace(/\n?```\s*$/, '') // Remove closing ```
+            .replace(/^```json\s*\n?/i, '')
+            .replace(/\n?```\s*$/, '')
             .trim()
 
-        // Parse the JSON response from Gemini
         const analysis = JSON.parse(cleanedText)
 
         return NextResponse.json({
-            genreIds: analysis.genreIds || [], // Array of TMDB genre IDs (numbers)
+            genreIds: analysis.genreIds || [],
             yearRange: analysis.yearRange || null,
             certification: analysis.certification || null,
             recommendations: analysis.recommendations || [],
             mediaType: analysis.mediaType || 'both',
-            conceptQuery: analysis.conceptQuery || null, // For vibe-based queries like "comedy of errors"
-            movieRecommendations: analysis.movieRecommendations || [], // Specific movie titles to search for
+            conceptQuery: analysis.conceptQuery || null,
+            movieRecommendations: analysis.movieRecommendations || [],
         })
     } catch (error) {
         console.error('Gemini analysis error:', error)
@@ -84,9 +85,6 @@ export async function POST(request: NextRequest) {
     }
 }
 
-/**
- * Build the prompt for Gemini to analyze user input
- */
 function buildAnalysisPrompt(text: string, entities: any[], mediaType: string): string {
     const taggedPeople = entities.filter((e) => e.type === 'person').map((e) => e.name)
     const taggedContent = entities
@@ -144,7 +142,7 @@ TV GENRES:
 Return ONLY this JSON structure with TMDB genre IDs:
 {
   "mediaType": "movie"|"tv"|"both",
-  "genreIds": [80, 18],  // ARRAY OF NUMBERS ONLY - TMDB genre IDs from the lists above
+  "genreIds": [80, 18],
   "yearRange": { "min": 1980, "max": 1989 } | null,
   "certification": ["R", "PG-13"] | null,
   "recommendations": [
@@ -155,68 +153,29 @@ Return ONLY this JSON structure with TMDB genre IDs:
       "confidence": 0-100
     }
   ],
-  "conceptQuery": string | null,  // If user describes a VIBE/CONCEPT (like "comedy of errors", "fish out of water", "heist gone wrong"), provide a search-friendly description
-  "movieRecommendations": [  // If conceptQuery exists, provide 10-15 specific movie/show titles that match
+  "conceptQuery": string | null,
+  "movieRecommendations": [
     {
-      "title": "Clue",  // Exact title for TMDB search
-      "year": 1985,     // Release year for disambiguation
-      "reason": "Classic comedy of errors with mistaken identity"
+      "title": "Clue",
+      "year": 1985,
+      "reason": "Murder mystery comedy with mistaken identities"
     }
   ]
 }
 
 Examples:
-- "gangster movies" → {"genreIds": [80, 18]} (Crime + Drama)
-- "scary films" → {"genreIds": [27]} (Horror)
-- "space adventures" → {"genreIds": [878, 12]} (Sci-Fi + Adventure)
-- "action comedies" → {"genreIds": [28, 35]} (Action + Comedy)
+- "gangster movies" → {"genreIds": [80, 18]}
+- "scary films" → {"genreIds": [27]}
+- "space adventures" → {"genreIds": [878, 12]}
+- "action comedies" → {"genreIds": [28, 35]}
 
 CONCEPT QUERY Examples:
 
-**Pure Concept (provide BOTH genres AND specific titles):**
-- "comedy of errors" → {
-    "conceptQuery": "Comedy films with mistaken identities, misunderstandings, and escalating chaos",
-    "movieRecommendations": [
-      {"title": "Clue", "year": 1985, "reason": "Murder mystery comedy with mistaken identities"},
-      {"title": "Noises Off", "year": 1992, "reason": "Farce with cascading misunderstandings"},
-      {"title": "A Fish Called Wanda", "year": 1988, "reason": "Heist comedy with double-crosses and confusion"},
-      {"title": "The Pink Panther", "year": 1963, "reason": "Slapstick comedy with bumbling detective"},
-      {"title": "Arsenic and Old Lace", "year": 1944, "reason": "Dark comedy with mounting confusion"},
-      // ... 10-15 total
-    ],
-    "genreIds": [35]  // Still include genre for broader filtering
-  }
+Pure Concept:
+- "comedy of errors" → provide conceptQuery plus 10-15 titles and genreIds [35]
 
-**Hybrid Genre+Vibe (provide BOTH genres AND specific titles):**
-- "dark scifi thriller" → {
-    "conceptQuery": "Dark, atmospheric sci-fi thrillers with suspense and tension",
-    "movieRecommendations": [
-      {"title": "Blade Runner", "year": 1982, "reason": "Neo-noir sci-fi with dark atmosphere"},
-      {"title": "Ex Machina", "year": 2014, "reason": "Tense AI thriller with dark undertones"},
-      {"title": "Moon", "year": 2009, "reason": "Psychological sci-fi thriller"},
-      {"title": "Annihilation", "year": 2018, "reason": "Dark cosmic horror sci-fi"},
-      // ... 10-15 total
-    ],
-    "genreIds": [878, 53]  // Sci-Fi + Thriller for backup/fallback
-  }
+Hybrid Genre+Vibe:
+- "dark scifi thriller" → conceptQuery + movieRecommendations + genreIds [878, 53]
 
-**Simple Genre (NO recommendations needed):**
-- "action movies" → {"genreIds": [28], "movieRecommendations": []}
-- "romantic comedies" → {"genreIds": [10749, 35], "movieRecommendations": []}
-
-Rules:
-- MediaType: "series/show/tv" → "tv", "film/movie" → "movie", unclear → "both"
-- ALWAYS provide genreIds when genres are clear
-- Provide movieRecommendations when:
-  1. Query describes a vibe/tone (dark, gritty, wholesome, epic)
-  2. Query describes a narrative structure (fish out of water, heist gone wrong)
-  3. Query has subjective qualities beyond genre (best, underrated, hidden gems)
-- For simple genre-only queries (no vibe/concept): return empty movieRecommendations
-- For concept/vibe queries: provide 10-15 specific titles AND relevant genres
-- Return 1-3 genre IDs maximum
-- ONLY use IDs from the lists above
-- Be precise - don't add extra genres
-- Return ONLY valid JSON
-
-Return ONLY valid JSON, no markdown formatting.`
+Stay concise and return valid JSON only.`
 }

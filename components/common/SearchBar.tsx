@@ -20,6 +20,10 @@ interface SearchBarProps {
     focusColor?: 'purple' | 'green' | 'blue' | 'gray'
     /** Enable voice input */
     voiceInput?: boolean
+    /** Optional DOM id for the underlying input */
+    inputId?: string
+    /** Optional stable identifier for the shared voice controller */
+    voiceSourceId?: string
 }
 
 export default function SearchBar({
@@ -28,6 +32,8 @@ export default function SearchBar({
     placeholder = 'Search...',
     focusColor = 'purple',
     voiceInput = false,
+    inputId,
+    voiceSourceId,
 }: SearchBarProps) {
     const { showError } = useToast()
 
@@ -38,6 +44,7 @@ export default function SearchBar({
         onError: (error) => {
             showError(error)
         },
+        sourceId: voiceSourceId,
     })
 
     const focusColorClasses = {
@@ -63,6 +70,7 @@ export default function SearchBar({
             <input
                 type="text"
                 placeholder={placeholder}
+                id={inputId}
                 className={`w-full pl-10 ${voiceInput && isSupported ? 'pr-12' : 'pr-4'} py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 ${focusColorClasses[focusColor]} focus:border-transparent transition-all duration-200`}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
@@ -72,7 +80,7 @@ export default function SearchBar({
                     type="button"
                     onClick={handleVoiceClick}
                     className={`absolute inset-y-0 right-0 pr-3 flex items-center transition-all duration-200 ${
-                        isListening ? 'text-red-500' : 'text-gray-400 hover:text-gray-200'
+                        isListening ? '!text-red-500' : 'text-gray-400 hover:text-gray-200'
                     }`}
                     title={isListening ? 'Stop listening' : 'Start voice input'}
                     aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
@@ -96,7 +104,7 @@ export default function SearchBar({
                         <MicrophoneIcon
                             className={`h-5 w-5 relative z-10 transition-all ${
                                 isListening
-                                    ? 'scale-110 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]'
+                                    ? 'scale-110 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)] !text-red-500'
                                     : ''
                             }`}
                         />

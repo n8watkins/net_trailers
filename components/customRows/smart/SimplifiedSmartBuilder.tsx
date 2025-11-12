@@ -13,6 +13,8 @@ import NetflixLoader from '../../common/NetflixLoader'
 import { SmartInput } from '../../common/SmartInput'
 import type { CustomRowFormData } from '@/types/customRows'
 import { Content } from '@/typings'
+import { useToast } from '@/hooks/useToast'
+import { authenticatedFetch, AuthRequiredError } from '@/lib/authenticatedFetch'
 
 interface SimplifiedSmartBuilderProps {
     onClose: () => void
@@ -62,6 +64,7 @@ export function SimplifiedSmartBuilder({
     const [enableInfiniteContent, setEnableInfiniteContent] = useState(false)
     const [showInfiniteTooltip, setShowInfiniteTooltip] = useState(false)
     const [mouseDownOnBackdrop, setMouseDownOnBackdrop] = useState(false)
+    const { showError } = useToast()
 
     // Collection settings
     const [isPublic, setIsPublic] = useState(false)
@@ -129,6 +132,12 @@ export function SimplifiedSmartBuilder({
             return
         }
 
+        if (!isAuthenticated) {
+            showError('Sign in required', 'Please sign in to use AI-powered collection tools.')
+            onSignIn()
+            return
+        }
+
         setIsGenerating(true)
         setError(null)
 
@@ -136,7 +145,7 @@ export function SimplifiedSmartBuilder({
             // Include excluded IDs in the request to prevent duplicates
             const excludedIds = [...allSeenIds]
 
-            const response = await fetch('/api/generate-row', {
+            const response = await authenticatedFetch('/api/generate-row', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -146,6 +155,18 @@ export function SimplifiedSmartBuilder({
             })
 
             if (!response.ok) {
+                if (response.status === 429) {
+                    const data = await response.json().catch(() => ({}))
+                    const message =
+                        data.error || 'Daily Gemini limit reached. Please try again tomorrow.'
+                    showError('AI limit reached', message)
+                    throw new Error(message)
+                }
+                if (response.status === 401) {
+                    showError('Session expired', 'Please sign in again to continue.')
+                    onSignIn()
+                    throw new Error('Authentication required')
+                }
                 throw new Error('Failed to generate recommendations')
             }
 
@@ -172,6 +193,10 @@ export function SimplifiedSmartBuilder({
                 setGeneratedRow(data)
             }
         } catch (err) {
+            if (err instanceof AuthRequiredError) {
+                showError('Sign in required', 'Please sign in to use AI-powered collection tools.')
+                onSignIn()
+            }
             setError((err as Error).message || 'Something went wrong')
         } finally {
             setIsGenerating(false)

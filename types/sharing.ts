@@ -39,6 +39,9 @@ export interface ShareableLink {
     /** Number of times this link has been viewed */
     viewCount: number
 
+    /** Timestamp of the most recent view */
+    lastViewedAt?: number
+
     /** Allow viewers to duplicate collection to their account */
     allowDuplicates: boolean
 

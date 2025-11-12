@@ -519,11 +519,21 @@ export function createInteractionFromContent(
         source?: InteractionSource
     }
 ): Omit<UserInteraction, 'id' | 'timestamp' | 'userId'> {
+    // Filter out undefined values from options to prevent Firebase errors
+    const filteredOptions: Record<string, any> = {}
+    if (options) {
+        Object.entries(options).forEach(([key, value]) => {
+            if (value !== undefined) {
+                filteredOptions[key] = value
+            }
+        })
+    }
+
     return {
         contentId: content.id,
         mediaType: content.media_type,
         interactionType,
         genreIds: content.genre_ids || [],
-        ...options,
+        ...filteredOptions,
     }
 }

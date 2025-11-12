@@ -19,6 +19,7 @@ import InlineSearchBar from './InlineSearchBar'
 import useUserData from '../../hooks/useUserData'
 import Image from 'next/image'
 import { Content, getTitle, getYear, isMovie } from '../../typings'
+import { authenticatedFetch, AuthRequiredError } from '@/lib/authenticatedFetch'
 
 const ITEMS_PER_PAGE = 8 // 2 rows x 4 columns
 
@@ -238,7 +239,7 @@ export default function CollectionCreatorModal() {
                 year: getYear(r),
             }))
 
-            const response = await fetch('/api/ai-suggestions', {
+            const response = await authenticatedFetch('/api/ai-suggestions', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -252,6 +253,18 @@ export default function CollectionCreatorModal() {
             })
 
             if (!response.ok) {
+                if (response.status === 429) {
+                    const data = await response.json().catch(() => ({}))
+                    showError(
+                        'AI limit reached',
+                        data.error || 'Daily Gemini limit reached. Please try again tomorrow.'
+                    )
+                    throw new Error('AI limit reached')
+                }
+                if (response.status === 401) {
+                    showError('Session expired', 'Please sign in again to continue.')
+                    throw new Error('Authentication required')
+                }
                 throw new Error('Failed to get more suggestions')
             }
 
@@ -289,8 +302,12 @@ export default function CollectionCreatorModal() {
                 showError('No new suggestions found', 'All returned titles were duplicates')
             }
         } catch (error) {
-            console.error('Ask for more error:', error)
-            showError('Failed to get more suggestions')
+            if (error instanceof AuthRequiredError) {
+                showError('Please sign in', 'Smart Search requires a Net Trailers account.')
+            } else {
+                console.error('Ask for more error:', error)
+                showError('Failed to get more suggestions')
+            }
         } finally {
             setIsLoadingMore(false)
         }

@@ -8,6 +8,7 @@ import {
     EyeSlashIcon,
     EyeIcon,
 } from '@heroicons/react/24/solid'
+import { HandThumbUpIcon as HandThumbUpOutlineIcon } from '@heroicons/react/24/outline'
 import { useAppStore } from '../../stores/appStore'
 import { prefetchMovieDetails } from '../../utils/prefetchCache'
 import useUserData from '../../hooks/useUserData'
@@ -35,6 +36,7 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const [showHoverActions, setShowHoverActions] = useState(false) // Show hover menu above bookmark button
     const [isCardHovered, setIsCardHovered] = useState(false) // Track card hover state
+    const [isLikeAnimating, setIsLikeAnimating] = useState(false) // Track like button animation
 
     // Check if content is liked, hidden, or in any lists
     const liked = content ? isLiked(content.id) : false
@@ -208,7 +210,7 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                         >
                             {/* Hover Action Buttons - Fade in above bookmark (vertical stack) */}
                             <div
-                                className={`absolute bottom-full pb-1 right-0 flex flex-col gap-2 transition-all duration-300 ${
+                                className={`absolute bottom-full pb-2 right-0 flex flex-col gap-2 transition-all duration-300 ${
                                     showHoverActions
                                         ? 'opacity-100 translate-y-0'
                                         : 'opacity-0 translate-y-2 pointer-events-none'
@@ -223,6 +225,10 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                         onClick={(e) => {
                                             e.stopPropagation()
                                             if (content) {
+                                                // Trigger animation
+                                                setIsLikeAnimating(true)
+                                                setTimeout(() => setIsLikeAnimating(false), 300)
+
                                                 if (liked) {
                                                     removeLikedMovie(content.id)
                                                     showSuccess(
@@ -242,13 +248,31 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                                 : 'border-white/40 bg-black/85 hover:bg-black hover:border-white'
                                         }`}
                                     >
-                                        <HandThumbUpIcon
-                                            className={`h-5 w-5 transition-colors duration-200 ${
-                                                liked
-                                                    ? 'text-white'
-                                                    : 'text-white/60 group-hover/like:text-white'
-                                            }`}
-                                        />
+                                        {liked ? (
+                                            <HandThumbUpIcon
+                                                className={`h-5 w-5 transition-all duration-200 text-white`}
+                                                style={
+                                                    isLikeAnimating
+                                                        ? {
+                                                              animation:
+                                                                  'scale-pulse 0.3s ease-in-out',
+                                                          }
+                                                        : undefined
+                                                }
+                                            />
+                                        ) : (
+                                            <HandThumbUpOutlineIcon
+                                                className={`h-5 w-5 transition-all duration-200 text-white/60 group-hover/like:text-white`}
+                                                style={
+                                                    isLikeAnimating
+                                                        ? {
+                                                              animation:
+                                                                  'scale-pulse 0.3s ease-in-out',
+                                                          }
+                                                        : undefined
+                                                }
+                                            />
+                                        )}
                                     </button>
                                 </ToolTipMod>
 

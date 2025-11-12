@@ -1,12 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import {
-    XMarkIcon,
-    SparklesIcon,
-    MicrophoneIcon,
-    MagnifyingGlassIcon,
-} from '@heroicons/react/24/outline'
+import { XMarkIcon, MicrophoneIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { useTypewriter } from '../../hooks/useTypewriter'
 import { useVoiceInput } from '../../hooks/useVoiceInput'
 import { useToast } from '../../hooks/useToast'
@@ -58,6 +53,7 @@ interface SmartInputProps {
         | 'double'
     showSurpriseMe?: boolean
     onSurpriseMe?: () => void
+    voiceSourceId?: string
 }
 
 /**
@@ -89,7 +85,8 @@ export function SmartInput({
     variant = 'solid',
     shimmer = 'none',
     showSurpriseMe = false,
-    onSurpriseMe,
+    onSurpriseMe: _onSurpriseMe,
+    voiceSourceId,
 }: SmartInputProps) {
     const { showError } = useToast()
     const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -155,6 +152,7 @@ export function SmartInput({
         onError: (error) => {
             showError('Voice input error', error)
         },
+        sourceId: voiceSourceId,
     })
 
     // Show live transcript while listening
@@ -243,7 +241,7 @@ export function SmartInput({
             setLocalValue(data.query)
             onChange(data.query)
             inputRef.current?.focus()
-        } catch (error) {
+        } catch (_error) {
             showError('Failed to generate surprise', 'Please try again')
         } finally {
             setIsGeneratingSurprise(false)
@@ -620,7 +618,7 @@ export function SmartInput({
                             <MicrophoneIcon
                                 className={`
                                     ${currentSize.button} transition-all relative z-10
-                                    ${isListening ? 'text-red-500 scale-110 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'text-red-400 hover:text-red-300'}
+                                    ${isListening ? '!text-red-500 scale-110 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'text-red-400 hover:text-red-300'}
                                 `}
                             />
                         </button>

@@ -5,6 +5,8 @@ import { GenrePills } from './GenrePills'
 import { AdvancedFiltersSection } from './AdvancedFiltersSection'
 import { CustomRowFormData, CUSTOM_ROW_CONSTRAINTS, CustomRow } from '../../types/customRows'
 import { FilmIcon, TvIcon, SparklesIcon } from '@heroicons/react/24/outline'
+import { useToast } from '@/hooks/useToast'
+import { authenticatedFetch, AuthRequiredError } from '@/lib/authenticatedFetch'
 
 interface CustomRowFormProps {
     initialData?: CustomRow
@@ -31,6 +33,7 @@ export function CustomRowForm({ initialData, onSubmit, onCancel, isLoading }: Cu
 
     const [errors, setErrors] = useState<Record<string, string>>({})
     const [isGeneratingName, setIsGeneratingName] = useState(false)
+    const { showError } = useToast()
 
     const validate = (): boolean => {
         const newErrors: Record<string, string> = {}
@@ -63,7 +66,7 @@ export function CustomRowForm({ initialData, onSubmit, onCancel, isLoading }: Cu
         setErrors({})
 
         try {
-            const response = await fetch('/api/generate-row-name', {
+            const response = await authenticatedFetch('/api/generate-row-name', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -76,17 +79,32 @@ export function CustomRowForm({ initialData, onSubmit, onCancel, isLoading }: Cu
             })
 
             if (!response.ok) {
+                if (response.status === 429) {
+                    const data = await response.json().catch(() => ({}))
+                    const message =
+                        data.error || 'Daily Gemini limit reached. Please try again tomorrow.'
+                    showError('AI limit reached', message)
+                    throw new Error(message)
+                }
+                if (response.status === 401) {
+                    showError('Session expired', 'Please sign in again to continue.')
+                    throw new Error('Authentication required')
+                }
                 throw new Error('Failed to generate name')
             }
 
             const data = await response.json()
             setFormData({ ...formData, name: data.name })
         } catch (error) {
-            console.error('Error generating name:', error)
-            setErrors({
-                ...errors,
-                name: 'Failed to generate name. Try manually entering one.',
-            })
+            if (error instanceof AuthRequiredError) {
+                showError('Please sign in', 'AI naming requires a Net Trailers account.')
+            } else {
+                console.error('Error generating name:', error)
+                setErrors({
+                    ...errors,
+                    name: 'Failed to generate name. Try manually entering one.',
+                })
+            }
         } finally {
             setIsGeneratingName(false)
         }

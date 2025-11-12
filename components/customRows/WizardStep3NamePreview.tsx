@@ -7,6 +7,8 @@ import { CustomRowFormData, CUSTOM_ROW_CONSTRAINTS } from '../../types/customRow
 import { MOVIE_GENRES, TV_GENRES } from '../../constants/genres'
 import { Content, getTitle } from '../../typings'
 import Image from 'next/image'
+import { useToast } from '@/hooks/useToast'
+import { authenticatedFetch, AuthRequiredError } from '@/lib/authenticatedFetch'
 
 interface WizardStep3NamePreviewProps {
     formData: CustomRowFormData
@@ -42,6 +44,7 @@ export function WizardStep3NamePreview({
     const [currentPreviewPage, setCurrentPreviewPage] = useState(0)
     const [isLoadingMoreSuggestions, setIsLoadingMoreSuggestions] = useState(false)
     const [currentTMDBPage, setCurrentTMDBPage] = useState(1)
+    const { showError } = useToast()
 
     // Get genre names for display
     const genreList = formData.mediaType === 'tv' ? TV_GENRES : MOVIE_GENRES
@@ -87,7 +90,7 @@ export function WizardStep3NamePreview({
         setNameError(null)
 
         try {
-            const response = await fetch('/api/generate-row-name', {
+            const response = await authenticatedFetch('/api/generate-row-name', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -102,17 +105,35 @@ export function WizardStep3NamePreview({
             })
 
             if (!response.ok) {
+                if (response.status === 429) {
+                    const data = await response.json().catch(() => ({}))
+                    const message =
+                        data.error || 'Daily Gemini limit reached. Please try again tomorrow.'
+                    showError('AI limit reached', message)
+                    throw new Error(message)
+                }
+                if (response.status === 401) {
+                    showError('Session expired', 'Please sign in again to continue.')
+                    throw new Error('Authentication required')
+                }
                 throw new Error('Failed to generate name')
             }
 
             const data = await response.json()
             onChange({ name: data.name })
         } catch (error) {
-            console.error('Error generating name:', error)
-            setNameError('Failed to generate name. Please try again or enter one manually.')
-            // Fallback to basic name
-            const genreNames = selectedGenreNames.join(' & ')
-            onChange({ name: `${genreNames} ${formData.mediaType === 'tv' ? 'Shows' : 'Movies'}` })
+            if (error instanceof AuthRequiredError) {
+                showError('Please sign in', 'AI naming requires a Net Trailers account.')
+                onSignIn()
+            } else {
+                console.error('Error generating name:', error)
+                setNameError('Failed to generate name. Please try again or enter one manually.')
+                // Fallback to basic name
+                const genreNames = selectedGenreNames.join(' & ')
+                onChange({
+                    name: `${genreNames} ${formData.mediaType === 'tv' ? 'Shows' : 'Movies'}`,
+                })
+            }
         } finally {
             setIsGeneratingName(false)
         }

@@ -236,7 +236,7 @@ export async function incrementViewCount(db: Firestore, shareId: string): Promis
             .doc(shareId)
             .update({
                 viewCount: FieldValue.increment(1),
-                lastViewedAt: FieldValue.serverTimestamp(),
+                lastViewedAt: Date.now(),
             })
     } catch (error) {
         console.error('Error incrementing view count:', error)

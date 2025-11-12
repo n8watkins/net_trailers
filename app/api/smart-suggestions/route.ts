@@ -1,24 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateSmartSuggestions } from '../../../utils/smartRowSuggestions'
+import { consumeGeminiRateLimit } from '@/lib/geminiRateLimiter'
+import { getRequestIdentity } from '@/lib/requestIdentity'
+import { TMDBApiClient } from '@/utils/tmdbApi'
 
 export async function POST(request: NextRequest) {
     try {
+        const { rateLimitKey } = await getRequestIdentity(request)
         const body = await request.json()
         const { entities, rawText, seed } = body
         let mediaType = body.mediaType || 'both'
 
-        // Validate input
         if (!entities || !Array.isArray(entities)) {
             return NextResponse.json({ error: 'Invalid entities' }, { status: 400 })
         }
 
-        // Call Gemini for semantic analysis if there's text (to infer media type)
         let geminiInsights = null
         if (rawText && rawText.trim().length >= 5) {
             try {
+                const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+                const authHeader = request.headers.get('authorization')
+                if (authHeader) {
+                    headers.Authorization = authHeader
+                }
+
                 const geminiResponse = await fetch(`${request.nextUrl.origin}/api/gemini/analyze`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers,
                     body: JSON.stringify({
                         text: rawText,
                         entities,
@@ -28,7 +36,6 @@ export async function POST(request: NextRequest) {
 
                 if (geminiResponse.ok) {
                     geminiInsights = await geminiResponse.json()
-                    // Use Gemini's inferred media type if available
                     if (geminiInsights.mediaType) {
                         mediaType = geminiInsights.mediaType
                     }
@@ -38,16 +45,13 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // Validate media type
         if (!['movie', 'tv', 'both'].includes(mediaType)) {
             mediaType = 'both'
         }
 
-        // Generate TMDB-based suggestions (people/content analysis)
         const inputData = { entities, mediaType, rawText }
         const tmdbResult = await generateSmartSuggestions(inputData, seed)
 
-        // Merge Gemini insights with TMDB suggestions
         const mergedResult = geminiInsights
             ? await mergeGeminiInsights(
                   tmdbResult,
@@ -57,8 +61,19 @@ export async function POST(request: NextRequest) {
               )
             : { ...tmdbResult, mediaType }
 
-        // Generate creative row names using Gemini
         try {
+            const rateStatus = consumeGeminiRateLimit(rateLimitKey)
+            if (!rateStatus.allowed) {
+                return NextResponse.json(
+                    {
+                        ...mergedResult,
+                        error: 'AI naming limit reached. Please try again later.',
+                        retryAfterMs: rateStatus.retryAfterMs,
+                    },
+                    { status: 429 }
+                )
+            }
+
             const nameResult = await generateCreativeRowName(
                 request.nextUrl.origin,
                 entities,
@@ -67,7 +82,7 @@ export async function POST(request: NextRequest) {
                 geminiInsights
             )
             if (nameResult) {
-                mergedResult.rowNames = [nameResult, ...mergedResult.rowNames].slice(0, 3)
+                mergedResult.rowNames = [nameResult, ...(mergedResult.rowNames || [])].slice(0, 3)
             }
         } catch (error) {
             console.warn('Failed to generate creative name, using defaults:', error)
@@ -80,9 +95,6 @@ export async function POST(request: NextRequest) {
     }
 }
 
-/**
- * Generate super creative row name using Gemini
- */
 async function generateCreativeRowName(
     origin: string,
     entities: any[],
@@ -90,20 +102,17 @@ async function generateCreativeRowName(
     mediaType: string,
     geminiInsights: any
 ): Promise<string | null> {
-    // Build context for name generation
-    const people = entities.filter((e) => e.type === 'person')
+    const people = entities.filter((e: any) => e.type === 'person')
 
     if (people.length === 0 && !rawText) {
-        return null // Need at least something to work with
+        return null
     }
 
-    // Build a smart prompt for Gemini using raw text and people
     let context = rawText || ''
     if (people.length > 0) {
         context += ` featuring ${people.map((p: any) => p.name).join(', ')}`
     }
 
-    // Call Gemini directly with a specialized creative naming prompt
     const apiKey = process.env.GEMINI_API_KEY
     if (!apiKey) return null
 
@@ -118,13 +127,13 @@ Create ONE ultra-creative, surprisingly witty row name (1-3 words MAX) that:
 - Sounds like a cool friend, not corporate marketing
 
 Examples of the vibe:
-- "THE GOAT" (for legendary directors/actors)
-- "Peak Scorsese" (for Martin Scorsese)
-- "Certified Bangers" (for action)
-- "Chef's Kiss" (for perfection)
-- "Built Different" (for unique)
-- "No Skips" (for consistent quality)
-- "Unhinged Energy" (for wild content)
+- "THE GOAT"
+- "Peak Scorsese"
+- "Certified Bangers"
+- "Chef's Kiss"
+- "Built Different"
+- "No Skips"
+- "Unhinged Energy"
 
 For this selection, create a name that's SO surprisingly cool it delights the user.
 
@@ -139,7 +148,7 @@ Response: Just the name, nothing else.`
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: prompt }] }],
                     generationConfig: {
-                        temperature: 0.95, // High creativity
+                        temperature: 0.95,
                         maxOutputTokens: 50,
                     },
                 }),
@@ -163,33 +172,27 @@ Response: Just the name, nothing else.`
     }
 }
 
-/**
- * Merge Gemini semantic insights with TMDB suggestions
- */
 async function mergeGeminiInsights(
     tmdbResult: any,
     geminiInsights: any,
     mediaType: string,
     origin: string
 ): Promise<any> {
-    const { suggestions, rowNames, insight } = tmdbResult
+    const { suggestions, rowNames } = tmdbResult
     const mergedSuggestions = [...suggestions]
 
-    // Add Gemini genre recommendations (as TMDB genre IDs)
     if (geminiInsights.genreIds && geminiInsights.genreIds.length > 0) {
         mergedSuggestions.push({
             type: 'genre',
-            value: geminiInsights.genreIds, // Array of TMDB genre IDs (numbers)
-            confidence: 95, // High confidence since it's AI-inferred
+            value: geminiInsights.genreIds,
+            confidence: 95,
             reason: 'AI detected these genres from your description',
             source: 'gemini',
         })
     }
 
-    // Handle concept queries with specific movie recommendations
     if (geminiInsights.movieRecommendations && geminiInsights.movieRecommendations.length > 0) {
         try {
-            // Search TMDB for each recommended title to get IDs
             const tmdbIds = await searchTMDBForTitles(
                 geminiInsights.movieRecommendations,
                 mediaType
@@ -198,85 +201,51 @@ async function mergeGeminiInsights(
             if (tmdbIds.length > 0) {
                 mergedSuggestions.push({
                     type: 'content_list',
-                    value: tmdbIds, // Array of TMDB IDs
-                    confidence: 95,
-                    reason: geminiInsights.conceptQuery || 'AI-curated content matching your vibe',
+                    value: tmdbIds,
                     source: 'gemini',
+                    confidence: 90,
+                    reason: 'AI-recommended titles based on your vibe',
                 })
             }
         } catch (error) {
-            console.error('Error searching TMDB for recommendations:', error)
+            console.warn('Failed to merge Gemini movie recommendations:', error)
         }
-    }
-
-    // Add Gemini recommendations
-    if (geminiInsights.recommendations) {
-        geminiInsights.recommendations.forEach((rec: any) => {
-            mergedSuggestions.push({
-                type: rec.type,
-                value: rec.value,
-                confidence: rec.confidence || 80,
-                reason: rec.reason,
-                source: 'gemini',
-            })
-        })
     }
 
     return {
+        ...tmdbResult,
         suggestions: mergedSuggestions,
         rowNames,
-        insight: '', // No descriptive insight
-        mediaType: geminiInsights.mediaType || mediaType,
+        mediaType,
     }
 }
 
-/**
- * Search TMDB for specific movie/show titles to get their IDs
- */
-async function searchTMDBForTitles(
-    recommendations: Array<{ title: string; year?: number; reason?: string }>,
-    mediaType: string
-): Promise<number[]> {
-    const tmdbIds: number[] = []
+async function searchTMDBForTitles(recommendations: any[], mediaType: string): Promise<number[]> {
+    const tmdb = TMDBApiClient.getInstance()
+    const ids: number[] = []
 
-    for (const rec of recommendations) {
+    for (const rec of recommendations.slice(0, 10)) {
         try {
-            // Search TMDB for this title
-            const searchUrl =
+            const searchEndpoint =
                 mediaType === 'tv'
-                    ? `https://api.themoviedb.org/3/search/tv?api_key=${process.env.TMDB_API_KEY}&query=${encodeURIComponent(rec.title)}`
-                    : `https://api.themoviedb.org/3/search/movie?api_key=${process.env.TMDB_API_KEY}&query=${encodeURIComponent(rec.title)}`
+                    ? '/search/tv'
+                    : mediaType === 'movie'
+                      ? '/search/movie'
+                      : '/search/multi'
 
-            const response = await fetch(searchUrl)
-            if (!response.ok) continue
+            const result = (await tmdb.fetch(searchEndpoint, {
+                query: rec.title,
+                year: rec.year,
+            })) as any
 
-            const data = await response.json()
-            const results = data.results || []
-
-            // Find best match (prefer by year if provided)
-            let bestMatch = results[0]
-            if (rec.year && results.length > 1) {
-                for (const result of results) {
-                    const releaseYear = parseInt(
-                        (result.release_date || result.first_air_date || '').split('-')[0]
-                    )
-                    if (releaseYear === rec.year) {
-                        bestMatch = result
-                        break
-                    }
-                }
+            const match = result?.results?.[0]
+            if (match?.id) {
+                ids.push(match.id)
             }
-
-            if (bestMatch?.id) {
-                tmdbIds.push(bestMatch.id)
-            }
-
-            // Rate limit: don't overwhelm TMDB
-            if (tmdbIds.length >= 15) break
         } catch (error) {
-            console.error(`Failed to search TMDB for "${rec.title}":`, error)
+            console.warn('TMDB title lookup failed for', rec.title, error)
         }
     }
 
-    return tmdbIds
+    return ids
 }

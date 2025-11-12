@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { withAuth } from '@/lib/auth-middleware'
+import { consumeGeminiRateLimit } from '@/lib/geminiRateLimiter'
 
 /**
  * Simplified Smart Row Generator - Single API call does everything
@@ -10,7 +12,7 @@ import { NextRequest, NextResponse } from 'next/server'
  *
  * This replaces the complex multi-step flow with instant results.
  */
-export async function POST(request: NextRequest) {
+async function handleGenerateRow(request: NextRequest, userId: string): Promise<NextResponse> {
     try {
         const { query, excludedIds } = await request.json()
 
@@ -25,9 +27,20 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'AI service unavailable' }, { status: 503 })
         }
 
+        const rateStatus = consumeGeminiRateLimit(userId)
+        if (!rateStatus.allowed) {
+            return NextResponse.json(
+                {
+                    error: 'AI request limit reached. Please try again later.',
+                    retryAfterMs: rateStatus.retryAfterMs,
+                },
+                { status: 429 }
+            )
+        }
+
         // Build prompt for Gemini, including excluded IDs if present
         const prompt = buildGenerateRowPrompt(query, excludedIds)
-        console.log('[Generate Row] Request received', { queryLength: query.length })
+        console.log('[Generate Row] Request received', { queryLength: query.length, userId })
 
         // Call Gemini API
         const response = await fetch(
@@ -89,6 +102,7 @@ export async function POST(request: NextRequest) {
         console.log('[Generate Row] Completed', {
             movies: filteredMovies.length,
             mediaType: finalResult.mediaType,
+            userId,
         })
         return NextResponse.json(finalResult)
     } catch (error) {
@@ -99,6 +113,8 @@ export async function POST(request: NextRequest) {
         )
     }
 }
+
+export const POST = withAuth(handleGenerateRow)
 
 /**
  * Build Gemini prompt for movie recommendations

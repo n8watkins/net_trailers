@@ -25,6 +25,7 @@ import {
     QueryConstraint,
     DocumentSnapshot,
     startAfter,
+    writeBatch,
 } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { PaginatedResult, createPaginatedResult } from '../../types/pagination'
@@ -457,6 +458,45 @@ export async function incrementRankingView(rankingId: string, userId?: string): 
     } catch (error) {
         console.error('Error incrementing ranking view:', error)
         // Don't throw - view tracking shouldn't block user experience
+    }
+}
+
+/**
+ * Update denormalized username across all rankings owned by a user
+ */
+export async function updateRankingsUsername(userId: string, newUsername: string): Promise<void> {
+    try {
+        const rankingsRef = collection(db, COLLECTIONS.rankings)
+        const rankingsSnapshot = await getDocs(query(rankingsRef, where('userId', '==', userId)))
+
+        if (rankingsSnapshot.empty) {
+            return
+        }
+
+        let batch = writeBatch(db)
+        let operations = 0
+        const timestamp = Date.now()
+
+        for (const rankingDoc of rankingsSnapshot.docs) {
+            batch.update(rankingDoc.ref, {
+                userName: newUsername,
+                updatedAt: timestamp,
+            })
+            operations++
+
+            if (operations === 500) {
+                await batch.commit()
+                batch = writeBatch(db)
+                operations = 0
+            }
+        }
+
+        if (operations > 0) {
+            await batch.commit()
+        }
+    } catch (error) {
+        console.error('Error updating ranking usernames:', error)
+        throw error
     }
 }
 

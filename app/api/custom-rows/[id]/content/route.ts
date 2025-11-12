@@ -4,6 +4,7 @@ import { filterMatureTVShows } from '../../../../../utils/tvContentRatings'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
+const MAX_CURATED_CONTENT_IDS = 30
 
 type MediaType = 'movie' | 'tv' | 'both'
 type GenreLogic = 'AND' | 'OR'
@@ -54,10 +55,34 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         // Page 1: Show curated content
         // Page 2+: Fall back to genre-based discovery (if genres exist)
         if (contentIdsParam && page === '1') {
-            const contentIds = contentIdsParam.split(',').map((id) => parseInt(id.trim(), 10))
+            const uniqueContentIds = Array.from(
+                new Set(
+                    contentIdsParam
+                        .split(',')
+                        .map((id) => parseInt(id.trim(), 10))
+                        .filter((id) => Number.isFinite(id) && id > 0)
+                )
+            )
+
+            if (uniqueContentIds.length === 0) {
+                return NextResponse.json(
+                    { error: 'Bad Request', message: 'contentIds must contain valid TMDB IDs' },
+                    { status: 400 }
+                )
+            }
+
+            if (uniqueContentIds.length > MAX_CURATED_CONTENT_IDS) {
+                return NextResponse.json(
+                    {
+                        error: 'Too many curated IDs',
+                        message: `A maximum of ${MAX_CURATED_CONTENT_IDS} curated items is supported.`,
+                    },
+                    { status: 400 }
+                )
+            }
 
             // Fetch specific content by IDs using parallel fetching for better performance
-            const fetchPromises = contentIds.map(async (tmdbId) => {
+            const fetchPromises = uniqueContentIds.map(async (tmdbId) => {
                 try {
                     // For "both" media type, try movie first, then TV if it fails
                     if (mediaType === 'both') {

@@ -7,6 +7,7 @@ import { useSessionStore } from '../../stores/sessionStore'
 import { useAppStore } from '../../stores/appStore'
 import { useToast } from '../../hooks/useToast'
 import { getTitle, getYear } from '../../typings'
+import { fetchWithOptionalAuth } from '@/lib/authenticatedFetch'
 
 interface SmartSearchActionsProps {
     showAskForMore?: boolean
@@ -62,7 +63,7 @@ export default function SmartSearchActions({
                 year: getYear(r),
             }))
 
-            const response = await fetch('/api/ai-suggestions', {
+            const response = await fetchWithOptionalAuth('/api/ai-suggestions', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -76,6 +77,14 @@ export default function SmartSearchActions({
             })
 
             if (!response.ok) {
+                if (response.status === 429) {
+                    const data = await response.json().catch(() => ({}))
+                    showError(
+                        'AI limit reached',
+                        data.error || 'Daily Gemini limit reached. Try again tomorrow.'
+                    )
+                    throw new Error('AI limit reached')
+                }
                 throw new Error('Failed to get more suggestions')
             }
 

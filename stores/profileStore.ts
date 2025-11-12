@@ -23,6 +23,8 @@ import {
     uploadAvatar as uploadAvatarToStorage,
     deleteAvatar as deleteAvatarFromStorage,
 } from '../utils/firestore/profiles'
+import { updateRankingsUsername } from '../utils/firestore/rankings'
+import { updateRankingCommentsUsername } from '../utils/firestore/rankingComments'
 
 const GUEST_ID_PREFIX = 'guest_'
 
@@ -321,11 +323,24 @@ export const useProfileStore = create<ProfileState>()(
                     return
                 }
 
+                const trimmedUsername = newUsername.trim()
+                const currentProfile = get().profile
+
+                if (!currentProfile) {
+                    set({ error: 'Profile not loaded', isLoading: false })
+                    return
+                }
+
+                if (currentProfile.username === trimmedUsername) {
+                    // Nothing to do
+                    return
+                }
+
                 set({ isLoading: true, error: null })
 
                 try {
                     // Validate and check availability
-                    const availability = await get().checkUsernameAvailability(newUsername)
+                    const availability = await get().checkUsernameAvailability(trimmedUsername)
                     if (!availability.available) {
                         set({
                             error: availability.error || 'Username not available',
@@ -334,25 +349,21 @@ export const useProfileStore = create<ProfileState>()(
                         return
                     }
 
-                    // TODO: Implement cascading updates
-                    // 1. Update profile
-                    // await updateProfileInFirestore(userId, { username: newUsername })
-                    //
-                    // 2. Update username mapping
-                    // await updateUsernameMapping(oldUsername, newUsername, userId)
-                    //
-                    // 3. Update all rankings by this user (denormalized username)
-                    // await updateRankingsUsername(userId, newUsername)
-                    //
-                    // 4. Update all comments by this user
-                    // await updateCommentsUsername(userId, newUsername)
+                    // Update canonical profile (handles username mapping atomically)
+                    await updateProfileInFirestore(userId, { username: trimmedUsername })
+
+                    // Update denormalized references
+                    await Promise.all([
+                        updateRankingsUsername(userId, trimmedUsername),
+                        updateRankingCommentsUsername(userId, trimmedUsername),
+                    ])
 
                     // Update local state
                     set((state) => ({
                         profile: state.profile
                             ? {
                                   ...state.profile,
-                                  username: newUsername,
+                                  username: trimmedUsername,
                                   updatedAt: Date.now(),
                               }
                             : null,

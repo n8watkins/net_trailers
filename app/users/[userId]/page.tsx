@@ -13,13 +13,11 @@ import { RankingGrid } from '../../../components/rankings/RankingGrid'
 import { useRankingStore } from '../../../stores/rankingStore'
 import NetflixLoader from '../../../components/common/NetflixLoader'
 import { UserIcon, TrophyIcon, HeartIcon, EyeIcon } from '@heroicons/react/24/outline'
-import { doc, getDoc } from 'firebase/firestore'
-import { db } from '../../../firebase'
-
 interface UserProfile {
     username: string
     avatarUrl?: string | null
-    bio?: string
+    bio?: string | null
+    displayName?: string | null
 }
 
 export default function UserProfilePage() {
@@ -34,32 +32,57 @@ export default function UserProfilePage() {
 
     // Load user profile
     useEffect(() => {
+        const controller = new AbortController()
+        let isMounted = true
+
         const loadProfile = async () => {
             if (!userId) return
 
             try {
                 setIsLoadingProfile(true)
-                const userDoc = await getDoc(doc(db, 'users', userId))
+                setError(null)
+                const response = await fetch(`/api/public-profile/${userId}`, {
+                    signal: controller.signal,
+                })
 
-                if (userDoc.exists()) {
-                    const data = userDoc.data()
-                    setProfile({
-                        username: data.username || 'User',
-                        avatarUrl: data.avatarUrl,
-                        bio: data.bio,
-                    })
-                } else {
-                    setError('User not found')
+                if (!response.ok) {
+                    const errorBody = await response.json().catch(() => ({}))
+                    throw new Error(
+                        errorBody.error || response.statusText || 'Profile request failed'
+                    )
                 }
+
+                const data = (await response.json()) as UserProfile
+
+                if (!isMounted) return
+
+                setProfile({
+                    username: data.username || 'User',
+                    avatarUrl: data.avatarUrl,
+                    bio: data.bio ?? null,
+                    displayName: data.displayName ?? null,
+                })
             } catch (err) {
+                if ((err as Error).name === 'AbortError') {
+                    return
+                }
                 console.error('Error loading user profile:', err)
-                setError('Failed to load profile')
+                if (isMounted) {
+                    setError('Failed to load profile')
+                }
             } finally {
-                setIsLoadingProfile(false)
+                if (isMounted) {
+                    setIsLoadingProfile(false)
+                }
             }
         }
 
         loadProfile()
+
+        return () => {
+            isMounted = false
+            controller.abort()
+        }
     }, [userId])
 
     // Load user's public rankings
