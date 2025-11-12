@@ -43,7 +43,7 @@ export default function RankingDetailPage() {
         return () => {
             clearCurrentRanking()
         }
-    }, [isInitialized, rankingId, userId, loadRanking, clearCurrentRanking])
+    }, [isInitialized, rankingId, userId])
 
     const handleEdit = () => {
         // TODO: Implement edit mode

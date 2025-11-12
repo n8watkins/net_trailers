@@ -61,7 +61,7 @@ export default function ProfilePage() {
         if (userId && isInitialized) {
             loadUserRankings(userId)
         }
-    }, [isInitialized, loadUserRankings])
+    }, [isInitialized])
 
     const handleSeedData = async () => {
         const getUserId = useSessionStore.getState().getUserId

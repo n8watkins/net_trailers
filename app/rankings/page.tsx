@@ -48,7 +48,7 @@ export default function RankingsPage() {
         if (isInitialized && userId) {
             loadUserRankings(userId)
         }
-    }, [isInitialized, userId, loadUserRankings])
+    }, [isInitialized, userId])
 
     const handleCreateNew = () => {
         router.push('/rankings/new')

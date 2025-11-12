@@ -43,19 +43,12 @@ export default function CommunityPage() {
 
     const [filterByTag, setFilterByTag] = useState<string | null>(null)
 
-    // Load community rankings on mount
+    // Load community rankings on mount and when sort changes
     useEffect(() => {
         if (isInitialized) {
             loadCommunityRankings(50)
         }
-    }, [isInitialized, loadCommunityRankings])
-
-    // Reload when sort changes
-    useEffect(() => {
-        if (isInitialized) {
-            loadCommunityRankings(50)
-        }
-    }, [sortBy, isInitialized, loadCommunityRankings])
+    }, [isInitialized, sortBy])
 
     const handleRankingClick = (rankingId: string) => {
         router.push(`/rankings/${rankingId}`)

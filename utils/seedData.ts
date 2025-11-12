@@ -1011,10 +1011,14 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
             avatar: profile?.avatarUrl || useAuthStore.getState().photoURL || undefined,
         }
 
+        console.log('  👤 User profile for rankings:', userProfile)
+
         // Load existing rankings to prevent duplicates
+        console.log('  📋 Loading existing rankings...')
         await useRankingStore.getState().loadUserRankings(userId)
         const existingRankings = useRankingStore.getState().rankings
         const existingTitles = new Set(existingRankings.map((r) => r.title))
+        console.log(`  📊 Found ${existingRankings.length} existing rankings`)
 
         const sampleRankings = [
             {
@@ -1057,11 +1061,17 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
 
         for (const rankingData of sampleRankings) {
             try {
+                console.log(`  🔄 Processing ranking: ${rankingData.title}`)
+
                 // Skip if ranking already exists
                 if (existingTitles.has(rankingData.title)) {
                     console.log(`    ⏭️  Skipping duplicate ranking: ${rankingData.title}`)
                     continue
                 }
+
+                console.log(
+                    `  📝 Creating ranking with ${rankingData.items.length} items: ${rankingData.title}`
+                )
 
                 // Step 1: Create the ranking with basic info
                 const rankingId = await useRankingStore
@@ -1074,11 +1084,14 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                         tags: rankingData.tags,
                     })
 
+                console.log(`  🆔 Ranking created with ID: ${rankingId}`)
+
                 if (!rankingId) {
                     throw new Error('Failed to create ranking - no ID returned')
                 }
 
                 // Step 2: Update with ranked items
+                console.log(`  🔧 Updating ranking ${rankingId} with items...`)
                 await useRankingStore.getState().updateRanking(userProfile.id, {
                     id: rankingId,
                     rankedItems: rankingData.items.map((item, index) => ({
@@ -1102,9 +1115,11 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                 // Small delay between rankings
                 await new Promise((resolve) => setTimeout(resolve, 200))
             } catch (error) {
-                console.error(`Failed to create ranking "${rankingData.title}":`, error)
+                console.error(`❌ Failed to create ranking "${rankingData.title}":`, error)
             }
         }
+    } else {
+        console.log('  ⏭️  Skipping rankings (guest mode)')
     }
 
     // Wait a bit to ensure all async saves complete before page reload
