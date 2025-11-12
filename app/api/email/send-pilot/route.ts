@@ -3,8 +3,9 @@ import { resend } from '../../../../lib/email/resend'
 import { TrendingContentEmail } from '../../../../lib/email/templates/trending-content'
 import { Content } from '../../../../typings'
 import { withAuth } from '../../../../lib/auth-middleware'
+import { getTMDBHeaders } from '../../../../utils/tmdbFetch'
 
-const TMDB_API_KEY = process.env.TMDB_API_KEY || process.env.NEXT_PUBLIC_TMDB_API_KEY
+const TMDB_API_KEY = process.env.TMDB_API_KEY
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
 const EMAIL_RATE_LIMIT = Number(process.env.PILOT_EMAIL_MAX_PER_DAY || '3')
 
@@ -49,9 +50,11 @@ function isEmailAllowed(email: string): boolean {
  */
 async function fetchTrendingContent(): Promise<{ movies: Content[]; tvShows: Content[] }> {
     try {
+        // Use Authorization headers instead of query parameters for security
+        const headers = getTMDBHeaders()
         const [moviesRes, tvRes] = await Promise.all([
-            fetch(`${TMDB_BASE_URL}/trending/movie/week?api_key=${TMDB_API_KEY}`),
-            fetch(`${TMDB_BASE_URL}/trending/tv/week?api_key=${TMDB_API_KEY}`),
+            fetch(`${TMDB_BASE_URL}/trending/movie/week`, { headers }),
+            fetch(`${TMDB_BASE_URL}/trending/tv/week`, { headers }),
         ])
 
         const moviesData = await moviesRes.json()

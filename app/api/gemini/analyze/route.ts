@@ -1,43 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { consumeGeminiRateLimit } from '@/lib/geminiRateLimiter'
 import { getRequestIdentity } from '@/lib/requestIdentity'
+import { sanitizeInput } from '@/utils/inputSanitization'
 
 /**
  * Gemini API endpoint for semantic analysis of user input
  */
-const MAX_INPUT_LENGTH = 500 // Maximum characters for user input
-const MIN_INPUT_LENGTH = 5 // Minimum characters for meaningful analysis
-
 export async function POST(request: NextRequest) {
     try {
         const { rateLimitKey } = await getRequestIdentity(request)
         const { text, entities, mediaType } = await request.json()
 
-        // Validate input length
-        if (!text || typeof text !== 'string') {
-            return NextResponse.json({ error: 'Invalid input: text must be a string' }, { status: 400 })
+        // Sanitize and validate input
+        const sanitizationResult = sanitizeInput(text)
+        if (!sanitizationResult.isValid) {
+            return NextResponse.json({ error: sanitizationResult.error }, { status: 400 })
         }
 
-        const trimmedText = text.trim()
-
-        if (trimmedText.length < MIN_INPUT_LENGTH) {
-            return NextResponse.json({ error: `Text too short for analysis (minimum ${MIN_INPUT_LENGTH} characters)` }, { status: 400 })
-        }
-
-        if (trimmedText.length > MAX_INPUT_LENGTH) {
-            return NextResponse.json({ error: `Text too long for analysis (maximum ${MAX_INPUT_LENGTH} characters)` }, { status: 400 })
-        }
-
-        // Sanitize input - remove control characters and normalize whitespace
-        const sanitizedText = trimmedText
-            // eslint-disable-next-line no-control-regex
-            .replace(/[\x00-\x1F\x7F-\x9F]/g, '') // Remove control characters
-            .replace(/\s+/g, ' ') // Normalize whitespace
-            .trim()
-
-        if (sanitizedText.length < MIN_INPUT_LENGTH) {
-            return NextResponse.json({ error: 'Text contains too many invalid characters' }, { status: 400 })
-        }
+        const sanitizedText = sanitizationResult.sanitized
 
         const apiKey = process.env.GEMINI_API_KEY
         if (!apiKey) {

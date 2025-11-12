@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { filterContentByAdultFlag } from '../../../utils/contentFilter'
 import { filterMatureTVShows } from '../../../utils/tvContentRatings'
 import { Content } from '../../../typings'
+import { getTMDBHeaders } from '../../../utils/tmdbFetch'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -36,23 +37,44 @@ async function fetchCandidates(mediaType: MediaType, page: number, childSafetyMo
     }
     const apiKey = API_KEY
 
-    let url: string
+    // Build URL without API key (moved to Authorization header)
+    const urlObj = new URL(BASE_URL)
 
     if (mediaType === 'movie') {
         if (childSafetyMode) {
-            url = `${BASE_URL}/discover/movie?api_key=${apiKey}&language=en-US&page=${page}&sort_by=popularity.desc&certification_country=US&certification.lte=PG-13&include_adult=false&vote_count.gte=100`
+            urlObj.pathname = '/3/discover/movie'
+            urlObj.searchParams.set('language', 'en-US')
+            urlObj.searchParams.set('page', page.toString())
+            urlObj.searchParams.set('sort_by', 'popularity.desc')
+            urlObj.searchParams.set('certification_country', 'US')
+            urlObj.searchParams.set('certification.lte', 'PG-13')
+            urlObj.searchParams.set('include_adult', 'false')
+            urlObj.searchParams.set('vote_count.gte', '100')
         } else {
-            url = `${BASE_URL}/trending/movie/week?api_key=${apiKey}&language=en-US&page=${page}`
+            urlObj.pathname = '/3/trending/movie/week'
+            urlObj.searchParams.set('language', 'en-US')
+            urlObj.searchParams.set('page', page.toString())
         }
     } else {
         if (childSafetyMode) {
-            url = `${BASE_URL}/discover/tv?api_key=${apiKey}&language=en-US&page=${page}&sort_by=popularity.desc&with_genres=16,10762,10751,35,10765,10759&include_adult=false`
+            urlObj.pathname = '/3/discover/tv'
+            urlObj.searchParams.set('language', 'en-US')
+            urlObj.searchParams.set('page', page.toString())
+            urlObj.searchParams.set('sort_by', 'popularity.desc')
+            urlObj.searchParams.set('with_genres', '16,10762,10751,35,10765,10759')
+            urlObj.searchParams.set('include_adult', 'false')
         } else {
-            url = `${BASE_URL}/trending/tv/week?api_key=${apiKey}&language=en-US&page=${page}`
+            urlObj.pathname = '/3/trending/tv/week'
+            urlObj.searchParams.set('language', 'en-US')
+            urlObj.searchParams.set('page', page.toString())
         }
     }
 
-    const response = await fetch(url, { cache: 'no-store' })
+    // Use Authorization header for secure authentication
+    const response = await fetch(urlObj.toString(), {
+        cache: 'no-store',
+        headers: getTMDBHeaders()
+    })
 
     if (!response.ok) {
         throw new Error(`TMDB API error: ${response.status}`)

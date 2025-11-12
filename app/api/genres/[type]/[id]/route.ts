@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { filterMatureTVShows } from '../../../../../utils/tvContentRatings'
 import { filterMatureMovies as _filterMatureMovies } from '../../../../../utils/movieCertifications'
 import { csDebugTMDB, csDebugResponse, csDebugFilter } from '../../../../../utils/childSafetyDebug'
-import { getTMDBHeaders } from '../../../../../utils/tmdbFetch'
 
 export async function GET(
     request: NextRequest,
@@ -58,6 +57,7 @@ export async function GET(
     try {
         // Build query parameters
         const queryParams = new URLSearchParams({
+            api_key: API_KEY,
             page: pageNum.toString(),
             sort_by: sort_by,
         })
@@ -178,7 +178,7 @@ export async function GET(
         // Debug logging
         csDebugTMDB(endpoint, childSafeMode)
 
-        const response = await fetch(endpoint, { headers: getTMDBHeaders() })
+        const response = await fetch(endpoint)
 
         if (!response.ok) {
             console.error(`TMDB API error: ${response.status} ${response.statusText}`)

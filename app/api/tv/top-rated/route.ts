@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { filterMatureTVShows } from '../../../../utils/tvContentRatings'
-import { getTMDBHeaders } from '../../../../utils/tmdbFetch'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -16,27 +15,19 @@ export async function GET(request: NextRequest) {
         const childSafetyMode = searchParams.get('childSafetyMode')
         const childSafeMode = childSafetyMode === 'true'
 
-        let url: URL
+        let url: string
 
         if (childSafeMode) {
             // ✅ CURATED CONTENT STRATEGY: Use family-friendly TV genres sorted by rating
             // Animation (16), Kids (10762), Family (10751), Comedy (35), Sci-Fi & Fantasy (10765), Action & Adventure (10759)
             // This ensures more content availability without aggressive filtering
-            url = new URL(`${BASE_URL}/discover/tv`)
-            url.searchParams.set('language', 'en-US')
-            url.searchParams.set('page', page)
-            url.searchParams.set('sort_by', 'vote_average.desc')
-            url.searchParams.set('vote_count.gte', '100')
-            url.searchParams.set('with_genres', '16,10762,10751,35,10765,10759')
-            url.searchParams.set('include_adult', 'false')
+            url = `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&page=${page}&sort_by=vote_average.desc&vote_count.gte=100&with_genres=16,10762,10751,35,10765,10759&include_adult=false`
         } else {
             // Normal mode - use top_rated endpoint
-            url = new URL(`${BASE_URL}/tv/top_rated`)
-            url.searchParams.set('language', 'en-US')
-            url.searchParams.set('page', page)
+            url = `${BASE_URL}/tv/top_rated?api_key=${API_KEY}&language=en-US&page=${page}`
         }
 
-        const response = await fetch(url.toString(), { headers: getTMDBHeaders() })
+        const response = await fetch(url)
 
         if (!response.ok) {
             throw new Error(`TMDB API error: ${response.status}`)

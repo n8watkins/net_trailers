@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { filterContentByAdultFlag } from '../../../../../utils/contentFilter'
 import { filterMatureTVShows } from '../../../../../utils/tvContentRatings'
+import { getTMDBHeaders } from '../../../../../utils/tmdbFetch'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -88,10 +89,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                     if (mediaType === 'both') {
                         // Try movie endpoint first
                         const movieUrl = new URL(`${BASE_URL}/movie/${tmdbId}`)
-                        movieUrl.searchParams.append('api_key', API_KEY)
                         movieUrl.searchParams.append('language', 'en-US')
 
-                        const movieResponse = await fetch(movieUrl.toString())
+                        const movieResponse = await fetch(movieUrl.toString(), { headers: getTMDBHeaders() })
                         if (movieResponse.ok) {
                             const item = await movieResponse.json()
                             return { ...item, media_type: 'movie' }
@@ -99,10 +99,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
                         // If movie fails, try TV endpoint
                         const tvUrl = new URL(`${BASE_URL}/tv/${tmdbId}`)
-                        tvUrl.searchParams.append('api_key', API_KEY)
                         tvUrl.searchParams.append('language', 'en-US')
 
-                        const tvResponse = await fetch(tvUrl.toString())
+                        const tvResponse = await fetch(tvUrl.toString(), { headers: getTMDBHeaders() })
                         if (tvResponse.ok) {
                             const item = await tvResponse.json()
                             return { ...item, media_type: 'tv' }
@@ -119,10 +118,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                             : `${BASE_URL}/movie/${tmdbId}`
 
                     const url = new URL(endpoint)
-                    url.searchParams.append('api_key', API_KEY)
                     url.searchParams.append('language', 'en-US')
 
-                    const response = await fetch(url.toString())
+                    const response = await fetch(url.toString(), { headers: getTMDBHeaders() })
                     if (!response.ok) return null
 
                     const item = await response.json()
@@ -231,7 +229,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         if (mediaType === 'both') {
             // Fetch movies
             const movieUrl = new URL(`${BASE_URL}/discover/movie`)
-            movieUrl.searchParams.append('api_key', API_KEY)
             movieUrl.searchParams.append('language', 'en-US')
             movieUrl.searchParams.append('page', page)
             movieUrl.searchParams.append('sort_by', 'popularity.desc')
@@ -243,7 +240,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
             // Fetch TV shows
             const tvUrl = new URL(`${BASE_URL}/discover/tv`)
-            tvUrl.searchParams.append('api_key', API_KEY)
             tvUrl.searchParams.append('language', 'en-US')
             tvUrl.searchParams.append('page', page)
             tvUrl.searchParams.append('sort_by', 'popularity.desc')
@@ -251,8 +247,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
             // Fetch both in parallel
             const [movieResponse, tvResponse] = await Promise.all([
-                fetch(movieUrl.toString()),
-                fetch(tvUrl.toString()),
+                fetch(movieUrl.toString(), { headers: getTMDBHeaders() }),
+                fetch(tvUrl.toString(), { headers: getTMDBHeaders() }),
             ])
 
             if (!movieResponse.ok || !tvResponse.ok) {
@@ -286,7 +282,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             // Single media type (movie or tv)
             const discoverEndpoint = mediaType === 'movie' ? 'discover/movie' : 'discover/tv'
             const url = new URL(`${BASE_URL}/${discoverEndpoint}`)
-            url.searchParams.append('api_key', API_KEY)
             url.searchParams.append('language', 'en-US')
             url.searchParams.append('page', page)
             url.searchParams.append('sort_by', 'popularity.desc')
@@ -299,7 +294,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             }
 
             // Fetch from TMDB
-            const response = await fetch(url.toString())
+            const response = await fetch(url.toString(), { headers: getTMDBHeaders() })
 
             if (!response.ok) {
                 throw new Error(`TMDB API error: ${response.status} ${response.statusText}`)
