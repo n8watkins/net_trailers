@@ -8,6 +8,7 @@ import { UserList } from '../../types/userLists'
 import Image from 'next/image'
 import IconPickerModal from './IconPickerModal'
 import ColorPickerModal from './ColorPickerModal'
+import CollectionEditorModal from './CollectionEditorModal'
 import { useToast } from '../../hooks/useToast'
 import { listNameSchema, validateListNameUnique } from '../../schemas/listSchema'
 import { z } from 'zod'
@@ -56,6 +57,8 @@ function ListSelectionModal() {
     const [showColorPicker, setShowColorPicker] = useState(false)
     const [showEditIconPicker, setShowEditIconPicker] = useState(false)
     const [showEditColorPicker, setShowEditColorPicker] = useState(false)
+    const [editorCollection, setEditorCollection] = useState<UserList | null>(null)
+    const [showEditor, setShowEditor] = useState(false)
 
     const targetContent = listModal.content
     const allLists = getAllLists()
@@ -187,12 +190,25 @@ function ListSelectionModal() {
     }
 
     const handleEditList = (list: UserList) => {
-        setEditingListId(list.id)
-        setEditingListName(list.name)
-        setEditingListEmoji(list.emoji || '🎬')
-        setEditingListColor(list.color || '#ef4444')
-        setEditingIsPublic(list.isPublic || false)
-        setEditingDisplayAsRow(list.displayAsRow ?? true)
+        // For custom collections with content, use comprehensive editor
+        const isDefaultList = list.id === 'default-watchlist'
+        const hasContent = list.items && list.items.length > 0
+        const isCustomCollection =
+            !isDefaultList && (hasContent || list.collectionType === 'ai-generated')
+
+        if (isCustomCollection) {
+            // Open comprehensive editor
+            setEditorCollection(list)
+            setShowEditor(true)
+        } else {
+            // Use inline edit for simple lists
+            setEditingListId(list.id)
+            setEditingListName(list.name)
+            setEditingListEmoji(list.emoji || '🎬')
+            setEditingListColor(list.color || '#ef4444')
+            setEditingIsPublic(list.isPublic || false)
+            setEditingDisplayAsRow(list.displayAsRow ?? true)
+        }
     }
 
     const handleSaveEdit = (listId: string, originalName: string) => {
@@ -968,6 +984,16 @@ function ListSelectionModal() {
                     )}
                 </div>
             </div>
+
+            {/* Comprehensive Collection Editor Modal */}
+            <CollectionEditorModal
+                collection={editorCollection}
+                isOpen={showEditor}
+                onClose={() => {
+                    setShowEditor(false)
+                    setEditorCollection(null)
+                }}
+            />
         </div>
     )
 }

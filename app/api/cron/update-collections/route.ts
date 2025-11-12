@@ -10,14 +10,19 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { CustomRowsFirestore } from '@/utils/firestore/customRows'
 import {
     checkForNewContent,
     addContentToCollection,
     getCollectionsDueForUpdate,
 } from '@/utils/tmdb/contentDiscovery'
-import { createNotification } from '@/utils/firestore/notifications'
 import { CustomRow } from '@/types/customRows'
+import { getAdminDb } from '@/lib/firebase-admin'
+import { Firestore } from 'firebase-admin/firestore'
+import {
+    getUserCustomRowsAdmin,
+    updateCustomRowAdmin,
+} from '@/utils/firestore/admin/customRowsAdmin'
+import { createNotificationAdmin } from '@/utils/firestore/admin/notificationsAdmin'
 
 /**
  * TEMPORARY: Auto-update cron is paused while the feature is de-scoped.
@@ -32,7 +37,15 @@ export async function POST(request: NextRequest) {
     try {
         // Verify authorization (protect against unauthorized calls)
         const authHeader = request.headers.get('authorization')
-        const cronSecret = process.env.CRON_SECRET || 'dev-secret-change-in-production'
+        const cronSecret = process.env.CRON_SECRET
+
+        if (!cronSecret) {
+            console.error('[Cron] CRON_SECRET is not configured')
+            return NextResponse.json(
+                { success: false, error: 'Cron secret is not configured on the server' },
+                { status: 500 }
+            )
+        }
 
         if (authHeader !== `Bearer ${cronSecret}`) {
             console.warn('Unauthorized cron job attempt')
@@ -51,11 +64,12 @@ export async function POST(request: NextRequest) {
         }
 
         console.log('[Cron] Starting collection auto-update job...')
+        const db = getAdminDb()
 
         // Get all users with custom rows
         // Note: This is a simplified approach. In production, you might want to
         // paginate through users or use Firebase Cloud Functions for better scalability
-        const allUserIds = await getAllUserIds()
+        const allUserIds = await getAllUserIds(db)
 
         let totalChecked = 0
         let totalUpdated = 0
@@ -64,7 +78,7 @@ export async function POST(request: NextRequest) {
         // Process each user's collections
         for (const userId of allUserIds) {
             try {
-                const result = await processUserCollections(userId)
+                const result = await processUserCollections(db, userId)
                 totalChecked += result.checked
                 totalUpdated += result.updated
             } catch (error) {
@@ -106,11 +120,12 @@ export async function POST(request: NextRequest) {
  * Process all collections for a single user
  */
 async function processUserCollections(
+    db: Firestore,
     userId: string
 ): Promise<{ checked: number; updated: number }> {
     try {
         // Get user's custom rows
-        const allCollections = await CustomRowsFirestore.getUserCustomRows(userId)
+        const allCollections = await getUserCustomRowsAdmin(db, userId)
 
         // Filter to collections due for update
         const dueCollections = getCollectionsDueForUpdate(allCollections)
@@ -126,7 +141,7 @@ async function processUserCollections(
         // Process each collection
         for (const collection of dueCollections) {
             try {
-                const hasUpdates = await processCollection(userId, collection)
+                const hasUpdates = await processCollection(db, userId, collection)
                 if (hasUpdates) {
                     updated++
                 }
@@ -146,14 +161,18 @@ async function processUserCollections(
 /**
  * Process a single collection - check for new content and notify
  */
-async function processCollection(userId: string, collection: CustomRow): Promise<boolean> {
+async function processCollection(
+    db: Firestore,
+    userId: string,
+    collection: CustomRow
+): Promise<boolean> {
     try {
         // Check TMDB for new content
         const newContentIds = await checkForNewContent(collection)
 
         if (newContentIds.length === 0) {
             // Update lastCheckedAt even if no new content
-            await CustomRowsFirestore.updateCustomRow(userId, collection.id, {
+            await updateCustomRowAdmin(db, userId, collection.id, {
                 lastCheckedAt: Date.now(),
             })
             return false
@@ -167,14 +186,14 @@ async function processCollection(userId: string, collection: CustomRow): Promise
         const updatedCollection = addContentToCollection(collection, newContentIds)
 
         // Save updated collection to Firestore
-        await CustomRowsFirestore.updateCustomRow(userId, collection.id, {
+        await updateCustomRowAdmin(db, userId, collection.id, {
             advancedFilters: updatedCollection.advancedFilters,
             lastCheckedAt: updatedCollection.lastCheckedAt,
             lastUpdateCount: updatedCollection.lastUpdateCount,
         })
 
         // Create notification for user
-        await createNotification(userId, {
+        await createNotificationAdmin(db, userId, {
             type: 'collection_update',
             title: `${newContentIds.length} new ${newContentIds.length === 1 ? 'item' : 'items'} in "${collection.name}"`,
             message: `Your collection has been updated with new matching content`,
@@ -200,12 +219,8 @@ async function processCollection(userId: string, collection: CustomRow): Promise
  *
  * For large user bases, consider implementing pagination and processing users in batches.
  */
-async function getAllUserIds(): Promise<string[]> {
+async function getAllUserIds(db: Firestore): Promise<string[]> {
     try {
-        // Use Firebase Admin SDK for server-side access
-        const { getAdminDb } = await import('@/lib/firebase-admin')
-        const db = getAdminDb()
-
         // Get all users
         const usersSnapshot = await db.collection('users').get()
 
@@ -258,9 +273,9 @@ async function getAllUserIds(): Promise<string[]> {
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const secret = searchParams.get('secret')
-    const cronSecret = process.env.CRON_SECRET || 'dev-secret-change-in-production'
+    const cronSecret = process.env.CRON_SECRET
 
-    if (secret !== cronSecret) {
+    if (!cronSecret || secret !== cronSecret) {
         return NextResponse.json({ success: false, error: 'Invalid secret' }, { status: 401 })
     }
 

@@ -27,10 +27,7 @@ export async function POST(request: NextRequest) {
 
         // Build prompt for Gemini, including excluded IDs if present
         const prompt = buildGenerateRowPrompt(query, excludedIds)
-        console.log('=== GENERATE ROW REQUEST ===')
-        console.log('User Query:', query)
-        console.log('Prompt sent to Gemini:', prompt)
-        console.log('============================')
+        console.log('[Generate Row] Request received', { queryLength: query.length })
 
         // Call Gemini API
         const response = await fetch(
@@ -56,10 +53,6 @@ export async function POST(request: NextRequest) {
         }
 
         const data = await response.json()
-        console.log('\n=== GEMINI RESPONSE ===')
-        console.log('Finish Reason:', data.candidates?.[0]?.finishReason)
-        console.log('Raw response:', JSON.stringify(data, null, 2))
-        console.log('======================\n')
 
         const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text
 
@@ -68,40 +61,23 @@ export async function POST(request: NextRequest) {
             throw new Error('No response from Gemini')
         }
 
-        console.log('📝 Gemini result text:', resultText)
-
         // Parse JSON response
         const cleanedText = resultText
             .replace(/^```json\s*\n?/i, '')
             .replace(/\n?```\s*$/, '')
             .trim()
 
-        console.log('🧹 Cleaned text for parsing:', cleanedText)
-
         const geminiResult = JSON.parse(cleanedText)
-        console.log('✅ Parsed successfully:', {
-            movieCount: geminiResult.movies?.length,
-            rowName: geminiResult.rowName,
-            mediaType: geminiResult.mediaType,
-        })
 
         // Validate and enrich with TMDB data
-        console.log('🎬 Enriching movies with TMDB data...')
         const enrichedMovies = await enrichMoviesWithTMDB(
             geminiResult.movies || [],
             geminiResult.mediaType || 'movie'
         )
-        console.log(`✅ Enriched ${enrichedMovies.length} movies successfully`)
 
         // Filter out any excluded IDs (double-check in case Gemini ignored the instruction)
         const excludedIdsSet = new Set(excludedIds || [])
         const filteredMovies = enrichedMovies.filter((m) => !excludedIdsSet.has(m.tmdbId))
-
-        if (filteredMovies.length < enrichedMovies.length) {
-            console.log(
-                `⚠️ Filtered out ${enrichedMovies.length - filteredMovies.length} duplicate movies`
-            )
-        }
 
         const finalResult = {
             movies: filteredMovies,
@@ -110,13 +86,10 @@ export async function POST(request: NextRequest) {
             genreFallback: geminiResult.genreFallback || [],
         }
 
-        console.log('\n=== FINAL RESULT ===')
-        console.log('Row Name:', finalResult.rowName)
-        console.log('Media Type:', finalResult.mediaType)
-        console.log('Movies:', filteredMovies.length)
-        console.log('Movies List:', filteredMovies.map((m) => `${m.title} (${m.year})`).join(', '))
-        console.log('====================\n')
-
+        console.log('[Generate Row] Completed', {
+            movies: filteredMovies.length,
+            mediaType: finalResult.mediaType,
+        })
         return NextResponse.json(finalResult)
     } catch (error) {
         console.error('Generate row error:', error)
