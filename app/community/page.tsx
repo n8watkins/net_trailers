@@ -6,10 +6,10 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import SubPageLayout from '../../components/layout/SubPageLayout'
-import { RankingGrid } from '../../components/rankings/RankingGrid'
+import { RankingRow } from '../../components/rankings/RankingRow'
 import { useRankingStore } from '../../stores/rankingStore'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import NetflixLoader from '../../components/common/NetflixLoader'
@@ -20,6 +20,10 @@ import {
     AdjustmentsHorizontalIcon,
     FunnelIcon,
     XMarkIcon,
+    FireIcon,
+    ClockIcon,
+    HeartIcon,
+    EyeIcon,
 } from '@heroicons/react/24/outline'
 
 export default function CommunityPage() {
@@ -37,7 +41,6 @@ export default function CommunityPage() {
         setFilterByMediaType,
     } = useRankingStore()
 
-    const [showFilters, setShowFilters] = useState(false)
     const [filterByTag, setFilterByTag] = useState<string | null>(null)
 
     // Load community rankings on mount
@@ -58,25 +61,55 @@ export default function CommunityPage() {
         router.push(`/rankings/${rankingId}`)
     }
 
-    // Filter rankings by media type and tag
-    const filteredRankings = communityRankings.filter((ranking) => {
-        // Filter by media type
-        if (filterByMediaType !== 'all') {
-            const matchesMediaType = ranking.rankedItems.every(
-                (item) => item.content.media_type === filterByMediaType
-            )
-            if (!matchesMediaType) return false
-        }
+    // Filter rankings by media type
+    const filteredByMediaType =
+        filterByMediaType === 'all'
+            ? communityRankings
+            : communityRankings.filter((ranking) => {
+                  return ranking.rankedItems.every(
+                      (item) => item.content.media_type === filterByMediaType
+                  )
+              })
 
-        // Filter by tag
-        if (filterByTag) {
-            if (!ranking.tags || !ranking.tags.includes(filterByTag)) {
-                return false
+    // Group rankings by tags
+    const rankingsByTag = useMemo(() => {
+        const grouped: Record<string, typeof communityRankings> = {}
+
+        // Group by tag
+        filteredByMediaType.forEach((ranking) => {
+            if (ranking.tags && ranking.tags.length > 0) {
+                ranking.tags.forEach((tag) => {
+                    if (!grouped[tag]) {
+                        grouped[tag] = []
+                    }
+                    grouped[tag].push(ranking)
+                })
+            } else {
+                // Rankings without tags go to "Other"
+                if (!grouped['Other']) {
+                    grouped['Other'] = []
+                }
+                grouped['Other'].push(ranking)
             }
+        })
+
+        return grouped
+    }, [filteredByMediaType])
+
+    // Get tag rows to display
+    const tagRows = useMemo(() => {
+        // If specific tag selected, only show that tag
+        if (filterByTag) {
+            return rankingsByTag[filterByTag]
+                ? [{ tag: filterByTag, rankings: rankingsByTag[filterByTag] }]
+                : []
         }
 
-        return true
-    })
+        // Otherwise show all tags, sorted by ranking count
+        return Object.entries(rankingsByTag)
+            .map(([tag, rankings]) => ({ tag, rankings }))
+            .sort((a, b) => b.rankings.length - a.rankings.length)
+    }, [rankingsByTag, filterByTag])
 
     if (!isInitialized || isLoading) {
         return (
@@ -95,15 +128,6 @@ export default function CommunityPage() {
             title="Community"
             icon={<UsersIcon className="w-8 h-8" />}
             iconColor="text-yellow-500"
-            headerActions={
-                <button
-                    onClick={() => setShowFilters(!showFilters)}
-                    className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors"
-                >
-                    <AdjustmentsHorizontalIcon className="w-5 h-5" />
-                    <span className="hidden sm:inline">Filters</span>
-                </button>
-            }
         >
             {/* Description */}
             <div className="mb-6 text-center">
@@ -112,141 +136,160 @@ export default function CommunityPage() {
                 </p>
             </div>
 
-            {/* Filters Panel */}
-            {showFilters && (
-                <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 mb-6 space-y-4">
-                    {/* Sort By */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Sort By
-                        </label>
-                        <div className="flex flex-wrap gap-2">
-                            {[
-                                { value: 'recent', label: 'Most Recent' },
-                                { value: 'popular', label: 'Most Popular' },
-                                { value: 'most-liked', label: 'Most Liked' },
-                                { value: 'most-viewed', label: 'Most Viewed' },
-                            ].map((option) => (
-                                <button
-                                    key={option.value}
-                                    onClick={() => setSortBy(option.value as typeof sortBy)}
-                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                        sortBy === option.value
-                                            ? 'bg-yellow-500 text-black'
-                                            : 'bg-zinc-800 text-gray-300 hover:bg-zinc-700'
-                                    }`}
-                                >
-                                    {option.label}
-                                </button>
-                            ))}
+            {/* Two-column layout */}
+            <div className="flex flex-col lg:flex-row gap-6">
+                {/* Sidebar filters */}
+                <div className="lg:w-64 flex-shrink-0">
+                    <div className="sticky top-4 bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-4">
+                        <div className="flex items-center gap-2 pb-3 border-b border-zinc-800">
+                            <AdjustmentsHorizontalIcon className="w-5 h-5 text-yellow-500" />
+                            <h3 className="font-semibold text-white">Filters</h3>
                         </div>
-                    </div>
-
-                    {/* Filter by Media Type */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Content Type
-                        </label>
-                        <div className="flex flex-wrap gap-2">
-                            {[
-                                { value: 'all', label: 'All' },
-                                { value: 'movie', label: 'Movies Only' },
-                                { value: 'tv', label: 'TV Shows Only' },
-                            ].map((option) => (
-                                <button
-                                    key={option.value}
-                                    onClick={() =>
-                                        setFilterByMediaType(
-                                            option.value as typeof filterByMediaType
-                                        )
-                                    }
-                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                        filterByMediaType === option.value
-                                            ? 'bg-yellow-500 text-black'
-                                            : 'bg-zinc-800 text-gray-300 hover:bg-zinc-700'
-                                    }`}
-                                >
-                                    {option.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Filter by Tag */}
-                    <div>
-                        <div className="flex items-center justify-between mb-2">
-                            <label className="block text-sm font-medium text-gray-300">
-                                Filter by Tag
+                        {/* Sort By - Compact */}
+                        <div>
+                            <label className="block text-xs font-medium text-gray-400 mb-2">
+                                Sort By
                             </label>
-                            {filterByTag && (
-                                <button
-                                    onClick={() => setFilterByTag(null)}
-                                    className="text-xs text-gray-400 hover:text-white flex items-center gap-1 transition-colors"
-                                >
-                                    <XMarkIcon className="w-4 h-4" />
-                                    Clear
-                                </button>
-                            )}
+                            <div className="space-y-1">
+                                {[
+                                    { value: 'recent', label: 'Recent', icon: ClockIcon },
+                                    { value: 'popular', label: 'Popular', icon: FireIcon },
+                                    { value: 'most-liked', label: 'Most Liked', icon: HeartIcon },
+                                    { value: 'most-viewed', label: 'Most Viewed', icon: EyeIcon },
+                                ].map((option) => (
+                                    <button
+                                        key={option.value}
+                                        onClick={() => setSortBy(option.value as typeof sortBy)}
+                                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                            sortBy === option.value
+                                                ? 'bg-yellow-500 text-black'
+                                                : 'bg-zinc-800 text-gray-300 hover:bg-zinc-700'
+                                        }`}
+                                    >
+                                        <option.icon className="w-4 h-4" />
+                                        {option.label}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                        <div className="flex flex-wrap gap-2 max-h-64 overflow-y-auto pr-2">
-                            {POPULAR_TAGS.map((tag) => (
-                                <button
-                                    key={tag.id}
-                                    onClick={() =>
-                                        setFilterByTag(filterByTag === tag.name ? null : tag.name)
-                                    }
-                                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                                        filterByTag === tag.name
-                                            ? 'bg-yellow-500 text-black'
-                                            : 'bg-zinc-800 text-gray-300 hover:bg-zinc-700'
-                                    }`}
-                                    title={tag.description}
-                                >
-                                    <span className="mr-1">{tag.emoji}</span>
-                                    {tag.name}
-                                </button>
-                            ))}
+
+                        {/* Filter by Media Type - Compact */}
+                        <div>
+                            <label className="block text-xs font-medium text-gray-400 mb-2">
+                                Content Type
+                            </label>
+                            <div className="space-y-1">
+                                {[
+                                    { value: 'all', label: 'All' },
+                                    { value: 'movie', label: 'Movies' },
+                                    { value: 'tv', label: 'TV Shows' },
+                                ].map((option) => (
+                                    <button
+                                        key={option.value}
+                                        onClick={() =>
+                                            setFilterByMediaType(
+                                                option.value as typeof filterByMediaType
+                                            )
+                                        }
+                                        className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                            filterByMediaType === option.value
+                                                ? 'bg-yellow-500 text-black'
+                                                : 'bg-zinc-800 text-gray-300 hover:bg-zinc-700'
+                                        }`}
+                                    >
+                                        {option.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Filter by Tag - Compact scrollable */}
+                        <div>
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="block text-xs font-medium text-gray-400">
+                                    Filter by Tag
+                                </label>
+                                {filterByTag && (
+                                    <button
+                                        onClick={() => setFilterByTag(null)}
+                                        className="text-xs text-gray-400 hover:text-white transition-colors"
+                                    >
+                                        <XMarkIcon className="w-4 h-4" />
+                                    </button>
+                                )}
+                            </div>
+                            <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pr-2">
+                                {POPULAR_TAGS.slice(0, 10).map((tag) => (
+                                    <button
+                                        key={tag.id}
+                                        onClick={() =>
+                                            setFilterByTag(
+                                                filterByTag === tag.name ? null : tag.name
+                                            )
+                                        }
+                                        className={`px-2 py-1 rounded-full text-xs font-medium transition-all ${
+                                            filterByTag === tag.name
+                                                ? 'bg-yellow-500 text-black'
+                                                : 'bg-zinc-800 text-gray-300 hover:bg-zinc-700'
+                                        }`}
+                                        title={tag.description}
+                                    >
+                                        {tag.emoji}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Stats */}
+                        <div className="pt-3 border-t border-zinc-800">
+                            <div className="text-xs text-gray-500 space-y-1">
+                                <div>Total: {communityRankings.length} rankings</div>
+                                <div>Showing: {filteredByMediaType.length} rankings</div>
+                                <div>Tags: {Object.keys(rankingsByTag).length}</div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            )}
 
-            {/* Error State */}
-            {error && (
-                <div className="bg-red-900/20 border border-red-800 rounded-lg p-4 mb-6">
-                    <p className="text-red-400">{error}</p>
-                </div>
-            )}
+                {/* Main content area - Tag-based rows */}
+                <div className="flex-1 min-w-0">
+                    {/* Error State */}
+                    {error && (
+                        <div className="bg-red-900/20 border border-red-800 rounded-lg p-4 mb-6">
+                            <p className="text-red-400">{error}</p>
+                        </div>
+                    )}
 
-            {/* Rankings Grid */}
-            <RankingGrid
-                rankings={filteredRankings}
-                isLoading={isLoading}
-                emptyMessage="No public rankings found. Be the first to create one!"
-                showAuthor={true}
-                onLike={handleRankingClick}
-            />
-
-            {/* Stats Footer */}
-            {!isLoading && communityRankings.length > 0 && (
-                <div className="mt-8 flex items-center justify-center gap-8 text-sm text-gray-400">
-                    <div className="flex items-center gap-2">
-                        <TrophyIcon className="w-5 h-5 text-yellow-500" />
-                        <span>
-                            {communityRankings.length}{' '}
-                            {communityRankings.length === 1 ? 'ranking' : 'rankings'}
-                        </span>
-                    </div>
-                    {filteredRankings.length !== communityRankings.length && (
-                        <div className="flex items-center gap-2">
-                            <FunnelIcon className="w-5 h-5 text-gray-500" />
-                            <span>
-                                Showing {filteredRankings.length} of {communityRankings.length}
-                            </span>
+                    {/* Tag Rows */}
+                    {tagRows.length > 0 ? (
+                        <div className="space-y-6">
+                            {tagRows.map(({ tag, rankings }) => {
+                                const tagData = POPULAR_TAGS.find((t) => t.name === tag)
+                                return (
+                                    <RankingRow
+                                        key={tag}
+                                        title={tag}
+                                        emoji={tagData?.emoji}
+                                        rankings={rankings}
+                                        showAuthor={true}
+                                        onLike={handleRankingClick}
+                                    />
+                                )
+                            })}
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-16 text-center">
+                            <div className="w-20 h-20 mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
+                                <TrophyIcon className="w-10 h-10 text-gray-600" />
+                            </div>
+                            <p className="text-gray-400 text-lg mb-2">No rankings found</p>
+                            <p className="text-gray-500 text-sm">
+                                Try adjusting your filters or be the first to create one!
+                            </p>
                         </div>
                     )}
                 </div>
-            )}
+            </div>
         </SubPageLayout>
     )
 }
