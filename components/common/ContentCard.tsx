@@ -239,7 +239,7 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                                         `Added ${getTitle(content)} to Liked`
                                                     )
                                                 }
-                                                setTimeout(() => setLikeAnimationType(null), 300)
+                                                setTimeout(() => setLikeAnimationType(null), 450)
                                             }
                                         }}
                                         className={`group/like p-3 rounded-full border-2 transition-all duration-200 ${
@@ -254,7 +254,7 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                                 style={
                                                     likeAnimationType
                                                         ? {
-                                                              animation: `scale-pulse-${likeAnimationType} 0.3s ease-in-out`,
+                                                              animation: `scale-pulse-${likeAnimationType} 0.45s ease-in-out`,
                                                           }
                                                         : undefined
                                                 }
@@ -265,7 +265,7 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                                 style={
                                                     likeAnimationType
                                                         ? {
-                                                              animation: `scale-pulse-${likeAnimationType} 0.3s ease-in-out`,
+                                                              animation: `scale-pulse-${likeAnimationType} 0.45s ease-in-out`,
                                                           }
                                                         : undefined
                                                 }
