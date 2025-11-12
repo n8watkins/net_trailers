@@ -48,6 +48,8 @@ function ListSelectionModal() {
     const [editingListName, setEditingListName] = useState('')
     const [editingListEmoji, setEditingListEmoji] = useState('')
     const [editingListColor, setEditingListColor] = useState('')
+    const [editingIsPublic, setEditingIsPublic] = useState(false)
+    const [editingDisplayAsRow, setEditingDisplayAsRow] = useState(true)
     const [deletingList, setDeletingList] = useState<UserList | null>(null)
     const [deleteConfirmationInput, setDeleteConfirmationInput] = useState('')
     const [showIconPicker, setShowIconPicker] = useState(false)
@@ -89,6 +91,8 @@ function ListSelectionModal() {
         setEditingListName('')
         setEditingListEmoji('')
         setEditingListColor('')
+        setEditingIsPublic(false)
+        setEditingDisplayAsRow(true)
         setDeletingList(null)
         setShowIconPicker(false)
         setShowColorPicker(false)
@@ -187,6 +191,8 @@ function ListSelectionModal() {
         setEditingListName(list.name)
         setEditingListEmoji(list.emoji || '🎬')
         setEditingListColor(list.color || '#ef4444')
+        setEditingIsPublic(list.isPublic || false)
+        setEditingDisplayAsRow(list.displayAsRow ?? true)
     }
 
     const handleSaveEdit = (listId: string, originalName: string) => {
@@ -207,11 +213,15 @@ function ListSelectionModal() {
                 name: validatedName,
                 emoji: editingListEmoji,
                 color: editingListColor,
+                isPublic: editingIsPublic,
+                displayAsRow: editingDisplayAsRow,
             })
             setEditingListId(null)
             setEditingListName('')
             setEditingListEmoji('')
             setEditingListColor('')
+            setEditingIsPublic(false)
+            setEditingDisplayAsRow(true)
         } catch (error) {
             if (error instanceof z.ZodError) {
                 showError('Invalid List Name', error.errors[0].message)
@@ -224,6 +234,8 @@ function ListSelectionModal() {
         setEditingListName('')
         setEditingListEmoji('')
         setEditingListColor('')
+        setEditingIsPublic(false)
+        setEditingDisplayAsRow(true)
         setShowEditIconPicker(false)
         setShowEditColorPicker(false)
     }
@@ -435,6 +447,50 @@ function ListSelectionModal() {
                                                     }}
                                                 />
 
+                                                {/* Display as Row Toggle */}
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setEditingDisplayAsRow(!editingDisplayAsRow)
+                                                    }
+                                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                                        editingDisplayAsRow
+                                                            ? 'bg-blue-600'
+                                                            : 'bg-gray-600'
+                                                    }`}
+                                                    title={`Display as Row: ${editingDisplayAsRow ? 'On' : 'Off'}`}
+                                                >
+                                                    <span
+                                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                                            editingDisplayAsRow
+                                                                ? 'translate-x-6'
+                                                                : 'translate-x-1'
+                                                        }`}
+                                                    />
+                                                </button>
+
+                                                {/* Public Toggle */}
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setEditingIsPublic(!editingIsPublic)
+                                                    }
+                                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                                        editingIsPublic
+                                                            ? 'bg-green-600'
+                                                            : 'bg-gray-600'
+                                                    }`}
+                                                    title={`Public: ${editingIsPublic ? 'Yes' : 'No'}`}
+                                                >
+                                                    <span
+                                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                                            editingIsPublic
+                                                                ? 'translate-x-6'
+                                                                : 'translate-x-1'
+                                                        }`}
+                                                    />
+                                                </button>
+
                                                 {/* Save Button */}
                                                 <button
                                                     onClick={() =>
@@ -595,6 +651,50 @@ function ListSelectionModal() {
                                                         }
                                                     }}
                                                 />
+
+                                                {/* Display as Row Toggle */}
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setEditingDisplayAsRow(!editingDisplayAsRow)
+                                                    }
+                                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                                        editingDisplayAsRow
+                                                            ? 'bg-blue-600'
+                                                            : 'bg-gray-600'
+                                                    }`}
+                                                    title={`Display as Row: ${editingDisplayAsRow ? 'On' : 'Off'}`}
+                                                >
+                                                    <span
+                                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                                            editingDisplayAsRow
+                                                                ? 'translate-x-6'
+                                                                : 'translate-x-1'
+                                                        }`}
+                                                    />
+                                                </button>
+
+                                                {/* Public Toggle */}
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setEditingIsPublic(!editingIsPublic)
+                                                    }
+                                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                                        editingIsPublic
+                                                            ? 'bg-green-600'
+                                                            : 'bg-gray-600'
+                                                    }`}
+                                                    title={`Public: ${editingIsPublic ? 'Yes' : 'No'}`}
+                                                >
+                                                    <span
+                                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                                            editingIsPublic
+                                                                ? 'translate-x-6'
+                                                                : 'translate-x-1'
+                                                        }`}
+                                                    />
+                                                </button>
 
                                                 {/* Save Button */}
                                                 <button

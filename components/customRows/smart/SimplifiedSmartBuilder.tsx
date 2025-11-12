@@ -596,7 +596,7 @@ export function SimplifiedSmartBuilder({
 
                         {/* Loading state */}
                         {isGenerating && (
-                            <div className="absolute top-48 left-0 right-0 flex justify-center">
+                            <div className="absolute top-20 left-0 right-0 flex justify-center">
                                 <NetflixLoader
                                     inline
                                     slowCounter

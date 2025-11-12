@@ -170,6 +170,17 @@ export function SmartInput({
         setLocalValue(value)
     }, [value])
 
+    // Auto-resize textarea when localValue changes (including programmatic changes)
+    useEffect(() => {
+        if (inputRef.current) {
+            inputRef.current.style.height = 'auto'
+            const lineHeight = parseInt(getComputedStyle(inputRef.current).lineHeight)
+            const maxHeight = lineHeight * 3 // 3 lines max
+            const newHeight = Math.min(inputRef.current.scrollHeight, maxHeight)
+            inputRef.current.style.height = newHeight + 'px'
+        }
+    }, [localValue])
+
     const handleFocus = () => {
         setIsFocused(true)
         onFocus?.()
