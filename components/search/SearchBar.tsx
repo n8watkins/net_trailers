@@ -463,13 +463,13 @@ export default function SearchBar({
                         }
                         aria-expanded={showSuggestions && quickResults.length > 0}
                         className={`
-                            block w-full pl-10 pr-12 py-4
+                            block w-full pl-10 pr-12 py-2.5
                             bg-[#0a0a0a] border-[0.5px] border-gray-600/30 rounded-lg
                             text-white placeholder-gray-400
                             focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent
                             transition-all duration-300 ease-in-out
                             placeholder:text-ellipsis placeholder:overflow-hidden placeholder:whitespace-nowrap
-                            text-base sm:text-lg select-none
+                            text-sm sm:text-base select-none
                             autofill:bg-[#0a0a0a] autofill:text-white
                             autofill:shadow-[inset_0_0_0_1000px_#0a0a0a]
                             shadow-[0_0_20px_rgba(220,38,38,0.4)]
