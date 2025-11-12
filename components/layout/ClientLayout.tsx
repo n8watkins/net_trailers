@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
+import { useAutoHideScrollbar } from '../../hooks/useAutoHideScrollbar'
 import KeyboardShortcutsModal from '../modals/KeyboardShortcutsModal'
 import TutorialModal from '../modals/TutorialModal'
 import Footer from './Footer'
@@ -34,6 +35,9 @@ function ClientLayout({ children }: ClientLayoutProps) {
     const isModalOpen = modal.isOpen
     const searchInputRef = useRef<HTMLInputElement>(null)
 
+    // Enable auto-hiding scrollbar (hides after 1 second of no scrolling)
+    useAutoHideScrollbar(1000)
+
     const handleOpenShortcuts = useCallback(() => {
         setShowKeyboardShortcuts(!showKeyboardShortcuts)
     }, [showKeyboardShortcuts])
@@ -64,14 +68,20 @@ function ClientLayout({ children }: ClientLayoutProps) {
     const handleFocusSearch = useCallback(() => {
         // Focus the search bar in the navbar (works on all pages)
         if (typeof window !== 'undefined') {
-            // Try to find by ID first
-            let searchInput = document.getElementById('main-search-input') as HTMLInputElement
+            const desktopInput = document.getElementById(
+                'navbar-search-input'
+            ) as HTMLInputElement | null
+            const mobileInput = document.getElementById(
+                'navbar-mobile-search-input'
+            ) as HTMLInputElement | null
 
-            // Fallback to query selector if ID not found
+            let searchInput = desktopInput || mobileInput
+
+            // Fallback to generic selector if specific IDs are missing
             if (!searchInput) {
                 searchInput = document.querySelector(
-                    'input[type="text"][placeholder*="search" i]'
-                ) as HTMLInputElement
+                    'input[type="search"], input[type="text"][placeholder*="search" i]'
+                ) as HTMLInputElement | null
             }
 
             if (searchInput) {
