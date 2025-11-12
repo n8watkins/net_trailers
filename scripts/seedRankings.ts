@@ -9,7 +9,7 @@
 import './load-env'
 
 import { db, auth } from '../firebase'
-import { collection, addDoc } from 'firebase/firestore'
+import { collection, setDoc, doc } from 'firebase/firestore'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 import { POPULAR_TAGS } from '../utils/popularTags'
 
@@ -351,7 +351,8 @@ async function fetchContentDetails(tmdbId: number, mediaType: 'movie' | 'tv' = '
 async function createSeedRanking(
     rankingData: (typeof SEED_RANKINGS)[0],
     userIndex: number,
-    authenticatedUserId: string
+    authenticatedUserId: string,
+    rankingId: string
 ) {
     const user = SEED_USERS[userIndex % SEED_USERS.length]
     const now = Date.now()
@@ -390,11 +391,9 @@ async function createSeedRanking(
         return item
     })
 
-    // Generate unique ranking ID
-    const rankingId = `${authenticatedUserId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-
+    // Create ranking data with the provided ID
     const ranking = {
-        id: rankingId,
+        id: rankingId, // Use the provided ID
         userId: authenticatedUserId, // Use authenticated user's ID for permissions
         userName: user.userName, // Use varied display name
         userAvatar: user.userAvatar, // Use varied display avatar
@@ -437,11 +436,17 @@ async function seedRankings() {
                 `\n📝 Creating ranking ${i + 1}/${SEED_RANKINGS.length}: "${rankingData.title}"`
             )
 
-            const ranking = await createSeedRanking(rankingData, i, userId)
+            // Generate a document reference (this creates the ID)
+            const docRef = doc(rankingsRef)
+            const rankingId = docRef.id
+
+            // Create ranking with the predetermined ID
+            const ranking = await createSeedRanking(rankingData, i, userId, rankingId)
 
             if (ranking) {
-                const docRef = await addDoc(rankingsRef, ranking)
-                console.log(`✅ Created ranking with ID: ${docRef.id}`)
+                // Create document with the predetermined ID
+                await setDoc(docRef, ranking)
+                console.log(`✅ Created ranking with ID: ${rankingId}`)
             }
 
             // Rate limit: wait 250ms between requests
