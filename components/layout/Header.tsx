@@ -356,7 +356,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                             disabled={isRandomLoading}
                             title="Jump to a random movie or TV show"
                         >
-                            <span className="absolute -inset-0.5 opacity-0 group-hover:opacity-60 bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 rounded-md blur-sm transition-opacity duration-300 bg-[length:200%_100%] group-hover:animate-[psychedelic-flow_3s_ease-in-out_infinite]" />
+                            <span className="absolute -inset-0.5 opacity-0 group-hover:opacity-30 bg-gradient-to-r from-purple-400/50 via-pink-400/50 to-red-400/50 rounded-md blur-md transition-opacity duration-500 bg-[length:200%_100%] group-hover:animate-[psychedelic-flow_3s_ease-in-out_infinite]" />
                             {isRandomLoading ? (
                                 <ArrowPathIcon className="h-5 w-5 relative z-10" />
                             ) : (
@@ -618,7 +618,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                                 }
                                                 disabled={isRandomLoading}
                                             >
-                                                <span className="absolute -inset-0.5 opacity-0 group-hover:opacity-60 bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 rounded-lg blur-sm transition-opacity duration-300 bg-[length:200%_100%] group-hover:animate-[psychedelic-flow_3s_ease-in-out_infinite]" />
+                                                <span className="absolute -inset-0.5 opacity-0 group-hover:opacity-30 bg-gradient-to-r from-purple-400/50 via-pink-400/50 to-red-400/50 rounded-lg blur-md transition-opacity duration-500 bg-[length:200%_100%] group-hover:animate-[psychedelic-flow_3s_ease-in-out_infinite]" />
                                                 {isRandomLoading ? (
                                                     <ArrowPathIcon className="h-5 w-5 animate-spin relative z-10" />
                                                 ) : (
