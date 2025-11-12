@@ -24,6 +24,7 @@ interface DebugSettings {
     showNotificationDebug: boolean
     showSeedButton: boolean
     showApiDebug: boolean
+    showChildSafetyDebug: boolean
 }
 
 interface Position {
@@ -55,6 +56,7 @@ export default function DebugControls() {
         showNotificationDebug: false,
         showSeedButton: false,
         showApiDebug: false,
+        showChildSafetyDebug: false,
     })
 
     // Visibility state - load from localStorage, hidden by default
@@ -247,6 +249,7 @@ export default function DebugControls() {
                     'showTrackingDebug',
                     'showNotificationDebug',
                     'showTestNotifications',
+                    'showChildSafetyDebug',
                     'showSeedButton',
                 ]
         }
@@ -454,6 +457,12 @@ export default function DebugControls() {
                                 'Toggle Test Notification Button',
                                 'red'
                             )}
+                            {renderButton(
+                                'showChildSafetyDebug',
+                                'Child Safety',
+                                'Toggle Child Safety Mode Debug Logs (TMDB filtering)',
+                                'violet'
+                            )}
                             <div className="w-px h-6 bg-gray-700" />
                             {renderButton(
                                 'showSeedButton',
@@ -487,6 +496,7 @@ export function useDebugSettings() {
         showNotificationDebug: false,
         showSeedButton: false,
         showApiDebug: false,
+        showChildSafetyDebug: false,
     })
 
     useEffect(() => {

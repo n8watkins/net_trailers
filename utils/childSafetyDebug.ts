@@ -1,34 +1,54 @@
 /**
  * Child Safety Debug Logger
- * Enable by setting: localStorage.setItem('DEBUG_CHILD_SAFETY', 'true')
+ * Controlled via DebugControls component (Alt+Shift+D)
+ * Enable the "Child Safety" toggle in Features & Tools category
  */
 
-const DEBUG_KEY = 'DEBUG_CHILD_SAFETY'
+// Get debug settings from localStorage
+function getDebugSettings() {
+    if (typeof window === 'undefined') return null
+
+    try {
+        const settings = localStorage.getItem('debugSettings')
+        if (!settings) return null
+        return JSON.parse(settings)
+    } catch {
+        return null
+    }
+}
+
+// Check if Child Safety debug is enabled
+function isDebugEnabled(setting: string): boolean {
+    const settings = getDebugSettings()
+    return settings?.[setting] === true
+}
 
 export function isChildSafetyDebugEnabled(): boolean {
     if (typeof window === 'undefined') {
-        // Server-side: check environment variable
-        return process.env.NODE_ENV === 'development' || process.env.DEBUG_CHILD_SAFETY === 'true'
-    }
-    // Client-side: check localStorage
-    try {
-        return localStorage.getItem(DEBUG_KEY) === 'true'
-    } catch {
+        // Server-side: disabled by default (client-only feature)
         return false
     }
+    // Client-side: check main debug settings
+    return process.env.NODE_ENV === 'development' && isDebugEnabled('showChildSafetyDebug')
 }
 
 export function enableChildSafetyDebug() {
     if (typeof window !== 'undefined') {
-        localStorage.setItem(DEBUG_KEY, 'true')
-        console.log('🔒 Child Safety Debug Mode ENABLED')
+        const settings = getDebugSettings() || {}
+        settings.showChildSafetyDebug = true
+        localStorage.setItem('debugSettings', JSON.stringify(settings))
+        window.dispatchEvent(new CustomEvent('debugSettingsChanged', { detail: settings }))
+        console.log('🔒 Child Safety Debug Mode ENABLED (via main debug settings)')
     }
 }
 
 export function disableChildSafetyDebug() {
     if (typeof window !== 'undefined') {
-        localStorage.removeItem(DEBUG_KEY)
-        console.log('🔒 Child Safety Debug Mode DISABLED')
+        const settings = getDebugSettings() || {}
+        settings.showChildSafetyDebug = false
+        localStorage.setItem('debugSettings', JSON.stringify(settings))
+        window.dispatchEvent(new CustomEvent('debugSettingsChanged', { detail: settings }))
+        console.log('🔒 Child Safety Debug Mode DISABLED (via main debug settings)')
     }
 }
 
