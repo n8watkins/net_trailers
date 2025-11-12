@@ -137,21 +137,24 @@
         }
     }
 
-    @keyframes wiggle {
+    @keyframes psychedelic-flow {
         0% {
-            transform: rotate(0deg) scale(1);
+            background-position: 0% 50%;
+            filter: hue-rotate(0deg);
         }
         25% {
-            transform: rotate(-10deg) scale(1.1);
+            filter: hue-rotate(90deg);
         }
         50% {
-            transform: rotate(10deg) scale(1.15);
+            background-position: 100% 50%;
+            filter: hue-rotate(180deg);
         }
         75% {
-            transform: rotate(-5deg) scale(1.1);
+            filter: hue-rotate(270deg);
         }
         100% {
-            transform: rotate(0deg) scale(1);
+            background-position: 0% 50%;
+            filter: hue-rotate(360deg);
         }
     }
 }

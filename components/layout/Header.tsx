@@ -349,19 +349,20 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
 
                         <button
                             type="button"
-                            className={`headerLink cursor-pointer flex items-center space-x-1 select-none group ${
+                            className={`headerLink cursor-pointer flex items-center space-x-1 select-none group relative ${
                                 isRandomLoading ? 'cursor-wait opacity-80' : ''
                             }`}
                             onClick={() => handleRandomContent()}
                             disabled={isRandomLoading}
                             title="Jump to a random movie or TV show"
                         >
+                            <span className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 blur-lg transition-opacity duration-300 bg-[length:200%_100%] group-hover:animate-[psychedelic-flow_3s_ease-in-out_infinite]" />
                             {isRandomLoading ? (
-                                <ArrowPathIcon className="h-5 w-5 animate-spin" />
+                                <ArrowPathIcon className="h-5 w-5 relative z-10" />
                             ) : (
-                                <SparklesIcon className="h-5 w-5 group-hover:animate-[wiggle_0.5s_ease-in-out]" />
+                                <SparklesIcon className="h-5 w-5 relative z-10" />
                             )}
-                            <span className="group-hover:animate-[wiggle_0.5s_ease-in-out]">
+                            <span className="relative z-10">
                                 {isRandomLoading ? 'Finding...' : 'Surprise Me!'}
                             </span>
                         </button>
@@ -607,7 +608,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                         </li>
                                         <li>
                                             <button
-                                                className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none group ${
+                                                className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none group relative overflow-hidden ${
                                                     isRandomLoading
                                                         ? 'opacity-80 cursor-wait'
                                                         : 'hover:bg-white/10'
@@ -617,12 +618,13 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                                 }
                                                 disabled={isRandomLoading}
                                             >
+                                                <span className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 blur-lg transition-opacity duration-300 bg-[length:200%_100%] group-hover:animate-[psychedelic-flow_3s_ease-in-out_infinite]" />
                                                 {isRandomLoading ? (
-                                                    <ArrowPathIcon className="h-5 w-5 animate-spin" />
+                                                    <ArrowPathIcon className="h-5 w-5 animate-spin relative z-10" />
                                                 ) : (
-                                                    <SparklesIcon className="h-5 w-5 group-hover:animate-[wiggle_0.5s_ease-in-out]" />
+                                                    <SparklesIcon className="h-5 w-5 relative z-10" />
                                                 )}
-                                                <span className="group-hover:animate-[wiggle_0.5s_ease-in-out]">
+                                                <span className="relative z-10">
                                                     {isRandomLoading
                                                         ? 'Finding...'
                                                         : 'Surprise Me!'}
