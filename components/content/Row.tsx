@@ -422,10 +422,10 @@ function Row({ title, content, apiEndpoint, pageType }: Props) {
                 {pageType && (
                     <button
                         onClick={() => openRowEditorModal(pageType)}
-                        className="opacity-0 group-hover/title:opacity-100 transition-opacity duration-200 p-1.5 hover:bg-gray-800/50 rounded-lg"
+                        className="opacity-0 group-hover/title:opacity-100 transition-opacity duration-200 p-1.5 hover:bg-gray-800/50 rounded-lg group/pencil flex items-center"
                         title="Edit rows"
                     >
-                        <PencilIcon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 hover:text-white transition-colors" />
+                        <PencilIcon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-300 hover:scale-110 transition-all duration-200" />
                     </button>
                 )}
             </div>

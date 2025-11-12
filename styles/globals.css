@@ -25,7 +25,25 @@
 
 @layer components {
     .headerLink {
-        @apply text-white/90 cursor-pointer text-sm font-semibold transition-all duration-200 hover:text-white hover:scale-105;
+        @apply text-white/90 cursor-pointer text-sm font-semibold transition-all duration-300 hover:text-white relative;
+    }
+
+    .headerLink::before {
+        content: '';
+        @apply absolute -inset-4 opacity-0 bg-[radial-gradient(60%_45%_at_center,_var(--tw-gradient-stops))] from-gray-200/80 via-gray-400/50 via-30% to-black rounded-md blur-xl transition-opacity duration-[400ms];
+    }
+
+    .headerLink:hover::before {
+        @apply opacity-60 animate-[white-glow-pulse_4s_ease-in-out_infinite];
+    }
+
+    @keyframes white-glow-pulse {
+        0%, 100% {
+            filter: brightness(1);
+        }
+        50% {
+            filter: brightness(1.08);
+        }
     }
     .bannerButton {
         @apply flex gap-1 sm:gap-2 md:gap-3 px-3 py-1.5 sm:px-4 sm:py-2 md:px-6 md:py-3 lg:px-8 lg:py-4 justify-center items-center rounded-md sm:rounded-lg text-xs sm:text-sm md:text-base lg:text-lg font-semibold shadow-lg;

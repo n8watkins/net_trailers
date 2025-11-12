@@ -286,22 +286,22 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                 className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${pathname === '/' ? 'text-white hover:text-white font-semibold' : ''}`}
                                 onClick={() => router.push('/')}
                             >
-                                <HomeIcon className="h-5 w-5" />
-                                <span>Home</span>
+                                <HomeIcon className="h-5 w-5 relative z-10" />
+                                <span className="relative z-10">Home</span>
                             </li>
                             <li
                                 className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${pathname === '/tv' ? 'text-white hover:text-white font-semibold' : ''}`}
                                 onClick={() => router.push('/tv')}
                             >
-                                <TvIcon className="h-5 w-5" />
-                                <span>TV Shows</span>
+                                <TvIcon className="h-5 w-5 relative z-10" />
+                                <span className="relative z-10">TV Shows</span>
                             </li>
                             <li
                                 className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${pathname === '/movies' ? 'text-white hover:text-white font-semibold' : ''}`}
                                 onClick={() => router.push('/movies')}
                             >
-                                <FilmIcon className="h-5 w-5" />
-                                <span>Movies</span>
+                                <FilmIcon className="h-5 w-5 relative z-10" />
+                                <span className="relative z-10">Movies</span>
                             </li>
                             <li>
                                 <GenresDropdown />
@@ -343,13 +343,13 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                             className={`headerLink cursor-pointer flex items-center space-x-1 select-none ml-4 ${pathname === '/community' ? 'text-white hover:text-white font-semibold' : ''}`}
                             onClick={() => router.push('/community')}
                         >
-                            <UsersIcon className="h-5 w-5" />
-                            <span>Community</span>
+                            <UsersIcon className="h-5 w-5 relative z-10" />
+                            <span className="relative z-10">Community</span>
                         </div>
 
                         <button
                             type="button"
-                            className={`headerLink cursor-pointer flex items-center space-x-1 select-none group relative ${
+                            className={`text-white/90 cursor-pointer text-sm font-semibold transition-all duration-300 hover:text-white flex items-center space-x-1 select-none group relative ${
                                 isRandomLoading ? 'cursor-wait opacity-80' : ''
                             }`}
                             onClick={() => handleRandomContent()}

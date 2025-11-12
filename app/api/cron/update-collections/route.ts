@@ -10,6 +10,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import crypto from 'crypto'
 import {
     checkForNewContent,
     addContentToCollection,
@@ -47,8 +48,28 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        if (authHeader !== `Bearer ${cronSecret}`) {
-            console.warn('Unauthorized cron job attempt')
+        // Use constant-time comparison to prevent timing attacks
+        const expectedHeader = `Bearer ${cronSecret}`
+
+        if (!authHeader || authHeader.length !== expectedHeader.length) {
+            console.warn('Unauthorized cron job attempt - invalid header format')
+            return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+        }
+
+        // Constant-time comparison using crypto.timingSafeEqual
+        const authBuffer = Buffer.from(authHeader)
+        const expectedBuffer = Buffer.from(expectedHeader)
+
+        let isValid = false
+        try {
+            isValid = crypto.timingSafeEqual(authBuffer, expectedBuffer)
+        } catch {
+            // Lengths don't match or other error - already handled by length check above
+            isValid = false
+        }
+
+        if (!isValid) {
+            console.warn('Unauthorized cron job attempt - invalid credentials')
             return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
         }
 

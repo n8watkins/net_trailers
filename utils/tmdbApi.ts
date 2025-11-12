@@ -30,7 +30,7 @@ export class TMDBApiClient {
 
     private buildUrl(endpoint: string, params: Record<string, string | number> = {}): string {
         const url = new URL(`${this.baseUrl}${endpoint}`)
-        url.searchParams.set('api_key', this.apiKey)
+        // No longer add api_key to URL - will use Authorization header instead
         url.searchParams.set('language', 'en-US')
 
         Object.entries(params).forEach(([key, value]) => {
@@ -47,7 +47,13 @@ export class TMDBApiClient {
         const url = this.buildUrl(endpoint, params)
 
         try {
-            const response = await fetch(url)
+            // Use Authorization header instead of query parameter for security
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${this.apiKey}`,
+                    'Content-Type': 'application/json',
+                },
+            })
 
             if (!response.ok) {
                 const error: TMDBError = new Error(
