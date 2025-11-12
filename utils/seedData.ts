@@ -1237,17 +1237,15 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                     id: rankingId,
                     rankedItems: rankingData.items.map((item, index) => ({
                         position: index + 1,
-                        content: {
-                            id: item.id,
-                            title: item.title || (item as TVShow).name || '',
-                            poster_path: item.poster_path || '',
-                            media_type: item.media_type,
-                            vote_average: item.vote_average || 0,
-                            release_date:
-                                (item as Movie).release_date ||
-                                (item as TVShow).first_air_date ||
-                                '',
-                        },
+                        content: item as any, // Use the full Movie/TVShow object with all properties
+                        note:
+                            index === 0
+                                ? 'Absolute masterpiece - a must watch!'
+                                : index === 1
+                                  ? 'Incredible storytelling and performances'
+                                  : index === 2
+                                    ? 'One of my all-time favorites'
+                                    : undefined,
                         addedAt: Date.now(),
                     })),
                 })
