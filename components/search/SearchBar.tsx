@@ -464,7 +464,7 @@ export default function SearchBar({
                         aria-expanded={showSuggestions && quickResults.length > 0}
                         className={`
                             block w-full pl-10 pr-12 py-4
-                            bg-[#0a0a0a] border border-gray-600/30 rounded-lg
+                            bg-[#0a0a0a] border-[0.5px] border-gray-600/30 rounded-lg
                             text-white placeholder-gray-400
                             focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent
                             transition-all duration-300 ease-in-out
