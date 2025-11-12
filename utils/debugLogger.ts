@@ -165,3 +165,25 @@ export function notificationWarn(...args: any[]): void {
         console.warn(...args)
     }
 }
+
+/**
+ * API & Server-side Logging (API routes, server errors, TMDB calls)
+ * Useful for debugging API routes, server-side operations, and external API calls
+ */
+export function apiLog(...args: any[]): void {
+    if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showApiDebug')) {
+        console.log(...args)
+    }
+}
+
+export function apiWarn(...args: any[]): void {
+    if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showApiDebug')) {
+        console.warn(...args)
+    }
+}
+
+export function apiError(...args: any[]): void {
+    if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showApiDebug')) {
+        console.error(...args)
+    }
+}

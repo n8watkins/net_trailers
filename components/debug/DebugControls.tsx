@@ -5,6 +5,8 @@ import {
     ChatBubbleBottomCenterTextIcon,
     CodeBracketIcon,
     SparklesIcon,
+    ChevronDownIcon,
+    ChevronRightIcon,
 } from '@heroicons/react/24/outline'
 
 interface DebugSettings {
@@ -21,12 +23,21 @@ interface DebugSettings {
     showTrackingDebug: boolean
     showNotificationDebug: boolean
     showSeedButton: boolean
+    showApiDebug: boolean
 }
 
 interface Position {
     x: number
     y: number
 }
+
+interface CategoryState {
+    firebase: boolean
+    ui: boolean
+    features: boolean
+}
+
+type DebugCategory = 'firebase' | 'ui' | 'features'
 
 export default function DebugControls() {
     const [settings, setSettings] = useState<DebugSettings>({
@@ -43,10 +54,18 @@ export default function DebugControls() {
         showTrackingDebug: false,
         showNotificationDebug: false,
         showSeedButton: false,
+        showApiDebug: false,
     })
 
     // Visibility state - load from localStorage, hidden by default
     const [isVisible, setIsVisible] = useState(false)
+
+    // Category expand/collapse state
+    const [expandedCategories, setExpandedCategories] = useState<CategoryState>({
+        firebase: true,
+        ui: true,
+        features: true,
+    })
 
     // Drag state - default position is a bit to the left (initialized after mount)
     const [position, setPosition] = useState<Position>({ x: 0, y: 16 })
@@ -57,6 +76,7 @@ export default function DebugControls() {
     const isFirstMount = useRef(true)
     const isFirstSettingsMount = useRef(true)
     const isFirstVisibilityMount = useRef(true)
+    const isFirstCategoryMount = useRef(true)
 
     // Keyboard shortcut handler for Alt+Shift+D
     useEffect(() => {
@@ -83,6 +103,12 @@ export default function DebugControls() {
         const savedVisibility = localStorage.getItem('debugConsoleVisible')
         if (savedVisibility !== null) {
             setIsVisible(JSON.parse(savedVisibility))
+        }
+
+        // Load saved category state
+        const savedCategories = localStorage.getItem('debugCategoriesExpanded')
+        if (savedCategories) {
+            setExpandedCategories(JSON.parse(savedCategories))
         }
 
         // Load saved position or set default based on window width
@@ -136,6 +162,15 @@ export default function DebugControls() {
         localStorage.setItem('debugConsoleVisible', JSON.stringify(isVisible))
     }, [isVisible])
 
+    // Save category state to localStorage (skip initial mount)
+    useEffect(() => {
+        if (isFirstCategoryMount.current) {
+            isFirstCategoryMount.current = false
+            return
+        }
+        localStorage.setItem('debugCategoriesExpanded', JSON.stringify(expandedCategories))
+    }, [expandedCategories])
+
     // Handle drag start - only from the bug icon
     const handleDragStart = (e: React.MouseEvent) => {
         e.preventDefault()
@@ -182,8 +217,47 @@ export default function DebugControls() {
         return showAllControls || settings[settingKey]
     }
 
+    // Helper to check if any setting in a category is enabled
+    const hasEnabledSetting = (category: DebugCategory): boolean => {
+        const categorySettings = getCategorySettings(category)
+        return categorySettings.some((key) => settings[key])
+    }
+
+    // Get settings for a category
+    const getCategorySettings = (category: DebugCategory): (keyof DebugSettings)[] => {
+        switch (category) {
+            case 'firebase':
+                return [
+                    'showFirebaseTracker',
+                    'showFirebaseDebug',
+                    'showSessionDebug',
+                    'showGuestDebug',
+                    'showCacheDebug',
+                ]
+            case 'ui':
+                return [
+                    'showToastDebug',
+                    'showApiResults',
+                    'showWebVitals',
+                    'showUIDebug',
+                    'showApiDebug',
+                ]
+            case 'features':
+                return [
+                    'showTrackingDebug',
+                    'showNotificationDebug',
+                    'showTestNotifications',
+                    'showSeedButton',
+                ]
+        }
+    }
+
     const toggleSetting = (key: keyof DebugSettings) => {
         setSettings((prev) => ({ ...prev, [key]: !prev[key] }))
+    }
+
+    const toggleCategory = (category: DebugCategory) => {
+        setExpandedCategories((prev) => ({ ...prev, [category]: !prev[category] }))
     }
 
     // Only show in development
@@ -192,6 +266,78 @@ export default function DebugControls() {
     // Don't render if not visible
     if (!isVisible) return null
 
+    // Render a category section
+    const renderCategory = (
+        category: DebugCategory,
+        title: string,
+        icon: React.ReactNode,
+        buttons: React.ReactNode
+    ) => {
+        const isExpanded = expandedCategories[category]
+        const hasEnabled = hasEnabledSetting(category)
+
+        // Show category if hovering/dragging OR if it has enabled settings
+        if (!showAllControls && !hasEnabled) return null
+
+        return (
+            <div className="flex flex-col gap-1">
+                <button
+                    onClick={() => toggleCategory(category)}
+                    className="flex items-center gap-2 px-2 py-1 hover:bg-gray-800/50 rounded transition-colors group"
+                    title={`Toggle ${title} category`}
+                >
+                    <div className="flex items-center gap-1.5 flex-1">
+                        {icon}
+                        <span className="text-xs font-medium text-gray-400 group-hover:text-gray-300">
+                            {title}
+                        </span>
+                        {hasEnabled && !showAllControls && (
+                            <span className="text-[10px] text-emerald-500">●</span>
+                        )}
+                    </div>
+                    {isExpanded ? (
+                        <ChevronDownIcon className="w-3 h-3 text-gray-500" />
+                    ) : (
+                        <ChevronRightIcon className="w-3 h-3 text-gray-500" />
+                    )}
+                </button>
+
+                {isExpanded && (
+                    <div className="flex items-center gap-2 flex-wrap pl-6">{buttons}</div>
+                )}
+            </div>
+        )
+    }
+
+    // Render a debug button
+    const renderButton = (
+        key: keyof DebugSettings,
+        label: string,
+        title: string,
+        color: string,
+        icon?: React.ReactNode
+    ) => {
+        // Only show if setting is enabled OR if we're showing all controls
+        if (!showAllControls && !settings[key]) return null
+
+        const isEnabled = settings[key]
+        const colorClasses = isEnabled
+            ? `bg-${color}-600/20 text-${color}-400 border border-${color}-500/30`
+            : 'bg-gray-800 text-gray-500 border border-gray-700'
+
+        return (
+            <button
+                key={key}
+                onClick={() => toggleSetting(key)}
+                className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${colorClasses}`}
+                title={title}
+            >
+                {icon}
+                <span className="text-xs">{label}</span>
+            </button>
+        )
+    }
+
     return (
         <div
             className={`fixed z-[9999] bg-gray-900/95 rounded-lg border border-gray-700 px-3 py-2 select-none ${isDragging ? '' : 'transition-all duration-200'} ${showAllControls ? 'max-w-3xl' : ''}`}
@@ -199,7 +345,7 @@ export default function DebugControls() {
             onMouseEnter={() => !isDragging && setIsHovered(true)}
             onMouseLeave={() => !isDragging && setIsHovered(false)}
         >
-            <div className="flex items-start gap-2">
+            <div className="flex items-start gap-3">
                 {/* Drag Handle */}
                 <div
                     ref={dragHandleRef}
@@ -210,196 +356,115 @@ export default function DebugControls() {
                     <BugAntIcon className="w-6 h-6 text-gray-400" />
                 </div>
 
-                {/* Button Grid - Only shown when expanded */}
-                {showAllControls && (
-                    <div className="flex flex-col gap-2">
-                        {/* Row 1: Firebase & Auth */}
-                        <div className="flex items-center gap-2 flex-wrap">
-                            {shouldShowButton('showFirebaseTracker') && (
-                                <button
-                                    onClick={() => toggleSetting('showFirebaseTracker')}
-                                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                                        settings.showFirebaseTracker
-                                            ? 'bg-orange-600/20 text-orange-400 border border-orange-500/30'
-                                            : 'bg-gray-800 text-gray-500 border border-gray-700'
-                                    }`}
-                                    title="Toggle Firebase Call Tracker"
-                                >
-                                    <FireIcon className="w-3 h-3" />
-                                    <span className="text-xs">Firebase</span>
-                                </button>
+                {/* Categories - Always show selected items, expand on hover */}
+                <div className="flex flex-col gap-2.5 min-w-0">
+                    {/* Firebase & Data Category */}
+                    {renderCategory(
+                        'firebase',
+                        'Firebase & Data',
+                        <FireIcon className="w-3.5 h-3.5 text-orange-500" />,
+                        <>
+                            {renderButton(
+                                'showFirebaseTracker',
+                                'Tracker',
+                                'Toggle Firebase Call Tracker',
+                                'orange',
+                                <FireIcon className="w-3 h-3" />
                             )}
-                            {shouldShowButton('showFirebaseDebug') && (
-                                <button
-                                    onClick={() => toggleSetting('showFirebaseDebug')}
-                                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                                        settings.showFirebaseDebug
-                                            ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
-                                            : 'bg-gray-800 text-gray-500 border border-gray-700'
-                                    }`}
-                                    title="Toggle Auth Flow Logs"
-                                >
-                                    <span className="text-xs">Auth</span>
-                                </button>
+                            {renderButton(
+                                'showFirebaseDebug',
+                                'Auth',
+                                'Toggle Auth Flow Logs',
+                                'blue'
                             )}
-                            {shouldShowButton('showSessionDebug') && (
-                                <button
-                                    onClick={() => toggleSetting('showSessionDebug')}
-                                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                                        settings.showSessionDebug
-                                            ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30'
-                                            : 'bg-gray-800 text-gray-500 border border-gray-700'
-                                    }`}
-                                    title="Toggle Session Logs"
-                                >
-                                    <span className="text-xs">Session</span>
-                                </button>
+                            {renderButton(
+                                'showSessionDebug',
+                                'Session',
+                                'Toggle Session Logs',
+                                'purple'
                             )}
-                            {shouldShowButton('showGuestDebug') && (
-                                <button
-                                    onClick={() => toggleSetting('showGuestDebug')}
-                                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                                        settings.showGuestDebug
-                                            ? 'bg-teal-600/20 text-teal-400 border border-teal-500/30'
-                                            : 'bg-gray-800 text-gray-500 border border-gray-700'
-                                    }`}
-                                    title="Toggle Guest Logs"
-                                >
-                                    <span className="text-xs">Guest</span>
-                                </button>
-                            )}
-                            {shouldShowButton('showCacheDebug') && (
-                                <button
-                                    onClick={() => toggleSetting('showCacheDebug')}
-                                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                                        settings.showCacheDebug
-                                            ? 'bg-cyan-600/20 text-cyan-400 border border-cyan-500/30'
-                                            : 'bg-gray-800 text-gray-500 border border-gray-700'
-                                    }`}
-                                    title="Toggle Cache Logs"
-                                >
-                                    <span className="text-xs">Cache</span>
-                                </button>
-                            )}
-                        </div>
+                            {renderButton('showGuestDebug', 'Guest', 'Toggle Guest Logs', 'teal')}
+                            {renderButton('showCacheDebug', 'Cache', 'Toggle Cache Logs', 'cyan')}
+                        </>
+                    )}
 
-                        {/* Row 2: UI & Interaction */}
-                        <div className="flex items-center gap-2 flex-wrap">
-                            {shouldShowButton('showToastDebug') && (
-                                <button
-                                    onClick={() => toggleSetting('showToastDebug')}
-                                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                                        settings.showToastDebug
-                                            ? 'bg-green-600/20 text-green-400 border border-green-500/30'
-                                            : 'bg-gray-800 text-gray-500 border border-gray-700'
-                                    }`}
-                                    title="Toggle Toast Debug"
-                                >
-                                    <ChatBubbleBottomCenterTextIcon className="w-3 h-3" />
-                                    <span className="text-xs">Toast</span>
-                                </button>
+                    {/* UI & Interaction Category */}
+                    {renderCategory(
+                        'ui',
+                        'UI & Interaction',
+                        <ChatBubbleBottomCenterTextIcon className="w-3.5 h-3.5 text-blue-500" />,
+                        <>
+                            {renderButton(
+                                'showToastDebug',
+                                'Toast',
+                                'Toggle Toast Debug',
+                                'green',
+                                <ChatBubbleBottomCenterTextIcon className="w-3 h-3" />
                             )}
-                            {shouldShowButton('showApiResults') && (
-                                <button
-                                    onClick={() => toggleSetting('showApiResults')}
-                                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                                        settings.showApiResults
-                                            ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30'
-                                            : 'bg-gray-800 text-gray-500 border border-gray-700'
-                                    }`}
-                                    title="Toggle API Results Button"
-                                >
-                                    <CodeBracketIcon className="w-3 h-3" />
-                                    <span className="text-xs">API Results</span>
-                                </button>
+                            {renderButton(
+                                'showApiResults',
+                                'API Results',
+                                'Toggle API Results Button',
+                                'purple',
+                                <CodeBracketIcon className="w-3 h-3" />
                             )}
-                            {shouldShowButton('showWebVitals') && (
-                                <button
-                                    onClick={() => toggleSetting('showWebVitals')}
-                                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                                        settings.showWebVitals
-                                            ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30'
-                                            : 'bg-gray-800 text-gray-500 border border-gray-700'
-                                    }`}
-                                    title="Toggle Web Vitals HUD (Alt+Shift+V)"
-                                >
-                                    <span className="text-xs">Vitals</span>
-                                </button>
+                            {renderButton(
+                                'showWebVitals',
+                                'Vitals',
+                                'Toggle Web Vitals HUD (Alt+Shift+V)',
+                                'emerald'
                             )}
-                            {shouldShowButton('showUIDebug') && (
-                                <button
-                                    onClick={() => toggleSetting('showUIDebug')}
-                                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                                        settings.showUIDebug
-                                            ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
-                                            : 'bg-gray-800 text-gray-500 border border-gray-700'
-                                    }`}
-                                    title="Toggle UI Interaction Logs (modals, infinite scroll, etc.)"
-                                >
-                                    <span className="text-xs">UI</span>
-                                </button>
+                            {renderButton(
+                                'showUIDebug',
+                                'UI Logs',
+                                'Toggle UI Interaction Logs (modals, infinite scroll, etc.)',
+                                'indigo'
                             )}
-                        </div>
+                            {renderButton(
+                                'showApiDebug',
+                                'API/Server',
+                                'Toggle API & Server-side Logs',
+                                'amber',
+                                <CodeBracketIcon className="w-3 h-3" />
+                            )}
+                        </>
+                    )}
 
-                        {/* Row 3: Features & Tools */}
-                        <div className="flex items-center gap-2 flex-wrap">
-                            {shouldShowButton('showTrackingDebug') && (
-                                <button
-                                    onClick={() => toggleSetting('showTrackingDebug')}
-                                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                                        settings.showTrackingDebug
-                                            ? 'bg-yellow-600/20 text-yellow-400 border border-yellow-500/30'
-                                            : 'bg-gray-800 text-gray-500 border border-gray-700'
-                                    }`}
-                                    title="Toggle Interaction Tracking Logs"
-                                >
-                                    <span className="text-xs">Tracking</span>
-                                </button>
+                    {/* Features & Tools Category */}
+                    {renderCategory(
+                        'features',
+                        'Features & Tools',
+                        <SparklesIcon className="w-3.5 h-3.5 text-purple-500" />,
+                        <>
+                            {renderButton(
+                                'showTrackingDebug',
+                                'Tracking',
+                                'Toggle Interaction Tracking Logs',
+                                'yellow'
                             )}
-                            {shouldShowButton('showNotificationDebug') && (
-                                <button
-                                    onClick={() => toggleSetting('showNotificationDebug')}
-                                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                                        settings.showNotificationDebug
-                                            ? 'bg-pink-600/20 text-pink-400 border border-pink-500/30'
-                                            : 'bg-gray-800 text-gray-500 border border-gray-700'
-                                    }`}
-                                    title="Toggle Notification System Logs"
-                                >
-                                    <span className="text-xs">Notif</span>
-                                </button>
+                            {renderButton(
+                                'showNotificationDebug',
+                                'Notif',
+                                'Toggle Notification System Logs',
+                                'pink'
                             )}
-                            {shouldShowButton('showTestNotifications') && (
-                                <button
-                                    onClick={() => toggleSetting('showTestNotifications')}
-                                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                                        settings.showTestNotifications
-                                            ? 'bg-red-600/20 text-red-400 border border-red-500/30'
-                                            : 'bg-gray-800 text-gray-500 border border-gray-700'
-                                    }`}
-                                    title="Toggle Test Notification Button"
-                                >
-                                    <span className="text-xs">TestNotif</span>
-                                </button>
+                            {renderButton(
+                                'showTestNotifications',
+                                'TestNotif',
+                                'Toggle Test Notification Button',
+                                'red'
                             )}
                             <div className="w-px h-6 bg-gray-700" />
-                            {shouldShowButton('showSeedButton') && (
-                                <button
-                                    onClick={() => toggleSetting('showSeedButton')}
-                                    className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors ${
-                                        settings.showSeedButton
-                                            ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30'
-                                            : 'bg-gray-800 text-gray-500 border border-gray-700'
-                                    }`}
-                                    title="Toggle Seed Data Button on Profile"
-                                >
-                                    <SparklesIcon className="w-3 h-3" />
-                                    <span className="text-xs">Seed Btn</span>
-                                </button>
+                            {renderButton(
+                                'showSeedButton',
+                                'Seed Btn',
+                                'Toggle Seed Data Button on Profile',
+                                'purple',
+                                <SparklesIcon className="w-3 h-3" />
                             )}
-                        </div>
-                    </div>
-                )}
+                        </>
+                    )}
+                </div>
             </div>
         </div>
     )
@@ -421,6 +486,7 @@ export function useDebugSettings() {
         showTrackingDebug: false,
         showNotificationDebug: false,
         showSeedButton: false,
+        showApiDebug: false,
     })
 
     useEffect(() => {

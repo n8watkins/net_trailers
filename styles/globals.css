@@ -30,15 +30,17 @@
 
     .headerLink::before {
         content: '';
-        @apply absolute -inset-4 opacity-0 bg-[radial-gradient(60%_45%_at_center,_var(--tw-gradient-stops))] from-gray-200/80 via-gray-400/50 via-30% to-black rounded-md blur-xl transition-opacity duration-[400ms];
+        @apply absolute -inset-4 opacity-0 bg-[radial-gradient(60%_45%_at_center,_var(--tw-gradient-stops))] from-gray-200/80 via-gray-400/50 via-30% to-black rounded-md blur-xl transition-opacity duration-200;
     }
 
     .headerLink:hover::before {
         @apply opacity-60 animate-[white-glow-pulse_4s_ease-in-out_infinite];
+        transition-duration: 300ms;
     }
 
     @keyframes white-glow-pulse {
-        0%, 100% {
+        0%,
+        100% {
             filter: brightness(1);
         }
         50% {

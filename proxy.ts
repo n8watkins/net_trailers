@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
- * Global middleware for security and request validation
+ * Global proxy for security and request validation
+ * Next.js 16+ uses "proxy" instead of "middleware"
  */
 
 const MAX_REQUEST_BODY_SIZE = 1024 * 1024 // 1MB limit for request bodies
 const MAX_JSON_PAYLOAD_SIZE = 500 * 1024 // 500KB for JSON payloads
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     // Apply security checks only to API routes
     if (request.nextUrl.pathname.startsWith('/api/')) {
         // Check Content-Length header for POST/PUT/PATCH requests
@@ -30,9 +31,7 @@ export async function middleware(request: NextRequest) {
                     return NextResponse.json(
                         {
                             error: 'Request body too large',
-                            maxSize: contentType?.includes('application/json')
-                                ? '500KB'
-                                : '1MB',
+                            maxSize: contentType?.includes('application/json') ? '500KB' : '1MB',
                         },
                         { status: 413 } // 413 Payload Too Large
                     )
@@ -62,7 +61,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
 }
 
-// Configure which routes this middleware applies to
+// Configure which routes this proxy applies to
 export const config = {
     matcher: [
         // Apply to all API routes
