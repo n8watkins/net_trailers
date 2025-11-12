@@ -12,7 +12,7 @@ import { NextRequest, NextResponse } from 'next/server'
  */
 export async function POST(request: NextRequest) {
     try {
-        const { query } = await request.json()
+        const { query, excludedIds } = await request.json()
 
         // Validate input
         if (!query || query.trim().length < 3) {
@@ -25,8 +25,8 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'AI service unavailable' }, { status: 503 })
         }
 
-        // Build prompt for Gemini
-        const prompt = buildGenerateRowPrompt(query)
+        // Build prompt for Gemini, including excluded IDs if present
+        const prompt = buildGenerateRowPrompt(query, excludedIds)
         console.log('=== GENERATE ROW REQUEST ===')
         console.log('User Query:', query)
         console.log('Prompt sent to Gemini:', prompt)
@@ -93,8 +93,18 @@ export async function POST(request: NextRequest) {
         )
         console.log(`✅ Enriched ${enrichedMovies.length} movies successfully`)
 
+        // Filter out any excluded IDs (double-check in case Gemini ignored the instruction)
+        const excludedIdsSet = new Set(excludedIds || [])
+        const filteredMovies = enrichedMovies.filter((m) => !excludedIdsSet.has(m.tmdbId))
+
+        if (filteredMovies.length < enrichedMovies.length) {
+            console.log(
+                `⚠️ Filtered out ${enrichedMovies.length - filteredMovies.length} duplicate movies`
+            )
+        }
+
         const finalResult = {
-            movies: enrichedMovies,
+            movies: filteredMovies,
             rowName: geminiResult.rowName || 'Custom Row',
             mediaType: geminiResult.mediaType || 'movie',
             genreFallback: geminiResult.genreFallback || [],
@@ -103,8 +113,8 @@ export async function POST(request: NextRequest) {
         console.log('\n=== FINAL RESULT ===')
         console.log('Row Name:', finalResult.rowName)
         console.log('Media Type:', finalResult.mediaType)
-        console.log('Movies:', enrichedMovies.length)
-        console.log('Movies List:', enrichedMovies.map((m) => `${m.title} (${m.year})`).join(', '))
+        console.log('Movies:', filteredMovies.length)
+        console.log('Movies List:', filteredMovies.map((m) => `${m.title} (${m.year})`).join(', '))
         console.log('====================\n')
 
         return NextResponse.json(finalResult)
@@ -120,10 +130,15 @@ export async function POST(request: NextRequest) {
 /**
  * Build Gemini prompt for movie recommendations
  */
-function buildGenerateRowPrompt(query: string): string {
+function buildGenerateRowPrompt(query: string, excludedIds?: number[]): string {
+    const excludedIdsText =
+        excludedIds && excludedIds.length > 0
+            ? `\n\n**IMPORTANT:** Do NOT recommend any movies/shows with these TMDB IDs (already shown): ${excludedIds.join(', ')}`
+            : ''
+
     return `You are a movie/TV recommendation expert with deep knowledge of TMDB (The Movie Database).
 
-User Query: "${query}"
+User Query: "${query}"${excludedIdsText}
 
 Generate 10-15 movie/TV recommendations that match this query. Return ONLY this JSON structure:
 

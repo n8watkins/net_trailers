@@ -69,6 +69,8 @@ function CollectionBuilderModal() {
                 color: '#3b82f6', // Default blue color
                 displayAsRow: false, // Collections don't display as rows
                 collectionType: mode === 'smart' ? 'ai-generated' : 'manual',
+                autoUpdateEnabled: false, // Collections created here don't auto-update
+                updateFrequency: 'never',
             })
 
             // Handle both sync and async returns
@@ -77,7 +79,11 @@ function CollectionBuilderModal() {
 
             // Add preview content to the collection if it exists
             if (formData.previewContent && formData.previewContent.length > 0) {
-                console.log('Adding preview content to collection:', formData.previewContent.length, 'items')
+                console.log(
+                    'Adding preview content to collection:',
+                    formData.previewContent.length,
+                    'items'
+                )
                 formData.previewContent.forEach((content) => {
                     console.log('Adding content:', content.id, content.title || content.name)
                     addToList(listId, content)

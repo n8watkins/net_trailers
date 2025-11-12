@@ -51,6 +51,10 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
     }, [userId, systemRowPreferencesMap])
 
     const { trending } = data
+    const trendingSignature = useMemo(
+        () => trending.map((item) => `${item.id}-${item.media_type ?? ''}`).join('|'),
+        [trending]
+    )
 
     // Get cached trending data and notification preferences
     const mainPageData = useCacheStore((state) => state.mainPageData)
@@ -61,6 +65,17 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
 
     // Use ref to track if we've already processed this trending data
     const hasProcessedRef = useRef(false)
+
+    // Reset processing flag when relevant inputs change
+    useEffect(() => {
+        hasProcessedRef.current = false
+    }, [
+        trendingSignature,
+        userId,
+        sessionType,
+        notificationPreferences?.inApp,
+        notificationPreferences?.types?.trending_update,
+    ])
 
     // Check for trending changes and create notifications
     useEffect(() => {

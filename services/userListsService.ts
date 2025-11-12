@@ -68,6 +68,9 @@ export class UserListsService {
     static createList<T extends StateWithLists>(state: T, request: CreateListRequest): T {
         // Sanitize user inputs to prevent XSS attacks
         const sanitizedName = this.sanitizeText(request.name)
+        if (!sanitizedName) {
+            throw new Error('List name must include visible characters.')
+        }
 
         // Validate and sanitize emoji if provided
         const sanitizedEmoji =
@@ -134,7 +137,11 @@ export class UserListsService {
 
         // Sanitize name if provided
         if (request.name !== undefined) {
-            sanitizedUpdates.name = this.sanitizeText(request.name)
+            const sanitizedName = this.sanitizeText(request.name)
+            if (!sanitizedName) {
+                throw new Error('List name must include visible characters.')
+            }
+            sanitizedUpdates.name = sanitizedName
         }
 
         // Sanitize description if provided

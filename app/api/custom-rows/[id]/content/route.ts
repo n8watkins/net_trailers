@@ -119,10 +119,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                 const beforeCount = enrichedResults.length
                 enrichedResults = filterContentByAdultFlag(enrichedResults, true)
 
-                const hasTV = enrichedResults.some((item: any) => item.media_type === 'tv')
-                if (hasTV && enrichedResults.length > 0) {
-                    enrichedResults = await filterMatureTVShows(enrichedResults, API_KEY)
+                const tvItems = enrichedResults.filter((item: any) => item.media_type === 'tv')
+                const movieItems = enrichedResults.filter((item: any) => item.media_type !== 'tv')
+                let filteredTvItems = tvItems
+
+                if (tvItems.length > 0) {
+                    filteredTvItems = await filterMatureTVShows(tvItems, API_KEY)
                 }
+
+                enrichedResults = [...movieItems, ...filteredTvItems]
 
                 const hiddenCount = beforeCount - enrichedResults.length
 
@@ -290,11 +295,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             // Filter by adult flag
             enrichedResults = filterContentByAdultFlag(enrichedResults, true)
 
-            // For TV shows or mixed content, apply content rating filter
-            const hasTV = enrichedResults.some((item: any) => item.media_type === 'tv')
-            if (hasTV && enrichedResults.length > 0) {
-                enrichedResults = await filterMatureTVShows(enrichedResults, API_KEY)
+            const tvItems = enrichedResults.filter((item: any) => item.media_type === 'tv')
+            const movieItems = enrichedResults.filter((item: any) => item.media_type !== 'tv')
+            let filteredTvItems = tvItems
+
+            if (tvItems.length > 0) {
+                filteredTvItems = await filterMatureTVShows(tvItems, API_KEY)
             }
+
+            enrichedResults = [...movieItems, ...filteredTvItems]
 
             const hiddenCount = beforeCount - enrichedResults.length
 

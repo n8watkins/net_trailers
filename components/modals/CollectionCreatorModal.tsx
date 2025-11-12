@@ -197,6 +197,8 @@ export default function CollectionCreatorModal() {
                 collectionType: 'ai-generated', // This is from smart search
                 originalQuery: query, // Store the original search query
                 canGenerateMore: true, // AI-generated collections can always generate more
+                autoUpdateEnabled: false, // AI-generated collections don't auto-update
+                updateFrequency: 'never',
             })
 
             // Handle both sync and async returns

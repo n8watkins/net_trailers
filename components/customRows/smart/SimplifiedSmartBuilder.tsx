@@ -2,11 +2,17 @@
 
 import React, { useState } from 'react'
 import Image from 'next/image'
-import { XMarkIcon, SparklesIcon, ArrowPathIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline'
+import {
+    XMarkIcon,
+    SparklesIcon,
+    ArrowPathIcon,
+    QuestionMarkCircleIcon,
+} from '@heroicons/react/24/outline'
 import { WizardStep4Confirmation } from '../WizardStep4Confirmation'
 import NetflixLoader from '../../common/NetflixLoader'
 import { SmartInput } from '../../common/SmartInput'
 import type { CustomRowFormData } from '@/types/customRows'
+import { Content } from '@/typings'
 
 interface SimplifiedSmartBuilderProps {
     onClose: () => void
@@ -57,6 +63,13 @@ export function SimplifiedSmartBuilder({
     const [showInfiniteTooltip, setShowInfiniteTooltip] = useState(false)
     const [mouseDownOnBackdrop, setMouseDownOnBackdrop] = useState(false)
 
+    // Track all content IDs seen in this session (both removed and kept)
+    const [allSeenIds, setAllSeenIds] = useState<Set<number>>(new Set())
+    // Track IDs that user explicitly removed
+    const [removedIds, setRemovedIds] = useState<Set<number>>(new Set())
+    // Store full Content objects for preview
+    const [contentMap, setContentMap] = useState<Map<number, Content>>(new Map())
+
     const handleBackdropMouseDown = (e: React.MouseEvent) => {
         // Check if click is outside the modal content
         const target = e.target as HTMLElement
@@ -74,6 +87,38 @@ export function SimplifiedSmartBuilder({
         setMouseDownOnBackdrop(false)
     }
 
+    // Fetch full Content objects from TMDB for given IDs
+    const fetchContentObjects = async (
+        movies: GeneratedMovie[],
+        mediaType: string
+    ): Promise<Content[]> => {
+        const contents: Content[] = []
+
+        for (const movie of movies) {
+            try {
+                const endpoint = mediaType === 'tv' ? '/api/tv' : '/api/movies'
+                const response = await fetch(`${endpoint}/${movie.tmdbId}`)
+
+                if (response.ok) {
+                    const data = await response.json()
+                    contents.push(data)
+
+                    // Store in content map
+                    setContentMap((prev) => new Map(prev).set(movie.tmdbId, data))
+                }
+            } catch (error) {
+                console.warn(`Failed to fetch content for ${movie.title}:`, error)
+            }
+        }
+
+        return contents
+    }
+
+    // Handle removing a movie from the preview
+    const handleRemoveMovie = (tmdbId: number) => {
+        setRemovedIds((prev) => new Set(prev).add(tmdbId))
+    }
+
     const handleGenerate = async () => {
         if (query.trim().length < 3) {
             setError('Please enter at least 3 characters')
@@ -84,10 +129,16 @@ export function SimplifiedSmartBuilder({
         setError(null)
 
         try {
+            // Include excluded IDs in the request to prevent duplicates
+            const excludedIds = [...allSeenIds]
+
             const response = await fetch('/api/generate-row', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: query.trim() }),
+                body: JSON.stringify({
+                    query: query.trim(),
+                    excludedIds: excludedIds.length > 0 ? excludedIds : undefined,
+                }),
             })
 
             if (!response.ok) {
@@ -100,7 +151,22 @@ export function SimplifiedSmartBuilder({
                 throw new Error('No movies found for your query')
             }
 
-            setGeneratedRow(data)
+            // Track all newly seen IDs
+            const newIds = data.movies.map((m) => m.tmdbId)
+            setAllSeenIds((prev) => new Set([...prev, ...newIds]))
+
+            // Fetch full Content objects for the movies
+            await fetchContentObjects(data.movies, data.mediaType)
+
+            // If we already have a row, append the new movies to it
+            if (generatedRow) {
+                setGeneratedRow({
+                    ...generatedRow,
+                    movies: [...generatedRow.movies, ...data.movies],
+                })
+            } else {
+                setGeneratedRow(data)
+            }
         } catch (err) {
             setError((err as Error).message || 'Something went wrong')
         } finally {
@@ -120,6 +186,15 @@ export function SimplifiedSmartBuilder({
         setIsCreating(true)
 
         try {
+            // Filter out removed movies and get their Content objects
+            const activeMovieIds = generatedRow.movies
+                .filter((m) => !removedIds.has(m.tmdbId))
+                .map((m) => m.tmdbId)
+
+            const previewContent = activeMovieIds
+                .map((id) => contentMap.get(id))
+                .filter((c): c is Content => c !== undefined)
+
             const formData: CustomRowFormData = {
                 name: generatedRow.rowName,
                 // Only include genres if infinite content is enabled (for fallback pagination)
@@ -128,11 +203,16 @@ export function SimplifiedSmartBuilder({
                 mediaType: generatedRow.mediaType,
                 enabled: true,
                 advancedFilters: {
-                    contentIds: generatedRow.movies.map((m) => m.tmdbId),
+                    contentIds: activeMovieIds,
                 },
-                autoUpdateEnabled,
-                updateFrequency,
+                // Auto-update settings are optional and not exposed in this simplified builder
+                autoUpdateEnabled: false,
+                updateFrequency: 'never',
+                // Include preview content for collection creation
+                previewContent,
             }
+
+            console.log('Creating collection with preview content:', previewContent.length, 'items')
 
             await onComplete(formData)
             setCurrentStep(2)
@@ -149,8 +229,9 @@ export function SimplifiedSmartBuilder({
         setError(null)
         setCurrentStep(1)
         setEnableInfiniteContent(false)
-        setAutoUpdateEnabled(false)
-        setUpdateFrequency('weekly')
+        setAllSeenIds(new Set())
+        setRemovedIds(new Set())
+        setContentMap(new Map())
     }
 
     const handleQueryChange = (value: string) => {
@@ -166,8 +247,14 @@ export function SimplifiedSmartBuilder({
         return (
             <div className="fixed inset-0 z-[56000] overflow-y-auto">
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
-                <div className="relative min-h-screen flex items-center justify-center p-4" onClick={onClose}>
-                    <div className="relative bg-[#181818] rounded-lg shadow-2xl max-w-4xl w-full border border-gray-700" onClick={(e) => e.stopPropagation()}>
+                <div
+                    className="relative min-h-screen flex items-center justify-center p-4"
+                    onClick={onClose}
+                >
+                    <div
+                        className="relative bg-[#181818] rounded-lg shadow-2xl max-w-4xl w-full border border-gray-700"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="p-6">
                             <WizardStep4Confirmation
                                 rowName={generatedRow.rowName}
@@ -194,7 +281,10 @@ export function SimplifiedSmartBuilder({
 
             {/* Modal */}
             <div className="relative min-h-screen flex items-center justify-center p-4">
-                <div data-modal-content className="relative bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-lg shadow-2xl max-w-6xl w-full border border-gray-700">
+                <div
+                    data-modal-content
+                    className="relative bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-lg shadow-2xl max-w-6xl w-full border border-gray-700"
+                >
                     {/* Header */}
                     <div className="flex items-center justify-between p-6 border-b border-gray-700">
                         <div className="flex-1">
@@ -250,8 +340,12 @@ export function SimplifiedSmartBuilder({
                     {/* Content */}
                     <div className="p-6 min-h-[600px] flex flex-col">
                         {/* Query Input - Centered and Hero-style */}
-                        <div className={`mb-6 ${!generatedRow && !isGenerating ? 'w-full mx-auto mt-32' : ''}`}>
-                            <label className={`block text-sm font-medium text-gray-300 mb-4 ${!generatedRow && !isGenerating ? 'text-center' : ''}`}>
+                        <div
+                            className={`mb-6 transition-all duration-700 ease-out ${!generatedRow && !isGenerating ? 'w-full mx-auto mt-32 opacity-100' : 'opacity-100 transform translate-y-0'}`}
+                        >
+                            <label
+                                className={`block text-sm font-medium text-gray-300 mb-4 transition-all duration-500 ${!generatedRow && !isGenerating ? 'text-center' : ''}`}
+                            >
                                 What do you want to watch?
                             </label>
                             <SmartInput
@@ -285,14 +379,32 @@ export function SimplifiedSmartBuilder({
                                             {generatedRow.rowName}
                                         </h3>
                                         <p className="text-sm text-gray-400">
-                                            {generatedRow.movies.length} titles •{' '}
+                                            {
+                                                generatedRow.movies.filter(
+                                                    (m) => !removedIds.has(m.tmdbId)
+                                                ).length
+                                            }{' '}
+                                            titles •{' '}
                                             {generatedRow.mediaType === 'both'
                                                 ? 'Movies & TV'
                                                 : generatedRow.mediaType === 'tv'
                                                   ? 'TV Shows'
                                                   : 'Movies'}
+                                            {removedIds.size > 0 && (
+                                                <span className="text-gray-500 ml-2">
+                                                    ({removedIds.size} removed)
+                                                </span>
+                                            )}
                                         </p>
                                     </div>
+                                    <button
+                                        onClick={handleGenerate}
+                                        disabled={isGenerating}
+                                        className="flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                                    >
+                                        <SparklesIcon className="w-4 h-4" />
+                                        {isGenerating ? 'Generating...' : 'Generate More'}
+                                    </button>
                                 </div>
 
                                 {/* Toggle Settings */}
@@ -305,7 +417,9 @@ export function SimplifiedSmartBuilder({
                                                 type="button"
                                                 onMouseEnter={() => setShowInfiniteTooltip(true)}
                                                 onMouseLeave={() => setShowInfiniteTooltip(false)}
-                                                onClick={() => setShowInfiniteTooltip(!showInfiniteTooltip)}
+                                                onClick={() =>
+                                                    setShowInfiniteTooltip(!showInfiniteTooltip)
+                                                }
                                                 className="text-gray-400 hover:text-white"
                                             >
                                                 <QuestionMarkCircleIcon className="w-4 h-4" />
@@ -333,8 +447,8 @@ export function SimplifiedSmartBuilder({
                                     {showInfiniteTooltip && (
                                         <div className="absolute z-10 top-full left-0 mt-1 p-2 bg-gray-900 border border-gray-700 rounded-md shadow-xl max-w-xs">
                                             <p className="text-xs text-gray-300">
-                                                After these {generatedRow.movies.length} curated titles,
-                                                show more similar content based on genres
+                                                After these {generatedRow.movies.length} curated
+                                                titles, show more similar content based on genres
                                             </p>
                                         </div>
                                     )}
@@ -342,42 +456,65 @@ export function SimplifiedSmartBuilder({
 
                                 {/* Movie Grid */}
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-[400px] overflow-y-auto p-2">
-                                    {generatedRow.movies.map((movie) => (
-                                        <div
-                                            key={movie.tmdbId}
-                                            className="group relative rounded-lg overflow-hidden bg-gray-800 hover:ring-2 hover:ring-red-600 transition-all"
-                                        >
-                                            {/* Poster */}
-                                            <div className="aspect-[2/3] relative">
-                                                {movie.posterPath ? (
-                                                    <Image
-                                                        src={`https://image.tmdb.org/t/p/w342${movie.posterPath}`}
-                                                        alt={movie.title}
-                                                        fill
-                                                        className="object-cover"
-                                                        sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center bg-gray-700 text-gray-500 text-xs p-2 text-center">
-                                                        {movie.title}
-                                                    </div>
-                                                )}
-                                            </div>
+                                    {generatedRow.movies
+                                        .filter((movie) => !removedIds.has(movie.tmdbId))
+                                        .map((movie) => (
+                                            <div
+                                                key={movie.tmdbId}
+                                                className="group relative rounded-lg overflow-hidden bg-gray-800 hover:ring-2 hover:ring-red-600 transition-all"
+                                            >
+                                                {/* Remove Button - Top center */}
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        handleRemoveMovie(movie.tmdbId)
+                                                    }}
+                                                    className="
+                                                        absolute top-2 left-1/2 -translate-x-1/2 z-50
+                                                        w-8 h-8 rounded-full
+                                                        bg-white shadow-lg
+                                                        border-2 border-black
+                                                        opacity-0 group-hover:opacity-100
+                                                        transition-all duration-200
+                                                        hover:scale-110
+                                                        flex items-center justify-center
+                                                    "
+                                                    aria-label="Remove from collection"
+                                                >
+                                                    <XMarkIcon className="h-5 w-5 text-black" />
+                                                </button>
 
-                                            {/* Hover overlay with info */}
-                                            <div className="absolute inset-0 bg-black/90 opacity-0 group-hover:opacity-100 transition-opacity p-2 flex flex-col justify-end">
-                                                <p className="text-white text-sm font-semibold line-clamp-2">
-                                                    {movie.title}
-                                                </p>
-                                                <p className="text-gray-400 text-xs">
-                                                    {movie.year} • ⭐ {movie.rating.toFixed(1)}
-                                                </p>
-                                                <p className="text-gray-300 text-xs mt-1 line-clamp-2">
-                                                    {movie.reason}
-                                                </p>
+                                                {/* Poster */}
+                                                <div className="aspect-[2/3] relative">
+                                                    {movie.posterPath ? (
+                                                        <Image
+                                                            src={`https://image.tmdb.org/t/p/w342${movie.posterPath}`}
+                                                            alt={movie.title}
+                                                            fill
+                                                            className="object-cover"
+                                                            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center bg-gray-700 text-gray-500 text-xs p-2 text-center">
+                                                            {movie.title}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Hover overlay with info */}
+                                                <div className="absolute inset-0 bg-black/90 opacity-0 group-hover:opacity-100 transition-opacity p-2 flex flex-col justify-end">
+                                                    <p className="text-white text-sm font-semibold line-clamp-2">
+                                                        {movie.title}
+                                                    </p>
+                                                    <p className="text-gray-400 text-xs">
+                                                        {movie.year} • ⭐ {movie.rating.toFixed(1)}
+                                                    </p>
+                                                    <p className="text-gray-300 text-xs mt-1 line-clamp-2">
+                                                        {movie.reason}
+                                                    </p>
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))}
                                 </div>
 
                                 {/* Actions */}
@@ -401,8 +538,12 @@ export function SimplifiedSmartBuilder({
 
                         {/* Loading state */}
                         {isGenerating && (
-                            <div className="py-8">
-                                <NetflixLoader inline message="Building your collection..." />
+                            <div className="py-8 -mt-24">
+                                <NetflixLoader
+                                    inline
+                                    slowCounter
+                                    message="Building your collection..."
+                                />
                             </div>
                         )}
                     </div>

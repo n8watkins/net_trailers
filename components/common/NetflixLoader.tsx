@@ -5,9 +5,14 @@ import React, { useState, useEffect } from 'react'
 interface Props {
     message?: string
     inline?: boolean // New prop to control full-page vs inline mode
+    slowCounter?: boolean // Slower counter animation for longer operations like Gemini requests
 }
 
-const NetflixLoader: React.FC<Props> = ({ message = 'Loading your movies...', inline = false }) => {
+const NetflixLoader: React.FC<Props> = ({
+    message = 'Loading your movies...',
+    inline = false,
+    slowCounter = false,
+}) => {
     const [loadingCounter, setLoadingCounter] = useState(0)
     const [loadingMessage, setLoadingMessage] = useState('🎬 Finding your favorite movies...')
 
@@ -40,18 +45,21 @@ const NetflixLoader: React.FC<Props> = ({ message = 'Loading your movies...', in
         setLoadingCounter(0)
         setLoadingMessage('🎬 Finding your favorite movies...')
 
-        // Counter animation - faster to reach 100% before loading completes
+        // Counter animation - slower for Gemini requests, faster for regular loads
+        const increment = slowCounter ? 1 : 2 // Slower increment for Gemini
+        const interval = slowCounter ? 25 : 15 // Slower interval for Gemini
+
         const counterInterval = setInterval(() => {
             setLoadingCounter((prev) => {
                 if (prev >= 100) {
                     clearInterval(counterInterval)
                     return 100
                 }
-                return prev + 2 // Increment by 2 for faster animation
+                return prev + increment
             })
-        }, 15) // Faster interval - completes in ~750ms
+        }, interval)
 
-        // Message rotation - independent of counter
+        // Message rotation - independent of counter with longer delay
         const messages = [
             '🎬 Finding favorites...',
             '🍿 Popping corn...',
@@ -69,13 +77,13 @@ const NetflixLoader: React.FC<Props> = ({ message = 'Loading your movies...', in
         const messageInterval = setInterval(() => {
             messageIndex = (messageIndex + 1) % messages.length
             setLoadingMessage(messages[messageIndex])
-        }, 500) // Change message every half second
+        }, 800) // Increased from 500ms to 800ms for more delay between text changes
 
         return () => {
             clearInterval(counterInterval)
             clearInterval(messageInterval)
         }
-    }, [])
+    }, [slowCounter])
 
     return (
         <div

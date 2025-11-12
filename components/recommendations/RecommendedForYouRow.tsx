@@ -33,6 +33,12 @@ export default function RecommendedForYouRow() {
     // Fetch personalized recommendations
     useEffect(() => {
         const fetchRecommendations = async () => {
+            if (!showRecommendations) {
+                setIsLoading(false)
+                setRecommendations([])
+                return
+            }
+
             // Only show recommendations for authenticated users (requires Firestore)
             if (!userId || sessionType !== 'authenticated') {
                 setIsLoading(false)
@@ -98,7 +104,13 @@ export default function RecommendedForYouRow() {
         }
 
         fetchRecommendations()
-    }, [userId, sessionType, sessionData.likedMovies.length, sessionData.defaultWatchlist.length])
+    }, [
+        userId,
+        sessionType,
+        sessionData.likedMovies.length,
+        sessionData.defaultWatchlist.length,
+        showRecommendations,
+    ])
 
     // Scroll handlers
     const handleClick = (direction: 'left' | 'right') => {

@@ -158,13 +158,14 @@ export function createUserStore(options: CreateUserStoreOptions) {
             if (adapter.isAsync) set({ syncStatus: 'syncing' })
 
             const newWatchlist = [...state.defaultWatchlist, content]
+            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
             set({
                 defaultWatchlist: newWatchlist,
-                lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+                lastActive: newLastActive,
             })
 
             try {
-                await saveToStorage({ ...state, defaultWatchlist: newWatchlist }, 'addToWatchlist')
+                await saveToStorage(get(), 'addToWatchlist')
                 if (adapter.isAsync) set({ syncStatus: 'synced' })
             } catch (_error) {
                 if (adapter.isAsync) set({ syncStatus: 'offline' })
@@ -182,16 +183,14 @@ export function createUserStore(options: CreateUserStoreOptions) {
             if (adapter.isAsync) set({ syncStatus: 'syncing' })
 
             const newWatchlist = state.defaultWatchlist.filter((item) => item.id !== contentId)
+            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
             set({
                 defaultWatchlist: newWatchlist,
-                lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+                lastActive: newLastActive,
             })
 
             try {
-                await saveToStorage(
-                    { ...state, defaultWatchlist: newWatchlist },
-                    'removeFromWatchlist'
-                )
+                await saveToStorage(get(), 'removeFromWatchlist')
                 if (adapter.isAsync) set({ syncStatus: 'synced' })
             } catch (_error) {
                 if (adapter.isAsync) set({ syncStatus: 'offline' })
@@ -214,17 +213,15 @@ export function createUserStore(options: CreateUserStoreOptions) {
             const newHiddenMovies = state.hiddenMovies.filter((m) => m.id !== content.id)
             const newLikedMovies = [...state.likedMovies, content]
 
+            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
             set({
                 likedMovies: newLikedMovies,
                 hiddenMovies: newHiddenMovies,
-                lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+                lastActive: newLastActive,
             })
 
             try {
-                await saveToStorage(
-                    { ...state, likedMovies: newLikedMovies, hiddenMovies: newHiddenMovies },
-                    'addLiked'
-                )
+                await saveToStorage(get(), 'addLiked')
                 if (adapter.isAsync) set({ syncStatus: 'synced' })
             } catch (_error) {
                 if (adapter.isAsync) set({ syncStatus: 'offline' })
@@ -238,13 +235,14 @@ export function createUserStore(options: CreateUserStoreOptions) {
             if (adapter.isAsync) set({ syncStatus: 'syncing' })
 
             const newLikedMovies = state.likedMovies.filter((m) => m.id !== contentId)
+            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
             set({
                 likedMovies: newLikedMovies,
-                lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+                lastActive: newLastActive,
             })
 
             try {
-                await saveToStorage({ ...state, likedMovies: newLikedMovies }, 'removeLiked')
+                await saveToStorage(get(), 'removeLiked')
                 if (adapter.isAsync) set({ syncStatus: 'synced' })
             } catch (_error) {
                 if (adapter.isAsync) set({ syncStatus: 'offline' })
@@ -267,17 +265,15 @@ export function createUserStore(options: CreateUserStoreOptions) {
             const newLikedMovies = state.likedMovies.filter((m) => m.id !== content.id)
             const newHiddenMovies = [...state.hiddenMovies, content]
 
+            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
             set({
                 hiddenMovies: newHiddenMovies,
                 likedMovies: newLikedMovies,
-                lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+                lastActive: newLastActive,
             })
 
             try {
-                await saveToStorage(
-                    { ...state, hiddenMovies: newHiddenMovies, likedMovies: newLikedMovies },
-                    'addHidden'
-                )
+                await saveToStorage(get(), 'addHidden')
                 if (adapter.isAsync) set({ syncStatus: 'synced' })
             } catch (_error) {
                 if (adapter.isAsync) set({ syncStatus: 'offline' })
@@ -291,13 +287,14 @@ export function createUserStore(options: CreateUserStoreOptions) {
             if (adapter.isAsync) set({ syncStatus: 'syncing' })
 
             const newHiddenMovies = state.hiddenMovies.filter((m) => m.id !== contentId)
+            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
             set({
                 hiddenMovies: newHiddenMovies,
-                lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+                lastActive: newLastActive,
             })
 
             try {
-                await saveToStorage({ ...state, hiddenMovies: newHiddenMovies }, 'removeHidden')
+                await saveToStorage(get(), 'removeHidden')
                 if (adapter.isAsync) set({ syncStatus: 'synced' })
             } catch (_error) {
                 if (adapter.isAsync) set({ syncStatus: 'offline' })
@@ -324,16 +321,14 @@ export function createUserStore(options: CreateUserStoreOptions) {
             const newList =
                 updatedPrefs.userCreatedWatchlists[updatedPrefs.userCreatedWatchlists.length - 1]
 
+            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
             set({
                 userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
-                lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+                lastActive: newLastActive,
             })
 
             try {
-                await saveToStorage(
-                    { ...state, userCreatedWatchlists: updatedPrefs.userCreatedWatchlists },
-                    'createList'
-                )
+                await saveToStorage(get(), 'createList')
                 if (adapter.isAsync) set({ syncStatus: 'synced' })
             } catch (_error) {
                 if (adapter.isAsync) set({ syncStatus: 'offline' })
@@ -349,16 +344,14 @@ export function createUserStore(options: CreateUserStoreOptions) {
 
             const updatedPrefs = UserListsService.addToList(state, { listId, content })
 
+            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
             set({
                 userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
-                lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+                lastActive: newLastActive,
             })
 
             try {
-                await saveToStorage(
-                    { ...state, userCreatedWatchlists: updatedPrefs.userCreatedWatchlists },
-                    'addToList'
-                )
+                await saveToStorage(get(), 'addToList')
                 if (adapter.isAsync) set({ syncStatus: 'synced' })
             } catch (_error) {
                 if (adapter.isAsync) set({ syncStatus: 'offline' })
@@ -376,16 +369,14 @@ export function createUserStore(options: CreateUserStoreOptions) {
 
             const updatedPrefs = UserListsService.removeFromList(state, { listId, contentId })
 
+            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
             set({
                 userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
-                lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+                lastActive: newLastActive,
             })
 
             try {
-                await saveToStorage(
-                    { ...state, userCreatedWatchlists: updatedPrefs.userCreatedWatchlists },
-                    'removeFromList'
-                )
+                await saveToStorage(get(), 'removeFromList')
                 if (adapter.isAsync) set({ syncStatus: 'synced' })
             } catch (_error) {
                 if (adapter.isAsync) set({ syncStatus: 'offline' })
@@ -403,16 +394,14 @@ export function createUserStore(options: CreateUserStoreOptions) {
 
             const updatedPrefs = UserListsService.updateList(state, { id: listId, ...updates })
 
+            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
             set({
                 userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
-                lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+                lastActive: newLastActive,
             })
 
             try {
-                await saveToStorage(
-                    { ...state, userCreatedWatchlists: updatedPrefs.userCreatedWatchlists },
-                    'updateList'
-                )
+                await saveToStorage(get(), 'updateList')
                 if (adapter.isAsync) set({ syncStatus: 'synced' })
             } catch (_error) {
                 if (adapter.isAsync) set({ syncStatus: 'offline' })
@@ -427,16 +416,14 @@ export function createUserStore(options: CreateUserStoreOptions) {
 
             const updatedPrefs = UserListsService.deleteList(state, listId)
 
+            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
             set({
                 userCreatedWatchlists: updatedPrefs.userCreatedWatchlists,
-                lastActive: typeof window !== 'undefined' ? Date.now() : 0,
+                lastActive: newLastActive,
             })
 
             try {
-                await saveToStorage(
-                    { ...state, userCreatedWatchlists: updatedPrefs.userCreatedWatchlists },
-                    'deleteList'
-                )
+                await saveToStorage(get(), 'deleteList')
                 if (adapter.isAsync) set({ syncStatus: 'synced' })
             } catch (_error) {
                 if (adapter.isAsync) set({ syncStatus: 'offline' })
