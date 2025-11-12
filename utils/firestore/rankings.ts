@@ -221,6 +221,29 @@ export async function getPublicRankings(
 /**
  * Update ranking
  */
+/**
+ * Remove undefined values from an object recursively
+ * Firestore doesn't accept undefined values
+ */
+function removeUndefined(obj: any): any {
+    if (obj === null || obj === undefined) {
+        return null
+    }
+    if (Array.isArray(obj)) {
+        return obj.map((item) => removeUndefined(item))
+    }
+    if (typeof obj === 'object') {
+        const cleaned: any = {}
+        for (const [key, value] of Object.entries(obj)) {
+            if (value !== undefined) {
+                cleaned[key] = removeUndefined(value)
+            }
+        }
+        return cleaned
+    }
+    return obj
+}
+
 export async function updateRanking(
     userId: string,
     rankingId: string,
@@ -245,15 +268,19 @@ export async function updateRanking(
             throw new UnauthorizedError('update this ranking')
         }
 
-        // If updating rankedItems, extract metadata
+        // If updating rankedItems, extract metadata and clean undefined values
         let metadata = {}
+        let cleanedRankedItems = updates.rankedItems
         if (updates.rankedItems) {
             metadata = extractContentMetadata(updates.rankedItems)
+            // Remove undefined values from rankedItems to prevent Firestore errors
+            cleanedRankedItems = removeUndefined(updates.rankedItems)
         }
 
         // Trim text fields
         const sanitizedUpdates = {
             ...updates,
+            rankedItems: cleanedRankedItems,
             title: updates.title?.trim(),
             description: updates.description?.trim(),
         }
