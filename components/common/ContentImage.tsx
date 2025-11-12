@@ -2,7 +2,7 @@ import React from 'react'
 import { Content, getTitle, getYear, getContentType, isMovie } from '../../typings'
 import Image from 'next/image'
 import { PlayIcon } from '@heroicons/react/24/solid'
-import { useAppStore } from '../../stores/appStore'
+import { useModalStore } from '../../stores/modalStore'
 import WatchLaterButton from '../content/WatchLaterButton'
 
 type ContentImageVariant = 'thumbnail' | 'search' | 'favorites' | 'banner'
@@ -27,7 +27,7 @@ function ContentImage({
     showRating = false,
 }: Props) {
     const posterImage = content?.poster_path
-    const { openModal } = useAppStore()
+    const { openModal } = useModalStore()
 
     const handleImageClick = () => {
         if (content) {

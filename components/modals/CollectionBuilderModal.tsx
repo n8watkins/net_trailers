@@ -3,7 +3,6 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useModalStore } from '../../stores/modalStore'
-import { useAppStore } from '../../stores/appStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useToast } from '../../hooks/useToast'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
@@ -28,8 +27,7 @@ type CreationMode = 'traditional' | 'smart'
  */
 function CollectionBuilderModal() {
     const router = useRouter()
-    const { collectionBuilderModal, closeCollectionBuilderModal } = useModalStore()
-    const { openAuthModal } = useAppStore()
+    const { collectionBuilderModal, closeCollectionBuilderModal, openAuthModal } = useModalStore()
     const getUserId = useSessionStore((state: any) => state.getUserId)
     const sessionType = useSessionStore((state: any) => state.sessionType)
     const { showSuccess, showError } = useToast()

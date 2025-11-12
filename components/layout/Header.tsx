@@ -42,7 +42,7 @@ import GenresDropdown from '../content/GenresDropdown'
 import MyListsDropdown from '../content/MyListsDropdown'
 import { useToast } from '../../hooks/useToast'
 import { useDebugSettings } from '../debug/DebugControls'
-import { useAppStore } from '../../stores/appStore'
+import { useModalStore } from '../../stores/modalStore'
 import { ChildSafetyIndicator } from '../content/ChildSafetyIndicator'
 import { GuestModeIndicator } from '../auth/GuestModeIndicator'
 import { useLayoutContext } from '../../contexts/LayoutContext'
@@ -127,7 +127,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
     const [showMobileMenu, setShowMobileMenu] = useState(false)
     const [isSearchExpanded, setIsSearchExpanded] = useState(false)
     const [isRandomLoading, setIsRandomLoading] = useState(false)
-    const { authModal, openAuthModal, closeAuthModal, openModal } = useAppStore()
+    const { authModal, openAuthModal, closeAuthModal, openModal } = useModalStore()
     const router = useRouter()
     const pathname = usePathname()
     const { user } = useAuth()

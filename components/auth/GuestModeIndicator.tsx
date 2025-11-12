@@ -1,6 +1,6 @@
 import { UserCircleIcon, SparklesIcon } from '@heroicons/react/24/solid'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
-import { useAppStore } from '../../stores/appStore'
+import { useModalStore } from '../../stores/modalStore'
 
 /**
  * Guest Mode indicator with flashy sign-in CTA
@@ -8,7 +8,7 @@ import { useAppStore } from '../../stores/appStore'
  */
 export function GuestModeIndicator() {
     const { isGuest } = useAuthStatus()
-    const openAuthModal = useAppStore((state) => state.openAuthModal)
+    const openAuthModal = useModalStore((state) => state.openAuthModal)
 
     // Only render if user is a guest
     if (!isGuest) {

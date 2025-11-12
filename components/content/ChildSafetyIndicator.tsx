@@ -1,7 +1,7 @@
 import { ShieldCheckIcon } from '@heroicons/react/24/solid'
 import { useChildSafety } from '../../hooks/useChildSafety'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
-import { useAppStore } from '../../stores/appStore'
+import { useModalStore } from '../../stores/modalStore'
 
 /**
  * Visual indicator that displays when Child Safety Mode is active
@@ -20,7 +20,7 @@ import { useAppStore } from '../../stores/appStore'
 export function ChildSafetyIndicator() {
     const { isEnabled, isLoading } = useChildSafety()
     const { isGuest } = useAuthStatus()
-    const { openAuthModal } = useAppStore()
+    const { openAuthModal } = useModalStore()
 
     // Don't render if loading or disabled
     if (isLoading || !isEnabled) {

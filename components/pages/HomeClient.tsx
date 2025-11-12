@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import Header from '../layout/Header'
 import Banner from '../layout/Banner'
 import { HomeData } from '../../lib/serverData'
-import { useAppStore } from '../../stores/appStore'
+import { useModalStore } from '../../stores/modalStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { CollectionRowLoader } from '../collections/CollectionRowLoader'
 import { autoMigrateIfNeeded } from '../../utils/migrations/customRowsToCollections'
@@ -23,7 +23,7 @@ interface HomeClientProps {
 }
 
 export default function HomeClient({ data, filter }: HomeClientProps) {
-    const { modal } = useAppStore()
+    const { modal } = useModalStore()
     const showModal = modal.isOpen
     const getUserId = useSessionStore((state) => state.getUserId)
     const sessionType = useSessionStore((state) => state.sessionType)

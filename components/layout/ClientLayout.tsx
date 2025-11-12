@@ -9,7 +9,7 @@ import AboutModal from '../modals/AboutModal'
 import ScrollToTopButton from '../common/ScrollToTopButton'
 import CustomScrollbar from '../common/CustomScrollbar'
 import { markAsVisited } from '../../utils/firstVisitTracker'
-import { useAppStore } from '../../stores/appStore'
+import { useModalStore } from '../../stores/modalStore'
 import { shouldShowAboutModal, markAboutModalShown } from '../../utils/aboutModalTimer'
 import { LayoutProvider } from '../../contexts/LayoutContext'
 
@@ -31,7 +31,7 @@ function ClientLayout({ children }: ClientLayoutProps) {
     const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
     const [showAboutModal, setShowAboutModal] = useState(false)
     const [showTutorial, setShowTutorial] = useState(false)
-    const { modal } = useAppStore()
+    const { modal } = useModalStore()
     const isModalOpen = modal.isOpen
     const searchInputRef = useRef<HTMLInputElement>(null)
 

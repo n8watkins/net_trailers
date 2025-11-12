@@ -1,5 +1,5 @@
 import { UserCircleIcon } from '@heroicons/react/24/outline'
-import { useAppStore } from '../../stores/appStore'
+import { useModalStore } from '../../stores/modalStore'
 
 interface GuestModeNotificationProps {
     onOpenTutorial?: () => void
@@ -15,7 +15,7 @@ export function GuestModeNotification({
     onOpenTutorial,
     align = 'center',
 }: GuestModeNotificationProps) {
-    const { openAuthModal } = useAppStore()
+    const { openAuthModal } = useModalStore()
 
     const handleLimitationsClick = () => {
         if (onOpenTutorial) {

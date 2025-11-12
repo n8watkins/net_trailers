@@ -7,7 +7,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { HandThumbUpIcon } from '@heroicons/react/24/solid'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
-import { useAppStore } from '../../stores/appStore'
+import { useModalStore } from '../../stores/modalStore'
 
 interface TutorialModalProps {
     isOpen: boolean
@@ -16,7 +16,7 @@ interface TutorialModalProps {
 
 const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
     const { isGuest } = useAuthStatus()
-    const { openAuthModal } = useAppStore()
+    const { openAuthModal } = useModalStore()
 
     const handleSignUp = () => {
         onClose()

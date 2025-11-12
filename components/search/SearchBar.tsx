@@ -6,7 +6,7 @@ import {
     MicrophoneIcon,
 } from '@heroicons/react/24/outline'
 import { useRouter, usePathname } from 'next/navigation'
-import { useAppStore } from '../../stores/appStore'
+import { useModalStore } from '../../stores/modalStore'
 import { useSearch } from '../../hooks/useSearch'
 import { useTypewriter } from '../../hooks/useTypewriter'
 import { useVoiceInput } from '../../hooks/useVoiceInput'
@@ -74,7 +74,7 @@ export default function SearchBar({
         clearSearch,
     } = useSearch()
 
-    const openModal = useAppStore((state) => state.openModal)
+    const openModal = useModalStore((state) => state.openModal)
     const { showError } = useToast()
 
     // Voice input

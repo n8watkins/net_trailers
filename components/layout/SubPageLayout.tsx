@@ -13,7 +13,7 @@
 
 import React, { ReactNode } from 'react'
 import Header from './Header'
-import { useAppStore } from '../../stores/appStore'
+import { useModalStore } from '../../stores/modalStore'
 
 interface SubPageLayoutProps {
     /** Page title (e.g., "Watch History") */
@@ -44,7 +44,7 @@ export default function SubPageLayout({
     children,
     contentClassName = '',
 }: SubPageLayoutProps) {
-    const { modal } = useAppStore()
+    const { modal } = useModalStore()
     const showModal = modal.isOpen
 
     return (

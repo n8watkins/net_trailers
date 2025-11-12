@@ -12,7 +12,7 @@ import { XMarkIcon } from '@heroicons/react/24/outline'
 import { Notification } from '../../types/notifications'
 import { useNotificationStore } from '../../stores/notificationStore'
 import { useSessionStore } from '../../stores/sessionStore'
-import { useAppStore } from '../../stores/appStore'
+import { useModalStore } from '../../stores/modalStore'
 import { Content } from '../../typings'
 
 interface NotificationItemProps {
@@ -24,7 +24,7 @@ export default function NotificationItem({ notification }: NotificationItemProps
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
     const { markNotificationAsRead, deleteNotification, closePanel } = useNotificationStore()
-    const { openModal } = useAppStore()
+    const { openModal } = useModalStore()
     const [isLoading, setIsLoading] = useState(false)
 
     // Format timestamp

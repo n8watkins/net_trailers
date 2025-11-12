@@ -5,11 +5,11 @@ import { HandThumbUpIcon as HandThumbUpIconOutline } from '@heroicons/react/24/o
 import { HandThumbUpIcon as HandThumbUpIconFilled } from '@heroicons/react/24/solid'
 import useUserData from '../../hooks/useUserData'
 import { useToast } from '../../hooks/useToast'
-import { useAppStore } from '../../stores/appStore'
+import { useModalStore } from '../../stores/modalStore'
 
 function SimpleLikeButton() {
     // Get current movie from Zustand store
-    const { modal } = useAppStore()
+    const { modal } = useModalStore()
     const currentMovie = modal.content?.content || null
 
     // Use new schema hooks

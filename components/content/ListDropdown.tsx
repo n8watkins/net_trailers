@@ -4,7 +4,7 @@ import { Content, getTitle } from '../../typings'
 import useUserData from '../../hooks/useUserData'
 import { useToast } from '../../hooks/useToast'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
-import { useAppStore } from '../../stores/appStore'
+import { useModalStore } from '../../stores/modalStore'
 import { EyeIcon, PlusIcon, CheckIcon, LockClosedIcon } from '@heroicons/react/24/solid'
 import { uiLog } from '../../utils/debugLogger'
 
@@ -37,7 +37,7 @@ function ListDropdown({
     } = useUserData()
 
     const { showSuccess, showWatchlistAdd, showWatchlistRemove } = useToast()
-    const { openAuthModal, openListModal } = useAppStore()
+    const { openAuthModal, openListModal } = useModalStore()
     const { isGuest } = useAuthStatus()
 
     const [_showCreateInput, setShowCreateInput] = useState(false)

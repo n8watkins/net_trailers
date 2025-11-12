@@ -4,7 +4,7 @@ import Image from 'next/image'
 import { BASE_URL } from '../../constants/movie'
 import { PlayIcon } from '@heroicons/react/24/solid'
 import { InformationCircleIcon } from '@heroicons/react/24/outline'
-import { useAppStore } from '../../stores/appStore'
+import { useModalStore } from '../../stores/modalStore'
 import useUserData from '../../hooks/useUserData'
 import { filterDislikedContent } from '../../utils/contentFilter'
 import SmartSearchInput from '../smartSearch/SmartSearchInput'
@@ -16,7 +16,7 @@ interface Props {
 
 //pass props to Banner component
 function Banner({ trending, variant = 'default' }: Props) {
-    const { openModal } = useAppStore()
+    const { openModal } = useModalStore()
     const { hiddenMovies } = useUserData()
 
     const [currentIndex, setCurrentIndex] = useState(0)

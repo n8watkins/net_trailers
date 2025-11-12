@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAppStore } from '../../stores/appStore'
+import { useModalStore } from '../../stores/modalStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useSmartSearchStore } from '../../stores/smartSearchStore'
 import { useToast } from '../../hooks/useToast'
@@ -122,7 +122,7 @@ export default function CollectionCreatorModal() {
         setCollectionCreatorName,
         addToCollectionCreator,
         removeFromCollectionCreator,
-    } = useAppStore()
+    } = useModalStore()
     const getUserId = useSessionStore((state) => state.getUserId)
     const { createList, addToList } = useUserData()
     const { showSuccess, showError } = useToast()

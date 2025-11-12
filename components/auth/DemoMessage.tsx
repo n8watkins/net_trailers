@@ -1,13 +1,13 @@
-import { useAppStore } from '../../stores/appStore'
+import { useUIStore } from '../../stores/uiStore'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { useState, useEffect } from 'react'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import { usePathname } from 'next/navigation'
 
 export default function DemoMessage() {
-    const showDemoMessage = useAppStore((state) => state.showDemoMessage)
-    const setShowDemoMessage = useAppStore((state) => state.setShowDemoMessage)
-    const contentLoadedSuccessfully = useAppStore((state) => state.contentLoadedSuccessfully)
+    const showDemoMessage = useUIStore((state) => state.showDemoMessage)
+    const setShowDemoMessage = useUIStore((state) => state.setShowDemoMessage)
+    const contentLoadedSuccessfully = useUIStore((state) => state.contentLoadedSuccessfully)
     const { isGuest, isAuthenticated } = useAuthStatus()
     const [visible, setVisible] = useState(false)
     const pathname = usePathname()

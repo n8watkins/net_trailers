@@ -9,7 +9,7 @@ import {
     EyeIcon,
 } from '@heroicons/react/24/solid'
 import { HandThumbUpIcon as HandThumbUpOutlineIcon } from '@heroicons/react/24/outline'
-import { useAppStore } from '../../stores/appStore'
+import { useModalStore } from '../../stores/modalStore'
 import { prefetchMovieDetails } from '../../utils/prefetchCache'
 import useUserData from '../../hooks/useUserData'
 import { useToast } from '../../hooks/useToast'
@@ -22,7 +22,7 @@ interface Props {
 }
 function ContentCard({ content, className = '', size = 'medium' }: Props) {
     const posterImage = content?.poster_path
-    const { openModal, openListModal } = useAppStore()
+    const { openModal, openListModal } = useModalStore()
     const {
         addLikedMovie,
         removeLikedMovie,

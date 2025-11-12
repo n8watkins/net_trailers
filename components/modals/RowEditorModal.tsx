@@ -14,7 +14,8 @@ import { MOVIE_GENRES, TV_GENRES, Genre } from '../../constants/genres'
 import { SortableCustomRowCard } from '../customRows/SortableCustomRowCard'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useCustomRowsStore } from '../../stores/customRowsStore'
-import { useAppStore } from '../../stores/appStore'
+import { useToastStore } from '../../stores/toastStore'
+import { useModalStore } from '../../stores/modalStore'
 import { CustomRow, DisplayRow } from '../../types/customRows'
 import { CustomRowsFirestore } from '../../utils/firestore/customRows'
 import { SystemRowStorage } from '../../utils/systemRowStorage'
@@ -210,7 +211,8 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         toggleSystemRow: toggleSystemRowStore,
         updateSystemRowOrder,
     } = useCustomRowsStore()
-    const { showToast, openCustomRowModal, openAuthModal } = useAppStore()
+    const { showToast } = useToastStore()
+    const { openCustomRowModal, openAuthModal } = useModalStore()
 
     const userId = getUserId()
     const sessionType = useSessionStore((state) => state.sessionType)

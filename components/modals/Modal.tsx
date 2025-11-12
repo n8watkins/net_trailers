@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState, useRef, useCallback, MouseEvent } from 'react'
 import MuiModal from '@mui/material/Modal'
-import { useAppStore } from '../../stores/appStore'
+import { useModalStore } from '../../stores/modalStore'
+import { useLoadingStore } from '../../stores/loadingStore'
 import { createErrorHandler } from '../../utils/errorHandler'
 import { getTitle, Content } from '../../typings'
 import {
@@ -39,16 +40,10 @@ function Modal() {
     // Debug settings
     const debugSettings = useDebugSettings()
 
-    // Zustand store
-    const {
-        modal,
-        closeModal,
-        setAutoPlayWithSound,
-        setLoading,
-        openListModal,
-        listModal,
-        openModal,
-    } = useAppStore()
+    // Zustand stores
+    const { modal, closeModal, setAutoPlayWithSound, openListModal, listModal, openModal } =
+        useModalStore()
+    const { setLoading } = useLoadingStore()
 
     // Extract modal state
     const showModal = modal.isOpen

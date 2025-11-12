@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import ToolTipMod from '../common/ToolTipMod'
-import { useAppStore } from '../../stores/appStore'
+import { useModalStore } from '../../stores/modalStore'
+import { useUIStore } from '../../stores/uiStore'
 import { useLikedHidden } from '../../hooks/useLikedHidden'
 import { Content } from '../../typings'
 import {
@@ -14,7 +15,8 @@ import {
 } from '@heroicons/react/24/solid'
 
 function LikeOptions() {
-    const { modal, showDemoMessage, setShowDemoMessage } = useAppStore()
+    const { modal } = useModalStore()
+    const { showDemoMessage, setShowDemoMessage } = useUIStore()
     const currentMovie = modal.content?.content || null
     const {
         isLiked,

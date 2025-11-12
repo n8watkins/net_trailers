@@ -1,12 +1,12 @@
 import { SparklesIcon } from '@heroicons/react/24/solid'
-import { useAppStore } from '../../stores/appStore'
+import { useModalStore } from '../../stores/modalStore'
 
 interface UpgradeAccountBannerProps {
     onOpenTutorial?: () => void
 }
 
 export function UpgradeAccountBanner({ onOpenTutorial }: UpgradeAccountBannerProps) {
-    const { openAuthModal } = useAppStore()
+    const { openAuthModal } = useModalStore()
 
     const handleCreateAccount = () => {
         openAuthModal('signup')

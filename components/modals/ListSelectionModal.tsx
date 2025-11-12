@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import { useAppStore } from '../../stores/appStore'
 import { useModalStore } from '../../stores/modalStore'
 import useUserData from '../../hooks/useUserData'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
@@ -24,8 +23,7 @@ import {
 } from '@heroicons/react/24/solid'
 
 function ListSelectionModal() {
-    const { listModal, closeListModal, openAuthModal } = useAppStore()
-    const { openCollectionBuilderModal } = useModalStore()
+    const { listModal, closeListModal, openAuthModal, openCollectionBuilderModal } = useModalStore()
     const { isGuest } = useAuthStatus()
     const { showError, showWatchlistAdd, showWatchlistRemove, showSuccess } = useToast()
     const {

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useAppStore } from '../../stores/appStore'
+import { useModalStore } from '../../stores/modalStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useCustomRowsStore } from '../../stores/customRowsStore'
 import { CustomRowsFirestore } from '../../utils/firestore/customRows'
@@ -23,7 +23,7 @@ type CreationMode = 'traditional' | 'smart'
  * - Smart: AI-powered with entity tagging and TMDB suggestions
  */
 function CustomRowModal() {
-    const { customRowModal, closeCustomRowModal, openAuthModal } = useAppStore()
+    const { customRowModal, closeCustomRowModal, openAuthModal } = useModalStore()
     const getUserId = useSessionStore((state: any) => state.getUserId)
     const sessionType = useSessionStore((state: any) => state.sessionType)
     const { addRow } = useCustomRowsStore()

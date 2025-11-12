@@ -4,7 +4,7 @@ import { ChevronLeftIcon, ChevronRightIcon, PencilIcon } from '@heroicons/react/
 import ContentCard from '../common/ContentCard'
 import { useSessionData } from '../../hooks/useSessionData'
 import { filterDislikedContent } from '../../utils/contentFilter'
-import { useAppStore } from '../../stores/appStore'
+import { useModalStore } from '../../stores/modalStore'
 import { uiLog, uiWarn } from '../../utils/debugLogger'
 
 // Helper for infinite scroll logging with emoji prefix
@@ -19,7 +19,7 @@ interface Props {
     pageType?: 'home' | 'movies' | 'tv' // Page type for row editing
 }
 function Row({ title, content, apiEndpoint, pageType }: Props) {
-    const openRowEditorModal = useAppStore((state) => state.openRowEditorModal)
+    const openRowEditorModal = useModalStore((state) => state.openRowEditorModal)
     const rowRef = useRef<HTMLDivElement>(null)
     const sentinelRef = useRef<HTMLDivElement>(null)
     const isLoadingRef = useRef(false)
