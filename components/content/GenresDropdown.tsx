@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { ChevronDownIcon, FilmIcon, TvIcon } from '@heroicons/react/24/outline'
+import { ChevronDownIcon, FilmIcon, TvIcon, Squares2X2Icon } from '@heroicons/react/24/outline'
 import { useRouter } from 'next/navigation'
 import {
     MOVIE_GENRES as movieGenres,
@@ -48,6 +48,7 @@ function GenresDropdown() {
                 className="headerLink cursor-pointer flex items-center space-x-1 hover:text-white transition-colors select-none"
                 onClick={() => setIsOpen(!isOpen)}
             >
+                <Squares2X2Icon className="h-5 w-5" />
                 <span>Genres</span>
                 <ChevronDownIcon
                     className={`h-5 w-5 transition-transform ${isOpen ? 'rotate-180' : ''}`}
