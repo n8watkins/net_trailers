@@ -983,6 +983,92 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
         }
     }
 
+    // Seed rankings (only for authenticated users, not guests)
+    if (!isGuest) {
+        console.log('  🏆 Creating sample rankings')
+
+        const { useRankingStore } = await import('../stores/rankingStore')
+        const userProfile = isGuest
+            ? { id: userId, name: 'Guest User', avatar: undefined }
+            : {
+                  id: userId,
+                  name: useAuthStore.getState().email || 'User',
+                  avatar: useAuthStore.getState().photoURL || undefined,
+              }
+
+        const sampleRankings = [
+            {
+                title: 'Top 5 Mind-Bending Movies',
+                description: 'Films that make you question reality',
+                items: [
+                    sampleMovies[8],
+                    sampleMovies[0],
+                    sampleMovies[16],
+                    sampleMovies[3],
+                    sampleMovies[20],
+                ], // Inception, Fight Club, Matrix, Dark Knight, Psycho
+                tags: ['Psychological Thrillers'],
+            },
+            {
+                title: 'Best Animated Films Ever',
+                description: 'My favorite animated masterpieces',
+                items: [
+                    sampleMovies[7],
+                    sampleMovies[9],
+                    sampleMovies[11],
+                    sampleMovies[21],
+                    sampleMovies[22],
+                ], // Your Name, Spirited Away, Toy Story, Lion King, Wall-E
+                tags: ['Anime', 'Pixar'],
+            },
+            {
+                title: 'Epic Sagas to Binge',
+                description: 'Long-form storytelling at its finest',
+                items: [
+                    sampleMovies[10],
+                    sampleMovies[17],
+                    sampleMovies[5],
+                    sampleMovies[4],
+                    sampleMovies[13],
+                ], // LOTR Return, LOTR Fellowship, Godfather, Shawshank, GoodFellas
+                tags: ['Fantasy Adventures', 'Classic Hollywood'],
+            },
+        ]
+
+        for (const rankingData of sampleRankings) {
+            try {
+                await useRankingStore
+                    .getState()
+                    .createRanking(userProfile.id, userProfile.name, userProfile.avatar, {
+                        title: rankingData.title,
+                        description: rankingData.description,
+                        isPublic: false, // Keep test rankings private
+                        tags: rankingData.tags,
+                        rankedItems: rankingData.items.map((item, index) => ({
+                            position: index + 1,
+                            content: {
+                                id: item.id,
+                                title: item.title || (item as TVShow).name || '',
+                                poster_path: item.poster_path || '',
+                                media_type: item.media_type,
+                                vote_average: item.vote_average || 0,
+                                release_date:
+                                    (item as Movie).release_date ||
+                                    (item as TVShow).first_air_date ||
+                                    '',
+                            },
+                            addedAt: Date.now(),
+                        })),
+                    })
+                console.log(`    ✅ Created ranking: ${rankingData.title}`)
+                // Small delay between rankings
+                await new Promise((resolve) => setTimeout(resolve, 200))
+            } catch (error) {
+                console.error(`Failed to create ranking "${rankingData.title}":`, error)
+            }
+        }
+    }
+
     // Wait a bit to ensure all async saves complete before page reload
     console.log('⏳ Waiting for all saves to complete...')
     await new Promise((resolve) => setTimeout(resolve, 2000))

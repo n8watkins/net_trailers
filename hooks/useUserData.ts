@@ -232,6 +232,8 @@ export default function useUserData() {
                 useNotificationStore.getState().clearNotifications()
                 console.log(`[useUserData] ✅ Cleared ${notifCountBefore} notifications from store`)
 
+                // Note: Guest users cannot create rankings, so no ranking cleanup needed
+
                 console.log('[useUserData] ✅ clearAccountData completed for guest')
             },
             exportAccountData: () => ({
@@ -386,6 +388,25 @@ export default function useUserData() {
                 console.log(
                     `[useUserData] ✅ Cleared ${notifCountBefore} notifications from Firestore`
                 )
+
+                // Clear rankings from store and Firestore
+                const { useRankingStore } = await import('../stores/rankingStore')
+                console.log('[useUserData] 🗑️ Clearing user rankings...')
+                const userRankings = useRankingStore.getState().rankings
+                console.log(`[useUserData] Found ${userRankings.length} rankings to delete`)
+
+                for (const ranking of userRankings) {
+                    try {
+                        await useRankingStore.getState().deleteRanking(userId, ranking.id)
+                        console.log(`[useUserData] ✅ Deleted ranking: ${ranking.title}`)
+                    } catch (error) {
+                        console.error(
+                            `[useUserData] Failed to delete ranking ${ranking.id}:`,
+                            error
+                        )
+                    }
+                }
+                console.log('[useUserData] ✅ Cleared all rankings from Firestore')
 
                 // Then clear local cache
                 sessionData.clearLocalCache()
