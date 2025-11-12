@@ -466,7 +466,7 @@ export default function SearchBar({
                             block w-full pl-10 pr-12 py-2.5
                             bg-[#0a0a0a] border-[0.5px] border-gray-600/30 rounded-lg
                             text-white placeholder-gray-400
-                            focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent
+                            focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-transparent
                             transition-all duration-300 ease-in-out
                             placeholder:text-ellipsis placeholder:overflow-hidden placeholder:whitespace-nowrap
                             text-sm sm:text-base select-none
