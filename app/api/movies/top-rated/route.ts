@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getTMDBHeaders } from '../../../../utils/tmdbFetch'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -14,20 +15,29 @@ export async function GET(request: NextRequest) {
         const childSafetyMode = searchParams.get('childSafetyMode')
         const childSafeMode = childSafetyMode === 'true'
 
-        let url: string
+        let url: URL
 
         if (childSafeMode) {
             // ✅ RATING-BASED FILTERING STRATEGY
             // Use discover endpoint with certification filter for all movies
             // certification.lte=PG-13 ensures only G, PG, and PG-13 rated movies
             // Sorted by rating for top-rated content
-            url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&page=${page}&sort_by=vote_average.desc&vote_count.gte=300&certification_country=US&certification.lte=PG-13&include_adult=false`
+            url = new URL(`${BASE_URL}/discover/movie`)
+            url.searchParams.set('language', 'en-US')
+            url.searchParams.set('page', page)
+            url.searchParams.set('sort_by', 'vote_average.desc')
+            url.searchParams.set('vote_count.gte', '300')
+            url.searchParams.set('certification_country', 'US')
+            url.searchParams.set('certification.lte', 'PG-13')
+            url.searchParams.set('include_adult', 'false')
         } else {
             // Normal mode - use top_rated endpoint
-            url = `${BASE_URL}/movie/top_rated?api_key=${API_KEY}&language=en-US&page=${page}`
+            url = new URL(`${BASE_URL}/movie/top_rated`)
+            url.searchParams.set('language', 'en-US')
+            url.searchParams.set('page', page)
         }
 
-        const response = await fetch(url)
+        const response = await fetch(url.toString(), { headers: getTMDBHeaders() })
 
         if (!response.ok) {
             throw new Error(`TMDB API error: ${response.status}`)

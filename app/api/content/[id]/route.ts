@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchTVContentRatings, hasMatureRating } from '../../../../utils/tvContentRatings'
 import { tmdbContentCache } from '../../../../utils/apiCache'
+import { getTMDBHeaders } from '../../../../utils/tmdbFetch'
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
@@ -34,9 +35,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         }
 
         // Try to fetch as a movie first
-        const movieResponse = await fetch(
-            `https://api.themoviedb.org/3/movie/${contentId}?api_key=${API_KEY}&language=en-US`
-        )
+        const movieUrl = new URL(`https://api.themoviedb.org/3/movie/${contentId}`)
+        movieUrl.searchParams.set('language', 'en-US')
+        const movieResponse = await fetch(movieUrl.toString(), { headers: getTMDBHeaders() })
 
         if (movieResponse.ok) {
             const movieData = await movieResponse.json()
@@ -65,9 +66,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         }
 
         // If movie fetch failed, try as a TV show
-        const tvResponse = await fetch(
-            `https://api.themoviedb.org/3/tv/${contentId}?api_key=${API_KEY}&language=en-US`
-        )
+        const tvUrl = new URL(`https://api.themoviedb.org/3/tv/${contentId}`)
+        tvUrl.searchParams.set('language', 'en-US')
+        const tvResponse = await fetch(tvUrl.toString(), { headers: getTMDBHeaders() })
 
         if (tvResponse.ok) {
             const tvData = await tvResponse.json()
