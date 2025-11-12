@@ -7,12 +7,10 @@
         /**/
         @apply bg-[#0a0a0a] text-white;
         /* CSS variables for scrollbar auto-hide */
-        --scrollbar-width: 0px;
-        --scrollbar-thumb: transparent;
+        --scrollbar-opacity: 0;
     }
     body.scrolling {
-        --scrollbar-width: 8px;
-        --scrollbar-thumb: rgb(220, 38, 38);
+        --scrollbar-opacity: 1;
     }
     header {
         @apply fixed top-0 z-30 flex  w-full justify-between items-center px-4 py-4 transition-all duration-[1s] lg:px-10 lg:py-6 bg-gradient-to-b from-[rgba(0,0,0,.7)] to-transparent;
@@ -112,11 +110,10 @@
 
 /* Red-themed scrollbar styling with auto-hide */
 ::-webkit-scrollbar {
-    width: var(--scrollbar-width, 0px);
-    height: var(--scrollbar-width, 0px);
-    transition:
-        width 0.3s ease,
-        height 0.3s ease;
+    width: 8px;
+    height: 8px;
+    opacity: var(--scrollbar-opacity, 0);
+    transition: opacity 0.3s ease;
 }
 
 ::-webkit-scrollbar-track {
@@ -125,9 +122,8 @@
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--scrollbar-thumb, transparent);
+    background: rgb(220, 38, 38); /* red-600 */
     border-radius: 9999px;
-    transition: background 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
