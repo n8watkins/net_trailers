@@ -108,7 +108,7 @@ export async function createRanking(
         id: rankingId,
         userId,
         userName: username,
-        userAvatar,
+        userAvatar: userAvatar || null,
         title: request.title.trim(),
         description: request.description?.trim(),
         rankedItems: [],

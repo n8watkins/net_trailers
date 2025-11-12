@@ -65,7 +65,7 @@ export async function createComment(
         rankingId: request.rankingId,
         userId,
         userName: username,
-        userAvatar,
+        userAvatar: userAvatar || null,
         type: request.type,
         positionNumber: request.positionNumber,
         text: request.text,
