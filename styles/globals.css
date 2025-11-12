@@ -6,6 +6,13 @@
     body {
         /**/
         @apply bg-[#0a0a0a] text-white;
+        /* CSS variables for scrollbar auto-hide */
+        --scrollbar-track: transparent;
+        --scrollbar-thumb: transparent;
+    }
+    body.scrolling {
+        --scrollbar-track: rgb(31, 41, 55);
+        --scrollbar-thumb: rgb(220, 38, 38);
     }
     header {
         @apply fixed top-0 z-30 flex  w-full justify-between items-center px-4 py-4 transition-all duration-[1s] lg:px-10 lg:py-6 bg-gradient-to-b from-[rgba(0,0,0,.7)] to-transparent;
@@ -110,13 +117,13 @@
 }
 
 ::-webkit-scrollbar-track {
-    background: transparent;
+    background: var(--scrollbar-track, transparent);
     border-radius: 9999px;
     transition: background 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: transparent;
+    background: var(--scrollbar-thumb, transparent);
     border-radius: 9999px;
     transition: background 0.3s ease;
 }
@@ -126,21 +133,8 @@
 }
 
 ::-webkit-scrollbar-corner {
-    background: transparent;
+    background: var(--scrollbar-track, transparent);
     transition: background 0.3s ease;
-}
-
-/* Show scrollbar when body has scrolling class */
-body.scrolling ::-webkit-scrollbar-track {
-    background: rgb(31, 41, 55); /* gray-800 */
-}
-
-body.scrolling ::-webkit-scrollbar-thumb {
-    background: rgb(220, 38, 38); /* red-600 */
-}
-
-body.scrolling ::-webkit-scrollbar-corner {
-    background: rgb(31, 41, 55); /* gray-800 */
 }
 
 .backGround {
