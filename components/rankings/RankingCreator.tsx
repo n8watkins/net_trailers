@@ -1284,11 +1284,11 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
                                         </button>
                                     </div>
                                     {tags.length > 0 && (
-                                        <div className="flex flex-wrap gap-2">
+                                        <div className="flex flex-wrap gap-2 mb-3">
                                             {tags.map((tag) => (
                                                 <span
                                                     key={tag}
-                                                    className="flex items-center gap-1 px-3 py-1 bg-zinc-800 text-gray-300 rounded-full"
+                                                    className="flex items-center gap-1 px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full border border-yellow-500/30"
                                                 >
                                                     {tag}
                                                     <button
@@ -1301,7 +1301,47 @@ export function RankingCreator({ onComplete, onCancel }: RankingCreatorProps) {
                                             ))}
                                         </div>
                                     )}
-                                    <p className="text-sm text-gray-500 mt-2">
+
+                                    {/* Suggested Tags from POPULAR_TAGS */}
+                                    {tags.length < RANKING_CONSTRAINTS.MAX_TAGS && (
+                                        <div className="mb-3">
+                                            <p className="text-xs text-gray-500 mb-2">
+                                                Suggested tags (click to add):
+                                            </p>
+                                            <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-2">
+                                                {POPULAR_TAGS.filter(
+                                                    (popularTag) => !tags.includes(popularTag.name)
+                                                )
+                                                    .slice(0, 15)
+                                                    .map((popularTag) => (
+                                                        <button
+                                                            key={popularTag.id}
+                                                            onClick={() => {
+                                                                if (
+                                                                    tags.length <
+                                                                        RANKING_CONSTRAINTS.MAX_TAGS &&
+                                                                    !tags.includes(popularTag.name)
+                                                                ) {
+                                                                    setTags([
+                                                                        ...tags,
+                                                                        popularTag.name,
+                                                                    ])
+                                                                }
+                                                            }}
+                                                            className="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-gray-300 hover:text-white rounded-full text-xs font-medium transition-colors"
+                                                            title={popularTag.description}
+                                                        >
+                                                            <span className="mr-1">
+                                                                {popularTag.emoji}
+                                                            </span>
+                                                            {popularTag.name}
+                                                        </button>
+                                                    ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <p className="text-sm text-gray-500">
                                         {tags.length}/{RANKING_CONSTRAINTS.MAX_TAGS} tags
                                     </p>
                                 </div>
