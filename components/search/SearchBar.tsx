@@ -472,8 +472,8 @@ export default function SearchBar({
                             text-base sm:text-lg select-none
                             autofill:bg-[#0a0a0a] autofill:text-white
                             autofill:shadow-[inset_0_0_0_1000px_#0a0a0a]
-                            shadow-[0_0_15px_rgba(220,38,38,0.3)]
-                            ${isFocused ? 'bg-[#0a0a0a] shadow-[0_0_20px_rgba(220,38,38,0.5)] border-red-500/50' : 'hover:shadow-[0_0_18px_rgba(220,38,38,0.4)] bg-[#0a0a0a]'}
+                            shadow-[0_0_20px_rgba(220,38,38,0.4)]
+                            ${isFocused ? 'bg-[#0a0a0a] shadow-[0_0_30px_rgba(220,38,38,0.6)] border-red-500/50' : 'hover:shadow-[0_0_25px_rgba(220,38,38,0.5)] bg-[#0a0a0a]'}
                         `}
                     />
 
