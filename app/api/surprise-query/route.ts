@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { sanitizeInput } from '@/utils/inputSanitization'
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY
 
@@ -26,8 +27,7 @@ export async function POST() {
                 'feel-good musicals',
                 'gritty crime dramas',
             ]
-            const randomQuery =
-                fallbackQueries[Math.floor(Math.random() * fallbackQueries.length)]
+            const randomQuery = fallbackQueries[Math.floor(Math.random() * fallbackQueries.length)]
             return NextResponse.json({ query: randomQuery })
         }
         lastRequestTime = now
@@ -71,7 +71,11 @@ export async function POST() {
         )
 
         if (!response.ok) {
-            console.error('[Surprise Query] Gemini API error:', response.status, response.statusText)
+            console.error(
+                '[Surprise Query] Gemini API error:',
+                response.status,
+                response.statusText
+            )
             throw new Error('Failed to generate query from Gemini')
         }
 
@@ -103,8 +107,7 @@ export async function POST() {
             'feel-good musicals',
             'gritty crime dramas',
         ]
-        const randomQuery =
-            fallbackQueries[Math.floor(Math.random() * fallbackQueries.length)]
+        const randomQuery = fallbackQueries[Math.floor(Math.random() * fallbackQueries.length)]
         return NextResponse.json({ query: randomQuery })
     }
 }

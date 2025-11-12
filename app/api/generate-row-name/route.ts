@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withAuth } from '@/lib/auth-middleware'
 import { consumeGeminiRateLimit } from '@/lib/geminiRateLimiter'
+import { sanitizeInput } from '@/utils/inputSanitization'
 
 /**
  * POST /api/generate-row-name

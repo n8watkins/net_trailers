@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAllEmojis, AVAILABLE_COLORS } from '../../../config/constants'
+import { sanitizeInput, sanitizeArray } from '@/utils/inputSanitization'
 
 interface WatchlistStyleRequest {
     name: string
@@ -15,6 +16,16 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Missing required field: name' }, { status: 400 })
         }
 
+        // Sanitize watchlist name
+        const nameResult = sanitizeInput(name, 1, 100)
+        if (!nameResult.isValid) {
+            return NextResponse.json({ error: nameResult.error }, { status: 400 })
+        }
+        const sanitizedName = nameResult.sanitized
+
+        // Sanitize content titles array
+        const sanitizedTitles = sanitizeArray(contentTitles, 100)
+
         const apiKey = process.env.GEMINI_API_KEY
         if (!apiKey) {
             console.error('GEMINI_API_KEY not configured')
@@ -27,13 +38,13 @@ export async function POST(request: NextRequest) {
 
         // Build prompt for Gemini
         const contentContext =
-            contentTitles.length > 0
-                ? `\n\nThis watchlist contains: ${contentTitles.slice(0, 10).join(', ')}`
+            sanitizedTitles.length > 0
+                ? `\n\nThis watchlist contains: ${sanitizedTitles.slice(0, 10).join(', ')}`
                 : ''
 
         const prompt = `You are a design expert helping choose an emoji icon and color for a movie/TV watchlist.
 
-Watchlist Name: "${name}"${contentContext}
+Watchlist Name: "${sanitizedName}"${contentContext}
 
 Available Emojis:
 ${allEmojis.join(' ')}

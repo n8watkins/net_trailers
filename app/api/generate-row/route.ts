@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withAuth } from '@/lib/auth-middleware'
 import { consumeGeminiRateLimit } from '@/lib/geminiRateLimiter'
+import { getTMDBHeaders } from '@/utils/tmdbFetch'
+import { sanitizeInput } from '@/utils/inputSanitization'
 
 /**
  * Simplified Smart Row Generator - Single API call does everything
@@ -21,6 +23,13 @@ async function handleGenerateRow(request: NextRequest, userId: string): Promise<
             return NextResponse.json({ error: 'Query too short' }, { status: 400 })
         }
 
+        // Sanitize user query
+        const queryResult = sanitizeInput(query, 3, 500)
+        if (!queryResult.isValid) {
+            return NextResponse.json({ error: queryResult.error }, { status: 400 })
+        }
+        const sanitizedQuery = queryResult.sanitized
+
         const apiKey = process.env.GEMINI_API_KEY
         if (!apiKey) {
             console.error('GEMINI_API_KEY not configured')
@@ -39,8 +48,11 @@ async function handleGenerateRow(request: NextRequest, userId: string): Promise<
         }
 
         // Build prompt for Gemini, including excluded IDs if present
-        const prompt = buildGenerateRowPrompt(query, excludedIds)
-        console.log('[Generate Row] Request received', { queryLength: query.length, userId })
+        const prompt = buildGenerateRowPrompt(sanitizedQuery, excludedIds)
+        console.log('[Generate Row] Request received', {
+            queryLength: sanitizedQuery.length,
+            userId,
+        })
 
         // Call Gemini API
         const response = await fetch(
@@ -275,8 +287,10 @@ async function enrichMoviesWithTMDB(
                     ? 'https://api.themoviedb.org/3/search/tv'
                     : 'https://api.themoviedb.org/3/search/movie'
 
-            const searchUrl = `${searchEndpoint}?api_key=${API_KEY}&query=${encodeURIComponent(movie.title)}`
-            const searchResponse = await fetch(searchUrl)
+            const searchUrl = new URL(searchEndpoint)
+            searchUrl.searchParams.append('language', 'en-US')
+            searchUrl.searchParams.append('query', movie.title)
+            const searchResponse = await fetch(searchUrl.toString(), { headers: getTMDBHeaders() })
 
             if (searchResponse.ok) {
                 const searchData = await searchResponse.json()

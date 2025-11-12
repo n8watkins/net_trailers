@@ -4,6 +4,7 @@ import { buildInitialPrompt, buildFollowUpPrompt } from '../../../utils/gemini/p
 import { parseGeminiResponse, enrichWithTMDB } from '../../../utils/gemini/responseParser'
 import { consumeGeminiRateLimit } from '@/lib/geminiRateLimiter'
 import { getRequestIdentity } from '@/lib/requestIdentity'
+import { sanitizeQuery } from '@/utils/inputSanitization'
 
 export async function POST(request: NextRequest) {
     try {
@@ -17,6 +18,13 @@ export async function POST(request: NextRequest) {
                 { status: 400 }
             )
         }
+
+        // Sanitize user query
+        const queryResult = sanitizeQuery(query)
+        if (!queryResult.isValid) {
+            return NextResponse.json({ error: queryResult.error }, { status: 400 })
+        }
+        const sanitizedQuery = queryResult.sanitized
 
         const apiKey = process.env.GEMINI_API_KEY
         if (!apiKey) {
@@ -37,14 +45,14 @@ export async function POST(request: NextRequest) {
 
         const isFollowUp = conversationHistory.length > 0 || existingMovies.length > 0
         const prompt = isFollowUp
-            ? buildFollowUpPrompt(query, mode, conversationHistory, existingMovies)
-            : buildInitialPrompt(query, mode)
+            ? buildFollowUpPrompt(sanitizedQuery, mode, conversationHistory, existingMovies)
+            : buildInitialPrompt(sanitizedQuery, mode)
 
         console.log('[AI Suggestions] Existing movies count:', existingMovies.length, { userId })
         console.log('[AI Suggestions] Sending prompt to Gemini:', {
             mode,
             isFollowUp,
-            query,
+            query: sanitizedQuery,
             userId,
         })
 

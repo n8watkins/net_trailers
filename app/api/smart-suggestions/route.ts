@@ -3,6 +3,7 @@ import { generateSmartSuggestions } from '../../../utils/smartRowSuggestions'
 import { consumeGeminiRateLimit } from '@/lib/geminiRateLimiter'
 import { getRequestIdentity } from '@/lib/requestIdentity'
 import { TMDBApiClient } from '@/utils/tmdbApi'
+import { sanitizeInput } from '@/utils/inputSanitization'
 
 export async function POST(request: NextRequest) {
     try {
@@ -15,8 +16,18 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Invalid entities' }, { status: 400 })
         }
 
-        let geminiInsights = null
+        // Sanitize rawText if present
+        let sanitizedRawText = ''
         if (rawText && rawText.trim().length >= 5) {
+            const textResult = sanitizeInput(rawText, 5, 500)
+            if (!textResult.isValid) {
+                return NextResponse.json({ error: textResult.error }, { status: 400 })
+            }
+            sanitizedRawText = textResult.sanitized
+        }
+
+        let geminiInsights = null
+        if (sanitizedRawText) {
             try {
                 const headers: Record<string, string> = { 'Content-Type': 'application/json' }
                 const authHeader = request.headers.get('authorization')
@@ -28,7 +39,7 @@ export async function POST(request: NextRequest) {
                     method: 'POST',
                     headers,
                     body: JSON.stringify({
-                        text: rawText,
+                        text: sanitizedRawText,
                         entities,
                         mediaType,
                     }),
@@ -49,7 +60,7 @@ export async function POST(request: NextRequest) {
             mediaType = 'both'
         }
 
-        const inputData = { entities, mediaType, rawText }
+        const inputData = { entities, mediaType, rawText: sanitizedRawText }
         const tmdbResult = await generateSmartSuggestions(inputData, seed)
 
         const mergedResult = geminiInsights
@@ -77,7 +88,7 @@ export async function POST(request: NextRequest) {
             const nameResult = await generateCreativeRowName(
                 request.nextUrl.origin,
                 entities,
-                rawText,
+                sanitizedRawText,
                 mediaType,
                 geminiInsights
             )
