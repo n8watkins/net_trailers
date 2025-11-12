@@ -10,13 +10,31 @@ import React, { useEffect, useRef, useState } from 'react'
  * - Auto-hides after 1 second of no scrolling
  * - Smooth fade in/out transitions
  * - Proportional thumb size based on content
+ * - Only shows on desktop (mobile devices have native overlay scrollbars)
  */
 export default function CustomScrollbar() {
     const thumbRef = useRef<HTMLDivElement>(null)
     const [isVisible, setIsVisible] = useState(false)
+    const [isTouchDevice, setIsTouchDevice] = useState(false)
     const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
+    // Detect if this is a touch device
     useEffect(() => {
+        const checkTouchDevice = () => {
+            setIsTouchDevice(
+                'ontouchstart' in window ||
+                    navigator.maxTouchPoints > 0 ||
+                    // @ts-ignore - for older browsers
+                    navigator.msMaxTouchPoints > 0
+            )
+        }
+        checkTouchDevice()
+    }, [])
+
+    useEffect(() => {
+        // Don't set up scroll tracking on touch devices
+        if (isTouchDevice) return
+
         const updateThumb = () => {
             if (!thumbRef.current) return
 
@@ -73,7 +91,10 @@ export default function CustomScrollbar() {
                 clearTimeout(hideTimeoutRef.current)
             }
         }
-    }, [])
+    }, [isTouchDevice])
+
+    // Don't render on touch devices (they have native overlay scrollbars)
+    if (isTouchDevice) return null
 
     return (
         <div className={`custom-scrollbar ${isVisible ? 'visible' : ''}`} aria-hidden="true">
