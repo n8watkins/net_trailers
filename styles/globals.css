@@ -11,7 +11,7 @@
         --scrollbar-thumb: transparent;
     }
     body.scrolling {
-        --scrollbar-track: rgb(31, 41, 55);
+        --scrollbar-track: transparent;
         --scrollbar-thumb: rgb(220, 38, 38);
     }
     header {
