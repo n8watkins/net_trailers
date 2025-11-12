@@ -280,8 +280,8 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                         priority
                         onClick={() => router.push('/')}
                     />
-                    <div className="hidden lg:flex items-center space-x-6 flex-1">
-                        <ul className="flex space-x-4 items-center">
+                    <div className="hidden lg:flex items-center space-x-8 flex-1">
+                        <ul className="flex space-x-6 items-center">
                             <li
                                 className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${pathname === '/' ? 'text-white hover:text-white font-semibold' : ''}`}
                                 onClick={() => router.push('/')}
