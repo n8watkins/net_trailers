@@ -28,10 +28,19 @@ export default function RankingDetailPage() {
     const { isInitialized } = useAuthStatus()
     const { showSuccess, showError } = useToast()
 
-    const { currentRanking, isLoading, error, loadRanking, deleteRanking, clearCurrentRanking } =
-        useRankingStore()
+    const {
+        currentRanking,
+        isLoading,
+        error,
+        loadRanking,
+        deleteRanking,
+        clearCurrentRanking,
+        createRanking,
+        updateRanking,
+    } = useRankingStore()
 
     const [isDeleting, setIsDeleting] = useState(false)
+    const [isCloning, setIsCloning] = useState(false)
 
     // Load ranking on mount
     useEffect(() => {
@@ -69,11 +78,44 @@ export default function RankingDetailPage() {
         showSuccess('Link Copied!', 'Ranking link copied to clipboard')
     }
 
+    const handleClone = async () => {
+        if (!userId || !currentRanking) return
+
+        setIsCloning(true)
+        try {
+            // Create a new ranking with cloned data
+            const clonedRankingId = await createRanking(
+                userId,
+                `${currentRanking.title} (Copy)`,
+                currentRanking.description || undefined,
+                currentRanking.itemCount,
+                currentRanking.isPublic,
+                currentRanking.tags
+            )
+
+            // Update with the ranked items
+            await updateRanking(userId, {
+                id: clonedRankingId,
+                rankedItems: currentRanking.rankedItems,
+            })
+
+            showSuccess(
+                'Ranking Cloned!',
+                'You can now edit your copy of this ranking in your rankings page'
+            )
+            router.push(`/rankings/${clonedRankingId}`)
+        } catch (error) {
+            console.error('Failed to clone ranking:', error)
+            showError('Failed to clone ranking')
+            setIsCloning(false)
+        }
+    }
+
     const handleBack = () => {
         router.push('/rankings')
     }
 
-    if (!isInitialized || isLoading || isDeleting) {
+    if (!isInitialized || isLoading || isDeleting || isCloning) {
         return (
             <SubPageLayout
                 title="Loading Ranking..."
@@ -134,6 +176,7 @@ export default function RankingDetailPage() {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onShare={handleShare}
+                onClone={handleClone}
             />
         </SubPageLayout>
     )

@@ -31,6 +31,7 @@ import {
     ShareIcon,
     GlobeAltIcon,
     LockClosedIcon,
+    DocumentDuplicateIcon,
 } from '@heroicons/react/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid'
 
@@ -40,6 +41,7 @@ interface RankingDetailProps {
     onEdit?: () => void
     onDelete?: () => void
     onShare?: () => void
+    onClone?: () => void
 }
 
 export function RankingDetail({
@@ -48,6 +50,7 @@ export function RankingDetail({
     onEdit,
     onDelete,
     onShare,
+    onClone,
 }: RankingDetailProps) {
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
@@ -179,6 +182,15 @@ export function RankingDetail({
                                 </button>
                             </>
                         )}
+                        {!isOwner && userId && (
+                            <button
+                                onClick={onClone}
+                                className="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
+                                title="Clone this ranking to your account"
+                            >
+                                <DocumentDuplicateIcon className="w-5 h-5" />
+                            </button>
+                        )}
                         <button
                             onClick={handleShare}
                             className="p-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors"
@@ -285,55 +297,77 @@ export function RankingDetail({
                     Ranked Items ({ranking.rankedItems.length} of {ranking.itemCount})
                 </h2>
 
-                <div className="space-y-4">
+                <div className="space-y-3">
                     {ranking.rankedItems.map((item) => (
                         <div
                             key={item.content.id}
-                            className="group flex items-center gap-4 bg-zinc-800 hover:bg-zinc-750 rounded-lg p-4 transition-colors"
+                            className="group relative flex items-start gap-4 bg-zinc-800 hover:bg-zinc-750 rounded-lg p-4 transition-colors border border-zinc-700 hover:border-zinc-600"
                         >
-                            {/* Position number */}
-                            <div className="flex-shrink-0 w-12 h-12 bg-yellow-500 text-black font-bold rounded-full flex items-center justify-center text-xl">
-                                {item.position}
+                            {/* Position number - IMDb style with gradient background */}
+                            <div className="relative flex-shrink-0">
+                                <div className="absolute -left-2 -top-2 w-16 h-16 bg-gradient-to-br from-yellow-400 via-yellow-500 to-yellow-600 rounded-tl-lg rounded-br-3xl shadow-lg flex items-center justify-center">
+                                    <span className="text-2xl font-black text-black drop-shadow-md">
+                                        {item.position}
+                                    </span>
+                                </div>
                             </div>
 
-                            {/* Poster */}
-                            <div className="relative w-16 h-24 flex-shrink-0">
+                            {/* Poster - Larger like IMDb */}
+                            <div className="relative w-24 h-36 flex-shrink-0 ml-12">
                                 <Image
                                     src={getPosterPath(item.content)}
                                     alt={getTitle(item.content)}
                                     fill
-                                    sizes="64px"
-                                    className="object-cover rounded-md"
+                                    sizes="96px"
+                                    className="object-cover rounded-md shadow-md"
                                 />
+                                {/* Checkmark overlay like IMDb */}
+                                <div className="absolute -top-2 -left-2 w-8 h-8 bg-yellow-500 rounded-sm flex items-center justify-center shadow-lg">
+                                    <svg
+                                        className="w-5 h-5 text-black"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={3}
+                                            d="M5 13l4 4L19 7"
+                                        />
+                                    </svg>
+                                </div>
                             </div>
 
                             {/* Content info */}
-                            <div className="flex-1 min-w-0">
-                                <h3 className="text-lg font-bold text-white group-hover:text-yellow-400 transition-colors truncate">
-                                    {getTitle(item.content)}
-                                </h3>
-                                <p className="text-sm text-gray-400">
-                                    {getYear(item.content)} •{' '}
-                                    {item.content.media_type === 'movie' ? 'Movie' : 'TV Show'}
-                                </p>
+                            <div className="flex-1 min-w-0 pt-1">
+                                <div className="flex items-start justify-between gap-4 mb-2">
+                                    <h3 className="text-xl font-bold text-white group-hover:text-yellow-400 transition-colors">
+                                        {getTitle(item.content)}
+                                    </h3>
+                                    {/* Rating if available */}
+                                    {item.content.vote_average && (
+                                        <div className="flex-shrink-0 flex items-center gap-1 bg-zinc-900 px-2 py-1 rounded">
+                                            <span className="text-yellow-400 text-lg">★</span>
+                                            <span className="font-bold text-white">
+                                                {item.content.vote_average.toFixed(1)}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
+                                    <span className="font-medium">{getYear(item.content)}</span>
+                                    <span>•</span>
+                                    <span>
+                                        {item.content.media_type === 'movie' ? 'Movie' : 'TV Show'}
+                                    </span>
+                                </div>
                                 {item.note && (
-                                    <p className="text-sm text-gray-300 mt-1 line-clamp-2">
+                                    <p className="text-sm text-gray-300 mt-2 leading-relaxed">
                                         {item.note}
                                     </p>
                                 )}
                             </div>
-
-                            {/* Rating if available */}
-                            {item.content.vote_average && (
-                                <div className="flex-shrink-0 text-gray-400">
-                                    <div className="flex items-center gap-1">
-                                        <span className="text-yellow-400">★</span>
-                                        <span className="font-medium">
-                                            {item.content.vote_average.toFixed(1)}
-                                        </span>
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     ))}
                 </div>
