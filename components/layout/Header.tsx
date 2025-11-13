@@ -20,7 +20,6 @@ import {
     UsersIcon,
     SparklesIcon,
     ArrowPathIcon,
-    BeakerIcon,
 } from '@heroicons/react/24/outline'
 import {
     UserIcon as UserIconSolid,
@@ -348,23 +347,14 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                             <span className="relative z-10">Community</span>
                         </div>
 
-                        {/* Test Link - After Community */}
                         <div
-                            className={`headerLink cursor-pointer flex items-center space-x-1 select-none group relative overflow-visible ${pathname === '/test' ? 'text-white hover:text-white font-semibold' : ''}`}
-                            onClick={() => router.push('/test')}
-                        >
-                            <span className="absolute -inset-3 opacity-0 group-hover:opacity-40 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-red-400 via-yellow-400 via-25% via-green-400 via-50% via-blue-400 via-75% to-purple-400 rounded-md blur-lg transition-opacity duration-400 group-hover:animate-[rainbow-glow_3s_linear_infinite]" />
-                            <BeakerIcon className="h-5 w-5 relative z-10" />
-                            <span className="relative z-10">Test</span>
-                        </div>
-
-                        <div
-                            className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${
+                            className={`headerLink cursor-pointer flex items-center space-x-1 select-none group relative overflow-visible ${
                                 isRandomLoading ? 'cursor-wait' : ''
                             }`}
                             onClick={() => !isRandomLoading && handleRandomContent()}
                             title="Jump to a random movie or TV show"
                         >
+                            <span className="absolute -inset-3 opacity-0 group-hover:opacity-50 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-red-400 via-red-300/60 via-40% to-transparent rounded-md blur-lg transition-opacity duration-400" />
                             <SparklesIcon
                                 className={`h-5 w-5 relative z-10 ${isRandomLoading ? 'animate-pulse' : ''}`}
                             />
@@ -612,7 +602,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                         </li>
                                         <li>
                                             <button
-                                                className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
+                                                className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none group relative overflow-visible ${
                                                     isRandomLoading
                                                         ? 'cursor-wait'
                                                         : 'hover:bg-white/10'
@@ -622,6 +612,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                                 }
                                                 disabled={isRandomLoading}
                                             >
+                                                <span className="absolute -inset-3 opacity-0 group-hover:opacity-50 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-red-400 via-red-300/60 via-40% to-transparent rounded-lg blur-lg transition-opacity duration-400" />
                                                 <SparklesIcon
                                                     className={`h-5 w-5 relative z-10 ${isRandomLoading ? 'animate-pulse' : ''}`}
                                                 />
