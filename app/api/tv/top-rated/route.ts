@@ -5,6 +5,9 @@ import { apiError } from '../../../../utils/debugLogger'
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
 
+// Cache this route for 1 hour
+export const revalidate = 3600
+
 export async function GET(request: NextRequest) {
     if (!API_KEY) {
         return NextResponse.json({ message: 'TMDB API key not configured' }, { status: 500 })
