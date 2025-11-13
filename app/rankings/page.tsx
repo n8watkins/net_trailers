@@ -216,7 +216,7 @@ export default function RankingsPage() {
 
                     {/* Search Input */}
                     {rankings.length > 0 && (
-                        <div className="relative mb-6 w-full sm:max-w-md">
+                        <div className="relative mb-6 w-full sm:max-w-lg">
                             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                             <input
                                 type="text"
@@ -257,7 +257,7 @@ export default function RankingsPage() {
                 <>
                     {/* Search Input */}
                     {userComments.length > 0 && (
-                        <div className="relative mb-6 w-full sm:max-w-md">
+                        <div className="relative mb-6 w-full sm:max-w-lg">
                             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                             <input
                                 type="text"
@@ -328,7 +328,7 @@ export default function RankingsPage() {
                 <>
                     {/* Search Input */}
                     {likedRankings.length > 0 && (
-                        <div className="relative mb-6 w-full sm:max-w-md">
+                        <div className="relative mb-6 w-full sm:max-w-lg">
                             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                             <input
                                 type="text"
