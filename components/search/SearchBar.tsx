@@ -93,7 +93,7 @@ export default function SearchBar({
         if (isListening && transcript) {
             updateQuery(transcript)
         }
-    }, [transcript, isListening, updateQuery])
+    }, [transcript, isListening])
 
     const [isMounted, setIsMounted] = useState(false)
     const [isFocused, setIsFocused] = useState(false)

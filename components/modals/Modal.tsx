@@ -519,8 +519,6 @@ function Modal() {
         addHiddenMovie,
         removeHiddenMovie,
         currentMovie,
-        showContentShown,
-        showContentHidden,
         listModal,
     ])
 
@@ -779,25 +777,6 @@ function Modal() {
                                                     </button>
                                                 </ToolTipMod>
                                             )}
-                                            <ToolTipMod title="Surprise Me">
-                                                <button
-                                                    className={`group relative p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-colors duration-200 ${
-                                                        isRandomLoading
-                                                            ? 'cursor-wait opacity-80'
-                                                            : ''
-                                                    }`}
-                                                    onClick={handleRandomContent}
-                                                    disabled={isRandomLoading}
-                                                >
-                                                    <SparklesIcon
-                                                        className={`h-4 w-4 sm:h-6 sm:w-6 text-white/70 transition-colors ${
-                                                            isRandomLoading
-                                                                ? 'animate-spin text-red-400'
-                                                                : 'group-hover:text-red-400'
-                                                        }`}
-                                                    />
-                                                </button>
-                                            </ToolTipMod>
 
                                             {/* Like Button */}
                                             <SimpleLikeButton />
@@ -847,6 +826,26 @@ function Modal() {
                                                         </ToolTipMod>
                                                     )
                                                 })()}
+
+                                            <ToolTipMod title="Surprise Me">
+                                                <button
+                                                    className={`group relative p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-colors duration-200 ${
+                                                        isRandomLoading
+                                                            ? 'cursor-wait opacity-80'
+                                                            : ''
+                                                    }`}
+                                                    onClick={handleRandomContent}
+                                                    disabled={isRandomLoading}
+                                                >
+                                                    <SparklesIcon
+                                                        className={`h-4 w-4 sm:h-6 sm:w-6 text-white/70 transition-colors ${
+                                                            isRandomLoading
+                                                                ? 'animate-spin text-red-400'
+                                                                : 'group-hover:text-red-400'
+                                                        }`}
+                                                    />
+                                                </button>
+                                            </ToolTipMod>
                                         </div>
 
                                         {/* Right side buttons - Video Controls */}
@@ -873,7 +872,7 @@ function Modal() {
 
                     {/* Content Section - Below Video - Hidden in fullscreen */}
                     {!fullScreen && (
-                        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 flex-1 overflow-y-auto min-h-[450px]">
+                        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 flex-1 overflow-y-auto min-h-[450px] modal-scrollbar">
                             {/* Content Metadata - Show immediately with card data, enhanced data loads in background */}
                             <ContentMetadata
                                 content={(enhancedMovieData || currentMovie) as Content}

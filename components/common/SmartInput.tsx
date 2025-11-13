@@ -167,7 +167,7 @@ export function SmartInput({
             setLocalValue(transcript)
             onChange(transcript)
         }
-    }, [transcript, isListening, onChange])
+    }, [transcript, isListening])
 
     // Sync local value with prop
     useEffect(() => {
