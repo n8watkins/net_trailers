@@ -48,6 +48,12 @@ function Banner({ trending, variant = 'default' }: Props) {
                         img.onload = () => {
                             setImagesLoaded((prev) => new Set(prev).add(index))
                         }
+                        img.onerror = () => {
+                            // Even if preload fails, mark as "loaded" so image can render
+                            // Next.js Image component will handle the actual loading
+                            console.warn(`Failed to preload image: ${imgUrl}`)
+                            setImagesLoaded((prev) => new Set(prev).add(index))
+                        }
                         img.src = `${BASE_URL}/${imgUrl}`
                     }
                 })
