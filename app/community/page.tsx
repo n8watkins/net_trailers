@@ -418,6 +418,7 @@ function RankingsTab({
 function ForumsTab() {
     const { threads, isLoadingThreads, loadThreads, createThread } = useForumStore()
     const getUserId = useSessionStore((state) => state.getUserId)
+    const { isGuest } = useAuthStatus()
     const [selectedCategory, setSelectedCategory] = useState<ForumCategory | 'all'>('all')
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
@@ -432,9 +433,21 @@ function ForumsTab() {
         category: ForumCategory,
         tags: string[]
     ) => {
+        if (isGuest) {
+            alert('Please sign in to create threads')
+            return
+        }
         const userId = getUserId()
         await createThread(userId, title, content, category, tags)
         await loadThreads() // Reload threads
+    }
+
+    const handleOpenCreateModal = () => {
+        if (isGuest) {
+            alert('Please sign in to create threads')
+            return
+        }
+        setIsCreateModalOpen(true)
     }
 
     return (
@@ -470,11 +483,17 @@ function ForumsTab() {
 
                 {/* Create thread button */}
                 <button
-                    onClick={() => setIsCreateModalOpen(true)}
-                    className="px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
+                    onClick={handleOpenCreateModal}
+                    className={`px-5 py-2.5 font-semibold rounded-lg transition-colors flex items-center gap-2 ${
+                        isGuest
+                            ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                            : 'bg-blue-500 hover:bg-blue-600 text-white'
+                    }`}
+                    disabled={isGuest}
+                    title={isGuest ? 'Sign in to create threads' : 'Create a new thread'}
                 >
                     <ChatBubbleLeftRightIcon className="w-5 h-5" />
-                    New Thread
+                    New Thread {isGuest && '(Sign in required)'}
                 </button>
             </div>
 
@@ -497,10 +516,15 @@ function ForumsTab() {
                         start a debate about your favorite movies and shows.
                     </p>
                     <button
-                        onClick={() => setIsCreateModalOpen(true)}
-                        className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors"
+                        onClick={handleOpenCreateModal}
+                        className={`px-6 py-3 font-semibold rounded-lg transition-colors ${
+                            isGuest
+                                ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                                : 'bg-blue-500 hover:bg-blue-600 text-white'
+                        }`}
+                        disabled={isGuest}
                     >
-                        Create First Thread
+                        {isGuest ? 'Sign in to Create Threads' : 'Create First Thread'}
                     </button>
                 </div>
             )}
@@ -521,6 +545,7 @@ function ForumsTab() {
 function PollsTab() {
     const { polls, isLoadingPolls, loadPolls, createPoll, voteOnPoll } = useForumStore()
     const getUserId = useSessionStore((state) => state.getUserId)
+    const { isGuest } = useAuthStatus()
     const [selectedCategory, setSelectedCategory] = useState<ForumCategory | 'all'>('all')
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [userVotes, setUserVotes] = useState<Record<string, string[]>>({})
@@ -538,6 +563,10 @@ function PollsTab() {
         isMultipleChoice?: boolean,
         expiresInDays?: number
     ) => {
+        if (isGuest) {
+            alert('Please sign in to create polls')
+            return
+        }
         const userId = getUserId()
         await createPoll(
             userId,
@@ -551,7 +580,19 @@ function PollsTab() {
         await loadPolls() // Reload polls
     }
 
+    const handleOpenCreateModal = () => {
+        if (isGuest) {
+            alert('Please sign in to create polls')
+            return
+        }
+        setIsCreateModalOpen(true)
+    }
+
     const handleVote = async (pollId: string, optionIds: string[]) => {
+        if (isGuest) {
+            alert('Please sign in to vote on polls')
+            return
+        }
         const userId = getUserId()
         try {
             await voteOnPoll(userId, pollId, optionIds)
@@ -596,11 +637,17 @@ function PollsTab() {
 
                 {/* Create poll button */}
                 <button
-                    onClick={() => setIsCreateModalOpen(true)}
-                    className="px-5 py-2.5 bg-pink-500 hover:bg-pink-600 text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
+                    onClick={handleOpenCreateModal}
+                    className={`px-5 py-2.5 font-semibold rounded-lg transition-colors flex items-center gap-2 ${
+                        isGuest
+                            ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                            : 'bg-pink-500 hover:bg-pink-600 text-white'
+                    }`}
+                    disabled={isGuest}
+                    title={isGuest ? 'Sign in to create polls' : 'Create a new poll'}
                 >
                     <ChartBarIcon className="w-5 h-5" />
-                    New Poll
+                    New Poll {isGuest && '(Sign in required)'}
                 </button>
             </div>
 
@@ -623,10 +670,15 @@ function PollsTab() {
                         topics, favorite shows, or anything else.
                     </p>
                     <button
-                        onClick={() => setIsCreateModalOpen(true)}
-                        className="px-6 py-3 bg-pink-500 hover:bg-pink-600 text-white font-semibold rounded-lg transition-colors"
+                        onClick={handleOpenCreateModal}
+                        className={`px-6 py-3 font-semibold rounded-lg transition-colors ${
+                            isGuest
+                                ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                                : 'bg-pink-500 hover:bg-pink-600 text-white'
+                        }`}
+                        disabled={isGuest}
                     >
-                        Create First Poll
+                        {isGuest ? 'Sign in to Create Polls' : 'Create First Poll'}
                     </button>
                 </div>
             )}
@@ -639,7 +691,9 @@ function PollsTab() {
                             key={poll.id}
                             poll={poll}
                             userVote={userVotes[poll.id] || []}
-                            onVote={(optionIds) => handleVote(poll.id, optionIds)}
+                            onVote={
+                                isGuest ? undefined : (optionIds) => handleVote(poll.id, optionIds)
+                            }
                         />
                     ))}
                 </div>

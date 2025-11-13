@@ -232,26 +232,8 @@ export default function useUserData() {
                 useNotificationStore.getState().clearNotifications()
                 console.log(`[useUserData] ✅ Cleared ${notifCountBefore} notifications from store`)
 
-                // Clear forum threads and polls (guest users can create these)
-                const { useForumStore } = await import('../stores/forumStore')
-                if (guestId) {
-                    console.log('[useUserData] 🗑️ Clearing forum content...')
-                    const { threads, polls } = useForumStore.getState()
-                    const userThreads = threads.filter((t) => t.userId === guestId)
-                    const userPolls = polls.filter((p) => p.userId === guestId)
-
-                    for (const thread of userThreads) {
-                        await useForumStore.getState().deleteThread(guestId, thread.id)
-                    }
-                    for (const poll of userPolls) {
-                        await useForumStore.getState().deletePoll(guestId, poll.id)
-                    }
-                    console.log(
-                        `[useUserData] ✅ Cleared ${userThreads.length} threads and ${userPolls.length} polls from store`
-                    )
-                }
-
-                // Note: Guest users cannot create rankings, so no ranking cleanup needed
+                // Note: Guest users cannot create rankings, forum threads, or polls
+                // These are community features that require authentication
 
                 console.log('[useUserData] ✅ clearAccountData completed for guest')
             },

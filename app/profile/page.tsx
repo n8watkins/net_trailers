@@ -219,7 +219,9 @@ export default function ProfilePage() {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+            <div
+                className={`grid grid-cols-2 md:grid-cols-4 gap-4 ${isGuest ? 'lg:grid-cols-5' : 'lg:grid-cols-8'}`}
+            >
                 {/* Watch Later */}
                 <Link
                     href="/watch-later"
@@ -280,41 +282,47 @@ export default function ProfilePage() {
                     <p className="text-3xl font-bold text-white">{stats.totalCollections}</p>
                 </Link>
 
-                {/* Rankings */}
-                <Link
-                    href="/rankings"
-                    className="bg-gradient-to-br from-yellow-900/30 to-yellow-800/20 border border-yellow-700/30 rounded-xl p-6 hover:border-yellow-600/50 transition-all duration-200 group"
-                >
-                    <div className="flex items-center gap-3 mb-2">
-                        <TrophyIcon className="w-6 h-6 text-yellow-400 group-hover:scale-110 transition-transform" />
-                        <h3 className="text-sm font-medium text-gray-400">Rankings</h3>
-                    </div>
-                    <p className="text-3xl font-bold text-white">{stats.totalRankings}</p>
-                </Link>
+                {/* Rankings - Auth only */}
+                {!isGuest && (
+                    <Link
+                        href="/rankings"
+                        className="bg-gradient-to-br from-yellow-900/30 to-yellow-800/20 border border-yellow-700/30 rounded-xl p-6 hover:border-yellow-600/50 transition-all duration-200 group"
+                    >
+                        <div className="flex items-center gap-3 mb-2">
+                            <TrophyIcon className="w-6 h-6 text-yellow-400 group-hover:scale-110 transition-transform" />
+                            <h3 className="text-sm font-medium text-gray-400">Rankings</h3>
+                        </div>
+                        <p className="text-3xl font-bold text-white">{stats.totalRankings}</p>
+                    </Link>
+                )}
 
-                {/* Forum Threads */}
-                <Link
-                    href="/community?tab=forums"
-                    className="bg-gradient-to-br from-cyan-900/30 to-cyan-800/20 border border-cyan-700/30 rounded-xl p-6 hover:border-cyan-600/50 transition-all duration-200 group"
-                >
-                    <div className="flex items-center gap-3 mb-2">
-                        <ChatBubbleLeftRightIcon className="w-6 h-6 text-cyan-400 group-hover:scale-110 transition-transform" />
-                        <h3 className="text-sm font-medium text-gray-400">Threads</h3>
-                    </div>
-                    <p className="text-3xl font-bold text-white">{stats.totalThreads}</p>
-                </Link>
+                {/* Forum Threads - Auth only */}
+                {!isGuest && (
+                    <Link
+                        href="/community?tab=forums"
+                        className="bg-gradient-to-br from-cyan-900/30 to-cyan-800/20 border border-cyan-700/30 rounded-xl p-6 hover:border-cyan-600/50 transition-all duration-200 group"
+                    >
+                        <div className="flex items-center gap-3 mb-2">
+                            <ChatBubbleLeftRightIcon className="w-6 h-6 text-cyan-400 group-hover:scale-110 transition-transform" />
+                            <h3 className="text-sm font-medium text-gray-400">Threads</h3>
+                        </div>
+                        <p className="text-3xl font-bold text-white">{stats.totalThreads}</p>
+                    </Link>
+                )}
 
-                {/* Polls */}
-                <Link
-                    href="/community?tab=polls"
-                    className="bg-gradient-to-br from-pink-900/30 to-pink-800/20 border border-pink-700/30 rounded-xl p-6 hover:border-pink-600/50 transition-all duration-200 group"
-                >
-                    <div className="flex items-center gap-3 mb-2">
-                        <PollIcon className="w-6 h-6 text-pink-400 group-hover:scale-110 transition-transform" />
-                        <h3 className="text-sm font-medium text-gray-400">Polls</h3>
-                    </div>
-                    <p className="text-3xl font-bold text-white">{stats.totalPolls}</p>
-                </Link>
+                {/* Polls - Auth only */}
+                {!isGuest && (
+                    <Link
+                        href="/community?tab=polls"
+                        className="bg-gradient-to-br from-pink-900/30 to-pink-800/20 border border-pink-700/30 rounded-xl p-6 hover:border-pink-600/50 transition-all duration-200 group"
+                    >
+                        <div className="flex items-center gap-3 mb-2">
+                            <PollIcon className="w-6 h-6 text-pink-400 group-hover:scale-110 transition-transform" />
+                            <h3 className="text-sm font-medium text-gray-400">Polls</h3>
+                        </div>
+                        <p className="text-3xl font-bold text-white">{stats.totalPolls}</p>
+                    </Link>
+                )}
             </div>
 
             {/* Content Breakdown */}
@@ -362,7 +370,9 @@ export default function ProfilePage() {
             {/* Quick Links */}
             <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-6">
                 <h2 className="text-xl font-semibold text-white mb-4">Quick Links</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                <div
+                    className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 ${isGuest ? 'lg:grid-cols-3' : 'lg:grid-cols-6'}`}
+                >
                     <Link
                         href="/watch-history"
                         className="flex items-center gap-3 p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
@@ -377,27 +387,31 @@ export default function ProfilePage() {
                         <RectangleStackIcon className="w-5 h-5 text-blue-400" />
                         <span className="text-white font-medium">My Collections</span>
                     </Link>
-                    <Link
-                        href="/rankings"
-                        className="flex items-center gap-3 p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
-                    >
-                        <TrophyIcon className="w-5 h-5 text-yellow-400" />
-                        <span className="text-white font-medium">My Rankings</span>
-                    </Link>
-                    <Link
-                        href="/community?tab=forums"
-                        className="flex items-center gap-3 p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
-                    >
-                        <ChatBubbleLeftRightIcon className="w-5 h-5 text-cyan-400" />
-                        <span className="text-white font-medium">My Threads</span>
-                    </Link>
-                    <Link
-                        href="/community?tab=polls"
-                        className="flex items-center gap-3 p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
-                    >
-                        <PollIcon className="w-5 h-5 text-pink-400" />
-                        <span className="text-white font-medium">My Polls</span>
-                    </Link>
+                    {!isGuest && (
+                        <>
+                            <Link
+                                href="/rankings"
+                                className="flex items-center gap-3 p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
+                            >
+                                <TrophyIcon className="w-5 h-5 text-yellow-400" />
+                                <span className="text-white font-medium">My Rankings</span>
+                            </Link>
+                            <Link
+                                href="/community?tab=forums"
+                                className="flex items-center gap-3 p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
+                            >
+                                <ChatBubbleLeftRightIcon className="w-5 h-5 text-cyan-400" />
+                                <span className="text-white font-medium">My Threads</span>
+                            </Link>
+                            <Link
+                                href="/community?tab=polls"
+                                className="flex items-center gap-3 p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
+                            >
+                                <PollIcon className="w-5 h-5 text-pink-400" />
+                                <span className="text-white font-medium">My Polls</span>
+                            </Link>
+                        </>
+                    )}
                     <Link
                         href="/settings"
                         className="flex items-center gap-3 p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"

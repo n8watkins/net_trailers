@@ -74,6 +74,10 @@ export default function RankingsPage() {
     }, [isInitialized, userId, isGuest, loadUserRankings])
 
     const handleCreateNew = () => {
+        if (isGuest) {
+            alert('Please sign in to create rankings')
+            return
+        }
         router.push('/rankings/new')
     }
 
@@ -130,10 +134,16 @@ export default function RankingsPage() {
             headerActions={
                 <button
                     onClick={handleCreateNew}
-                    className="flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-black font-medium rounded-lg transition-colors"
+                    className={`flex items-center gap-2 px-4 py-2 font-medium rounded-lg transition-colors ${
+                        isGuest
+                            ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                            : 'bg-yellow-500 hover:bg-yellow-400 text-black'
+                    }`}
+                    disabled={isGuest}
+                    title={isGuest ? 'Sign in to create rankings' : 'Create a new ranking'}
                 >
                     <PlusIcon className="w-5 h-5" />
-                    <span>Create Ranking</span>
+                    <span>Create Ranking {isGuest && '(Sign in required)'}</span>
                 </button>
             }
         >
