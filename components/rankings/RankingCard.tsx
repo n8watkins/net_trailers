@@ -72,14 +72,7 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
                     <div className="relative h-48 bg-gradient-to-br from-zinc-800/50 to-zinc-900">
                         <div className="absolute inset-0 flex justify-center items-center gap-2 p-4">
                             {topItems.map((item, index) => (
-                                <div
-                                    key={item.content.id}
-                                    className="relative flex-1 h-full"
-                                    style={{
-                                        transform: `scale(${1 - index * 0.05}) translateY(${index * 4}px)`,
-                                        zIndex: 3 - index,
-                                    }}
-                                >
+                                <div key={item.content.id} className="relative flex-1 h-full">
                                     <Image
                                         src={getPosterPath(item.content)}
                                         alt={getTitle(item.content)}
@@ -87,10 +80,6 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
                                         sizes="(max-width: 768px) 33vw, (max-width: 1200px) 25vw, 200px"
                                         className="object-cover rounded-md shadow-lg"
                                     />
-                                    {/* Subtle position indicator */}
-                                    <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-sm text-white font-semibold rounded px-2 py-0.5 text-xs">
-                                        #{item.position}
-                                    </div>
                                 </div>
                             ))}
                         </div>

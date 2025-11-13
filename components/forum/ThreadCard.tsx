@@ -9,6 +9,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { Thread } from '@/types/forum'
 import { getCategoryInfo } from '@/utils/forumCategories'
 import { ChatBubbleLeftIcon, EyeIcon, HeartIcon, ClockIcon } from '@heroicons/react/24/outline'
@@ -33,12 +34,21 @@ interface ThreadCardProps {
 }
 
 export function ThreadCard({ thread, onClick }: ThreadCardProps) {
+    const router = useRouter()
     const category = getCategoryInfo(thread.category)
     const isLiked = false // TODO: Check if user has liked this thread
 
+    const handleClick = () => {
+        if (onClick) {
+            onClick()
+        } else {
+            router.push(`/community/threads/${thread.id}`)
+        }
+    }
+
     return (
         <div
-            onClick={onClick}
+            onClick={handleClick}
             className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 hover:border-zinc-700 transition-colors cursor-pointer"
         >
             {/* Header */}

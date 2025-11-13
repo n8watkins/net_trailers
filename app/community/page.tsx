@@ -38,6 +38,7 @@ import {
     ChatBubbleLeftRightIcon,
     ChartBarIcon,
     SparklesIcon,
+    MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline'
 
 type TabType = 'rankings' | 'forums' | 'polls'
@@ -59,6 +60,9 @@ export default function CommunityPage() {
 
     const [activeTab, setActiveTab] = useState<TabType>('rankings')
     const [filterByTag, setFilterByTag] = useState<string | null>(null)
+    const [searchQuery, setSearchQuery] = useState('')
+
+    const { threads, polls } = useForumStore()
 
     // Read tab from URL parameter
     useEffect(() => {
@@ -69,12 +73,18 @@ export default function CommunityPage() {
         }
     }, [])
 
+    const [rankingsLimit, setRankingsLimit] = useState(20)
+
     // Load community rankings on mount and when sort changes
     useEffect(() => {
         if (isInitialized) {
-            loadCommunityRankings(50)
+            loadCommunityRankings(rankingsLimit)
         }
-    }, [isInitialized, sortBy])
+    }, [isInitialized, sortBy, rankingsLimit])
+
+    const handleLoadMoreRankings = () => {
+        setRankingsLimit((prev) => prev + 20)
+    }
 
     const handleRankingClick = (rankingId: string) => {
         router.push(`/rankings/${rankingId}`)
@@ -155,6 +165,28 @@ export default function CommunityPage() {
                 </p>
             </div>
 
+            {/* Global Search */}
+            <div className="mb-6 max-w-2xl mx-auto">
+                <div className="relative">
+                    <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder={`Search ${activeTab}...`}
+                        className="w-full pl-12 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
+                    />
+                    {searchQuery && (
+                        <button
+                            onClick={() => setSearchQuery('')}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                        >
+                            <XMarkIcon className="w-5 h-5" />
+                        </button>
+                    )}
+                </div>
+            </div>
+
             {/* Tabs Navigation */}
             <div className="mb-8">
                 <div className="flex justify-center">
@@ -172,14 +204,14 @@ export default function CommunityPage() {
                                 label: 'Forums',
                                 icon: ChatBubbleLeftRightIcon,
                                 color: 'text-blue-500',
-                                count: 0, // TODO: Get from forum store
+                                count: threads.length,
                             },
                             {
                                 id: 'polls' as TabType,
                                 label: 'Polls',
                                 icon: ChartBarIcon,
                                 color: 'text-pink-500',
-                                count: 0, // TODO: Get from forum store
+                                count: polls.length,
                             },
                         ].map((tab) => {
                             const Icon = tab.icon
@@ -233,12 +265,15 @@ export default function CommunityPage() {
                     rankingsByTag={rankingsByTag}
                     tagRows={tagRows}
                     handleRankingClick={handleRankingClick}
+                    searchQuery={searchQuery}
+                    onLoadMore={handleLoadMoreRankings}
+                    hasMore={communityRankings.length >= rankingsLimit}
                 />
             )}
 
-            {activeTab === 'forums' && <ForumsTab />}
+            {activeTab === 'forums' && <ForumsTab searchQuery={searchQuery} />}
 
-            {activeTab === 'polls' && <PollsTab />}
+            {activeTab === 'polls' && <PollsTab searchQuery={searchQuery} />}
         </SubPageLayout>
     )
 }
@@ -258,7 +293,60 @@ function RankingsTab({
     rankingsByTag,
     tagRows,
     handleRankingClick,
+    searchQuery,
+    onLoadMore,
+    hasMore,
 }: any) {
+    // Apply search filter
+    const searchFilteredRankings = searchQuery
+        ? filteredByMediaType.filter(
+              (ranking: any) =>
+                  ranking.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  ranking.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  ranking.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  ranking.contentTitles?.some((title: string) =>
+                      title.toLowerCase().includes(searchQuery.toLowerCase())
+                  )
+          )
+        : filteredByMediaType
+
+    // Group search results by tags
+    const searchRankingsByTag = useMemo(() => {
+        const grouped: Record<string, typeof communityRankings> = {}
+
+        searchFilteredRankings.forEach((ranking: any) => {
+            if (ranking.tags && ranking.tags.length > 0) {
+                ranking.tags.forEach((tag: string) => {
+                    if (!grouped[tag]) {
+                        grouped[tag] = []
+                    }
+                    grouped[tag].push(ranking)
+                })
+            } else {
+                if (!grouped['Other']) {
+                    grouped['Other'] = []
+                }
+                grouped['Other'].push(ranking)
+            }
+        })
+
+        return grouped
+    }, [searchFilteredRankings])
+
+    // Get tag rows for search results
+    const searchTagRows = useMemo(() => {
+        if (filterByTag) {
+            return searchRankingsByTag[filterByTag]
+                ? [{ tag: filterByTag, rankings: searchRankingsByTag[filterByTag] }]
+                : []
+        }
+
+        return Object.entries(searchRankingsByTag)
+            .map(([tag, rankings]) => ({ tag, rankings }))
+            .sort((a, b) => b.rankings.length - a.rankings.length)
+    }, [searchRankingsByTag, filterByTag])
+
+    const displayTagRows = searchQuery ? searchTagRows : tagRows
     return (
         <div className="flex flex-col lg:flex-row gap-6">
             {/* Sidebar filters */}
@@ -341,21 +429,22 @@ function RankingsTab({
                                 </button>
                             )}
                         </div>
-                        <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pr-2">
-                            {POPULAR_TAGS.slice(0, 10).map((tag) => (
+                        <div className="flex flex-col gap-1.5 max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
+                            {POPULAR_TAGS.slice(0, 15).map((tag) => (
                                 <button
                                     key={tag.id}
                                     onClick={() =>
                                         setFilterByTag(filterByTag === tag.name ? null : tag.name)
                                     }
-                                    className={`px-2 py-1 rounded-full text-xs font-medium transition-all ${
+                                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all text-left flex items-center gap-2 ${
                                         filterByTag === tag.name
                                             ? 'bg-yellow-500 text-black'
                                             : 'bg-zinc-800 text-gray-300 hover:bg-zinc-700'
                                     }`}
                                     title={tag.description}
                                 >
-                                    {tag.emoji}
+                                    <span className="text-base">{tag.emoji}</span>
+                                    <span className="flex-1 truncate">{tag.name}</span>
                                 </button>
                             ))}
                         </div>
@@ -365,7 +454,11 @@ function RankingsTab({
                     <div className="pt-3 border-t border-zinc-800">
                         <div className="text-xs text-gray-500 space-y-1">
                             <div>Total: {communityRankings.length} rankings</div>
-                            <div>Showing: {filteredByMediaType.length} rankings</div>
+                            {searchQuery ? (
+                                <div>Found: {searchFilteredRankings.length} matches</div>
+                            ) : (
+                                <div>Showing: {filteredByMediaType.length} rankings</div>
+                            )}
                             <div>Tags: {Object.keys(rankingsByTag).length}</div>
                         </div>
                     </div>
@@ -382,9 +475,9 @@ function RankingsTab({
                 )}
 
                 {/* Tag Rows */}
-                {tagRows.length > 0 ? (
+                {displayTagRows.length > 0 ? (
                     <div className="space-y-6">
-                        {tagRows.map(({ tag, rankings }) => {
+                        {displayTagRows.map(({ tag, rankings }) => {
                             const tagData = POPULAR_TAGS.find((t) => t.name === tag)
                             return (
                                 <RankingRow
@@ -403,10 +496,29 @@ function RankingsTab({
                         <div className="w-20 h-20 mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
                             <TrophyIcon className="w-10 h-10 text-gray-600" />
                         </div>
-                        <p className="text-gray-400 text-lg mb-2">No rankings found</p>
-                        <p className="text-gray-500 text-sm">
-                            Try adjusting your filters or be the first to create one!
+                        <p className="text-gray-400 text-lg mb-2">
+                            {searchQuery
+                                ? `No rankings match "${searchQuery}"`
+                                : 'No rankings found'}
                         </p>
+                        <p className="text-gray-500 text-sm">
+                            {searchQuery
+                                ? 'Try a different search term'
+                                : 'Try adjusting your filters or be the first to create one!'}
+                        </p>
+                    </div>
+                )}
+
+                {/* Load More button */}
+                {hasMore && !searchQuery && displayTagRows.length > 0 && (
+                    <div className="flex justify-center mt-8">
+                        <button
+                            onClick={onLoadMore}
+                            className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
+                        >
+                            <span>Load More Rankings</span>
+                            <SparklesIcon className="w-5 h-5" />
+                        </button>
                     </div>
                 )}
             </div>
@@ -415,12 +527,13 @@ function RankingsTab({
 }
 
 // Forums Tab Component
-function ForumsTab() {
+function ForumsTab({ searchQuery }: { searchQuery: string }) {
     const { threads, isLoadingThreads, loadThreads, createThread } = useForumStore()
     const getUserId = useSessionStore((state) => state.getUserId)
     const { isGuest } = useAuthStatus()
     const [selectedCategory, setSelectedCategory] = useState<ForumCategory | 'all'>('all')
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+    const [sortBy, setSortBy] = useState<'recent' | 'popular' | 'most-replied'>('recent')
 
     // Load threads on mount
     useEffect(() => {
@@ -452,6 +565,28 @@ function ForumsTab() {
 
     return (
         <div className="space-y-6">
+            {/* Sort controls */}
+            <div className="flex flex-wrap gap-2 items-center bg-zinc-900 border border-zinc-800 rounded-lg p-3">
+                <span className="text-sm text-gray-400">Sort by:</span>
+                {[
+                    { value: 'recent' as const, label: 'Recent' },
+                    { value: 'popular' as const, label: 'Popular' },
+                    { value: 'most-replied' as const, label: 'Most Replied' },
+                ].map((option) => (
+                    <button
+                        key={option.value}
+                        onClick={() => setSortBy(option.value)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                            sortBy === option.value
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-zinc-800 text-gray-400 hover:text-white hover:bg-zinc-700'
+                        }`}
+                    >
+                        {option.label}
+                    </button>
+                ))}
+            </div>
+
             {/* Header with filters and create button */}
             <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
                 {/* Category filter */}
@@ -530,25 +665,79 @@ function ForumsTab() {
             )}
 
             {/* Thread list */}
-            {threads.length > 0 && (
-                <div className="space-y-3">
-                    {threads.map((thread) => (
-                        <ThreadCard key={thread.id} thread={thread} />
-                    ))}
-                </div>
-            )}
+            {threads.length > 0 &&
+                (() => {
+                    const filteredThreads = threads
+                        .filter((thread) =>
+                            selectedCategory === 'all' ? true : thread.category === selectedCategory
+                        )
+                        .filter((thread) =>
+                            searchQuery
+                                ? thread.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                  thread.content
+                                      .toLowerCase()
+                                      .includes(searchQuery.toLowerCase()) ||
+                                  thread.userName
+                                      .toLowerCase()
+                                      .includes(searchQuery.toLowerCase()) ||
+                                  thread.tags?.some((tag) =>
+                                      tag.toLowerCase().includes(searchQuery.toLowerCase())
+                                  )
+                                : true
+                        )
+                        .sort((a, b) => {
+                            const toDate = (ts: any) => (ts?.toDate ? ts.toDate() : new Date(ts))
+                            switch (sortBy) {
+                                case 'popular':
+                                    return b.likes - a.likes
+                                case 'most-replied':
+                                    return b.replyCount - a.replyCount
+                                case 'recent':
+                                default:
+                                    return (
+                                        toDate(b.createdAt).getTime() -
+                                        toDate(a.createdAt).getTime()
+                                    )
+                            }
+                        })
+
+                    return filteredThreads.length > 0 ? (
+                        <div className="space-y-3">
+                            {filteredThreads.map((thread) => (
+                                <ThreadCard key={thread.id} thread={thread} />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-16 text-center">
+                            <div className="w-20 h-20 mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
+                                <ChatBubbleLeftRightIcon className="w-10 h-10 text-gray-600" />
+                            </div>
+                            <p className="text-gray-400 text-lg mb-2">
+                                {searchQuery
+                                    ? `No threads match "${searchQuery}"`
+                                    : 'No threads found'}
+                            </p>
+                            <p className="text-gray-500 text-sm">
+                                {searchQuery
+                                    ? 'Try a different search term'
+                                    : 'Try adjusting your filters'}
+                            </p>
+                        </div>
+                    )
+                })()}
         </div>
     )
 }
 
 // Polls Tab Component
-function PollsTab() {
+function PollsTab({ searchQuery }: { searchQuery: string }) {
     const { polls, isLoadingPolls, loadPolls, createPoll, voteOnPoll } = useForumStore()
     const getUserId = useSessionStore((state) => state.getUserId)
     const { isGuest } = useAuthStatus()
     const [selectedCategory, setSelectedCategory] = useState<ForumCategory | 'all'>('all')
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [userVotes, setUserVotes] = useState<Record<string, string[]>>({})
+    const [sortBy, setSortBy] = useState<'recent' | 'popular' | 'most-voted'>('recent')
 
     // Load polls on mount
     useEffect(() => {
@@ -606,6 +795,28 @@ function PollsTab() {
 
     return (
         <div className="space-y-6">
+            {/* Sort controls */}
+            <div className="flex flex-wrap gap-2 items-center bg-zinc-900 border border-zinc-800 rounded-lg p-3">
+                <span className="text-sm text-gray-400">Sort by:</span>
+                {[
+                    { value: 'recent' as const, label: 'Recent' },
+                    { value: 'popular' as const, label: 'Popular' },
+                    { value: 'most-voted' as const, label: 'Most Voted' },
+                ].map((option) => (
+                    <button
+                        key={option.value}
+                        onClick={() => setSortBy(option.value)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                            sortBy === option.value
+                                ? 'bg-pink-500 text-white'
+                                : 'bg-zinc-800 text-gray-400 hover:text-white hover:bg-zinc-700'
+                        }`}
+                    >
+                        {option.label}
+                    </button>
+                ))}
+            </div>
+
             {/* Header with filters and create button */}
             <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
                 {/* Category filter */}
@@ -684,20 +895,74 @@ function PollsTab() {
             )}
 
             {/* Poll list */}
-            {polls.length > 0 && (
-                <div className="space-y-4">
-                    {polls.map((poll) => (
-                        <PollCard
-                            key={poll.id}
-                            poll={poll}
-                            userVote={userVotes[poll.id] || []}
-                            onVote={
-                                isGuest ? undefined : (optionIds) => handleVote(poll.id, optionIds)
+            {polls.length > 0 &&
+                (() => {
+                    const filteredPolls = polls
+                        .filter((poll) =>
+                            selectedCategory === 'all' ? true : poll.category === selectedCategory
+                        )
+                        .filter((poll) =>
+                            searchQuery
+                                ? poll.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                  poll.description
+                                      ?.toLowerCase()
+                                      .includes(searchQuery.toLowerCase()) ||
+                                  poll.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                  poll.options.some((opt) =>
+                                      opt.text.toLowerCase().includes(searchQuery.toLowerCase())
+                                  ) ||
+                                  poll.tags?.some((tag) =>
+                                      tag.toLowerCase().includes(searchQuery.toLowerCase())
+                                  )
+                                : true
+                        )
+                        .sort((a, b) => {
+                            const toDate = (ts: any) => (ts?.toDate ? ts.toDate() : new Date(ts))
+                            switch (sortBy) {
+                                case 'most-voted':
+                                    return b.totalVotes - a.totalVotes
+                                case 'popular':
+                                    return b.totalVotes - a.totalVotes
+                                case 'recent':
+                                default:
+                                    return (
+                                        toDate(b.createdAt).getTime() -
+                                        toDate(a.createdAt).getTime()
+                                    )
                             }
-                        />
-                    ))}
-                </div>
-            )}
+                        })
+
+                    return filteredPolls.length > 0 ? (
+                        <div className="space-y-4">
+                            {filteredPolls.map((poll) => (
+                                <PollCard
+                                    key={poll.id}
+                                    poll={poll}
+                                    userVote={userVotes[poll.id] || []}
+                                    onVote={
+                                        isGuest
+                                            ? undefined
+                                            : (optionIds) => handleVote(poll.id, optionIds)
+                                    }
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-16 text-center">
+                            <div className="w-20 h-20 mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
+                                <ChartBarIcon className="w-10 h-10 text-gray-600" />
+                            </div>
+                            <p className="text-gray-400 text-lg mb-2">
+                                {searchQuery ? `No polls match "${searchQuery}"` : 'No polls found'}
+                            </p>
+                            <p className="text-gray-500 text-sm">
+                                {searchQuery
+                                    ? 'Try a different search term'
+                                    : 'Try adjusting your filters'}
+                            </p>
+                        </div>
+                    )
+                })()}
         </div>
     )
 }

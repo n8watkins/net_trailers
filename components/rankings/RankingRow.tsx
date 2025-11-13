@@ -77,7 +77,7 @@ export function RankingRow({ title, emoji, rankings, showAuthor = true, onLike }
                     className="flex gap-4 overflow-x-scroll scrollbar-hide px-4 md:px-8 py-2"
                 >
                     {rankings.map((ranking) => (
-                        <div key={ranking.id} className="flex-shrink-0 w-64">
+                        <div key={ranking.id} className="flex-shrink-0 w-80">
                             <RankingCard
                                 ranking={ranking}
                                 showAuthor={showAuthor}

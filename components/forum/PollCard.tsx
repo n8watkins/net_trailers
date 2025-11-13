@@ -8,6 +8,7 @@
 'use client'
 
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { Poll } from '@/types/forum'
 import { getCategoryInfo } from '@/utils/forumCategories'
 import { ChartBarIcon, ClockIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
@@ -32,11 +33,17 @@ interface PollCardProps {
 }
 
 export function PollCard({ poll, userVote = [], onVote }: PollCardProps) {
+    const router = useRouter()
     const category = getCategoryInfo(poll.category)
     const hasVoted = userVote.length > 0
     const isExpired = poll.expiresAt ? toDate(poll.expiresAt) < new Date() : false
 
-    const handleVote = (optionId: string) => {
+    const handleCardClick = () => {
+        router.push(`/community/polls/${poll.id}`)
+    }
+
+    const handleVote = (optionId: string, e: React.MouseEvent) => {
+        e.stopPropagation() // Prevent card click
         if (hasVoted || isExpired || !onVote) return
 
         if (poll.isMultipleChoice) {
@@ -53,7 +60,10 @@ export function PollCard({ poll, userVote = [], onVote }: PollCardProps) {
     }
 
     return (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
+        <div
+            onClick={handleCardClick}
+            className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 hover:border-zinc-700 transition-colors cursor-pointer"
+        >
             {/* Header */}
             <div className="flex items-start gap-3 mb-4">
                 {/* Author avatar */}
@@ -106,7 +116,7 @@ export function PollCard({ poll, userVote = [], onVote }: PollCardProps) {
                     return (
                         <button
                             key={option.id}
-                            onClick={() => handleVote(option.id)}
+                            onClick={(e) => handleVote(option.id, e)}
                             disabled={hasVoted || isExpired}
                             className={`w-full text-left p-3 rounded-lg border transition-colors ${
                                 isSelected
