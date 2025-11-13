@@ -3,6 +3,9 @@ import { fetchTVContentRatings, hasMatureRating } from '../../../../utils/tvCont
 import { tmdbContentCache } from '../../../../utils/apiCache'
 import { apiError } from '../../../../utils/debugLogger'
 
+// Cache this route for 1 hour
+export const revalidate = 3600
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
     const searchParams = request.nextUrl.searchParams
@@ -62,7 +65,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             // Cache the result (30 minutes TTL)
             tmdbContentCache.set(cacheKey, enrichedMovieData)
 
-            return NextResponse.json(enrichedMovieData, { status: 200 })
+            return NextResponse.json(enrichedMovieData, {
+                status: 200,
+                headers: {
+                    'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+                },
+            })
         }
 
         // If movie fetch failed, try as a TV show
@@ -96,7 +104,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             // Cache the result (30 minutes TTL)
             tmdbContentCache.set(cacheKey, enrichedTvData)
 
-            return NextResponse.json(enrichedTvData, { status: 200 })
+            return NextResponse.json(enrichedTvData, {
+                status: 200,
+                headers: {
+                    'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+                },
+            })
         }
 
         // If both failed, the content doesn't exist

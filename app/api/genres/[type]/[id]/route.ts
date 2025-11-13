@@ -4,6 +4,9 @@ import { filterMatureMovies as _filterMatureMovies } from '../../../../../utils/
 import { csDebugTMDB, csDebugResponse, csDebugFilter } from '../../../../../utils/childSafetyDebug'
 import { apiError } from '../../../../../utils/debugLogger'
 
+// Cache this route for 1 hour
+export const revalidate = 3600
+
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ type: string; id: string }> }
@@ -237,7 +240,12 @@ export async function GET(
                     child_safety_enabled: true,
                     hidden_count: hiddenCount,
                 },
-                { status: 200 }
+                {
+                    status: 200,
+                    headers: {
+                        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+                    },
+                }
             )
         }
 
@@ -249,7 +257,12 @@ export async function GET(
                 ...data,
                 results: enrichedResults,
             },
-            { status: 200 }
+            {
+                status: 200,
+                headers: {
+                    'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+                },
+            }
         )
     } catch (error) {
         apiError('Error fetching genre content:', error)

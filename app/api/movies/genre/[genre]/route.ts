@@ -5,6 +5,9 @@ import { apiError } from '@/utils/debugLogger'
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
 
+// Cache this route for 30 minutes
+export const revalidate = 1800
+
 // Genre mapping
 const genreMap: Record<string, number> = {
     action: 28,

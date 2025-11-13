@@ -10,6 +10,9 @@ import { getHybridRecommendations } from '@/utils/tmdb/recommendations'
 import { Recommendation, RECOMMENDATION_CONSTRAINTS } from '@/types/recommendations'
 import { apiError } from '@/utils/debugLogger'
 
+// Cache this route for 30 minutes
+export const revalidate = 1800
+
 interface RouteParams {
     params: Promise<{
         id: string
@@ -50,13 +53,21 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             generatedAt: Date.now(),
         }))
 
-        return NextResponse.json({
-            success: true,
-            recommendations,
-            sourceId: contentId,
-            totalCount: recommendations.length,
-            generatedAt: Date.now(),
-        })
+        return NextResponse.json(
+            {
+                success: true,
+                recommendations,
+                sourceId: contentId,
+                totalCount: recommendations.length,
+                generatedAt: Date.now(),
+            },
+            {
+                status: 200,
+                headers: {
+                    'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=3600',
+                },
+            }
+        )
     } catch (error) {
         apiError('Error fetching similar content recommendations:', error)
         return NextResponse.json(
