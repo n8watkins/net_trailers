@@ -4,7 +4,6 @@ import { useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { SparklesIcon } from '@heroicons/react/24/outline'
 import Header from '../layout/Header'
-import SmartSearchModeBar from '../smartSearch/SmartSearchModeBar'
 import SmartSearchResults from '../smartSearch/SmartSearchResults'
 import SmartSearchActions from '../smartSearch/SmartSearchActions'
 import NetflixLoader from '../common/NetflixLoader'
@@ -98,7 +97,7 @@ export default function SmartSearchClient() {
         }
 
         performSearch()
-    }, [queryParam, showError]) // Only trigger on query param change
+    }, [queryParam]) // Only trigger on query param change
 
     return (
         <div className="relative min-h-screen bg-gradient-to-b from-black via-gray-900 to-black">
