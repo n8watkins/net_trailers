@@ -12,10 +12,11 @@ import SmartSearchInput from '../smartSearch/SmartSearchInput'
 interface Props {
     trending: Content[]
     variant?: 'default' | 'compact'
+    onHeroImageLoaded?: () => void // Callback when the first hero image is loaded
 }
 
 //pass props to Banner component
-function Banner({ trending, variant = 'default' }: Props) {
+function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
     const { openModal } = useModalStore()
     const { hiddenMovies } = useUserData()
 
@@ -47,12 +48,20 @@ function Banner({ trending, variant = 'default' }: Props) {
                         const img = new window.Image()
                         img.onload = () => {
                             setImagesLoaded((prev) => new Set(prev).add(index))
+                            // Call the callback when the first image (hero) is loaded
+                            if (index === 0 && onHeroImageLoaded) {
+                                onHeroImageLoaded()
+                            }
                         }
                         img.onerror = () => {
                             // Even if preload fails, mark as "loaded" so image can render
                             // Next.js Image component will handle the actual loading
                             console.warn(`Failed to preload image: ${imgUrl}`)
                             setImagesLoaded((prev) => new Set(prev).add(index))
+                            // Call the callback even on error for index 0 to prevent indefinite loading
+                            if (index === 0 && onHeroImageLoaded) {
+                                onHeroImageLoaded()
+                            }
                         }
                         img.src = `${BASE_URL}/${imgUrl}`
                     }
@@ -95,6 +104,19 @@ function Banner({ trending, variant = 'default' }: Props) {
     const isCurrentImageLoaded = imagesLoaded.has(currentIndex)
 
     const contentImgUrl = featuredContent?.backdrop_path || featuredContent?.poster_path
+
+    // Debug logging
+    if (featuredContent) {
+        console.log('Banner Debug:', {
+            hasContent: !!featuredContent,
+            contentImgUrl,
+            isCurrentImageLoaded,
+            currentIndex,
+            carouselLength: carouselContent.length,
+            imagesLoadedSet: Array.from(imagesLoaded),
+        })
+    }
+
     return (
         <>
             {/* AI-Powered Smart Search Overlay - Position varies by variant */}
@@ -111,7 +133,7 @@ function Banner({ trending, variant = 'default' }: Props) {
             </div>
 
             {/* background image with mobile-responsive container */}
-            <div className="absolute inset-0 -z-10 font-sans overflow-hidden">
+            <div className="absolute inset-0 z-0 font-sans overflow-hidden">
                 {contentImgUrl && isCurrentImageLoaded && (
                     <div className="relative w-full h-full">
                         <Image

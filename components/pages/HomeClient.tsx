@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Header from '../layout/Header'
 import Banner from '../layout/Banner'
 import { HomeData } from '../../lib/serverData'
@@ -16,6 +16,7 @@ import { useCustomRowsStore } from '../../stores/customRowsStore'
 import { SystemRowStorage } from '../../utils/systemRowStorage'
 import { useCacheStore } from '../../stores/cacheStore'
 import { processTrendingUpdates } from '../../utils/trendingNotifications'
+import NetflixLoader from '../common/NetflixLoader'
 
 interface HomeClientProps {
     data: HomeData
@@ -30,6 +31,9 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
     const isInitialized = useSessionStore((state) => state.isInitialized)
     const userId = getUserId()
     const isGuest = sessionType === 'guest'
+
+    // Track hero image loading state
+    const [heroImageLoaded, setHeroImageLoaded] = useState(false)
 
     // Get collections from appropriate store
     const authCollections = useAuthStore((state) => state.userCreatedWatchlists)
@@ -180,29 +184,39 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
     const enabledCollections = allCollections.filter((c) => c.enabled)
 
     return (
-        <div
-            className={`relative min-h-screen overflow-x-clip ${showModal && `overflow-y-hidden`} `}
-        >
-            <Header />
+        <>
+            {/* Show loader until hero image is loaded */}
+            {!heroImageLoaded && <NetflixLoader message="Loading NetTrailer..." />}
 
-            <main id="content" className="relative">
-                <div className="relative h-screen w-full">
-                    <Banner trending={trending} />
-                </div>
-                <section className="relative z-10 pb-52 space-y-8">
-                    {/* Personalized Recommendations Row */}
-                    <RecommendedForYouRow />
+            <div
+                className={`relative min-h-screen overflow-x-clip ${showModal && `overflow-y-hidden`} ${
+                    !heroImageLoaded ? 'opacity-0' : 'opacity-100'
+                } transition-opacity duration-500`}
+            >
+                <Header />
 
-                    {/* Dynamic collections (system + user) sorted by order */}
-                    {enabledCollections.map((collection) => (
-                        <CollectionRowLoader
-                            key={collection.id}
-                            collection={collection}
-                            pageType="home"
+                <main id="content" className="relative">
+                    <div className="relative h-screen w-full">
+                        <Banner
+                            trending={trending}
+                            onHeroImageLoaded={() => setHeroImageLoaded(true)}
                         />
-                    ))}
-                </section>
-            </main>
-        </div>
+                    </div>
+                    <section className="relative z-10 pb-52 space-y-8">
+                        {/* Personalized Recommendations Row */}
+                        <RecommendedForYouRow />
+
+                        {/* Dynamic collections (system + user) sorted by order */}
+                        {enabledCollections.map((collection) => (
+                            <CollectionRowLoader
+                                key={collection.id}
+                                collection={collection}
+                                pageType="home"
+                            />
+                        ))}
+                    </section>
+                </main>
+            </div>
+        </>
     )
 }
