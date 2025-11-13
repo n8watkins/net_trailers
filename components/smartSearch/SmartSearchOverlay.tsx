@@ -66,7 +66,7 @@ export default function SmartSearchOverlay() {
         }
 
         performSearch()
-    }, [query, showError]) // Only trigger on query change
+    }, [query, setLoading, setResults, addToConversation]) // Only trigger on query change
 
     // Don't show overlay if no query or no results
     if (!query.trim() || results.length === 0) {
