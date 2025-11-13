@@ -1,0 +1,41 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Forum thread images
+    match /forum/threads/{threadId}/{imageFile} {
+      // Allow authenticated users to read all thread images
+      allow read: if request.auth != null;
+
+      // Allow authenticated users to upload images (max 5MB)
+      allow create: if request.auth != null
+                    && request.resource.size < 5 * 1024 * 1024
+                    && request.resource.contentType.matches('image/.*');
+
+      // Only allow thread owner to delete their thread images
+      // (deletion is handled when thread is deleted)
+      allow delete: if request.auth != null;
+    }
+
+    // Forum thread reply images
+    match /forum/threads/{threadId}/replies/{imageFile} {
+      // Allow authenticated users to read all reply images
+      allow read: if request.auth != null;
+
+      // Allow authenticated users to upload images (max 5MB)
+      allow create: if request.auth != null
+                    && request.resource.size < 5 * 1024 * 1024
+                    && request.resource.contentType.matches('image/.*');
+
+      // Only allow reply owner to delete their reply images
+      // (deletion is handled when reply is deleted)
+      allow delete: if request.auth != null;
+    }
+
+    // Default: deny all other access
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

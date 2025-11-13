@@ -6,7 +6,16 @@
  */
 
 import { create } from 'zustand'
-import { Thread, ThreadReply, Poll, ForumCategory, ForumSortBy, ForumFilters } from '@/types/forum'
+import {
+    Thread,
+    ThreadReply,
+    Poll,
+    ForumCategory,
+    ForumSortBy,
+    ForumFilters,
+    ReportReason,
+    ReportContentType,
+} from '@/types/forum'
 import {
     collection,
     doc,
@@ -19,11 +28,13 @@ import {
     where,
     orderBy,
     limit as limitQuery,
+    startAfter,
     Timestamp,
     increment,
     setDoc,
+    QueryDocumentSnapshot,
 } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
+import { db } from '@/firebase'
 
 interface ForumState {
     // Threads
@@ -32,18 +43,23 @@ interface ForumState {
     threadReplies: ThreadReply[]
     isLoadingThreads: boolean
     threadsError: string | null
+    lastThreadDoc: QueryDocumentSnapshot | null
+    hasMoreThreads: boolean
 
     // Polls
     polls: Poll[]
     currentPoll: Poll | null
     isLoadingPolls: boolean
     pollsError: string | null
+    lastPollDoc: QueryDocumentSnapshot | null
+    hasMorePolls: boolean
 
     // Filters
     filters: ForumFilters
 
     // Actions - Threads
     loadThreads: (category?: ForumCategory, limit?: number) => Promise<void>
+    loadMoreThreads: () => Promise<void>
     loadThreadById: (threadId: string) => Promise<void>
     loadThreadReplies: (threadId: string) => Promise<void>
     createThread: (
@@ -53,7 +69,8 @@ interface ForumState {
         title: string,
         content: string,
         category: ForumCategory,
-        tags?: string[]
+        tags?: string[],
+        images?: string[]
     ) => Promise<string>
     replyToThread: (
         userId: string,
@@ -61,7 +78,8 @@ interface ForumState {
         userAvatar: string | undefined,
         threadId: string,
         content: string,
-        parentReplyId?: string
+        parentReplyId?: string,
+        images?: string[]
     ) => Promise<void>
     likeThread: (userId: string, threadId: string) => Promise<void>
     unlikeThread: (userId: string, threadId: string) => Promise<void>
@@ -72,6 +90,7 @@ interface ForumState {
 
     // Actions - Polls
     loadPolls: (category?: ForumCategory, limit?: number) => Promise<void>
+    loadMorePolls: () => Promise<void>
     loadPollById: (pollId: string) => Promise<void>
     createPoll: (
         userId: string,
@@ -87,6 +106,16 @@ interface ForumState {
     voteOnPoll: (userId: string, pollId: string, optionIds: string[]) => Promise<void>
     deletePoll: (userId: string, pollId: string) => Promise<void>
     getUserVote: (userId: string, pollId: string) => Promise<string[] | null>
+
+    // Actions - Reports
+    reportContent: (
+        userId: string,
+        userName: string,
+        contentId: string,
+        contentType: ReportContentType,
+        reason: ReportReason,
+        details?: string
+    ) => Promise<void>
 
     // Actions - Filters
     setFilters: (filters: Partial<ForumFilters>) => void
@@ -112,17 +141,21 @@ export const useForumStore = create<ForumState>((set, get) => ({
     threadReplies: [],
     isLoadingThreads: false,
     threadsError: null,
+    lastThreadDoc: null,
+    hasMoreThreads: true,
 
     polls: [],
     currentPoll: null,
     isLoadingPolls: false,
     pollsError: null,
+    lastPollDoc: null,
+    hasMorePolls: true,
 
     filters: initialFilters,
 
     // Thread actions
-    loadThreads: async (category, limit = 50) => {
-        set({ isLoadingThreads: true, threadsError: null })
+    loadThreads: async (category, limit = 20) => {
+        set({ isLoadingThreads: true, threadsError: null, lastThreadDoc: null })
         try {
             const threadsRef = collection(db, 'threads')
             let q = query(threadsRef, orderBy('createdAt', 'desc'), limitQuery(limit))
@@ -142,13 +175,70 @@ export const useForumStore = create<ForumState>((set, get) => ({
                 id: doc.id,
             })) as Thread[]
 
-            set({ threads, isLoadingThreads: false })
+            const lastDoc = snapshot.docs[snapshot.docs.length - 1] || null
+            const hasMore = snapshot.docs.length === limit
+
+            set({
+                threads,
+                lastThreadDoc: lastDoc,
+                hasMoreThreads: hasMore,
+                isLoadingThreads: false,
+            })
         } catch (error) {
             console.error('Failed to load threads:', error)
             set({
                 threadsError: error instanceof Error ? error.message : 'Failed to load threads',
                 isLoadingThreads: false,
             })
+        }
+    },
+
+    loadMoreThreads: async () => {
+        const { lastThreadDoc, hasMoreThreads, isLoadingThreads, filters } = get()
+
+        if (!hasMoreThreads || isLoadingThreads || !lastThreadDoc) return
+
+        set({ isLoadingThreads: true })
+        try {
+            const threadsRef = collection(db, 'threads')
+            const category = filters.category !== 'all' ? filters.category : undefined
+            const limit = 20
+
+            let q = query(
+                threadsRef,
+                orderBy('createdAt', 'desc'),
+                startAfter(lastThreadDoc),
+                limitQuery(limit)
+            )
+
+            if (category) {
+                q = query(
+                    threadsRef,
+                    where('category', '==', category),
+                    orderBy('createdAt', 'desc'),
+                    startAfter(lastThreadDoc),
+                    limitQuery(limit)
+                )
+            }
+
+            const snapshot = await getDocs(q)
+            const newThreads = snapshot.docs.map((doc) => ({
+                ...doc.data(),
+                id: doc.id,
+            })) as Thread[]
+
+            const lastDoc = snapshot.docs[snapshot.docs.length - 1] || lastThreadDoc
+            const hasMore = snapshot.docs.length === limit
+
+            set((state) => ({
+                threads: [...state.threads, ...newThreads],
+                lastThreadDoc: lastDoc,
+                hasMoreThreads: hasMore,
+                isLoadingThreads: false,
+            }))
+        } catch (error) {
+            console.error('Failed to load more threads:', error)
+            set({ isLoadingThreads: false })
         }
     },
 
@@ -200,7 +290,7 @@ export const useForumStore = create<ForumState>((set, get) => ({
         }
     },
 
-    createThread: async (userId, userName, userAvatar, title, content, category, tags) => {
+    createThread: async (userId, userName, userAvatar, title, content, category, tags, images) => {
         try {
             const threadsRef = collection(db, 'threads')
             const now = Timestamp.now()
@@ -221,6 +311,7 @@ export const useForumStore = create<ForumState>((set, get) => ({
                 replyCount: 0,
                 likes: 0,
                 tags: tags || [],
+                images: images || [],
             }
 
             const docRef = await addDoc(threadsRef, threadData)
@@ -232,7 +323,15 @@ export const useForumStore = create<ForumState>((set, get) => ({
         }
     },
 
-    replyToThread: async (userId, userName, userAvatar, threadId, content, parentReplyId) => {
+    replyToThread: async (
+        userId,
+        userName,
+        userAvatar,
+        threadId,
+        content,
+        parentReplyId,
+        images
+    ) => {
         try {
             const repliesRef = collection(db, 'thread_replies')
             const now = Timestamp.now()
@@ -250,6 +349,7 @@ export const useForumStore = create<ForumState>((set, get) => ({
                 likes: 0,
                 parentReplyId: parentReplyId || undefined,
                 mentions: [],
+                images: images || [],
             }
 
             const docRef = await addDoc(repliesRef, replyData)
@@ -257,10 +357,58 @@ export const useForumStore = create<ForumState>((set, get) => ({
 
             // Increment reply count on thread
             const threadRef = doc(db, 'threads', threadId)
+            const threadSnap = await getDoc(threadRef)
+
+            if (!threadSnap.exists()) {
+                throw new Error('Thread not found')
+            }
+
+            const threadData = threadSnap.data() as Thread
+
             await updateDoc(threadRef, {
                 replyCount: increment(1),
                 lastReplyAt: now,
                 lastReplyBy: { userId, userName },
+            })
+
+            // Send email notification
+            // Determine recipient based on whether this is a reply to a reply or the thread
+            let recipientUserId: string
+            let isReplyToReply = false
+
+            if (parentReplyId) {
+                // Replying to a reply - notify the reply author
+                const parentReplyRef = doc(db, 'thread_replies', parentReplyId)
+                const parentReplySnap = await getDoc(parentReplyRef)
+
+                if (parentReplySnap.exists()) {
+                    recipientUserId = parentReplySnap.data().userId
+                    isReplyToReply = true
+                } else {
+                    // Fallback to thread author if parent reply not found
+                    recipientUserId = threadData.userId
+                }
+            } else {
+                // Replying to thread - notify thread author
+                recipientUserId = threadData.userId
+            }
+
+            // Send email notification (don't await - fire and forget)
+            fetch('/api/forum/send-reply-notification', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    recipientUserId,
+                    replierUserId: userId,
+                    replierName: userName,
+                    threadTitle: threadData.title,
+                    threadId,
+                    replyContent: content,
+                    isReplyToReply,
+                }),
+            }).catch((error) => {
+                // Log error but don't fail the reply operation
+                console.error('Failed to send email notification:', error)
             })
         } catch (error) {
             throw new Error(error instanceof Error ? error.message : 'Failed to reply')
@@ -370,8 +518,8 @@ export const useForumStore = create<ForumState>((set, get) => ({
     },
 
     // Poll actions
-    loadPolls: async (category, limit = 50) => {
-        set({ isLoadingPolls: true, pollsError: null })
+    loadPolls: async (category, limit = 20) => {
+        set({ isLoadingPolls: true, pollsError: null, lastPollDoc: null })
         try {
             const pollsRef = collection(db, 'polls')
             let q = query(pollsRef, orderBy('createdAt', 'desc'), limitQuery(limit))
@@ -391,13 +539,70 @@ export const useForumStore = create<ForumState>((set, get) => ({
                 id: doc.id,
             })) as Poll[]
 
-            set({ polls, isLoadingPolls: false })
+            const lastDoc = snapshot.docs[snapshot.docs.length - 1] || null
+            const hasMore = snapshot.docs.length === limit
+
+            set({
+                polls,
+                lastPollDoc: lastDoc,
+                hasMorePolls: hasMore,
+                isLoadingPolls: false,
+            })
         } catch (error) {
             console.error('Failed to load polls:', error)
             set({
                 pollsError: error instanceof Error ? error.message : 'Failed to load polls',
                 isLoadingPolls: false,
             })
+        }
+    },
+
+    loadMorePolls: async () => {
+        const { lastPollDoc, hasMorePolls, isLoadingPolls, filters } = get()
+
+        if (!hasMorePolls || isLoadingPolls || !lastPollDoc) return
+
+        set({ isLoadingPolls: true })
+        try {
+            const pollsRef = collection(db, 'polls')
+            const category = filters.category !== 'all' ? filters.category : undefined
+            const limit = 20
+
+            let q = query(
+                pollsRef,
+                orderBy('createdAt', 'desc'),
+                startAfter(lastPollDoc),
+                limitQuery(limit)
+            )
+
+            if (category) {
+                q = query(
+                    pollsRef,
+                    where('category', '==', category),
+                    orderBy('createdAt', 'desc'),
+                    startAfter(lastPollDoc),
+                    limitQuery(limit)
+                )
+            }
+
+            const snapshot = await getDocs(q)
+            const newPolls = snapshot.docs.map((doc) => ({
+                ...doc.data(),
+                id: doc.id,
+            })) as Poll[]
+
+            const lastDoc = snapshot.docs[snapshot.docs.length - 1] || lastPollDoc
+            const hasMore = snapshot.docs.length === limit
+
+            set((state) => ({
+                polls: [...state.polls, ...newPolls],
+                lastPollDoc: lastDoc,
+                hasMorePolls: hasMore,
+                isLoadingPolls: false,
+            }))
+        } catch (error) {
+            console.error('Failed to load more polls:', error)
+            set({ isLoadingPolls: false })
         }
     },
 
@@ -558,6 +763,31 @@ export const useForumStore = create<ForumState>((set, get) => ({
         } catch (error) {
             console.error('Failed to get user vote:', error)
             return null
+        }
+    },
+
+    // Report content
+    reportContent: async (userId, userName, contentId, contentType, reason, details) => {
+        try {
+            const reportsRef = collection(db, 'content_reports')
+            const now = Timestamp.now()
+
+            const reportData = {
+                id: '',
+                contentId,
+                contentType,
+                reportedBy: userId,
+                reporterName: userName,
+                reason,
+                details: details || '',
+                createdAt: now,
+                status: 'pending' as const,
+            }
+
+            const docRef = await addDoc(reportsRef, reportData)
+            await updateDoc(docRef, { id: docRef.id })
+        } catch (error) {
+            throw new Error(error instanceof Error ? error.message : 'Failed to report content')
         }
     },
 

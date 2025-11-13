@@ -46,6 +46,7 @@ export interface Thread {
     }
     tags?: string[]
     likes: number
+    images?: string[] // Image URLs uploaded with the thread
 }
 
 // Thread Reply
@@ -63,6 +64,7 @@ export interface ThreadReply {
     // For nested replies
     parentReplyId?: string
     mentions?: string[] // userIds mentioned in reply
+    images?: string[] // Image URLs uploaded with the reply
 }
 
 // Poll
@@ -192,4 +194,29 @@ export interface ForumFilters {
     sortBy: ForumSortBy
     searchQuery: string
     tags: string[]
+}
+
+// Report/Flag Content
+export type ReportReason =
+    | 'spam'
+    | 'harassment'
+    | 'inappropriate'
+    | 'misinformation'
+    | 'off-topic'
+    | 'other'
+
+export type ReportContentType = 'thread' | 'reply' | 'poll'
+
+export interface ContentReport {
+    id: string
+    contentId: string
+    contentType: ReportContentType
+    reportedBy: string
+    reporterName: string
+    reason: ReportReason
+    details?: string
+    createdAt: Timestamp
+    status: 'pending' | 'reviewed' | 'resolved' | 'dismissed'
+    reviewedBy?: string
+    reviewedAt?: Timestamp
 }

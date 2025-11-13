@@ -25,7 +25,7 @@ import { CreatePollModal } from '../../components/forum/CreatePollModal'
 import { useForumStore } from '../../stores/forumStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { ForumCategory } from '../../types/forum'
-import { auth } from '../../lib/firebase'
+import { auth } from '@/firebase'
 import {
     TrophyIcon,
     UsersIcon,
@@ -547,7 +547,8 @@ function ForumsTab({ searchQuery }: { searchQuery: string }) {
         title: string,
         content: string,
         category: ForumCategory,
-        tags: string[]
+        tags: string[],
+        images?: string[]
     ) => {
         if (isGuest) {
             alert('Please sign in to create threads')
@@ -563,7 +564,7 @@ function ForumsTab({ searchQuery }: { searchQuery: string }) {
         const userName = currentUser.displayName || 'Anonymous'
         const userAvatar = currentUser.photoURL || undefined
 
-        await createThread(userId, userName, userAvatar, title, content, category, tags)
+        await createThread(userId, userName, userAvatar, title, content, category, tags, images)
         await loadThreads() // Reload threads
     }
 

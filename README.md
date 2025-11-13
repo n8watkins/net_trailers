@@ -94,6 +94,7 @@ A Netflix-inspired streaming discovery platform built with modern web technologi
     - Sort by recent, popular, most-liked, most-viewed
     - Filter by media type
     - Search rankings by title/description
+    - Tabbed interface: Rankings, Discussions, Polls
 
 - **Engagement Features**
     - Like rankings (one per user)
@@ -102,6 +103,45 @@ A Netflix-inspired streaming discovery platform built with modern web technologi
     - Comment likes and engagement
     - Delete comments (owner or ranking author)
     - Public profile pages showing user's rankings
+
+### 💬 Forum & Discussion System
+
+- **Discussion Threads**
+    - Create threads with rich text and image uploads
+    - Categorized discussions (General, Movies, TV Shows, Recommendations, Rankings, Announcements)
+    - Reply to threads with nested conversation support
+    - Thread author can delete any replies for moderation
+    - Like/unlike threads and replies
+    - View counts and engagement metrics
+    - Detail pages at `/community/threads/[id]`
+
+- **Polls & Voting**
+    - Create polls with multiple choice options (2-10 options)
+    - Single or multiple-choice voting modes
+    - Optional expiration dates for time-limited polls
+    - Real-time vote counting with percentages
+    - Visual progress bars showing vote distribution
+    - One vote per user per poll (tracked via Firestore)
+    - Vote tracking prevents duplicate votes
+    - Detail pages at `/community/polls/[id]`
+
+- **Image Upload Support**
+    - Upload images to threads and forum posts
+    - Firebase Storage integration with security rules
+    - Image preview and optimization
+    - Automatic image resizing for performance
+
+- **Moderation & Safety**
+    - Report inappropriate content (threads, replies, polls)
+    - Thread owners can delete replies
+    - Authentication required for all forum features
+    - Comprehensive Firestore security rules
+
+- **Search & Discovery**
+    - Global search across threads and polls
+    - Filter by category and media type
+    - Sort by recent, popular, most replied, most voted
+    - Pagination for better performance
 
 ### 👶 Child Safety Mode
 
@@ -190,11 +230,12 @@ A Netflix-inspired streaming discovery platform built with modern web technologi
     - Test coverage reporting
 
 - **Architecture**
-    - **17 Focused Zustand Stores**: Migrated from monolithic "god store" to granular stores
+    - **18 Focused Zustand Stores**: Migrated from monolithic "god store" to granular stores
         - appStore, authStore, guestStore, sessionStore, cacheStore
         - searchStore, loadingStore, uiStore, childSafetyStore
         - customRowsStore, smartSearchStore, modalStore, toastStore
         - watchHistoryStore, rankingStore, notificationStore, profileStore
+        - forumStore
     - Next.js 16 with React 19 and App Router patterns
     - Firebase Firestore with optimistic updates and real-time sync
     - **30+ API routes** organized by feature
@@ -385,7 +426,10 @@ net_trailers/
 │   │   ├── page.tsx      # User rankings dashboard
 │   │   ├── new/          # Create new ranking
 │   │   └── [id]/         # View/edit ranking
-│   ├── community/        # Browse public rankings
+│   ├── community/        # Community hub with rankings, threads, polls
+│   │   ├── page.tsx      # Main community page with tabs
+│   │   ├── threads/[id]/ # Thread detail pages
+│   │   └── polls/[id]/   # Poll detail pages
 │   ├── collections/      # Collection management
 │   ├── watchlists/       # Custom watchlists
 │   ├── liked/            # Liked content page
@@ -404,6 +448,7 @@ net_trailers/
 │       ├── recommendations/ # Personalized recommendations
 │       ├── collections/  # Collection management
 │       ├── shares/       # Sharing endpoints
+│       ├── forum/        # Forum threads, polls, replies endpoints
 │       ├── cron/         # Cron job endpoints
 │       └── ...
 │
@@ -420,6 +465,13 @@ net_trailers/
 │   ├── modals/           # InfoModal, AuthModal, CollectionEditorModal
 │   │   ├── list-selection/    # ListSelectionModal components (17 files)
 │   │   └── modal-sections/    # ModalVideoPlayer, VideoControls
+│   ├── forum/            # Forum components
+│   │   ├── CreateThreadModal.tsx  # Thread creation modal
+│   │   ├── CreatePollModal.tsx    # Poll creation modal
+│   │   ├── ThreadCard.tsx         # Thread preview card
+│   │   ├── PollCard.tsx           # Poll preview card
+│   │   ├── ImageUpload.tsx        # Image upload component
+│   │   └── ReportModal.tsx        # Content reporting modal
 │   ├── notifications/    # NotificationPanel
 │   ├── pages/            # MoviesClient, TVClient, SmartSearchClient
 │   ├── rankings/         # RankingCreator, RankingDetail, RankingCard, CommentSection
@@ -430,7 +482,7 @@ net_trailers/
 │   ├── smartSearch/      # SmartSearchOverlay, SmartSearchResults, SmartSearchInput
 │   └── utility/          # Analytics, SessionSyncManager, KeyboardShortcuts
 │
-├── stores/               # 17 Focused Zustand Stores
+├── stores/               # 18 Focused Zustand Stores
 │   ├── appStore.ts       # Global UI state
 │   ├── authStore.ts      # Authenticated user data (Firestore sync)
 │   ├── guestStore.ts     # Guest user data (localStorage)
@@ -446,6 +498,7 @@ net_trailers/
 │   ├── toastStore.ts     # Toast notification queue
 │   ├── watchHistoryStore.ts   # Watch history tracking
 │   ├── rankingStore.ts   # Rankings, comments, likes
+│   ├── forumStore.ts     # Forum threads, polls, votes, replies
 │   ├── notificationStore.ts   # In-app notifications
 │   └── profileStore.ts   # User profile data
 │
@@ -473,6 +526,7 @@ net_trailers/
 │   ├── userLists.ts      # User list and collection types
 │   ├── atoms.ts          # Shared state type definitions
 │   ├── rankings.ts       # Ranking and comment types
+│   ├── forum.ts          # Forum thread, poll, vote, reply types
 │   └── ...
 │
 ├── typings.d.ts          # Global TypeScript typings
@@ -585,6 +639,34 @@ getReleaseDate(content)
 
 /rankingLikes/{likeId}
   - User likes on rankings
+
+/threads/{threadId}
+  - Discussion threads with replies
+  - Indexed by category, createdAt, userId
+  - Image URLs stored in imageUrl field
+
+/thread_replies/{replyId}
+  - Replies to threads
+  - Indexed by threadId, createdAt
+  - Supports nested discussions
+
+/thread_likes/{likeId}
+  - User likes on threads
+  - One like per user per thread
+
+/reply_likes/{likeId}
+  - User likes on replies
+  - One like per user per reply
+
+/polls/{pollId}
+  - Polls with voting options
+  - Indexed by category, createdAt, userId
+  - Support for single/multiple choice
+
+/poll_votes/{voteId}
+  - User votes on polls
+  - One vote per user per poll
+  - Tracks selected options
 
 /sharedCollections/{linkId}
   - Shared collection snapshots

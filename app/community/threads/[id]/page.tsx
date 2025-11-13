@@ -15,9 +15,10 @@ import { useSessionStore } from '@/stores/sessionStore'
 import { useAuthStatus } from '@/hooks/useAuthStatus'
 import { getCategoryInfo } from '@/utils/forumCategories'
 import NetflixLoader from '@/components/common/NetflixLoader'
+import ImageUpload from '@/components/forum/ImageUpload'
 import { formatDistanceToNow } from 'date-fns'
 import { Timestamp } from 'firebase/firestore'
-import { auth } from '@/lib/firebase'
+import { auth } from '@/firebase'
 import {
     ChatBubbleLeftIcon,
     HeartIcon,
@@ -64,6 +65,7 @@ export default function ThreadDetailPage({ params }: ThreadDetailPageProps) {
     } = useForumStore()
 
     const [replyContent, setReplyContent] = useState('')
+    const [replyImageUrls, setReplyImageUrls] = useState<string[]>([])
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [replyingTo, setReplyingTo] = useState<string | null>(null)
     const [isLiked, setIsLiked] = useState(false)
@@ -94,9 +96,11 @@ export default function ThreadDetailPage({ params }: ThreadDetailPageProps) {
                 userAvatar,
                 currentThread.id,
                 replyContent,
-                replyingTo || undefined
+                replyingTo || undefined,
+                replyImageUrls
             )
             setReplyContent('')
+            setReplyImageUrls([])
             setReplyingTo(null)
             await loadThreadReplies(currentThread.id)
         } catch (error) {
@@ -240,6 +244,34 @@ export default function ThreadDetailPage({ params }: ThreadDetailPageProps) {
                         <p className="text-gray-300 whitespace-pre-wrap">{currentThread.content}</p>
                     </div>
 
+                    {/* Images */}
+                    {currentThread.images && currentThread.images.length > 0 && (
+                        <div
+                            className={`grid gap-3 mb-4 ${
+                                currentThread.images.length === 1
+                                    ? 'grid-cols-1'
+                                    : currentThread.images.length === 2
+                                      ? 'grid-cols-2'
+                                      : 'grid-cols-2 md:grid-cols-3'
+                            }`}
+                        >
+                            {currentThread.images.map((imageUrl, index) => (
+                                <div
+                                    key={index}
+                                    className="relative aspect-video bg-zinc-800 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                                    onClick={() => window.open(imageUrl, '_blank')}
+                                >
+                                    <Image
+                                        src={imageUrl}
+                                        alt={`Thread image ${index + 1}`}
+                                        fill
+                                        className="object-cover"
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
                     {/* Tags */}
                     {currentThread.tags && currentThread.tags.length > 0 && (
                         <div className="flex flex-wrap gap-2 mb-4">
@@ -303,6 +335,15 @@ export default function ThreadDetailPage({ params }: ThreadDetailPageProps) {
                                 rows={4}
                                 maxLength={2000}
                             />
+
+                            <div className="mt-4">
+                                <ImageUpload
+                                    maxImages={4}
+                                    onImagesChange={setReplyImageUrls}
+                                    storagePath={`forum/threads/${currentThread?.id}/replies`}
+                                    disabled={isSubmitting}
+                                />
+                            </div>
 
                             <div className="flex items-center justify-between mt-4">
                                 <span className="text-sm text-gray-500">
@@ -399,6 +440,34 @@ export default function ThreadDetailPage({ params }: ThreadDetailPageProps) {
                                             <p className="text-gray-300 whitespace-pre-wrap mb-2">
                                                 {reply.content}
                                             </p>
+
+                                            {/* Reply Images */}
+                                            {reply.images && reply.images.length > 0 && (
+                                                <div
+                                                    className={`grid gap-2 mb-3 ${
+                                                        reply.images.length === 1
+                                                            ? 'grid-cols-1 max-w-xs'
+                                                            : 'grid-cols-2'
+                                                    }`}
+                                                >
+                                                    {reply.images.map((imageUrl, index) => (
+                                                        <div
+                                                            key={index}
+                                                            className="relative aspect-video bg-zinc-800 rounded overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                                                            onClick={() =>
+                                                                window.open(imageUrl, '_blank')
+                                                            }
+                                                        >
+                                                            <Image
+                                                                src={imageUrl}
+                                                                alt={`Reply image ${index + 1}`}
+                                                                fill
+                                                                className="object-cover"
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
 
                                             <div className="flex items-center gap-3 text-sm">
                                                 <button

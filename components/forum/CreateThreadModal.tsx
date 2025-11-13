@@ -11,11 +11,18 @@ import { useState } from 'react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { FORUM_CATEGORIES } from '@/utils/forumCategories'
 import { ForumCategory } from '@/types/forum'
+import ImageUpload from './ImageUpload'
 
 interface CreateThreadModalProps {
     isOpen: boolean
     onClose: () => void
-    onCreate: (title: string, content: string, category: ForumCategory, tags: string[]) => void
+    onCreate: (
+        title: string,
+        content: string,
+        category: ForumCategory,
+        tags: string[],
+        images?: string[]
+    ) => void
 }
 
 export function CreateThreadModal({ isOpen, onClose, onCreate }: CreateThreadModalProps) {
@@ -23,6 +30,7 @@ export function CreateThreadModal({ isOpen, onClose, onCreate }: CreateThreadMod
     const [content, setContent] = useState('')
     const [category, setCategory] = useState<ForumCategory>('general')
     const [tagsInput, setTagsInput] = useState('')
+    const [imageUrls, setImageUrls] = useState<string[]>([])
     const [isSubmitting, setIsSubmitting] = useState(false)
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -35,7 +43,7 @@ export function CreateThreadModal({ isOpen, onClose, onCreate }: CreateThreadMod
                 .split(',')
                 .map((tag) => tag.trim())
                 .filter((tag) => tag.length > 0)
-            await onCreate(title, content, category, tags)
+            await onCreate(title, content, category, tags, imageUrls)
             handleClose()
         } catch (error) {
             console.error('Failed to create thread:', error)
@@ -49,6 +57,7 @@ export function CreateThreadModal({ isOpen, onClose, onCreate }: CreateThreadMod
         setContent('')
         setCategory('general')
         setTagsInput('')
+        setImageUrls([])
         onClose()
     }
 
@@ -156,6 +165,19 @@ export function CreateThreadModal({ isOpen, onClose, onCreate }: CreateThreadMod
                         <div className="mt-1 text-xs text-gray-400">
                             Separate tags with commas. Max 5 tags.
                         </div>
+                    </div>
+
+                    {/* Images */}
+                    <div>
+                        <label className="block text-sm font-semibold text-white mb-2">
+                            Images (optional)
+                        </label>
+                        <ImageUpload
+                            maxImages={4}
+                            onImagesChange={setImageUrls}
+                            storagePath="forum/threads"
+                            disabled={isSubmitting}
+                        />
                     </div>
 
                     {/* Actions */}

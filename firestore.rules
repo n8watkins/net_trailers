@@ -475,6 +475,24 @@ service cloud.firestore {
              && (after.totalVotes >= before.totalVotes);
     }
 
+    // Content reports collection
+    match /content_reports/{reportId} {
+      // Only authenticated users can read reports they created
+      allow read: if request.auth != null && request.auth.uid == resource.data.reportedBy;
+
+      // Allow authenticated users to create reports
+      allow create: if request.auth != null
+                    && request.resource.data.reportedBy == request.auth.uid
+                    && request.resource.data.keys().hasAll(['id', 'contentId', 'contentType', 'reportedBy', 'reporterName', 'reason', 'details', 'createdAt', 'status'])
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.contentType in ['thread', 'reply', 'poll']
+                    && request.resource.data.reason in ['spam', 'harassment', 'inappropriate', 'misinformation', 'off-topic', 'other'];
+
+      // Only allow status updates by admins (future feature)
+      // For now, reports cannot be updated or deleted by users
+      allow update, delete: if false;
+    }
+
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;

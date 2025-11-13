@@ -294,7 +294,80 @@ This document outlines all features and improvements committed but not yet pushe
 
 ---
 
-## 10. Additional Improvements & Fixes
+## 10. Forum & Discussion System (Latest Addition)
+
+**What it does:** Complete community discussion platform with threads, polls, voting, and image uploads.
+
+### Key Components:
+
+- **Discussion Threads**:
+    - Create threads with rich text content and image uploads
+    - Categorized by General, Movies, TV Shows, Recommendations, Rankings, Announcements
+    - Reply system with nested conversation support
+    - Thread author moderation (can delete any replies)
+    - Like/unlike threads and replies
+    - View count tracking
+    - Detail pages at `/community/threads/[id]`
+
+- **Polls & Voting**:
+    - Create polls with 2-10 options
+    - Single or multiple-choice voting modes
+    - Optional expiration dates for time-limited polls
+    - Real-time vote counting with percentages
+    - Visual progress bars for results
+    - One vote per user per poll (Firestore tracking)
+    - Detail pages at `/community/polls/[id]`
+
+- **Image Upload System**:
+    - Firebase Storage integration for thread images
+    - Image preview and optimization
+    - Automatic resizing for performance
+    - Security rules for storage access
+    - ImageUpload component with drag-and-drop
+
+- **Moderation Features**:
+    - Report inappropriate content (threads, replies, polls)
+    - Thread owner can delete replies
+    - ReportModal component for content reporting
+    - Authentication required for all forum actions
+
+### How it Works:
+
+- Forum data stored in Firestore:
+    - `/threads/{threadId}` - Thread documents with metadata
+    - `/thread_replies/{replyId}` - Reply documents linked to threads
+    - `/thread_likes/{likeId}` - Like tracking for threads
+    - `/reply_likes/{likeId}` - Like tracking for replies
+    - `/polls/{pollId}` - Poll documents with options
+    - `/poll_votes/{voteId}` - Vote tracking per user
+- Images uploaded to Firebase Storage with security rules
+- Real-time updates using Firestore listeners
+- Comprehensive indexing for category, createdAt, userId
+- Vote validation prevents duplicate votes
+- Pagination for performance with large datasets
+
+### Connected Systems:
+
+- forumStore (Zustand) manages all forum state
+- Integrated into Community page with tabbed interface (Rankings, Discussions, Polls)
+- Search functionality spans threads and polls
+- User profiles show forum activity
+- Notification system for forum interactions (future)
+- Firebase Storage for image hosting
+
+### UI Components:
+
+- `CreateThreadModal.tsx` - Thread creation with image upload
+- `CreatePollModal.tsx` - Poll creation with option management
+- `ThreadCard.tsx` - Thread preview cards
+- `PollCard.tsx` - Poll preview with voting interface
+- `ImageUpload.tsx` - Reusable image upload component
+- `ReportModal.tsx` - Content reporting interface
+- Thread and poll detail pages with full functionality
+
+---
+
+## 11. Additional Improvements & Fixes
 
 ### Search & UI Enhancements:
 
@@ -329,8 +402,8 @@ This document outlines all features and improvements committed but not yet pushe
 
 ### Frontend:
 
-- **React 18** with TypeScript
-- **Next.js 15** (App Router)
+- **React 19** with TypeScript
+- **Next.js 16** (App Router)
 - **Zustand** for state management
 - **Tailwind CSS** for styling
 - **React DnD** for drag-and-drop
@@ -341,6 +414,7 @@ This document outlines all features and improvements committed but not yet pushe
 - **Next.js API Routes** (serverless functions)
 - **Firebase Firestore** for database
 - **Firebase Auth** for authentication
+- **Firebase Storage** for image uploads
 - **Vercel Cron Jobs** for scheduled tasks
 - **TMDB API** for content data
 - **Gemini AI** for semantic analysis
@@ -414,13 +488,13 @@ This document outlines all features and improvements committed but not yet pushe
 
 ## Key Metrics
 
-- **Total Commits**: 150+
-- **Features Completed**: 9 major feature sets
-- **Documentation Pages**: 7 comprehensive guides
-- **API Routes Added**: 15+
-- **Zustand Stores Created**: 5 focused stores
-- **Components Created**: 30+ new components
-- **Lines of Code**: ~15,000+ new lines
+- **Total Commits**: 378+
+- **Features Completed**: 10 major feature sets (including Forum & Discussion System)
+- **Documentation Pages**: 55+ comprehensive guides
+- **API Routes Added**: 30+
+- **Zustand Stores Created**: 18 focused stores
+- **Components Created**: 100+ new components
+- **Lines of Code**: ~50,000+ total lines
 - **Test Coverage**: Unit tests for critical paths
 
 ---
