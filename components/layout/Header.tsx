@@ -353,19 +353,18 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                             className={`headerLink cursor-pointer flex items-center space-x-1 select-none group relative overflow-visible ${pathname === '/test' ? 'text-white hover:text-white font-semibold' : ''}`}
                             onClick={() => router.push('/test')}
                         >
-                            <span className="absolute -inset-6 opacity-0 group-hover:opacity-40 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-red-400 via-yellow-400 via-25% via-green-400 via-50% via-blue-400 via-75% to-purple-400 rounded-md blur-lg transition-opacity duration-400 group-hover:animate-[rainbow-glow_3s_linear_infinite]" />
+                            <span className="absolute -inset-3 opacity-0 group-hover:opacity-40 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-red-400 via-yellow-400 via-25% via-green-400 via-50% via-blue-400 via-75% to-purple-400 rounded-md blur-lg transition-opacity duration-400 group-hover:animate-[rainbow-glow_3s_linear_infinite]" />
                             <BeakerIcon className="h-5 w-5 relative z-10" />
                             <span className="relative z-10">Test</span>
                         </div>
 
                         <div
-                            className={`headerLink cursor-pointer flex items-center space-x-1 select-none group relative overflow-visible ${
+                            className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${
                                 isRandomLoading ? 'cursor-wait' : ''
                             }`}
                             onClick={() => !isRandomLoading && handleRandomContent()}
                             title="Jump to a random movie or TV show"
                         >
-                            <span className="absolute -inset-6 opacity-0 group-hover:opacity-50 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-purple-300 via-pink-300/40 via-20% to-transparent rounded-md blur-xl transition-opacity duration-400 group-hover:animate-[psychedelic-flow_3s_linear_infinite]" />
                             <SparklesIcon
                                 className={`h-5 w-5 relative z-10 ${isRandomLoading ? 'animate-pulse' : ''}`}
                             />
@@ -613,7 +612,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                         </li>
                                         <li>
                                             <button
-                                                className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none group relative overflow-visible ${
+                                                className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
                                                     isRandomLoading
                                                         ? 'cursor-wait'
                                                         : 'hover:bg-white/10'
@@ -623,7 +622,6 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                                 }
                                                 disabled={isRandomLoading}
                                             >
-                                                <span className="absolute -inset-6 opacity-0 group-hover:opacity-50 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-purple-300 via-pink-300/40 via-20% to-transparent rounded-lg blur-xl transition-opacity duration-400 group-hover:animate-[psychedelic-flow_3s_linear_infinite]" />
                                                 <SparklesIcon
                                                     className={`h-5 w-5 relative z-10 ${isRandomLoading ? 'animate-pulse' : ''}`}
                                                 />
