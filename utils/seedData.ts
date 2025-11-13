@@ -709,6 +709,8 @@ export interface SeedDataOptions {
     watchLaterCount?: number
     createCollections?: boolean
     notificationCount?: number
+    threadCount?: number
+    pollCount?: number
 }
 
 /**
@@ -722,6 +724,8 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
         watchLaterCount = 12,
         createCollections = true,
         notificationCount = 8,
+        threadCount = 3,
+        pollCount = 2,
     } = options
 
     // Import stores dynamically to avoid circular dependencies
@@ -1259,6 +1263,58 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
         }
     } else {
         console.log('  ⏭️  Skipping rankings (guest mode)')
+    }
+
+    // ===================================
+    // 8. Forum Threads and Polls (auth only)
+    // ===================================
+    if (!isGuest) {
+        console.log('\n📝 Creating forum threads and polls...')
+        const { useForumStore } = await import('../stores/forumStore')
+        const { SEED_THREADS, SEED_POLLS } = await import('./forumSeedData')
+
+        // Create sample threads
+        const threadsToCreate = SEED_THREADS.slice(0, threadCount)
+        for (const threadData of threadsToCreate) {
+            try {
+                await useForumStore
+                    .getState()
+                    .createThread(
+                        userId,
+                        threadData.title,
+                        threadData.content,
+                        threadData.category,
+                        threadData.tags
+                    )
+                console.log(`    ✅ Created thread: ${threadData.title}`)
+                await new Promise((resolve) => setTimeout(resolve, 200))
+            } catch (error) {
+                console.error(`❌ Failed to create thread "${threadData.title}":`, error)
+            }
+        }
+
+        // Create sample polls
+        const pollsToCreate = SEED_POLLS.slice(0, pollCount)
+        for (const pollData of pollsToCreate) {
+            try {
+                const optionTexts = pollData.options.map((opt) => opt.text)
+                await useForumStore.getState().createPoll(
+                    userId,
+                    pollData.question,
+                    optionTexts,
+                    pollData.category,
+                    pollData.description,
+                    pollData.isMultipleChoice,
+                    undefined // No expiration
+                )
+                console.log(`    ✅ Created poll: ${pollData.question}`)
+                await new Promise((resolve) => setTimeout(resolve, 200))
+            } catch (error) {
+                console.error(`❌ Failed to create poll "${pollData.question}":`, error)
+            }
+        }
+    } else {
+        console.log('  ⏭️  Skipping forum content (guest mode)')
     }
 
     // Wait a bit to ensure all async saves complete before page reload
