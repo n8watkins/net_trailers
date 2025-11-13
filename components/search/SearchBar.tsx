@@ -95,6 +95,7 @@ export default function SearchBar({
         }
     }, [transcript, isListening, updateQuery])
 
+    const [isMounted, setIsMounted] = useState(false)
     const [isFocused, setIsFocused] = useState(false)
     const [showSuggestions, setShowSuggestions] = useState(false)
     const [selectedIndex, setSelectedIndex] = useState(-1)
@@ -104,6 +105,11 @@ export default function SearchBar({
     const [showFilters, setShowFilters] = useState(false)
     const [isTyping, setIsTyping] = useState(false)
     const inputRef = useRef<HTMLInputElement>(null)
+
+    // Fix hydration mismatch - only render voice button animations after mount
+    useEffect(() => {
+        setIsMounted(true)
+    }, [])
     const suggestionsRef = useRef<HTMLDivElement>(null)
     const resultRefs = useRef<(HTMLDivElement | null)[]>([])
     const seeAllButtonRef = useRef<HTMLButtonElement>(null)
@@ -492,8 +498,8 @@ export default function SearchBar({
                                 aria-pressed={isListening}
                             >
                                 <div className="relative">
-                                    {/* Animated pulsing rings when listening */}
-                                    {isListening && (
+                                    {/* Animated pulsing rings when listening - only after mount to prevent hydration mismatch */}
+                                    {isMounted && isListening && (
                                         <>
                                             <span className="absolute inset-0 rounded-full bg-red-500/40 animate-ping" />
                                             <span
@@ -511,7 +517,7 @@ export default function SearchBar({
                                     )}
                                     <MicrophoneIcon
                                         className={`h-5 w-5 relative z-10 transition-all ${
-                                            isListening
+                                            isMounted && isListening
                                                 ? 'scale-110 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)] !text-red-500'
                                                 : ''
                                         }`}
