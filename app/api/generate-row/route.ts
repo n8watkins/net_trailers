@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { withAuth } from '@/lib/auth-middleware'
 import { consumeGeminiRateLimit } from '@/lib/geminiRateLimiter'
-import { getTMDBHeaders } from '@/utils/tmdbFetch'
 import { sanitizeInput } from '@/utils/inputSanitization'
 import { apiLog, apiError, apiWarn } from '@/utils/debugLogger'
 
@@ -283,15 +282,17 @@ async function enrichMoviesWithTMDB(
             let tmdbData: any = null
 
             // Search TMDB by title + year
+            // TMDB API v3 requires authentication via api_key query parameter
             const searchEndpoint =
                 mediaType === 'tv'
                     ? 'https://api.themoviedb.org/3/search/tv'
                     : 'https://api.themoviedb.org/3/search/movie'
 
             const searchUrl = new URL(searchEndpoint)
+            searchUrl.searchParams.append('api_key', API_KEY)
             searchUrl.searchParams.append('language', 'en-US')
             searchUrl.searchParams.append('query', movie.title)
-            const searchResponse = await fetch(searchUrl.toString(), { headers: getTMDBHeaders() })
+            const searchResponse = await fetch(searchUrl.toString())
 
             if (searchResponse.ok) {
                 const searchData = await searchResponse.json()

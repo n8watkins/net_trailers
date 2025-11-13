@@ -353,7 +353,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                             className={`headerLink cursor-pointer flex items-center space-x-1 select-none group relative overflow-visible ${pathname === '/test' ? 'text-white hover:text-white font-semibold' : ''}`}
                             onClick={() => router.push('/test')}
                         >
-                            <span className="absolute -inset-6 opacity-0 group-hover:opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-purple-400/50 via-blue-400/50 via-40% to-transparent rounded-md blur-md transition-opacity duration-400 group-hover:animate-[rainbow-glow_4s_linear_infinite]" />
+                            <span className="absolute -inset-6 opacity-0 group-hover:opacity-40 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-red-400 via-yellow-400 via-25% via-green-400 via-50% via-blue-400 via-75% to-purple-400 rounded-md blur-lg transition-opacity duration-400 group-hover:animate-[rainbow-glow_3s_linear_infinite]" />
                             <BeakerIcon className="h-5 w-5 relative z-10" />
                             <span className="relative z-10">Test</span>
                         </div>
