@@ -59,65 +59,39 @@ export async function fetchHomeData(filter?: string): Promise<HomeData> {
     if (filter === 'tv') {
         // Fetch TV-specific content
         fetchPromises = [
-            fetch(`${baseUrl}/api/tv/trending?${childSafetyParam}`, {
-                cache: 'no-store',
-            }),
-            fetch(`${baseUrl}/api/tv/top-rated?page=1&${childSafetyParam}`, { cache: 'no-store' }),
-            fetch(`${baseUrl}/api/tv/top-rated?page=2&${childSafetyParam}`, { cache: 'no-store' }),
-            fetch(`${baseUrl}/api/genres/tv/10759?${childSafetyParam}`, {
-                cache: 'no-store',
-            }), // Action & Adventure
-            fetch(`${baseUrl}/api/genres/tv/35?${childSafetyParam}`, {
-                cache: 'no-store',
-            }), // Comedy
-            fetch(`${baseUrl}/api/genres/tv/10765?${childSafetyParam}`, {
-                cache: 'no-store',
-            }), // Sci-Fi & Fantasy
-            fetch(`${baseUrl}/api/genres/tv/16?${childSafetyParam}`, {
-                cache: 'no-store',
-            }), // Animation
-            fetch(`${baseUrl}/api/genres/tv/99?${childSafetyParam}`, {
-                cache: 'no-store',
-            }), // Documentary
+            fetch(`${baseUrl}/api/tv/trending?${childSafetyParam}`),
+            fetch(`${baseUrl}/api/tv/top-rated?page=1&${childSafetyParam}`),
+            fetch(`${baseUrl}/api/tv/top-rated?page=2&${childSafetyParam}`),
+            fetch(`${baseUrl}/api/genres/tv/10759?${childSafetyParam}`), // Action & Adventure
+            fetch(`${baseUrl}/api/genres/tv/35?${childSafetyParam}`), // Comedy
+            fetch(`${baseUrl}/api/genres/tv/10765?${childSafetyParam}`), // Sci-Fi & Fantasy
+            fetch(`${baseUrl}/api/genres/tv/16?${childSafetyParam}`), // Animation
+            fetch(`${baseUrl}/api/genres/tv/99?${childSafetyParam}`), // Documentary
         ]
     } else if (filter === 'movies') {
         // Fetch movie-specific content
         // In child safety mode, use family-friendly genres only
         if (childSafetyEnabled) {
             fetchPromises = [
-                fetch(`${baseUrl}/api/movies/trending?${childSafetyParam}`, { cache: 'no-store' }),
-                fetch(`${baseUrl}/api/movies/top-rated?page=1&${childSafetyParam}`, {
-                    cache: 'no-store',
-                }),
-                fetch(`${baseUrl}/api/movies/top-rated?page=2&${childSafetyParam}`, {
-                    cache: 'no-store',
-                }),
-                fetch(`${baseUrl}/api/genres/movie/16?${childSafetyParam}`, { cache: 'no-store' }), // Animation
-                fetch(`${baseUrl}/api/genres/movie/10751?${childSafetyParam}`, {
-                    cache: 'no-store',
-                }), // Family
-                fetch(`${baseUrl}/api/genres/movie/12?${childSafetyParam}`, { cache: 'no-store' }), // Adventure
-                fetch(`${baseUrl}/api/genres/movie/10749,18?${childSafetyParam}`, {
-                    cache: 'no-store',
-                }), // Romance+Drama (multi-genre)
-                fetch(`${baseUrl}/api/genres/movie/99?${childSafetyParam}`, { cache: 'no-store' }), // Documentary
+                fetch(`${baseUrl}/api/movies/trending?${childSafetyParam}`),
+                fetch(`${baseUrl}/api/movies/top-rated?page=1&${childSafetyParam}`),
+                fetch(`${baseUrl}/api/movies/top-rated?page=2&${childSafetyParam}`),
+                fetch(`${baseUrl}/api/genres/movie/16?${childSafetyParam}`), // Animation
+                fetch(`${baseUrl}/api/genres/movie/10751?${childSafetyParam}`), // Family
+                fetch(`${baseUrl}/api/genres/movie/12?${childSafetyParam}`), // Adventure
+                fetch(`${baseUrl}/api/genres/movie/10749,18?${childSafetyParam}`), // Romance+Drama (multi-genre)
+                fetch(`${baseUrl}/api/genres/movie/99?${childSafetyParam}`), // Documentary
             ]
         } else {
             fetchPromises = [
-                fetch(`${baseUrl}/api/movies/trending?${childSafetyParam}`, { cache: 'no-store' }),
-                fetch(`${baseUrl}/api/movies/top-rated?page=1&${childSafetyParam}`, {
-                    cache: 'no-store',
-                }),
-                fetch(`${baseUrl}/api/movies/top-rated?page=2&${childSafetyParam}`, {
-                    cache: 'no-store',
-                }),
-                fetch(`${baseUrl}/api/genres/movie/28?${childSafetyParam}`, { cache: 'no-store' }), // Action
-                fetch(`${baseUrl}/api/genres/movie/35?${childSafetyParam}`, { cache: 'no-store' }), // Comedy
-                fetch(`${baseUrl}/api/genres/movie/27?${childSafetyParam}`, { cache: 'no-store' }), // Horror
-                fetch(`${baseUrl}/api/genres/movie/10749,18?${childSafetyParam}`, {
-                    cache: 'no-store',
-                }), // Romance+Drama (multi-genre)
-                fetch(`${baseUrl}/api/genres/movie/99?${childSafetyParam}`, { cache: 'no-store' }), // Documentary
+                fetch(`${baseUrl}/api/movies/trending?${childSafetyParam}`),
+                fetch(`${baseUrl}/api/movies/top-rated?page=1&${childSafetyParam}`),
+                fetch(`${baseUrl}/api/movies/top-rated?page=2&${childSafetyParam}`),
+                fetch(`${baseUrl}/api/genres/movie/28?${childSafetyParam}`), // Action
+                fetch(`${baseUrl}/api/genres/movie/35?${childSafetyParam}`), // Comedy
+                fetch(`${baseUrl}/api/genres/movie/27?${childSafetyParam}`), // Horror
+                fetch(`${baseUrl}/api/genres/movie/10749,18?${childSafetyParam}`), // Romance+Drama (multi-genre)
+                fetch(`${baseUrl}/api/genres/movie/99?${childSafetyParam}`), // Documentary
             ]
         }
     } else {
@@ -126,80 +100,50 @@ export async function fetchHomeData(filter?: string): Promise<HomeData> {
         if (childSafetyEnabled) {
             fetchPromises = [
                 // Fetch both movie and TV trending
-                fetch(`${baseUrl}/api/movies/trending?${childSafetyParam}`, { cache: 'no-store' }),
-                fetch(`${baseUrl}/api/tv/trending?${childSafetyParam}`, {
-                    cache: 'no-store',
-                }),
+                fetch(`${baseUrl}/api/movies/trending?${childSafetyParam}`),
+                fetch(`${baseUrl}/api/tv/trending?${childSafetyParam}`),
                 // Fetch both movie and TV top rated
-                fetch(`${baseUrl}/api/movies/top-rated?page=1&${childSafetyParam}`, {
-                    cache: 'no-store',
-                }),
-                fetch(`${baseUrl}/api/tv/top-rated?page=1&${childSafetyParam}`, {
-                    cache: 'no-store',
-                }),
+                fetch(`${baseUrl}/api/movies/top-rated?page=1&${childSafetyParam}`),
+                fetch(`${baseUrl}/api/tv/top-rated?page=1&${childSafetyParam}`),
                 // Mixed genres - Animation (movies + TV)
-                fetch(`${baseUrl}/api/genres/movie/16?${childSafetyParam}`, { cache: 'no-store' }),
-                fetch(`${baseUrl}/api/genres/tv/16?${childSafetyParam}`, {
-                    cache: 'no-store',
-                }),
+                fetch(`${baseUrl}/api/genres/movie/16?${childSafetyParam}`),
+                fetch(`${baseUrl}/api/genres/tv/16?${childSafetyParam}`),
                 // Mixed genres - Family/Comedy (movies + TV)
-                fetch(`${baseUrl}/api/genres/movie/10751?${childSafetyParam}`, {
-                    cache: 'no-store',
-                }),
-                fetch(`${baseUrl}/api/genres/tv/35?${childSafetyParam}`, {
-                    cache: 'no-store',
-                }),
+                fetch(`${baseUrl}/api/genres/movie/10751?${childSafetyParam}`),
+                fetch(`${baseUrl}/api/genres/tv/35?${childSafetyParam}`),
                 // Mixed genres - Adventure (movies + TV Action & Adventure)
-                fetch(`${baseUrl}/api/genres/movie/12?${childSafetyParam}`, { cache: 'no-store' }),
-                fetch(`${baseUrl}/api/genres/tv/10759?${childSafetyParam}`, { cache: 'no-store' }),
+                fetch(`${baseUrl}/api/genres/movie/12?${childSafetyParam}`),
+                fetch(`${baseUrl}/api/genres/tv/10759?${childSafetyParam}`),
                 // Mixed genres - Romance+Drama (movies) + Sci-Fi & Fantasy (TV)
-                fetch(`${baseUrl}/api/genres/movie/10749,18?${childSafetyParam}`, {
-                    cache: 'no-store',
-                }),
-                fetch(`${baseUrl}/api/genres/tv/10765?${childSafetyParam}`, { cache: 'no-store' }),
+                fetch(`${baseUrl}/api/genres/movie/10749,18?${childSafetyParam}`),
+                fetch(`${baseUrl}/api/genres/tv/10765?${childSafetyParam}`),
                 // Documentary (both)
-                fetch(`${baseUrl}/api/genres/movie/99?${childSafetyParam}`, { cache: 'no-store' }),
-                fetch(`${baseUrl}/api/genres/tv/99?${childSafetyParam}`, {
-                    cache: 'no-store',
-                }),
+                fetch(`${baseUrl}/api/genres/movie/99?${childSafetyParam}`),
+                fetch(`${baseUrl}/api/genres/tv/99?${childSafetyParam}`),
             ]
         } else {
             fetchPromises = [
                 // Fetch both movie and TV trending
-                fetch(`${baseUrl}/api/movies/trending?${childSafetyParam}`, { cache: 'no-store' }),
-                fetch(`${baseUrl}/api/tv/trending?${childSafetyParam}`, {
-                    cache: 'no-store',
-                }),
+                fetch(`${baseUrl}/api/movies/trending?${childSafetyParam}`),
+                fetch(`${baseUrl}/api/tv/trending?${childSafetyParam}`),
                 // Fetch both movie and TV top rated
-                fetch(`${baseUrl}/api/movies/top-rated?page=1&${childSafetyParam}`, {
-                    cache: 'no-store',
-                }),
-                fetch(`${baseUrl}/api/tv/top-rated?page=1&${childSafetyParam}`, {
-                    cache: 'no-store',
-                }),
+                fetch(`${baseUrl}/api/movies/top-rated?page=1&${childSafetyParam}`),
+                fetch(`${baseUrl}/api/tv/top-rated?page=1&${childSafetyParam}`),
                 // Mixed genres - Action (movies + TV Action & Adventure)
-                fetch(`${baseUrl}/api/genres/movie/28?${childSafetyParam}`, { cache: 'no-store' }),
-                fetch(`${baseUrl}/api/genres/tv/10759?${childSafetyParam}`, { cache: 'no-store' }),
+                fetch(`${baseUrl}/api/genres/movie/28?${childSafetyParam}`),
+                fetch(`${baseUrl}/api/genres/tv/10759?${childSafetyParam}`),
                 // Mixed genres - Comedy (both)
-                fetch(`${baseUrl}/api/genres/movie/35?${childSafetyParam}`, { cache: 'no-store' }),
-                fetch(`${baseUrl}/api/genres/tv/35?${childSafetyParam}`, {
-                    cache: 'no-store',
-                }),
+                fetch(`${baseUrl}/api/genres/movie/35?${childSafetyParam}`),
+                fetch(`${baseUrl}/api/genres/tv/35?${childSafetyParam}`),
                 // Mixed genres - Horror (movies) + Sci-Fi & Fantasy (TV)
-                fetch(`${baseUrl}/api/genres/movie/27?${childSafetyParam}`, { cache: 'no-store' }),
-                fetch(`${baseUrl}/api/genres/tv/10765?${childSafetyParam}`, { cache: 'no-store' }),
+                fetch(`${baseUrl}/api/genres/movie/27?${childSafetyParam}`),
+                fetch(`${baseUrl}/api/genres/tv/10765?${childSafetyParam}`),
                 // Mixed genres - Romance+Drama (movies) + Animation (TV)
-                fetch(`${baseUrl}/api/genres/movie/10749,18?${childSafetyParam}`, {
-                    cache: 'no-store',
-                }),
-                fetch(`${baseUrl}/api/genres/tv/16?${childSafetyParam}`, {
-                    cache: 'no-store',
-                }),
+                fetch(`${baseUrl}/api/genres/movie/10749,18?${childSafetyParam}`),
+                fetch(`${baseUrl}/api/genres/tv/16?${childSafetyParam}`),
                 // Documentary (both)
-                fetch(`${baseUrl}/api/genres/movie/99?${childSafetyParam}`, { cache: 'no-store' }),
-                fetch(`${baseUrl}/api/genres/tv/99?${childSafetyParam}`, {
-                    cache: 'no-store',
-                }),
+                fetch(`${baseUrl}/api/genres/movie/99?${childSafetyParam}`),
+                fetch(`${baseUrl}/api/genres/tv/99?${childSafetyParam}`),
             ]
         }
     }
