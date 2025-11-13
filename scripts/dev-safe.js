@@ -85,10 +85,21 @@ function startDevServer() {
     }
 }
 
+function shouldShowNextLogs() {
+    // Check debug settings from localStorage (simulated by checking a flag file)
+    // Since we can't access browser localStorage from Node, we use an environment variable
+    if (process.env.SHOW_NEXT_LOGS === 'false') {
+        return false
+    }
+    return true // Default: show logs
+}
+
 function launchServer() {
+    const showLogs = shouldShowNextLogs()
+
     // Start the dev server with WSL2 optimizations
     const devProcess = spawn('npm', ['run', 'dev:next'], {
-        stdio: 'inherit',
+        stdio: showLogs ? 'inherit' : ['inherit', 'pipe', 'pipe'],
         cwd: process.cwd(),
         env: {
             ...process.env,
@@ -99,6 +110,50 @@ function launchServer() {
             CHOKIDAR_INTERVAL: '1000',
         },
     })
+
+    // Filter Next.js request logs if showNextServerLogs is disabled
+    if (!showLogs) {
+        const filterNextLogs = (data) => {
+            const output = data.toString()
+            // Filter out Next.js GET/POST request logs but keep important messages
+            const lines = output.split('\n')
+            const filtered = lines
+                .filter((line) => {
+                    // Keep compilation messages, errors, and warnings
+                    if (
+                        line.includes('compile:') ||
+                        line.includes('error') ||
+                        line.includes('Error') ||
+                        line.includes('warn') ||
+                        line.includes('Warning') ||
+                        line.includes('✓') ||
+                        line.includes('Starting') ||
+                        line.includes('Ready') ||
+                        line.includes('Local:') ||
+                        line.includes('Network:') ||
+                        line.includes('Experiments:')
+                    ) {
+                        return true
+                    }
+
+                    // Filter out request logs (GET/POST with status codes and timings)
+                    if (/^(GET|POST|PUT|DELETE|PATCH)\s+\//.test(line.trim())) {
+                        return false
+                    }
+
+                    // Keep everything else
+                    return line.trim().length > 0
+                })
+                .join('\n')
+
+            if (filtered.trim()) {
+                process.stdout.write(filtered + '\n')
+            }
+        }
+
+        devProcess.stdout.on('data', filterNextLogs)
+        devProcess.stderr.on('data', filterNextLogs)
+    }
 
     devProcess.on('error', (error) => {
         console.error('❌ Failed to start dev server:', error)

@@ -25,6 +25,7 @@ interface DebugSettings {
     showSeedButton: boolean
     showApiDebug: boolean
     showChildSafetyDebug: boolean
+    showNextServerLogs: boolean
 }
 
 interface Position {
@@ -57,6 +58,7 @@ export default function DebugControls() {
         showSeedButton: false,
         showApiDebug: false,
         showChildSafetyDebug: false,
+        showNextServerLogs: true, // Enabled by default
     })
 
     // Visibility state - load from localStorage, hidden by default
@@ -243,6 +245,7 @@ export default function DebugControls() {
                     'showWebVitals',
                     'showUIDebug',
                     'showApiDebug',
+                    'showNextServerLogs',
                 ]
             case 'features':
                 return [
@@ -430,6 +433,12 @@ export default function DebugControls() {
                                 'amber',
                                 <CodeBracketIcon className="w-3 h-3" />
                             )}
+                            {renderButton(
+                                'showNextServerLogs',
+                                'Next.js Server',
+                                'Toggle Next.js dev server request logs (requires restart)',
+                                'slate'
+                            )}
                         </>
                     )}
 
@@ -497,6 +506,7 @@ export function useDebugSettings() {
         showSeedButton: false,
         showApiDebug: false,
         showChildSafetyDebug: false,
+        showNextServerLogs: true, // Enabled by default
     })
 
     useEffect(() => {

@@ -356,7 +356,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                             disabled={isRandomLoading}
                             title="Jump to a random movie or TV show"
                         >
-                            <span className="absolute -inset-4 opacity-0 group-hover:opacity-50 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-purple-500/80 via-pink-500/40 to-transparent rounded-md blur-lg transition-opacity duration-300 delay-100" />
+                            <span className="absolute -inset-4 opacity-0 group-hover:opacity-100 rounded-md blur-lg transition-all duration-200 delay-75 animate-[gradient-rotate_2s_linear_infinite]" />
                             {isRandomLoading ? (
                                 <ArrowPathIcon className="h-5 w-5 relative z-10" />
                             ) : (
@@ -618,7 +618,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                                 }
                                                 disabled={isRandomLoading}
                                             >
-                                                <span className="absolute -inset-4 opacity-0 group-hover:opacity-50 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-purple-500/80 via-pink-500/40 to-transparent rounded-lg blur-lg transition-opacity duration-300 delay-100" />
+                                                <span className="absolute -inset-4 opacity-0 group-hover:opacity-100 rounded-lg blur-lg transition-all duration-200 delay-75 animate-[gradient-rotate_2s_linear_infinite]" />
                                                 {isRandomLoading ? (
                                                     <ArrowPathIcon className="h-5 w-5 animate-spin relative z-10" />
                                                 ) : (

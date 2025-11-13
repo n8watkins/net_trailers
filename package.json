@@ -2,6 +2,7 @@
     "private": true,
     "scripts": {
         "dev": "node scripts/dev-safe.js",
+        "dev:quiet": "SHOW_NEXT_LOGS=false node scripts/dev-safe.js",
         "dev:next": "CHOKIDAR_USEPOLLING=1 WATCHPACK_POLLING=true next dev -p 3000",
         "dev:turbo": "CHOKIDAR_USEPOLLING=1 WATCHPACK_POLLING=true next dev --turbo -p 3000",
         "build": "next build",
