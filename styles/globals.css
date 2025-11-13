@@ -155,6 +155,29 @@
             filter: hue-rotate(360deg);
         }
     }
+
+    @keyframes gradient-shift {
+        0%,
+        100% {
+            background-position: 0% 50%;
+        }
+        50% {
+            background-position: 100% 50%;
+        }
+    }
+
+    .animate-gradient-shift {
+        background-size: 200% 200%;
+        animation: gradient-shift 10s ease infinite;
+    }
+
+    .drop-shadow-glow-yellow {
+        filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.6));
+    }
+
+    .drop-shadow-glow-red {
+        filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.8));
+    }
 }
 
 /* Custom overlay scrollbar styles */
