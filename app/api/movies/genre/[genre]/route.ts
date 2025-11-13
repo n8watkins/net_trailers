@@ -43,7 +43,8 @@ export async function GET(
     try {
         // Build URL with certification filtering for child safety mode
         const url = new URL(`${BASE_URL}/discover/movie`)
-        // API key moved to Authorization header for security
+        // TMDB API v3 requires authentication via api_key query parameter
+        url.searchParams.append('api_key', API_KEY)
         url.searchParams.append('language', 'en-US')
         url.searchParams.append('with_genres', genreId.toString())
         url.searchParams.append('page', page)
@@ -54,13 +55,7 @@ export async function GET(
             url.searchParams.append('certification.lte', 'PG-13')
         }
 
-        // Use Authorization header instead of query parameter for security
-        const response = await fetch(url.toString(), {
-            headers: {
-                Authorization: `Bearer ${API_KEY}`,
-                'Content-Type': 'application/json',
-            },
-        })
+        const response = await fetch(url.toString())
 
         if (!response.ok) {
             throw new Error(`TMDB API error: ${response.status}`)

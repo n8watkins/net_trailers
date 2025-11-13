@@ -33,7 +33,8 @@ export async function GET(request: NextRequest) {
         // Build URL for TMDB discover API
         const discoverEndpoint = mediaType === 'tv' ? 'discover/tv' : 'discover/movie'
         const url = new URL(`${BASE_URL}/${discoverEndpoint}`)
-        // API key moved to Authorization header for security
+        // TMDB API v3 requires authentication via api_key query parameter
+        url.searchParams.append('api_key', API_KEY)
         url.searchParams.append('language', 'en-US')
         url.searchParams.append('page', page)
         url.searchParams.append('sort_by', 'popularity.desc')
@@ -79,13 +80,7 @@ export async function GET(request: NextRequest) {
             url.searchParams.append('certification.lte', 'PG-13')
         }
 
-        // Use Authorization header instead of query parameter for security
-        const response = await fetch(url.toString(), {
-            headers: {
-                Authorization: `Bearer ${API_KEY}`,
-                'Content-Type': 'application/json',
-            },
-        })
+        const response = await fetch(url.toString())
 
         if (!response.ok) {
             throw new Error(`TMDB API error: ${response.status}`)
