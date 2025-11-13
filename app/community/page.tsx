@@ -20,7 +20,10 @@ import { POPULAR_TAGS } from '../../utils/popularTags'
 import { FORUM_CATEGORIES } from '../../utils/forumCategories'
 import { ThreadCard } from '../../components/forum/ThreadCard'
 import { PollCard } from '../../components/forum/PollCard'
+import { CreateThreadModal } from '../../components/forum/CreateThreadModal'
+import { CreatePollModal } from '../../components/forum/CreatePollModal'
 import { useForumStore } from '../../stores/forumStore'
+import { useSessionStore } from '../../stores/sessionStore'
 import { ForumCategory } from '../../types/forum'
 import {
     TrophyIcon,
@@ -404,8 +407,26 @@ function RankingsTab({
 
 // Forums Tab Component
 function ForumsTab() {
-    const { threads, isLoadingThreads } = useForumStore()
+    const { threads, isLoadingThreads, loadThreads, createThread } = useForumStore()
+    const getUserId = useSessionStore((state) => state.getUserId)
     const [selectedCategory, setSelectedCategory] = useState<ForumCategory | 'all'>('all')
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+
+    // Load threads on mount
+    useEffect(() => {
+        loadThreads()
+    }, [loadThreads])
+
+    const handleCreateThread = async (
+        title: string,
+        content: string,
+        category: ForumCategory,
+        tags: string[]
+    ) => {
+        const userId = getUserId()
+        await createThread(userId, title, content, category, tags)
+        await loadThreads() // Reload threads
+    }
 
     return (
         <div className="space-y-6">
@@ -439,11 +460,21 @@ function ForumsTab() {
                 </div>
 
                 {/* Create thread button */}
-                <button className="px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors flex items-center gap-2">
+                <button
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
+                >
                     <ChatBubbleLeftRightIcon className="w-5 h-5" />
                     New Thread
                 </button>
             </div>
+
+            {/* Create Thread Modal */}
+            <CreateThreadModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                onCreate={handleCreateThread}
+            />
 
             {/* Empty state */}
             {!isLoadingThreads && threads.length === 0 && (
@@ -456,7 +487,10 @@ function ForumsTab() {
                         Be the first to start a discussion! Share your thoughts, ask questions, or
                         start a debate about your favorite movies and shows.
                     </p>
-                    <button className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors">
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors"
+                    >
                         Create First Thread
                     </button>
                 </div>
@@ -476,8 +510,36 @@ function ForumsTab() {
 
 // Polls Tab Component
 function PollsTab() {
-    const { polls, isLoadingPolls } = useForumStore()
+    const { polls, isLoadingPolls, loadPolls, createPoll } = useForumStore()
+    const getUserId = useSessionStore((state) => state.getUserId)
     const [selectedCategory, setSelectedCategory] = useState<ForumCategory | 'all'>('all')
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+
+    // Load polls on mount
+    useEffect(() => {
+        loadPolls()
+    }, [loadPolls])
+
+    const handleCreatePoll = async (
+        question: string,
+        options: string[],
+        category: ForumCategory,
+        description?: string,
+        isMultipleChoice?: boolean,
+        expiresInDays?: number
+    ) => {
+        const userId = getUserId()
+        await createPoll(
+            userId,
+            question,
+            options,
+            category,
+            description,
+            isMultipleChoice,
+            expiresInDays
+        )
+        await loadPolls() // Reload polls
+    }
 
     return (
         <div className="space-y-6">
@@ -511,11 +573,21 @@ function PollsTab() {
                 </div>
 
                 {/* Create poll button */}
-                <button className="px-5 py-2.5 bg-pink-500 hover:bg-pink-600 text-white font-semibold rounded-lg transition-colors flex items-center gap-2">
+                <button
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="px-5 py-2.5 bg-pink-500 hover:bg-pink-600 text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
+                >
                     <ChartBarIcon className="w-5 h-5" />
                     New Poll
                 </button>
             </div>
+
+            {/* Create Poll Modal */}
+            <CreatePollModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                onCreate={handleCreatePoll}
+            />
 
             {/* Empty state */}
             {!isLoadingPolls && polls.length === 0 && (
@@ -528,7 +600,10 @@ function PollsTab() {
                         Be the first to create a poll! Ask the community what they think about hot
                         topics, favorite shows, or anything else.
                     </p>
-                    <button className="px-6 py-3 bg-pink-500 hover:bg-pink-600 text-white font-semibold rounded-lg transition-colors">
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="px-6 py-3 bg-pink-500 hover:bg-pink-600 text-white font-semibold rounded-lg transition-colors"
+                    >
                         Create First Poll
                     </button>
                 </div>

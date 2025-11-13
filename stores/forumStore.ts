@@ -100,9 +100,10 @@ export const useForumStore = create<ForumState>((set, get) => ({
     loadThreads: async (category, limit = 50) => {
         set({ isLoadingThreads: true, threadsError: null })
         try {
-            // TODO: Implement Firestore query
-            // For now, return empty array
-            set({ threads: [], isLoadingThreads: false })
+            // Load seed data for now (replace with Firestore later)
+            const { loadSeedData } = await import('@/utils/forumSeedData')
+            const { threads } = loadSeedData()
+            set({ threads, isLoadingThreads: false })
         } catch (error) {
             set({
                 threadsError: error instanceof Error ? error.message : 'Failed to load threads',
@@ -202,8 +203,10 @@ export const useForumStore = create<ForumState>((set, get) => ({
     loadPolls: async (category, limit = 50) => {
         set({ isLoadingPolls: true, pollsError: null })
         try {
-            // TODO: Implement Firestore query
-            set({ polls: [], isLoadingPolls: false })
+            // Load seed data for now (replace with Firestore later)
+            const { loadSeedData } = await import('@/utils/forumSeedData')
+            const { polls } = loadSeedData()
+            set({ polls, isLoadingPolls: false })
         } catch (error) {
             set({
                 pollsError: error instanceof Error ? error.message : 'Failed to load polls',

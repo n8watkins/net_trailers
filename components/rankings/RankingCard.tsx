@@ -87,9 +87,9 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
                                         sizes="(max-width: 768px) 33vw, (max-width: 1200px) 25vw, 200px"
                                         className="object-cover rounded-md shadow-lg"
                                     />
-                                    {/* Position badge */}
-                                    <div className="absolute -top-2 -left-2 bg-yellow-500 text-black font-bold rounded-full w-8 h-8 flex items-center justify-center text-sm shadow-lg">
-                                        {item.position}
+                                    {/* Subtle position indicator */}
+                                    <div className="absolute top-2 left-2 bg-black/70 backdrop-blur-sm text-white font-semibold rounded px-2 py-0.5 text-xs">
+                                        #{item.position}
                                     </div>
                                 </div>
                             ))}
@@ -100,8 +100,8 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
 
                         {/* Trending badge for popular rankings */}
                         {ranking.likes > 50 && (
-                            <div className="absolute top-3 right-3 px-2.5 py-1 bg-orange-500 rounded-md text-xs font-bold text-white shadow-md flex items-center gap-1">
-                                <FireIcon className="w-3.5 h-3.5" />
+                            <div className="absolute top-3 right-3 px-2.5 py-1 bg-orange-500/90 backdrop-blur-sm rounded text-xs font-semibold text-white flex items-center gap-1">
+                                <FireIcon className="w-3 h-3" />
                                 <span>HOT</span>
                             </div>
                         )}
