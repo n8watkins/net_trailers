@@ -17,6 +17,11 @@ import { useRankingStore } from '../../stores/rankingStore'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import NetflixLoader from '../../components/common/NetflixLoader'
 import { POPULAR_TAGS } from '../../utils/popularTags'
+import { FORUM_CATEGORIES } from '../../utils/forumCategories'
+import { ThreadCard } from '../../components/forum/ThreadCard'
+import { PollCard } from '../../components/forum/PollCard'
+import { useForumStore } from '../../stores/forumStore'
+import { ForumCategory } from '../../types/forum'
 import {
     TrophyIcon,
     UsersIcon,
@@ -397,108 +402,146 @@ function RankingsTab({
     )
 }
 
-// Forums Tab Component (Placeholder)
+// Forums Tab Component
 function ForumsTab() {
+    const { threads, isLoadingThreads } = useForumStore()
+    const [selectedCategory, setSelectedCategory] = useState<ForumCategory | 'all'>('all')
+
     return (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="mb-8">
-                <div className="w-24 h-24 rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700">
-                    <ChatBubbleLeftRightIcon className="w-12 h-12 text-blue-400" />
-                </div>
-            </div>
-
-            <h3 className="text-2xl font-bold text-white mb-3">Forums Coming Soon!</h3>
-            <p className="text-gray-400 mb-2 max-w-xl">Get ready for community discussions</p>
-            <p className="text-gray-500 mb-10 max-w-md">
-                Create threads, share theories, and discuss your favorite movies and shows
-            </p>
-
-            {/* Feature preview cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl w-full">
-                {[
-                    {
-                        title: 'Discussion Threads',
-                        desc: 'Start conversations about anything',
-                        icon: ChatBubbleLeftRightIcon,
-                    },
-                    {
-                        title: 'Categories',
-                        desc: 'Movies, TV, recommendations & more',
-                        icon: FireIcon,
-                    },
-                    {
-                        title: 'Trending Topics',
-                        desc: 'See what the community is talking about',
-                        icon: TrophyIcon,
-                    },
-                ].map((feature) => {
-                    const Icon = feature.icon
-                    return (
-                        <div
-                            key={feature.title}
-                            className="p-6 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors"
+        <div className="space-y-6">
+            {/* Header with filters and create button */}
+            <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+                {/* Category filter */}
+                <div className="flex flex-wrap gap-2">
+                    <button
+                        onClick={() => setSelectedCategory('all')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            selectedCategory === 'all'
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-zinc-900 text-gray-400 hover:text-white hover:bg-zinc-800 border border-zinc-800'
+                        }`}
+                    >
+                        All
+                    </button>
+                    {FORUM_CATEGORIES.map((cat) => (
+                        <button
+                            key={cat.id}
+                            onClick={() => setSelectedCategory(cat.id)}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                selectedCategory === cat.id
+                                    ? 'bg-blue-500 text-white'
+                                    : 'bg-zinc-900 text-gray-400 hover:text-white hover:bg-zinc-800 border border-zinc-800'
+                            }`}
                         >
-                            <Icon className="w-8 h-8 text-gray-400 mb-3 mx-auto" />
-                            <h4 className="text-white font-semibold mb-2">{feature.title}</h4>
-                            <p className="text-gray-400 text-sm">{feature.desc}</p>
-                        </div>
-                    )
-                })}
+                            {cat.icon} {cat.name}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Create thread button */}
+                <button className="px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors flex items-center gap-2">
+                    <ChatBubbleLeftRightIcon className="w-5 h-5" />
+                    New Thread
+                </button>
             </div>
+
+            {/* Empty state */}
+            {!isLoadingThreads && threads.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <div className="w-20 h-20 rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700 mb-6">
+                        <ChatBubbleLeftRightIcon className="w-10 h-10 text-gray-600" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">No threads yet</h3>
+                    <p className="text-gray-400 mb-6 max-w-md">
+                        Be the first to start a discussion! Share your thoughts, ask questions, or
+                        start a debate about your favorite movies and shows.
+                    </p>
+                    <button className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors">
+                        Create First Thread
+                    </button>
+                </div>
+            )}
+
+            {/* Thread list */}
+            {threads.length > 0 && (
+                <div className="space-y-3">
+                    {threads.map((thread) => (
+                        <ThreadCard key={thread.id} thread={thread} />
+                    ))}
+                </div>
+            )}
         </div>
     )
 }
 
-// Polls Tab Component (Placeholder)
+// Polls Tab Component
 function PollsTab() {
+    const { polls, isLoadingPolls } = useForumStore()
+    const [selectedCategory, setSelectedCategory] = useState<ForumCategory | 'all'>('all')
+
     return (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="mb-8">
-                <div className="w-24 h-24 rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700">
-                    <ChartBarIcon className="w-12 h-12 text-pink-400" />
-                </div>
-            </div>
-
-            <h3 className="text-2xl font-bold text-white mb-3">Polls Coming Soon!</h3>
-            <p className="text-gray-400 mb-2 max-w-xl">
-                Let your voice be heard in community decisions
-            </p>
-            <p className="text-gray-500 mb-10 max-w-md">
-                Vote on hot topics, create your own polls, and see what the community thinks
-            </p>
-
-            {/* Feature preview cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl w-full">
-                {[
-                    {
-                        title: 'Community Polls',
-                        desc: 'Vote on popular topics',
-                        icon: ChartBarIcon,
-                    },
-                    {
-                        title: 'Create Polls',
-                        desc: 'Ask the community anything',
-                        icon: SparklesIcon,
-                    },
-                    {
-                        title: 'Real-time Results',
-                        desc: 'Watch votes come in live',
-                        icon: FireIcon,
-                    },
-                ].map((feature) => {
-                    const Icon = feature.icon
-                    return (
-                        <div
-                            key={feature.title}
-                            className="p-6 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors"
+        <div className="space-y-6">
+            {/* Header with filters and create button */}
+            <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+                {/* Category filter */}
+                <div className="flex flex-wrap gap-2">
+                    <button
+                        onClick={() => setSelectedCategory('all')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            selectedCategory === 'all'
+                                ? 'bg-pink-500 text-white'
+                                : 'bg-zinc-900 text-gray-400 hover:text-white hover:bg-zinc-800 border border-zinc-800'
+                        }`}
+                    >
+                        All
+                    </button>
+                    {FORUM_CATEGORIES.map((cat) => (
+                        <button
+                            key={cat.id}
+                            onClick={() => setSelectedCategory(cat.id)}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                selectedCategory === cat.id
+                                    ? 'bg-pink-500 text-white'
+                                    : 'bg-zinc-900 text-gray-400 hover:text-white hover:bg-zinc-800 border border-zinc-800'
+                            }`}
                         >
-                            <Icon className="w-8 h-8 text-gray-400 mb-3 mx-auto" />
-                            <h4 className="text-white font-semibold mb-2">{feature.title}</h4>
-                            <p className="text-gray-400 text-sm">{feature.desc}</p>
-                        </div>
-                    )
-                })}
+                            {cat.icon} {cat.name}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Create poll button */}
+                <button className="px-5 py-2.5 bg-pink-500 hover:bg-pink-600 text-white font-semibold rounded-lg transition-colors flex items-center gap-2">
+                    <ChartBarIcon className="w-5 h-5" />
+                    New Poll
+                </button>
             </div>
+
+            {/* Empty state */}
+            {!isLoadingPolls && polls.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <div className="w-20 h-20 rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700 mb-6">
+                        <ChartBarIcon className="w-10 h-10 text-gray-600" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">No polls yet</h3>
+                    <p className="text-gray-400 mb-6 max-w-md">
+                        Be the first to create a poll! Ask the community what they think about hot
+                        topics, favorite shows, or anything else.
+                    </p>
+                    <button className="px-6 py-3 bg-pink-500 hover:bg-pink-600 text-white font-semibold rounded-lg transition-colors">
+                        Create First Poll
+                    </button>
+                </div>
+            )}
+
+            {/* Poll list */}
+            {polls.length > 0 && (
+                <div className="space-y-4">
+                    {polls.map((poll) => (
+                        <PollCard key={poll.id} poll={poll} />
+                    ))}
+                </div>
+            )}
         </div>
     )
 }
