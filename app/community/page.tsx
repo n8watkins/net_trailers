@@ -138,30 +138,30 @@ export default function CommunityPage() {
                 </p>
             </div>
 
-            {/* Tabs Navigation - Bold & Vibrant */}
+            {/* Tabs Navigation */}
             <div className="mb-8">
                 <div className="flex justify-center">
-                    <div className="inline-flex gap-2 bg-zinc-900/80 backdrop-blur-sm p-2 rounded-2xl border-2 border-zinc-800 shadow-lg">
+                    <div className="inline-flex gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800">
                         {[
                             {
                                 id: 'rankings' as TabType,
                                 label: 'Rankings',
                                 icon: TrophyIcon,
-                                gradient: 'from-yellow-500 to-orange-500',
+                                color: 'text-yellow-500',
                                 count: communityRankings.length,
                             },
                             {
                                 id: 'forums' as TabType,
                                 label: 'Forums',
                                 icon: ChatBubbleLeftRightIcon,
-                                gradient: 'from-blue-500 to-purple-500',
+                                color: 'text-blue-500',
                                 count: 0, // TODO: Get from forum store
                             },
                             {
                                 id: 'polls' as TabType,
                                 label: 'Polls',
                                 icon: ChartBarIcon,
-                                gradient: 'from-pink-500 to-red-500',
+                                color: 'text-pink-500',
                                 count: 0, // TODO: Get from forum store
                             },
                         ].map((tab) => {
@@ -172,37 +172,21 @@ export default function CommunityPage() {
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
-                                    className={`relative group px-6 py-4 rounded-xl font-bold text-sm transition-all duration-300 ${
+                                    className={`relative px-5 py-3 rounded-md font-semibold text-sm transition-all duration-200 ${
                                         isActive
-                                            ? 'text-white shadow-2xl scale-105'
+                                            ? 'bg-zinc-800 text-white'
                                             : 'text-gray-400 hover:text-gray-200 hover:bg-zinc-800/50'
                                     }`}
                                 >
-                                    {/* Active background gradient */}
-                                    {isActive && (
-                                        <>
-                                            <div
-                                                className={`absolute inset-0 bg-gradient-to-r ${tab.gradient} rounded-xl opacity-100`}
-                                            />
-                                            {/* Glow effect */}
-                                            <div
-                                                className={`absolute -inset-1 bg-gradient-to-r ${tab.gradient} rounded-xl blur-xl opacity-50 animate-pulse`}
-                                            />
-                                        </>
-                                    )}
-
-                                    {/* Content */}
-                                    <div className="relative flex items-center gap-2">
-                                        <Icon
-                                            className={`w-5 h-5 ${isActive ? 'drop-shadow-lg' : ''}`}
-                                        />
-                                        <span className="font-black">{tab.label}</span>
+                                    <div className="flex items-center gap-2">
+                                        <Icon className={`w-5 h-5 ${isActive ? tab.color : ''}`} />
+                                        <span>{tab.label}</span>
                                         {tab.count > 0 && (
                                             <span
                                                 className={`px-2 py-0.5 text-xs rounded-full ${
                                                     isActive
-                                                        ? 'bg-white/20 text-white'
-                                                        : 'bg-zinc-800 text-gray-400'
+                                                        ? 'bg-zinc-700 text-gray-300'
+                                                        : 'bg-zinc-800 text-gray-500'
                                                 }`}
                                             >
                                                 {tab.count}
@@ -417,25 +401,16 @@ function RankingsTab({
 function ForumsTab() {
     return (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="relative mb-8">
-                {/* Glowing background */}
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 blur-3xl rounded-full" />
-                {/* Icon */}
-                <div className="relative w-32 h-32 rounded-full bg-gradient-to-br from-blue-900/50 via-purple-900/50 to-pink-900/50 flex items-center justify-center border-2 border-blue-500/30 shadow-2xl">
-                    <ChatBubbleLeftRightIcon className="w-16 h-16 text-blue-400" />
-                    <SparklesIcon className="absolute top-2 right-2 w-6 h-6 text-yellow-400 animate-pulse" />
+            <div className="mb-8">
+                <div className="w-24 h-24 rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700">
+                    <ChatBubbleLeftRightIcon className="w-12 h-12 text-blue-400" />
                 </div>
             </div>
 
-            <h3 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 mb-4">
-                Forums Coming Soon!
-            </h3>
-            <p className="text-gray-300 text-lg mb-2 max-w-xl">
-                Get ready for vibrant community discussions
-            </p>
-            <p className="text-gray-400 mb-8 max-w-md">
-                Create threads, share theories, discuss your favorite movies and shows, and connect
-                with fellow fans
+            <h3 className="text-2xl font-bold text-white mb-3">Forums Coming Soon!</h3>
+            <p className="text-gray-400 mb-2 max-w-xl">Get ready for community discussions</p>
+            <p className="text-gray-500 mb-10 max-w-md">
+                Create threads, share theories, and discuss your favorite movies and shows
             </p>
 
             {/* Feature preview cards */}
@@ -445,30 +420,27 @@ function ForumsTab() {
                         title: 'Discussion Threads',
                         desc: 'Start conversations about anything',
                         icon: ChatBubbleLeftRightIcon,
-                        color: 'from-blue-500/20 to-cyan-500/20',
                     },
                     {
                         title: 'Categories',
                         desc: 'Movies, TV, recommendations & more',
                         icon: FireIcon,
-                        color: 'from-purple-500/20 to-pink-500/20',
                     },
                     {
                         title: 'Trending Topics',
                         desc: 'See what the community is talking about',
                         icon: TrophyIcon,
-                        color: 'from-orange-500/20 to-red-500/20',
                     },
                 ].map((feature) => {
                     const Icon = feature.icon
                     return (
                         <div
                             key={feature.title}
-                            className={`p-6 rounded-xl bg-gradient-to-br ${feature.color} border border-white/10 backdrop-blur-sm`}
+                            className="p-6 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors"
                         >
-                            <Icon className="w-8 h-8 text-white mb-3 mx-auto" />
-                            <h4 className="text-white font-bold mb-2">{feature.title}</h4>
-                            <p className="text-gray-300 text-sm">{feature.desc}</p>
+                            <Icon className="w-8 h-8 text-gray-400 mb-3 mx-auto" />
+                            <h4 className="text-white font-semibold mb-2">{feature.title}</h4>
+                            <p className="text-gray-400 text-sm">{feature.desc}</p>
                         </div>
                     )
                 })}
@@ -481,25 +453,18 @@ function ForumsTab() {
 function PollsTab() {
     return (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="relative mb-8">
-                {/* Glowing background */}
-                <div className="absolute inset-0 bg-gradient-to-r from-pink-500/20 via-red-500/20 to-orange-500/20 blur-3xl rounded-full" />
-                {/* Icon */}
-                <div className="relative w-32 h-32 rounded-full bg-gradient-to-br from-pink-900/50 via-red-900/50 to-orange-900/50 flex items-center justify-center border-2 border-pink-500/30 shadow-2xl">
-                    <ChartBarIcon className="w-16 h-16 text-pink-400" />
-                    <SparklesIcon className="absolute top-2 right-2 w-6 h-6 text-yellow-400 animate-pulse" />
+            <div className="mb-8">
+                <div className="w-24 h-24 rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700">
+                    <ChartBarIcon className="w-12 h-12 text-pink-400" />
                 </div>
             </div>
 
-            <h3 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-red-400 to-orange-400 mb-4">
-                Polls Coming Soon!
-            </h3>
-            <p className="text-gray-300 text-lg mb-2 max-w-xl">
+            <h3 className="text-2xl font-bold text-white mb-3">Polls Coming Soon!</h3>
+            <p className="text-gray-400 mb-2 max-w-xl">
                 Let your voice be heard in community decisions
             </p>
-            <p className="text-gray-400 mb-8 max-w-md">
-                Vote on hot topics, create your own polls, and see what the community thinks about
-                the latest releases
+            <p className="text-gray-500 mb-10 max-w-md">
+                Vote on hot topics, create your own polls, and see what the community thinks
             </p>
 
             {/* Feature preview cards */}
@@ -509,30 +474,27 @@ function PollsTab() {
                         title: 'Community Polls',
                         desc: 'Vote on popular topics',
                         icon: ChartBarIcon,
-                        color: 'from-pink-500/20 to-red-500/20',
                     },
                     {
                         title: 'Create Polls',
                         desc: 'Ask the community anything',
                         icon: SparklesIcon,
-                        color: 'from-red-500/20 to-orange-500/20',
                     },
                     {
                         title: 'Real-time Results',
                         desc: 'Watch votes come in live',
                         icon: FireIcon,
-                        color: 'from-orange-500/20 to-yellow-500/20',
                     },
                 ].map((feature) => {
                     const Icon = feature.icon
                     return (
                         <div
                             key={feature.title}
-                            className={`p-6 rounded-xl bg-gradient-to-br ${feature.color} border border-white/10 backdrop-blur-sm`}
+                            className="p-6 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors"
                         >
-                            <Icon className="w-8 h-8 text-white mb-3 mx-auto" />
-                            <h4 className="text-white font-bold mb-2">{feature.title}</h4>
-                            <p className="text-gray-300 text-sm">{feature.desc}</p>
+                            <Icon className="w-8 h-8 text-gray-400 mb-3 mx-auto" />
+                            <h4 className="text-white font-semibold mb-2">{feature.title}</h4>
+                            <p className="text-gray-400 text-sm">{feature.desc}</p>
                         </div>
                     )
                 })}
