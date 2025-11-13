@@ -30,12 +30,12 @@
 
     .headerLink::before {
         content: '';
-        @apply absolute -inset-6 opacity-0 bg-[radial-gradient(60%_40%_at_center,_var(--tw-gradient-stops))] from-gray-200 via-gray-400/60 via-30% to-black rounded-md blur-xl transition-opacity duration-300;
+        @apply absolute -inset-6 opacity-0 bg-[radial-gradient(60%_40%_at_center,_var(--tw-gradient-stops))] from-white via-gray-200/60 via-40% to-transparent rounded-md blur-xl transition-opacity duration-300;
         transition-delay: 0.1s;
     }
 
     .headerLink:hover::before {
-        @apply opacity-50;
+        @apply opacity-60;
     }
     .bannerButton {
         @apply flex gap-1 sm:gap-2 md:gap-3 px-3 py-1.5 sm:px-4 sm:py-2 md:px-6 md:py-3 lg:px-8 lg:py-4 justify-center items-center rounded-md sm:rounded-lg text-xs sm:text-sm md:text-base lg:text-lg font-semibold shadow-lg;
@@ -147,69 +147,12 @@
         }
     }
 
-    @keyframes gradient-rotate {
+    @keyframes psychedelic-flow {
         0% {
-            background: radial-gradient(
-                circle at center,
-                rgba(168, 85, 247, 0.8) 0%,
-                rgba(192, 132, 252, 0.5) 40%,
-                rgba(216, 180, 254, 0.25) 70%,
-                transparent 100%
-            );
-        }
-        16.67% {
-            background: radial-gradient(
-                circle at center,
-                rgba(180, 108, 249, 0.8) 0%,
-                rgba(204, 155, 253, 0.5) 40%,
-                rgba(192, 132, 252, 0.25) 70%,
-                transparent 100%
-            );
-        }
-        33.33% {
-            background: radial-gradient(
-                circle at center,
-                rgba(192, 132, 252, 0.8) 0%,
-                rgba(216, 180, 254, 0.5) 40%,
-                rgba(204, 155, 253, 0.25) 70%,
-                transparent 100%
-            );
-        }
-        50% {
-            background: radial-gradient(
-                circle at center,
-                rgba(204, 155, 253, 0.8) 0%,
-                rgba(216, 180, 254, 0.5) 40%,
-                rgba(192, 132, 252, 0.25) 70%,
-                transparent 100%
-            );
-        }
-        66.67% {
-            background: radial-gradient(
-                circle at center,
-                rgba(216, 180, 254, 0.8) 0%,
-                rgba(204, 155, 253, 0.5) 40%,
-                rgba(180, 108, 249, 0.25) 70%,
-                transparent 100%
-            );
-        }
-        83.33% {
-            background: radial-gradient(
-                circle at center,
-                rgba(192, 132, 252, 0.8) 0%,
-                rgba(180, 108, 249, 0.5) 40%,
-                rgba(168, 85, 247, 0.25) 70%,
-                transparent 100%
-            );
+            filter: hue-rotate(0deg);
         }
         100% {
-            background: radial-gradient(
-                circle at center,
-                rgba(168, 85, 247, 0.8) 0%,
-                rgba(192, 132, 252, 0.5) 40%,
-                rgba(216, 180, 254, 0.25) 70%,
-                transparent 100%
-            );
+            filter: hue-rotate(360deg);
         }
     }
 }

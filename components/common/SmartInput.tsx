@@ -93,6 +93,7 @@ export function SmartInput({
     const [localValue, setLocalValue] = useState(value)
     const [isFocused, setIsFocused] = useState(false)
     const [isGeneratingSurprise, setIsGeneratingSurprise] = useState(false)
+    const [isMounted, setIsMounted] = useState(false)
 
     // Search examples for typewriter
     const searchExamples = [
@@ -154,6 +155,11 @@ export function SmartInput({
         },
         sourceId: voiceSourceId,
     })
+
+    // Set mounted state after hydration to prevent SSR mismatch
+    useEffect(() => {
+        setIsMounted(true)
+    }, [])
 
     // Show live transcript while listening
     useEffect(() => {
@@ -585,8 +591,8 @@ export function SmartInput({
                         </button>
                     )}
 
-                    {/* Voice input button */}
-                    {isSupported && (
+                    {/* Voice input button - only render after hydration to prevent SSR mismatch */}
+                    {isMounted && isSupported && (
                         <button
                             type="button"
                             onClick={handleVoiceToggle}

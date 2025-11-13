@@ -20,6 +20,7 @@ import {
     UsersIcon,
     SparklesIcon,
     ArrowPathIcon,
+    BeakerIcon,
 } from '@heroicons/react/24/outline'
 import {
     UserIcon as UserIconSolid,
@@ -347,25 +348,28 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                             <span className="relative z-10">Community</span>
                         </div>
 
-                        <button
-                            type="button"
-                            className={`text-white/90 cursor-pointer text-sm font-semibold transition-all duration-300 hover:text-white flex items-center space-x-1 select-none group relative ${
-                                isRandomLoading ? 'cursor-wait opacity-80' : ''
+                        {/* Test Link - After Community */}
+                        <div
+                            className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${pathname === '/test' ? 'text-white hover:text-white font-semibold' : ''}`}
+                            onClick={() => router.push('/test')}
+                        >
+                            <BeakerIcon className="h-5 w-5 relative z-10" />
+                            <span className="relative z-10">Test</span>
+                        </div>
+
+                        <div
+                            className={`headerLink cursor-pointer flex items-center space-x-1 select-none group relative overflow-visible ${
+                                isRandomLoading ? 'cursor-wait' : ''
                             }`}
-                            onClick={() => handleRandomContent()}
-                            disabled={isRandomLoading}
+                            onClick={() => !isRandomLoading && handleRandomContent()}
                             title="Jump to a random movie or TV show"
                         >
-                            <span className="absolute -inset-4 opacity-0 group-hover:opacity-100 rounded-md blur-lg transition-all duration-200 delay-75 animate-[gradient-rotate_2s_linear_infinite]" />
-                            {isRandomLoading ? (
-                                <ArrowPathIcon className="h-5 w-5 relative z-10" />
-                            ) : (
-                                <SparklesIcon className="h-5 w-5 relative z-10" />
-                            )}
-                            <span className="relative z-10">
-                                {isRandomLoading ? 'Finding...' : 'Surprise Me!'}
-                            </span>
-                        </button>
+                            <span className="absolute -inset-6 opacity-0 group-hover:opacity-50 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-purple-300 via-pink-300/40 via-20% to-transparent rounded-md blur-xl transition-opacity duration-400 group-hover:animate-[psychedelic-flow_3s_linear_infinite]" />
+                            <SparklesIcon
+                                className={`h-5 w-5 relative z-10 ${isRandomLoading ? 'animate-pulse' : ''}`}
+                            />
+                            <span className="relative z-10">Surprise Me!</span>
+                        </div>
 
                         {/* Child Safety Indicator - After Community */}
                         <div className="flex items-center ml-4">
@@ -608,9 +612,9 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                         </li>
                                         <li>
                                             <button
-                                                className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none group relative overflow-hidden ${
+                                                className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none group relative overflow-visible ${
                                                     isRandomLoading
-                                                        ? 'opacity-80 cursor-wait'
+                                                        ? 'cursor-wait'
                                                         : 'hover:bg-white/10'
                                                 }`}
                                                 onClick={() =>
@@ -618,17 +622,11 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                                 }
                                                 disabled={isRandomLoading}
                                             >
-                                                <span className="absolute -inset-4 opacity-0 group-hover:opacity-100 rounded-lg blur-lg transition-all duration-200 delay-75 animate-[gradient-rotate_2s_linear_infinite]" />
-                                                {isRandomLoading ? (
-                                                    <ArrowPathIcon className="h-5 w-5 animate-spin relative z-10" />
-                                                ) : (
-                                                    <SparklesIcon className="h-5 w-5 relative z-10" />
-                                                )}
-                                                <span className="relative z-10">
-                                                    {isRandomLoading
-                                                        ? 'Finding...'
-                                                        : 'Surprise Me!'}
-                                                </span>
+                                                <span className="absolute -inset-6 opacity-0 group-hover:opacity-50 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-purple-300 via-pink-300/40 via-20% to-transparent rounded-lg blur-xl transition-opacity duration-400 group-hover:animate-[psychedelic-flow_3s_linear_infinite]" />
+                                                <SparklesIcon
+                                                    className={`h-5 w-5 relative z-10 ${isRandomLoading ? 'animate-pulse' : ''}`}
+                                                />
+                                                <span className="relative z-10">Surprise Me!</span>
                                             </button>
                                         </li>
                                     </ul>
