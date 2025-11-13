@@ -155,6 +155,15 @@
             filter: hue-rotate(360deg);
         }
     }
+
+    @keyframes rainbow-glow {
+        0% {
+            filter: hue-rotate(0deg) brightness(1.2);
+        }
+        100% {
+            filter: hue-rotate(360deg) brightness(1.2);
+        }
+    }
 }
 
 /* Custom overlay scrollbar styles */

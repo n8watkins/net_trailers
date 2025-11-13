@@ -350,9 +350,10 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
 
                         {/* Test Link - After Community */}
                         <div
-                            className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${pathname === '/test' ? 'text-white hover:text-white font-semibold' : ''}`}
+                            className={`headerLink cursor-pointer flex items-center space-x-1 select-none group relative overflow-visible ${pathname === '/test' ? 'text-white hover:text-white font-semibold' : ''}`}
                             onClick={() => router.push('/test')}
                         >
+                            <span className="absolute -inset-6 opacity-0 group-hover:opacity-60 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-red-500 via-yellow-400 via-30% via-green-400 via-50% via-blue-400 via-70% to-purple-500 rounded-md blur-xl transition-opacity duration-400 group-hover:animate-[rainbow-glow_2s_linear_infinite]" />
                             <BeakerIcon className="h-5 w-5 relative z-10" />
                             <span className="relative z-10">Test</span>
                         </div>
