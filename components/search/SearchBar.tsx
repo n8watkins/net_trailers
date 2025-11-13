@@ -485,8 +485,8 @@ export default function SearchBar({
 
                     {/* Voice, Filter, and Clear Buttons */}
                     <div className="absolute inset-y-0 right-0 flex items-center">
-                        {/* Voice Input Button */}
-                        {isSupported && (
+                        {/* Voice Input Button - only render after mount to prevent hydration mismatch */}
+                        {isMounted && isSupported && (
                             <button
                                 onClick={handleVoiceToggle}
                                 className={`px-3 py-2 transition-all duration-200 ${
@@ -498,8 +498,8 @@ export default function SearchBar({
                                 aria-pressed={isListening}
                             >
                                 <div className="relative">
-                                    {/* Animated pulsing rings when listening - only after mount to prevent hydration mismatch */}
-                                    {isMounted && isListening && (
+                                    {/* Animated pulsing rings when listening */}
+                                    {isListening && (
                                         <>
                                             <span className="absolute inset-0 rounded-full bg-red-500/40 animate-ping" />
                                             <span
@@ -517,7 +517,7 @@ export default function SearchBar({
                                     )}
                                     <MicrophoneIcon
                                         className={`h-5 w-5 relative z-10 transition-all ${
-                                            isMounted && isListening
+                                            isListening
                                                 ? 'scale-110 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)] !text-red-500'
                                                 : ''
                                         }`}
