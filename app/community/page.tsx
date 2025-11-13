@@ -60,6 +60,15 @@ export default function CommunityPage() {
     const [activeTab, setActiveTab] = useState<TabType>('rankings')
     const [filterByTag, setFilterByTag] = useState<string | null>(null)
 
+    // Read tab from URL parameter
+    useEffect(() => {
+        const searchParams = new URLSearchParams(window.location.search)
+        const tab = searchParams.get('tab') as TabType
+        if (tab && ['rankings', 'forums', 'polls'].includes(tab)) {
+            setActiveTab(tab)
+        }
+    }, [])
+
     // Load community rankings on mount and when sort changes
     useEffect(() => {
         if (isInitialized) {
@@ -510,10 +519,11 @@ function ForumsTab() {
 
 // Polls Tab Component
 function PollsTab() {
-    const { polls, isLoadingPolls, loadPolls, createPoll } = useForumStore()
+    const { polls, isLoadingPolls, loadPolls, createPoll, voteOnPoll } = useForumStore()
     const getUserId = useSessionStore((state) => state.getUserId)
     const [selectedCategory, setSelectedCategory] = useState<ForumCategory | 'all'>('all')
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+    const [userVotes, setUserVotes] = useState<Record<string, string[]>>({})
 
     // Load polls on mount
     useEffect(() => {
@@ -539,6 +549,18 @@ function PollsTab() {
             expiresInDays
         )
         await loadPolls() // Reload polls
+    }
+
+    const handleVote = async (pollId: string, optionIds: string[]) => {
+        const userId = getUserId()
+        try {
+            await voteOnPoll(userId, pollId, optionIds)
+            // Update local state to show vote immediately
+            setUserVotes((prev) => ({ ...prev, [pollId]: optionIds }))
+            await loadPolls() // Reload to get updated counts
+        } catch (error) {
+            console.error('Failed to vote:', error)
+        }
     }
 
     return (
@@ -613,7 +635,12 @@ function PollsTab() {
             {polls.length > 0 && (
                 <div className="space-y-4">
                     {polls.map((poll) => (
-                        <PollCard key={poll.id} poll={poll} />
+                        <PollCard
+                            key={poll.id}
+                            poll={poll}
+                            userVote={userVotes[poll.id] || []}
+                            onVote={(optionIds) => handleVote(poll.id, optionIds)}
+                        />
                     ))}
                 </div>
             )}

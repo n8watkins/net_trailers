@@ -104,6 +104,37 @@ export function useAuthData(userId: string) {
             console.log(`[useAuthData] ✅ Cleared ${notifCountBefore} notifications from Firestore`)
         }
 
+        // Clear rankings from store and Firestore
+        const { useRankingStore } = await import('../stores/rankingStore')
+        if (userId) {
+            console.log('[useAuthData] 🗑️ Clearing rankings...')
+            const rankings = useRankingStore.getState().rankings
+            const userRankings = rankings.filter((r) => r.userId === userId)
+            for (const ranking of userRankings) {
+                await useRankingStore.getState().deleteRanking(userId, ranking.id)
+            }
+            console.log(`[useAuthData] ✅ Cleared ${userRankings.length} rankings from Firestore`)
+        }
+
+        // Clear forum threads and polls
+        const { useForumStore } = await import('../stores/forumStore')
+        if (userId) {
+            console.log('[useAuthData] 🗑️ Clearing forum content...')
+            const { threads, polls } = useForumStore.getState()
+            const userThreads = threads.filter((t) => t.userId === userId)
+            const userPolls = polls.filter((p) => p.userId === userId)
+
+            for (const thread of userThreads) {
+                await useForumStore.getState().deleteThread(userId, thread.id)
+            }
+            for (const poll of userPolls) {
+                await useForumStore.getState().deletePoll(userId, poll.id)
+            }
+            console.log(
+                `[useAuthData] ✅ Cleared ${userThreads.length} threads and ${userPolls.length} polls from Firestore`
+            )
+        }
+
         console.log('[useAuthData] ✅ clearAccountData completed')
     }
 

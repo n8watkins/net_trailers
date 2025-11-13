@@ -33,6 +33,8 @@ import NetflixLoader from '../../components/common/NetflixLoader'
 import { GuestModeNotification } from '../../components/auth/GuestModeNotification'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import { useRankingStore } from '../../stores/rankingStore'
+import { useForumStore } from '../../stores/forumStore'
+import { ChatBubbleLeftRightIcon, ChartBarIcon as PollIcon } from '@heroicons/react/24/outline'
 
 export default function ProfilePage() {
     const { user, loading: authLoading } = useAuth()
@@ -45,6 +47,7 @@ export default function ProfilePage() {
     const sessionType = useSessionStore((state) => state.sessionType)
     const isInitialized = useSessionStore((state) => state.isInitialized)
     const { rankings, loadUserRankings } = useRankingStore()
+    const { threads, polls, loadThreads, loadPolls } = useForumStore()
 
     // Show loading state while data is being fetched
     const isLoading = !isInitialized || isLoadingHistory || authLoading
@@ -53,15 +56,17 @@ export default function ProfilePage() {
         document.title = 'Profile - NetTrailers'
     }, [])
 
-    // Load user rankings
+    // Load user rankings, threads, and polls
     useEffect(() => {
         const getUserId = useSessionStore.getState().getUserId
         const userId = getUserId()
 
         if (userId && isInitialized) {
             loadUserRankings(userId)
+            loadThreads()
+            loadPolls()
         }
-    }, [isInitialized])
+    }, [isInitialized, loadUserRankings, loadThreads, loadPolls])
 
     const handleSeedData = async () => {
         const getUserId = useSessionStore.getState().getUserId
@@ -111,11 +116,18 @@ export default function ProfilePage() {
     }
 
     // Calculate stats
+    const getUserId = useSessionStore((state) => state.getUserId)
+    const currentUserId = getUserId()
+    const userThreads = threads.filter((thread) => thread.userId === currentUserId)
+    const userPolls = polls.filter((poll) => poll.userId === currentUserId)
+
     const stats = {
         totalWatched,
         watchLater: userData.defaultWatchlist.length, // Separate Watch Later from collections
         totalCollections: userData.userCreatedWatchlists.length, // Only user-created collections
         totalRankings: rankings.length, // User's rankings
+        totalThreads: userThreads.length, // User's forum threads
+        totalPolls: userPolls.length, // User's polls
         totalLiked: userData.likedMovies.length,
         totalHidden: userData.hiddenMovies.length,
         moviesLiked: userData.likedMovies.filter((item) => item.media_type === 'movie').length,
@@ -207,7 +219,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
                 {/* Watch Later */}
                 <Link
                     href="/watch-later"
@@ -279,6 +291,30 @@ export default function ProfilePage() {
                     </div>
                     <p className="text-3xl font-bold text-white">{stats.totalRankings}</p>
                 </Link>
+
+                {/* Forum Threads */}
+                <Link
+                    href="/community?tab=forums"
+                    className="bg-gradient-to-br from-cyan-900/30 to-cyan-800/20 border border-cyan-700/30 rounded-xl p-6 hover:border-cyan-600/50 transition-all duration-200 group"
+                >
+                    <div className="flex items-center gap-3 mb-2">
+                        <ChatBubbleLeftRightIcon className="w-6 h-6 text-cyan-400 group-hover:scale-110 transition-transform" />
+                        <h3 className="text-sm font-medium text-gray-400">Threads</h3>
+                    </div>
+                    <p className="text-3xl font-bold text-white">{stats.totalThreads}</p>
+                </Link>
+
+                {/* Polls */}
+                <Link
+                    href="/community?tab=polls"
+                    className="bg-gradient-to-br from-pink-900/30 to-pink-800/20 border border-pink-700/30 rounded-xl p-6 hover:border-pink-600/50 transition-all duration-200 group"
+                >
+                    <div className="flex items-center gap-3 mb-2">
+                        <PollIcon className="w-6 h-6 text-pink-400 group-hover:scale-110 transition-transform" />
+                        <h3 className="text-sm font-medium text-gray-400">Polls</h3>
+                    </div>
+                    <p className="text-3xl font-bold text-white">{stats.totalPolls}</p>
+                </Link>
             </div>
 
             {/* Content Breakdown */}
@@ -326,7 +362,7 @@ export default function ProfilePage() {
             {/* Quick Links */}
             <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-6">
                 <h2 className="text-xl font-semibold text-white mb-4">Quick Links</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                     <Link
                         href="/watch-history"
                         className="flex items-center gap-3 p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
@@ -349,11 +385,25 @@ export default function ProfilePage() {
                         <span className="text-white font-medium">My Rankings</span>
                     </Link>
                     <Link
+                        href="/community?tab=forums"
+                        className="flex items-center gap-3 p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
+                    >
+                        <ChatBubbleLeftRightIcon className="w-5 h-5 text-cyan-400" />
+                        <span className="text-white font-medium">My Threads</span>
+                    </Link>
+                    <Link
+                        href="/community?tab=polls"
+                        className="flex items-center gap-3 p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
+                    >
+                        <PollIcon className="w-5 h-5 text-pink-400" />
+                        <span className="text-white font-medium">My Polls</span>
+                    </Link>
+                    <Link
                         href="/settings"
                         className="flex items-center gap-3 p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
                     >
                         <UserIcon className="w-5 h-5 text-green-400" />
-                        <span className="text-white font-medium">Account Settings</span>
+                        <span className="text-white font-medium">Settings</span>
                     </Link>
                 </div>
             </div>
