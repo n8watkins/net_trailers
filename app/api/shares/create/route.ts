@@ -28,6 +28,7 @@ import { createShareLink } from '../../../../utils/firestore/shares'
 import { CreateShareRequest, CreateShareResponse } from '../../../../types/sharing'
 import { withAuth } from '../../../../lib/auth-middleware'
 import { getAdminDb } from '../../../../lib/firebase-admin'
+import { apiError } from '@/utils/debugLogger'
 
 async function handleCreateShare(request: NextRequest, userId: string): Promise<NextResponse> {
     try {
@@ -61,7 +62,7 @@ async function handleCreateShare(request: NextRequest, userId: string): Promise<
             ...response,
         })
     } catch (error) {
-        console.error('Error creating share link:', error)
+        apiError('Error creating share link:', error)
 
         const errorMessage = error instanceof Error ? error.message : 'Failed to create share link'
 

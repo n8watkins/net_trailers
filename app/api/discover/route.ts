@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { filterContentByAdultFlag } from '../../../utils/contentFilter'
 import { filterMatureTVShows } from '../../../utils/tvContentRatings'
+import { apiError } from '@/utils/debugLogger'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -81,7 +82,7 @@ export async function GET(request: NextRequest) {
         // Use Authorization header instead of query parameter for security
         const response = await fetch(url.toString(), {
             headers: {
-                'Authorization': `Bearer ${API_KEY}`,
+                Authorization: `Bearer ${API_KEY}`,
                 'Content-Type': 'application/json',
             },
         })
@@ -141,7 +142,7 @@ export async function GET(request: NextRequest) {
             }
         )
     } catch (error) {
-        console.error('TMDB discover API error:', error)
+        apiError('TMDB discover API error:', error)
         return NextResponse.json(
             { message: 'Failed to fetch content', error: (error as Error).message },
             { status: 500 }

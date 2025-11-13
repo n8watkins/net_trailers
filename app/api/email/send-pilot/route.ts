@@ -4,6 +4,7 @@ import { TrendingContentEmail } from '../../../../lib/email/templates/trending-c
 import { Content } from '../../../../typings'
 import { withAuth } from '../../../../lib/auth-middleware'
 import { getTMDBHeaders } from '../../../../utils/tmdbFetch'
+import { apiError } from '@/utils/debugLogger'
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
@@ -71,7 +72,7 @@ async function fetchTrendingContent(): Promise<{ movies: Content[]; tvShows: Con
             })),
         }
     } catch (error) {
-        console.error('Error fetching trending content:', error)
+        apiError('Error fetching trending content:', error)
         return { movies: [], tvShows: [] }
     }
 }
@@ -135,7 +136,7 @@ async function handleSendPilot(request: NextRequest, userId: string): Promise<Ne
         })
 
         if (error) {
-            console.error('Error sending email:', error)
+            apiError('Error sending email:', error)
             return NextResponse.json({ error: 'Failed to send email' }, { status: 500 })
         }
 
@@ -145,7 +146,7 @@ async function handleSendPilot(request: NextRequest, userId: string): Promise<Ne
             emailId: data?.id,
         })
     } catch (error) {
-        console.error('Error in send-pilot route:', error)
+        apiError('Error in send-pilot route:', error)
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

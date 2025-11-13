@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebase-admin'
+import { apiError } from '@/utils/debugLogger'
 
 interface PublicProfileResponse {
     username: string
@@ -87,7 +88,7 @@ export async function GET(
             headers: DEFAULT_RESPONSE_HEADERS,
         })
     } catch (error) {
-        console.error('[PublicProfile] Failed to fetch profile:', error)
+        apiError('[PublicProfile] Failed to fetch profile:', error)
         return NextResponse.json(
             {
                 error: 'Failed to load profile',

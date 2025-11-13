@@ -18,6 +18,7 @@ import {
 } from '../../../../utils/firestore/shares'
 import { withAuth } from '../../../../lib/auth-middleware'
 import { getAdminDb } from '../../../../lib/firebase-admin'
+import { apiError } from '@/utils/debugLogger'
 
 interface RouteContext {
     params: Promise<{
@@ -57,7 +58,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
 
         // Increment view count asynchronously (don't wait)
         incrementViewCount(db, shareId).catch((err) =>
-            console.error('Failed to increment view count:', err)
+            apiError('Failed to increment view count:', err)
         )
 
         return NextResponse.json({
@@ -65,7 +66,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
             data,
         })
     } catch (error) {
-        console.error('Error fetching shared collection:', error)
+        apiError('Error fetching shared collection:', error)
 
         return NextResponse.json(
             {
@@ -116,7 +117,7 @@ async function handleDeleteShare(
             message: 'Share link deleted successfully',
         })
     } catch (error) {
-        console.error('Error deleting share:', error)
+        apiError('Error deleting share:', error)
 
         const errorMessage = error instanceof Error ? error.message : 'Failed to delete share link'
 

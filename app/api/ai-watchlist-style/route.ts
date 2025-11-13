@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAllEmojis, AVAILABLE_COLORS } from '../../../config/constants'
 import { sanitizeInput, sanitizeArray } from '@/utils/inputSanitization'
+import { apiLog, apiError, apiWarn } from '@/utils/debugLogger'
 
 interface WatchlistStyleRequest {
     name: string
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
 
         const apiKey = process.env.GEMINI_API_KEY
         if (!apiKey) {
-            console.error('GEMINI_API_KEY not configured')
+            apiError('GEMINI_API_KEY not configured')
             return NextResponse.json({ error: 'AI service unavailable' }, { status: 503 })
         }
 
@@ -70,7 +71,7 @@ Guidelines:
 - Consider the emotional tone (exciting = red/orange, calm = blue/teal, etc.)
 - The reasoning should be 1-2 sentences max`
 
-        console.log('[AI Watchlist Style] Sending prompt to Gemini')
+        apiLog('[AI Watchlist Style] Sending prompt to Gemini')
 
         // Call Gemini API
         const response = await fetch(
@@ -91,7 +92,7 @@ Guidelines:
 
         if (!response.ok) {
             const errorText = await response.text()
-            console.error('[AI Watchlist Style] Gemini API error:', errorText)
+            apiError('[AI Watchlist Style] Gemini API error:', errorText)
             throw new Error('Gemini API request failed')
         }
 
@@ -102,19 +103,19 @@ Guidelines:
             throw new Error('No response from Gemini')
         }
 
-        console.log('[AI Watchlist Style] Gemini response received')
+        apiLog('[AI Watchlist Style] Gemini response received')
 
         // Parse response
         const parsed = JSON.parse(text)
 
         // Validate that the emoji and color are from our lists
         if (!allEmojis.includes(parsed.emoji)) {
-            console.warn('[AI Watchlist Style] Invalid emoji, using default')
+            apiWarn('[AI Watchlist Style] Invalid emoji, using default')
             parsed.emoji = '📺' // Default fallback
         }
 
         if (!allColors.includes(parsed.color)) {
-            console.warn('[AI Watchlist Style] Invalid color, using default')
+            apiWarn('[AI Watchlist Style] Invalid color, using default')
             parsed.color = '#ef4444' // Default fallback
         }
 
@@ -124,7 +125,7 @@ Guidelines:
             reasoning: parsed.reasoning,
         })
     } catch (error: any) {
-        console.error('[AI Watchlist Style] Error:', error)
+        apiError('[AI Watchlist Style] Error:', error)
         return NextResponse.json(
             { error: error.message || 'Failed to generate style suggestions' },
             { status: 500 }

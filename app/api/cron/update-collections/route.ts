@@ -24,6 +24,7 @@ import {
     updateCustomRowAdmin,
 } from '@/utils/firestore/admin/customRowsAdmin'
 import { createNotificationAdmin } from '@/utils/firestore/admin/notificationsAdmin'
+import { apiLog, apiError, apiWarn } from '@/utils/debugLogger'
 
 /**
  * TEMPORARY: Auto-update cron is paused while the feature is de-scoped.
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
         const cronSecret = process.env.CRON_SECRET
 
         if (!cronSecret) {
-            console.error('[Cron] CRON_SECRET is not configured')
+            apiError('[Cron] CRON_SECRET is not configured')
             return NextResponse.json(
                 { success: false, error: 'Cron secret is not configured on the server' },
                 { status: 500 }
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
         const expectedHeader = `Bearer ${cronSecret}`
 
         if (!authHeader || authHeader.length !== expectedHeader.length) {
-            console.warn('Unauthorized cron job attempt - invalid header format')
+            apiWarn('Unauthorized cron job attempt - invalid header format')
             return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
         }
 
@@ -69,12 +70,12 @@ export async function POST(request: NextRequest) {
         }
 
         if (!isValid) {
-            console.warn('Unauthorized cron job attempt - invalid credentials')
+            apiWarn('Unauthorized cron job attempt - invalid credentials')
             return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
         }
 
         if (!AUTO_UPDATE_CRON_ENABLED) {
-            console.warn('[Cron] Auto-update cron is currently disabled.')
+            apiWarn('[Cron] Auto-update cron is currently disabled.')
             return NextResponse.json(
                 {
                     success: false,
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        console.log('[Cron] Starting collection auto-update job...')
+        apiLog('[Cron] Starting collection auto-update job...')
         const db = getAdminDb()
 
         // Get all users with custom rows
@@ -104,12 +105,12 @@ export async function POST(request: NextRequest) {
                 totalUpdated += result.updated
             } catch (error) {
                 const errorMsg = `Error processing user ${userId}: ${error instanceof Error ? error.message : 'Unknown error'}`
-                console.error(errorMsg)
+                apiError(errorMsg)
                 errors.push(errorMsg)
             }
         }
 
-        console.log('[Cron] Collection update job complete', {
+        apiLog('[Cron] Collection update job complete', {
             totalChecked,
             totalUpdated,
             errorCount: errors.length,
@@ -126,7 +127,7 @@ export async function POST(request: NextRequest) {
             errors: errors.length > 0 ? errors : undefined,
         })
     } catch (error) {
-        console.error('[Cron] Fatal error in update job:', error)
+        apiError('[Cron] Fatal error in update job:', error)
         return NextResponse.json(
             {
                 success: false,
@@ -155,7 +156,7 @@ async function processUserCollections(
             return { checked: 0, updated: 0 }
         }
 
-        console.log(`[Cron] Checking ${dueCollections.length} collections for user ${userId}`)
+        apiLog(`[Cron] Checking ${dueCollections.length} collections for user ${userId}`)
 
         let updated = 0
 
@@ -167,14 +168,14 @@ async function processUserCollections(
                     updated++
                 }
             } catch (error) {
-                console.error(`[Cron] Error processing collection ${collection.id}:`, error)
+                apiError(`[Cron] Error processing collection ${collection.id}:`, error)
                 // Continue with other collections even if one fails
             }
         }
 
         return { checked: dueCollections.length, updated }
     } catch (error) {
-        console.error(`[Cron] Error loading collections for user ${userId}:`, error)
+        apiError(`[Cron] Error loading collections for user ${userId}:`, error)
         return { checked: 0, updated: 0 }
     }
 }
@@ -199,9 +200,7 @@ async function processCollection(
             return false
         }
 
-        console.log(
-            `[Cron] Found ${newContentIds.length} new items for collection "${collection.name}"`
-        )
+        apiLog(`[Cron] Found ${newContentIds.length} new items for collection "${collection.name}"`)
 
         // Add new content to collection
         const updatedCollection = addContentToCollection(collection, newContentIds)
@@ -222,11 +221,11 @@ async function processCollection(
             actionUrl: `/rows`, // Link to rows page where they can see their custom rows
         })
 
-        console.log(`[Cron] Created notification for user ${userId}`)
+        apiLog(`[Cron] Created notification for user ${userId}`)
 
         return true
     } catch (error) {
-        console.error(`[Cron] Error in processCollection:`, error)
+        apiError(`[Cron] Error in processCollection:`, error)
         throw error
     }
 }
@@ -273,15 +272,15 @@ async function getAllUserIds(db: Firestore): Promise<string[]> {
                     }
                 }
             } catch (error) {
-                console.error(`[Cron] Error checking user ${userDoc.id}:`, error)
+                apiError(`[Cron] Error checking user ${userDoc.id}:`, error)
                 // Continue with next user
             }
         }
 
-        console.log(`[Cron] Found ${userIds.length} users with auto-update enabled custom rows`)
+        apiLog(`[Cron] Found ${userIds.length} users with auto-update enabled custom rows`)
         return userIds
     } catch (error) {
-        console.error('[Cron] Error in getAllUserIds:', error)
+        apiError('[Cron] Error in getAllUserIds:', error)
         return []
     }
 }

@@ -5,6 +5,7 @@ import {
     handleApiError as _handleApiError,
 } from '../../../../../utils/tmdbApi'
 import { fetchTVContentRatings, hasMatureRating } from '../../../../../utils/tvContentRatings'
+import { apiError } from '@/utils/debugLogger'
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
@@ -70,7 +71,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             },
         })
     } catch (error) {
-        console.error('Failed to fetch movie/TV show details:', error)
+        apiError('Failed to fetch movie/TV show details:', error)
         return NextResponse.json(
             { message: 'Failed to fetch movie/TV show details' },
             { status: 500 }

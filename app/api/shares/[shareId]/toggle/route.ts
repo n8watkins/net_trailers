@@ -15,6 +15,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { deactivateShare, reactivateShare } from '../../../../../utils/firestore/shares'
 import { withAuth } from '../../../../../lib/auth-middleware'
 import { getAdminDb } from '../../../../../lib/firebase-admin'
+import { apiError } from '@/utils/debugLogger'
 
 interface RouteContext {
     params: Promise<{
@@ -79,7 +80,7 @@ async function handleToggleShare(
             message: `Share link ${isActive ? 'activated' : 'deactivated'} successfully`,
         })
     } catch (error) {
-        console.error('Error toggling share status:', error)
+        apiError('Error toggling share status:', error)
 
         const errorMessage =
             error instanceof Error ? error.message : 'Failed to toggle share status'
