@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { resend } from '../../../../lib/email/resend'
-import { TrendingContentEmail } from '../../../../lib/email/templates/trending-content'
+import { EmailService } from '../../../../lib/email/email-service'
 import { Content } from '../../../../typings'
 import { withAuth } from '../../../../lib/auth-middleware'
 import { apiError } from '@/utils/debugLogger'
@@ -121,16 +120,12 @@ async function handleSendPilot(request: NextRequest, userId: string): Promise<Ne
             )
         }
 
-        // Send email using Resend
-        const { data, error } = await resend.emails.send({
-            from: 'Net Trailers <onboarding@resend.dev>', // Use your verified domain
+        // Send email using EmailService
+        const { data, error } = await EmailService.sendTrendingContent({
             to: email,
-            subject: "🎬 This Week's Trending Movies & TV Shows",
-            react: TrendingContentEmail({
-                userName: userName || '',
-                movies,
-                tvShows,
-            }),
+            userName: userName || '',
+            movies,
+            tvShows,
         })
 
         if (error) {
