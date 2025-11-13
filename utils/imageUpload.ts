@@ -26,7 +26,7 @@ export async function compressImage(file: File): Promise<File> {
             maxSizeMB: 1, // Maximum file size in MB
             maxWidthOrHeight: 1920, // Maximum dimension (width or height)
             useWebWorker: true, // Use web worker for better performance
-            fileType: 'image/jpeg', // Convert to JPEG for best compression
+            fileType: 'image/webp', // Convert to WebP for best compression
             initialQuality: 0.85, // Quality setting (0-1)
         }
 
@@ -74,8 +74,8 @@ export async function uploadImage(file: File, path: string): Promise<string> {
         // Create a unique filename using timestamp and random string
         const timestamp = Date.now()
         const randomStr = Math.random().toString(36).substring(2, 15)
-        // Always use .jpg extension since we convert to JPEG
-        const filename = `${timestamp}_${randomStr}.jpg`
+        // Always use .webp extension since we convert to WebP
+        const filename = `${timestamp}_${randomStr}.webp`
 
         // Create storage reference
         const storageRef = ref(storage, `${path}/${filename}`)
