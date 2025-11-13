@@ -48,6 +48,8 @@ interface ForumState {
     loadThreadReplies: (threadId: string) => Promise<void>
     createThread: (
         userId: string,
+        userName: string,
+        userAvatar: string | undefined,
         title: string,
         content: string,
         category: ForumCategory,
@@ -55,6 +57,8 @@ interface ForumState {
     ) => Promise<string>
     replyToThread: (
         userId: string,
+        userName: string,
+        userAvatar: string | undefined,
         threadId: string,
         content: string,
         parentReplyId?: string
@@ -71,6 +75,8 @@ interface ForumState {
     loadPollById: (pollId: string) => Promise<void>
     createPoll: (
         userId: string,
+        userName: string,
+        userAvatar: string | undefined,
         question: string,
         options: string[],
         category: ForumCategory,
@@ -194,20 +200,19 @@ export const useForumStore = create<ForumState>((set, get) => ({
         }
     },
 
-    createThread: async (userId, title, content, category, tags) => {
+    createThread: async (userId, userName, userAvatar, title, content, category, tags) => {
         try {
             const threadsRef = collection(db, 'threads')
             const now = Timestamp.now()
 
-            // Get user info from auth (you may want to pass this in or get from auth state)
             const threadData = {
                 id: '', // Will be set by Firestore
                 title,
                 content,
                 category,
                 userId,
-                userName: 'User', // Should get from auth
-                userAvatar: undefined,
+                userName,
+                userAvatar,
                 createdAt: now,
                 updatedAt: now,
                 isPinned: false,
@@ -227,7 +232,7 @@ export const useForumStore = create<ForumState>((set, get) => ({
         }
     },
 
-    replyToThread: async (userId, threadId, content, parentReplyId) => {
+    replyToThread: async (userId, userName, userAvatar, threadId, content, parentReplyId) => {
         try {
             const repliesRef = collection(db, 'thread_replies')
             const now = Timestamp.now()
@@ -237,8 +242,8 @@ export const useForumStore = create<ForumState>((set, get) => ({
                 threadId,
                 content,
                 userId,
-                userName: 'User', // Should get from auth
-                userAvatar: undefined,
+                userName,
+                userAvatar,
                 createdAt: now,
                 updatedAt: undefined,
                 isEdited: false,
@@ -255,7 +260,7 @@ export const useForumStore = create<ForumState>((set, get) => ({
             await updateDoc(threadRef, {
                 replyCount: increment(1),
                 lastReplyAt: now,
-                lastReplyBy: { userId, userName: 'User' },
+                lastReplyBy: { userId, userName },
             })
         } catch (error) {
             throw new Error(error instanceof Error ? error.message : 'Failed to reply')
@@ -418,6 +423,8 @@ export const useForumStore = create<ForumState>((set, get) => ({
 
     createPoll: async (
         userId,
+        userName,
+        userAvatar,
         question,
         options,
         category,
@@ -451,8 +458,8 @@ export const useForumStore = create<ForumState>((set, get) => ({
                 description: description || undefined,
                 category,
                 userId,
-                userName: 'User', // Should get from auth
-                userAvatar: undefined,
+                userName,
+                userAvatar,
                 createdAt: now,
                 expiresAt: expiresAt || undefined,
                 options: pollOptions,

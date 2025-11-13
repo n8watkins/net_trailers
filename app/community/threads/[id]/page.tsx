@@ -17,6 +17,7 @@ import { getCategoryInfo } from '@/utils/forumCategories'
 import NetflixLoader from '@/components/common/NetflixLoader'
 import { formatDistanceToNow } from 'date-fns'
 import { Timestamp } from 'firebase/firestore'
+import { auth } from '@/lib/firebase'
 import {
     ChatBubbleLeftIcon,
     HeartIcon,
@@ -78,9 +79,23 @@ export default function ThreadDetailPage({ params }: ThreadDetailPageProps) {
     const handleReply = async () => {
         if (!replyContent.trim() || isGuest || !currentThread || !userId) return
 
+        // Get user info from Firebase Auth
+        const currentUser = auth.currentUser
+        if (!currentUser) return
+
+        const userName = currentUser.displayName || 'Anonymous'
+        const userAvatar = currentUser.photoURL || undefined
+
         setIsSubmitting(true)
         try {
-            await replyToThread(userId, currentThread.id, replyContent, replyingTo || undefined)
+            await replyToThread(
+                userId,
+                userName,
+                userAvatar,
+                currentThread.id,
+                replyContent,
+                replyingTo || undefined
+            )
             setReplyContent('')
             setReplyingTo(null)
             await loadThreadReplies(currentThread.id)

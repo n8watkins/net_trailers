@@ -25,6 +25,7 @@ import { CreatePollModal } from '../../components/forum/CreatePollModal'
 import { useForumStore } from '../../stores/forumStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { ForumCategory } from '../../types/forum'
+import { auth } from '../../lib/firebase'
 import {
     TrophyIcon,
     UsersIcon,
@@ -554,7 +555,15 @@ function ForumsTab({ searchQuery }: { searchQuery: string }) {
         }
         const userId = getUserId()
         if (!userId) return
-        await createThread(userId, title, content, category, tags)
+
+        // Get user info from Firebase Auth
+        const currentUser = auth.currentUser
+        if (!currentUser) return
+
+        const userName = currentUser.displayName || 'Anonymous'
+        const userAvatar = currentUser.photoURL || undefined
+
+        await createThread(userId, userName, userAvatar, title, content, category, tags)
         await loadThreads() // Reload threads
     }
 
@@ -761,8 +770,18 @@ function PollsTab({ searchQuery }: { searchQuery: string }) {
         }
         const userId = getUserId()
         if (!userId) return
+
+        // Get user info from Firebase Auth
+        const currentUser = auth.currentUser
+        if (!currentUser) return
+
+        const userName = currentUser.displayName || 'Anonymous'
+        const userAvatar = currentUser.photoURL || undefined
+
         await createPoll(
             userId,
+            userName,
+            userAvatar,
             question,
             options,
             category,
