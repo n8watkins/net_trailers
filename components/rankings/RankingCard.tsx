@@ -77,6 +77,7 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
                                         src={getPosterPath(item.content)}
                                         alt={getTitle(item.content)}
                                         fill
+                                        loading="lazy"
                                         sizes="(max-width: 768px) 33vw, (max-width: 1200px) 25vw, 200px"
                                         className="object-cover rounded-md shadow-lg"
                                     />
@@ -128,6 +129,7 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
                                         alt={ranking.userName || 'User'}
                                         width={24}
                                         height={24}
+                                        loading="lazy"
                                         className="rounded-full"
                                     />
                                 ) : (

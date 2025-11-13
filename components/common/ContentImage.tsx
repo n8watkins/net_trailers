@@ -74,6 +74,7 @@ function ContentImage({
                                     : 'Content poster'
                             }
                             fill
+                            loading="lazy"
                             style={{ objectFit: 'cover' }}
                             className="rounded-md transition-all duration-300"
                             sizes="(max-width: 640px) 140px, (max-width: 768px) 160px, (max-width: 1024px) 180px, 240px"
@@ -155,6 +156,7 @@ function ContentImage({
                             alt={getTitle(content)}
                             width={200}
                             height={300}
+                            loading="lazy"
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                         />
                     ) : (
@@ -237,6 +239,7 @@ function ContentImage({
                             src={`https://image.tmdb.org/t/p/w500${posterImage}`}
                             alt={getTitle(content)}
                             fill
+                            loading="lazy"
                             sizes="(max-width: 640px) 140px, (max-width: 768px) 160px, (max-width: 1024px) 180px, 240px"
                             className="object-cover transition-transform duration-200 group-hover:scale-110"
                         />
