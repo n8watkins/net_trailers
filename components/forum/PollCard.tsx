@@ -12,6 +12,18 @@ import { Poll } from '@/types/forum'
 import { getCategoryInfo } from '@/utils/forumCategories'
 import { ChartBarIcon, ClockIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
 import { formatDistanceToNow } from 'date-fns'
+import { Timestamp } from 'firebase/firestore'
+
+// Helper to convert Firebase Timestamp to Date
+const toDate = (timestamp: Timestamp | Date | number): Date => {
+    if (timestamp instanceof Timestamp) {
+        return timestamp.toDate()
+    }
+    if (timestamp instanceof Date) {
+        return timestamp
+    }
+    return new Date(timestamp)
+}
 
 interface PollCardProps {
     poll: Poll
@@ -22,7 +34,7 @@ interface PollCardProps {
 export function PollCard({ poll, userVote = [], onVote }: PollCardProps) {
     const category = getCategoryInfo(poll.category)
     const hasVoted = userVote.length > 0
-    const isExpired = poll.expiresAt ? new Date(poll.expiresAt.toDate()) < new Date() : false
+    const isExpired = poll.expiresAt ? toDate(poll.expiresAt) < new Date() : false
 
     const handleVote = (optionId: string) => {
         if (hasVoted || isExpired || !onVote) return
@@ -67,7 +79,7 @@ export function PollCard({ poll, userVote = [], onVote }: PollCardProps) {
                         <span>•</span>
                         <span className="flex items-center gap-1">
                             <ClockIcon className="w-4 h-4" />
-                            {formatDistanceToNow(poll.createdAt, { addSuffix: true })}
+                            {formatDistanceToNow(toDate(poll.createdAt), { addSuffix: true })}
                         </span>
                         {category && (
                             <>
@@ -157,7 +169,7 @@ export function PollCard({ poll, userVote = [], onVote }: PollCardProps) {
                     <span className="text-xs text-red-400">Expired</span>
                 ) : poll.expiresAt ? (
                     <span className="text-xs text-gray-500">
-                        Expires {formatDistanceToNow(poll.expiresAt, { addSuffix: true })}
+                        Expires {formatDistanceToNow(toDate(poll.expiresAt), { addSuffix: true })}
                     </span>
                 ) : null}
             </div>

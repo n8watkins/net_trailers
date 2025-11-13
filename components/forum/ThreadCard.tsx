@@ -14,6 +14,18 @@ import { getCategoryInfo } from '@/utils/forumCategories'
 import { ChatBubbleLeftIcon, EyeIcon, HeartIcon, ClockIcon } from '@heroicons/react/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid'
 import { formatDistanceToNow } from 'date-fns'
+import { Timestamp } from 'firebase/firestore'
+
+// Helper to convert Firebase Timestamp to Date
+const toDate = (timestamp: Timestamp | Date | number): Date => {
+    if (timestamp instanceof Timestamp) {
+        return timestamp.toDate()
+    }
+    if (timestamp instanceof Date) {
+        return timestamp
+    }
+    return new Date(timestamp)
+}
 
 interface ThreadCardProps {
     thread: Thread
@@ -56,7 +68,7 @@ export function ThreadCard({ thread, onClick }: ThreadCardProps) {
                         <span>•</span>
                         <span className="flex items-center gap-1">
                             <ClockIcon className="w-4 h-4" />
-                            {formatDistanceToNow(thread.createdAt, { addSuffix: true })}
+                            {formatDistanceToNow(toDate(thread.createdAt), { addSuffix: true })}
                         </span>
                         {category && (
                             <>
