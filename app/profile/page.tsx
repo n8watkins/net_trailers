@@ -440,7 +440,7 @@ export default function ProfilePage() {
             iconColor="text-blue-400"
             headerActions={profileHeader}
         >
-            {/* Page content handled by header */}
+            <></>
         </SubPageLayout>
     )
 }

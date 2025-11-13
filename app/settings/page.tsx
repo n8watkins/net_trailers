@@ -221,6 +221,7 @@ const Settings: React.FC = () => {
                 autoMute: currentPreferences.autoMute,
                 defaultVolume: currentPreferences.defaultVolume,
                 improveRecommendations: currentPreferences.improveRecommendations,
+                showRecommendations: currentPreferences.showRecommendations,
                 notifications: currentPreferences.notifications,
             })
             // Update our tracking ref
@@ -698,6 +699,7 @@ const Settings: React.FC = () => {
         likedCount: number
         hiddenCount: number
         listsCount: number
+        watchHistoryCount: number
         totalItems: number
         isEmpty: boolean
         accountCreated?: Date
@@ -706,6 +708,7 @@ const Settings: React.FC = () => {
         likedCount: 0,
         hiddenCount: 0,
         listsCount: 0,
+        watchHistoryCount: 0,
         totalItems: 0,
         isEmpty: true,
     })
@@ -878,7 +881,7 @@ const Settings: React.FC = () => {
     // Notifications handlers
     const handleNotificationsChange = React.useCallback(
         (changes: Partial<typeof notifications>) => {
-            setNotifications((prev) => ({ ...prev, ...changes }))
+            setNotifications((prev: typeof notifications) => ({ ...prev, ...changes }))
         },
         []
     )

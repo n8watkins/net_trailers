@@ -76,7 +76,7 @@ export default function ThreadDetailPage({ params }: ThreadDetailPageProps) {
     }, [isInitialized, params.id])
 
     const handleReply = async () => {
-        if (!replyContent.trim() || isGuest || !currentThread) return
+        if (!replyContent.trim() || isGuest || !currentThread || !userId) return
 
         setIsSubmitting(true)
         try {
@@ -92,7 +92,7 @@ export default function ThreadDetailPage({ params }: ThreadDetailPageProps) {
     }
 
     const handleLike = async () => {
-        if (isGuest || !currentThread) return
+        if (isGuest || !currentThread || !userId) return
 
         try {
             if (isLiked) {
@@ -108,7 +108,7 @@ export default function ThreadDetailPage({ params }: ThreadDetailPageProps) {
     }
 
     const handleDelete = async () => {
-        if (!currentThread || currentThread.userId !== userId) return
+        if (!currentThread || !userId || currentThread.userId !== userId) return
 
         if (confirm('Are you sure you want to delete this thread?')) {
             try {
@@ -121,6 +121,7 @@ export default function ThreadDetailPage({ params }: ThreadDetailPageProps) {
     }
 
     const handleDeleteReply = async (replyId: string) => {
+        if (!userId) return
         if (confirm('Are you sure you want to delete this reply?')) {
             try {
                 await deleteReply(userId, replyId)

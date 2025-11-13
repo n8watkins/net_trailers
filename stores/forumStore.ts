@@ -7,6 +7,23 @@
 
 import { create } from 'zustand'
 import { Thread, ThreadReply, Poll, ForumCategory, ForumSortBy, ForumFilters } from '@/types/forum'
+import {
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    addDoc,
+    updateDoc,
+    deleteDoc,
+    query,
+    where,
+    orderBy,
+    limit as limitQuery,
+    Timestamp,
+    increment,
+    setDoc,
+} from 'firebase/firestore'
+import { db } from '@/lib/firebase'
 
 interface ForumState {
     // Threads
@@ -63,6 +80,7 @@ interface ForumState {
     ) => Promise<string>
     voteOnPoll: (userId: string, pollId: string, optionIds: string[]) => Promise<void>
     deletePoll: (userId: string, pollId: string) => Promise<void>
+    getUserVote: (userId: string, pollId: string) => Promise<string[] | null>
 
     // Actions - Filters
     setFilters: (filters: Partial<ForumFilters>) => void
@@ -100,11 +118,27 @@ export const useForumStore = create<ForumState>((set, get) => ({
     loadThreads: async (category, limit = 50) => {
         set({ isLoadingThreads: true, threadsError: null })
         try {
-            // Load seed data for now (replace with Firestore later)
-            const { loadSeedData } = await import('@/utils/forumSeedData')
-            const { threads } = loadSeedData()
+            const threadsRef = collection(db, 'threads')
+            let q = query(threadsRef, orderBy('createdAt', 'desc'), limitQuery(limit))
+
+            if (category) {
+                q = query(
+                    threadsRef,
+                    where('category', '==', category),
+                    orderBy('createdAt', 'desc'),
+                    limitQuery(limit)
+                )
+            }
+
+            const snapshot = await getDocs(q)
+            const threads = snapshot.docs.map((doc) => ({
+                ...doc.data(),
+                id: doc.id,
+            })) as Thread[]
+
             set({ threads, isLoadingThreads: false })
         } catch (error) {
+            console.error('Failed to load threads:', error)
             set({
                 threadsError: error instanceof Error ? error.message : 'Failed to load threads',
                 isLoadingThreads: false,
@@ -115,8 +149,22 @@ export const useForumStore = create<ForumState>((set, get) => ({
     loadThreadById: async (threadId) => {
         set({ isLoadingThreads: true, threadsError: null })
         try {
-            // TODO: Implement Firestore query
-            set({ currentThread: null, isLoadingThreads: false })
+            const threadRef = doc(db, 'threads', threadId)
+            const threadSnap = await getDoc(threadRef)
+
+            if (threadSnap.exists()) {
+                const thread = { ...threadSnap.data(), id: threadSnap.id } as Thread
+                set({ currentThread: thread, isLoadingThreads: false })
+
+                // Increment view count
+                await updateDoc(threadRef, { views: increment(1) })
+            } else {
+                set({
+                    currentThread: null,
+                    isLoadingThreads: false,
+                    threadsError: 'Thread not found',
+                })
+            }
         } catch (error) {
             set({
                 threadsError: error instanceof Error ? error.message : 'Failed to load thread',
@@ -127,8 +175,20 @@ export const useForumStore = create<ForumState>((set, get) => ({
 
     loadThreadReplies: async (threadId) => {
         try {
-            // TODO: Implement Firestore query
-            set({ threadReplies: [] })
+            const repliesRef = collection(db, 'thread_replies')
+            const q = query(
+                repliesRef,
+                where('threadId', '==', threadId),
+                orderBy('createdAt', 'asc')
+            )
+            const snapshot = await getDocs(q)
+
+            const replies = snapshot.docs.map((doc) => ({
+                ...doc.data(),
+                id: doc.id,
+            })) as ThreadReply[]
+
+            set({ threadReplies: replies })
         } catch (error) {
             console.error('Failed to load thread replies:', error)
         }
@@ -136,8 +196,32 @@ export const useForumStore = create<ForumState>((set, get) => ({
 
     createThread: async (userId, title, content, category, tags) => {
         try {
-            // TODO: Implement Firestore write
-            return 'thread-id-placeholder'
+            const threadsRef = collection(db, 'threads')
+            const now = Timestamp.now()
+
+            // Get user info from auth (you may want to pass this in or get from auth state)
+            const threadData = {
+                id: '', // Will be set by Firestore
+                title,
+                content,
+                category,
+                userId,
+                userName: 'User', // Should get from auth
+                userAvatar: undefined,
+                createdAt: now,
+                updatedAt: now,
+                isPinned: false,
+                isLocked: false,
+                views: 0,
+                replyCount: 0,
+                likes: 0,
+                tags: tags || [],
+            }
+
+            const docRef = await addDoc(threadsRef, threadData)
+            await updateDoc(docRef, { id: docRef.id })
+
+            return docRef.id
         } catch (error) {
             throw new Error(error instanceof Error ? error.message : 'Failed to create thread')
         }
@@ -145,7 +229,34 @@ export const useForumStore = create<ForumState>((set, get) => ({
 
     replyToThread: async (userId, threadId, content, parentReplyId) => {
         try {
-            // TODO: Implement Firestore write
+            const repliesRef = collection(db, 'thread_replies')
+            const now = Timestamp.now()
+
+            const replyData = {
+                id: '', // Will be set by Firestore
+                threadId,
+                content,
+                userId,
+                userName: 'User', // Should get from auth
+                userAvatar: undefined,
+                createdAt: now,
+                updatedAt: undefined,
+                isEdited: false,
+                likes: 0,
+                parentReplyId: parentReplyId || undefined,
+                mentions: [],
+            }
+
+            const docRef = await addDoc(repliesRef, replyData)
+            await updateDoc(docRef, { id: docRef.id })
+
+            // Increment reply count on thread
+            const threadRef = doc(db, 'threads', threadId)
+            await updateDoc(threadRef, {
+                replyCount: increment(1),
+                lastReplyAt: now,
+                lastReplyBy: { userId, userName: 'User' },
+            })
         } catch (error) {
             throw new Error(error instanceof Error ? error.message : 'Failed to reply')
         }
@@ -153,7 +264,16 @@ export const useForumStore = create<ForumState>((set, get) => ({
 
     likeThread: async (userId, threadId) => {
         try {
-            // TODO: Implement Firestore write
+            const likeRef = doc(db, 'thread_likes', `${userId}_${threadId}`)
+            await setDoc(likeRef, {
+                userId,
+                threadId,
+                createdAt: Timestamp.now(),
+            })
+
+            // Increment like count on thread
+            const threadRef = doc(db, 'threads', threadId)
+            await updateDoc(threadRef, { likes: increment(1) })
         } catch (error) {
             throw new Error(error instanceof Error ? error.message : 'Failed to like thread')
         }
@@ -161,7 +281,12 @@ export const useForumStore = create<ForumState>((set, get) => ({
 
     unlikeThread: async (userId, threadId) => {
         try {
-            // TODO: Implement Firestore write
+            const likeRef = doc(db, 'thread_likes', `${userId}_${threadId}`)
+            await deleteDoc(likeRef)
+
+            // Decrement like count on thread
+            const threadRef = doc(db, 'threads', threadId)
+            await updateDoc(threadRef, { likes: increment(-1) })
         } catch (error) {
             throw new Error(error instanceof Error ? error.message : 'Failed to unlike thread')
         }
@@ -169,7 +294,16 @@ export const useForumStore = create<ForumState>((set, get) => ({
 
     likeReply: async (userId, replyId) => {
         try {
-            // TODO: Implement Firestore write
+            const likeRef = doc(db, 'reply_likes', `${userId}_${replyId}`)
+            await setDoc(likeRef, {
+                userId,
+                replyId,
+                createdAt: Timestamp.now(),
+            })
+
+            // Increment like count on reply
+            const replyRef = doc(db, 'thread_replies', replyId)
+            await updateDoc(replyRef, { likes: increment(1) })
         } catch (error) {
             throw new Error(error instanceof Error ? error.message : 'Failed to like reply')
         }
@@ -177,7 +311,12 @@ export const useForumStore = create<ForumState>((set, get) => ({
 
     unlikeReply: async (userId, replyId) => {
         try {
-            // TODO: Implement Firestore write
+            const likeRef = doc(db, 'reply_likes', `${userId}_${replyId}`)
+            await deleteDoc(likeRef)
+
+            // Decrement like count on reply
+            const replyRef = doc(db, 'thread_replies', replyId)
+            await updateDoc(replyRef, { likes: increment(-1) })
         } catch (error) {
             throw new Error(error instanceof Error ? error.message : 'Failed to unlike reply')
         }
@@ -185,7 +324,21 @@ export const useForumStore = create<ForumState>((set, get) => ({
 
     deleteThread: async (userId, threadId) => {
         try {
-            // TODO: Implement Firestore delete
+            const threadRef = doc(db, 'threads', threadId)
+            const threadSnap = await getDoc(threadRef)
+
+            if (!threadSnap.exists() || threadSnap.data().userId !== userId) {
+                throw new Error('Unauthorized or thread not found')
+            }
+
+            await deleteDoc(threadRef)
+
+            // Also delete all replies to this thread
+            const repliesRef = collection(db, 'thread_replies')
+            const q = query(repliesRef, where('threadId', '==', threadId))
+            const snapshot = await getDocs(q)
+            const deletePromises = snapshot.docs.map((doc) => deleteDoc(doc.ref))
+            await Promise.all(deletePromises)
         } catch (error) {
             throw new Error(error instanceof Error ? error.message : 'Failed to delete thread')
         }
@@ -193,7 +346,19 @@ export const useForumStore = create<ForumState>((set, get) => ({
 
     deleteReply: async (userId, replyId) => {
         try {
-            // TODO: Implement Firestore delete
+            const replyRef = doc(db, 'thread_replies', replyId)
+            const replySnap = await getDoc(replyRef)
+
+            if (!replySnap.exists() || replySnap.data().userId !== userId) {
+                throw new Error('Unauthorized or reply not found')
+            }
+
+            const threadId = replySnap.data().threadId
+            await deleteDoc(replyRef)
+
+            // Decrement reply count on thread
+            const threadRef = doc(db, 'threads', threadId)
+            await updateDoc(threadRef, { replyCount: increment(-1) })
         } catch (error) {
             throw new Error(error instanceof Error ? error.message : 'Failed to delete reply')
         }
@@ -203,11 +368,27 @@ export const useForumStore = create<ForumState>((set, get) => ({
     loadPolls: async (category, limit = 50) => {
         set({ isLoadingPolls: true, pollsError: null })
         try {
-            // Load seed data for now (replace with Firestore later)
-            const { loadSeedData } = await import('@/utils/forumSeedData')
-            const { polls } = loadSeedData()
+            const pollsRef = collection(db, 'polls')
+            let q = query(pollsRef, orderBy('createdAt', 'desc'), limitQuery(limit))
+
+            if (category) {
+                q = query(
+                    pollsRef,
+                    where('category', '==', category),
+                    orderBy('createdAt', 'desc'),
+                    limitQuery(limit)
+                )
+            }
+
+            const snapshot = await getDocs(q)
+            const polls = snapshot.docs.map((doc) => ({
+                ...doc.data(),
+                id: doc.id,
+            })) as Poll[]
+
             set({ polls, isLoadingPolls: false })
         } catch (error) {
+            console.error('Failed to load polls:', error)
             set({
                 pollsError: error instanceof Error ? error.message : 'Failed to load polls',
                 isLoadingPolls: false,
@@ -218,8 +399,15 @@ export const useForumStore = create<ForumState>((set, get) => ({
     loadPollById: async (pollId) => {
         set({ isLoadingPolls: true, pollsError: null })
         try {
-            // TODO: Implement Firestore query
-            set({ currentPoll: null, isLoadingPolls: false })
+            const pollRef = doc(db, 'polls', pollId)
+            const pollSnap = await getDoc(pollRef)
+
+            if (pollSnap.exists()) {
+                const poll = { ...pollSnap.data(), id: pollSnap.id } as Poll
+                set({ currentPoll: poll, isLoadingPolls: false })
+            } else {
+                set({ currentPoll: null, isLoadingPolls: false, pollsError: 'Poll not found' })
+            }
         } catch (error) {
             set({
                 pollsError: error instanceof Error ? error.message : 'Failed to load poll',
@@ -238,8 +426,46 @@ export const useForumStore = create<ForumState>((set, get) => ({
         expiresInDays
     ) => {
         try {
-            // TODO: Implement Firestore write
-            return 'poll-id-placeholder'
+            const pollsRef = collection(db, 'polls')
+            const now = Timestamp.now()
+
+            // Calculate expiration date if provided
+            let expiresAt: Timestamp | undefined
+            if (expiresInDays) {
+                const expireDate = new Date()
+                expireDate.setDate(expireDate.getDate() + expiresInDays)
+                expiresAt = Timestamp.fromDate(expireDate)
+            }
+
+            // Create poll options with initial vote counts
+            const pollOptions = options.map((optionText, index) => ({
+                id: `option-${index}`,
+                text: optionText,
+                votes: 0,
+                percentage: 0,
+            }))
+
+            const pollData = {
+                id: '', // Will be set by Firestore
+                question,
+                description: description || undefined,
+                category,
+                userId,
+                userName: 'User', // Should get from auth
+                userAvatar: undefined,
+                createdAt: now,
+                expiresAt: expiresAt || undefined,
+                options: pollOptions,
+                totalVotes: 0,
+                isMultipleChoice,
+                allowAddOptions: false,
+                tags: [],
+            }
+
+            const docRef = await addDoc(pollsRef, pollData)
+            await updateDoc(docRef, { id: docRef.id })
+
+            return docRef.id
         } catch (error) {
             throw new Error(error instanceof Error ? error.message : 'Failed to create poll')
         }
@@ -247,7 +473,45 @@ export const useForumStore = create<ForumState>((set, get) => ({
 
     voteOnPoll: async (userId, pollId, optionIds) => {
         try {
-            // TODO: Implement Firestore write
+            // Record the vote
+            const voteRef = doc(db, 'poll_votes', `${userId}_${pollId}`)
+            await setDoc(voteRef, {
+                pollId,
+                userId,
+                optionIds,
+                votedAt: Timestamp.now(),
+            })
+
+            // Update poll vote counts
+            const pollRef = doc(db, 'polls', pollId)
+            const pollSnap = await getDoc(pollRef)
+
+            if (!pollSnap.exists()) {
+                throw new Error('Poll not found')
+            }
+
+            const pollData = pollSnap.data()
+            const updatedOptions = pollData.options.map((option: any) => {
+                if (optionIds.includes(option.id)) {
+                    return {
+                        ...option,
+                        votes: option.votes + 1,
+                    }
+                }
+                return option
+            })
+
+            // Recalculate percentages
+            const totalVotes = pollData.totalVotes + 1
+            const optionsWithPercentages = updatedOptions.map((option: any) => ({
+                ...option,
+                percentage: totalVotes > 0 ? Math.round((option.votes / totalVotes) * 100) : 0,
+            }))
+
+            await updateDoc(pollRef, {
+                options: optionsWithPercentages,
+                totalVotes,
+            })
         } catch (error) {
             throw new Error(error instanceof Error ? error.message : 'Failed to vote on poll')
         }
@@ -255,9 +519,38 @@ export const useForumStore = create<ForumState>((set, get) => ({
 
     deletePoll: async (userId, pollId) => {
         try {
-            // TODO: Implement Firestore delete
+            const pollRef = doc(db, 'polls', pollId)
+            const pollSnap = await getDoc(pollRef)
+
+            if (!pollSnap.exists() || pollSnap.data().userId !== userId) {
+                throw new Error('Unauthorized or poll not found')
+            }
+
+            await deleteDoc(pollRef)
+
+            // Also delete all votes for this poll
+            const votesRef = collection(db, 'poll_votes')
+            const q = query(votesRef, where('pollId', '==', pollId))
+            const snapshot = await getDocs(q)
+            const deletePromises = snapshot.docs.map((doc) => deleteDoc(doc.ref))
+            await Promise.all(deletePromises)
         } catch (error) {
             throw new Error(error instanceof Error ? error.message : 'Failed to delete poll')
+        }
+    },
+
+    getUserVote: async (userId, pollId) => {
+        try {
+            const voteRef = doc(db, 'poll_votes', `${userId}_${pollId}`)
+            const voteSnap = await getDoc(voteRef)
+
+            if (voteSnap.exists()) {
+                return voteSnap.data().optionIds as string[]
+            }
+            return null
+        } catch (error) {
+            console.error('Failed to get user vote:', error)
+            return null
         }
     },
 

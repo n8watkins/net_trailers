@@ -49,7 +49,8 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
 
-    const { currentPoll, isLoadingPolls, loadPollById, voteOnPoll, deletePoll } = useForumStore()
+    const { currentPoll, isLoadingPolls, loadPollById, voteOnPoll, deletePoll, getUserVote } =
+        useForumStore()
 
     const [selectedOptions, setSelectedOptions] = useState<string[]>([])
     const [hasVoted, setHasVoted] = useState(false)
@@ -62,11 +63,22 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
         }
     }, [isInitialized, params.id])
 
-    // Check if user has already voted (TODO: Load from Firestore)
+    // Check if user has already voted
     useEffect(() => {
-        // This should check against user's votes in Firestore
-        setHasVoted(false)
-    }, [currentPoll, userId])
+        const checkUserVote = async () => {
+            if (currentPoll && userId) {
+                const userVote = await getUserVote(userId, currentPoll.id)
+                if (userVote) {
+                    setHasVoted(true)
+                    setSelectedOptions(userVote)
+                } else {
+                    setHasVoted(false)
+                    setSelectedOptions([])
+                }
+            }
+        }
+        checkUserVote()
+    }, [currentPoll, userId, getUserVote])
 
     const handleOptionToggle = (optionId: string) => {
         if (hasVoted || isExpired || isGuest) return
@@ -83,7 +95,7 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
     }
 
     const handleVote = async () => {
-        if (!currentPoll || selectedOptions.length === 0 || isGuest || hasVoted) return
+        if (!currentPoll || selectedOptions.length === 0 || isGuest || hasVoted || !userId) return
 
         setIsSubmitting(true)
         try {

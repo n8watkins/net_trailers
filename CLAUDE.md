@@ -29,7 +29,7 @@ The app uses **Zustand** with **17 focused stores** (migrated from monolithic "g
 - **Storage adapters**: FirebaseStorageAdapter (auth users) and LocalStorageAdapter (guests)
 - **Store factory pattern**: createUserStore.ts for shared auth/guest store logic
 
-**Zustand Stores** (17 total):
+**Zustand Stores** (18 total):
 
 **Core App Stores**:
 
@@ -62,12 +62,14 @@ The app uses **Zustand** with **17 focused stores** (migrated from monolithic "g
 
 - `stores/childSafetyStore.ts` - Child safety PIN and settings
 - `stores/rankingStore.ts` - Rankings, comments, and likes
+- `stores/forumStore.ts` - Forum threads, polls, and community discussions
 
 **Type Definitions**:
 
 - `types/atoms.ts` - Shared type definitions (UserPreferences, UserSession, SessionType, etc.)
 - `types/userLists.ts` - Collection types (CollectionType, UserList, AdvancedFilters, ShareSettings)
 - `types/rankings.ts` - Ranking and comment types
+- `types/forum.ts` - Forum types (Thread, ThreadReply, Poll, PollVote, ForumCategory, etc.)
 
 ### Content Type System
 
@@ -158,6 +160,28 @@ The app handles both movies and TV shows through a unified type system:
 /rankingLikes/{likeId}
   - User likes on rankings
 
+/threads/{threadId}
+  - Discussion threads with replies
+  - Indexed by category, createdAt, userId
+
+/thread_replies/{replyId}
+  - Replies to threads
+  - Indexed by threadId, createdAt
+
+/thread_likes/{likeId}
+  - User likes on threads
+
+/reply_likes/{likeId}
+  - User likes on replies
+
+/polls/{pollId}
+  - Polls with voting options
+  - Indexed by category, createdAt, userId
+
+/poll_votes/{voteId}
+  - User votes on polls
+  - One vote per user per poll
+
 /sharedCollections/{linkId}
   - Shared collection snapshots
   - Public read access
@@ -222,11 +246,37 @@ The app handles both movies and TV shows through a unified type system:
 
 - **Create rankings** with drag-and-drop content and custom scores
 - **Public/private** visibility controls
-- **Community page** (`/community`) to browse public rankings
+- **Community page** (`/community`) to browse public rankings, forums, and polls
 - **Engagement**: Likes, view counts, threaded comment system
 - **Comment features**: Nested replies, likes, delete by owner or ranking author
-- **Sorting**: Recent, popular, most-liked, most-viewed
+- **Sorting**: Recent, popular, most-liked, most-viewed, most-replied
 - **Media type support**: Movies, TV shows, or mixed rankings
+
+### Forum & Discussion Features
+
+- **Discussion threads** with categorization (General, Movies, TV Shows, Recommendations, Rankings, Announcements)
+- **Thread features**:
+    - Create, read, update, delete threads
+    - Reply system with nested support
+    - Like/unlike threads and replies
+    - View counts and engagement metrics
+    - Thread owner can delete any replies
+- **Polls system**:
+    - Create polls with multiple options
+    - Single or multiple-choice voting
+    - Optional expiration dates
+    - Real-time vote counting with percentages
+    - Visual progress bars for results
+    - Vote tracking per user (one vote per poll)
+- **Forum categories**: General, Movies, TV Shows, Recommendations, Rankings, Announcements
+- **Thread/Poll detail pages**:
+    - `/community/threads/[id]` - Full thread view with replies
+    - `/community/polls/[id]` - Interactive voting interface
+- **Search & filtering**: Global search across threads and polls
+- **Sorting options**: Recent, Popular, Most Replied, Most Voted
+- **Authentication required**: All forum features require authentication (no guest access)
+- **Firestore backend**: Full CRUD operations for threads, replies, polls, and votes
+- **Security rules**: Comprehensive Firestore security rules for data protection
 
 ### Child Safety Mode
 

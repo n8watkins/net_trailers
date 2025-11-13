@@ -57,7 +57,7 @@ export function CommentSection({
         }
 
         const username = currentUser.displayName || 'Unknown User'
-        const avatarUrl = currentUser.photoURL || null
+        const avatarUrl = currentUser.photoURL || undefined
 
         setIsSubmitting(true)
         try {
@@ -85,7 +85,7 @@ export function CommentSection({
         }
 
         const username = currentUser.displayName || 'Unknown User'
-        const avatarUrl = currentUser.photoURL || null
+        const avatarUrl = currentUser.photoURL || undefined
 
         setIsSubmitting(true)
         try {

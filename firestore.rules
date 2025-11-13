@@ -274,6 +274,207 @@ service cloud.firestore {
              );
     }
 
+    // ==========================================
+    // Forum Features: Threads, Polls, Replies
+    // ==========================================
+
+    // Discussion threads collection
+    match /threads/{threadId} {
+      // Allow read for all authenticated users
+      allow read: if request.auth != null;
+
+      // Allow create if authenticated and userId matches auth
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid
+                    && isValidThreadData(request.resource.data);
+
+      // Allow update if authenticated user is the owner OR if only incrementing stats
+      allow update: if request.auth != null && (
+                      // Owner can update anything
+                      (request.auth.uid == resource.data.userId
+                       && request.resource.data.userId == resource.data.userId
+                       && isValidThreadData(request.resource.data))
+                      ||
+                      // Anyone authenticated can increment views/likes/replyCount
+                      (isOnlyIncrementingThreadStats(resource.data, request.resource.data))
+                    );
+
+      // Allow delete if authenticated user is the owner
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // Thread replies collection
+    match /thread_replies/{replyId} {
+      // Allow read for all authenticated users
+      allow read: if request.auth != null;
+
+      // Allow create if authenticated and userId matches auth
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid
+                    && isValidThreadReplyData(request.resource.data);
+
+      // Allow update if authenticated user is the owner (for editing)
+      allow update: if request.auth != null
+                    && request.auth.uid == resource.data.userId;
+
+      // Allow delete if authenticated user is the reply owner
+      // OR if authenticated user is the thread owner
+      allow delete: if request.auth != null
+                    && (request.auth.uid == resource.data.userId
+                    || request.auth.uid == get(/databases/$(database)/documents/threads/$(resource.data.threadId)).data.userId);
+    }
+
+    // Thread likes collection
+    match /thread_likes/{likeId} {
+      // Allow read for all authenticated users
+      allow read: if request.auth != null;
+
+      // Allow create if authenticated and userId matches auth
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid;
+
+      // Allow delete if authenticated user owns the like
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // Reply likes collection
+    match /reply_likes/{likeId} {
+      // Allow read for all authenticated users
+      allow read: if request.auth != null;
+
+      // Allow create if authenticated and userId matches auth
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid;
+
+      // Allow delete if authenticated user owns the like
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // Polls collection
+    match /polls/{pollId} {
+      // Allow read for all authenticated users
+      allow read: if request.auth != null;
+
+      // Allow create if authenticated and userId matches auth
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid
+                    && isValidPollData(request.resource.data);
+
+      // Allow update if authenticated user is the owner OR if only incrementing totalVotes
+      allow update: if request.auth != null && (
+                      // Owner can update anything
+                      (request.auth.uid == resource.data.userId
+                       && request.resource.data.userId == resource.data.userId
+                       && isValidPollData(request.resource.data))
+                      ||
+                      // Anyone authenticated can update vote counts
+                      (isOnlyUpdatingPollVotes(resource.data, request.resource.data))
+                    );
+
+      // Allow delete if authenticated user is the owner
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // Poll votes collection
+    match /poll_votes/{voteId} {
+      // Allow read for all authenticated users
+      allow read: if request.auth != null;
+
+      // Allow create if authenticated and userId matches auth
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid;
+
+      // Allow delete if authenticated user owns the vote
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+
+      // Don't allow updates - votes are immutable once cast
+    }
+
+    // Helper function to validate thread data structure
+    function isValidThreadData(data) {
+      return data.keys().hasAll(['id', 'title', 'content', 'category', 'userId', 'userName', 'createdAt', 'updatedAt', 'isPinned', 'isLocked', 'views', 'replyCount', 'likes'])
+             && data.id is string
+             && data.title is string
+             && data.content is string
+             && data.category is string
+             && data.userId is string
+             && data.userName is string
+             && data.isPinned is bool
+             && data.isLocked is bool
+             && data.views is number
+             && data.replyCount is number
+             && data.likes is number;
+    }
+
+    // Helper function to validate thread reply data structure
+    function isValidThreadReplyData(data) {
+      return data.keys().hasAll(['id', 'threadId', 'content', 'userId', 'userName', 'createdAt', 'isEdited', 'likes'])
+             && data.id is string
+             && data.threadId is string
+             && data.content is string
+             && data.userId is string
+             && data.userName is string
+             && data.isEdited is bool
+             && data.likes is number;
+    }
+
+    // Helper function to validate poll data structure
+    function isValidPollData(data) {
+      return data.keys().hasAll(['id', 'question', 'category', 'userId', 'userName', 'createdAt', 'options', 'totalVotes', 'isMultipleChoice', 'allowAddOptions'])
+             && data.id is string
+             && data.question is string
+             && data.category is string
+             && data.userId is string
+             && data.userName is string
+             && data.options is list
+             && data.totalVotes is number
+             && data.isMultipleChoice is bool
+             && data.allowAddOptions is bool;
+    }
+
+    // Helper function to check if only thread stats are being incremented
+    function isOnlyIncrementingThreadStats(before, after) {
+      return after.id == before.id
+             && after.userId == before.userId
+             && after.userName == before.userName
+             && after.title == before.title
+             && after.content == before.content
+             && after.category == before.category
+             && after.createdAt == before.createdAt
+             && after.updatedAt == before.updatedAt
+             && after.isPinned == before.isPinned
+             && after.isLocked == before.isLocked
+             // Only allow one stat to change at a time, by exactly 1 or -1
+             && (
+                 // Views increment by 1
+                 (after.views == before.views + 1 && after.likes == before.likes && after.replyCount == before.replyCount)
+                 // Likes increment by 1
+                 || (after.likes == before.likes + 1 && after.views == before.views && after.replyCount == before.replyCount)
+                 // Likes decrement by 1
+                 || (after.likes == before.likes - 1 && after.views == before.views && after.replyCount == before.replyCount)
+                 // Reply count increment by 1
+                 || (after.replyCount == before.replyCount + 1 && after.views == before.views && after.likes == before.likes)
+                 // Reply count decrement by 1
+                 || (after.replyCount == before.replyCount - 1 && after.views == before.views && after.likes == before.likes)
+             );
+    }
+
+    // Helper function to check if only poll votes are being updated
+    function isOnlyUpdatingPollVotes(before, after) {
+      return after.id == before.id
+             && after.userId == before.userId
+             && after.userName == before.userName
+             && after.question == before.question
+             && after.category == before.category
+             && after.createdAt == before.createdAt
+             && after.isMultipleChoice == before.isMultipleChoice
+             && after.allowAddOptions == before.allowAddOptions
+             // Allow options array to change (vote counts)
+             && after.options.size() == before.options.size()
+             // Allow totalVotes to increment
+             && (after.totalVotes >= before.totalVotes);
+    }
+
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;

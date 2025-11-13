@@ -477,19 +477,21 @@ function RankingsTab({
                 {/* Tag Rows */}
                 {displayTagRows.length > 0 ? (
                     <div className="space-y-6">
-                        {displayTagRows.map(({ tag, rankings }) => {
-                            const tagData = POPULAR_TAGS.find((t) => t.name === tag)
-                            return (
-                                <RankingRow
-                                    key={tag}
-                                    title={tag}
-                                    emoji={tagData?.emoji}
-                                    rankings={rankings}
-                                    showAuthor={true}
-                                    onLike={handleRankingClick}
-                                />
-                            )
-                        })}
+                        {displayTagRows.map(
+                            ({ tag, rankings }: { tag: string; rankings: any[] }) => {
+                                const tagData = POPULAR_TAGS.find((t) => t.name === tag)
+                                return (
+                                    <RankingRow
+                                        key={tag}
+                                        title={tag}
+                                        emoji={tagData?.emoji}
+                                        rankings={rankings}
+                                        showAuthor={true}
+                                        onLike={handleRankingClick}
+                                    />
+                                )
+                            }
+                        )}
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -551,6 +553,7 @@ function ForumsTab({ searchQuery }: { searchQuery: string }) {
             return
         }
         const userId = getUserId()
+        if (!userId) return
         await createThread(userId, title, content, category, tags)
         await loadThreads() // Reload threads
     }
@@ -757,6 +760,7 @@ function PollsTab({ searchQuery }: { searchQuery: string }) {
             return
         }
         const userId = getUserId()
+        if (!userId) return
         await createPoll(
             userId,
             question,
@@ -783,6 +787,7 @@ function PollsTab({ searchQuery }: { searchQuery: string }) {
             return
         }
         const userId = getUserId()
+        if (!userId) return
         try {
             await voteOnPoll(userId, pollId, optionIds)
             // Update local state to show vote immediately
