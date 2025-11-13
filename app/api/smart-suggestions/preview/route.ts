@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { TMDBApiClient } from '@/utils/tmdbApi'
 import { MemoryRateLimiter } from '@/lib/rateLimiter'
 import { getRequestIdentity } from '@/lib/requestIdentity'
+import { apiWarn, apiError } from '@/utils/debugLogger'
 
 const previewLimiter = new MemoryRateLimiter(
     Number(process.env.SMART_PREVIEW_MAX_REQUESTS || 60),
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
                     const item = await tmdb.fetch(endpoint, {})
                     return item
                 } catch (error) {
-                    console.warn(`Failed to fetch content ${tmdbId}:`, error)
+                    apiWarn(`Failed to fetch content ${tmdbId}:`, error)
                     return null
                 }
             })
@@ -196,7 +197,7 @@ export async function POST(request: NextRequest) {
                     }
                 } catch (error) {
                     // If credits fetch fails, skip this item
-                    console.warn(`Failed to fetch credits for ${item.id}:`, error)
+                    apiWarn(`Failed to fetch credits for ${item.id}:`, error)
                 }
 
                 // Stop if we have enough items
@@ -211,7 +212,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ content, totalResults })
     } catch (error) {
-        console.error('Preview fetch error:', error)
+        apiError('Preview fetch error:', error)
         return NextResponse.json({ content: [] })
     }
 }

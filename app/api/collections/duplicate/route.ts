@@ -18,6 +18,7 @@ import { Content } from '../../../../typings'
 import { nanoid } from 'nanoid'
 import { withAuth } from '../../../../lib/auth-middleware'
 import { getAdminDb } from '../../../../lib/firebase-admin'
+import { apiError } from '../../../../utils/debugLogger'
 
 async function handleDuplicate(request: NextRequest, userId: string): Promise<NextResponse> {
     try {
@@ -81,7 +82,7 @@ async function handleDuplicate(request: NextRequest, userId: string): Promise<Ne
             message: 'Collection saved successfully',
         })
     } catch (error) {
-        console.error('Error duplicating collection:', error)
+        apiError('Error duplicating collection:', error)
 
         const errorMessage =
             error instanceof Error ? error.message : 'Failed to duplicate collection'

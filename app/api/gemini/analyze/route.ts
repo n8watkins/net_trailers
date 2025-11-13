@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { consumeGeminiRateLimit } from '@/lib/geminiRateLimiter'
 import { getRequestIdentity } from '@/lib/requestIdentity'
 import { sanitizeInput } from '@/utils/inputSanitization'
+import { apiError } from '@/utils/debugLogger'
 
 /**
  * Gemini API endpoint for semantic analysis of user input
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
 
         const apiKey = process.env.GEMINI_API_KEY
         if (!apiKey) {
-            console.error('GEMINI_API_KEY not configured')
+            apiError('GEMINI_API_KEY not configured')
             return NextResponse.json({ error: 'AI analysis unavailable' }, { status: 503 })
         }
 
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
             movieRecommendations: analysis.movieRecommendations || [],
         })
     } catch (error) {
-        console.error('Gemini analysis error:', error)
+        apiError('Gemini analysis error:', error)
         return NextResponse.json(
             { error: 'Failed to analyze text', details: (error as Error).message },
             { status: 500 }

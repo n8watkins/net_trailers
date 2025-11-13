@@ -3,6 +3,7 @@ import { filterContentByAdultFlag } from '../../../utils/contentFilter'
 import { filterMatureTVShows } from '../../../utils/tvContentRatings'
 import { searchCache } from '../../../utils/apiCache'
 import type { Content } from '../../../typings'
+import { apiError } from '../../../utils/debugLogger'
 
 interface TMDBSearchResult {
     id: number
@@ -120,7 +121,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json(normalResponse, { status: 200 })
     } catch (error) {
-        console.error('Search API error:', error)
+        apiError('Search API error:', error)
         return NextResponse.json(
             {
                 message: 'Internal server error',

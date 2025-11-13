@@ -19,6 +19,7 @@ import { getBatchSimilarContent } from '@/utils/tmdb/recommendations'
 import { Recommendation, RECOMMENDATION_CONSTRAINTS } from '@/types/recommendations'
 import { Content, getTitle } from '@/typings'
 import { withAuth } from '@/lib/auth-middleware'
+import { apiError } from '@/utils/debugLogger'
 
 async function handlePersonalizedRecommendations(
     request: NextRequest,
@@ -110,7 +111,7 @@ async function handlePersonalizedRecommendations(
             generatedAt: Date.now(),
         })
     } catch (error) {
-        console.error('Error generating personalized recommendations:', error)
+        apiError('Error generating personalized recommendations:', error)
         return NextResponse.json(
             {
                 success: false,

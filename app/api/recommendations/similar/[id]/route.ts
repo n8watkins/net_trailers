@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getHybridRecommendations } from '@/utils/tmdb/recommendations'
 import { Recommendation, RECOMMENDATION_CONSTRAINTS } from '@/types/recommendations'
+import { apiError } from '@/utils/debugLogger'
 
 interface RouteParams {
     params: Promise<{
@@ -57,7 +58,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             generatedAt: Date.now(),
         })
     } catch (error) {
-        console.error('Error fetching similar content recommendations:', error)
+        apiError('Error fetching similar content recommendations:', error)
         return NextResponse.json(
             {
                 success: false,

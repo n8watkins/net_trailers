@@ -3,6 +3,7 @@ import { filterContentByAdultFlag } from '../../../utils/contentFilter'
 import { filterMatureTVShows } from '../../../utils/tvContentRatings'
 import { Content } from '../../../typings'
 import { getTMDBHeaders } from '../../../utils/tmdbFetch'
+import { apiError } from '../../../utils/debugLogger'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -73,7 +74,7 @@ async function fetchCandidates(mediaType: MediaType, page: number, childSafetyMo
     // Use Authorization header for secure authentication
     const response = await fetch(urlObj.toString(), {
         cache: 'no-store',
-        headers: getTMDBHeaders()
+        headers: getTMDBHeaders(),
     })
 
     if (!response.ok) {
@@ -143,7 +144,7 @@ export async function GET(request: NextRequest) {
             { status: 404 }
         )
     } catch (error) {
-        console.error('Failed to fetch random content:', error)
+        apiError('Failed to fetch random content:', error)
         return NextResponse.json({ message: 'Failed to fetch random content' }, { status: 500 })
     }
 }

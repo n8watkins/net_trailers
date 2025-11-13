@@ -5,6 +5,7 @@ import { parseGeminiResponse, enrichWithTMDB } from '../../../utils/gemini/respo
 import { consumeGeminiRateLimit } from '@/lib/geminiRateLimiter'
 import { getRequestIdentity } from '@/lib/requestIdentity'
 import { sanitizeQuery } from '@/utils/inputSanitization'
+import { apiLog, apiError } from '@/utils/debugLogger'
 
 export async function POST(request: NextRequest) {
     try {
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
 
         const apiKey = process.env.GEMINI_API_KEY
         if (!apiKey) {
-            console.error('GEMINI_API_KEY not configured')
+            apiError('GEMINI_API_KEY not configured')
             return NextResponse.json({ error: 'AI service unavailable' }, { status: 503 })
         }
 
@@ -48,8 +49,8 @@ export async function POST(request: NextRequest) {
             ? buildFollowUpPrompt(sanitizedQuery, mode, conversationHistory, existingMovies)
             : buildInitialPrompt(sanitizedQuery, mode)
 
-        console.log('[AI Suggestions] Existing movies count:', existingMovies.length, { userId })
-        console.log('[AI Suggestions] Sending prompt to Gemini:', {
+        apiLog('[AI Suggestions] Existing movies count:', existingMovies.length, { userId })
+        apiLog('[AI Suggestions] Sending prompt to Gemini:', {
             mode,
             isFollowUp,
             query: sanitizedQuery,
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest) {
 
         if (!response.ok) {
             const errorText = await response.text()
-            console.error('[AI Suggestions] Gemini API error:', errorText)
+            apiError('[AI Suggestions] Gemini API error:', errorText)
             throw new Error('Gemini API request failed')
         }
 
@@ -85,11 +86,11 @@ export async function POST(request: NextRequest) {
             throw new Error('No response from Gemini')
         }
 
-        console.log('[AI Suggestions] Gemini response received', { userId })
+        apiLog('[AI Suggestions] Gemini response received', { userId })
 
         const parsed = parseGeminiResponse(text)
 
-        console.log('[AI Suggestions] Parsed response:', {
+        apiLog('[AI Suggestions] Parsed response:', {
             rowName: parsed.rowName,
             mediaType: parsed.mediaType,
             movieCount: parsed.movies.length,
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
 
         const enrichedResults = await enrichWithTMDB(parsed.movies, parsed.mediaType)
 
-        console.log('[AI Suggestions] Enriched with TMDB:', {
+        apiLog('[AI Suggestions] Enriched with TMDB:', {
             foundCount: enrichedResults.length,
             requestedCount: parsed.movies.length,
             userId,
@@ -112,7 +113,7 @@ export async function POST(request: NextRequest) {
             mediaType: parsed.mediaType,
         })
     } catch (error: any) {
-        console.error('[AI Suggestions] Error:', error)
+        apiError('[AI Suggestions] Error:', error)
         return NextResponse.json(
             { error: error.message || 'Failed to generate suggestions' },
             { status: 500 }

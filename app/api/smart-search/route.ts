@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { TMDBApiClient } from '../../../utils/tmdbApi'
 import { MOVIE_GENRES, TV_GENRES } from '../../../constants/genres'
+import { apiError } from '../../../utils/debugLogger'
 
 // In-memory cache for search results (5 minute TTL)
 const searchCache = new Map<string, { results: any[]; timestamp: number }>()
@@ -72,7 +73,7 @@ export async function GET(request: NextRequest) {
                 },
             }))
         } catch (error) {
-            console.error('People search error:', error)
+            apiError('People search error:', error)
         }
 
         // 3. Search TMDB Movies
@@ -91,7 +92,7 @@ export async function GET(request: NextRequest) {
                 },
             }))
         } catch (error) {
-            console.error('Movies search error:', error)
+            apiError('Movies search error:', error)
         }
 
         // 4. Search TMDB TV Shows
@@ -110,7 +111,7 @@ export async function GET(request: NextRequest) {
                 },
             }))
         } catch (error) {
-            console.error('TV search error:', error)
+            apiError('TV search error:', error)
         }
 
         // 5. Search TMDB Companies (studios)
@@ -128,7 +129,7 @@ export async function GET(request: NextRequest) {
                 },
             }))
         } catch (error) {
-            console.error('Company search error:', error)
+            apiError('Company search error:', error)
         }
 
         // Combine and sort by relevance
@@ -177,7 +178,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({ results })
     } catch (error) {
-        console.error('Smart search error:', error)
+        apiError('Smart search error:', error)
         return NextResponse.json({ error: 'Search failed' }, { status: 500 })
     }
 }
