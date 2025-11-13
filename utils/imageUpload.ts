@@ -2,13 +2,55 @@
  * Image Upload Utilities
  *
  * Handles uploading images to Firebase Storage for forum content
+ * with automatic compression for optimized file sizes
  */
 
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { storage } from '@/firebase'
+import imageCompression from 'browser-image-compression'
 
 /**
- * Upload an image to Firebase Storage
+ * Compress an image file to reduce size and improve performance
+ * @param file - The image file to compress
+ * @returns Promise<File> - The compressed image file
+ */
+export async function compressImage(file: File): Promise<File> {
+    try {
+        // Skip compression for small files (< 100KB)
+        if (file.size < 100 * 1024) {
+            console.log('Image already small, skipping compression:', file.name)
+            return file
+        }
+
+        const options = {
+            maxSizeMB: 1, // Maximum file size in MB
+            maxWidthOrHeight: 1920, // Maximum dimension (width or height)
+            useWebWorker: true, // Use web worker for better performance
+            fileType: 'image/jpeg', // Convert to JPEG for best compression
+            initialQuality: 0.85, // Quality setting (0-1)
+        }
+
+        console.log('Compressing image:', file.name, 'Original size:', formatFileSize(file.size))
+
+        const compressedFile = await imageCompression(file, options)
+
+        console.log(
+            'Compression complete:',
+            compressedFile.name,
+            'New size:',
+            formatFileSize(compressedFile.size),
+            `(${Math.round(((file.size - compressedFile.size) / file.size) * 100)}% reduction)`
+        )
+
+        return compressedFile
+    } catch (error) {
+        console.error('Image compression failed, using original:', error)
+        return file // Fallback to original file if compression fails
+    }
+}
+
+/**
+ * Upload an image to Firebase Storage with automatic compression
  * @param file - The image file to upload
  * @param path - The storage path (e.g., 'forum/threads/{threadId}')
  * @returns Promise<string> - The download URL of the uploaded image
@@ -20,23 +62,26 @@ export async function uploadImage(file: File, path: string): Promise<string> {
             throw new Error('File must be an image')
         }
 
-        // Validate file size (max 5MB)
+        // Validate file size (max 5MB before compression)
         const maxSize = 5 * 1024 * 1024 // 5MB in bytes
         if (file.size > maxSize) {
             throw new Error('Image size must be less than 5MB')
         }
 
+        // Compress image before uploading
+        const compressedFile = await compressImage(file)
+
         // Create a unique filename using timestamp and random string
         const timestamp = Date.now()
         const randomStr = Math.random().toString(36).substring(2, 15)
-        const extension = file.name.split('.').pop()
-        const filename = `${timestamp}_${randomStr}.${extension}`
+        // Always use .jpg extension since we convert to JPEG
+        const filename = `${timestamp}_${randomStr}.jpg`
 
         // Create storage reference
         const storageRef = ref(storage, `${path}/${filename}`)
 
-        // Upload file
-        await uploadBytes(storageRef, file)
+        // Upload compressed file
+        await uploadBytes(storageRef, compressedFile)
 
         // Get download URL
         const downloadURL = await getDownloadURL(storageRef)

@@ -28,6 +28,7 @@ export default function ImageUpload({
     const [previewUrls, setPreviewUrls] = useState<string[]>([])
     const [uploadedUrls, setUploadedUrls] = useState<string[]>([])
     const [isUploading, setIsUploading] = useState(false)
+    const [isCompressing, setIsCompressing] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
     const handleFileSelect = useCallback(
@@ -92,16 +93,20 @@ export default function ImageUpload({
     const handleUpload = useCallback(async () => {
         if (selectedFiles.length === 0 || isUploading || disabled) return
 
+        setIsCompressing(true)
         setIsUploading(true)
         setError(null)
 
         try {
+            // Compression happens automatically in uploadImages
+            setIsCompressing(false)
             const urls = await uploadImages(selectedFiles, storagePath)
             setUploadedUrls(urls)
             onImagesChange(urls)
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to upload images')
         } finally {
+            setIsCompressing(false)
             setIsUploading(false)
         }
     }, [selectedFiles, storagePath, onImagesChange, isUploading, disabled])
@@ -203,16 +208,23 @@ export default function ImageUpload({
 
             {/* Upload button */}
             {selectedFiles.length > 0 && uploadedUrls.length === 0 && !disabled && (
-                <button
-                    onClick={handleUpload}
-                    disabled={isUploading}
-                    className="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    type="button"
-                >
-                    {isUploading
-                        ? 'Uploading...'
-                        : `Upload ${selectedFiles.length} ${selectedFiles.length === 1 ? 'Image' : 'Images'}`}
-                </button>
+                <div className="space-y-2">
+                    <button
+                        onClick={handleUpload}
+                        disabled={isUploading}
+                        className="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        type="button"
+                    >
+                        {isCompressing
+                            ? 'Compressing images...'
+                            : isUploading
+                              ? 'Uploading...'
+                              : `Upload ${selectedFiles.length} ${selectedFiles.length === 1 ? 'Image' : 'Images'}`}
+                    </button>
+                    <p className="text-xs text-gray-500 text-center">
+                        Images will be automatically optimized before upload
+                    </p>
+                </div>
             )}
         </div>
     )
