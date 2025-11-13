@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react'
+import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import { Content, getTitle } from '../../typings'
 import { ChevronLeftIcon, ChevronRightIcon, PencilIcon } from '@heroicons/react/24/solid'
 import ContentCard from '../common/ContentCard'
@@ -51,8 +51,11 @@ function Row({ title, content, apiEndpoint, pageType }: Props) {
         setHasMore(true)
     }, [content, title, apiEndpoint])
 
-    // Filter out disliked content
-    const filteredContent = filterDislikedContent(allContent, sessionData.hiddenMovies)
+    // Filter out disliked content (memoized for performance)
+    const filteredContent = useMemo(
+        () => filterDislikedContent(allContent, sessionData.hiddenMovies),
+        [allContent, sessionData.hiddenMovies]
+    )
 
     // Load next page of content
     const loadMoreContent = useCallback(async () => {
