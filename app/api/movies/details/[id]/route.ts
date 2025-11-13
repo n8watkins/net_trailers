@@ -7,6 +7,9 @@ import {
 import { fetchTVContentRatings, hasMatureRating } from '../../../../../utils/tvContentRatings'
 import { apiError } from '@/utils/debugLogger'
 
+// Cache this route for 6 hours
+export const revalidate = 21600
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
     const searchParams = request.nextUrl.searchParams

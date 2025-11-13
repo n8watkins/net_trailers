@@ -5,6 +5,9 @@ import { searchCache } from '../../../utils/apiCache'
 import type { Content } from '../../../typings'
 import { apiError } from '../../../utils/debugLogger'
 
+// Cache this route for 10 minutes
+export const revalidate = 600
+
 interface TMDBSearchResult {
     id: number
     media_type: 'movie' | 'tv' | 'person'
@@ -105,7 +108,12 @@ export async function GET(request: NextRequest) {
             // Cache the result (10 minutes TTL from searchCache settings)
             searchCache.set(cacheKey, childSafeResponse)
 
-            return NextResponse.json(childSafeResponse, { status: 200 })
+            return NextResponse.json(childSafeResponse, {
+                status: 200,
+                headers: {
+                    'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1800',
+                },
+            })
         }
 
         // Return normal results if child safety is off
@@ -119,7 +127,12 @@ export async function GET(request: NextRequest) {
         // Cache the result (10 minutes TTL from searchCache settings)
         searchCache.set(cacheKey, normalResponse)
 
-        return NextResponse.json(normalResponse, { status: 200 })
+        return NextResponse.json(normalResponse, {
+            status: 200,
+            headers: {
+                'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1800',
+            },
+        })
     } catch (error) {
         apiError('Search API error:', error)
         return NextResponse.json(
