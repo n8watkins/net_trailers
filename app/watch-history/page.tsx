@@ -177,7 +177,7 @@ export default function WatchHistoryPage() {
                     {Object.entries(groupedHistory).map(([date, items]) => (
                         <div key={date} className="space-y-4">
                             {/* Date Header */}
-                            <div className="flex items-center gap-3 sticky top-24 bg-gradient-to-r from-gray-900 to-transparent py-3 z-10">
+                            <div className="flex items-center gap-3 sticky top-24 bg-gradient-to-r from-black to-transparent py-3 z-10">
                                 <CalendarIcon className="w-5 h-5 text-purple-400" />
                                 <h3 className="text-lg font-semibold text-white">{date}</h3>
                                 <div className="flex-1 h-px bg-gradient-to-r from-gray-700 to-transparent" />

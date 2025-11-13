@@ -13,6 +13,7 @@ import { useSessionStore } from '../stores/sessionStore'
 import { Content } from '../typings'
 import { addWatchEntryToFirestore, saveWatchHistory } from '../utils/firestore/watchHistory'
 import { auth } from '../firebase'
+import { watchHistoryLog, watchHistoryError } from '../utils/debugLogger'
 
 export function useWatchHistory() {
     const sessionType = useSessionStore((state) => state.sessionType)
@@ -65,13 +66,13 @@ export function useWatchHistory() {
             prevSession.type !== sessionType || prevSession.id !== currentSessionTypeId
 
         if (sessionChanged) {
-            console.log(
+            watchHistoryLog(
                 `[Watch History] Session transition detected: ${prevSession.type}(${prevSession.id}) -> ${sessionType}(${currentSessionTypeId})`
             )
 
             if (sessionType === 'guest' || sessionType === 'authenticated') {
                 switchSession(sessionType, currentSessionTypeId).catch((error) => {
-                    console.error('[Watch History] Failed to switch session:', error)
+                    watchHistoryError('[Watch History] Failed to switch session:', error)
                 })
             }
 
@@ -79,7 +80,7 @@ export function useWatchHistory() {
             prevSessionRef.current = { type: sessionType, id: currentSessionTypeId }
         } else if (sessionType === 'authenticated' && userId && currentSessionId !== userId) {
             // Authenticated user, but store hasn't loaded their data yet
-            console.log('[Watch History] Loading authenticated user data from Firestore')
+            watchHistoryLog('[Watch History] Loading authenticated user data from Firestore')
             // Wait for Firebase Auth to be ready
             const unsubscribe = auth.onAuthStateChanged((user) => {
                 if (user && user.uid === userId) {
@@ -116,7 +117,7 @@ export function useWatchHistory() {
                 syncError: null,
             })
         } catch (error) {
-            console.error('Failed to persist watch history to Firestore:', error)
+            watchHistoryError('Failed to persist watch history to Firestore:', error)
             useWatchHistoryStore.setState({
                 syncError: error instanceof Error ? error.message : 'Failed to sync watch history',
             })

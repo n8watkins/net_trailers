@@ -266,7 +266,7 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
                                 : ''
                         }`}
                     >
-                        <ContentCard content={item} size="medium" />
+                        <ContentCard content={item} size="normal" />
                     </div>
                 ))}
             </div>

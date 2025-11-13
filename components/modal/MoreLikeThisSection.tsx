@@ -6,12 +6,14 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Content, getTitle } from '../../typings'
 import { Recommendation } from '../../types/recommendations'
 import ContentCard from '../common/ContentCard'
-import { FolderPlusIcon } from '@heroicons/react/24/outline'
+import { PlusIcon } from '@heroicons/react/24/outline'
+import { RectangleStackIcon } from '@heroicons/react/24/solid'
 import { useModalStore } from '../../stores/modalStore'
+import useUserData from '../../hooks/useUserData'
 
 interface MoreLikeThisSectionProps {
     /** Current content being viewed */
@@ -23,6 +25,14 @@ export default function MoreLikeThisSection({ content }: MoreLikeThisSectionProp
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const openCollectionCreatorModal = useModalStore((state) => state.openCollectionCreatorModal)
+    const { hiddenMovies } = useUserData()
+
+    // Filter out hidden content from recommendations
+    const filteredRecommendations = useMemo(() => {
+        return recommendations.filter(
+            (rec) => !hiddenMovies.some((hidden) => hidden.id === rec.content.id)
+        )
+    }, [recommendations, hiddenMovies])
 
     // Fetch similar content
     useEffect(() => {
@@ -61,7 +71,7 @@ export default function MoreLikeThisSection({ content }: MoreLikeThisSectionProp
     }, [content.id])
 
     // Don't render if loading initially
-    if (isLoading && recommendations.length === 0) {
+    if (isLoading && filteredRecommendations.length === 0) {
         return (
             <div className="space-y-4">
                 <h3 className="text-lg sm:text-xl font-semibold text-white">More Like This</h3>
@@ -77,8 +87,8 @@ export default function MoreLikeThisSection({ content }: MoreLikeThisSectionProp
         return null // Fail silently - recommendations are not critical
     }
 
-    // Don't render if no recommendations
-    if (recommendations.length === 0) {
+    // Don't render if no recommendations after filtering
+    if (filteredRecommendations.length === 0) {
         return null
     }
 
@@ -106,27 +116,26 @@ export default function MoreLikeThisSection({ content }: MoreLikeThisSectionProp
     }
 
     return (
-        <div className="space-y-4 border-t border-gray-700 pt-6">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <h3 className="text-lg sm:text-xl font-semibold text-white">
+        <div className="space-y-6 border-t border-gray-700 pt-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 pb-2">
+                <h3 className="text-xl sm:text-2xl font-semibold text-white">
                     More Like {getTitle(content)}
                 </h3>
 
-                <div className="flex flex-wrap gap-2">
-                    <button
-                        type="button"
-                        className="inline-flex items-center gap-1.5 rounded-full border border-red-500/40 px-3 py-1.5 text-sm font-medium text-red-200 hover:border-red-400 hover:bg-red-500/10 transition-colors"
-                        onClick={handleCreateCollection}
-                    >
-                        <FolderPlusIcon className="h-4 w-4" />
-                        <span>Create Collection</span>
-                    </button>
-                </div>
+                <button
+                    type="button"
+                    className="flex items-center space-x-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-200 bg-gray-800/80 text-white hover:bg-gray-700/80 border border-gray-600 hover:border-gray-400 hover:scale-105"
+                    onClick={handleCreateCollection}
+                >
+                    <PlusIcon className="w-5 h-5 text-white" />
+                    <RectangleStackIcon className="w-5 h-5 text-white" />
+                    <span>New Collection</span>
+                </button>
             </div>
 
             {/* Grid of recommendations */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
-                {recommendations.map((rec) => (
+                {filteredRecommendations.map((rec) => (
                     <ContentCard key={rec.content.id} content={rec.content} size="small" />
                 ))}
             </div>

@@ -7,6 +7,7 @@
 import { doc, getDoc, setDoc, runTransaction } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { WatchHistoryEntry, WatchHistoryDocument } from '../../types/watchHistory'
+import { watchHistoryLog, watchHistoryError } from '../debugLogger'
 
 const removeUndefinedValues = <T>(value: T): T => {
     if (Array.isArray(value)) {
@@ -30,14 +31,14 @@ const removeUndefinedValues = <T>(value: T): T => {
  * Get watch history from Firestore
  */
 export async function getWatchHistory(userId: string): Promise<WatchHistoryEntry[] | null> {
-    console.log('[Firestore Watch History] 🔍 Fetching watch history for user:', userId)
+    watchHistoryLog('[Firestore Watch History] 🔍 Fetching watch history for user:', userId)
     try {
         const docRef = doc(db, 'users', userId, 'data', 'watchHistory')
         const docSnap = await getDoc(docRef)
 
         if (docSnap.exists()) {
             const data = docSnap.data() as WatchHistoryDocument
-            console.log(
+            watchHistoryLog(
                 '[Firestore Watch History] 📥 Found',
                 data.history?.length || 0,
                 'entries in Firestore'
@@ -45,10 +46,10 @@ export async function getWatchHistory(userId: string): Promise<WatchHistoryEntry
             return data.history || []
         }
 
-        console.log('[Firestore Watch History] ⚠️ No document found in Firestore')
+        watchHistoryLog('[Firestore Watch History] ⚠️ No document found in Firestore')
         return null
     } catch (error) {
-        console.error('[Firestore Watch History] ❌ Error fetching:', error)
+        watchHistoryError('[Firestore Watch History] ❌ Error fetching:', error)
         // Silently fail - permissions error may occur if auth isn't ready yet
         return null
     }
@@ -61,7 +62,12 @@ export async function saveWatchHistory(
     userId: string,
     history: WatchHistoryEntry[]
 ): Promise<void> {
-    console.log('[Firestore Watch History] 💾 Saving', history.length, 'entries for user:', userId)
+    watchHistoryLog(
+        '[Firestore Watch History] 💾 Saving',
+        history.length,
+        'entries for user:',
+        userId
+    )
     try {
         const docRef = doc(db, 'users', userId, 'data', 'watchHistory')
 
@@ -71,9 +77,9 @@ export async function saveWatchHistory(
         })
 
         await setDoc(docRef, data, { merge: true })
-        console.log('[Firestore Watch History] ✅ Successfully saved to Firestore')
+        watchHistoryLog('[Firestore Watch History] ✅ Successfully saved to Firestore')
     } catch (error) {
-        console.error('[Firestore Watch History] ❌ Failed to save:', error)
+        watchHistoryError('[Firestore Watch History] ❌ Failed to save:', error)
         throw error // Re-throw so seeding knows it failed
     }
 }
@@ -124,9 +130,9 @@ export async function addWatchEntryToFirestore(
             transaction.set(docRef, data, { merge: true })
         })
 
-        console.log('[Firestore Watch History] ✅ Successfully added/updated entry')
+        watchHistoryLog('[Firestore Watch History] ✅ Successfully added/updated entry')
     } catch (error) {
-        console.error('[Firestore Watch History] ❌ Failed to add entry:', error)
+        watchHistoryError('[Firestore Watch History] ❌ Failed to add entry:', error)
         // Silently fail - watch history is not critical
     }
 }

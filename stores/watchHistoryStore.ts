@@ -11,6 +11,7 @@ import { WatchHistoryStore, WatchHistoryEntry } from '../types/watchHistory'
 import { Content } from '../typings'
 import { getWatchHistory, saveWatchHistory } from '../utils/firestore/watchHistory'
 import { auth } from '../firebase'
+import { watchHistoryLog, watchHistoryError } from '../utils/debugLogger'
 
 // Manual localStorage helpers for guest sessions only
 // We don't use Zustand persist because it can't conditionally persist based on session type
@@ -24,7 +25,7 @@ const loadGuestHistory = (guestId: string): WatchHistoryEntry[] => {
             return parsed.history || []
         }
     } catch (error) {
-        console.error('Failed to load guest watch history:', error)
+        watchHistoryError('Failed to load guest watch history:', error)
     }
     return []
 }
@@ -33,7 +34,7 @@ const saveGuestHistory = (guestId: string, history: WatchHistoryEntry[]) => {
     try {
         localStorage.setItem(`${STORAGE_KEY_PREFIX}${guestId}`, JSON.stringify({ history }))
     } catch (error) {
-        console.error('Failed to save guest watch history:', error)
+        watchHistoryError('Failed to save guest watch history:', error)
     }
 }
 
@@ -41,7 +42,7 @@ const clearGuestHistory = (guestId: string) => {
     try {
         localStorage.removeItem(`${STORAGE_KEY_PREFIX}${guestId}`)
     } catch (error) {
-        console.error('Failed to clear guest watch history:', error)
+        watchHistoryError('Failed to clear guest watch history:', error)
     }
 }
 
@@ -159,7 +160,7 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()((set, get) => ({
     loadFromFirestore: async (userId: string) => {
         if (!userId) return
 
-        console.log('[Watch History Store] 🔍 Loading from Firestore for user:', userId)
+        watchHistoryLog('[Watch History Store] 🔍 Loading from Firestore for user:', userId)
 
         try {
             set({ isLoading: true, syncError: null })
@@ -167,7 +168,7 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()((set, get) => ({
             // Load history from Firestore
             const firestoreHistory = await getWatchHistory(userId)
 
-            console.log(
+            watchHistoryLog(
                 '[Watch History Store] 📥 Loaded from Firestore:',
                 firestoreHistory?.length || 0,
                 'entries'
@@ -180,7 +181,7 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()((set, get) => ({
                     lastSyncedAt: Date.now(),
                     syncError: null,
                 })
-                console.log('[Watch History Store] ✅ Watch history loaded successfully')
+                watchHistoryLog('[Watch History Store] ✅ Watch history loaded successfully')
             } else {
                 // No history in Firestore yet
                 set({
@@ -189,10 +190,10 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()((set, get) => ({
                     lastSyncedAt: Date.now(),
                     syncError: null,
                 })
-                console.log('[Watch History Store] ⚠️ No watch history found in Firestore')
+                watchHistoryLog('[Watch History Store] ⚠️ No watch history found in Firestore')
             }
         } catch (error) {
-            console.error(
+            watchHistoryError(
                 '[Watch History Store] ❌ Failed to load watch history from Firestore:',
                 error
             )
@@ -232,7 +233,7 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()((set, get) => ({
                 syncError: null,
             })
         } catch (error) {
-            console.error('Failed to sync watch history with Firestore:', error)
+            watchHistoryError('Failed to sync watch history with Firestore:', error)
             set({
                 syncError: error instanceof Error ? error.message : 'Failed to sync watch history',
             })
@@ -272,7 +273,7 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()((set, get) => ({
                 get().clearGuestSession(guestId)
             }
         } catch (error) {
-            console.error('Failed to migrate guest watch history:', error)
+            watchHistoryError('Failed to migrate guest watch history:', error)
             set({
                 syncError:
                     error instanceof Error ? error.message : 'Failed to migrate watch history',
@@ -301,7 +302,7 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()((set, get) => ({
                 get().loadGuestSession(sessionId)
             }
         } catch (error) {
-            console.error('Failed to switch session:', error)
+            watchHistoryError('Failed to switch session:', error)
             set({
                 isLoading: false,
                 syncError: error instanceof Error ? error.message : 'Failed to switch session',

@@ -8,6 +8,7 @@ import { useModalStore } from '../../stores/modalStore'
 import useUserData from '../../hooks/useUserData'
 import { filterDislikedContent } from '../../utils/contentFilter'
 import SmartSearchInput from '../smartSearch/SmartSearchInput'
+import { bannerLog } from '../../utils/debugLogger'
 
 interface Props {
     trending: Content[]
@@ -107,7 +108,7 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
 
     // Debug logging
     if (featuredContent) {
-        console.log('Banner Debug:', {
+        bannerLog('Banner Debug:', {
             hasContent: !!featuredContent,
             contentImgUrl,
             isCurrentImageLoaded,

@@ -10,7 +10,7 @@ export default function SmartSearchResults() {
         <div className="flex flex-wrap gap-6 mb-8">
             {results.map((content) => (
                 <div key={content.id}>
-                    <ContentCard content={content} size="medium" />
+                    <ContentCard content={content} size="normal" />
                 </div>
             ))}
         </div>

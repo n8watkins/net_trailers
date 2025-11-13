@@ -26,6 +26,8 @@ interface DebugSettings {
     showApiDebug: boolean
     showChildSafetyDebug: boolean
     showNextServerLogs: boolean
+    showWatchHistoryDebug: boolean
+    showBannerDebug: boolean
 }
 
 interface Position {
@@ -59,6 +61,8 @@ export default function DebugControls() {
         showApiDebug: false,
         showChildSafetyDebug: false,
         showNextServerLogs: true, // Enabled by default
+        showWatchHistoryDebug: false,
+        showBannerDebug: false,
     })
 
     // Visibility state - load from localStorage, hidden by default
@@ -237,6 +241,7 @@ export default function DebugControls() {
                     'showSessionDebug',
                     'showGuestDebug',
                     'showCacheDebug',
+                    'showWatchHistoryDebug',
                 ]
             case 'ui':
                 return [
@@ -246,6 +251,7 @@ export default function DebugControls() {
                     'showUIDebug',
                     'showApiDebug',
                     'showNextServerLogs',
+                    'showBannerDebug',
                 ]
             case 'features':
                 return [
@@ -391,6 +397,12 @@ export default function DebugControls() {
                             )}
                             {renderButton('showGuestDebug', 'Guest', 'Toggle Guest Logs', 'teal')}
                             {renderButton('showCacheDebug', 'Cache', 'Toggle Cache Logs', 'cyan')}
+                            {renderButton(
+                                'showWatchHistoryDebug',
+                                'Watch History',
+                                'Toggle Watch History & Firestore Sync Logs',
+                                'sky'
+                            )}
                         </>
                     )}
 
@@ -438,6 +450,12 @@ export default function DebugControls() {
                                 'Next.js Server',
                                 'Toggle Next.js dev server request logs (requires restart)',
                                 'slate'
+                            )}
+                            {renderButton(
+                                'showBannerDebug',
+                                'Banner',
+                                'Toggle Banner Carousel & Image Loading Logs',
+                                'rose'
                             )}
                         </>
                     )}
@@ -507,6 +525,8 @@ export function useDebugSettings() {
         showApiDebug: false,
         showChildSafetyDebug: false,
         showNextServerLogs: true, // Enabled by default
+        showWatchHistoryDebug: false,
+        showBannerDebug: false,
     })
 
     useEffect(() => {

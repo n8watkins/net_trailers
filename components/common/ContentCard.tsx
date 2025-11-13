@@ -18,9 +18,9 @@ import ToolTipMod from './ToolTipMod'
 interface Props {
     content?: Content
     className?: string
-    size?: 'small' | 'medium' | 'large'
+    size?: 'compact' | 'small' | 'normal'
 }
-function ContentCard({ content, className = '', size = 'medium' }: Props) {
+function ContentCard({ content, className = '', size = 'normal' }: Props) {
     const posterImage = content?.poster_path
     const { openModal, openListModal } = useModalStore()
     const {
@@ -78,11 +78,11 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
     // Size classes for image portion only
     const getImageSizeClasses = () => {
         switch (size) {
+            case 'compact':
+                return 'w-[100px] h-[150px] sm:w-[120px] sm:h-[180px] md:w-[140px] md:h-[210px] lg:w-[160px] lg:h-[240px]'
             case 'small':
                 return 'w-[120px] h-[180px] sm:w-[140px] sm:h-[210px] md:w-[160px] md:h-[240px] lg:w-[180px] lg:h-[270px]'
-            case 'large':
-                return 'w-[200px] h-[300px] sm:w-[240px] sm:h-[360px] md:w-[280px] md:h-[420px] lg:w-[320px] lg:h-[480px] xl:w-[360px] xl:h-[540px]'
-            case 'medium':
+            case 'normal':
             default:
                 return 'w-[160px] h-[240px] sm:w-[180px] sm:h-[270px] md:w-[200px] md:h-[300px] lg:w-[220px] lg:h-[330px] xl:w-[260px] xl:h-[390px]'
         }
@@ -91,11 +91,11 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
     // Total card size including text below
     const getCardSizeClasses = () => {
         switch (size) {
+            case 'compact':
+                return 'w-[100px] sm:w-[120px] md:w-[140px] lg:w-[160px]'
             case 'small':
                 return 'w-[120px] sm:w-[140px] md:w-[160px] lg:w-[180px]'
-            case 'large':
-                return 'w-[200px] sm:w-[240px] md:w-[280px] lg:w-[320px] xl:w-[360px]'
-            case 'medium':
+            case 'normal':
             default:
                 return 'w-[160px] sm:w-[180px] md:w-[200px] lg:w-[220px] xl:w-[260px]'
         }
@@ -108,7 +108,7 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
             className={`relative cursor-pointer transition-all duration-300 ease-out group
                        ${getCardSizeClasses()}
                        hover:z-40 ${className}
-                       ${size === 'small' ? 'min-h-[280px] sm:min-h-[310px] md:min-h-[340px] lg:min-h-[370px]' : 'min-h-[340px] sm:min-h-[370px] md:min-h-[400px] lg:min-h-[430px] xl:min-h-[490px]'}`}
+                       ${size === 'compact' ? 'min-h-[250px] sm:min-h-[280px] md:min-h-[310px] lg:min-h-[340px]' : size === 'small' ? 'min-h-[280px] sm:min-h-[310px] md:min-h-[340px] lg:min-h-[370px]' : 'min-h-[340px] sm:min-h-[370px] md:min-h-[400px] lg:min-h-[430px] xl:min-h-[490px]'}`}
             onClick={handleImageClick}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
@@ -198,8 +198,14 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                  border-2 border-red-500 hover:border-red-600
                                  group/watch"
                         >
-                            <PlayIcon className="w-4 h-4" />
-                            <span>Watch</span>
+                            {size === 'compact' ? (
+                                <PlayIcon className="w-4 h-4" />
+                            ) : (
+                                <>
+                                    {size !== 'small' && <PlayIcon className="w-4 h-4" />}
+                                    <span>Watch</span>
+                                </>
+                            )}
                         </button>
 
                         {/* Hover Menu with Bookmark Icon - Shows quick actions on hover */}
@@ -210,7 +216,7 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                         >
                             {/* Hover Action Buttons - Fade in above bookmark (vertical stack) */}
                             <div
-                                className={`absolute bottom-full pb-2 right-0 flex flex-col gap-2 transition-all duration-300 ${
+                                className={`absolute bottom-full ${size === 'compact' ? 'pb-1' : 'pb-2'} right-0 flex flex-col ${size === 'compact' ? 'gap-1' : 'gap-2'} transition-all duration-300 ${
                                     showHoverActions
                                         ? 'opacity-100 translate-y-0'
                                         : 'opacity-0 translate-y-2 pointer-events-none'
@@ -242,15 +248,15 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                                 setTimeout(() => setLikeAnimationType(null), 450)
                                             }
                                         }}
-                                        className={`group/like p-3 rounded-full border-2 transition-all duration-200 ${
+                                        className={`group/like ${size === 'compact' ? 'p-2' : 'p-3'} rounded-full border-2 transition-all duration-200 hover:scale-105 ${
                                             liked
                                                 ? 'border-white bg-black hover:bg-black'
-                                                : 'border-white/40 bg-black/85 hover:bg-black hover:border-white'
+                                                : 'border-white bg-black/85 hover:bg-black'
                                         }`}
                                     >
                                         {liked ? (
                                             <HandThumbUpIcon
-                                                className={`h-5 w-5 transition-all duration-200 text-white`}
+                                                className={`${size === 'compact' ? 'h-4 w-4' : 'h-5 w-5'} transition-all duration-200 text-white`}
                                                 style={
                                                     likeAnimationType
                                                         ? {
@@ -261,7 +267,7 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                             />
                                         ) : (
                                             <HandThumbUpOutlineIcon
-                                                className={`h-5 w-5 transition-all duration-200 text-white/60 group-hover/like:text-white`}
+                                                className={`${size === 'compact' ? 'h-4 w-4' : 'h-5 w-5'} transition-all duration-200 text-white`}
                                                 style={
                                                     likeAnimationType
                                                         ? {
@@ -296,16 +302,16 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                                 }
                                             }
                                         }}
-                                        className={`group/hide p-3 rounded-full border-2 transition-all duration-200 ${
-                                            hidden
-                                                ? 'border-orange-400/60 bg-orange-500/20 hover:bg-orange-500/30'
-                                                : 'border-white/40 bg-black/85 hover:bg-black hover:border-white'
-                                        }`}
+                                        className={`group/hide ${size === 'compact' ? 'p-2' : 'p-3'} rounded-full border-2 border-white transition-all duration-200 hover:scale-105 bg-black/85 hover:bg-black`}
                                     >
                                         {hidden ? (
-                                            <EyeSlashIcon className="h-5 w-5 text-orange-400" />
+                                            <EyeSlashIcon
+                                                className={`${size === 'compact' ? 'h-4 w-4' : 'h-5 w-5'} text-white`}
+                                            />
                                         ) : (
-                                            <EyeIcon className="h-5 w-5 text-white/60 group-hover/hide:text-white transition-colors duration-200" />
+                                            <EyeIcon
+                                                className={`${size === 'compact' ? 'h-4 w-4' : 'h-5 w-5'} text-white transition-colors duration-200`}
+                                            />
                                         )}
                                     </button>
                                 </ToolTipMod>
@@ -319,9 +325,11 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                                 openListModal(content)
                                             }
                                         }}
-                                        className="group/add p-3 rounded-full border-2 border-white/40 bg-black/85 hover:bg-black hover:border-white transition-all duration-200"
+                                        className={`group/add ${size === 'compact' ? 'p-2' : 'p-3'} rounded-full border-2 border-white bg-black/85 hover:bg-black transition-all duration-200 hover:scale-105`}
                                     >
-                                        <PlusIcon className="h-5 w-5 text-white/60 group-hover/add:text-white transition-colors duration-200" />
+                                        <PlusIcon
+                                            className={`${size === 'compact' ? 'h-4 w-4' : 'h-5 w-5'} text-white transition-colors duration-200`}
+                                        />
                                     </button>
                                 </ToolTipMod>
                             </div>
@@ -332,15 +340,15 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                 onClick={(e) => {
                                     e.stopPropagation()
                                 }}
-                                className={`p-3 rounded-full border-2 transition-all duration-200 ${
+                                className={`${size === 'compact' ? 'p-2' : 'p-3'} rounded-full border-2 transition-all duration-200 hover:scale-105 ${
                                     showHoverActions
                                         ? 'bg-red-600 border-red-500 text-black'
-                                        : 'bg-black border-white/30 text-white hover:bg-red-600 hover:border-red-500 hover:text-black'
+                                        : 'bg-black border-white text-white hover:bg-red-600 hover:border-red-500 hover:text-black'
                                 }`}
                                 aria-label="Show content actions menu"
                             >
                                 <svg
-                                    className="w-5 h-5"
+                                    className={size === 'compact' ? 'w-4 h-4' : 'w-5 h-5'}
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
                                     fill="none"
@@ -395,7 +403,7 @@ function ContentCard({ content, className = '', size = 'medium' }: Props) {
                                 : 'bg-gradient-to-br from-black to-gray-900 text-white font-medium border border-white'
                         }`}
                     >
-                        {getContentType(content)}
+                        {size === 'compact' && !isMovie(content) ? 'TV' : getContentType(content)}
                     </span>
                 </div>
             )}

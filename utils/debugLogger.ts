@@ -187,3 +187,31 @@ export function apiError(...args: any[]): void {
         console.error(...args)
     }
 }
+
+/**
+ * Watch History Logging (watch history tracking, Firestore sync)
+ */
+export function watchHistoryLog(...args: any[]): void {
+    if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showWatchHistoryDebug')) {
+        console.log(...args)
+    }
+}
+
+export function watchHistoryWarn(...args: any[]): void {
+    if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showWatchHistoryDebug')) {
+        console.warn(...args)
+    }
+}
+
+export function watchHistoryError(...args: any[]): void {
+    console.error('[Watch History Error]', ...args)
+}
+
+/**
+ * Banner Logging (banner carousel, image loading)
+ */
+export function bannerLog(...args: any[]): void {
+    if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showBannerDebug')) {
+        console.log(...args)
+    }
+}

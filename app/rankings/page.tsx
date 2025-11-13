@@ -48,34 +48,30 @@ export default function RankingsPage() {
     const [commentsSearch, setCommentsSearch] = useState('')
     const [likedSearch, setLikedSearch] = useState('')
 
-    // Load rankings on mount
+    // Load all data on mount
     useEffect(() => {
         if (isInitialized && userId) {
+            // Load user rankings
             loadUserRankings(userId)
-        }
-    }, [isInitialized, userId])
 
-    // Load comments when comments tab is active
-    useEffect(() => {
-        if (activeTab === 'comments' && userId && !isGuest) {
-            setIsLoadingComments(true)
-            getUserComments(userId)
-                .then((result) => setUserComments(result.data))
-                .catch(console.error)
-                .finally(() => setIsLoadingComments(false))
-        }
-    }, [activeTab, userId, isGuest])
+            // Load comments and liked rankings for authenticated users
+            if (!isGuest) {
+                // Load comments
+                setIsLoadingComments(true)
+                getUserComments(userId)
+                    .then((result) => setUserComments(result.data))
+                    .catch(console.error)
+                    .finally(() => setIsLoadingComments(false))
 
-    // Load liked rankings when liked tab is active
-    useEffect(() => {
-        if (activeTab === 'liked' && userId && !isGuest) {
-            setIsLoadingLiked(true)
-            getUserLikedRankings(userId)
-                .then((result) => setLikedRankings(result.data))
-                .catch(console.error)
-                .finally(() => setIsLoadingLiked(false))
+                // Load liked rankings
+                setIsLoadingLiked(true)
+                getUserLikedRankings(userId)
+                    .then((result) => setLikedRankings(result.data))
+                    .catch(console.error)
+                    .finally(() => setIsLoadingLiked(false))
+            }
         }
-    }, [activeTab, userId, isGuest])
+    }, [isInitialized, userId, isGuest, loadUserRankings])
 
     const handleCreateNew = () => {
         router.push('/rankings/new')
@@ -126,18 +122,6 @@ export default function RankingsPage() {
         )
     }, [likedRankings, likedSearch])
 
-    if (!isInitialized || isLoading) {
-        return (
-            <SubPageLayout
-                title="My Rankings"
-                icon={<TrophyIcon className="w-8 h-8" />}
-                iconColor="text-yellow-500"
-            >
-                <NetflixLoader />
-            </SubPageLayout>
-        )
-    }
-
     return (
         <SubPageLayout
             title="My Rankings"
@@ -172,9 +156,11 @@ export default function RankingsPage() {
                 >
                     <TrophyIcon className="w-5 h-5" />
                     <span>Your Rankings</span>
-                    {rankings.length > 0 && (
+                    {isLoading ? (
+                        <span className="ml-1 text-sm text-gray-500 animate-pulse">(...)</span>
+                    ) : rankings.length > 0 ? (
                         <span className="ml-1 text-sm text-gray-500">({rankings.length})</span>
-                    )}
+                    ) : null}
                 </button>
                 <button
                     onClick={() => setActiveTab('comments')}
@@ -183,12 +169,18 @@ export default function RankingsPage() {
                             ? 'border-yellow-500 text-yellow-500'
                             : 'border-transparent text-gray-400 hover:text-white'
                     }`}
+                    disabled={isGuest}
                 >
                     <ChatBubbleLeftIcon className="w-5 h-5" />
                     <span>Your Comments</span>
-                    {userComments.length > 0 && (
-                        <span className="ml-1 text-sm text-gray-500">({userComments.length})</span>
-                    )}
+                    {!isGuest &&
+                        (isLoadingComments ? (
+                            <span className="ml-1 text-sm text-gray-500 animate-pulse">(...)</span>
+                        ) : userComments.length > 0 ? (
+                            <span className="ml-1 text-sm text-gray-500">
+                                ({userComments.length})
+                            </span>
+                        ) : null)}
                 </button>
                 <button
                     onClick={() => setActiveTab('liked')}
@@ -197,12 +189,18 @@ export default function RankingsPage() {
                             ? 'border-yellow-500 text-yellow-500'
                             : 'border-transparent text-gray-400 hover:text-white'
                     }`}
+                    disabled={isGuest}
                 >
                     <HeartIcon className="w-5 h-5" />
                     <span>Liked Rankings</span>
-                    {likedRankings.length > 0 && (
-                        <span className="ml-1 text-sm text-gray-500">({likedRankings.length})</span>
-                    )}
+                    {!isGuest &&
+                        (isLoadingLiked ? (
+                            <span className="ml-1 text-sm text-gray-500 animate-pulse">(...)</span>
+                        ) : likedRankings.length > 0 ? (
+                            <span className="ml-1 text-sm text-gray-500">
+                                ({likedRankings.length})
+                            </span>
+                        ) : null)}
                 </button>
             </div>
 
@@ -218,7 +216,7 @@ export default function RankingsPage() {
 
                     {/* Search Input */}
                     {rankings.length > 0 && (
-                        <div className="relative mb-6">
+                        <div className="relative mb-6 w-full sm:max-w-md">
                             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                             <input
                                 type="text"
@@ -259,7 +257,7 @@ export default function RankingsPage() {
                 <>
                     {/* Search Input */}
                     {userComments.length > 0 && (
-                        <div className="relative mb-6">
+                        <div className="relative mb-6 w-full sm:max-w-md">
                             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                             <input
                                 type="text"
@@ -330,7 +328,7 @@ export default function RankingsPage() {
                 <>
                     {/* Search Input */}
                     {likedRankings.length > 0 && (
-                        <div className="relative mb-6">
+                        <div className="relative mb-6 w-full sm:max-w-md">
                             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                             <input
                                 type="text"

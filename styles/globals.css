@@ -187,6 +187,34 @@
     background: rgb(239, 68, 68); /* red-500 */
 }
 
+/* Modal content scrollbar - overlay style with auto-hide on scroll */
+.modal-scrollbar {
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: rgb(220, 38, 38) transparent; /* red-600 thumb, transparent track */
+}
+
+/* Webkit/Chrome scrollbar */
+.modal-scrollbar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.modal-scrollbar::-webkit-scrollbar-button {
+    display: none; /* Remove arrow buttons */
+}
+
+.modal-scrollbar::-webkit-scrollbar-thumb {
+    background: rgb(220, 38, 38); /* red-600 */
+    border-radius: 9999px;
+}
+
+.modal-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgb(239, 68, 68); /* red-500 */
+}
+
 .backGround {
     background: linear-gradient(
         to bottom,
