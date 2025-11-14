@@ -7,6 +7,7 @@ interface BaseEmailProps {
     children: React.ReactNode
     showLogo?: boolean
     showFooter?: boolean
+    unsubscribeToken?: string
     ctaButton?: {
         text: string
         url: string
@@ -24,8 +25,13 @@ export const BaseEmail = ({
     children,
     showLogo = true,
     showFooter = true,
+    unsubscribeToken,
     ctaButton,
 }: BaseEmailProps) => {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const unsubscribeUrl = unsubscribeToken
+        ? `${appUrl}/api/email/unsubscribe?token=${unsubscribeToken}`
+        : `${appUrl}/settings#notifications`
     return (
         <html>
             <head>
@@ -204,10 +210,7 @@ export const BaseEmail = ({
                                     Settings
                                 </a>
                                 •
-                                <a
-                                    href={`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/settings#notifications`}
-                                    className="footer-link"
-                                >
+                                <a href={unsubscribeUrl} className="footer-link">
                                     Unsubscribe
                                 </a>
                             </div>
