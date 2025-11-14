@@ -376,19 +376,23 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
                             </label>
                         </div>
 
-                        {/* Email Notifications - Pilot Feature */}
+                        {/* Email Notifications */}
                         <div className="space-y-4">
                             <div className="flex items-start justify-between">
                                 <div className="flex-1">
                                     <label className="block text-sm font-medium text-[#e5e5e5] mb-1">
-                                        Email Notifications (Pilot)
+                                        Email Notifications
                                     </label>
                                     <p className="text-sm text-[#b3b3b3]">
-                                        Receive a showcase email with trending movies and TV shows
+                                        Receive branded emails for important updates and activity
                                     </p>
-                                    <p className="text-xs text-[#999] mt-1">
-                                        This is a demo feature to showcase email functionality
-                                    </p>
+                                    {notifications.email && (
+                                        <ul className="text-xs text-[#999] mt-2 space-y-1 list-disc list-inside">
+                                            <li>Collection updates (new content added)</li>
+                                            <li>Ranking comments and replies</li>
+                                            <li>Weekly digest (what's new this week)</li>
+                                        </ul>
+                                    )}
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer ml-4">
                                     <input
@@ -402,6 +406,51 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
                                     <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                                 </label>
                             </div>
+
+                            {/* Email Digest Frequency */}
+                            {notifications.email && (
+                                <div className="pt-4 border-t border-[#313131]">
+                                    <label className="block text-sm font-medium text-[#e5e5e5] mb-3">
+                                        Weekly Digest
+                                    </label>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button
+                                            onClick={() =>
+                                                onNotificationsChange({ emailDigest: 'weekly' })
+                                            }
+                                            className={`px-4 py-2 rounded-lg border transition-all duration-200 ${
+                                                notifications.emailDigest === 'weekly'
+                                                    ? 'border-red-600 bg-red-600/10 text-white'
+                                                    : 'border-[#313131] bg-[#1a1a1a] text-[#b3b3b3] hover:bg-[#2a2a2a]'
+                                            }`}
+                                        >
+                                            <div className="text-sm font-medium">Weekly</div>
+                                            <div className="text-xs opacity-75 mt-1">
+                                                Sundays at 6 PM
+                                            </div>
+                                        </button>
+                                        <button
+                                            onClick={() =>
+                                                onNotificationsChange({ emailDigest: 'never' })
+                                            }
+                                            className={`px-4 py-2 rounded-lg border transition-all duration-200 ${
+                                                notifications.emailDigest === 'never'
+                                                    ? 'border-red-600 bg-red-600/10 text-white'
+                                                    : 'border-[#313131] bg-[#1a1a1a] text-[#b3b3b3] hover:bg-[#2a2a2a]'
+                                            }`}
+                                        >
+                                            <div className="text-sm font-medium">Off</div>
+                                            <div className="text-xs opacity-75 mt-1">
+                                                No digest emails
+                                            </div>
+                                        </button>
+                                    </div>
+                                    <p className="text-xs text-[#808080] mt-3">
+                                        Weekly digests include trending content, your stats, and
+                                        collection updates
+                                    </p>
+                                </div>
+                            )}
 
                             {/* Send Test Email Button */}
                             {notifications.email && user?.email && (
