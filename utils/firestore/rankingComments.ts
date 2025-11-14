@@ -33,6 +33,7 @@ import { RankingComment, CreateCommentRequest, RANKING_CONSTRAINTS } from '../..
 import { NotFoundError, UnauthorizedError, ValidationError } from './errors'
 import { validateCommentText, validateUserId, validateRankingId } from './validation'
 import { PaginatedResult, createPaginatedResult } from '../../types/pagination'
+import { EmailService } from '../../lib/email/email-service'
 
 const COLLECTIONS = {
     comments: 'ranking_comments',
@@ -156,7 +157,109 @@ export async function createComment(
         })
     })
 
+    // Send email notification after successful comment creation
+    // Don't await to avoid blocking the comment creation
+    sendCommentEmailNotification(userId, username, comment, request.parentCommentId).catch(
+        (error) => {
+            console.error('Error sending comment email notification:', error)
+            // Don't throw - email failure shouldn't fail comment creation
+        }
+    )
+
     return comment
+}
+
+/**
+ * Send email notification for new comment/reply
+ * Notifies ranking owner for comments, or parent comment author for replies
+ */
+async function sendCommentEmailNotification(
+    commenterId: string,
+    commenterName: string,
+    comment: RankingComment,
+    parentCommentId: string | null
+): Promise<void> {
+    try {
+        // Get ranking details
+        const rankingRef = doc(db, COLLECTIONS.rankings, comment.rankingId)
+        const rankingSnap = await getDoc(rankingRef)
+
+        if (!rankingSnap.exists()) {
+            return
+        }
+
+        const ranking = rankingSnap.data() as any
+        const isReply = !!parentCommentId
+
+        // Determine recipient
+        let recipientId: string
+        let parentCommentText: string | undefined
+
+        if (isReply) {
+            // Get parent comment to notify its author
+            const parentCommentRef = getCommentDocRef(parentCommentId)
+            const parentCommentSnap = await getDoc(parentCommentRef)
+
+            if (!parentCommentSnap.exists()) {
+                return
+            }
+
+            const parentComment = parentCommentSnap.data() as RankingComment
+            recipientId = parentComment.userId
+            parentCommentText = parentComment.text
+
+            // Don't notify if replying to yourself
+            if (recipientId === commenterId) {
+                return
+            }
+        } else {
+            // Notify ranking owner
+            recipientId = ranking.userId
+
+            // Don't notify if commenting on your own ranking
+            if (recipientId === commenterId) {
+                return
+            }
+        }
+
+        // Get recipient's profile for email and preferences
+        const userRef = doc(db, 'users', recipientId)
+        const userSnap = await getDoc(userRef)
+
+        if (!userSnap.exists()) {
+            return
+        }
+
+        const userData = userSnap.data()
+        const email = userData?.profile?.email || userData?.email
+        const username = userData?.profile?.username || userData?.username
+
+        // Check email notification preferences
+        const notificationPreferences = userData?.notificationPreferences
+        const emailEnabled = notificationPreferences?.email === true
+
+        if (!email || !emailEnabled) {
+            return
+        }
+
+        // Send email using EmailService
+        await EmailService.sendRankingComment({
+            to: email,
+            userName: username,
+            rankingTitle: ranking.title,
+            rankingId: comment.rankingId,
+            commenterName,
+            commentText: comment.text,
+            commentId: comment.id,
+            isReply,
+            parentCommentText,
+        })
+
+        console.log(`Sent comment email notification to ${email} for ranking "${ranking.title}"`)
+    } catch (error) {
+        console.error('Error in sendCommentEmailNotification:', error)
+        throw error
+    }
 }
 
 /**

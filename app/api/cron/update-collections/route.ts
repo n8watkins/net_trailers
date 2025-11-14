@@ -25,6 +25,8 @@ import {
 } from '@/utils/firestore/admin/customRowsAdmin'
 import { createNotificationAdmin } from '@/utils/firestore/admin/notificationsAdmin'
 import { apiLog, apiError, apiWarn } from '@/utils/debugLogger'
+import { EmailService } from '@/lib/email/email-service'
+import { Content } from '@/typings'
 
 /**
  * TEMPORARY: Auto-update cron is paused while the feature is de-scoped.
@@ -223,10 +225,147 @@ async function processCollection(
 
         apiLog(`[Cron] Created notification for user ${userId}`)
 
+        // Send email notification if user has email notifications enabled
+        try {
+            await sendCollectionUpdateEmail(db, userId, collection, newContentIds)
+        } catch (emailError) {
+            apiError(`[Cron] Error sending email notification:`, emailError)
+            // Don't fail the whole operation if email fails
+        }
+
         return true
     } catch (error) {
         apiError(`[Cron] Error in processCollection:`, error)
         throw error
+    }
+}
+
+/**
+ * Send collection update email notification
+ */
+async function sendCollectionUpdateEmail(
+    db: Firestore,
+    userId: string,
+    collection: CustomRow,
+    newContentIds: number[]
+): Promise<void> {
+    try {
+        // Get user profile for email and username
+        const userDoc = await db.collection('users').doc(userId).get()
+
+        if (!userDoc.exists) {
+            apiLog(`[Cron] User ${userId} not found, skipping email`)
+            return
+        }
+
+        const userData = userDoc.data()
+        const email = userData?.profile?.email || userData?.email
+        const username = userData?.profile?.username || userData?.username
+
+        // Check if user has email notifications enabled
+        const notificationPreferences = userData?.notificationPreferences
+        const emailEnabled = notificationPreferences?.email === true
+        const collectionUpdateEnabled = notificationPreferences?.types?.collection_update !== false
+
+        if (!email) {
+            apiLog(`[Cron] User ${userId} has no email, skipping email notification`)
+            return
+        }
+
+        if (!emailEnabled || !collectionUpdateEnabled) {
+            apiLog(`[Cron] Email notifications disabled for user ${userId}, skipping`)
+            return
+        }
+
+        // Fetch content details from TMDB for the new items
+        const contentItems = await fetchContentDetails(newContentIds, collection.mediaType)
+
+        if (contentItems.length === 0) {
+            apiLog(`[Cron] No content details fetched, skipping email`)
+            return
+        }
+
+        // Send email using EmailService
+        await EmailService.sendCollectionUpdate({
+            to: email,
+            userName: username,
+            collectionName: collection.name,
+            collectionId: collection.id,
+            newItems: contentItems,
+            totalNewItems: newContentIds.length,
+        })
+
+        apiLog(`[Cron] Sent email notification to ${email} for collection "${collection.name}"`)
+    } catch (error) {
+        apiError(`[Cron] Error in sendCollectionUpdateEmail:`, error)
+        throw error
+    }
+}
+
+/**
+ * Fetch content details from TMDB API
+ */
+async function fetchContentDetails(
+    contentIds: number[],
+    mediaType?: 'movie' | 'tv'
+): Promise<Content[]> {
+    const TMDB_API_KEY = process.env.TMDB_API_KEY
+    const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
+
+    if (!TMDB_API_KEY) {
+        apiError('[Cron] TMDB_API_KEY not configured')
+        return []
+    }
+
+    try {
+        // Fetch details for each content item (limit to first 10 for email)
+        const fetchPromises = contentIds.slice(0, 10).map(async (id) => {
+            try {
+                // Determine media type if not provided
+                const type = mediaType
+
+                if (!type) {
+                    // Try to fetch as movie first, then TV
+                    const movieRes = await fetch(
+                        `${TMDB_BASE_URL}/movie/${id}?api_key=${TMDB_API_KEY}`
+                    )
+
+                    if (movieRes.ok) {
+                        const movieData = await movieRes.json()
+                        return { ...movieData, media_type: 'movie' as const }
+                    }
+
+                    const tvRes = await fetch(`${TMDB_BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}`)
+                    if (tvRes.ok) {
+                        const tvData = await tvRes.json()
+                        return { ...tvData, media_type: 'tv' as const }
+                    }
+
+                    return null
+                }
+
+                const endpoint = type === 'movie' ? 'movie' : 'tv'
+                const response = await fetch(
+                    `${TMDB_BASE_URL}/${endpoint}/${id}?api_key=${TMDB_API_KEY}`
+                )
+
+                if (!response.ok) {
+                    return null
+                }
+
+                const data = await response.json()
+                return { ...data, media_type: type }
+            } catch (error) {
+                apiError(`[Cron] Error fetching content ${id}:`, error)
+                return null
+            }
+        })
+
+        const results = await Promise.all(fetchPromises)
+        return results.filter((item): item is Content => item !== null)
+    } catch (error) {
+        apiError('[Cron] Error in fetchContentDetails:', error)
+        return []
     }
 }
 
