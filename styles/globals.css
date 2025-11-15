@@ -119,6 +119,35 @@
         }
     }
 
+    /* Smooth bounce animation for loading dots */
+    @keyframes smooth-bounce {
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-12px);
+        }
+    }
+
+    .bounce-dot-1 {
+        animation: smooth-bounce 0.6s ease-in-out infinite;
+        animation-delay: 0s;
+        will-change: transform;
+    }
+
+    .bounce-dot-2 {
+        animation: smooth-bounce 0.6s ease-in-out infinite;
+        animation-delay: 0.1s;
+        will-change: transform;
+    }
+
+    .bounce-dot-3 {
+        animation: smooth-bounce 0.6s ease-in-out infinite;
+        animation-delay: 0.2s;
+        will-change: transform;
+    }
+
     .animate-fade-in-down {
         animation: fade-in-down 0.3s ease-out forwards;
     }

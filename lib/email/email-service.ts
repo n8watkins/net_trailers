@@ -25,6 +25,17 @@ const APP_NAME = 'Net Trailers'
  */
 export class EmailService {
     /**
+     * Check if email service is available
+     */
+    private static isAvailable(): boolean {
+        if (!resend) {
+            console.warn('Email service not configured - RESEND_API_KEY missing')
+            return false
+        }
+        return true
+    }
+
+    /**
      * Send password reset email
      */
     static async sendPasswordReset(params: {
@@ -33,7 +44,8 @@ export class EmailService {
         resetUrl: string
         expiresIn?: number
     }) {
-        return await resend.emails.send({
+        if (!this.isAvailable()) return null
+        return await resend!.emails.send({
             from: `${APP_NAME} <${SENDER_EMAIL}>`,
             to: params.to,
             subject: 'Reset Your Password - Net Trailers',
@@ -53,7 +65,8 @@ export class EmailService {
         userName?: string
         verificationUrl: string
     }) {
-        return await resend.emails.send({
+        if (!this.isAvailable()) return null
+        return await resend!.emails.send({
             from: `${APP_NAME} <${SENDER_EMAIL}>`,
             to: params.to,
             subject: 'Verify Your Email Address - Net Trailers',
@@ -75,7 +88,8 @@ export class EmailService {
         newEmail: string
         confirmUrl: string
     }) {
-        return await resend.emails.send({
+        if (!this.isAvailable()) return null
+        return await resend!.emails.send({
             from: `${APP_NAME} <${SENDER_EMAIL}>`,
             to: params.to,
             subject: 'Confirm Your Email Change - Net Trailers',
@@ -99,7 +113,8 @@ export class EmailService {
         newItems: Content[]
         totalNewItems: number
     }) {
-        return await resend.emails.send({
+        if (!this.isAvailable()) return null
+        return await resend!.emails.send({
             from: `${APP_NAME} <${SENDER_EMAIL}>`,
             to: params.to,
             subject: `New Content in "${params.collectionName}" - Net Trailers`,
@@ -117,7 +132,8 @@ export class EmailService {
      * Send new release notification
      */
     static async sendNewRelease(params: { to: string; userName?: string; releases: Content[] }) {
-        return await resend.emails.send({
+        if (!this.isAvailable()) return null
+        return await resend!.emails.send({
             from: `${APP_NAME} <${SENDER_EMAIL}>`,
             to: params.to,
             subject: `${params.releases.length} New ${params.releases.length === 1 ? 'Release' : 'Releases'} from Your Watchlist - Net Trailers`,
@@ -142,7 +158,8 @@ export class EmailService {
         isReply?: boolean
         parentCommentText?: string
     }) {
-        return await resend.emails.send({
+        if (!this.isAvailable()) return null
+        return await resend!.emails.send({
             from: `${APP_NAME} <${SENDER_EMAIL}>`,
             to: params.to,
             subject: params.isReply
@@ -172,7 +189,8 @@ export class EmailService {
         likerNames: string[]
         totalLikes: number
     }) {
-        return await resend.emails.send({
+        if (!this.isAvailable()) return null
+        return await resend!.emails.send({
             from: `${APP_NAME} <${SENDER_EMAIL}>`,
             to: params.to,
             subject: `Your ranking "${params.rankingTitle}" got ${params.likerNames.length} new ${params.likerNames.length === 1 ? 'like' : 'likes'} - Net Trailers`,
@@ -198,7 +216,8 @@ export class EmailService {
         previewItems: Content[]
         totalItems: number
     }) {
-        return await resend.emails.send({
+        if (!this.isAvailable()) return null
+        return await resend!.emails.send({
             from: `${APP_NAME} <${SENDER_EMAIL}>`,
             to: params.to,
             subject: `${params.senderName} shared a collection with you - Net Trailers`,
@@ -245,7 +264,8 @@ export class EmailService {
             engagement: number
         }>
     }) {
-        return await resend.emails.send({
+        if (!this.isAvailable()) return null
+        return await resend!.emails.send({
             from: `${APP_NAME} <${SENDER_EMAIL}>`,
             to: params.to,
             subject: `Your Week in Review: ${params.weekStart} - ${params.weekEnd} - Net Trailers`,
@@ -271,7 +291,8 @@ export class EmailService {
         movies: Content[]
         tvShows: Content[]
     }) {
-        return await resend.emails.send({
+        if (!this.isAvailable()) return null
+        return await resend!.emails.send({
             from: `${APP_NAME} <${SENDER_EMAIL}>`,
             to: params.to,
             subject: 'Trending This Week - Net Trailers [Demo]',
@@ -295,6 +316,8 @@ export class EmailService {
             react: React.ReactElement
         }>
     ) {
+        if (!this.isAvailable()) return []
+
         const results = []
         const BATCH_SIZE = 10 // Send 10 at a time
         const DELAY_MS = 1000 // 1 second delay between batches
@@ -302,7 +325,7 @@ export class EmailService {
         for (let i = 0; i < emails.length; i += BATCH_SIZE) {
             const batch = emails.slice(i, i + BATCH_SIZE)
             const promises = batch.map((email) =>
-                resend.emails.send({
+                resend!.emails.send({
                     from: `${APP_NAME} <${SENDER_EMAIL}>`,
                     to: email.to,
                     subject: email.subject,

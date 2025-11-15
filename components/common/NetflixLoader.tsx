@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 
 interface Props {
     message?: string
@@ -93,6 +93,18 @@ const NetflixLoader: React.FC<Props> = ({
         }
     }, [slowCounter, progress])
 
+    // Memoize the bouncing dots to prevent re-renders from affecting animation
+    const bouncingDots = useMemo(
+        () => (
+            <div className="flex space-x-3 justify-center mb-6">
+                <div className="w-6 h-6 bg-red-600 rounded-full bounce-dot-1"></div>
+                <div className="w-6 h-6 bg-red-600 rounded-full bounce-dot-2"></div>
+                <div className="w-6 h-6 bg-red-600 rounded-full bounce-dot-3"></div>
+            </div>
+        ),
+        [] // Never re-create this element
+    )
+
     return (
         <div
             className={
@@ -102,17 +114,7 @@ const NetflixLoader: React.FC<Props> = ({
             }
         >
             <div className="text-center max-w-md px-6">
-                <div className="flex space-x-3 justify-center mb-6">
-                    <div className="w-6 h-6 bg-red-600 rounded-full animate-bounce"></div>
-                    <div
-                        className="w-6 h-6 bg-red-600 rounded-full animate-bounce"
-                        style={{ animationDelay: '0.1s' }}
-                    ></div>
-                    <div
-                        className="w-6 h-6 bg-red-600 rounded-full animate-bounce"
-                        style={{ animationDelay: '0.2s' }}
-                    ></div>
-                </div>
+                {bouncingDots}
                 <p className="text-white text-xl mb-2 min-h-[3rem] flex items-center justify-center">
                     {loadingMessage}
                 </p>
