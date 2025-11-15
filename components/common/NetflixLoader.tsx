@@ -6,15 +6,20 @@ interface Props {
     message?: string
     inline?: boolean // New prop to control full-page vs inline mode
     slowCounter?: boolean // Slower counter animation for longer operations like Gemini requests
+    progress?: number // Actual loading progress (0-100), overrides fake counter if provided
 }
 
 const NetflixLoader: React.FC<Props> = ({
     message = 'Loading your movies...',
     inline = false,
     slowCounter = false,
+    progress,
 }) => {
     const [loadingCounter, setLoadingCounter] = useState(0)
     const [loadingMessage, setLoadingMessage] = useState('🎬 Finding your favorite movies...')
+
+    // Use actual progress if provided, otherwise use fake counter
+    const displayProgress = progress !== undefined ? progress : loadingCounter
 
     // Prevent scrolling while loading (only in full-page mode)
     useEffect(() => {
@@ -40,8 +45,11 @@ const NetflixLoader: React.FC<Props> = ({
         }
     }, [inline])
 
-    // Counter animation for loading
+    // Counter animation for loading (only if progress prop not provided)
     useEffect(() => {
+        // Skip fake counter if actual progress is being provided
+        if (progress !== undefined) return
+
         setLoadingCounter(0)
         setLoadingMessage('🎬 Finding your favorite movies...')
 
@@ -83,7 +91,7 @@ const NetflixLoader: React.FC<Props> = ({
             clearInterval(counterInterval)
             clearInterval(messageInterval)
         }
-    }, [slowCounter])
+    }, [slowCounter, progress])
 
     return (
         <div
@@ -104,9 +112,6 @@ const NetflixLoader: React.FC<Props> = ({
                         className="w-6 h-6 bg-red-600 rounded-full animate-bounce"
                         style={{ animationDelay: '0.2s' }}
                     ></div>
-                </div>
-                <div className="text-2xl font-bold text-white mb-6 font-mono">
-                    {loadingCounter}%
                 </div>
                 <p className="text-white text-xl mb-2 min-h-[3rem] flex items-center justify-center">
                     {loadingMessage}

@@ -191,7 +191,7 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
             <div
                 className={`relative min-h-screen overflow-x-clip ${showModal && `overflow-y-hidden`} ${
                     !heroImageLoaded ? 'opacity-0' : 'opacity-100'
-                } transition-opacity duration-500`}
+                }`}
             >
                 <Header />
 

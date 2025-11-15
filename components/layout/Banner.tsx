@@ -45,27 +45,17 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
                 // Preload all carousel images
                 selected.forEach((content, index) => {
                     const imgUrl = content.backdrop_path || content.poster_path
-                    if (imgUrl) {
-                        const img = new window.Image()
-                        img.onload = () => {
-                            setImagesLoaded((prev) => new Set(prev).add(index))
-                            // Call the callback when the first image (hero) is loaded
-                            if (index === 0 && onHeroImageLoaded) {
-                                onHeroImageLoaded()
-                            }
-                        }
-                        img.onerror = () => {
-                            // Even if preload fails, mark as "loaded" so image can render
-                            // Next.js Image component will handle the actual loading
-                            console.warn(`Failed to preload image: ${imgUrl}`)
-                            setImagesLoaded((prev) => new Set(prev).add(index))
-                            // Call the callback even on error for index 0 to prevent indefinite loading
-                            if (index === 0 && onHeroImageLoaded) {
-                                onHeroImageLoaded()
-                            }
-                        }
-                        img.src = `${BASE_URL}/${imgUrl}`
+                    if (!imgUrl) return
+
+                    const img = new window.Image()
+                    img.onload = () => {
+                        setImagesLoaded((prev) => new Set(prev).add(index))
                     }
+                    img.onerror = () => {
+                        console.warn(`Failed to preload image: ${imgUrl}`)
+                        setImagesLoaded((prev) => new Set(prev).add(index))
+                    }
+                    img.src = `${BASE_URL}/${imgUrl}`
                 })
             } else {
                 // No content available after filtering
@@ -157,6 +147,12 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
                             className={`select-none transition-opacity duration-300 ${
                                 isTransitioning ? 'opacity-0' : 'opacity-100'
                             }`}
+                            onLoad={() => {
+                                // Ensure callback is called when Next.js Image actually renders
+                                if (currentIndex === 0 && onHeroImageLoaded) {
+                                    onHeroImageLoaded()
+                                }
+                            }}
                         />
                     </div>
                 )}
