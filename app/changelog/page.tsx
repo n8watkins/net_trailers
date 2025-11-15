@@ -1,11 +1,13 @@
 'use client'
 
-import { useState } from 'next'
+import { useState } from 'react'
 import Link from 'next/link'
 import {
     DocumentTextIcon,
     AcademicCapIcon,
     InformationCircleIcon,
+    ChevronDownIcon,
+    ChevronUpIcon,
 } from '@heroicons/react/24/outline'
 import SubPageLayout from '@/components/layout/SubPageLayout'
 import AboutModal from '@/components/modals/AboutModal'
@@ -14,6 +16,46 @@ import TutorialModal from '@/components/modals/TutorialModal'
 export default function ChangelogPage() {
     const [showAbout, setShowAbout] = useState(false)
     const [showTutorial, setShowTutorial] = useState(false)
+    const [expandedVersions, setExpandedVersions] = useState<Set<string>>(
+        new Set(['1.6.0']) // Latest version expanded by default
+    )
+
+    const toggleVersion = (version: string) => {
+        setExpandedVersions((prev) => {
+            const newSet = new Set(prev)
+            if (newSet.has(version)) {
+                newSet.delete(version)
+            } else {
+                newSet.add(version)
+            }
+            return newSet
+        })
+    }
+
+    const expandAll = () => {
+        setExpandedVersions(
+            new Set([
+                '1.6.0',
+                '1.5.2',
+                '1.5.1',
+                '1.5.0',
+                '1.4.2',
+                '1.4.1',
+                '1.4.0',
+                '1.3.0',
+                '1.2.0',
+                '1.1.0',
+                '1.0.0',
+                '0.3.0',
+                '0.2.0',
+                '0.1.0',
+            ])
+        )
+    }
+
+    const collapseAll = () => {
+        setExpandedVersions(new Set())
+    }
 
     return (
         <>
@@ -26,14 +68,14 @@ export default function ChangelogPage() {
                 <div className="max-w-5xl mx-auto space-y-8">
                     {/* Quick Stats */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                        <StatCard number="931+" label="Commits" color="green" />
+                        <StatCard number="933+" label="Commits" color="green" />
                         <StatCard number="v1.6.0" label="Current Version" color="blue" />
-                        <StatCard number="13" label="Major Releases" color="purple" />
-                        <StatCard number="3 mos" label="Development" color="orange" />
+                        <StatCard number="14" label="Total Releases" color="purple" />
+                        <StatCard number="4 mos" label="Development" color="orange" />
                     </div>
 
-                    {/* Help Buttons */}
-                    <div className="flex gap-4 mb-8">
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap gap-4 mb-8">
                         <button
                             onClick={() => setShowTutorial(true)}
                             className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 text-blue-400 rounded-lg border border-blue-500/30 hover:bg-blue-500/30 transition-colors"
@@ -48,15 +90,69 @@ export default function ChangelogPage() {
                             <InformationCircleIcon className="w-5 h-5" />
                             <span>About NetTrailer</span>
                         </button>
+                        <a
+                            href="https://github.com/n8watkins/net_trailers"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 px-4 py-2 bg-gray-700/50 text-gray-300 rounded-lg border border-gray-600/50 hover:bg-gray-700 transition-colors"
+                        >
+                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path
+                                    fillRule="evenodd"
+                                    d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+                                    clipRule="evenodd"
+                                />
+                            </svg>
+                            <span>View on GitHub</span>
+                        </a>
+                        <a
+                            href="https://github.com/n8watkins/net_trailers/issues"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 px-4 py-2 bg-orange-500/20 text-orange-400 rounded-lg border border-orange-500/30 hover:bg-orange-500/30 transition-colors"
+                        >
+                            <svg
+                                className="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                                />
+                            </svg>
+                            <span>Report Issue</span>
+                        </a>
+                    </div>
+
+                    {/* Expand/Collapse Controls */}
+                    <div className="flex gap-3 mb-6">
+                        <button
+                            onClick={expandAll}
+                            className="text-sm px-3 py-1.5 bg-green-500/20 text-green-400 rounded border border-green-500/30 hover:bg-green-500/30 transition-colors"
+                        >
+                            Expand All
+                        </button>
+                        <button
+                            onClick={collapseAll}
+                            className="text-sm px-3 py-1.5 bg-red-500/20 text-red-400 rounded border border-red-500/30 hover:bg-red-500/30 transition-colors"
+                        >
+                            Collapse All
+                        </button>
                     </div>
 
                     {/* Version Releases */}
-                    <div className="space-y-12">
+                    <div className="space-y-6">
                         <VersionRelease
                             version="1.6.0"
                             date="January 14, 2025"
                             title="Email Notification System"
                             badge="Latest"
+                            isExpanded={expandedVersions.has('1.6.0')}
+                            onToggle={() => toggleVersion('1.6.0')}
                         >
                             <p className="text-gray-300 leading-relaxed mb-4">
                                 We chose <strong className="text-white">Resend</strong> for email
@@ -106,6 +202,8 @@ export default function ChangelogPage() {
                             version="1.5.2"
                             date="January 13, 2025"
                             title="Component Performance Optimization"
+                            isExpanded={expandedVersions.has('1.5.2')}
+                            onToggle={() => toggleVersion('1.5.2')}
                         >
                             <p className="text-gray-300 leading-relaxed mb-4">
                                 Focused on eliminating unnecessary re-renders with React
@@ -131,6 +229,8 @@ export default function ChangelogPage() {
                             version="1.5.1"
                             date="January 13, 2025"
                             title="Image Lazy Loading"
+                            isExpanded={expandedVersions.has('1.5.1')}
+                            onToggle={() => toggleVersion('1.5.1')}
                         >
                             <p className="text-gray-300 leading-relaxed mb-4">
                                 Implemented native browser lazy loading to improve initial page load
@@ -151,6 +251,8 @@ export default function ChangelogPage() {
                             version="1.5.0"
                             date="January 12, 2025"
                             title="API Caching & WebP Compression"
+                            isExpanded={expandedVersions.has('1.5.0')}
+                            onToggle={() => toggleVersion('1.5.0')}
                         >
                             <p className="text-gray-300 leading-relaxed mb-4">
                                 Major performance upgrade through API response caching and WebP
@@ -191,6 +293,8 @@ export default function ChangelogPage() {
                             version="1.4.2"
                             date="January 11, 2025"
                             title="Poll Voting System"
+                            isExpanded={expandedVersions.has('1.4.2')}
+                            onToggle={() => toggleVersion('1.4.2')}
                         >
                             <p className="text-gray-300 leading-relaxed mb-4">
                                 Added interactive polls with real-time results and vote tracking.
@@ -211,6 +315,8 @@ export default function ChangelogPage() {
                             version="1.4.1"
                             date="January 10, 2025"
                             title="Image Uploads & Moderation"
+                            isExpanded={expandedVersions.has('1.4.1')}
+                            onToggle={() => toggleVersion('1.4.1')}
                         >
                             <p className="text-gray-300 leading-relaxed mb-4">
                                 Added image upload support and community moderation tools.
@@ -234,6 +340,8 @@ export default function ChangelogPage() {
                             version="1.4.0"
                             date="January 9, 2025"
                             title="Discussion Forums"
+                            isExpanded={expandedVersions.has('1.4.0')}
+                            onToggle={() => toggleVersion('1.4.0')}
                         >
                             <p className="text-gray-300 leading-relaxed mb-4">
                                 Chose Firestore for forum backend due to real-time capabilities and
@@ -269,6 +377,8 @@ export default function ChangelogPage() {
                             version="1.3.0"
                             date="January 5, 2025"
                             title="Rankings & Public Profiles"
+                            isExpanded={expandedVersions.has('1.3.0')}
+                            onToggle={() => toggleVersion('1.3.0')}
                         >
                             <p className="text-gray-300 leading-relaxed mb-4">
                                 IMDb-style ranking system with drag-and-drop ordering, custom
@@ -324,6 +434,8 @@ export default function ChangelogPage() {
                             version="1.2.0"
                             date="December 20, 2024"
                             title="AI-Powered Smart Search"
+                            isExpanded={expandedVersions.has('1.2.0')}
+                            onToggle={() => toggleVersion('1.2.0')}
                         >
                             <p className="text-gray-300 leading-relaxed mb-4">
                                 Google&apos;s Gemini 2.5 Flash powers natural language search,
@@ -379,6 +491,8 @@ export default function ChangelogPage() {
                             version="1.1.0"
                             date="December 1, 2024"
                             title="Custom Collections"
+                            isExpanded={expandedVersions.has('1.1.0')}
+                            onToggle={() => toggleVersion('1.1.0')}
                         >
                             <p className="text-gray-300 leading-relaxed mb-4">
                                 Three collection types serve different needs: Manual (hand-picked),
@@ -441,6 +555,8 @@ export default function ChangelogPage() {
                             date="November 1, 2024"
                             title="Initial Release"
                             isInitial
+                            isExpanded={expandedVersions.has('1.0.0')}
+                            onToggle={() => toggleVersion('1.0.0')}
                         >
                             <p className="text-gray-300 leading-relaxed mb-4">
                                 NetTrailer launched with a comprehensive feature set built over 3
@@ -476,6 +592,125 @@ export default function ChangelogPage() {
                                 <strong className="text-white">Tech Stack:</strong> Next.js 16,
                                 React 19, TypeScript 5.7, Zustand 5.0, Tailwind CSS 3.4, Firebase
                                 11.0
+                            </p>
+                        </VersionRelease>
+
+                        <VersionRelease
+                            version="0.3.0"
+                            date="October 25, 2024"
+                            title="Beta - Search & UI Polish"
+                            isExpanded={expandedVersions.has('0.3.0')}
+                            onToggle={() => toggleVersion('0.3.0')}
+                        >
+                            <p className="text-gray-300 leading-relaxed mb-4">
+                                Final beta release focused on perfecting the search experience and
+                                polishing the UI before production launch. Added comprehensive
+                                filtering, keyboard navigation, and performance optimizations.
+                            </p>
+
+                            <div className="mb-4">
+                                <h4 className="text-white font-semibold mb-3">Beta Features</h4>
+                                <ul className="space-y-2 text-gray-300 list-disc list-inside">
+                                    <li>
+                                        Advanced search filters with clickable badges (genre, year,
+                                        rating)
+                                    </li>
+                                    <li>Keyboard navigation (arrow keys, Enter, Escape)</li>
+                                    <li>
+                                        Progressive loading system targeting 30 movies with trailers
+                                    </li>
+                                    <li>Enhanced mobile UX with improved search animation</li>
+                                    <li>User feedback for edge cases (least popular genres)</li>
+                                    <li>Search performance optimizations for quick searches</li>
+                                    <li>
+                                        Husky pre-commit hooks with lint-staged for code quality
+                                    </li>
+                                    <li>
+                                        Netflix-style hover effects with red glow and Watch button
+                                    </li>
+                                    <li>Optimized row spacing and thumbnail interactions</li>
+                                </ul>
+                            </div>
+
+                            <p className="text-gray-300 leading-relaxed text-sm">
+                                <strong className="text-white">Status:</strong> Feature-complete and
+                                ready for v1.0.0 production release.
+                            </p>
+                        </VersionRelease>
+
+                        <VersionRelease
+                            version="0.2.0"
+                            date="September 20, 2024"
+                            title="Alpha - Authentication & Core Features"
+                            isExpanded={expandedVersions.has('0.2.0')}
+                            onToggle={() => toggleVersion('0.2.0')}
+                        >
+                            <p className="text-gray-300 leading-relaxed mb-4">
+                                Alpha release introducing authentication, user accounts, and core
+                                content management features. Migrated to Recoil for state management
+                                and added comprehensive error handling.
+                            </p>
+
+                            <div className="mb-4">
+                                <h4 className="text-white font-semibold mb-3">Alpha Features</h4>
+                                <ul className="space-y-2 text-gray-300 list-disc list-inside">
+                                    <li>
+                                        Firebase authentication (Google Sign-In, Email/Password)
+                                    </li>
+                                    <li>Guest mode with localStorage persistence</li>
+                                    <li>Favorites system with Firebase integration</li>
+                                    <li>Comprehensive error handling system</li>
+                                    <li>Real-time search with debouncing (300ms)</li>
+                                    <li>
+                                        Enhanced search animation and clickable badges for filtering
+                                    </li>
+                                    <li>Redesigned login page with social auth UI</li>
+                                    <li>Security fixes for critical vulnerabilities</li>
+                                    <li>Testing infrastructure with Jest</li>
+                                    <li>ESLint warnings eliminated</li>
+                                    <li>API caching strategy</li>
+                                    <li>Vercel Analytics integration</li>
+                                    <li>Legal pages (Privacy, Terms)</li>
+                                </ul>
+                            </div>
+
+                            <p className="text-gray-300 leading-relaxed text-sm">
+                                <strong className="text-white">Migration:</strong> Switched from
+                                basic state management to Recoil for scalable architecture.
+                            </p>
+                        </VersionRelease>
+
+                        <VersionRelease
+                            version="0.1.0"
+                            date="September 1, 2024"
+                            title="Prototype - Initial Setup"
+                            isExpanded={expandedVersions.has('0.1.0')}
+                            onToggle={() => toggleVersion('0.1.0')}
+                        >
+                            <p className="text-gray-300 leading-relaxed mb-4">
+                                Initial prototype built with Next.js and TMDB API integration. Basic
+                                content browsing and modal functionality.
+                            </p>
+
+                            <div className="mb-4">
+                                <h4 className="text-white font-semibold mb-3">
+                                    Prototype Features
+                                </h4>
+                                <ul className="space-y-2 text-gray-300 list-disc list-inside">
+                                    <li>Project setup with Next.js (Create Next App template)</li>
+                                    <li>TMDB API integration for movie and TV show data</li>
+                                    <li>Basic content modal with video player</li>
+                                    <li>Initial deployment configuration</li>
+                                    <li>Trending movies and TV shows</li>
+                                    <li>Basic search functionality</li>
+                                    <li>Image optimization with Next.js Image</li>
+                                    <li>Responsive layout foundation</li>
+                                </ul>
+                            </div>
+
+                            <p className="text-gray-300 leading-relaxed text-sm">
+                                <strong className="text-white">Stack:</strong> Next.js Pages Router,
+                                React, TypeScript, TMDB API, Tailwind CSS
                             </p>
                         </VersionRelease>
                     </div>
@@ -523,6 +758,8 @@ function VersionRelease({
     title,
     badge,
     isInitial,
+    isExpanded,
+    onToggle,
     children,
 }: {
     version: string
@@ -530,6 +767,8 @@ function VersionRelease({
     title: string
     badge?: string
     isInitial?: boolean
+    isExpanded: boolean
+    onToggle: () => void
     children: React.ReactNode
 }) {
     const versionColor = isInitial
@@ -538,27 +777,54 @@ function VersionRelease({
 
     return (
         <div className="relative">
-            {/* Version Number Badge */}
-            <div className="flex items-center gap-3 mb-4">
-                <div className={`text-4xl font-bold font-mono ${versionColor.split(' ')[0]}`}>
-                    v{version}
+            {/* Clickable Header */}
+            <button
+                onClick={onToggle}
+                className="w-full text-left group transition-all hover:bg-gray-800/20 rounded-lg p-4 -m-4"
+            >
+                <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                        {/* Version Number Badge */}
+                        <div className="flex items-center gap-3 mb-4">
+                            <div
+                                className={`text-4xl font-bold font-mono ${versionColor.split(' ')[0]}`}
+                            >
+                                v{version}
+                            </div>
+                            {badge && (
+                                <span className="px-3 py-1 bg-red-500/20 text-red-400 text-xs font-semibold rounded-full border border-red-500/30">
+                                    {badge}
+                                </span>
+                            )}
+                        </div>
+
+                        {/* Date */}
+                        <div className="text-gray-400 text-sm mb-2">{date}</div>
+
+                        {/* Title */}
+                        <h2 className="text-2xl md:text-3xl font-bold text-white">{title}</h2>
+                    </div>
+
+                    {/* Chevron Icon */}
+                    <div className="ml-4 flex-shrink-0">
+                        {isExpanded ? (
+                            <ChevronUpIcon className="w-6 h-6 text-gray-400 group-hover:text-white transition-colors" />
+                        ) : (
+                            <ChevronDownIcon className="w-6 h-6 text-gray-400 group-hover:text-white transition-colors" />
+                        )}
+                    </div>
                 </div>
-                {badge && (
-                    <span className="px-3 py-1 bg-red-500/20 text-red-400 text-xs font-semibold rounded-full border border-red-500/30">
-                        {badge}
-                    </span>
-                )}
-            </div>
+            </button>
 
-            {/* Date */}
-            <div className="text-gray-400 text-sm mb-2">{date}</div>
-
-            {/* Title */}
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">{title}</h2>
-
-            {/* Content */}
-            <div className="bg-gray-800/30 rounded-lg p-6 border border-gray-700/50">
-                {children}
+            {/* Collapsible Content */}
+            <div
+                className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                    isExpanded ? 'max-h-[5000px] opacity-100 mt-6' : 'max-h-0 opacity-0'
+                }`}
+            >
+                <div className="bg-gray-800/30 rounded-lg p-6 border border-gray-700/50">
+                    {children}
+                </div>
             </div>
         </div>
     )
