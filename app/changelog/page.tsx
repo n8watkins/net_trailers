@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
     DocumentTextIcon,
@@ -25,12 +25,47 @@ export default function ChangelogPage() {
             const newSet = new Set(prev)
             if (newSet.has(version)) {
                 newSet.delete(version)
+                // Clear hash if collapsing
+                if (window.location.hash === `#v${version}`) {
+                    window.history.pushState(null, '', window.location.pathname)
+                }
             } else {
                 newSet.add(version)
+                // Update hash when expanding
+                window.history.pushState(null, '', `#v${version}`)
             }
             return newSet
         })
     }
+
+    // Handle URL hash on mount and hash changes
+    useEffect(() => {
+        const handleHashChange = () => {
+            const hash = window.location.hash.slice(1) // Remove #
+            if (hash.startsWith('v')) {
+                const version = hash.slice(1) // Remove 'v' prefix
+                setExpandedVersions((prev) => {
+                    const newSet = new Set(prev)
+                    newSet.add(version)
+                    return newSet
+                })
+                // Scroll to the version after a short delay to ensure it's expanded
+                setTimeout(() => {
+                    const element = document.getElementById(hash)
+                    if (element) {
+                        element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                    }
+                }, 100)
+            }
+        }
+
+        // Handle initial hash on mount
+        handleHashChange()
+
+        // Listen for hash changes
+        window.addEventListener('hashchange', handleHashChange)
+        return () => window.removeEventListener('hashchange', handleHashChange)
+    }, [])
 
     const expandAll = () => {
         setExpandedVersions(
@@ -595,6 +630,18 @@ export default function ChangelogPage() {
                             </p>
                         </VersionRelease>
 
+                        {/* Separator: Production vs Pre-Release */}
+                        <div className="relative py-8">
+                            <div className="absolute inset-0 flex items-center">
+                                <div className="w-full border-t border-gray-600"></div>
+                            </div>
+                            <div className="relative flex justify-center">
+                                <span className="bg-gray-900 px-4 py-1 text-sm text-gray-400 rounded-full border border-gray-600">
+                                    Pre-Release Versions
+                                </span>
+                            </div>
+                        </div>
+
                         <VersionRelease
                             version="0.3.0"
                             date="October 25, 2024"
@@ -776,11 +823,13 @@ function VersionRelease({
         : 'text-green-400 border-green-500'
 
     return (
-        <div className="relative">
+        <div className="relative" id={`v${version}`}>
             {/* Clickable Header */}
             <button
                 onClick={onToggle}
                 className="w-full text-left group transition-all hover:bg-gray-800/20 rounded-lg p-4 -m-4"
+                aria-expanded={isExpanded}
+                aria-label={`${isExpanded ? 'Collapse' : 'Expand'} version ${version} - ${title}`}
             >
                 <div className="flex items-center justify-between">
                     <div className="flex-1">
@@ -808,9 +857,9 @@ function VersionRelease({
                     {/* Chevron Icon */}
                     <div className="ml-4 flex-shrink-0">
                         {isExpanded ? (
-                            <ChevronUpIcon className="w-6 h-6 text-gray-400 group-hover:text-white transition-colors" />
+                            <ChevronUpIcon className="w-8 h-8 text-gray-400 group-hover:text-white transition-colors" />
                         ) : (
-                            <ChevronDownIcon className="w-6 h-6 text-gray-400 group-hover:text-white transition-colors" />
+                            <ChevronDownIcon className="w-8 h-8 text-gray-400 group-hover:text-white transition-colors" />
                         )}
                     </div>
                 </div>
