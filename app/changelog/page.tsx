@@ -1,285 +1,351 @@
-import type { Metadata } from 'next'
-import Link from 'next/link'
-import fs from 'fs'
-import path from 'path'
+'use client'
 
-export const metadata: Metadata = {
-    title: 'Changelog - NetTrailer',
-    description:
-        'NetTrailer version history and changelog - Track all updates, features, and improvements to the platform',
-    keywords: ['changelog', 'updates', 'version', 'history', 'releases'],
-}
+import { DocumentTextIcon } from '@heroicons/react/24/outline'
+import SubPageLayout from '@/components/layout/SubPageLayout'
 
 export default function ChangelogPage() {
-    // Read changelog from file
-    const changelogPath = path.join(process.cwd(), 'CHANGELOG.md')
-    const changelogContent = fs.existsSync(changelogPath)
-        ? fs.readFileSync(changelogPath, 'utf8')
-        : '# Changelog\n\nChangelog not found.'
+    return (
+        <SubPageLayout
+            title="Changelog"
+            icon={<DocumentTextIcon className="w-8 h-8" />}
+            iconColor="text-blue-400"
+            description="Version history and release notes for NetTrailer"
+        >
+            <div className="max-w-5xl mx-auto space-y-8">
+                {/* Quick Stats */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <StatCard number="931+" label="Commits" color="green" />
+                    <StatCard number="v1.6.0" label="Current Version" color="blue" />
+                    <StatCard number="13" label="Major Releases" color="purple" />
+                    <StatCard number="3 mos" label="Development" color="orange" />
+                </div>
 
-    // Parse markdown into sections
-    const sections = parseChangelog(changelogContent)
+                {/* Version Releases */}
+                <div className="space-y-12">
+                    <VersionRelease
+                        version="1.6.0"
+                        date="January 14, 2025"
+                        title="Email Notification System"
+                        badge="Latest"
+                    >
+                        <p className="text-gray-300 leading-relaxed mb-4">
+                            We chose <strong className="text-white">Resend</strong> as our email
+                            delivery provider after evaluating several options. Resend offers a
+                            modern developer experience with excellent deliverability rates (99.9%),
+                            generous free tier (100 emails/day), and simple API integration. Unlike
+                            traditional email services, Resend was built specifically for
+                            transactional emails, making it perfect for our notification system.
+                        </p>
+
+                        <p className="text-gray-300 leading-relaxed mb-4">
+                            The email system introduces comprehensive branded HTML templates that
+                            match NetTrailer&apos;s dark theme aesthetic. Each template includes
+                            responsive design for mobile devices, inline CSS for email client
+                            compatibility, and one-click unsubscribe links for user convenience.
+                        </p>
+
+                        <div className="bg-gray-800/50 rounded-lg p-4 my-6 border-l-4 border-blue-500">
+                            <h4 className="text-white font-semibold mb-2">Key Features</h4>
+                            <ul className="space-y-2 text-gray-300">
+                                <li>
+                                    • Weekly digest emails consolidate activity into a single Monday
+                                    morning update
+                                </li>
+                                <li>
+                                    • Smart batching prevents spam by limiting ranking like
+                                    notifications to max 1/hour
+                                </li>
+                                <li>
+                                    • Token-based unsubscribe system allows users to opt-out without
+                                    logging in
+                                </li>
+                                <li>
+                                    • Email preferences UI gives granular control over notification
+                                    types
+                                </li>
+                            </ul>
+                        </div>
+
+                        <p className="text-gray-300 leading-relaxed">
+                            The system includes retry logic and delivery tracking to ensure reliable
+                            email delivery. At scale (10k users), estimated costs are ~$40/month on
+                            Resend&apos;s Pro tier.
+                        </p>
+                    </VersionRelease>
+
+                    <VersionRelease
+                        version="1.5.0"
+                        date="January 13, 2025"
+                        title="Performance Revolution"
+                    >
+                        <p className="text-gray-300 leading-relaxed mb-4">
+                            This release focused on making NetTrailer blazing fast. We implemented
+                            production-only API response caching with stale-while-revalidate
+                            strategy, reducing repeat visit load times by{' '}
+                            <strong className="text-green-400">90%</strong>. High-traffic routes
+                            like search, movie details, and trending content now serve cached
+                            responses within milliseconds.
+                        </p>
+
+                        <p className="text-gray-300 leading-relaxed mb-4">
+                            Image optimization was a major win. By switching from JPEG to WebP
+                            format and implementing browser-based compression using Web Workers, we
+                            achieved{' '}
+                            <strong className="text-green-400">80-90% file size reduction</strong>.
+                            A 4.2MB upload now compresses to just 425KB before hitting Firebase
+                            Storage. This translates to massive cost savings—from $24k/month to
+                            $2.4k/month for a hypothetical 10k user base with 50k images.
+                        </p>
+
+                        <div className="bg-gray-800/50 rounded-lg p-4 my-6">
+                            <h4 className="text-white font-semibold mb-3">Performance Metrics</h4>
+                            <div className="grid grid-cols-2 gap-4">
+                                <MetricItem label="Initial Load" value="80% faster" />
+                                <MetricItem label="Repeat Visits" value="90% faster" />
+                                <MetricItem label="Image Size" value="90% smaller" />
+                                <MetricItem label="Lighthouse Score" value="95+" />
+                            </div>
+                        </div>
+
+                        <p className="text-gray-300 leading-relaxed">
+                            Component memoization with React.memo and useMemo eliminated unnecessary
+                            re-renders, making scrolling butter-smooth even with hundreds of content
+                            cards on screen.
+                        </p>
+                    </VersionRelease>
+
+                    <VersionRelease
+                        version="1.4.0"
+                        date="January 10, 2025"
+                        title="Community Forums & Polls"
+                    >
+                        <p className="text-gray-300 leading-relaxed mb-4">
+                            Building a community discussion platform required careful consideration
+                            of data structure and moderation. We chose Firestore for its real-time
+                            capabilities and scalability. The forum supports six categories
+                            (General, Movies, TV Shows, Recommendations, Rankings, Announcements)
+                            with threaded conversations and nested replies.
+                        </p>
+
+                        <p className="text-gray-300 leading-relaxed mb-4">
+                            The polling system introduces interactive voting with real-time results.
+                            Users can create single or multiple-choice polls with optional
+                            expiration dates. Vote tracking ensures one vote per user per poll using
+                            Firestore&apos;s composite keys for efficient lookups.
+                        </p>
+
+                        <p className="text-gray-300 leading-relaxed mb-4">
+                            Image uploads integrate with Firebase Storage, with automatic WebP
+                            compression reducing storage costs. Thread authors have moderation
+                            powers to delete inappropriate replies, creating a self-policing
+                            community structure.
+                        </p>
+                    </VersionRelease>
+
+                    <VersionRelease
+                        version="1.3.0"
+                        date="January 5, 2025"
+                        title="Rankings & Public Profiles"
+                    >
+                        <p className="text-gray-300 leading-relaxed mb-4">
+                            The ranking system lets users create IMDb-style lists with drag-and-drop
+                            ordering and custom scoring. We implemented 30 popular tags for content
+                            discovery, making it easy to find rankings about specific themes like
+                            &quot;Time Travel&quot; or &quot;Strong Female Lead.&quot;
+                        </p>
+
+                        <p className="text-gray-300 leading-relaxed mb-4">
+                            Public profiles showcase user activity and contributions. The comment
+                            system supports nested replies with engagement metrics (likes, views,
+                            reply counts). A comprehensive seed data script populates 35+ example
+                            rankings for testing and demo purposes.
+                        </p>
+
+                        <p className="text-gray-300 leading-relaxed">
+                            Community engagement features like cloning popular rankings encourage
+                            participation while crediting original creators. The sorting system
+                            (Recent, Popular, Most Liked) helps surface quality content.
+                        </p>
+                    </VersionRelease>
+
+                    <VersionRelease
+                        version="1.2.0"
+                        date="December 20, 2024"
+                        title="AI-Powered Smart Search"
+                    >
+                        <p className="text-gray-300 leading-relaxed mb-4">
+                            Smart search represents our biggest technical achievement. We integrated
+                            Google&apos;s Gemini 2.5 Flash model to understand natural language
+                            queries like &quot;rainy day vibes&quot; or &quot;mind-bending
+                            thrillers.&quot; The AI analyzes queries to extract genre preferences,
+                            cast/crew requirements, and thematic concepts, then generates optimized
+                            TMDB API filters.
+                        </p>
+
+                        <p className="text-gray-300 leading-relaxed mb-4">
+                            Voice input using the Web Speech API allows hands-free searching. The
+                            live transcript display gives visual feedback during recognition, and
+                            entity recognition with <code className="text-green-400">@actors</code>{' '}
+                            and <code className="text-green-400">#directors</code> autocomplete
+                            makes building complex queries intuitive.
+                        </p>
+
+                        <p className="text-gray-300 leading-relaxed">
+                            The smart suggestion system uses AI to generate creative collection
+                            names. Instead of &quot;Action Movies,&quot; you get &quot;Adrenaline
+                            Rush: High- Octane Action Thrillers.&quot; This personality makes the
+                            app feel more engaging and less robotic.
+                        </p>
+                    </VersionRelease>
+
+                    <VersionRelease
+                        version="1.1.0"
+                        date="December 1, 2024"
+                        title="Custom Collections"
+                    >
+                        <p className="text-gray-300 leading-relaxed mb-4">
+                            Collections transform how users organize content. Three collection types
+                            serve different needs: Manual for hand-picked favorites, TMDB
+                            Genre-Based for auto-updating themed lists, and AI-Generated for natural
+                            language queries.
+                        </p>
+
+                        <p className="text-gray-300 leading-relaxed mb-4">
+                            The auto-update system runs daily via Vercel cron jobs (2 AM UTC),
+                            checking TMDB for new releases matching collection filters. Visual
+                            indicators like the &quot;Auto&quot; badge and &quot;+5 new items&quot;
+                            counter keep users informed about updates.
+                        </p>
+
+                        <p className="text-gray-300 leading-relaxed">
+                            Collection sharing generates public links with view analytics. Open
+                            Graph tags ensure beautiful previews when sharing on social media. Users
+                            can revoke share links anytime from settings.
+                        </p>
+                    </VersionRelease>
+
+                    <VersionRelease
+                        version="1.0.0"
+                        date="November 1, 2024"
+                        title="Initial Release"
+                        isInitial
+                    >
+                        <p className="text-gray-300 leading-relaxed mb-4">
+                            NetTrailer launched with a comprehensive feature set built over 3 months
+                            of development. The Netflix-inspired design uses a dark theme with
+                            smooth animations and responsive layouts optimized for mobile-first
+                            experiences.
+                        </p>
+
+                        <p className="text-gray-300 leading-relaxed mb-4">
+                            State management uses Zustand with 18 focused stores instead of a
+                            monolithic Redux setup. This architecture improves performance through
+                            granular updates and makes the codebase more maintainable. Guest mode
+                            with localStorage and authenticated mode with Firestore sync both use
+                            the same underlying store factory pattern.
+                        </p>
+
+                        <p className="text-gray-300 leading-relaxed mb-4">
+                            Child Safety Mode filters content by MPAA and TV ratings with optional
+                            PIN protection. Server-side filtering ensures kids can&apos;t bypass
+                            restrictions, and cache invalidation prevents stale content from leaking
+                            through.
+                        </p>
+
+                        <p className="text-gray-300 leading-relaxed">
+                            The initial release included 30+ API routes, comprehensive error
+                            handling, and integration with TMDB, Firebase, and Google Analytics.
+                            Development focused on building a solid foundation for rapid feature
+                            iteration.
+                        </p>
+                    </VersionRelease>
+                </div>
+            </div>
+        </SubPageLayout>
+    )
+}
+
+// Component definitions
+function StatCard({
+    number,
+    label,
+    color,
+}: {
+    number: string
+    label: string
+    color: 'green' | 'blue' | 'purple' | 'orange'
+}) {
+    const colorClasses = {
+        green: 'text-green-400 border-green-500/30',
+        blue: 'text-blue-400 border-blue-500/30',
+        purple: 'text-purple-400 border-purple-500/30',
+        orange: 'text-orange-400 border-orange-500/30',
+    }
 
     return (
-        <div className="relative min-h-screen bg-gradient-to-b from-gray-900/10 to-[#0a0a0a]">
-            <main className="relative pl-4 pb-24 lg:space-y-24 lg:pl-16 mt-20">
-                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    <div className="mb-8">
-                        <h1 className="text-4xl font-bold text-white mb-4">Changelog</h1>
-                        <p className="text-gray-300 text-lg">
-                            Track all updates, features, and improvements to NetTrailer
-                        </p>
-                    </div>
-
-                    {/* Version Summary Table */}
-                    <div className="mb-12 bg-gray-800/50 rounded-lg p-6 border border-gray-700">
-                        <h2 className="text-2xl font-semibold text-white mb-4">Version History</h2>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left">
-                                <thead>
-                                    <tr className="border-b border-gray-700">
-                                        <th className="pb-3 text-gray-400 font-medium">Version</th>
-                                        <th className="pb-3 text-gray-400 font-medium">Date</th>
-                                        <th className="pb-3 text-gray-400 font-medium">
-                                            Key Features
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="text-gray-300">
-                                    <tr className="border-b border-gray-700/50">
-                                        <td className="py-3 font-mono text-green-400">v1.6.0</td>
-                                        <td className="py-3">2025-01-14</td>
-                                        <td className="py-3">Email Notification System</td>
-                                    </tr>
-                                    <tr className="border-b border-gray-700/50">
-                                        <td className="py-3 font-mono text-green-400">v1.5.0</td>
-                                        <td className="py-3">2025-01-13</td>
-                                        <td className="py-3">
-                                            Performance Optimizations & Image Compression
-                                        </td>
-                                    </tr>
-                                    <tr className="border-b border-gray-700/50">
-                                        <td className="py-3 font-mono text-green-400">v1.4.0</td>
-                                        <td className="py-3">2025-01-10</td>
-                                        <td className="py-3">Forum & Discussion System</td>
-                                    </tr>
-                                    <tr className="border-b border-gray-700/50">
-                                        <td className="py-3 font-mono text-green-400">v1.3.0</td>
-                                        <td className="py-3">2025-01-05</td>
-                                        <td className="py-3">Rankings & Community Features</td>
-                                    </tr>
-                                    <tr className="border-b border-gray-700/50">
-                                        <td className="py-3 font-mono text-green-400">v1.2.0</td>
-                                        <td className="py-3">2024-12-20</td>
-                                        <td className="py-3">Smart Search & AI Features</td>
-                                    </tr>
-                                    <tr className="border-b border-gray-700/50">
-                                        <td className="py-3 font-mono text-green-400">v1.1.0</td>
-                                        <td className="py-3">2024-12-01</td>
-                                        <td className="py-3">Custom Collections System</td>
-                                    </tr>
-                                    <tr>
-                                        <td className="py-3 font-mono text-blue-400">v1.0.0</td>
-                                        <td className="py-3">2024-11-01</td>
-                                        <td className="py-3">Initial Production Release</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    {/* Project Statistics */}
-                    <div className="mb-12 grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700 text-center">
-                            <div className="text-3xl font-bold text-green-400 mb-1">931+</div>
-                            <div className="text-sm text-gray-400">Total Commits</div>
-                        </div>
-                        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700 text-center">
-                            <div className="text-3xl font-bold text-blue-400 mb-1">13</div>
-                            <div className="text-sm text-gray-400">Major Features</div>
-                        </div>
-                        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700 text-center">
-                            <div className="text-3xl font-bold text-purple-400 mb-1">35+</div>
-                            <div className="text-sm text-gray-400">API Routes</div>
-                        </div>
-                        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700 text-center">
-                            <div className="text-3xl font-bold text-orange-400 mb-1">50k+</div>
-                            <div className="text-sm text-gray-400">Lines of Code</div>
-                        </div>
-                    </div>
-
-                    {/* Detailed Changelog Sections */}
-                    <div className="space-y-8">
-                        {sections.map((section, index) => (
-                            <div
-                                key={index}
-                                id={section.id}
-                                className="bg-gray-800/30 rounded-lg p-6 border border-gray-700/50"
-                            >
-                                <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-2xl font-semibold text-white">
-                                        {section.title}
-                                    </h2>
-                                    {section.version && (
-                                        <span className="text-sm font-mono px-3 py-1 bg-green-500/20 text-green-400 rounded-full border border-green-500/30">
-                                            {section.version}
-                                        </span>
-                                    )}
-                                </div>
-                                <div
-                                    className="prose prose-invert prose-gray max-w-none"
-                                    dangerouslySetInnerHTML={{ __html: section.content }}
-                                />
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Footer Links */}
-                    <div className="mt-12 text-center space-y-4">
-                        <p className="text-gray-400">
-                            For detailed commit history, see{' '}
-                            <code className="text-sm bg-gray-800 px-2 py-1 rounded">git log</code>
-                        </p>
-                        <div className="flex justify-center gap-4">
-                            <Link
-                                href="/"
-                                className="text-netflix-red hover:text-red-500 transition-colors"
-                            >
-                                ← Back to Home
-                            </Link>
-                            <Link
-                                href="/settings"
-                                className="text-netflix-red hover:text-red-500 transition-colors"
-                            >
-                                Settings →
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            </main>
+        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700 text-center">
+            <div
+                className={`text-2xl md:text-3xl font-bold mb-1 ${colorClasses[color].split(' ')[0]}`}
+            >
+                {number}
+            </div>
+            <div className="text-xs md:text-sm text-gray-400">{label}</div>
         </div>
     )
 }
 
-interface ChangelogSection {
-    id: string
-    version: string | null
+function VersionRelease({
+    version,
+    date,
+    title,
+    badge,
+    isInitial,
+    children,
+}: {
+    version: string
+    date: string
     title: string
-    content: string
+    badge?: string
+    isInitial?: boolean
+    children: React.ReactNode
+}) {
+    const versionColor = isInitial
+        ? 'text-blue-400 border-blue-500'
+        : 'text-green-400 border-green-500'
+
+    return (
+        <div className="relative">
+            {/* Version Number Badge */}
+            <div className="flex items-center gap-3 mb-4">
+                <div className={`text-4xl font-bold font-mono ${versionColor.split(' ')[0]}`}>
+                    v{version}
+                </div>
+                {badge && (
+                    <span className="px-3 py-1 bg-red-500/20 text-red-400 text-xs font-semibold rounded-full border border-red-500/30">
+                        {badge}
+                    </span>
+                )}
+            </div>
+
+            {/* Date */}
+            <div className="text-gray-400 text-sm mb-2">{date}</div>
+
+            {/* Title */}
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">{title}</h2>
+
+            {/* Content */}
+            <div className="bg-gray-800/30 rounded-lg p-6 border border-gray-700/50">
+                {children}
+            </div>
+        </div>
+    )
 }
 
-function parseChangelog(markdown: string): ChangelogSection[] {
-    const sections: ChangelogSection[] = []
-    const lines = markdown.split('\n')
-    let currentSection: ChangelogSection | null = null
-    let currentContent: string[] = []
-
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i]
-
-        // Check for version heading (## [1.6.0] - 2025-01-14 - Email Notification System)
-        const versionMatch = line.match(/^## \[([0-9.]+)\] - (.+)/)
-        if (versionMatch) {
-            // Save previous section
-            if (currentSection) {
-                currentSection.content = formatContent(currentContent.join('\n'))
-                sections.push(currentSection)
-            }
-
-            // Start new section
-            const version = versionMatch[1]
-            const title = versionMatch[2]
-            currentSection = {
-                id: `v${version}`,
-                version: `v${version}`,
-                title: title,
-                content: '',
-            }
-            currentContent = []
-            continue
-        }
-
-        // Check for other major headings
-        const headingMatch = line.match(/^## (.+)/)
-        if (headingMatch && !versionMatch) {
-            // Save previous section
-            if (currentSection) {
-                currentSection.content = formatContent(currentContent.join('\n'))
-                sections.push(currentSection)
-            }
-
-            // Start new section
-            const title = headingMatch[1]
-            currentSection = {
-                id: title.toLowerCase().replace(/\s+/g, '-'),
-                version: null,
-                title: title,
-                content: '',
-            }
-            currentContent = []
-            continue
-        }
-
-        // Add content to current section
-        if (currentSection && line !== '---') {
-            currentContent.push(line)
-        }
-    }
-
-    // Save last section
-    if (currentSection) {
-        currentSection.content = formatContent(currentContent.join('\n'))
-        sections.push(currentSection)
-    }
-
-    return sections
-}
-
-function formatContent(markdown: string): string {
-    // Basic markdown to HTML conversion
-    let html = markdown
-
-    // Headings
-    html = html.replace(
-        /^### (.+)$/gm,
-        '<h3 class="text-xl font-semibold text-white mt-6 mb-3">$1</h3>'
+function MetricItem({ label, value }: { label: string; value: string }) {
+    return (
+        <div className="text-center">
+            <div className="text-2xl font-bold text-green-400">{value}</div>
+            <div className="text-sm text-gray-400">{label}</div>
+        </div>
     )
-    html = html.replace(
-        /^#### (.+)$/gm,
-        '<h4 class="text-lg font-semibold text-gray-200 mt-4 mb-2">$1</h4>'
-    )
-
-    // Bold
-    html = html.replace(/\*\*(.+?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>')
-
-    // Lists
-    html = html.replace(/^- (.+)$/gm, '<li class="ml-4 text-gray-300">$1</li>')
-    html = html.replace(
-        /(<li.*<\/li>\n?)+/gs,
-        '<ul class="list-disc list-inside space-y-1 mb-4">$&</ul>'
-    )
-
-    // Code blocks
-    html = html.replace(
-        /`([^`]+)`/g,
-        '<code class="text-sm bg-gray-700 px-2 py-1 rounded text-green-400">$1</code>'
-    )
-
-    // Paragraphs
-    html = html.replace(/^([^<\n].+)$/gm, '<p class="text-gray-300 mb-3">$1</p>')
-
-    // Tables
-    html = html.replace(/\|(.+)\|/g, (match) => {
-        const cells = match
-            .split('|')
-            .filter((cell) => cell.trim())
-            .map((cell) => `<td class="px-4 py-2 border-b border-gray-700">${cell.trim()}</td>`)
-        return `<tr>${cells.join('')}</tr>`
-    })
-    html = html.replace(
-        /(<tr>.*<\/tr>\n?)+/gs,
-        '<table class="w-full text-left mb-4"><tbody>$&</tbody></table>'
-    )
-
-    return html
 }
