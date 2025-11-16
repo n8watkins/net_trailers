@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
             process.env.NEXT_PUBLIC_SITE_URL ||
             request.headers.get('origin') ||
             'http://localhost:3000'
-        const threadUrl = `${baseUrl}/community/threads/${threadId}`
+        const threadUrl = `${baseUrl}/community/thread/${threadId}`
 
         // Email subject
         const subject = isReplyToReply

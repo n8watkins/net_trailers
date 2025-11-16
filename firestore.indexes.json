@@ -159,6 +159,20 @@
                     "order": "DESCENDING"
                 }
             ]
+        },
+        {
+            "collectionGroup": "thread_replies",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "threadId",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "createdAt",
+                    "order": "ASCENDING"
+                }
+            ]
         }
     ],
     "fieldOverrides": []

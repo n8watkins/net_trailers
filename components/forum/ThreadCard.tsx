@@ -42,7 +42,7 @@ export function ThreadCard({ thread, onClick }: ThreadCardProps) {
         if (onClick) {
             onClick()
         } else {
-            router.push(`/community/threads/${thread.id}`)
+            router.push(`/community/thread/${thread.id}`)
         }
     }
 

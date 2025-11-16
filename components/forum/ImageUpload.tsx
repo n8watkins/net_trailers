@@ -6,7 +6,7 @@
 
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useId, useRef, forwardRef, useImperativeHandle } from 'react'
 import Image from 'next/image'
 import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { uploadImages, isValidImageFile, formatFileSize } from '@/utils/imageUpload'
@@ -16,20 +16,38 @@ interface ImageUploadProps {
     onImagesChange: (imageUrls: string[]) => void
     storagePath: string
     disabled?: boolean
+    showDropzone?: boolean
 }
 
-export default function ImageUpload({
-    maxImages = 4,
-    onImagesChange,
-    storagePath,
-    disabled = false,
-}: ImageUploadProps) {
+export interface ImageUploadHandle {
+    openFilePicker: () => void
+}
+
+const ImageUpload = forwardRef<ImageUploadHandle, ImageUploadProps>(function ImageUpload(
+    { maxImages = 4, onImagesChange, storagePath, disabled = false, showDropzone = true },
+    ref
+) {
     const [selectedFiles, setSelectedFiles] = useState<File[]>([])
     const [previewUrls, setPreviewUrls] = useState<string[]>([])
     const [uploadedUrls, setUploadedUrls] = useState<string[]>([])
     const [isUploading, setIsUploading] = useState(false)
     const [isCompressing, setIsCompressing] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const inputId = useId()
+    const fileInputRef = useRef<HTMLInputElement>(null)
+
+    const openFilePicker = useCallback(() => {
+        if (disabled) return
+        fileInputRef.current?.click()
+    }, [disabled])
+
+    useImperativeHandle(
+        ref,
+        () => ({
+            openFilePicker,
+        }),
+        [openFilePicker]
+    )
 
     const handleFileSelect = useCallback(
         (files: FileList | null) => {
@@ -126,30 +144,31 @@ export default function ImageUpload({
 
     return (
         <div className="space-y-3">
+            <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => handleFileSelect(e.target.files)}
+                className="hidden"
+                id={inputId}
+                disabled={disabled}
+                ref={fileInputRef}
+            />
+
             {/* Upload area */}
-            {selectedFiles.length < maxImages && !disabled && (
-                <div
+            {showDropzone && selectedFiles.length < maxImages && !disabled && (
+                <label
+                    htmlFor={inputId}
                     onDrop={handleDrop}
                     onDragOver={handleDragOver}
-                    className="border-2 border-dashed border-zinc-700 rounded-lg p-6 text-center hover:border-zinc-600 transition-colors cursor-pointer"
+                    className="block border-2 border-dashed border-zinc-700 rounded-lg p-6 text-center hover:border-zinc-600 transition-colors cursor-pointer"
                 >
-                    <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={(e) => handleFileSelect(e.target.files)}
-                        className="hidden"
-                        id="image-upload"
-                        disabled={disabled}
-                    />
-                    <label htmlFor="image-upload" className="cursor-pointer">
-                        <PhotoIcon className="w-12 h-12 mx-auto mb-3 text-gray-500" />
-                        <p className="text-gray-400 mb-1">Click to upload or drag and drop</p>
-                        <p className="text-sm text-gray-500">
-                            PNG, JPG, GIF up to 5MB (max {maxImages} images)
-                        </p>
-                    </label>
-                </div>
+                    <PhotoIcon className="w-12 h-12 mx-auto mb-3 text-gray-500" />
+                    <p className="text-gray-400 mb-1">Click to upload or drag and drop</p>
+                    <p className="text-sm text-gray-500">
+                        PNG, JPG, GIF up to 5MB (max {maxImages} images)
+                    </p>
+                </label>
             )}
 
             {/* Error message */}
@@ -228,4 +247,6 @@ export default function ImageUpload({
             )}
         </div>
     )
-}
+})
+
+export default ImageUpload

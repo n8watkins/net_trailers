@@ -307,7 +307,7 @@ This document outlines all features and improvements committed but not yet pushe
     - Thread author moderation (can delete any replies)
     - Like/unlike threads and replies
     - View count tracking
-    - Detail pages at `/community/threads/[id]`
+- Detail pages at `/community/thread/[id]`
 
 - **Polls & Voting**:
     - Create polls with 2-10 options

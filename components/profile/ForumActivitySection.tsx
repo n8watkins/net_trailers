@@ -48,7 +48,7 @@ export function ForumActivitySection({
                         </div>
                         {threads.length > 0 && (
                             <Link
-                                href="/threads"
+                                href="/community/forums"
                                 className="text-sm text-green-400 hover:text-green-300 underline"
                             >
                                 View all {threads.length}
@@ -60,7 +60,7 @@ export function ForumActivitySection({
                             {threads.slice(0, 3).map((thread) => (
                                 <Link
                                     key={thread.id}
-                                    href={`/community/threads/${thread.id}`}
+                                    href={`/community/thread/${thread.id}`}
                                     className="group hover:bg-zinc-800/50 rounded-lg p-3 transition-colors cursor-pointer border border-transparent hover:border-zinc-700 block"
                                 >
                                     <h4 className="text-white font-medium text-sm mb-1 line-clamp-1 group-hover:text-green-400 transition-colors">
@@ -95,6 +95,17 @@ export function ForumActivitySection({
                             <ChartBarIcon className="w-5 h-5 text-blue-400" />
                             <h3 className="text-lg font-semibold text-white">Polls</h3>
                         </div>
+                        {(pollsCreated.length > 0 || pollsVoted.length > 0) && (
+                            <Link
+                                href="/polls"
+                                className="text-sm text-blue-400 hover:text-blue-300 underline"
+                            >
+                                View all {pollsCreated.length + pollsVoted.length}
+                            </Link>
+                        )}
+                    </div>
+
+                    <div className="flex items-center justify-between mb-3">
                         <div className="inline-flex rounded-full bg-zinc-800/80 p-1 border border-zinc-700">
                             {[
                                 { id: 'created', label: 'Created', count: pollsCreated.length },
@@ -113,21 +124,11 @@ export function ForumActivitySection({
                                 </button>
                             ))}
                         </div>
-                    </div>
-
-                    <div className="flex items-center justify-between mb-3 text-xs text-gray-400">
-                        <span>
+                        <span className="text-xs text-gray-400">
                             {activePollTab === 'created'
                                 ? 'Polls you have published'
                                 : 'Polls you recently voted on'}
                         </span>
-                        <Link
-                            href="/community/polls"
-                            className="text-blue-400 hover:text-blue-300 underline"
-                        >
-                            View all{' '}
-                            {activePollTab === 'created' ? pollsCreated.length : pollsVoted.length}
-                        </Link>
                     </div>
 
                     {activePolls.length > 0 ? (

@@ -87,7 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Like/unlike threads and replies
     - Thread author moderation (delete replies)
     - View count tracking
-    - Thread detail pages at `/community/threads/[id]`
+    - Thread detail pages at `/community/thread/[id]`
 
 - **Polling System**
     - Create polls with 2-10 options

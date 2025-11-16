@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation'
+import CommunityHub from '@/components/community/CommunityHub'
 
 export default function CommunityForumsPage() {
-    redirect('/community/threads')
+    return <CommunityHub activeTab="forums" />
 }

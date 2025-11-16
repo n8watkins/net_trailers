@@ -113,7 +113,7 @@ A Netflix-inspired streaming discovery platform built with modern web technologi
     - Thread author can delete any replies for moderation
     - Like/unlike threads and replies
     - View counts and engagement metrics
-    - Detail pages at `/community/threads/[id]`
+- Detail pages at `/community/thread/[id]`
 
 - **Polls & Voting**
     - Create polls with multiple choice options (2-10 options)

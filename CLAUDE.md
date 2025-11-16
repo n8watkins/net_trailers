@@ -270,7 +270,7 @@ The app handles both movies and TV shows through a unified type system:
     - Vote tracking per user (one vote per poll)
 - **Forum categories**: General, Movies, TV Shows, Recommendations, Rankings, Announcements
 - **Thread/Poll detail pages**:
-    - `/community/threads/[id]` - Full thread view with replies
+    - `/community/thread/[id]` - Full thread view with replies
     - `/community/polls/[id]` - Interactive voting interface
 - **Search & filtering**: Global search across threads and polls
 - **Sorting options**: Recent, Popular, Most Replied, Most Voted

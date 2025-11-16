@@ -65,7 +65,7 @@ export default function MyThreadsPage() {
                         You haven&apos;t created any discussion threads yet.
                     </p>
                     <button
-                        onClick={() => router.push('/community/threads')}
+                        onClick={() => router.push('/community/forums')}
                         className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-colors"
                     >
                         Create Your First Thread

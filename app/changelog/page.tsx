@@ -398,7 +398,7 @@ export default function ChangelogPage() {
                                     <li>Nested reply system with conversation threading</li>
                                     <li>Like/unlike threads and replies</li>
                                     <li>View count tracking and engagement metrics</li>
-                                    <li>Thread detail pages at `/community/threads/[id]`</li>
+                                    <li>Thread detail pages at `/community/thread/[id]`</li>
                                 </ul>
                             </div>
 
