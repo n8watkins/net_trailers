@@ -77,15 +77,29 @@ export default function SmartSearchActions({
             })
 
             if (!response.ok) {
+                // Try to parse error response
+                const errorData = await response.json().catch(() => ({}))
+                const errorMessage = errorData.error || 'An unexpected error occurred'
+
                 if (response.status === 429) {
-                    const data = await response.json().catch(() => ({}))
                     showError(
                         'AI limit reached',
-                        data.error || 'Daily Gemini limit reached. Try again tomorrow.'
+                        errorMessage || 'Daily Gemini limit reached. Try again tomorrow.'
                     )
                     throw new Error('AI limit reached')
                 }
-                throw new Error('Failed to get more suggestions')
+
+                if (response.status === 503) {
+                    showError(
+                        'Service unavailable',
+                        'AI service is currently unavailable. Please try again later.'
+                    )
+                    throw new Error('Service unavailable')
+                }
+
+                // Generic error with server message
+                showError('Failed to get more suggestions', errorMessage)
+                throw new Error(errorMessage)
             }
 
             const data = await response.json()
@@ -124,7 +138,15 @@ export default function SmartSearchActions({
             }
         } catch (error) {
             console.error('Ask for more error:', error)
-            showError('Failed to get more suggestions')
+            // Error already shown via showError in the if block above
+            // Only show generic error if no error was shown yet
+            if (
+                error instanceof Error &&
+                !error.message.includes('limit') &&
+                !error.message.includes('unavailable')
+            ) {
+                // Error message already shown in the error handling above
+            }
         } finally {
             setIsAskingMore(false)
         }
