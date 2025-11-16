@@ -446,61 +446,52 @@ function RankingsTab({
                 </div>
             )}
 
-            {/* Rankings List */}
+            {/* Rankings List - Group by Tags and Show Content Previews */}
             {finalFilteredRankings.length > 0 ? (
-                <div className="space-y-4">
-                    {finalFilteredRankings.map((ranking: any) => (
-                        <div
-                            key={ranking.id}
-                            onClick={() => handleRankingClick(ranking.id)}
-                            className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 hover:bg-zinc-800 transition-colors cursor-pointer"
-                        >
-                            <div className="flex items-start justify-between gap-4">
-                                <div className="flex-1 min-w-0">
-                                    <h3 className="text-lg font-bold text-white mb-1 truncate">
-                                        {ranking.title}
-                                    </h3>
-                                    {ranking.description && (
-                                        <p className="text-sm text-gray-400 mb-2 line-clamp-2">
-                                            {ranking.description}
-                                        </p>
-                                    )}
-                                    <div className="flex items-center gap-4 text-xs text-gray-500">
-                                        <span>By {ranking.userName}</span>
-                                        <span className="flex items-center gap-1">
-                                            <HeartIcon className="w-4 h-4" />
-                                            {ranking.likes || 0}
-                                        </span>
-                                        <span className="flex items-center gap-1">
-                                            <EyeIcon className="w-4 h-4" />
-                                            {ranking.views || 0}
-                                        </span>
-                                        <span className="flex items-center gap-1">
-                                            <ChatBubbleLeftRightIcon className="w-4 h-4" />
-                                            {ranking.commentCount || 0}
-                                        </span>
-                                    </div>
-                                    {ranking.tags && ranking.tags.length > 0 && (
-                                        <div className="flex flex-wrap gap-1.5 mt-2">
-                                            {ranking.tags.map((tag: string) => {
-                                                const tagData = POPULAR_TAGS.find(
-                                                    (t) => t.name === tag
-                                                )
-                                                return (
-                                                    <span
-                                                        key={tag}
-                                                        className="text-xs bg-zinc-800 text-gray-400 px-2 py-1 rounded-full"
-                                                    >
-                                                        {tagData?.emoji} {tag}
-                                                    </span>
-                                                )
-                                            })}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    ))}
+                <div className="space-y-6">
+                    {(() => {
+                        // Group filtered rankings by tags
+                        const groupedRankings: Record<string, any[]> = {}
+
+                        finalFilteredRankings.forEach((ranking: any) => {
+                            if (ranking.tags && ranking.tags.length > 0) {
+                                ranking.tags.forEach((tag: string) => {
+                                    if (!groupedRankings[tag]) {
+                                        groupedRankings[tag] = []
+                                    }
+                                    groupedRankings[tag].push(ranking)
+                                })
+                            } else {
+                                if (!groupedRankings['Other']) {
+                                    groupedRankings['Other'] = []
+                                }
+                                groupedRankings['Other'].push(ranking)
+                            }
+                        })
+
+                        // If filtering by tag, only show that tag
+                        const tagsToShow = filterByTag
+                            ? groupedRankings[filterByTag]
+                                ? [filterByTag]
+                                : []
+                            : Object.keys(groupedRankings).sort(
+                                  (a, b) => groupedRankings[b].length - groupedRankings[a].length
+                              )
+
+                        return tagsToShow.map((tag) => {
+                            const tagData = POPULAR_TAGS.find((t) => t.name === tag)
+                            return (
+                                <RankingRow
+                                    key={tag}
+                                    title={tag}
+                                    emoji={tagData?.emoji}
+                                    rankings={groupedRankings[tag]}
+                                    showAuthor={true}
+                                    onLike={handleRankingClick}
+                                />
+                            )
+                        })
+                    })()}
                 </div>
             ) : (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
