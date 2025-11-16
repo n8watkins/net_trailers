@@ -450,13 +450,19 @@ export default function UserProfilePage() {
                         </Link>
                     </div>
                     {likedContent.length > 0 ? (
-                        <div className="grid grid-cols-3 gap-3">
-                            {likedContent.slice(0, 3).map((content) => (
+                        <div className="flex gap-2">
+                            {likedContent.slice(0, 6).map((content) => (
                                 <div
                                     key={content.id}
-                                    className="aspect-[2/3] relative overflow-hidden rounded-lg"
+                                    className="w-16 aspect-[2/3] relative overflow-hidden rounded"
                                 >
-                                    <ContentCard content={content} />
+                                    {content.poster_path && (
+                                        <img
+                                            src={`https://image.tmdb.org/t/p/w185${content.poster_path}`}
+                                            alt=""
+                                            className="w-full h-full object-cover"
+                                        />
+                                    )}
                                 </div>
                             ))}
                         </div>
@@ -475,13 +481,19 @@ export default function UserProfilePage() {
                             <ClockIcon className="w-6 h-6 text-indigo-400" />
                             <h2 className="text-2xl font-bold text-white">Watch Later</h2>
                         </div>
-                        <div className="grid grid-cols-3 gap-3">
-                            {watchLaterPreview.slice(0, 3).map((content) => (
+                        <div className="flex gap-2">
+                            {watchLaterPreview.slice(0, 6).map((content) => (
                                 <div
                                     key={content.id}
-                                    className="aspect-[2/3] relative overflow-hidden rounded-lg"
+                                    className="w-16 aspect-[2/3] relative overflow-hidden rounded"
                                 >
-                                    <ContentCard content={content} />
+                                    {content.poster_path && (
+                                        <img
+                                            src={`https://image.tmdb.org/t/p/w185${content.poster_path}`}
+                                            alt=""
+                                            className="w-full h-full object-cover"
+                                        />
+                                    )}
                                 </div>
                             ))}
                         </div>
