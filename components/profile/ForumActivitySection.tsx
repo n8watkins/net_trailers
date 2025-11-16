@@ -35,7 +35,7 @@ export function ForumActivitySection({ threads, polls }: ForumActivitySectionPro
                         <ChatBubbleLeftRightIcon className="w-5 h-5 text-green-400" />
                         <h3 className="text-lg font-semibold text-white">Threads</h3>
                         <Link
-                            href="/community?tab=threads"
+                            href="/community/forums"
                             className="text-base text-green-400 hover:text-green-300 underline"
                         >
                             View all {threads.length}
@@ -80,7 +80,7 @@ export function ForumActivitySection({ threads, polls }: ForumActivitySectionPro
                         <ChartBarIcon className="w-5 h-5 text-blue-400" />
                         <h3 className="text-lg font-semibold text-white">Polls</h3>
                         <Link
-                            href="/community?tab=polls"
+                            href="/community/polls"
                             className="text-base text-blue-400 hover:text-blue-300 underline"
                         >
                             View all {polls.length}

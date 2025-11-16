@@ -116,7 +116,7 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
         if (confirm('Are you sure you want to delete this poll?')) {
             try {
                 await deletePoll(userId, currentPoll.id)
-                router.push('/community?tab=polls')
+                router.push('/community/polls')
             } catch (error) {
                 console.error('Failed to delete poll:', error)
             }
