@@ -340,8 +340,12 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
 
                         {/* Community Link - After Search Bar */}
                         <div
-                            className={`headerLink cursor-pointer flex items-center space-x-1 select-none ml-4 ${pathname === '/community' ? 'text-white hover:text-white font-semibold' : ''}`}
-                            onClick={() => router.push('/community')}
+                            className={`headerLink cursor-pointer flex items-center space-x-1 select-none ml-4 ${
+                                pathname?.startsWith('/community')
+                                    ? 'text-white hover:text-white font-semibold'
+                                    : ''
+                            }`}
+                            onClick={() => router.push('/community/rankings')}
                         >
                             <UsersIcon className="h-5 w-5 relative z-10" />
                             <span className="relative z-10">Community</span>

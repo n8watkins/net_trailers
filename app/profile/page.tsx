@@ -244,7 +244,7 @@ export default function ProfilePage() {
                 <CollectionsSection collections={collections} />
             </div>
 
-            {/* Forum Activity */}
+            {/* Community Activity */}
             {!isGuest && <ForumActivitySection threads={userThreads} polls={userPolls} />}
         </SubPageLayout>
     )

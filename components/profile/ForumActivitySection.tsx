@@ -1,7 +1,7 @@
 /**
- * Forum Activity Section Component
+ * Community Activity Section Component
  *
- * Displays user's forum threads and polls
+ * Displays user's community threads and polls
  * Used in both private profile and public profile pages
  */
 
@@ -17,14 +17,9 @@ interface ForumActivitySectionProps {
 export function ForumActivitySection({ threads, polls }: ForumActivitySectionProps) {
     return (
         <section id="forum-section">
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-2">
-                    <ChatBubbleLeftRightIcon className="w-6 h-6 text-green-500" />
-                    <h2 className="text-2xl font-bold text-white">Forum Activity</h2>
-                </div>
-                <Link href="/community" className="text-sm text-blue-400 hover:text-blue-300">
-                    Visit community
-                </Link>
+            <div className="flex items-center gap-2 mb-6">
+                <ChatBubbleLeftRightIcon className="w-6 h-6 text-green-500" />
+                <h2 className="text-2xl font-bold text-white">Community Activity</h2>
             </div>
 
             {/* Bento Grid Layout - Side by Side on Large Screens */}
@@ -34,12 +29,7 @@ export function ForumActivitySection({ threads, polls }: ForumActivitySectionPro
                     <div className="flex items-center gap-3 mb-4">
                         <ChatBubbleLeftRightIcon className="w-5 h-5 text-green-400" />
                         <h3 className="text-lg font-semibold text-white">Threads</h3>
-                        <Link
-                            href="/community/forums"
-                            className="text-base text-green-400 hover:text-green-300 underline"
-                        >
-                            View all {threads.length}
-                        </Link>
+                        <span className="text-sm text-gray-400">({threads.length})</span>
                     </div>
                     {threads.length > 0 ? (
                         <div className="space-y-3">
@@ -79,12 +69,7 @@ export function ForumActivitySection({ threads, polls }: ForumActivitySectionPro
                     <div className="flex items-center gap-3 mb-4">
                         <ChartBarIcon className="w-5 h-5 text-blue-400" />
                         <h3 className="text-lg font-semibold text-white">Polls</h3>
-                        <Link
-                            href="/community/polls"
-                            className="text-base text-blue-400 hover:text-blue-300 underline"
-                        >
-                            View all {polls.length}
-                        </Link>
+                        <span className="text-sm text-gray-400">({polls.length})</span>
                     </div>
                     {polls.length > 0 ? (
                         <div className="space-y-3">

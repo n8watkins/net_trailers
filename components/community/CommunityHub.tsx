@@ -10,7 +10,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import SubPageLayout from '@/components/layout/SubPageLayout'
 import { RankingRow } from '@/components/rankings/RankingRow'
 import { useRankingStore } from '@/stores/rankingStore'
@@ -42,21 +42,14 @@ import {
     MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline'
 
-type TabType = 'rankings' | 'forums' | 'polls'
+export type TabType = 'rankings' | 'forums' | 'polls'
 
-const getTabFromPathname = (pathname: string | null): TabType => {
-    if (!pathname) return 'rankings'
-    const segments = pathname.split('/').filter(Boolean)
-    const section = segments[1]
-    if (section === 'forums' || section === 'polls' || section === 'rankings') {
-        return section as TabType
-    }
-    return 'rankings'
+interface CommunityHubProps {
+    activeTab: TabType
 }
 
-export default function CommunityHub() {
+export default function CommunityHub({ activeTab }: CommunityHubProps) {
     const router = useRouter()
-    const pathname = usePathname()
     const { isInitialized } = useAuthStatus()
 
     const {
@@ -75,11 +68,9 @@ export default function CommunityHub() {
 
     const { threads, polls } = useForumStore()
 
-    const activeTab = useMemo(() => getTabFromPathname(pathname), [pathname])
-
     const navigateToTab = (tab: TabType) => {
-        const destination = tab === 'rankings' ? '/community' : `/community/${tab}`
-        if (destination === pathname) return
+        if (tab === activeTab) return
+        const destination = tab === 'rankings' ? '/community/rankings' : `/community/${tab}`
         router.push(destination)
     }
 

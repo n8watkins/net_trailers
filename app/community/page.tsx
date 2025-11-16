@@ -1,5 +1,5 @@
-import CommunityHub from '@/components/community/CommunityHub'
+import { redirect } from 'next/navigation'
 
 export default function CommunityPage() {
-    return <CommunityHub />
+    redirect('/community/rankings')
 }

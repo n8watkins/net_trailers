@@ -405,7 +405,7 @@ export default function ChangelogPage() {
                             <p className="text-gray-300 leading-relaxed text-sm">
                                 Visit the{' '}
                                 <Link
-                                    href="/community"
+                                    href="/community/rankings"
                                     className="text-blue-400 hover:text-blue-300 underline"
                                 >
                                     Community page
@@ -462,7 +462,7 @@ export default function ChangelogPage() {
                                 </Link>{' '}
                                 or browse{' '}
                                 <Link
-                                    href="/community"
+                                    href="/community/rankings"
                                     className="text-blue-400 hover:text-blue-300 underline"
                                 >
                                     public rankings
