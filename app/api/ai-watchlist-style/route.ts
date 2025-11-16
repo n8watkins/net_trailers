@@ -84,7 +84,6 @@ Guidelines:
                     generationConfig: {
                         temperature: 0.7, // Slightly higher for creative choices
                         maxOutputTokens: 500,
-                        responseMimeType: 'application/json',
                     },
                 }),
             }

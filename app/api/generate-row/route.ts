@@ -65,7 +65,6 @@ async function handleGenerateRow(request: NextRequest, userId: string): Promise<
                     generationConfig: {
                         temperature: 0.4, // Balanced creativity
                         maxOutputTokens: 4000, // Increased to handle full response with row name
-                        responseMimeType: 'application/json',
                     },
                 }),
             }
