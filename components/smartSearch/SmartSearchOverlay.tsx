@@ -33,15 +33,29 @@ export default function SmartSearchOverlay() {
                 })
 
                 if (!response.ok) {
+                    // Try to parse error response
+                    const errorData = await response.json().catch(() => ({}))
+                    const errorMessage = errorData.error || 'An unexpected error occurred'
+
                     if (response.status === 429) {
-                        const data = await response.json().catch(() => ({}))
                         showError(
                             'AI limit reached',
-                            data.error || 'Daily Gemini limit reached. Try again tomorrow.'
+                            errorMessage || 'Daily Gemini limit reached. Try again tomorrow.'
                         )
                         throw new Error('AI limit reached')
                     }
-                    throw new Error('Search failed')
+
+                    if (response.status === 503) {
+                        showError(
+                            'Service unavailable',
+                            'AI service is currently unavailable. Please try again later.'
+                        )
+                        throw new Error('Service unavailable')
+                    }
+
+                    // Generic error with server message
+                    showError('Search failed', errorMessage)
+                    throw new Error(errorMessage)
                 }
 
                 const data = await response.json()
