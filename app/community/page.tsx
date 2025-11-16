@@ -166,30 +166,8 @@ export default function CommunityPage() {
                 </p>
             </div>
 
-            {/* Global Search */}
-            <div className="mb-6 max-w-2xl mx-auto">
-                <div className="relative">
-                    <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder={`Search ${activeTab}...`}
-                        className="w-full pl-12 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
-                    />
-                    {searchQuery && (
-                        <button
-                            onClick={() => setSearchQuery('')}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-                        >
-                            <XMarkIcon className="w-5 h-5" />
-                        </button>
-                    )}
-                </div>
-            </div>
-
             {/* Tabs Navigation */}
-            <div className="mb-8">
+            <div className="mb-6">
                 <div className="flex justify-center">
                     <div className="inline-flex gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800">
                         {[
@@ -250,6 +228,28 @@ export default function CommunityPage() {
                 </div>
             </div>
 
+            {/* Global Search */}
+            <div className="mb-8 max-w-2xl mx-auto">
+                <div className="relative">
+                    <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder={`Search ${activeTab}...`}
+                        className="w-full pl-12 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
+                    />
+                    {searchQuery && (
+                        <button
+                            onClick={() => setSearchQuery('')}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                        >
+                            <XMarkIcon className="w-5 h-5" />
+                        </button>
+                    )}
+                </div>
+            </div>
+
             {/* Tab Content */}
             {activeTab === 'rankings' && (
                 <RankingsTab
@@ -298,6 +298,8 @@ function RankingsTab({
     onLoadMore,
     hasMore,
 }: any) {
+    const [tagSearchQuery, setTagSearchQuery] = useState('')
+
     // Apply search filter
     const searchFilteredRankings = searchQuery
         ? filteredByMediaType.filter(
@@ -311,220 +313,225 @@ function RankingsTab({
           )
         : filteredByMediaType
 
-    // Group search results by tags
-    const searchRankingsByTag = useMemo(() => {
-        const grouped: Record<string, typeof communityRankings> = {}
+    // Filter rankings by selected tag
+    const finalFilteredRankings = filterByTag
+        ? searchFilteredRankings.filter(
+              (ranking: any) => ranking.tags && ranking.tags.includes(filterByTag)
+          )
+        : searchFilteredRankings
 
-        searchFilteredRankings.forEach((ranking: any) => {
-            if (ranking.tags && ranking.tags.length > 0) {
-                ranking.tags.forEach((tag: string) => {
-                    if (!grouped[tag]) {
-                        grouped[tag] = []
-                    }
-                    grouped[tag].push(ranking)
-                })
-            } else {
-                if (!grouped['Other']) {
-                    grouped['Other'] = []
-                }
-                grouped['Other'].push(ranking)
-            }
-        })
+    // Filter tags by search query
+    const filteredTags = POPULAR_TAGS.filter(
+        (tag) =>
+            tag.name.toLowerCase().includes(tagSearchQuery.toLowerCase()) ||
+            tag.description.toLowerCase().includes(tagSearchQuery.toLowerCase())
+    )
 
-        return grouped
-    }, [searchFilteredRankings])
-
-    // Get tag rows for search results
-    const searchTagRows = useMemo(() => {
-        if (filterByTag) {
-            return searchRankingsByTag[filterByTag]
-                ? [{ tag: filterByTag, rankings: searchRankingsByTag[filterByTag] }]
-                : []
-        }
-
-        return Object.entries(searchRankingsByTag)
-            .map(([tag, rankings]) => ({ tag, rankings }))
-            .sort((a, b) => b.rankings.length - a.rankings.length)
-    }, [searchRankingsByTag, filterByTag])
-
-    const displayTagRows = searchQuery ? searchTagRows : tagRows
     return (
-        <div className="flex flex-col lg:flex-row gap-6">
-            {/* Sidebar filters */}
-            <div className="lg:w-64 flex-shrink-0">
-                <div className="sticky top-4 bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-4">
-                    <div className="flex items-center gap-2 pb-3 border-b border-zinc-800">
-                        <AdjustmentsHorizontalIcon className="w-5 h-5 text-yellow-500" />
-                        <h3 className="font-semibold text-white">Filters</h3>
-                    </div>
-                    {/* Sort By - Compact */}
-                    <div>
-                        <label className="block text-xs font-medium text-gray-400 mb-2">
-                            Sort By
-                        </label>
-                        <div className="space-y-1">
-                            {[
-                                { value: 'recent', label: 'Recent', icon: ClockIcon },
-                                { value: 'popular', label: 'Popular', icon: FireIcon },
-                                { value: 'most-liked', label: 'Most Liked', icon: HeartIcon },
-                                { value: 'most-viewed', label: 'Most Viewed', icon: EyeIcon },
-                            ].map((option) => (
-                                <button
-                                    key={option.value}
-                                    onClick={() => setSortBy(option.value as typeof sortBy)}
-                                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                        sortBy === option.value
-                                            ? 'bg-yellow-500 text-black'
-                                            : 'bg-zinc-800 text-gray-300 hover:bg-zinc-700'
-                                    }`}
-                                >
-                                    <option.icon className="w-4 h-4" />
-                                    {option.label}
-                                </button>
-                            ))}
-                        </div>
+        <div className="space-y-6">
+            {/* Filters Section - Top Horizontal Layout */}
+            <div className="space-y-4">
+                {/* Stats Bar */}
+                <div className="text-sm text-gray-400 flex items-center gap-4">
+                    <span>
+                        Total:{' '}
+                        <span className="text-white font-semibold">{communityRankings.length}</span>{' '}
+                        rankings
+                    </span>
+                    {searchQuery && (
+                        <span>
+                            Found:{' '}
+                            <span className="text-white font-semibold">
+                                {searchFilteredRankings.length}
+                            </span>{' '}
+                            matches
+                        </span>
+                    )}
+                    {filterByTag && (
+                        <span>
+                            In tag:{' '}
+                            <span className="text-white font-semibold">
+                                {finalFilteredRankings.length}
+                            </span>{' '}
+                            rankings
+                        </span>
+                    )}
+                </div>
+
+                {/* Media Type Filter Pills */}
+                <div className="flex flex-wrap gap-2">
+                    {[
+                        { value: 'all', label: 'All' },
+                        { value: 'movie', label: 'Movies' },
+                        { value: 'tv', label: 'TV Shows' },
+                    ].map((option) => (
+                        <button
+                            key={option.value}
+                            onClick={() =>
+                                setFilterByMediaType(option.value as typeof filterByMediaType)
+                            }
+                            className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                                filterByMediaType === option.value
+                                    ? 'bg-yellow-500 text-black shadow-lg scale-105'
+                                    : 'bg-gray-800/80 text-gray-300 hover:bg-gray-700/80 hover:scale-105'
+                            }`}
+                        >
+                            {option.label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Tag Filter Section */}
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium text-gray-400">Filter by Tag</label>
+                        {filterByTag && (
+                            <button
+                                onClick={() => setFilterByTag(null)}
+                                className="text-xs text-yellow-500 hover:text-yellow-400 transition-colors flex items-center gap-1"
+                            >
+                                <XMarkIcon className="w-4 h-4" />
+                                Clear tag filter
+                            </button>
+                        )}
                     </div>
 
-                    {/* Filter by Media Type - Compact */}
-                    <div>
-                        <label className="block text-xs font-medium text-gray-400 mb-2">
-                            Content Type
-                        </label>
-                        <div className="space-y-1">
-                            {[
-                                { value: 'all', label: 'All' },
-                                { value: 'movie', label: 'Movies' },
-                                { value: 'tv', label: 'TV Shows' },
-                            ].map((option) => (
-                                <button
-                                    key={option.value}
-                                    onClick={() =>
-                                        setFilterByMediaType(
-                                            option.value as typeof filterByMediaType
-                                        )
-                                    }
-                                    className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                        filterByMediaType === option.value
-                                            ? 'bg-yellow-500 text-black'
-                                            : 'bg-zinc-800 text-gray-300 hover:bg-zinc-700'
-                                    }`}
-                                >
-                                    {option.label}
-                                </button>
-                            ))}
-                        </div>
+                    {/* Tag Search Input */}
+                    <div className="relative">
+                        <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                            type="text"
+                            value={tagSearchQuery}
+                            onChange={(e) => setTagSearchQuery(e.target.value)}
+                            placeholder="Search tags..."
+                            className="w-full pl-10 pr-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
+                        />
+                        {tagSearchQuery && (
+                            <button
+                                onClick={() => setTagSearchQuery('')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                            >
+                                <XMarkIcon className="w-4 h-4" />
+                            </button>
+                        )}
                     </div>
 
-                    {/* Filter by Tag - Compact scrollable */}
-                    <div>
-                        <div className="flex items-center justify-between mb-2">
-                            <label className="block text-xs font-medium text-gray-400">
-                                Filter by Tag
-                            </label>
-                            {filterByTag && (
-                                <button
-                                    onClick={() => setFilterByTag(null)}
-                                    className="text-xs text-gray-400 hover:text-white transition-colors"
-                                >
-                                    <XMarkIcon className="w-4 h-4" />
-                                </button>
-                            )}
-                        </div>
-                        <div className="flex flex-col gap-1.5 max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
-                            {POPULAR_TAGS.slice(0, 15).map((tag) => (
-                                <button
-                                    key={tag.id}
-                                    onClick={() =>
-                                        setFilterByTag(filterByTag === tag.name ? null : tag.name)
-                                    }
-                                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all text-left flex items-center gap-2 ${
-                                        filterByTag === tag.name
-                                            ? 'bg-yellow-500 text-black'
-                                            : 'bg-zinc-800 text-gray-300 hover:bg-zinc-700'
-                                    }`}
-                                    title={tag.description}
-                                >
-                                    <span className="text-base">{tag.emoji}</span>
-                                    <span className="flex-1 truncate">{tag.name}</span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Stats */}
-                    <div className="pt-3 border-t border-zinc-800">
-                        <div className="text-xs text-gray-500 space-y-1">
-                            <div>Total: {communityRankings.length} rankings</div>
-                            {searchQuery ? (
-                                <div>Found: {searchFilteredRankings.length} matches</div>
-                            ) : (
-                                <div>Showing: {filteredByMediaType.length} rankings</div>
-                            )}
-                            <div>Tags: {Object.keys(rankingsByTag).length}</div>
-                        </div>
+                    {/* Popular Tags as Pills */}
+                    <div className="flex flex-wrap gap-2">
+                        {filteredTags.slice(0, 12).map((tag) => (
+                            <button
+                                key={tag.id}
+                                onClick={() =>
+                                    setFilterByTag(filterByTag === tag.name ? null : tag.name)
+                                }
+                                className={`rounded-full px-3 py-1.5 text-sm font-medium transition-all duration-200 flex items-center gap-1.5 ${
+                                    filterByTag === tag.name
+                                        ? 'bg-yellow-500 text-black shadow-lg scale-105'
+                                        : 'bg-zinc-900 text-gray-300 hover:bg-zinc-800 border border-zinc-800 hover:scale-105'
+                                }`}
+                                title={tag.description}
+                            >
+                                <span>{tag.emoji}</span>
+                                <span>{tag.name}</span>
+                            </button>
+                        ))}
                     </div>
                 </div>
             </div>
 
-            {/* Main content area - Tag-based rows */}
-            <div className="flex-1 min-w-0">
-                {/* Error State */}
-                {error && (
-                    <div className="bg-red-900/20 border border-red-800 rounded-lg p-4 mb-6">
-                        <p className="text-red-400">{error}</p>
-                    </div>
-                )}
+            {/* Error State */}
+            {error && (
+                <div className="bg-red-900/20 border border-red-800 rounded-lg p-4">
+                    <p className="text-red-400">{error}</p>
+                </div>
+            )}
 
-                {/* Tag Rows */}
-                {displayTagRows.length > 0 ? (
-                    <div className="space-y-6">
-                        {displayTagRows.map(
-                            ({ tag, rankings }: { tag: string; rankings: any[] }) => {
-                                const tagData = POPULAR_TAGS.find((t) => t.name === tag)
-                                return (
-                                    <RankingRow
-                                        key={tag}
-                                        title={tag}
-                                        emoji={tagData?.emoji}
-                                        rankings={rankings}
-                                        showAuthor={true}
-                                        onLike={handleRankingClick}
-                                    />
-                                )
-                            }
-                        )}
-                    </div>
-                ) : (
-                    <div className="flex flex-col items-center justify-center py-16 text-center">
-                        <div className="w-20 h-20 mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
-                            <TrophyIcon className="w-10 h-10 text-gray-600" />
-                        </div>
-                        <p className="text-gray-400 text-lg mb-2">
-                            {searchQuery
-                                ? `No rankings match "${searchQuery}"`
-                                : 'No rankings found'}
-                        </p>
-                        <p className="text-gray-500 text-sm">
-                            {searchQuery
-                                ? 'Try a different search term'
-                                : 'Try adjusting your filters or be the first to create one!'}
-                        </p>
-                    </div>
-                )}
-
-                {/* Load More button */}
-                {hasMore && !searchQuery && displayTagRows.length > 0 && (
-                    <div className="flex justify-center mt-8">
-                        <button
-                            onClick={onLoadMore}
-                            className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
+            {/* Rankings List */}
+            {finalFilteredRankings.length > 0 ? (
+                <div className="space-y-4">
+                    {finalFilteredRankings.map((ranking: any) => (
+                        <div
+                            key={ranking.id}
+                            onClick={() => handleRankingClick(ranking.id)}
+                            className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 hover:bg-zinc-800 transition-colors cursor-pointer"
                         >
-                            <span>Load More Rankings</span>
-                            <SparklesIcon className="w-5 h-5" />
-                        </button>
+                            <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="text-lg font-bold text-white mb-1 truncate">
+                                        {ranking.title}
+                                    </h3>
+                                    {ranking.description && (
+                                        <p className="text-sm text-gray-400 mb-2 line-clamp-2">
+                                            {ranking.description}
+                                        </p>
+                                    )}
+                                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                                        <span>By {ranking.userName}</span>
+                                        <span className="flex items-center gap-1">
+                                            <HeartIcon className="w-4 h-4" />
+                                            {ranking.likes || 0}
+                                        </span>
+                                        <span className="flex items-center gap-1">
+                                            <EyeIcon className="w-4 h-4" />
+                                            {ranking.views || 0}
+                                        </span>
+                                        <span className="flex items-center gap-1">
+                                            <ChatBubbleLeftRightIcon className="w-4 h-4" />
+                                            {ranking.commentCount || 0}
+                                        </span>
+                                    </div>
+                                    {ranking.tags && ranking.tags.length > 0 && (
+                                        <div className="flex flex-wrap gap-1.5 mt-2">
+                                            {ranking.tags.map((tag: string) => {
+                                                const tagData = POPULAR_TAGS.find(
+                                                    (t) => t.name === tag
+                                                )
+                                                return (
+                                                    <span
+                                                        key={tag}
+                                                        className="text-xs bg-zinc-800 text-gray-400 px-2 py-1 rounded-full"
+                                                    >
+                                                        {tagData?.emoji} {tag}
+                                                    </span>
+                                                )
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <div className="w-20 h-20 mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
+                        <TrophyIcon className="w-10 h-10 text-gray-600" />
                     </div>
-                )}
-            </div>
+                    <p className="text-gray-400 text-lg mb-2">
+                        {searchQuery || filterByTag
+                            ? 'No rankings match your filters'
+                            : 'No rankings found'}
+                    </p>
+                    <p className="text-gray-500 text-sm">
+                        {searchQuery || filterByTag
+                            ? 'Try adjusting your search or filters'
+                            : 'Be the first to create one!'}
+                    </p>
+                </div>
+            )}
+
+            {/* Load More button */}
+            {hasMore && !searchQuery && !filterByTag && finalFilteredRankings.length > 0 && (
+                <div className="flex justify-center mt-8">
+                    <button
+                        onClick={onLoadMore}
+                        className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
+                    >
+                        <span>Load More Rankings</span>
+                        <SparklesIcon className="w-5 h-5" />
+                    </button>
+                </div>
+            )}
         </div>
     )
 }
@@ -536,7 +543,6 @@ function ForumsTab({ searchQuery }: { searchQuery: string }) {
     const { isGuest } = useAuthStatus()
     const [selectedCategory, setSelectedCategory] = useState<ForumCategory | 'all'>('all')
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-    const [sortBy, setSortBy] = useState<'recent' | 'popular' | 'most-replied'>('recent')
 
     // Load threads on mount
     useEffect(() => {
@@ -576,73 +582,99 @@ function ForumsTab({ searchQuery }: { searchQuery: string }) {
         setIsCreateModalOpen(true)
     }
 
+    // Apply filters
+    const filteredThreads = threads
+        .filter((thread) =>
+            selectedCategory === 'all' ? true : thread.category === selectedCategory
+        )
+        .filter((thread) =>
+            searchQuery
+                ? thread.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  thread.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  thread.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  thread.tags?.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+                : true
+        )
+        .sort((a, b) => {
+            const toDate = (ts: any) => (ts?.toDate ? ts.toDate() : new Date(ts))
+            return toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime()
+        })
+
     return (
         <div className="space-y-6">
-            {/* Sort controls */}
-            <div className="flex flex-wrap gap-2 items-center bg-zinc-900 border border-zinc-800 rounded-lg p-3">
-                <span className="text-sm text-gray-400">Sort by:</span>
-                {[
-                    { value: 'recent' as const, label: 'Recent' },
-                    { value: 'popular' as const, label: 'Popular' },
-                    { value: 'most-replied' as const, label: 'Most Replied' },
-                ].map((option) => (
-                    <button
-                        key={option.value}
-                        onClick={() => setSortBy(option.value)}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                            sortBy === option.value
-                                ? 'bg-blue-500 text-white'
-                                : 'bg-zinc-800 text-gray-400 hover:text-white hover:bg-zinc-700'
-                        }`}
-                    >
-                        {option.label}
-                    </button>
-                ))}
-            </div>
-
-            {/* Header with filters and create button */}
-            <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-                {/* Category filter */}
-                <div className="flex flex-wrap gap-2">
-                    <button
-                        onClick={() => setSelectedCategory('all')}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                            selectedCategory === 'all'
-                                ? 'bg-blue-500 text-white'
-                                : 'bg-zinc-900 text-gray-400 hover:text-white hover:bg-zinc-800 border border-zinc-800'
-                        }`}
-                    >
-                        All
-                    </button>
-                    {FORUM_CATEGORIES.map((cat) => (
-                        <button
-                            key={cat.id}
-                            onClick={() => setSelectedCategory(cat.id)}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                selectedCategory === cat.id
-                                    ? 'bg-blue-500 text-white'
-                                    : 'bg-zinc-900 text-gray-400 hover:text-white hover:bg-zinc-800 border border-zinc-800'
-                            }`}
-                        >
-                            {cat.icon} {cat.name}
-                        </button>
-                    ))}
+            {/* Filters Section - Top Horizontal Layout */}
+            <div className="space-y-4">
+                {/* Stats Bar */}
+                <div className="text-sm text-gray-400 flex items-center gap-4 flex-wrap">
+                    <span>
+                        Total: <span className="text-white font-semibold">{threads.length}</span>{' '}
+                        threads
+                    </span>
+                    {searchQuery && (
+                        <span>
+                            Found:{' '}
+                            <span className="text-white font-semibold">
+                                {filteredThreads.length}
+                            </span>{' '}
+                            matches
+                        </span>
+                    )}
+                    {selectedCategory !== 'all' && (
+                        <span>
+                            In category:{' '}
+                            <span className="text-white font-semibold">
+                                {filteredThreads.length}
+                            </span>{' '}
+                            threads
+                        </span>
+                    )}
                 </div>
 
-                {/* Create thread button */}
-                <button
-                    onClick={handleOpenCreateModal}
-                    className={`px-5 py-2.5 font-semibold rounded-lg transition-colors flex items-center gap-2 ${
-                        isGuest
-                            ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                            : 'bg-blue-500 hover:bg-blue-600 text-white'
-                    }`}
-                    disabled={isGuest}
-                    title={isGuest ? 'Sign in to create threads' : 'Create a new thread'}
-                >
-                    <ChatBubbleLeftRightIcon className="w-5 h-5" />
-                    New Thread {isGuest && '(Sign in required)'}
-                </button>
+                {/* Category Filter Pills and Create Button */}
+                <div className="flex flex-wrap gap-2 items-center justify-between">
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            onClick={() => setSelectedCategory('all')}
+                            className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                                selectedCategory === 'all'
+                                    ? 'bg-blue-500 text-white shadow-lg scale-105'
+                                    : 'bg-gray-800/80 text-gray-300 hover:bg-gray-700/80 hover:scale-105'
+                            }`}
+                        >
+                            All
+                        </button>
+                        {FORUM_CATEGORIES.map((cat) => (
+                            <button
+                                key={cat.id}
+                                onClick={() => setSelectedCategory(cat.id)}
+                                className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 flex items-center gap-1.5 ${
+                                    selectedCategory === cat.id
+                                        ? 'bg-blue-500 text-white shadow-lg scale-105'
+                                        : 'bg-gray-800/80 text-gray-300 hover:bg-gray-700/80 hover:scale-105'
+                                }`}
+                            >
+                                <span>{cat.icon}</span>
+                                <span>{cat.name}</span>
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Create thread button */}
+                    <button
+                        onClick={handleOpenCreateModal}
+                        className={`rounded-full px-5 py-2.5 font-semibold transition-all duration-200 flex items-center gap-2 ${
+                            isGuest
+                                ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                                : 'bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:scale-105'
+                        }`}
+                        disabled={isGuest}
+                        title={isGuest ? 'Sign in to create threads' : 'Create a new thread'}
+                    >
+                        <ChatBubbleLeftRightIcon className="w-5 h-5" />
+                        <span className="hidden sm:inline">New Thread</span>
+                        {isGuest && <span className="text-xs">(Sign in)</span>}
+                    </button>
+                </div>
             </div>
 
             {/* Create Thread Modal */}
@@ -678,66 +710,29 @@ function ForumsTab({ searchQuery }: { searchQuery: string }) {
             )}
 
             {/* Thread list */}
-            {threads.length > 0 &&
-                (() => {
-                    const filteredThreads = threads
-                        .filter((thread) =>
-                            selectedCategory === 'all' ? true : thread.category === selectedCategory
-                        )
-                        .filter((thread) =>
-                            searchQuery
-                                ? thread.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                  thread.content
-                                      .toLowerCase()
-                                      .includes(searchQuery.toLowerCase()) ||
-                                  thread.userName
-                                      .toLowerCase()
-                                      .includes(searchQuery.toLowerCase()) ||
-                                  thread.tags?.some((tag) =>
-                                      tag.toLowerCase().includes(searchQuery.toLowerCase())
-                                  )
-                                : true
-                        )
-                        .sort((a, b) => {
-                            const toDate = (ts: any) => (ts?.toDate ? ts.toDate() : new Date(ts))
-                            switch (sortBy) {
-                                case 'popular':
-                                    return b.likes - a.likes
-                                case 'most-replied':
-                                    return b.replyCount - a.replyCount
-                                case 'recent':
-                                default:
-                                    return (
-                                        toDate(b.createdAt).getTime() -
-                                        toDate(a.createdAt).getTime()
-                                    )
-                            }
-                        })
-
-                    return filteredThreads.length > 0 ? (
-                        <div className="space-y-3">
-                            {filteredThreads.map((thread) => (
-                                <ThreadCard key={thread.id} thread={thread} />
-                            ))}
+            {filteredThreads.length > 0 ? (
+                <div className="space-y-3">
+                    {filteredThreads.map((thread) => (
+                        <ThreadCard key={thread.id} thread={thread} />
+                    ))}
+                </div>
+            ) : (
+                threads.length > 0 && (
+                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                        <div className="w-20 h-20 mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
+                            <ChatBubbleLeftRightIcon className="w-10 h-10 text-gray-600" />
                         </div>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center py-16 text-center">
-                            <div className="w-20 h-20 mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
-                                <ChatBubbleLeftRightIcon className="w-10 h-10 text-gray-600" />
-                            </div>
-                            <p className="text-gray-400 text-lg mb-2">
-                                {searchQuery
-                                    ? `No threads match "${searchQuery}"`
-                                    : 'No threads found'}
-                            </p>
-                            <p className="text-gray-500 text-sm">
-                                {searchQuery
-                                    ? 'Try a different search term'
-                                    : 'Try adjusting your filters'}
-                            </p>
-                        </div>
-                    )
-                })()}
+                        <p className="text-gray-400 text-lg mb-2">
+                            {searchQuery ? `No threads match "${searchQuery}"` : 'No threads found'}
+                        </p>
+                        <p className="text-gray-500 text-sm">
+                            {searchQuery
+                                ? 'Try a different search term'
+                                : 'Try adjusting your filters'}
+                        </p>
+                    </div>
+                )
+            )}
         </div>
     )
 }
@@ -750,7 +745,6 @@ function PollsTab({ searchQuery }: { searchQuery: string }) {
     const [selectedCategory, setSelectedCategory] = useState<ForumCategory | 'all'>('all')
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [userVotes, setUserVotes] = useState<Record<string, string[]>>({})
-    const [sortBy, setSortBy] = useState<'recent' | 'popular' | 'most-voted'>('recent')
 
     // Load polls on mount
     useEffect(() => {
@@ -818,73 +812,96 @@ function PollsTab({ searchQuery }: { searchQuery: string }) {
         }
     }
 
+    // Apply filters
+    const filteredPolls = polls
+        .filter((poll) => (selectedCategory === 'all' ? true : poll.category === selectedCategory))
+        .filter((poll) =>
+            searchQuery
+                ? poll.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  poll.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  poll.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  poll.options.some((opt) =>
+                      opt.text.toLowerCase().includes(searchQuery.toLowerCase())
+                  ) ||
+                  poll.tags?.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+                : true
+        )
+        .sort((a, b) => {
+            const toDate = (ts: any) => (ts?.toDate ? ts.toDate() : new Date(ts))
+            return toDate(b.createdAt).getTime() - toDate(a.createdAt).getTime()
+        })
+
     return (
         <div className="space-y-6">
-            {/* Sort controls */}
-            <div className="flex flex-wrap gap-2 items-center bg-zinc-900 border border-zinc-800 rounded-lg p-3">
-                <span className="text-sm text-gray-400">Sort by:</span>
-                {[
-                    { value: 'recent' as const, label: 'Recent' },
-                    { value: 'popular' as const, label: 'Popular' },
-                    { value: 'most-voted' as const, label: 'Most Voted' },
-                ].map((option) => (
-                    <button
-                        key={option.value}
-                        onClick={() => setSortBy(option.value)}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                            sortBy === option.value
-                                ? 'bg-pink-500 text-white'
-                                : 'bg-zinc-800 text-gray-400 hover:text-white hover:bg-zinc-700'
-                        }`}
-                    >
-                        {option.label}
-                    </button>
-                ))}
-            </div>
-
-            {/* Header with filters and create button */}
-            <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-                {/* Category filter */}
-                <div className="flex flex-wrap gap-2">
-                    <button
-                        onClick={() => setSelectedCategory('all')}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                            selectedCategory === 'all'
-                                ? 'bg-pink-500 text-white'
-                                : 'bg-zinc-900 text-gray-400 hover:text-white hover:bg-zinc-800 border border-zinc-800'
-                        }`}
-                    >
-                        All
-                    </button>
-                    {FORUM_CATEGORIES.map((cat) => (
-                        <button
-                            key={cat.id}
-                            onClick={() => setSelectedCategory(cat.id)}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                selectedCategory === cat.id
-                                    ? 'bg-pink-500 text-white'
-                                    : 'bg-zinc-900 text-gray-400 hover:text-white hover:bg-zinc-800 border border-zinc-800'
-                            }`}
-                        >
-                            {cat.icon} {cat.name}
-                        </button>
-                    ))}
+            {/* Filters Section - Top Horizontal Layout */}
+            <div className="space-y-4">
+                {/* Stats Bar */}
+                <div className="text-sm text-gray-400 flex items-center gap-4 flex-wrap">
+                    <span>
+                        Total: <span className="text-white font-semibold">{polls.length}</span>{' '}
+                        polls
+                    </span>
+                    {searchQuery && (
+                        <span>
+                            Found:{' '}
+                            <span className="text-white font-semibold">{filteredPolls.length}</span>{' '}
+                            matches
+                        </span>
+                    )}
+                    {selectedCategory !== 'all' && (
+                        <span>
+                            In category:{' '}
+                            <span className="text-white font-semibold">{filteredPolls.length}</span>{' '}
+                            polls
+                        </span>
+                    )}
                 </div>
 
-                {/* Create poll button */}
-                <button
-                    onClick={handleOpenCreateModal}
-                    className={`px-5 py-2.5 font-semibold rounded-lg transition-colors flex items-center gap-2 ${
-                        isGuest
-                            ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                            : 'bg-pink-500 hover:bg-pink-600 text-white'
-                    }`}
-                    disabled={isGuest}
-                    title={isGuest ? 'Sign in to create polls' : 'Create a new poll'}
-                >
-                    <ChartBarIcon className="w-5 h-5" />
-                    New Poll {isGuest && '(Sign in required)'}
-                </button>
+                {/* Category Filter Pills and Create Button */}
+                <div className="flex flex-wrap gap-2 items-center justify-between">
+                    <div className="flex flex-wrap gap-2">
+                        <button
+                            onClick={() => setSelectedCategory('all')}
+                            className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                                selectedCategory === 'all'
+                                    ? 'bg-pink-500 text-white shadow-lg scale-105'
+                                    : 'bg-gray-800/80 text-gray-300 hover:bg-gray-700/80 hover:scale-105'
+                            }`}
+                        >
+                            All
+                        </button>
+                        {FORUM_CATEGORIES.map((cat) => (
+                            <button
+                                key={cat.id}
+                                onClick={() => setSelectedCategory(cat.id)}
+                                className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 flex items-center gap-1.5 ${
+                                    selectedCategory === cat.id
+                                        ? 'bg-pink-500 text-white shadow-lg scale-105'
+                                        : 'bg-gray-800/80 text-gray-300 hover:bg-gray-700/80 hover:scale-105'
+                                }`}
+                            >
+                                <span>{cat.icon}</span>
+                                <span>{cat.name}</span>
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Create poll button */}
+                    <button
+                        onClick={handleOpenCreateModal}
+                        className={`rounded-full px-5 py-2.5 font-semibold transition-all duration-200 flex items-center gap-2 ${
+                            isGuest
+                                ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                                : 'bg-pink-500 hover:bg-pink-600 text-white shadow-lg hover:scale-105'
+                        }`}
+                        disabled={isGuest}
+                        title={isGuest ? 'Sign in to create polls' : 'Create a new poll'}
+                    >
+                        <ChartBarIcon className="w-5 h-5" />
+                        <span className="hidden sm:inline">New Poll</span>
+                        {isGuest && <span className="text-xs">(Sign in)</span>}
+                    </button>
+                </div>
             </div>
 
             {/* Create Poll Modal */}
@@ -920,74 +937,36 @@ function PollsTab({ searchQuery }: { searchQuery: string }) {
             )}
 
             {/* Poll list */}
-            {polls.length > 0 &&
-                (() => {
-                    const filteredPolls = polls
-                        .filter((poll) =>
-                            selectedCategory === 'all' ? true : poll.category === selectedCategory
-                        )
-                        .filter((poll) =>
-                            searchQuery
-                                ? poll.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                  poll.description
-                                      ?.toLowerCase()
-                                      .includes(searchQuery.toLowerCase()) ||
-                                  poll.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                  poll.options.some((opt) =>
-                                      opt.text.toLowerCase().includes(searchQuery.toLowerCase())
-                                  ) ||
-                                  poll.tags?.some((tag) =>
-                                      tag.toLowerCase().includes(searchQuery.toLowerCase())
-                                  )
-                                : true
-                        )
-                        .sort((a, b) => {
-                            const toDate = (ts: any) => (ts?.toDate ? ts.toDate() : new Date(ts))
-                            switch (sortBy) {
-                                case 'most-voted':
-                                    return b.totalVotes - a.totalVotes
-                                case 'popular':
-                                    return b.totalVotes - a.totalVotes
-                                case 'recent':
-                                default:
-                                    return (
-                                        toDate(b.createdAt).getTime() -
-                                        toDate(a.createdAt).getTime()
-                                    )
+            {filteredPolls.length > 0 ? (
+                <div className="space-y-4">
+                    {filteredPolls.map((poll) => (
+                        <PollCard
+                            key={poll.id}
+                            poll={poll}
+                            userVote={userVotes[poll.id] || []}
+                            onVote={
+                                isGuest ? undefined : (optionIds) => handleVote(poll.id, optionIds)
                             }
-                        })
-
-                    return filteredPolls.length > 0 ? (
-                        <div className="space-y-4">
-                            {filteredPolls.map((poll) => (
-                                <PollCard
-                                    key={poll.id}
-                                    poll={poll}
-                                    userVote={userVotes[poll.id] || []}
-                                    onVote={
-                                        isGuest
-                                            ? undefined
-                                            : (optionIds) => handleVote(poll.id, optionIds)
-                                    }
-                                />
-                            ))}
+                        />
+                    ))}
+                </div>
+            ) : (
+                polls.length > 0 && (
+                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                        <div className="w-20 h-20 mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
+                            <ChartBarIcon className="w-10 h-10 text-gray-600" />
                         </div>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center py-16 text-center">
-                            <div className="w-20 h-20 mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
-                                <ChartBarIcon className="w-10 h-10 text-gray-600" />
-                            </div>
-                            <p className="text-gray-400 text-lg mb-2">
-                                {searchQuery ? `No polls match "${searchQuery}"` : 'No polls found'}
-                            </p>
-                            <p className="text-gray-500 text-sm">
-                                {searchQuery
-                                    ? 'Try a different search term'
-                                    : 'Try adjusting your filters'}
-                            </p>
-                        </div>
-                    )
-                })()}
+                        <p className="text-gray-400 text-lg mb-2">
+                            {searchQuery ? `No polls match "${searchQuery}"` : 'No polls found'}
+                        </p>
+                        <p className="text-gray-500 text-sm">
+                            {searchQuery
+                                ? 'Try a different search term'
+                                : 'Try adjusting your filters'}
+                        </p>
+                    </div>
+                )
+            )}
         </div>
     )
 }
