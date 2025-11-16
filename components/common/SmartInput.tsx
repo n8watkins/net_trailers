@@ -229,6 +229,16 @@ export function SmartInput({
         }
     }
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        // Submit on Enter (without Shift), allow Shift+Enter for new lines
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault()
+            if (localValue.trim()) {
+                onSubmit()
+            }
+        }
+    }
+
     const handleSurpriseMeClick = async () => {
         if (isGeneratingSurprise) return
 
@@ -548,6 +558,7 @@ export function SmartInput({
                     ref={inputRef}
                     value={localValue}
                     onChange={handleChange}
+                    onKeyDown={handleKeyDown}
                     onFocus={handleFocus}
                     onBlur={handleBlur}
                     placeholder={placeholderText}
