@@ -6,7 +6,7 @@
 
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import SubPageLayout from '../../components/layout/SubPageLayout'
 import {
@@ -18,6 +18,8 @@ import {
     EyeIcon,
     ChatBubbleLeftRightIcon,
     ChartBarIcon,
+    SparklesIcon,
+    TrashIcon,
 } from '@heroicons/react/24/outline'
 import useAuth from '../../hooks/useAuth'
 import useUserData from '../../hooks/useUserData'
@@ -27,6 +29,9 @@ import { useAuthStatus } from '../../hooks/useAuthStatus'
 import { useRankingStore } from '../../stores/rankingStore'
 import { useForumStore } from '../../stores/forumStore'
 import { useSessionStore } from '../../stores/sessionStore'
+import { useProfileStore } from '../../stores/profileStore'
+import { useDebugSettings } from '../../components/debug/DebugControls'
+import { seedUserData } from '../../utils/seedData'
 import type { Movie, TVShow } from '../../typings'
 import type { UserList } from '../../types/userLists'
 
@@ -37,6 +42,10 @@ export default function ProfilePage() {
     const isInitialized = useSessionStore((state) => state.isInitialized)
     const { rankings, loadUserRankings } = useRankingStore()
     const { threads, polls, loadThreads, loadPolls } = useForumStore()
+    const profileUsername = useProfileStore((state) => state.profile?.username)
+    const debugSettings = useDebugSettings()
+    const [isSeeding, setIsSeeding] = useState(false)
+    const [isDeleting, setIsDeleting] = useState(false)
 
     // Show loading state while data is being fetched
     const isLoading = !isInitialized || authLoading
@@ -56,6 +65,51 @@ export default function ProfilePage() {
             loadPolls()
         }
     }, [isInitialized, loadUserRankings, loadThreads, loadPolls])
+
+    const handleSeedData = async () => {
+        const getUserId = useSessionStore.getState().getUserId
+        const userId = getUserId()
+
+        if (!userId) {
+            console.error('No user ID found')
+            return
+        }
+
+        setIsSeeding(true)
+        try {
+            await seedUserData(userId, {
+                likedCount: 15,
+                hiddenCount: 8,
+                watchLaterCount: 12,
+                watchHistoryCount: 20,
+                createCollections: true,
+                notificationCount: 8,
+            })
+            setIsSeeding(false)
+        } catch (error) {
+            console.error('Failed to seed data:', error)
+            setIsSeeding(false)
+        }
+    }
+
+    const handleQuickDelete = async () => {
+        if (!confirm('🗑️ Delete all data? This will clear everything for the current session.')) {
+            return
+        }
+
+        setIsDeleting(true)
+        try {
+            console.log('[Profile] 🗑️ Starting quick delete...')
+            await userData.clearAccountData()
+            console.log('[Profile] ✅ Quick delete completed')
+
+            setIsDeleting(false)
+        } catch (error) {
+            console.error('[Profile] ❌ Failed to delete data:', error)
+            alert('Failed to delete data. Please try again or use Settings > Clear All Data.')
+            setIsDeleting(false)
+        }
+    }
 
     const getUserId = useSessionStore((state) => state.getUserId)
     const currentUserId = getUserId()
@@ -123,7 +177,56 @@ export default function ProfilePage() {
                     {/* Profile Info */}
                     <div className="flex-1 min-w-0">
                         <h1 className="text-3xl font-bold text-white mb-2">{userName}</h1>
-                        {user?.email && <p className="text-gray-400">{user.email}</p>}
+                        {user?.email && <p className="text-gray-400 mb-3">{user.email}</p>}
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-3 flex-wrap">
+                            <Link
+                                href="/settings"
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 text-white rounded-lg transition-colors text-sm font-medium"
+                            >
+                                Edit Profile
+                            </Link>
+
+                            {/* View Public Profile Button - Auth only */}
+                            {!isGuest && currentUserId && (
+                                <Link
+                                    href={`/users/${profileUsername || currentUserId}`}
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-400 rounded-lg transition-colors text-sm font-medium"
+                                >
+                                    <EyeIcon className="w-4 h-4" />
+                                    View Public Profile
+                                </Link>
+                            )}
+
+                            {/* Dev Tools - Controlled by debug console toggle */}
+                            {process.env.NODE_ENV === 'development' &&
+                                debugSettings.showSeedButton && (
+                                    <>
+                                        {/* Seed Data Button */}
+                                        <button
+                                            onClick={handleSeedData}
+                                            disabled={isSeeding || isDeleting}
+                                            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600/20 to-pink-600/20 hover:from-purple-600/30 hover:to-pink-600/30 text-purple-400 border border-purple-500/30 rounded-lg transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                            title="Populate with test data (15 liked, 8 hidden, 12 watch later, 20 watch history, 8 collections, 8 notifications, 3 forum threads, 2 polls)"
+                                        >
+                                            <SparklesIcon className="w-4 h-4" />
+                                            {isSeeding ? 'Seeding...' : 'Seed Test Data'}
+                                        </button>
+
+                                        {/* Quick Delete Button */}
+                                        <button
+                                            onClick={handleQuickDelete}
+                                            disabled={isSeeding || isDeleting}
+                                            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-600/20 to-orange-600/20 hover:from-red-600/30 hover:to-orange-600/30 text-red-400 border border-red-500/30 rounded-lg transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                            title="Clear all data for current session (collections, ratings, watch history, notifications)"
+                                        >
+                                            <TrashIcon className="w-4 h-4" />
+                                            {isDeleting ? 'Deleting...' : 'Quick Delete'}
+                                        </button>
+                                    </>
+                                )}
+                        </div>
                     </div>
                 </div>
             </div>
