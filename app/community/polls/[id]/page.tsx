@@ -81,32 +81,32 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
         checkUserVote()
     }, [currentPoll, userId, getUserVote])
 
-    const handleOptionToggle = (optionId: string) => {
-        if (hasVoted || isExpired || isGuest) return
-
-        if (currentPoll?.isMultipleChoice) {
-            // Multiple choice - toggle selection
-            setSelectedOptions((prev) =>
-                prev.includes(optionId) ? prev.filter((id) => id !== optionId) : [...prev, optionId]
-            )
-        } else {
-            // Single choice - replace selection
-            setSelectedOptions([optionId])
-        }
-    }
-
-    const handleVote = async () => {
-        if (!currentPoll || selectedOptions.length === 0 || isGuest || hasVoted || !userId) return
+    const submitVote = async (optionIds: string[]) => {
+        if (!currentPoll || optionIds.length === 0 || isGuest || hasVoted || !userId) return
 
         setIsSubmitting(true)
         try {
-            await voteOnPoll(userId, currentPoll.id, selectedOptions)
+            await voteOnPoll(userId, currentPoll.id, optionIds)
             setHasVoted(true)
             await loadPollById(currentPoll.id) // Reload to show updated results
         } catch (error) {
             console.error('Failed to vote:', error)
         } finally {
             setIsSubmitting(false)
+        }
+    }
+
+    const handleOptionToggle = async (optionId: string) => {
+        if (hasVoted || isExpired || isGuest || !currentPoll || isSubmitting) return
+
+        if (currentPoll.isMultipleChoice) {
+            setSelectedOptions((prev) =>
+                prev.includes(optionId) ? prev.filter((id) => id !== optionId) : [...prev, optionId]
+            )
+        } else {
+            const choice = [optionId]
+            setSelectedOptions(choice)
+            await submitVote(choice)
         }
     }
 
@@ -271,7 +271,9 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
                                             ? 'border-pink-500 bg-pink-500/10'
                                             : 'border-zinc-700 hover:border-zinc-600 bg-zinc-800/50'
                                     } ${
-                                        showResults || isGuest ? 'cursor-default' : 'cursor-pointer'
+                                        showResults || isGuest || isSubmitting
+                                            ? 'cursor-default'
+                                            : 'cursor-pointer'
                                     }`}
                                 >
                                     {/* Background progress bar for results */}
@@ -330,16 +332,14 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
                         })}
                     </div>
 
-                    {/* Vote button */}
-                    {!showResults && !isGuest && (
+                    {/* Vote button for multi-choice polls */}
+                    {!showResults && !isGuest && currentPoll.isMultipleChoice && (
                         <button
-                            onClick={handleVote}
+                            onClick={() => submitVote(selectedOptions)}
                             disabled={selectedOptions.length === 0 || isSubmitting}
                             className="w-full px-6 py-3 bg-pink-500 hover:bg-pink-600 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {isSubmitting
-                                ? 'Submitting...'
-                                : `Submit ${currentPoll.isMultipleChoice ? 'Votes' : 'Vote'}`}
+                            {isSubmitting ? 'Submitting...' : 'Submit Votes'}
                         </button>
                     )}
 

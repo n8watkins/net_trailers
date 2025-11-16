@@ -832,17 +832,57 @@ function ForumsTab({ searchQuery }: { searchQuery: string }) {
 
 // Polls Tab Component
 function PollsTab({ searchQuery }: { searchQuery: string }) {
-    const { polls, isLoadingPolls, loadPolls, createPoll, voteOnPoll } = useForumStore()
+    const { polls, isLoadingPolls, loadPolls, createPoll, voteOnPoll, getUserVote } =
+        useForumStore()
     const getUserId = useSessionStore((state) => state.getUserId)
     const { isGuest } = useAuthStatus()
     const [selectedCategory, setSelectedCategory] = useState<ForumCategory | 'all'>('all')
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [userVotes, setUserVotes] = useState<Record<string, string[]>>({})
+    const userId = getUserId()
 
     // Load polls on mount
     useEffect(() => {
         loadPolls()
     }, [loadPolls])
+
+    // Fetch user votes so cards remember selections
+    useEffect(() => {
+        if (!userId) {
+            setUserVotes({})
+            return
+        }
+
+        let isMounted = true
+        const fetchVotes = async () => {
+            try {
+                const entries = await Promise.all(
+                    polls.map(async (poll) => {
+                        const vote = await getUserVote(userId, poll.id)
+                        return vote ? { pollId: poll.id, vote } : null
+                    })
+                )
+
+                if (!isMounted) return
+
+                const votesMap: Record<string, string[]> = {}
+                entries.forEach((entry) => {
+                    if (entry) {
+                        votesMap[entry.pollId] = entry.vote
+                    }
+                })
+                setUserVotes(votesMap)
+            } catch (error) {
+                console.error('Failed to fetch user votes:', error)
+            }
+        }
+
+        fetchVotes()
+
+        return () => {
+            isMounted = false
+        }
+    }, [userId, polls, getUserVote])
 
     const handleCreatePoll = async (
         question: string,
@@ -893,7 +933,6 @@ function PollsTab({ searchQuery }: { searchQuery: string }) {
             alert('Please sign in to vote on polls')
             return
         }
-        const userId = getUserId()
         if (!userId) return
         try {
             await voteOnPoll(userId, pollId, optionIds)

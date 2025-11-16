@@ -26,10 +26,19 @@ export function ForumActivitySection({ threads, polls }: ForumActivitySectionPro
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Threads Column */}
                 <div className="bg-zinc-900/50 rounded-lg p-6 border border-zinc-800">
-                    <div className="flex items-center gap-3 mb-4">
-                        <ChatBubbleLeftRightIcon className="w-5 h-5 text-green-400" />
-                        <h3 className="text-lg font-semibold text-white">Threads</h3>
-                        <span className="text-sm text-gray-400">({threads.length})</span>
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                            <ChatBubbleLeftRightIcon className="w-5 h-5 text-green-400" />
+                            <h3 className="text-lg font-semibold text-white">Threads</h3>
+                        </div>
+                        {threads.length > 0 && (
+                            <Link
+                                href="/profile/threads"
+                                className="text-sm text-green-400 hover:text-green-300 underline"
+                            >
+                                View all {threads.length}
+                            </Link>
+                        )}
                     </div>
                     {threads.length > 0 ? (
                         <div className="space-y-3">
@@ -66,10 +75,19 @@ export function ForumActivitySection({ threads, polls }: ForumActivitySectionPro
 
                 {/* Polls Column */}
                 <div className="bg-zinc-900/50 rounded-lg p-6 border border-zinc-800">
-                    <div className="flex items-center gap-3 mb-4">
-                        <ChartBarIcon className="w-5 h-5 text-blue-400" />
-                        <h3 className="text-lg font-semibold text-white">Polls</h3>
-                        <span className="text-sm text-gray-400">({polls.length})</span>
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                            <ChartBarIcon className="w-5 h-5 text-blue-400" />
+                            <h3 className="text-lg font-semibold text-white">Polls</h3>
+                        </div>
+                        {polls.length > 0 && (
+                            <Link
+                                href="/profile/polls"
+                                className="text-sm text-blue-400 hover:text-blue-300 underline"
+                            >
+                                View all {polls.length}
+                            </Link>
+                        )}
                     </div>
                     {polls.length > 0 ? (
                         <div className="space-y-3">
