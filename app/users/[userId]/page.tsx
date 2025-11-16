@@ -326,8 +326,8 @@ export default function UserProfilePage() {
                     </div>
 
                     {/* Profile Info */}
-                    <div className="flex-shrink-0 min-w-0" style={{ width: '200px' }}>
-                        <h1 className="text-3xl font-bold text-white mb-2 truncate">
+                    <div className="flex-1 min-w-0">
+                        <h1 className="text-3xl font-bold text-white mb-2">
                             {profile.displayName || profile.username}
                         </h1>
                         {profile.bio && (
@@ -347,86 +347,6 @@ export default function UserProfilePage() {
                             </div>
                         )}
                     </div>
-
-                    {/* Quick Links Stats */}
-                    <div className="grid grid-cols-2 gap-3 flex-1">
-                        {[
-                            {
-                                label: 'Rankings',
-                                value: stats.totalRankings,
-                                icon: TrophyIcon,
-                                iconColor: 'text-yellow-400',
-                                bgAccent: 'from-yellow-900/20 to-yellow-800/5',
-                                hoverColor:
-                                    'hover:border-yellow-500/60 hover:shadow-lg hover:shadow-yellow-500/20',
-                                scrollTo: 'rankings-section',
-                            },
-                            {
-                                label: 'Collections',
-                                value: stats.totalCollections,
-                                icon: RectangleStackIcon,
-                                iconColor: 'text-purple-400',
-                                bgAccent: 'from-purple-900/20 to-purple-800/5',
-                                hoverColor:
-                                    'hover:border-purple-500/60 hover:shadow-lg hover:shadow-purple-500/20',
-                                scrollTo: 'collections-section',
-                            },
-                            {
-                                label: 'Liked',
-                                value: stats.totalLiked,
-                                icon: FilmIcon,
-                                iconColor: 'text-pink-400',
-                                bgAccent: 'from-pink-900/20 to-pink-800/5',
-                                hoverColor:
-                                    'hover:border-pink-500/60 hover:shadow-lg hover:shadow-pink-500/20',
-                                scrollTo: 'liked-section',
-                            },
-                            {
-                                label: 'Forum',
-                                value: stats.totalThreads + stats.totalPolls,
-                                icon: ChatBubbleLeftRightIcon,
-                                iconColor: 'text-green-400',
-                                bgAccent: 'from-green-900/20 to-green-800/5',
-                                hoverColor:
-                                    'hover:border-green-500/60 hover:shadow-lg hover:shadow-green-500/20',
-                                scrollTo: 'forum-section',
-                            },
-                        ].map(
-                            ({
-                                icon: Icon,
-                                label,
-                                value,
-                                iconColor,
-                                bgAccent,
-                                hoverColor,
-                                scrollTo,
-                            }) => (
-                                <button
-                                    key={label}
-                                    onClick={() => {
-                                        const element = document.getElementById(scrollTo)
-                                        element?.scrollIntoView({
-                                            behavior: 'smooth',
-                                            block: 'start',
-                                        })
-                                    }}
-                                    className={`group bg-gradient-to-br ${bgAccent} border border-zinc-700/50 ${hoverColor} rounded-xl p-5 transition-all duration-300 cursor-pointer hover:scale-105 active:scale-95 text-left`}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <Icon
-                                            className={`w-6 h-6 ${iconColor} flex-shrink-0 group-hover:scale-110 transition-transform`}
-                                        />
-                                        <p className="text-2xl font-bold text-white group-hover:text-white">
-                                            {value}{' '}
-                                            <span className="text-sm font-medium text-gray-300 group-hover:text-white uppercase tracking-wide">
-                                                {label}
-                                            </span>
-                                        </p>
-                                    </div>
-                                </button>
-                            )
-                        )}
-                    </div>
                 </div>
             </div>
 
@@ -437,16 +357,14 @@ export default function UserProfilePage() {
                     id="liked-section"
                     className="bg-gradient-to-br from-red-900/20 to-pink-900/10 border border-red-800/30 rounded-xl p-6"
                 >
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
-                            <HeartIcon className="w-6 h-6 text-red-400" />
-                            <h2 className="text-2xl font-bold text-white">Liked Content</h2>
-                        </div>
+                    <div className="flex items-center gap-3 mb-4">
+                        <HeartIcon className="w-6 h-6 text-red-400" />
+                        <h2 className="text-2xl font-bold text-white">Liked Content</h2>
                         <Link
                             href={`/users/${userId}/liked`}
-                            className="text-sm text-red-400 hover:text-red-300"
+                            className="text-base text-red-400 hover:text-red-300 underline"
                         >
-                            View all ({likedContent.length})
+                            View all {likedContent.length}
                         </Link>
                     </div>
                     {likedContent.length > 0 ? (
@@ -501,144 +419,144 @@ export default function UserProfilePage() {
                 )}
             </div>
 
-            {/* Rankings and Collections - Same Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                {/* Rankings Section */}
-                <section id="rankings-section">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
+            {/* Rankings and Collections - Bento Container */}
+            <div className="bg-gradient-to-br from-zinc-900/80 to-zinc-800/50 border border-zinc-700 rounded-xl p-6 mb-6">
+                <div className="flex gap-6">
+                    {/* Rankings Section - Takes 1/2 width */}
+                    <section id="rankings-section" className="flex-1">
+                        <div className="flex items-center gap-3 mb-4">
                             <TrophyIcon className="w-6 h-6 text-yellow-400" />
                             <h2 className="text-2xl font-bold text-white">Rankings</h2>
+                            <Link
+                                href={`/users/${userId}/rankings`}
+                                className="text-base text-yellow-400 hover:text-yellow-300 underline"
+                            >
+                                View all {publicRankings.length}
+                            </Link>
                         </div>
-                        <Link
-                            href={`/users/${userId}/rankings`}
-                            className="text-sm text-yellow-400 hover:text-yellow-300"
-                        >
-                            View all ({publicRankings.length})
-                        </Link>
-                    </div>
-                    {publicRankings.length > 0 ? (
-                        <div className="space-y-3">
-                            {publicRankings.slice(0, 3).map((ranking) => (
-                                <Link
-                                    key={ranking.id}
-                                    href={`/rankings/${ranking.id}`}
-                                    className="group bg-gradient-to-br from-yellow-900/20 to-orange-900/10 border border-yellow-800/30 hover:border-yellow-700/50 rounded-xl p-4 transition-all cursor-pointer block"
-                                >
-                                    <h3 className="text-lg font-bold text-white group-hover:text-yellow-400 transition-colors line-clamp-2 mb-3">
-                                        {ranking.title}
-                                    </h3>
-                                    <div className="flex gap-2 mb-3">
-                                        {ranking.rankedItems?.slice(0, 3).map((item, idx) => (
-                                            <div
-                                                key={idx}
-                                                className="w-16 aspect-[2/3] relative overflow-hidden rounded"
-                                            >
-                                                {item.content?.poster_path && (
-                                                    <img
-                                                        src={`https://image.tmdb.org/t/p/w185${item.content.poster_path}`}
-                                                        alt=""
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="flex items-center gap-4 text-sm text-gray-400">
-                                        <span className="flex items-center gap-1.5">
-                                            <HeartIcon className="w-4 h-4" />
-                                            <span className="font-medium">
-                                                {ranking.likes || 0}
+                        {publicRankings.length > 0 ? (
+                            <div className="flex gap-3">
+                                {publicRankings.slice(0, 3).map((ranking) => (
+                                    <Link
+                                        key={ranking.id}
+                                        href={`/rankings/${ranking.id}`}
+                                        className="group bg-gradient-to-br from-yellow-900/20 to-orange-900/10 border border-yellow-800/30 hover:border-yellow-700/50 rounded-xl p-4 transition-all cursor-pointer flex-1 min-w-0"
+                                    >
+                                        <h3 className="text-sm font-bold text-white group-hover:text-yellow-400 transition-colors line-clamp-2 mb-3 h-10">
+                                            {ranking.title}
+                                        </h3>
+                                        <div className="flex gap-2 mb-3">
+                                            {ranking.rankedItems?.slice(0, 3).map((item, idx) => (
+                                                <div
+                                                    key={idx}
+                                                    className="flex-1 aspect-[2/3] relative overflow-hidden rounded"
+                                                >
+                                                    {item.content?.poster_path && (
+                                                        <img
+                                                            src={`https://image.tmdb.org/t/p/w185${item.content.poster_path}`}
+                                                            alt=""
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="flex items-center gap-3 text-xs text-gray-400">
+                                            <span className="flex items-center gap-1.5">
+                                                <HeartIcon className="w-3 h-3" />
+                                                <span className="font-medium">
+                                                    {ranking.likes || 0}
+                                                </span>
                                             </span>
-                                        </span>
-                                        <span className="flex items-center gap-1.5">
-                                            <EyeIcon className="w-4 h-4" />
-                                            <span className="font-medium">
-                                                {ranking.views || 0}
+                                            <span className="flex items-center gap-1.5">
+                                                <EyeIcon className="w-3 h-3" />
+                                                <span className="font-medium">
+                                                    {ranking.views || 0}
+                                                </span>
                                             </span>
-                                        </span>
-                                        <span className="flex items-center gap-1.5">
-                                            <ChatBubbleLeftRightIcon className="w-4 h-4" />
-                                            <span className="font-medium">
-                                                {ranking.comments?.length || 0}
+                                            <span className="flex items-center gap-1.5">
+                                                <ChatBubbleLeftRightIcon className="w-3 h-3" />
+                                                <span className="font-medium">
+                                                    {ranking.comments?.length || 0}
+                                                </span>
                                             </span>
-                                        </span>
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-12 bg-gradient-to-br from-yellow-900/20 to-orange-900/10 border border-yellow-800/30 rounded-xl">
-                            <TrophyIcon className="w-16 h-16 text-yellow-900 mx-auto mb-4" />
-                            <p className="text-gray-400">No rankings yet</p>
-                        </div>
-                    )}
-                </section>
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-12 bg-gradient-to-br from-yellow-900/20 to-orange-900/10 border border-yellow-800/30 rounded-xl">
+                                <TrophyIcon className="w-16 h-16 text-yellow-900 mx-auto mb-4" />
+                                <p className="text-gray-400">No rankings yet</p>
+                            </div>
+                        )}
+                    </section>
 
-                {/* Collections Section */}
-                <section id="collections-section">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
+                    {/* Collections Section - Takes 1/2 width */}
+                    <section id="collections-section" className="flex-1">
+                        <div className="flex items-center gap-3 mb-4">
                             <RectangleStackIcon className="w-6 h-6 text-purple-400" />
                             <h2 className="text-2xl font-bold text-white">Collections</h2>
+                            <Link
+                                href={`/users/${userId}/collections`}
+                                className="text-base text-purple-400 hover:text-purple-300 underline"
+                            >
+                                View all {collections.length}
+                            </Link>
                         </div>
-                        <Link
-                            href={`/users/${userId}/collections`}
-                            className="text-sm text-purple-400 hover:text-purple-300"
-                        >
-                            View all ({collections.length})
-                        </Link>
-                    </div>
-                    {collections.length > 0 ? (
-                        <div className="space-y-3">
-                            {collections.slice(0, 3).map((collection) => (
-                                <Link
-                                    key={collection.id}
-                                    href={`/users/${userId}/collections/${collection.id}`}
-                                    className="group bg-gradient-to-br from-purple-900/20 to-violet-900/10 border border-purple-800/30 hover:border-purple-700/50 rounded-xl p-4 transition-all cursor-pointer block"
-                                >
-                                    <div className="flex items-center gap-2 mb-3">
-                                        {collection.emoji && (
-                                            <span className="text-2xl">{collection.emoji}</span>
-                                        )}
-                                        <h3 className="text-lg font-bold text-white group-hover:text-purple-400 transition-colors line-clamp-2 flex-1">
-                                            {collection.name}
-                                        </h3>
-                                    </div>
-                                    <div className="flex gap-2 mb-3">
-                                        {collection.items?.slice(0, 3).map((item) => (
-                                            <div
-                                                key={item.id}
-                                                className="w-16 aspect-[2/3] relative overflow-hidden rounded"
-                                            >
-                                                {item.poster_path && (
-                                                    <img
-                                                        src={`https://image.tmdb.org/t/p/w185${item.poster_path}`}
-                                                        alt=""
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="flex items-center text-sm text-gray-400">
-                                        <span className="flex items-center gap-1.5">
-                                            <RectangleStackIcon className="w-4 h-4" />
-                                            <span className="font-medium">
-                                                {collection.items?.length || 0} items
+                        {collections.length > 0 ? (
+                            <div className="flex gap-3">
+                                {collections.slice(0, 3).map((collection) => (
+                                    <Link
+                                        key={collection.id}
+                                        href={`/users/${userId}/collections/${collection.id}`}
+                                        className="group bg-gradient-to-br from-purple-900/20 to-violet-900/10 border border-purple-800/30 hover:border-purple-700/50 rounded-xl p-4 transition-all cursor-pointer flex-1 min-w-0"
+                                    >
+                                        <div className="flex items-center gap-2 mb-3 h-10">
+                                            {collection.emoji && (
+                                                <span className="text-xl flex-shrink-0">
+                                                    {collection.emoji}
+                                                </span>
+                                            )}
+                                            <h3 className="text-sm font-bold text-white group-hover:text-purple-400 transition-colors line-clamp-2 flex-1 min-w-0">
+                                                {collection.name}
+                                            </h3>
+                                        </div>
+                                        <div className="flex gap-2 mb-3">
+                                            {collection.items?.slice(0, 3).map((item) => (
+                                                <div
+                                                    key={item.id}
+                                                    className="flex-1 aspect-[2/3] relative overflow-hidden rounded"
+                                                >
+                                                    {item.poster_path && (
+                                                        <img
+                                                            src={`https://image.tmdb.org/t/p/w185${item.poster_path}`}
+                                                            alt=""
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="flex items-center text-xs text-gray-400">
+                                            <span className="flex items-center gap-1.5">
+                                                <RectangleStackIcon className="w-3 h-3" />
+                                                <span className="font-medium">
+                                                    {collection.items?.length || 0} items
+                                                </span>
                                             </span>
-                                        </span>
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-12 bg-gradient-to-br from-purple-900/20 to-violet-900/10 border border-purple-800/30 rounded-xl">
-                            <RectangleStackIcon className="w-16 h-16 text-purple-900 mx-auto mb-4" />
-                            <p className="text-gray-400">No collections yet</p>
-                        </div>
-                    )}
-                </section>
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-12 bg-gradient-to-br from-purple-900/20 to-violet-900/10 border border-purple-800/30 rounded-xl">
+                                <RectangleStackIcon className="w-16 h-16 text-purple-900 mx-auto mb-4" />
+                                <p className="text-gray-400">No collections yet</p>
+                            </div>
+                        )}
+                    </section>
+                </div>
             </div>
 
             <div className="space-y-12">
@@ -660,16 +578,14 @@ export default function UserProfilePage() {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Threads Column */}
                         <div className="bg-zinc-900/50 rounded-lg p-6 border border-zinc-800">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                                    <ChatBubbleLeftRightIcon className="w-5 h-5 text-green-400" />
-                                    Threads ({forumThreads.length})
-                                </h3>
+                            <div className="flex items-center gap-3 mb-4">
+                                <ChatBubbleLeftRightIcon className="w-5 h-5 text-green-400" />
+                                <h3 className="text-lg font-semibold text-white">Threads</h3>
                                 <Link
                                     href="/community?tab=threads"
-                                    className="text-sm text-green-400 hover:text-green-300"
+                                    className="text-base text-green-400 hover:text-green-300 underline"
                                 >
-                                    View all
+                                    View all {forumThreads.length}
                                 </Link>
                             </div>
                             {forumThreads.length > 0 ? (
@@ -709,16 +625,14 @@ export default function UserProfilePage() {
 
                         {/* Polls Column */}
                         <div className="bg-zinc-900/50 rounded-lg p-6 border border-zinc-800">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                                    <ChartBarIcon className="w-5 h-5 text-blue-400" />
-                                    Polls ({forumPolls.length})
-                                </h3>
+                            <div className="flex items-center gap-3 mb-4">
+                                <ChartBarIcon className="w-5 h-5 text-blue-400" />
+                                <h3 className="text-lg font-semibold text-white">Polls</h3>
                                 <Link
                                     href="/community?tab=polls"
-                                    className="text-sm text-blue-400 hover:text-blue-300"
+                                    className="text-base text-blue-400 hover:text-blue-300 underline"
                                 >
-                                    View all
+                                    View all {forumPolls.length}
                                 </Link>
                             </div>
                             {forumPolls.length > 0 ? (
