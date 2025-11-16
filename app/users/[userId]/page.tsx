@@ -18,6 +18,7 @@ import type { PublicProfilePayload } from '@/lib/publicProfile'
 import type { Movie, TVShow } from '../../../typings'
 import type { UserList } from '../../../types/userLists'
 import type { Ranking } from '../../../types/rankings'
+import type { ThreadSummary, PollSummary, PollOptionSummary } from '../../../types/forum'
 import { LikedContentSection } from '../../../components/profile/LikedContentSection'
 import { WatchLaterSection } from '../../../components/profile/WatchLaterSection'
 import { RankingsCollectionsSection } from '../../../components/profile/RankingsCollectionsSection'
@@ -101,8 +102,8 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
     const threadsSnap = await getDocs(
         query(collection(db, 'threads'), where('userId', '==', userId))
     )
-    const threadSummaries: PublicProfilePayload['forum']['threads'] = sortByRecency(
-        threadsSnap.docs.map((doc) => {
+    const threadSummaries: ThreadSummary[] = sortByRecency(
+        threadsSnap.docs.map((doc): ThreadSummary => {
             const data = doc.data() || {}
             return {
                 id: doc.id,
@@ -119,8 +120,8 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
     ).slice(0, PROFILE_CONFIG.MAX_THREAD_SUMMARIES)
 
     const pollsSnap = await getDocs(query(collection(db, 'polls'), where('userId', '==', userId)))
-    const pollSummaries: PublicProfilePayload['forum']['polls'] = sortByRecency(
-        pollsSnap.docs.map((doc) => {
+    const pollSummaries: PollSummary[] = sortByRecency(
+        pollsSnap.docs.map((doc): PollSummary => {
             const data = doc.data() || {}
             return {
                 id: doc.id,
@@ -130,21 +131,15 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
                 isMultipleChoice: Boolean(data.isMultipleChoice),
                 allowAddOptions: Boolean(data.allowAddOptions),
                 options: Array.isArray(data.options)
-                    ? data.options.map(
-                          (
-                              option: Partial<{
-                                  id: string
-                                  text: string
-                                  votes: number
-                                  percentage: number
-                              }>
-                          ) => ({
-                              id: option.id ?? '',
-                              text: option.text ?? '',
-                              votes: option.votes ?? 0,
-                              percentage: option.percentage,
-                          })
-                      )
+                    ? data.options.map((option: unknown): PollOptionSummary => {
+                          const opt = option as Record<string, unknown>
+                          return {
+                              id: (opt.id as string) ?? '',
+                              text: (opt.text as string) ?? '',
+                              votes: (opt.votes as number) ?? 0,
+                              percentage: opt.percentage as number | undefined,
+                          }
+                      })
                     : [],
                 createdAt: toMillisClient(data.createdAt),
                 expiresAt: toMillisClient(data.expiresAt),

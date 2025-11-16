@@ -100,6 +100,40 @@ export interface PollVote {
     votedAt: Timestamp
 }
 
+// Thread summary for profile pages (without Firestore Timestamp dependencies)
+export interface ThreadSummary {
+    id: string
+    title: string
+    content: string
+    category: ForumCategory
+    likes: number
+    views: number
+    replyCount: number
+    createdAt: number | null
+    updatedAt: number | null
+}
+
+// Poll summary for profile pages (without Firestore Timestamp dependencies)
+export interface PollSummary {
+    id: string
+    question: string
+    category: ForumCategory
+    totalVotes: number
+    isMultipleChoice: boolean
+    allowAddOptions: boolean
+    options: PollOptionSummary[]
+    createdAt: number | null
+    expiresAt: number | null
+}
+
+// Poll option summary (without percentage calculation needed)
+export interface PollOptionSummary {
+    id: string
+    text: string
+    votes: number
+    percentage?: number
+}
+
 // User Activity for Enhanced Profiles
 export interface UserActivity {
     id: string

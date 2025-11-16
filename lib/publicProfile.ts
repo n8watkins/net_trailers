@@ -3,37 +3,8 @@ import type { UserRecord } from 'firebase-admin/auth'
 import type { Ranking } from '@/types/rankings'
 import type { Movie, TVShow } from '@/typings'
 import type { UserList } from '@/types/userLists'
-import type { ForumCategory } from '@/types/forum'
+import type { ThreadSummary, PollSummary, PollOptionSummary } from '@/types/forum'
 import type { Timestamp, Firestore } from 'firebase-admin/firestore'
-
-export interface ThreadSummary {
-    id: string
-    title: string
-    content: string
-    category: ForumCategory | string
-    likes: number
-    views: number
-    replyCount: number
-    createdAt: number | null
-    updatedAt: number | null
-}
-
-export interface PollSummary {
-    id: string
-    question: string
-    category: ForumCategory | string
-    totalVotes: number
-    isMultipleChoice: boolean
-    allowAddOptions: boolean
-    options: Array<{
-        id: string
-        text: string
-        votes: number
-        percentage?: number
-    }>
-    createdAt: number | null
-    expiresAt: number | null
-}
 
 export interface PublicProfilePayload {
     profile: {
@@ -212,7 +183,7 @@ export async function buildPublicProfilePayload(
         .slice(0, 10)
 
     const pollSummaries: PollSummary[] = pollsSnap.docs
-        .map((doc) => {
+        .map((doc): PollSummary => {
             const data = doc.data() || {}
             return {
                 id: doc.id,
@@ -222,21 +193,15 @@ export async function buildPublicProfilePayload(
                 isMultipleChoice: Boolean(data.isMultipleChoice),
                 allowAddOptions: Boolean(data.allowAddOptions),
                 options: Array.isArray(data.options)
-                    ? data.options.map(
-                          (
-                              option: Partial<{
-                                  id: string
-                                  text: string
-                                  votes: number
-                                  percentage: number
-                              }>
-                          ) => ({
-                              id: option.id ?? '',
-                              text: option.text ?? '',
-                              votes: option.votes ?? 0,
-                              percentage: option.percentage,
-                          })
-                      )
+                    ? data.options.map((option: unknown): PollOptionSummary => {
+                          const opt = option as Record<string, unknown>
+                          return {
+                              id: (opt.id as string) ?? '',
+                              text: (opt.text as string) ?? '',
+                              votes: (opt.votes as number) ?? 0,
+                              percentage: opt.percentage as number | undefined,
+                          }
+                      })
                     : [],
                 createdAt: toMillis(data.createdAt as Timestamp | number | undefined),
                 expiresAt: toMillis(data.expiresAt as Timestamp | number | undefined),

@@ -7,22 +7,7 @@
 
 import Link from 'next/link'
 import { ChatBubbleLeftRightIcon, ChartBarIcon } from '@heroicons/react/24/outline'
-
-interface ThreadSummary {
-    id: string
-    title: string
-    content: string
-    replyCount: number
-    likes: number
-    views: number
-}
-
-interface PollSummary {
-    id: string
-    question: string
-    options: { id: string; text: string; votes: number; percentage?: number }[]
-    totalVotes: number
-}
+import type { ThreadSummary, PollSummary } from '../../types/forum'
 
 interface ForumActivitySectionProps {
     threads: ThreadSummary[]

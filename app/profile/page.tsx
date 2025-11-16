@@ -25,6 +25,15 @@ import { WatchLaterSection } from '../../components/profile/WatchLaterSection'
 import { RankingsCollectionsSection } from '../../components/profile/RankingsCollectionsSection'
 import { ForumActivitySection } from '../../components/profile/ForumActivitySection'
 import { useProfileActions } from '../../hooks/useProfileActions'
+import type { Thread, Poll } from '../../types/forum'
+import type { Timestamp } from 'firebase/firestore'
+
+// Helper to convert Firestore Timestamp to number
+const timestampToNumber = (ts: Timestamp | number | null | undefined): number | null => {
+    if (!ts) return null
+    if (typeof ts === 'number') return ts
+    return ts.toMillis()
+}
 
 export default function ProfilePage() {
     const { user, loading: authLoading } = useAuth()
@@ -59,13 +68,44 @@ export default function ProfilePage() {
     const getUserId = useSessionStore((state) => state.getUserId)
     const currentUserId = getUserId()
 
-    // Memoize filtered arrays to prevent unnecessary re-computations
+    // Memoize filtered arrays and convert to summary types
     const userThreads = useMemo(
-        () => threads.filter((thread) => thread.userId === currentUserId),
+        () =>
+            threads
+                .filter((thread) => thread.userId === currentUserId)
+                .map((thread) => ({
+                    id: thread.id,
+                    title: thread.title,
+                    content: thread.content,
+                    category: thread.category,
+                    likes: thread.likes,
+                    views: thread.views,
+                    replyCount: thread.replyCount,
+                    createdAt: timestampToNumber(thread.createdAt),
+                    updatedAt: timestampToNumber(thread.updatedAt),
+                })),
         [threads, currentUserId]
     )
     const userPolls = useMemo(
-        () => polls.filter((poll) => poll.userId === currentUserId),
+        () =>
+            polls
+                .filter((poll) => poll.userId === currentUserId)
+                .map((poll) => ({
+                    id: poll.id,
+                    question: poll.question,
+                    category: poll.category,
+                    totalVotes: poll.totalVotes,
+                    isMultipleChoice: poll.isMultipleChoice,
+                    allowAddOptions: poll.allowAddOptions,
+                    options: poll.options.map((opt) => ({
+                        id: opt.id,
+                        text: opt.text,
+                        votes: opt.votes,
+                        percentage: opt.percentage,
+                    })),
+                    createdAt: timestampToNumber(poll.createdAt),
+                    expiresAt: timestampToNumber(poll.expiresAt),
+                })),
         [polls, currentUserId]
     )
 
