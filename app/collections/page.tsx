@@ -14,6 +14,7 @@ import {
     Cog6ToothIcon,
     ChevronDownIcon,
 } from '@heroicons/react/24/solid'
+import { PencilIcon } from '@heroicons/react/24/outline'
 import { isMovie, isTVShow } from '../../typings'
 import { getTitle } from '../../typings'
 import ContentCard from '../../components/common/ContentCard'
@@ -27,6 +28,7 @@ import { UserList } from '../../types/userLists'
 import { useDebugSettings } from '../../components/debug/DebugControls'
 import { GuestModeNotification } from '../../components/auth/GuestModeNotification'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
+import CollectionEditorModal from '../../components/modals/CollectionEditorModal'
 
 const Collections = () => {
     const router = useRouter()
@@ -85,6 +87,8 @@ const Collections = () => {
     const [searchQuery, setSearchQuery] = useState('')
     const [showManageDropdown, setShowManageDropdown] = useState(false)
     const manageDropdownRef = useRef<HTMLDivElement>(null)
+    const [editorCollection, setEditorCollection] = useState<UserList | null>(null)
+    const [showEditor, setShowEditor] = useState(false)
     const { modal } = useAppStore()
     const { openCollectionBuilderModal, openListModal } = useModalStore()
     const showModal = modal.isOpen
@@ -245,61 +249,87 @@ const Collections = () => {
         return list ? list.items.length : 0
     }
 
+    const handleNewCollectionClick = () => {
+        console.log('New Collection button clicked')
+        openCollectionBuilderModal()
+    }
+
+    const handleManageClick = () => {
+        console.log('Manage button clicked')
+        setShowManageDropdown(!showManageDropdown)
+    }
+
+    const handleManageCollectionsClick = () => {
+        console.log('Manage Collections menu item clicked')
+        openListModal(undefined)
+        setShowManageDropdown(false)
+    }
+
+    const handleExportClick = () => {
+        console.log('Export CSV clicked')
+        handleExportCSV()
+        setShowManageDropdown(false)
+    }
+
+    const handleEditCollection = (list: UserList) => {
+        console.log('Edit collection clicked:', list.name)
+        setEditorCollection(list)
+        setShowEditor(true)
+    }
+
+    const handleCloseEditor = () => {
+        setShowEditor(false)
+        setEditorCollection(null)
+    }
+
     const titleActions = (
-        <div className="flex items-center space-x-3">
+        <div className="relative flex items-center gap-3 z-[201]" ref={manageDropdownRef}>
             {/* New Collection Button */}
             <button
-                onClick={() => openCollectionBuilderModal()}
-                className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-blue-600/80 hover:bg-blue-600 text-white transition-all duration-200"
+                type="button"
+                onClick={handleNewCollectionClick}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors cursor-pointer"
             >
-                <PlusIcon className="w-5 h-5 text-white" />
+                <PlusIcon className="w-5 h-5 flex-shrink-0" />
                 <span className="font-medium">New Collection</span>
             </button>
 
-            {/* Manage Dropdown */}
-            <div className="relative" ref={manageDropdownRef}>
-                <button
-                    type="button"
-                    onClick={() => setShowManageDropdown(!showManageDropdown)}
-                    className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 text-gray-400 hover:text-white transition-all duration-200 cursor-pointer"
-                >
-                    <Cog6ToothIcon className="w-5 h-5 pointer-events-none" />
-                    <span className="font-medium pointer-events-none">Manage</span>
-                    <ChevronDownIcon
-                        className={`w-4 h-4 transition-transform pointer-events-none ${
-                            showManageDropdown ? 'rotate-180' : ''
-                        }`}
-                    />
-                </button>
+            {/* Manage Button */}
+            <button
+                type="button"
+                onClick={handleManageClick}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-white transition-colors cursor-pointer"
+            >
+                <Cog6ToothIcon className="w-5 h-5 flex-shrink-0" />
+                <span className="font-medium">Manage</span>
+                <ChevronDownIcon
+                    className={`w-4 h-4 flex-shrink-0 transition-transform ${
+                        showManageDropdown ? 'rotate-180' : ''
+                    }`}
+                />
+            </button>
 
-                {/* Dropdown Menu */}
-                {showManageDropdown && (
-                    <div className="absolute top-full mt-2 right-0 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-xl z-50 min-w-[200px] overflow-hidden animate-fade-down">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                openListModal(undefined)
-                                setShowManageDropdown(false)
-                            }}
-                            className="w-full flex items-center space-x-3 px-4 py-3 text-white hover:bg-gray-800 transition-colors text-left cursor-pointer"
-                        >
-                            <RectangleStackIcon className="w-5 h-5 text-gray-400 pointer-events-none" />
-                            <span className="pointer-events-none">Manage Collections</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                handleExportCSV()
-                                setShowManageDropdown(false)
-                            }}
-                            className="w-full flex items-center space-x-3 px-4 py-3 text-white hover:bg-gray-800 transition-colors text-left cursor-pointer"
-                        >
-                            <ArrowDownTrayIcon className="w-5 h-5 text-gray-400 pointer-events-none" />
-                            <span className="pointer-events-none">Export to CSV</span>
-                        </button>
-                    </div>
-                )}
-            </div>
+            {/* Dropdown Menu */}
+            {showManageDropdown && (
+                <div className="absolute top-full mt-2 right-0 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-xl z-50 min-w-[200px] overflow-hidden">
+                    <button
+                        type="button"
+                        onClick={handleManageCollectionsClick}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-gray-800 transition-colors"
+                    >
+                        <RectangleStackIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                        <span>Manage Collections</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleExportClick}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-gray-800 transition-colors"
+                    >
+                        <ArrowDownTrayIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                        <span>Export to CSV</span>
+                    </button>
+                </div>
+            )}
         </div>
     )
 
@@ -383,6 +413,18 @@ const Collections = () => {
                                 <span className="text-xl text-gray-400 font-medium pb-0.5">
                                     {getListCount(selectedListId)} items
                                 </span>
+                                {/* Edit Button - Only show for editable collections (exclude Watch Later) */}
+                                {selectedList &&
+                                    selectedList.id !== 'default-watchlist' &&
+                                    selectedList.canEdit !== false && (
+                                        <button
+                                            onClick={() => handleEditCollection(selectedList)}
+                                            className="flex items-center justify-center w-9 h-9 mb-0.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white transition-colors"
+                                            title={`Edit ${selectedList.name}`}
+                                        >
+                                            <PencilIcon className="w-5 h-5" />
+                                        </button>
+                                    )}
                             </div>
 
                             {/* Search Bar */}
@@ -402,55 +444,65 @@ const Collections = () => {
     ) : undefined
 
     return (
-        <SubPageLayout
-            title="Collections"
-            icon={<RectangleStackIcon />}
-            iconColor="text-blue-400"
-            description="Keep track of the content you love!"
-            titleActions={titleActions}
-            headerActions={headerActions}
-        >
-            {/* Content Sections */}
-            {isLoading ? (
-                <NetflixLoader message="Loading your collections..." inline />
-            ) : filteredContent.length === 0 ? (
-                <EmptyState
-                    emoji="🍿"
-                    title={`No content in ${
-                        allLists.find((l) => l.id === selectedListId)?.name || 'this list'
-                    } yet`}
-                    description="Start adding movies and TV shows to your collections!"
-                />
-            ) : (
-                <div className="space-y-12">
-                    {(() => {
-                        // Filter out "Liked" and "Not For Me" items - they have their own pages now
-                        const watchlistContent = filteredContent.filter(
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            (item: any) => {
-                                return (
-                                    item.content && !['Liked', 'Not For Me'].includes(item.listName)
-                                )
-                            }
-                        )
-
-                        // No need to separate by media type - ContentCard shows the type
-                        return (
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-8">
-                                {watchlistContent.map(
-                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                    (item: any) => (
-                                        <div key={`${item.contentId}-${item.listId}`}>
-                                            <ContentCard content={item.content} />
-                                        </div>
+        <>
+            <SubPageLayout
+                title="Collections"
+                icon={<RectangleStackIcon />}
+                iconColor="text-blue-400"
+                description="Keep track of the content you love!"
+                titleActions={titleActions}
+                headerActions={headerActions}
+            >
+                {/* Content Sections */}
+                {isLoading ? (
+                    <NetflixLoader message="Loading your collections..." inline />
+                ) : filteredContent.length === 0 ? (
+                    <EmptyState
+                        emoji="🍿"
+                        title={`No content in ${
+                            allLists.find((l) => l.id === selectedListId)?.name || 'this list'
+                        } yet`}
+                        description="Start adding movies and TV shows to your collections!"
+                    />
+                ) : (
+                    <div className="space-y-12">
+                        {(() => {
+                            // Filter out "Liked" and "Not For Me" items - they have their own pages now
+                            const watchlistContent = filteredContent.filter(
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                (item: any) => {
+                                    return (
+                                        item.content &&
+                                        !['Liked', 'Not For Me'].includes(item.listName)
                                     )
-                                )}
-                            </div>
-                        )
-                    })()}
-                </div>
-            )}
-        </SubPageLayout>
+                                }
+                            )
+
+                            // No need to separate by media type - ContentCard shows the type
+                            return (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-8">
+                                    {watchlistContent.map(
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                        (item: any) => (
+                                            <div key={`${item.contentId}-${item.listId}`}>
+                                                <ContentCard content={item.content} />
+                                            </div>
+                                        )
+                                    )}
+                                </div>
+                            )
+                        })()}
+                    </div>
+                )}
+            </SubPageLayout>
+
+            {/* Collection Editor Modal */}
+            <CollectionEditorModal
+                collection={editorCollection}
+                isOpen={showEditor}
+                onClose={handleCloseEditor}
+            />
+        </>
     )
 }
 
