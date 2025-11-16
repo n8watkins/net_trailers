@@ -437,7 +437,7 @@ export default function UserProfilePage() {
                     id="liked-section"
                     className="bg-gradient-to-br from-red-900/20 to-pink-900/10 border border-red-800/30 rounded-xl p-6"
                 >
-                    <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
                             <HeartIcon className="w-6 h-6 text-red-400" />
                             <h2 className="text-2xl font-bold text-white">Liked Content</h2>
@@ -450,11 +450,11 @@ export default function UserProfilePage() {
                         </Link>
                     </div>
                     {likedContent.length > 0 ? (
-                        <div className="flex gap-2">
-                            {likedContent.slice(0, 6).map((content) => (
+                        <div className="flex gap-3 flex-wrap">
+                            {likedContent.slice(0, 5).map((content) => (
                                 <div
                                     key={content.id}
-                                    className="w-16 aspect-[2/3] relative overflow-hidden rounded"
+                                    className="w-24 aspect-[2/3] relative overflow-hidden rounded-lg"
                                 >
                                     {content.poster_path && (
                                         <img
@@ -477,15 +477,15 @@ export default function UserProfilePage() {
                 {/* Watch Later Section */}
                 {watchLaterPreview.length > 0 && (
                     <section className="bg-gradient-to-br from-indigo-900/20 to-blue-900/10 border border-indigo-800/30 rounded-xl p-6">
-                        <div className="flex items-center gap-2 mb-6">
+                        <div className="flex items-center gap-2 mb-4">
                             <ClockIcon className="w-6 h-6 text-indigo-400" />
                             <h2 className="text-2xl font-bold text-white">Watch Later</h2>
                         </div>
-                        <div className="flex gap-2">
-                            {watchLaterPreview.slice(0, 6).map((content) => (
+                        <div className="flex gap-3 flex-wrap">
+                            {watchLaterPreview.slice(0, 5).map((content) => (
                                 <div
                                     key={content.id}
-                                    className="w-16 aspect-[2/3] relative overflow-hidden rounded"
+                                    className="w-24 aspect-[2/3] relative overflow-hidden rounded-lg"
                                 >
                                     {content.poster_path && (
                                         <img
@@ -666,10 +666,18 @@ export default function UserProfilePage() {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Threads Column */}
                         <div className="bg-zinc-900/50 rounded-lg p-6 border border-zinc-800">
-                            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                                <ChatBubbleLeftRightIcon className="w-5 h-5 text-green-400" />
-                                Threads ({forumThreads.length})
-                            </h3>
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                                    <ChatBubbleLeftRightIcon className="w-5 h-5 text-green-400" />
+                                    Threads ({forumThreads.length})
+                                </h3>
+                                <Link
+                                    href="/community?tab=threads"
+                                    className="text-sm text-green-400 hover:text-green-300"
+                                >
+                                    View all
+                                </Link>
+                            </div>
                             {forumThreads.length > 0 ? (
                                 <div className="space-y-3">
                                     {forumThreads.slice(0, 3).map((thread) => (
@@ -707,10 +715,18 @@ export default function UserProfilePage() {
 
                         {/* Polls Column */}
                         <div className="bg-zinc-900/50 rounded-lg p-6 border border-zinc-800">
-                            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                                <ChartBarIcon className="w-5 h-5 text-blue-400" />
-                                Polls ({forumPolls.length})
-                            </h3>
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                                    <ChartBarIcon className="w-5 h-5 text-blue-400" />
+                                    Polls ({forumPolls.length})
+                                </h3>
+                                <Link
+                                    href="/community?tab=polls"
+                                    className="text-sm text-blue-400 hover:text-blue-300"
+                                >
+                                    View all
+                                </Link>
+                            </div>
                             {forumPolls.length > 0 ? (
                                 <div className="space-y-3">
                                     {forumPolls.slice(0, 3).map((poll) => (
