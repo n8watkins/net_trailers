@@ -165,10 +165,10 @@ export default function CommunityHub({ activeTab }: CommunityHubProps) {
                 </p>
             </div>
 
-            {/* Tabs Navigation */}
-            <div className="mb-6">
+            {/* Tabs Navigation - Larger Title-Style Toggle */}
+            <div className="mb-8">
                 <div className="flex justify-center">
-                    <div className="inline-flex gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800">
+                    <div className="inline-flex gap-2 bg-zinc-900 p-2 rounded-xl border-2 border-zinc-800 shadow-xl">
                         {[
                             {
                                 id: 'rankings' as TabType,
@@ -199,18 +199,18 @@ export default function CommunityHub({ activeTab }: CommunityHubProps) {
                                 <button
                                     key={tab.id}
                                     onClick={() => navigateToTab(tab.id)}
-                                    className={`relative px-5 py-3 rounded-md font-semibold text-sm transition-all duration-200 ${
+                                    className={`relative px-8 py-4 rounded-xl font-bold text-xl transition-all duration-200 ${
                                         isActive
-                                            ? 'bg-zinc-800 text-white'
-                                            : 'text-gray-400 hover:text-gray-200 hover:bg-zinc-800/50'
+                                            ? 'bg-zinc-800 text-white shadow-lg scale-105'
+                                            : 'text-gray-400 hover:text-gray-200 hover:bg-zinc-800/50 hover:scale-102'
                                     }`}
                                 >
-                                    <div className="flex items-center gap-2">
-                                        <Icon className={`w-5 h-5 ${isActive ? tab.color : ''}`} />
+                                    <div className="flex items-center gap-3">
+                                        <Icon className={`w-7 h-7 ${isActive ? tab.color : ''}`} />
                                         <span>{tab.label}</span>
                                         {tab.count > 0 && (
                                             <span
-                                                className={`px-2 py-0.5 text-xs rounded-full ${
+                                                className={`px-2.5 py-1 text-sm font-semibold rounded-full ${
                                                     isActive
                                                         ? 'bg-zinc-700 text-gray-300'
                                                         : 'bg-zinc-800 text-gray-500'
