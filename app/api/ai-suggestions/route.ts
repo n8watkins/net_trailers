@@ -4,7 +4,7 @@ import { buildInitialPrompt, buildFollowUpPrompt } from '../../../utils/gemini/p
 import { parseGeminiResponse, enrichWithTMDB } from '../../../utils/gemini/responseParser'
 import { consumeGeminiRateLimit } from '@/lib/geminiRateLimiter'
 import { getRequestIdentity } from '@/lib/requestIdentity'
-import { sanitizeQuery } from '@/utils/inputSanitization'
+import { sanitizeInput } from '@/utils/inputSanitization'
 import { apiLog, apiError } from '@/utils/debugLogger'
 
 export async function POST(request: NextRequest) {
@@ -20,8 +20,8 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Sanitize user query
-        const queryResult = sanitizeQuery(query)
+        // Sanitize user query (allow queries with 1+ characters for smart search)
+        const queryResult = sanitizeInput(query, 1, 500) // Min 1 char, max 500 chars
         if (!queryResult.isValid) {
             return NextResponse.json({ error: queryResult.error }, { status: 400 })
         }

@@ -19,12 +19,12 @@ async function handleGenerateRow(request: NextRequest, userId: string): Promise<
         const { query, excludedIds } = await request.json()
 
         // Validate input
-        if (!query || query.trim().length < 3) {
-            return NextResponse.json({ error: 'Query too short' }, { status: 400 })
+        if (!query || query.trim().length < 1) {
+            return NextResponse.json({ error: 'Query is required' }, { status: 400 })
         }
 
-        // Sanitize user query
-        const queryResult = sanitizeInput(query, 3, 500)
+        // Sanitize user query (allow queries with 1+ characters for smart search)
+        const queryResult = sanitizeInput(query, 1, 500)
         if (!queryResult.isValid) {
             return NextResponse.json({ error: queryResult.error }, { status: 400 })
         }

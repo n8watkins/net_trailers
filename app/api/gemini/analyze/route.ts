@@ -12,8 +12,8 @@ export async function POST(request: NextRequest) {
         const { rateLimitKey } = await getRequestIdentity(request)
         const { text, entities, mediaType } = await request.json()
 
-        // Sanitize and validate input
-        const sanitizationResult = sanitizeInput(text)
+        // Sanitize and validate input (allow queries with 1+ characters for smart search)
+        const sanitizationResult = sanitizeInput(text, 1, 500)
         if (!sanitizationResult.isValid) {
             return NextResponse.json({ error: sanitizationResult.error }, { status: 400 })
         }
