@@ -169,8 +169,8 @@ export default function CollectionEditorModal({
                     {/* Content */}
                     <div className="p-6 max-h-[calc(90vh-200px)] overflow-y-auto">
                         <div className="space-y-6">
-                            {/* Name, Icon, Color Section */}
-                            <div className="flex items-center justify-center space-x-3">
+                            {/* Name, Icon, Color Section - Left Aligned */}
+                            <div className="flex items-center space-x-3">
                                 {/* Icon Picker */}
                                 <div className="relative flex-shrink-0">
                                     <button
@@ -217,19 +217,19 @@ export default function CollectionEditorModal({
                                 </div>
 
                                 {/* Name Input */}
-                                <div>
+                                <div className="flex-1">
                                     <input
                                         type="text"
                                         placeholder="Collection name"
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
-                                        className="w-96 h-14 px-4 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        className="w-full max-w-md h-14 px-4 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     />
                                 </div>
                             </div>
 
-                            {/* Toggle Settings */}
-                            <div className="relative p-3 bg-gray-800/50 rounded-lg border border-gray-700 space-y-3">
+                            {/* Toggle Settings - Compact Width */}
+                            <div className="relative p-3 bg-gray-800/50 rounded-lg border border-gray-700 space-y-3 max-w-md">
                                 {/* Infinite Content Toggle */}
                                 <div className="flex items-center justify-between">
                                     <label className="text-sm font-medium text-white flex items-center gap-1.5">
@@ -317,36 +317,14 @@ export default function CollectionEditorModal({
                                 </div>
                             </div>
 
-                            {/* Add Content Search Bar */}
-                            <div className="flex justify-center">
+                            {/* Add Content Search Bar - Left Aligned */}
+                            <div>
                                 <div className="w-full max-w-2xl">
                                     <InlineSearchBar
                                         onAddContent={handleAddContent}
                                         existingContentIds={content.map((c) => c.id)}
                                         placeholder="Search to add movies or TV shows..."
                                     />
-                                </div>
-                            </div>
-
-                            {/* Search Filter */}
-                            <div className="flex justify-center">
-                                <div className="relative w-96">
-                                    <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                                    <input
-                                        type="text"
-                                        placeholder="Filter titles..."
-                                        value={searchFilter}
-                                        onChange={(e) => setSearchFilter(e.target.value)}
-                                        className="w-full h-12 pl-12 pr-4 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    />
-                                    {searchFilter && (
-                                        <button
-                                            onClick={() => setSearchFilter('')}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-                                        >
-                                            <XMarkIcon className="h-5 w-5" />
-                                        </button>
-                                    )}
                                 </div>
                             </div>
 
@@ -361,6 +339,28 @@ export default function CollectionEditorModal({
                                     )}
                                     )
                                 </h3>
+
+                                {/* Search Filter - Below heading */}
+                                <div className="mb-4">
+                                    <div className="relative w-96">
+                                        <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                                        <input
+                                            type="text"
+                                            placeholder="Filter titles..."
+                                            value={searchFilter}
+                                            onChange={(e) => setSearchFilter(e.target.value)}
+                                            className="w-full h-12 pl-12 pr-4 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                        {searchFilter && (
+                                            <button
+                                                onClick={() => setSearchFilter('')}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                                            >
+                                                <XMarkIcon className="h-5 w-5" />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
 
                                 {visibleContent.length === 0 ? (
                                     <div className="text-center py-8 text-gray-400">
