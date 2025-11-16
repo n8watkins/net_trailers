@@ -124,6 +124,7 @@ export interface PollSummary {
     options: PollOptionSummary[]
     createdAt: number | null
     expiresAt: number | null
+    votedAt?: number | null
 }
 
 // Poll option summary (without percentage calculation needed)

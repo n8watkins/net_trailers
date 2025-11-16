@@ -42,7 +42,7 @@ import {
     MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline'
 
-export type TabType = 'rankings' | 'forums' | 'polls'
+export type TabType = 'rankings' | 'threads' | 'polls'
 
 interface CommunityHubProps {
     activeTab: TabType
@@ -70,8 +70,7 @@ export default function CommunityHub({ activeTab }: CommunityHubProps) {
 
     const navigateToTab = (tab: TabType) => {
         if (tab === activeTab) return
-        const destination = tab === 'rankings' ? '/community/rankings' : `/community/${tab}`
-        router.push(destination)
+        router.push(`/community/${tab}`)
     }
 
     const [rankingsLimit, setRankingsLimit] = useState(20)
@@ -179,8 +178,8 @@ export default function CommunityHub({ activeTab }: CommunityHubProps) {
                                 count: communityRankings.length,
                             },
                             {
-                                id: 'forums' as TabType,
-                                label: 'Forums',
+                                id: 'threads' as TabType,
+                                label: 'Threads',
                                 icon: ChatBubbleLeftRightIcon,
                                 color: 'text-blue-500',
                                 count: threads.length,
@@ -269,12 +268,13 @@ export default function CommunityHub({ activeTab }: CommunityHubProps) {
                     tagRows={tagRows}
                     handleRankingClick={handleRankingClick}
                     searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
                     onLoadMore={handleLoadMoreRankings}
                     hasMore={communityRankings.length >= rankingsLimit}
                 />
             )}
 
-            {activeTab === 'forums' && <ForumsTab searchQuery={searchQuery} />}
+            {activeTab === 'threads' && <ThreadsTab searchQuery={searchQuery} />}
 
             {activeTab === 'polls' && <PollsTab searchQuery={searchQuery} />}
         </SubPageLayout>
@@ -297,6 +297,7 @@ function RankingsTab({
     tagRows,
     handleRankingClick,
     searchQuery,
+    setSearchQuery,
     onLoadMore,
     hasMore,
 }: any) {
@@ -629,8 +630,8 @@ function RankingsTab({
     )
 }
 
-// Forums Tab Component
-function ForumsTab({ searchQuery }: { searchQuery: string }) {
+// Threads Tab Component
+function ThreadsTab({ searchQuery }: { searchQuery: string }) {
     const { threads, isLoadingThreads, loadThreads, createThread } = useForumStore()
     const getUserId = useSessionStore((state) => state.getUserId)
     const { isGuest } = useAuthStatus()

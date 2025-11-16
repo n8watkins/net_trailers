@@ -26,8 +26,18 @@ import { RankingsSection } from '../../components/profile/RankingsSection'
 import { CollectionsSection } from '../../components/profile/CollectionsSection'
 import { ForumActivitySection } from '../../components/profile/ForumActivitySection'
 import { useProfileActions } from '../../hooks/useProfileActions'
-import type { Thread, Poll } from '../../types/forum'
-import type { Timestamp } from 'firebase/firestore'
+import type { PollSummary } from '../../types/forum'
+import {
+    Timestamp,
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    limit,
+    query,
+    where,
+} from 'firebase/firestore'
+import { db } from '@/firebase'
 
 // Helper to convert Firestore Timestamp to number
 const timestampToNumber = (ts: Timestamp | number | null | undefined): number | null => {
@@ -68,6 +78,98 @@ export default function ProfilePage() {
 
     const getUserId = useSessionStore((state) => state.getUserId)
     const currentUserId = getUserId()
+    const [votedPolls, setVotedPolls] = useState<PollSummary[]>([])
+    const [isLoadingVotedPolls, setIsLoadingVotedPolls] = useState(false)
+
+    useEffect(() => {
+        if (!currentUserId || isGuest) {
+            setVotedPolls([])
+            setIsLoadingVotedPolls(false)
+            return
+        }
+
+        let isMounted = true
+        const fetchVotedPolls = async () => {
+            setIsLoadingVotedPolls(true)
+            try {
+                const votesQuery = query(
+                    collection(db, 'poll_votes'),
+                    where('userId', '==', currentUserId),
+                    limit(25)
+                )
+                const votesSnap = await getDocs(votesQuery)
+
+                const pollsFromVotes = await Promise.all(
+                    votesSnap.docs.map(async (voteDoc) => {
+                        const voteData = voteDoc.data() || {}
+                        const pollId = voteData.pollId as string | undefined
+                        if (!pollId) {
+                            return null
+                        }
+
+                        const pollDoc = await getDoc(doc(db, 'polls', pollId))
+                        if (!pollDoc.exists()) {
+                            return null
+                        }
+                        const pollData = pollDoc.data() || {}
+
+                        if (pollData.userId === currentUserId) {
+                            return null
+                        }
+
+                        return {
+                            id: pollDoc.id,
+                            question: pollData.question ?? 'Untitled poll',
+                            category: pollData.category ?? 'general',
+                            totalVotes: pollData.totalVotes ?? 0,
+                            isMultipleChoice: Boolean(pollData.isMultipleChoice),
+                            allowAddOptions: Boolean(pollData.allowAddOptions),
+                            options: Array.isArray(pollData.options)
+                                ? pollData.options.map((option: any) => ({
+                                      id: option.id ?? '',
+                                      text: option.text ?? '',
+                                      votes: option.votes ?? 0,
+                                      percentage: option.percentage ?? 0,
+                                  }))
+                                : [],
+                            createdAt: timestampToNumber(
+                                pollData.createdAt as Timestamp | number | null | undefined
+                            ),
+                            expiresAt: timestampToNumber(
+                                pollData.expiresAt as Timestamp | number | null | undefined
+                            ),
+                            votedAt: timestampToNumber(
+                                voteData.votedAt as Timestamp | number | null | undefined
+                            ),
+                        } as PollSummary
+                    })
+                )
+
+                if (!isMounted) return
+
+                const filtered = pollsFromVotes
+                    .filter((poll): poll is PollSummary => Boolean(poll))
+                    .sort((a, b) => (b.votedAt ?? 0) - (a.votedAt ?? 0))
+
+                setVotedPolls(filtered)
+            } catch (error) {
+                console.error('Failed to load voted polls:', error)
+                if (isMounted) {
+                    setVotedPolls([])
+                }
+            } finally {
+                if (isMounted) {
+                    setIsLoadingVotedPolls(false)
+                }
+            }
+        }
+
+        fetchVotedPolls()
+
+        return () => {
+            isMounted = false
+        }
+    }, [currentUserId, isGuest])
 
     // Memoize filtered arrays and convert to summary types
     const userThreads = useMemo(
@@ -106,6 +208,7 @@ export default function ProfilePage() {
                     })),
                     createdAt: timestampToNumber(poll.createdAt),
                     expiresAt: timestampToNumber(poll.expiresAt),
+                    votedAt: null,
                 })),
         [polls, currentUserId]
     )
@@ -245,7 +348,14 @@ export default function ProfilePage() {
             </div>
 
             {/* Community Activity */}
-            {!isGuest && <ForumActivitySection threads={userThreads} polls={userPolls} />}
+            {!isGuest && (
+                <ForumActivitySection
+                    threads={userThreads}
+                    pollsCreated={userPolls}
+                    pollsVoted={votedPolls}
+                    isLoadingVotedPolls={isLoadingVotedPolls}
+                />
+            )}
         </SubPageLayout>
     )
 }

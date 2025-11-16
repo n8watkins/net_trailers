@@ -21,14 +21,16 @@ export interface PublicProfilePayload {
         totalLiked: number
         totalCollections: number
         totalThreads: number
-        totalPolls: number
+        totalPollsCreated: number
+        totalPollsVoted: number
     }
     rankings: Ranking[]
     likedContent: (Movie | TVShow)[]
     collections: UserList[]
     forum: {
         threads: ThreadSummary[]
-        polls: PollSummary[]
+        pollsCreated: PollSummary[]
+        pollsVoted: PollSummary[]
     }
     watchLaterPreview: (Movie | TVShow)[]
 }
@@ -199,15 +201,80 @@ export async function buildPublicProfilePayload(
                               id: (opt.id as string) ?? '',
                               text: (opt.text as string) ?? '',
                               votes: (opt.votes as number) ?? 0,
-                              percentage: opt.percentage as number | undefined,
+                              percentage: (opt.percentage as number) ?? 0,
                           }
                       })
                     : [],
                 createdAt: toMillis(data.createdAt as Timestamp | number | undefined),
                 expiresAt: toMillis(data.expiresAt as Timestamp | number | undefined),
+                votedAt: null,
             }
         })
         .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
+        .slice(0, 10)
+
+    const votesSnap = await db
+        .collection('poll_votes')
+        .where('userId', '==', userId)
+        .limit(25)
+        .get()
+
+    const votedPollSummaries = (
+        await Promise.all(
+            votesSnap.docs.map(async (voteDoc) => {
+                const voteData = voteDoc.data() || {}
+                const pollId = voteData.pollId as string | undefined
+                if (!pollId) {
+                    return null
+                }
+
+                const pollDoc = await db.collection('polls').doc(pollId).get()
+                if (!pollDoc.exists) {
+                    return null
+                }
+
+                const pollData = pollDoc.data() || {}
+                if (pollData.userId === userId) {
+                    return null
+                }
+
+                const summary: PollSummary = {
+                    id: pollDoc.id,
+                    question: pollData.question ?? 'Untitled poll',
+                    category: pollData.category ?? 'general',
+                    totalVotes: pollData.totalVotes ?? 0,
+                    isMultipleChoice: Boolean(pollData.isMultipleChoice),
+                    allowAddOptions: Boolean(pollData.allowAddOptions),
+                    options: Array.isArray(pollData.options)
+                        ? pollData.options.map((option: unknown): PollOptionSummary => {
+                              const opt = option as Record<string, unknown>
+                              return {
+                                  id: (opt.id as string) ?? '',
+                                  text: (opt.text as string) ?? '',
+                                  votes: (opt.votes as number) ?? 0,
+                                  percentage: (opt.percentage as number) ?? 0,
+                              }
+                          })
+                        : [],
+                    createdAt: toMillis(pollData.createdAt as Timestamp | number | undefined),
+                    expiresAt: toMillis(pollData.expiresAt as Timestamp | number | undefined),
+                    votedAt: toMillis(voteData.votedAt as Timestamp | number | undefined),
+                }
+                return summary
+            })
+        )
+    ).filter((poll): poll is PollSummary => poll !== null)
+
+    const uniqueVoted = votedPollSummaries.reduce<Record<string, PollSummary>>((acc, poll) => {
+        const existing = acc[poll.id]
+        if (!existing || (poll.votedAt ?? 0) > (existing.votedAt ?? 0)) {
+            acc[poll.id] = poll
+        }
+        return acc
+    }, {})
+
+    const orderedVotedPolls = Object.values(uniqueVoted)
+        .sort((a, b) => (b.votedAt ?? 0) - (a.votedAt ?? 0))
         .slice(0, 10)
 
     const stats: PublicProfilePayload['stats'] = {
@@ -221,7 +288,8 @@ export async function buildPublicProfilePayload(
         totalLiked: likedContent.length,
         totalCollections: collections.length,
         totalThreads: threadSummaries.length,
-        totalPolls: pollSummaries.length,
+        totalPollsCreated: pollSummaries.length,
+        totalPollsVoted: orderedVotedPolls.length,
     }
 
     return {
@@ -232,7 +300,8 @@ export async function buildPublicProfilePayload(
         collections,
         forum: {
             threads: threadSummaries,
-            polls: pollSummaries,
+            pollsCreated: pollSummaries,
+            pollsVoted: orderedVotedPolls,
         },
         watchLaterPreview,
     }

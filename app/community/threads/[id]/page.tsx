@@ -133,7 +133,7 @@ export default function ThreadDetailPage({ params }: ThreadDetailPageProps) {
         if (confirm('Are you sure you want to delete this thread?')) {
             try {
                 await deleteThread(userId, currentThread.id)
-                router.push('/community/forums')
+                router.push('/community/threads')
             } catch (error) {
                 console.error('Failed to delete thread:', error)
             }

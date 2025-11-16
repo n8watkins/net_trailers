@@ -13,7 +13,7 @@ import NetflixLoader from '../../../components/common/NetflixLoader'
 import { UserIcon } from '@heroicons/react/24/outline'
 import { FirebaseError } from 'firebase/app'
 import { db } from '../../../firebase'
-import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore'
+import { collection, doc, getDoc, getDocs, query, where, limit } from 'firebase/firestore'
 import type { PublicProfilePayload } from '@/lib/publicProfile'
 import type { Movie, TVShow } from '../../../typings'
 import type { UserList } from '../../../types/userLists'
@@ -138,15 +138,68 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
                               id: (opt.id as string) ?? '',
                               text: (opt.text as string) ?? '',
                               votes: (opt.votes as number) ?? 0,
-                              percentage: opt.percentage as number | undefined,
+                              percentage: (opt.percentage as number) ?? 0,
                           }
                       })
                     : [],
                 createdAt: toMillisClient(data.createdAt),
                 expiresAt: toMillisClient(data.expiresAt),
+                votedAt: null,
             }
         })
     ).slice(0, PROFILE_CONFIG.MAX_POLL_SUMMARIES)
+
+    const votesSnap = await getDocs(
+        query(collection(db, 'poll_votes'), where('userId', '==', userId), limit(25))
+    )
+    const votedPollSummaries = (
+        await Promise.all(
+            votesSnap.docs.map(async (voteDoc) => {
+                const voteData = voteDoc.data() || {}
+                const pollId = voteData.pollId as string | undefined
+                if (!pollId) {
+                    return null
+                }
+                const pollDoc = await getDoc(doc(db, 'polls', pollId))
+                if (!pollDoc.exists()) {
+                    return null
+                }
+                const pollData = pollDoc.data() || {}
+                if (pollData.userId === userId) {
+                    return null
+                }
+
+                const summary: PollSummary = {
+                    id: pollDoc.id,
+                    question: pollData.question ?? 'Untitled poll',
+                    category: pollData.category ?? 'general',
+                    totalVotes: pollData.totalVotes ?? 0,
+                    isMultipleChoice: Boolean(pollData.isMultipleChoice),
+                    allowAddOptions: Boolean(pollData.allowAddOptions),
+                    options: Array.isArray(pollData.options)
+                        ? pollData.options.map((option: unknown): PollOptionSummary => {
+                              const opt = option as Record<string, unknown>
+                              return {
+                                  id: (opt.id as string) ?? '',
+                                  text: (opt.text as string) ?? '',
+                                  votes: (opt.votes as number) ?? 0,
+                                  percentage: (opt.percentage as number) ?? 0,
+                              }
+                          })
+                        : [],
+                    createdAt: toMillisClient(pollData.createdAt),
+                    expiresAt: toMillisClient(pollData.expiresAt),
+                    votedAt: toMillisClient(voteData.votedAt),
+                }
+
+                return summary
+            })
+        )
+    )
+        .filter((poll): poll is PollSummary => Boolean(poll))
+        .filter((poll) => poll.votedAt !== null)
+        .sort((a, b) => (b.votedAt ?? 0) - (a.votedAt ?? 0))
+        .slice(0, PROFILE_CONFIG.MAX_POLL_SUMMARIES)
 
     const stats: PublicProfilePayload['stats'] = {
         totalRankings: publicRankings.length,
@@ -155,7 +208,8 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
         totalLiked: likedContent.length,
         totalCollections: collections.length,
         totalThreads: threadSummaries.length,
-        totalPolls: pollSummaries.length,
+        totalPollsCreated: pollSummaries.length,
+        totalPollsVoted: votedPollSummaries.length,
     }
 
     return {
@@ -166,7 +220,8 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
         collections,
         forum: {
             threads: threadSummaries,
-            polls: pollSummaries,
+            pollsCreated: pollSummaries,
+            pollsVoted: votedPollSummaries,
         },
         watchLaterPreview,
     }
@@ -247,7 +302,8 @@ export default function UserProfilePage() {
     const likedContent = profileData?.likedContent ?? []
     const collections = profileData?.collections ?? []
     const forumThreads = profileData?.forum?.threads ?? []
-    const forumPolls = profileData?.forum?.polls ?? []
+    const forumPollsCreated = profileData?.forum?.pollsCreated ?? []
+    const forumPollsVoted = profileData?.forum?.pollsVoted ?? []
     const watchLaterPreview = profileData?.watchLaterPreview ?? []
     const stats: PublicProfilePayload['stats'] = profileData?.stats ?? {
         totalRankings: publicRankings.length,
@@ -256,7 +312,8 @@ export default function UserProfilePage() {
         totalLiked: likedContent.length,
         totalCollections: collections.length,
         totalThreads: forumThreads.length,
-        totalPolls: forumPolls.length,
+        totalPollsCreated: forumPollsCreated.length,
+        totalPollsVoted: forumPollsVoted.length,
     }
 
     if (isLoadingProfile) {
@@ -361,7 +418,11 @@ export default function UserProfilePage() {
             </div>
 
             {/* Forum Activity */}
-            <ForumActivitySection threads={forumThreads} polls={forumPolls} />
+            <ForumActivitySection
+                threads={forumThreads}
+                pollsCreated={forumPollsCreated}
+                pollsVoted={forumPollsVoted}
+            />
         </SubPageLayout>
     )
 }
