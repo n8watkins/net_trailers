@@ -395,13 +395,11 @@ function RankingsTab({
                     />
                 </div>
 
-                {/* Tag Filter Container - Similar to Collections */}
-                <div className="bg-[#1a1a1a] border border-gray-800 rounded-2xl p-6">
+                {/* Tag Filter Container - Yellowish theme */}
+                <div className="bg-yellow-950/30 border-2 border-yellow-600/40 rounded-2xl p-6">
                     <div className="flex items-center gap-4 mb-4">
-                        <label className="text-sm font-medium text-gray-400">Filter by Tag</label>
-
-                        {/* Tag Search Input - Smaller, to the side */}
-                        <div className="flex-1 max-w-xs ml-auto">
+                        {/* Tag Search Input - Left side */}
+                        <div className="w-64">
                             <div className="relative">
                                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                 <input
@@ -421,6 +419,8 @@ function RankingsTab({
                                 )}
                             </div>
                         </div>
+
+                        <label className="text-sm font-medium text-yellow-400">Filter by Tag</label>
                     </div>
 
                     {/* Tag Pills */}
