@@ -228,27 +228,29 @@ export default function CommunityPage() {
                 </div>
             </div>
 
-            {/* Global Search */}
-            <div className="mb-8 max-w-2xl mx-auto">
-                <div className="relative">
-                    <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder={`Search ${activeTab}...`}
-                        className="w-full pl-12 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
-                    />
-                    {searchQuery && (
-                        <button
-                            onClick={() => setSearchQuery('')}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-                        >
-                            <XMarkIcon className="w-5 h-5" />
-                        </button>
-                    )}
+            {/* Global Search - Only for Forums and Polls */}
+            {activeTab !== 'rankings' && (
+                <div className="mb-8 max-w-2xl mx-auto">
+                    <div className="relative">
+                        <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder={`Search ${activeTab}...`}
+                            className="w-full pl-12 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
+                        />
+                        {searchQuery && (
+                            <button
+                                onClick={() => setSearchQuery('')}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                            >
+                                <XMarkIcon className="w-5 h-5" />
+                            </button>
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Tab Content */}
             {activeTab === 'rankings' && (
@@ -329,8 +331,8 @@ function RankingsTab({
 
     return (
         <div className="space-y-6">
-            {/* Filters Section - Top Horizontal Layout */}
-            <div className="space-y-4">
+            {/* Filters Section - Collections-style Layout */}
+            <div className="space-y-6">
                 {/* Stats Bar */}
                 <div className="text-sm text-gray-400 flex items-center gap-4">
                     <span>
@@ -381,53 +383,58 @@ function RankingsTab({
                     ))}
                 </div>
 
-                {/* Tag Filter Section */}
-                <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                        <label className="text-sm font-medium text-gray-400">Filter by Tag</label>
-                        {filterByTag && (
-                            <button
-                                onClick={() => setFilterByTag(null)}
-                                className="text-xs text-yellow-500 hover:text-yellow-400 transition-colors flex items-center gap-1"
-                            >
-                                <XMarkIcon className="w-4 h-4" />
-                                Clear tag filter
-                            </button>
-                        )}
+                {/* Tag Filter Container - Similar to Collections */}
+                <div className="bg-[#1a1a1a] border border-gray-800 rounded-2xl p-6">
+                    <div className="flex items-start gap-4 mb-4">
+                        {/* Search Rankings Input - Main Search */}
+                        <div className="flex-1">
+                            <div className="relative">
+                                <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="Search rankings..."
+                                    className="w-full pl-12 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Tag Search Input - Smaller, to the side */}
+                        <div className="w-64">
+                            <div className="relative">
+                                <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <input
+                                    type="text"
+                                    value={tagSearchQuery}
+                                    onChange={(e) => setTagSearchQuery(e.target.value)}
+                                    placeholder="Search tags..."
+                                    className="w-full pl-10 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
+                                />
+                                {tagSearchQuery && (
+                                    <button
+                                        onClick={() => setTagSearchQuery('')}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                                    >
+                                        <XMarkIcon className="w-4 h-4" />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
                     </div>
 
-                    {/* Tag Search Input */}
-                    <div className="relative">
-                        <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input
-                            type="text"
-                            value={tagSearchQuery}
-                            onChange={(e) => setTagSearchQuery(e.target.value)}
-                            placeholder="Search tags..."
-                            className="w-full pl-10 pr-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
-                        />
-                        {tagSearchQuery && (
-                            <button
-                                onClick={() => setTagSearchQuery('')}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-                            >
-                                <XMarkIcon className="w-4 h-4" />
-                            </button>
-                        )}
-                    </div>
-
-                    {/* Popular Tags as Pills */}
+                    {/* Tag Pills */}
                     <div className="flex flex-wrap gap-2">
-                        {filteredTags.slice(0, 12).map((tag) => (
+                        {filteredTags.slice(0, 15).map((tag) => (
                             <button
                                 key={tag.id}
                                 onClick={() =>
                                     setFilterByTag(filterByTag === tag.name ? null : tag.name)
                                 }
-                                className={`rounded-full px-3 py-1.5 text-sm font-medium transition-all duration-200 flex items-center gap-1.5 ${
+                                className={`rounded-full px-3 py-1.5 text-sm font-medium transition-all duration-200 flex items-center gap-1.5 border-2 ${
                                     filterByTag === tag.name
-                                        ? 'bg-yellow-500 text-black shadow-lg scale-105'
-                                        : 'bg-zinc-900 text-gray-300 hover:bg-zinc-800 border border-zinc-800 hover:scale-105'
+                                        ? 'bg-yellow-500 text-black shadow-lg scale-105 border-yellow-500'
+                                        : 'bg-zinc-900 text-gray-300 hover:bg-zinc-800 border-zinc-700 hover:scale-105'
                                 }`}
                                 title={tag.description}
                             >
@@ -435,7 +442,23 @@ function RankingsTab({
                                 <span>{tag.name}</span>
                             </button>
                         ))}
+                        {filteredTags.length === 0 && tagSearchQuery && (
+                            <span className="text-sm text-gray-500 py-1">No tags found</span>
+                        )}
                     </div>
+
+                    {/* Clear Filter Button */}
+                    {filterByTag && (
+                        <div className="mt-3 pt-3 border-t border-zinc-800">
+                            <button
+                                onClick={() => setFilterByTag(null)}
+                                className="text-xs text-yellow-500 hover:text-yellow-400 transition-colors flex items-center gap-1"
+                            >
+                                <XMarkIcon className="w-4 h-4" />
+                                Clear tag filter
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 
