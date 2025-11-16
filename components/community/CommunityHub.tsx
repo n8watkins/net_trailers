@@ -227,30 +227,6 @@ export default function CommunityHub({ activeTab }: CommunityHubProps) {
                 </div>
             </div>
 
-            {/* Global Search - Only for Forums and Polls */}
-            {activeTab !== 'rankings' && (
-                <div className="mb-8 max-w-2xl mx-auto">
-                    <div className="relative">
-                        <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder={`Search ${activeTab}...`}
-                            className="w-full pl-12 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
-                        />
-                        {searchQuery && (
-                            <button
-                                onClick={() => setSearchQuery('')}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-                            >
-                                <XMarkIcon className="w-5 h-5" />
-                            </button>
-                        )}
-                    </div>
-                </div>
-            )}
-
             {/* Tab Content */}
             {activeTab === 'rankings' && (
                 <RankingsTab
@@ -769,6 +745,26 @@ function ThreadsTab({ searchQuery }: { searchQuery: string }) {
                         {isGuest && <span className="text-xs">(Sign in)</span>}
                     </button>
                 </div>
+
+                {/* Search Threads - Below Filters, Left Aligned */}
+                <div className="relative max-w-md">
+                    <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search threads..."
+                        className="w-full pl-12 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
+                    />
+                    {searchQuery && (
+                        <button
+                            onClick={() => setSearchQuery('')}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                        >
+                            <XMarkIcon className="w-5 h-5" />
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Create Thread Modal */}
@@ -1034,6 +1030,26 @@ function PollsTab({ searchQuery }: { searchQuery: string }) {
                         <span className="hidden sm:inline">New Poll</span>
                         {isGuest && <span className="text-xs">(Sign in)</span>}
                     </button>
+                </div>
+
+                {/* Search Polls - Below Filters, Left Aligned */}
+                <div className="relative max-w-md">
+                    <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search polls..."
+                        className="w-full pl-12 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-pink-500 transition-colors"
+                    />
+                    {searchQuery && (
+                        <button
+                            onClick={() => setSearchQuery('')}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                        >
+                            <XMarkIcon className="w-5 h-5" />
+                        </button>
+                    )}
                 </div>
             </div>
 
