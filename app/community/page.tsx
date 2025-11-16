@@ -446,34 +446,119 @@ function RankingsTab({
                 </div>
             )}
 
-            {/* Rankings List */}
+            {/* Rankings Grid */}
             {finalFilteredRankings.length > 0 ? (
-                <div className="space-y-6">
-                    {filterByTag ? (
-                        // When a specific tag is selected, show that tag group
-                        (() => {
-                            const tagData = POPULAR_TAGS.find((t) => t.name === filterByTag)
-                            return (
-                                <RankingRow
-                                    key={filterByTag}
-                                    title={filterByTag}
-                                    emoji={tagData?.emoji}
-                                    rankings={finalFilteredRankings}
-                                    showAuthor={true}
-                                    onLike={handleRankingClick}
-                                />
-                            )
-                        })()
-                    ) : (
-                        // When no tag filter (All), show ungrouped rankings
-                        <RankingRow
-                            title="All Rankings"
-                            emoji="🏆"
-                            rankings={finalFilteredRankings}
-                            showAuthor={true}
-                            onLike={handleRankingClick}
-                        />
-                    )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                    {finalFilteredRankings.map((ranking: any) => (
+                        <div
+                            key={ranking.id}
+                            onClick={() => handleRankingClick(ranking.id)}
+                            className="cursor-pointer"
+                        >
+                            <div className="group relative bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800 hover:border-zinc-700 transition-all duration-200 hover:shadow-xl">
+                                {/* Main card */}
+                                <div className="relative">
+                                    {/* Header with top 3 posters */}
+                                    {ranking.rankedItems && ranking.rankedItems.length > 0 && (
+                                        <div className="relative h-48 bg-gradient-to-br from-zinc-800/50 to-zinc-900">
+                                            <div className="absolute inset-0 flex justify-center items-center gap-2 p-4">
+                                                {ranking.rankedItems
+                                                    .slice(0, 3)
+                                                    .map((item: any) => (
+                                                        <div
+                                                            key={item.content.id}
+                                                            className="relative flex-1 h-full"
+                                                        >
+                                                            <img
+                                                                src={`https://image.tmdb.org/t/p/w500${item.content.poster_path}`}
+                                                                alt={
+                                                                    item.content.title ||
+                                                                    item.content.name
+                                                                }
+                                                                className="object-cover rounded-md shadow-lg w-full h-full"
+                                                            />
+                                                        </div>
+                                                    ))}
+                                            </div>
+                                            <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/50 to-transparent" />
+                                            {ranking.likes > 50 && (
+                                                <div className="absolute top-3 right-3 px-2.5 py-1 bg-orange-500/90 backdrop-blur-sm rounded text-xs font-semibold text-white flex items-center gap-1">
+                                                    <FireIcon className="w-3 h-3" />
+                                                    <span>HOT</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Content section */}
+                                    <div className="p-4 space-y-3">
+                                        {/* Trophy icon + title */}
+                                        <div className="flex items-start gap-2">
+                                            <TrophyIcon className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-1" />
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="text-lg font-bold text-white group-hover:text-yellow-400 transition-colors line-clamp-2">
+                                                    {ranking.title}
+                                                </h3>
+                                            </div>
+                                        </div>
+
+                                        {/* Description - Fixed height for 2 lines */}
+                                        <div className="h-10">
+                                            {ranking.description && (
+                                                <p className="text-sm text-gray-400 line-clamp-2">
+                                                    {ranking.description}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        {/* Author info */}
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <span className="text-gray-400">
+                                                By {ranking.userName}
+                                            </span>
+                                        </div>
+
+                                        {/* Tags */}
+                                        {ranking.tags && ranking.tags.length > 0 && (
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {ranking.tags.slice(0, 3).map((tag: string) => (
+                                                    <span
+                                                        key={tag}
+                                                        className="px-2 py-1 text-xs font-medium bg-zinc-800 text-gray-300 rounded-full"
+                                                    >
+                                                        {tag}
+                                                    </span>
+                                                ))}
+                                                {ranking.tags.length > 3 && (
+                                                    <span className="px-2 py-1 text-xs font-medium text-gray-500">
+                                                        +{ranking.tags.length - 3}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Stats & actions */}
+                                        <div className="flex items-center justify-between pt-2 border-t border-zinc-800">
+                                            <div className="flex items-center gap-4 text-sm text-gray-400">
+                                                <div className="flex items-center gap-1">
+                                                    <HeartIcon className="w-5 h-5" />
+                                                    <span>{ranking.likes || 0}</span>
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    <ChatBubbleLeftRightIcon className="w-5 h-5" />
+                                                    <span>{ranking.commentCount || 0}</span>
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    <EyeIcon className="w-5 h-5" />
+                                                    <span>{ranking.views || 0}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             ) : (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
