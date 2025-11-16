@@ -430,178 +430,187 @@ export default function UserProfilePage() {
                 </div>
             </div>
 
-            {watchLaterPreview.length > 0 && (
-                <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4 mb-6">
-                    <div className="flex items-center gap-2 mb-3">
-                        <ClockIcon className="w-5 h-5 text-indigo-400" />
-                        <h2 className="text-lg font-semibold text-white">
-                            Watch Later ({watchLaterPreview.length})
-                        </h2>
-                    </div>
-                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
-                        {watchLaterPreview.slice(0, 10).map((content) => (
-                            <div
-                                key={content.id}
-                                className="aspect-[2/3] relative overflow-hidden rounded"
-                            >
-                                <ContentCard content={content} />
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
             <div className="space-y-12">
-                <section id="rankings-section">
-                    <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-2">
-                            <TrophyIcon className="w-6 h-6 text-yellow-500" />
-                            <h2 className="text-2xl font-bold text-white">Public Rankings</h2>
+                {/* Rankings and Collections - Side by Side */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Rankings Section */}
+                    <section id="rankings-section">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-2">
+                                <TrophyIcon className="w-6 h-6 text-yellow-500" />
+                                <h2 className="text-2xl font-bold text-white">Rankings</h2>
+                            </div>
+                            <Link
+                                href={`/users/${userId}/rankings`}
+                                className="text-sm text-blue-400 hover:text-blue-300"
+                            >
+                                View all ({publicRankings.length})
+                            </Link>
                         </div>
-                        <Link
-                            href={`/users/${userId}/rankings`}
-                            className="text-sm text-blue-400 hover:text-blue-300"
-                        >
-                            View all ({publicRankings.length})
-                        </Link>
-                    </div>
-                    {publicRankings.length > 0 ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                            {publicRankings.slice(0, 10).map((ranking) => (
-                                <Link
-                                    key={ranking.id}
-                                    href={`/rankings/${ranking.id}`}
-                                    className="group bg-zinc-900/50 rounded-lg p-3 border border-zinc-800 hover:border-yellow-700/50 transition-all cursor-pointer"
-                                >
-                                    <h3 className="text-sm font-semibold text-white group-hover:text-yellow-400 transition-colors line-clamp-2 mb-2">
-                                        {ranking.title}
-                                    </h3>
-                                    <div className="grid grid-cols-3 gap-1 mb-2">
-                                        {ranking.rankedItems?.slice(0, 3).map((item, idx) => (
-                                            <div
-                                                key={idx}
-                                                className="aspect-[2/3] relative overflow-hidden rounded"
-                                            >
-                                                {item.content?.poster_path && (
-                                                    <img
-                                                        src={`https://image.tmdb.org/t/p/w185${item.content.poster_path}`}
-                                                        alt=""
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="flex items-center justify-between text-xs text-gray-500">
-                                        <span className="flex items-center gap-1">
-                                            ❤️ {ranking.likes || 0}
-                                        </span>
-                                        <span className="flex items-center gap-1">
-                                            👁️ {ranking.views || 0}
-                                        </span>
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-12 bg-zinc-900 rounded-lg border border-zinc-800">
-                            <TrophyIcon className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                            <p className="text-gray-400">No public rankings yet</p>
-                        </div>
-                    )}
-                </section>
-
-                <section id="collections-section">
-                    <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-2">
-                            <RectangleStackIcon className="w-6 h-6 text-purple-500" />
-                            <h2 className="text-2xl font-bold text-white">Public Collections</h2>
-                        </div>
-                        <Link
-                            href={`/users/${userId}/collections`}
-                            className="text-sm text-blue-400 hover:text-blue-300"
-                        >
-                            View all ({collections.length})
-                        </Link>
-                    </div>
-                    {collections.length > 0 ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                            {collections.slice(0, 10).map((collection) => (
-                                <div
-                                    key={collection.id}
-                                    className="group bg-zinc-900/50 rounded-lg p-3 border border-zinc-800 hover:border-purple-700/50 transition-all"
-                                >
-                                    <div className="flex items-center gap-2 mb-2">
-                                        {collection.emoji && (
-                                            <span className="text-xl">{collection.emoji}</span>
-                                        )}
-                                        <h3 className="text-sm font-semibold text-white group-hover:text-purple-400 transition-colors line-clamp-2 flex-1">
-                                            {collection.name}
+                        {publicRankings.length > 0 ? (
+                            <div className="space-y-3">
+                                {publicRankings.slice(0, 3).map((ranking) => (
+                                    <Link
+                                        key={ranking.id}
+                                        href={`/rankings/${ranking.id}`}
+                                        className="group bg-zinc-900/50 rounded-lg p-3 border border-zinc-800 hover:border-yellow-700/50 transition-all cursor-pointer block"
+                                    >
+                                        <h3 className="text-sm font-semibold text-white group-hover:text-yellow-400 transition-colors line-clamp-2 mb-2">
+                                            {ranking.title}
                                         </h3>
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-1 mb-2">
-                                        {collection.items?.slice(0, 3).map((item) => (
-                                            <div
-                                                key={item.id}
-                                                className="aspect-[2/3] relative overflow-hidden rounded"
-                                            >
-                                                {item.poster_path && (
-                                                    <img
-                                                        src={`https://image.tmdb.org/t/p/w185${item.poster_path}`}
-                                                        alt=""
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="flex items-center justify-between text-xs text-gray-500">
-                                        <span className="flex items-center gap-1">
-                                            📚 {collection.items?.length || 0} items
-                                        </span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-12 bg-zinc-900 rounded-lg border border-zinc-800">
-                            <RectangleStackIcon className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                            <p className="text-gray-400">No public collections yet</p>
-                        </div>
-                    )}
-                </section>
+                                        <div className="grid grid-cols-3 gap-1 mb-2">
+                                            {ranking.rankedItems?.slice(0, 3).map((item, idx) => (
+                                                <div
+                                                    key={idx}
+                                                    className="aspect-[2/3] relative overflow-hidden rounded"
+                                                >
+                                                    {item.content?.poster_path && (
+                                                        <img
+                                                            src={`https://image.tmdb.org/t/p/w185${item.content.poster_path}`}
+                                                            alt=""
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="flex items-center justify-between text-xs text-gray-500">
+                                            <span className="flex items-center gap-1">
+                                                ❤️ {ranking.likes || 0}
+                                            </span>
+                                            <span className="flex items-center gap-1">
+                                                👁️ {ranking.views || 0}
+                                            </span>
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-12 bg-zinc-900 rounded-lg border border-zinc-800">
+                                <TrophyIcon className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                                <p className="text-gray-400">No rankings yet</p>
+                            </div>
+                        )}
+                    </section>
 
-                <section id="liked-section">
-                    <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-2">
-                            <HeartIcon className="w-6 h-6 text-red-500" />
-                            <h2 className="text-2xl font-bold text-white">Liked Content</h2>
+                    {/* Collections Section */}
+                    <section id="collections-section">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-2">
+                                <RectangleStackIcon className="w-6 h-6 text-purple-500" />
+                                <h2 className="text-2xl font-bold text-white">Collections</h2>
+                            </div>
+                            <Link
+                                href={`/users/${userId}/collections`}
+                                className="text-sm text-blue-400 hover:text-blue-300"
+                            >
+                                View all ({collections.length})
+                            </Link>
                         </div>
-                        <Link
-                            href={`/users/${userId}/liked`}
-                            className="text-sm text-blue-400 hover:text-blue-300"
-                        >
-                            View all ({likedContent.length})
-                        </Link>
-                    </div>
-                    {likedContent.length > 0 ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
-                            {likedContent.slice(0, 5).map((content) => (
-                                <div
-                                    key={content.id}
-                                    className="aspect-[2/3] relative overflow-hidden rounded"
-                                >
-                                    <ContentCard content={content} />
-                                </div>
-                            ))}
+                        {collections.length > 0 ? (
+                            <div className="space-y-3">
+                                {collections.slice(0, 3).map((collection) => (
+                                    <Link
+                                        key={collection.id}
+                                        href={`/users/${userId}/collections/${collection.id}`}
+                                        className="group bg-zinc-900/50 rounded-lg p-3 border border-zinc-800 hover:border-purple-700/50 transition-all cursor-pointer block"
+                                    >
+                                        <div className="flex items-center gap-2 mb-2">
+                                            {collection.emoji && (
+                                                <span className="text-xl">{collection.emoji}</span>
+                                            )}
+                                            <h3 className="text-sm font-semibold text-white group-hover:text-purple-400 transition-colors line-clamp-2 flex-1">
+                                                {collection.name}
+                                            </h3>
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-1 mb-2">
+                                            {collection.items?.slice(0, 3).map((item) => (
+                                                <div
+                                                    key={item.id}
+                                                    className="aspect-[2/3] relative overflow-hidden rounded"
+                                                >
+                                                    {item.poster_path && (
+                                                        <img
+                                                            src={`https://image.tmdb.org/t/p/w185${item.poster_path}`}
+                                                            alt=""
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="flex items-center justify-between text-xs text-gray-500">
+                                            <span className="flex items-center gap-1">
+                                                📚 {collection.items?.length || 0} items
+                                            </span>
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-12 bg-zinc-900 rounded-lg border border-zinc-800">
+                                <RectangleStackIcon className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                                <p className="text-gray-400">No collections yet</p>
+                            </div>
+                        )}
+                    </section>
+                </div>
+
+                {/* Liked Content and Watch Later - Side by Side */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Liked Content Section */}
+                    <section id="liked-section">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-2">
+                                <HeartIcon className="w-6 h-6 text-red-500" />
+                                <h2 className="text-2xl font-bold text-white">Liked Content</h2>
+                            </div>
+                            <Link
+                                href={`/users/${userId}/liked`}
+                                className="text-sm text-blue-400 hover:text-blue-300"
+                            >
+                                View all ({likedContent.length})
+                            </Link>
                         </div>
-                    ) : (
-                        <div className="text-center py-12 bg-zinc-900 rounded-lg border border-zinc-800">
-                            <HeartIcon className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                            <p className="text-gray-400">No liked content yet</p>
-                        </div>
+                        {likedContent.length > 0 ? (
+                            <div className="grid grid-cols-3 gap-2">
+                                {likedContent.slice(0, 3).map((content) => (
+                                    <div
+                                        key={content.id}
+                                        className="aspect-[2/3] relative overflow-hidden rounded"
+                                    >
+                                        <ContentCard content={content} />
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-12 bg-zinc-900 rounded-lg border border-zinc-800">
+                                <HeartIcon className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                                <p className="text-gray-400">No liked content yet</p>
+                            </div>
+                        )}
+                    </section>
+
+                    {/* Watch Later Section */}
+                    {watchLaterPreview.length > 0 && (
+                        <section>
+                            <div className="flex items-center gap-2 mb-6">
+                                <ClockIcon className="w-6 h-6 text-indigo-400" />
+                                <h2 className="text-2xl font-bold text-white">Watch Later</h2>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                                {watchLaterPreview.slice(0, 3).map((content) => (
+                                    <div
+                                        key={content.id}
+                                        className="aspect-[2/3] relative overflow-hidden rounded"
+                                    >
+                                        <ContentCard content={content} />
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
                     )}
-                </section>
+                </div>
 
                 <section id="forum-section">
                     <div className="flex items-center justify-between mb-6">
