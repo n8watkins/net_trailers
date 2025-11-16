@@ -16,9 +16,10 @@ const DEFAULT_RESPONSE_HEADERS = {
 
 export async function GET(
     _request: NextRequest,
-    { params }: { params: { userId: string } }
+    { params }: { params: Promise<{ userId: string }> }
 ): Promise<NextResponse> {
-    const userId = params?.userId?.trim()
+    const { userId: userIdRaw } = await params
+    const userId = userIdRaw?.trim()
 
     if (!userId) {
         return NextResponse.json(
