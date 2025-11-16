@@ -110,10 +110,14 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
                         </div>
                     </div>
 
-                    {/* Description */}
-                    {ranking.description && (
-                        <p className="text-sm text-gray-400 line-clamp-2">{ranking.description}</p>
-                    )}
+                    {/* Description - Fixed height for 2 lines */}
+                    <div className="h-10">
+                        {ranking.description && (
+                            <p className="text-sm text-gray-400 line-clamp-2">
+                                {ranking.description}
+                            </p>
+                        )}
+                    </div>
 
                     {/* Author info */}
                     {showAuthor && (

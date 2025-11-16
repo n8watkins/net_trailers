@@ -446,52 +446,34 @@ function RankingsTab({
                 </div>
             )}
 
-            {/* Rankings List - Group by Tags and Show Content Previews */}
+            {/* Rankings List */}
             {finalFilteredRankings.length > 0 ? (
                 <div className="space-y-6">
-                    {(() => {
-                        // Group filtered rankings by tags
-                        const groupedRankings: Record<string, any[]> = {}
-
-                        finalFilteredRankings.forEach((ranking: any) => {
-                            if (ranking.tags && ranking.tags.length > 0) {
-                                ranking.tags.forEach((tag: string) => {
-                                    if (!groupedRankings[tag]) {
-                                        groupedRankings[tag] = []
-                                    }
-                                    groupedRankings[tag].push(ranking)
-                                })
-                            } else {
-                                if (!groupedRankings['Other']) {
-                                    groupedRankings['Other'] = []
-                                }
-                                groupedRankings['Other'].push(ranking)
-                            }
-                        })
-
-                        // If filtering by tag, only show that tag
-                        const tagsToShow = filterByTag
-                            ? groupedRankings[filterByTag]
-                                ? [filterByTag]
-                                : []
-                            : Object.keys(groupedRankings).sort(
-                                  (a, b) => groupedRankings[b].length - groupedRankings[a].length
-                              )
-
-                        return tagsToShow.map((tag) => {
-                            const tagData = POPULAR_TAGS.find((t) => t.name === tag)
+                    {filterByTag ? (
+                        // When a specific tag is selected, show that tag group
+                        (() => {
+                            const tagData = POPULAR_TAGS.find((t) => t.name === filterByTag)
                             return (
                                 <RankingRow
-                                    key={tag}
-                                    title={tag}
+                                    key={filterByTag}
+                                    title={filterByTag}
                                     emoji={tagData?.emoji}
-                                    rankings={groupedRankings[tag]}
+                                    rankings={finalFilteredRankings}
                                     showAuthor={true}
                                     onLike={handleRankingClick}
                                 />
                             )
-                        })
-                    })()}
+                        })()
+                    ) : (
+                        // When no tag filter (All), show ungrouped rankings
+                        <RankingRow
+                            title="All Rankings"
+                            emoji="🏆"
+                            rankings={finalFilteredRankings}
+                            showAuthor={true}
+                            onLike={handleRankingClick}
+                        />
+                    )}
                 </div>
             ) : (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
