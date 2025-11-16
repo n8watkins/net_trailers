@@ -279,7 +279,7 @@ export default function ProfilePage() {
                         <ClockIcon className="w-6 h-6 text-indigo-400" />
                         <h2 className="text-2xl font-bold text-white">Watch Later</h2>
                         <Link
-                            href="/watch-later"
+                            href="/collections"
                             className="text-base text-indigo-400 hover:text-indigo-300 underline"
                         >
                             View all {userData.defaultWatchlist.length}
