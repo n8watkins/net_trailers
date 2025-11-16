@@ -501,138 +501,145 @@ export default function UserProfilePage() {
                 )}
             </div>
 
-            {/* Rankings Section */}
-            <section id="rankings-section" className="mb-6">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                        <TrophyIcon className="w-6 h-6 text-yellow-400" />
-                        <h2 className="text-2xl font-bold text-white">Rankings</h2>
+            {/* Rankings and Collections - Same Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* Rankings Section */}
+                <section id="rankings-section">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                            <TrophyIcon className="w-6 h-6 text-yellow-400" />
+                            <h2 className="text-2xl font-bold text-white">Rankings</h2>
+                        </div>
+                        <Link
+                            href={`/users/${userId}/rankings`}
+                            className="text-sm text-yellow-400 hover:text-yellow-300"
+                        >
+                            View all ({publicRankings.length})
+                        </Link>
                     </div>
-                    <Link
-                        href={`/users/${userId}/rankings`}
-                        className="text-sm text-yellow-400 hover:text-yellow-300"
-                    >
-                        View all ({publicRankings.length})
-                    </Link>
-                </div>
-                {publicRankings.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {publicRankings.slice(0, 3).map((ranking) => (
-                            <Link
-                                key={ranking.id}
-                                href={`/rankings/${ranking.id}`}
-                                className="group bg-gradient-to-br from-yellow-900/20 to-orange-900/10 border border-yellow-800/30 hover:border-yellow-700/50 rounded-xl p-4 transition-all cursor-pointer block"
-                            >
-                                <h3 className="text-lg font-bold text-white group-hover:text-yellow-400 transition-colors line-clamp-2 mb-3">
-                                    {ranking.title}
-                                </h3>
-                                <div className="flex gap-2 mb-3">
-                                    {ranking.rankedItems?.slice(0, 3).map((item, idx) => (
-                                        <div
-                                            key={idx}
-                                            className="w-16 aspect-[2/3] relative overflow-hidden rounded"
-                                        >
-                                            {item.content?.poster_path && (
-                                                <img
-                                                    src={`https://image.tmdb.org/t/p/w185${item.content.poster_path}`}
-                                                    alt=""
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="flex items-center gap-4 text-sm text-gray-400">
-                                    <span className="flex items-center gap-1.5">
-                                        <HeartIcon className="w-4 h-4" />
-                                        <span className="font-medium">{ranking.likes || 0}</span>
-                                    </span>
-                                    <span className="flex items-center gap-1.5">
-                                        <EyeIcon className="w-4 h-4" />
-                                        <span className="font-medium">{ranking.views || 0}</span>
-                                    </span>
-                                    <span className="flex items-center gap-1.5">
-                                        <ChatBubbleLeftRightIcon className="w-4 h-4" />
-                                        <span className="font-medium">
-                                            {ranking.comments?.length || 0}
-                                        </span>
-                                    </span>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="text-center py-12 bg-gradient-to-br from-yellow-900/20 to-orange-900/10 border border-yellow-800/30 rounded-xl">
-                        <TrophyIcon className="w-16 h-16 text-yellow-900 mx-auto mb-4" />
-                        <p className="text-gray-400">No rankings yet</p>
-                    </div>
-                )}
-            </section>
-
-            {/* Collections Section */}
-            <section id="collections-section" className="mb-6">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                        <RectangleStackIcon className="w-6 h-6 text-purple-400" />
-                        <h2 className="text-2xl font-bold text-white">Collections</h2>
-                    </div>
-                    <Link
-                        href={`/users/${userId}/collections`}
-                        className="text-sm text-purple-400 hover:text-purple-300"
-                    >
-                        View all ({collections.length})
-                    </Link>
-                </div>
-                {collections.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {collections.slice(0, 3).map((collection) => (
-                            <Link
-                                key={collection.id}
-                                href={`/users/${userId}/collections/${collection.id}`}
-                                className="group bg-gradient-to-br from-purple-900/20 to-violet-900/10 border border-purple-800/30 hover:border-purple-700/50 rounded-xl p-4 transition-all cursor-pointer block"
-                            >
-                                <div className="flex items-center gap-2 mb-3">
-                                    {collection.emoji && (
-                                        <span className="text-2xl">{collection.emoji}</span>
-                                    )}
-                                    <h3 className="text-lg font-bold text-white group-hover:text-purple-400 transition-colors line-clamp-2 flex-1">
-                                        {collection.name}
+                    {publicRankings.length > 0 ? (
+                        <div className="space-y-3">
+                            {publicRankings.slice(0, 3).map((ranking) => (
+                                <Link
+                                    key={ranking.id}
+                                    href={`/rankings/${ranking.id}`}
+                                    className="group bg-gradient-to-br from-yellow-900/20 to-orange-900/10 border border-yellow-800/30 hover:border-yellow-700/50 rounded-xl p-4 transition-all cursor-pointer block"
+                                >
+                                    <h3 className="text-lg font-bold text-white group-hover:text-yellow-400 transition-colors line-clamp-2 mb-3">
+                                        {ranking.title}
                                     </h3>
-                                </div>
-                                <div className="flex gap-2 mb-3">
-                                    {collection.items?.slice(0, 3).map((item) => (
-                                        <div
-                                            key={item.id}
-                                            className="w-16 aspect-[2/3] relative overflow-hidden rounded"
-                                        >
-                                            {item.poster_path && (
-                                                <img
-                                                    src={`https://image.tmdb.org/t/p/w185${item.poster_path}`}
-                                                    alt=""
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="flex items-center text-sm text-gray-400">
-                                    <span className="flex items-center gap-1.5">
-                                        <RectangleStackIcon className="w-4 h-4" />
-                                        <span className="font-medium">
-                                            {collection.items?.length || 0} items
+                                    <div className="flex gap-2 mb-3">
+                                        {ranking.rankedItems?.slice(0, 3).map((item, idx) => (
+                                            <div
+                                                key={idx}
+                                                className="w-16 aspect-[2/3] relative overflow-hidden rounded"
+                                            >
+                                                {item.content?.poster_path && (
+                                                    <img
+                                                        src={`https://image.tmdb.org/t/p/w185${item.content.poster_path}`}
+                                                        alt=""
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="flex items-center gap-4 text-sm text-gray-400">
+                                        <span className="flex items-center gap-1.5">
+                                            <HeartIcon className="w-4 h-4" />
+                                            <span className="font-medium">
+                                                {ranking.likes || 0}
+                                            </span>
                                         </span>
-                                    </span>
-                                </div>
-                            </Link>
-                        ))}
+                                        <span className="flex items-center gap-1.5">
+                                            <EyeIcon className="w-4 h-4" />
+                                            <span className="font-medium">
+                                                {ranking.views || 0}
+                                            </span>
+                                        </span>
+                                        <span className="flex items-center gap-1.5">
+                                            <ChatBubbleLeftRightIcon className="w-4 h-4" />
+                                            <span className="font-medium">
+                                                {ranking.comments?.length || 0}
+                                            </span>
+                                        </span>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-12 bg-gradient-to-br from-yellow-900/20 to-orange-900/10 border border-yellow-800/30 rounded-xl">
+                            <TrophyIcon className="w-16 h-16 text-yellow-900 mx-auto mb-4" />
+                            <p className="text-gray-400">No rankings yet</p>
+                        </div>
+                    )}
+                </section>
+
+                {/* Collections Section */}
+                <section id="collections-section">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                            <RectangleStackIcon className="w-6 h-6 text-purple-400" />
+                            <h2 className="text-2xl font-bold text-white">Collections</h2>
+                        </div>
+                        <Link
+                            href={`/users/${userId}/collections`}
+                            className="text-sm text-purple-400 hover:text-purple-300"
+                        >
+                            View all ({collections.length})
+                        </Link>
                     </div>
-                ) : (
-                    <div className="text-center py-12 bg-gradient-to-br from-purple-900/20 to-violet-900/10 border border-purple-800/30 rounded-xl">
-                        <RectangleStackIcon className="w-16 h-16 text-purple-900 mx-auto mb-4" />
-                        <p className="text-gray-400">No collections yet</p>
-                    </div>
-                )}
-            </section>
+                    {collections.length > 0 ? (
+                        <div className="space-y-3">
+                            {collections.slice(0, 3).map((collection) => (
+                                <Link
+                                    key={collection.id}
+                                    href={`/users/${userId}/collections/${collection.id}`}
+                                    className="group bg-gradient-to-br from-purple-900/20 to-violet-900/10 border border-purple-800/30 hover:border-purple-700/50 rounded-xl p-4 transition-all cursor-pointer block"
+                                >
+                                    <div className="flex items-center gap-2 mb-3">
+                                        {collection.emoji && (
+                                            <span className="text-2xl">{collection.emoji}</span>
+                                        )}
+                                        <h3 className="text-lg font-bold text-white group-hover:text-purple-400 transition-colors line-clamp-2 flex-1">
+                                            {collection.name}
+                                        </h3>
+                                    </div>
+                                    <div className="flex gap-2 mb-3">
+                                        {collection.items?.slice(0, 3).map((item) => (
+                                            <div
+                                                key={item.id}
+                                                className="w-16 aspect-[2/3] relative overflow-hidden rounded"
+                                            >
+                                                {item.poster_path && (
+                                                    <img
+                                                        src={`https://image.tmdb.org/t/p/w185${item.poster_path}`}
+                                                        alt=""
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="flex items-center text-sm text-gray-400">
+                                        <span className="flex items-center gap-1.5">
+                                            <RectangleStackIcon className="w-4 h-4" />
+                                            <span className="font-medium">
+                                                {collection.items?.length || 0} items
+                                            </span>
+                                        </span>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-12 bg-gradient-to-br from-purple-900/20 to-violet-900/10 border border-purple-800/30 rounded-xl">
+                            <RectangleStackIcon className="w-16 h-16 text-purple-900 mx-auto mb-4" />
+                            <p className="text-gray-400">No collections yet</p>
+                        </div>
+                    )}
+                </section>
+            </div>
 
             <div className="space-y-12">
                 <section id="forum-section">
