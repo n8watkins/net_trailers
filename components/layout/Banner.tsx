@@ -96,6 +96,13 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
 
     const contentImgUrl = featuredContent?.backdrop_path || featuredContent?.poster_path
 
+    // If hero slide has no image at all, don't block the rest of the page
+    useEffect(() => {
+        if (currentIndex === 0 && !contentImgUrl && onHeroImageLoaded) {
+            onHeroImageLoaded()
+        }
+    }, [contentImgUrl, currentIndex, onHeroImageLoaded])
+
     // Debug logging
     if (featuredContent) {
         bannerLog('Banner Debug:', {
@@ -149,6 +156,12 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
                             }`}
                             onLoad={() => {
                                 // Ensure callback is called when Next.js Image actually renders
+                                if (currentIndex === 0 && onHeroImageLoaded) {
+                                    onHeroImageLoaded()
+                                }
+                            }}
+                            onError={() => {
+                                console.warn('Failed to load banner hero image')
                                 if (currentIndex === 0 && onHeroImageLoaded) {
                                     onHeroImageLoaded()
                                 }

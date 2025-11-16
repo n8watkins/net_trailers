@@ -122,6 +122,7 @@ export async function createRanking(
         id: rankingId,
         userId,
         userName: username,
+        userUsername: username,
         userAvatar: userAvatar || null,
         title: request.title.trim(),
         description: request.description?.trim(),
@@ -256,21 +257,21 @@ export async function getPublicRankings(
  * Remove undefined values from an object recursively
  * Firestore doesn't accept undefined values
  */
-function removeUndefined(obj: any): any {
+function removeUndefined<T>(obj: T): T {
     if (obj === null || obj === undefined) {
-        return null
+        return obj
     }
     if (Array.isArray(obj)) {
-        return obj.map((item) => removeUndefined(item))
+        return obj.map((item) => removeUndefined(item)) as unknown as T
     }
     if (typeof obj === 'object') {
-        const cleaned: any = {}
-        for (const [key, value] of Object.entries(obj)) {
+        const cleaned: Record<string, unknown> = {}
+        Object.entries(obj as Record<string, unknown>).forEach(([key, value]) => {
             if (value !== undefined) {
                 cleaned[key] = removeUndefined(value)
             }
-        }
-        return cleaned
+        })
+        return cleaned as T
     }
     return obj
 }
@@ -308,12 +309,27 @@ export async function updateRanking(
             cleanedRankedItems = removeUndefined(updates.rankedItems)
         }
 
-        // Trim text fields
-        const sanitizedUpdates = {
-            ...updates,
-            rankedItems: cleanedRankedItems,
-            title: updates.title?.trim(),
-            description: updates.description?.trim(),
+        // Trim text fields and only include defined values
+        const sanitizedUpdates: Partial<Ranking> = {}
+
+        if (updates.rankedItems !== undefined) {
+            sanitizedUpdates.rankedItems =
+                (cleanedRankedItems as Ranking['rankedItems']) ?? ([] as Ranking['rankedItems'])
+        }
+        if (updates.title !== undefined) {
+            sanitizedUpdates.title = updates.title?.trim() ?? ''
+        }
+        if (updates.description !== undefined) {
+            sanitizedUpdates.description = updates.description?.trim() ?? ''
+        }
+        if (updates.isPublic !== undefined) {
+            sanitizedUpdates.isPublic = updates.isPublic
+        }
+        if (updates.itemCount !== undefined) {
+            sanitizedUpdates.itemCount = updates.itemCount
+        }
+        if (updates.tags !== undefined) {
+            sanitizedUpdates.tags = updates.tags
         }
 
         transaction.update(rankingRef, {
@@ -480,6 +496,7 @@ export async function updateRankingsUsername(userId: string, newUsername: string
         for (const rankingDoc of rankingsSnapshot.docs) {
             batch.update(rankingDoc.ref, {
                 userName: newUsername,
+                userUsername: newUsername,
                 updatedAt: timestamp,
             })
             operations++
@@ -552,7 +569,10 @@ export async function getUserLikedRankings(
     try {
         // Get ranking likes by this user (with pagination)
         const likesRef = collection(db, COLLECTIONS.likes)
-        const constraints: any[] = [where('userId', '==', userId), firestoreLimit(limit)]
+        const constraints: QueryConstraint[] = [
+            where('userId', '==', userId),
+            firestoreLimit(limit),
+        ]
 
         // Add cursor if provided
         if (startAfterDoc) {

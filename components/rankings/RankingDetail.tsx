@@ -59,7 +59,6 @@ export function RankingDetail({
     const { likeRanking, unlikeRanking, incrementView, loadComments } = useRankingStore()
 
     const [isLiked, setIsLiked] = useState(false)
-    const [isCheckingLike, setIsCheckingLike] = useState(true)
     const [localLikes, setLocalLikes] = useState(ranking.likes)
     const [localViews, setLocalViews] = useState(ranking.views)
     const [isLoadingComments, setIsLoadingComments] = useState(false)
@@ -71,21 +70,14 @@ export function RankingDetail({
         let isMounted = true
 
         const checkLikeStatus = async () => {
-            if (userId) {
-                try {
-                    const liked = await hasUserLikedRanking(userId, rankingId)
-                    if (isMounted) {
-                        setIsLiked(liked)
-                    }
-                } catch (error) {
-                    console.error('Failed to check like status:', error)
-                } finally {
-                    if (isMounted) {
-                        setIsCheckingLike(false)
-                    }
+            if (!userId) return
+            try {
+                const liked = await hasUserLikedRanking(userId, rankingId)
+                if (isMounted) {
+                    setIsLiked(liked)
                 }
-            } else {
-                setIsCheckingLike(false)
+            } catch (error) {
+                console.error('Failed to check like status:', error)
             }
         }
 
@@ -252,7 +244,7 @@ export function RankingDetail({
                     )}
                     <div>
                         <Link
-                            href={`/users/${ranking.userId}`}
+                            href={`/users/${ranking.userUsername || ranking.userId}`}
                             className="text-white font-medium hover:text-yellow-400 transition-colors"
                         >
                             {ranking.userName || 'Unknown User'}

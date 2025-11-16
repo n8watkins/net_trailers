@@ -36,6 +36,7 @@ import { useAuthStatus } from '../../hooks/useAuthStatus'
 import { useRankingStore } from '../../stores/rankingStore'
 import { useForumStore } from '../../stores/forumStore'
 import { ChatBubbleLeftRightIcon, ChartBarIcon as PollIcon } from '@heroicons/react/24/outline'
+import { useProfileStore } from '../../stores/profileStore'
 
 export default function ProfilePage() {
     const { user, loading: authLoading } = useAuth()
@@ -45,10 +46,10 @@ export default function ProfilePage() {
     const debugSettings = useDebugSettings()
     const [isSeeding, setIsSeeding] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
-    const sessionType = useSessionStore((state) => state.sessionType)
     const isInitialized = useSessionStore((state) => state.isInitialized)
     const { rankings, loadUserRankings } = useRankingStore()
     const { threads, polls, loadThreads, loadPolls } = useForumStore()
+    const profileUsername = useProfileStore((state) => state.profile?.username)
 
     // Show loading state while data is being fetched
     const isLoading = !isInitialized || isLoadingHistory || authLoading
@@ -88,8 +89,7 @@ export default function ProfilePage() {
                 createCollections: true,
                 notificationCount: 8,
             })
-            // Force a page reload to show the new data
-            window.location.reload()
+            setIsSeeding(false)
         } catch (error) {
             console.error('Failed to seed data:', error)
             setIsSeeding(false)
@@ -107,8 +107,7 @@ export default function ProfilePage() {
             await userData.clearAccountData()
             console.log('[Profile] ✅ Quick delete completed')
 
-            // Force a page reload to show empty state
-            window.location.reload()
+            setIsDeleting(false)
         } catch (error) {
             console.error('[Profile] ❌ Failed to delete data:', error)
             alert('Failed to delete data. Please try again or use Settings > Clear All Data.')
@@ -192,7 +191,7 @@ export default function ProfilePage() {
                         {/* View Public Profile Button - Auth only */}
                         {!isGuest && currentUserId && (
                             <Link
-                                href={`/users/${currentUserId}`}
+                                href={`/users/${profileUsername || currentUserId}`}
                                 className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-400 rounded-lg transition-colors text-sm font-medium"
                             >
                                 <EyeIcon className="w-4 h-4" />

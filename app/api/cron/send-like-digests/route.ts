@@ -63,8 +63,9 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
         }
 
-        const authBuffer = Buffer.from(authHeader)
-        const expectedBuffer = Buffer.from(expectedHeader)
+        const encoder = new TextEncoder()
+        const authBuffer = encoder.encode(authHeader)
+        const expectedBuffer = encoder.encode(expectedHeader)
 
         let isValid = false
         try {

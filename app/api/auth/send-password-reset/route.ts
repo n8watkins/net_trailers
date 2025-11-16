@@ -8,7 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { EmailService } from '@/lib/email/email-service'
-import { apiError, apiLog } from '@/utils/debugLogger'
+import { apiError, apiLog, apiWarn } from '@/utils/debugLogger'
 import crypto from 'crypto'
 import { getAdminDb } from '@/lib/firebase-admin'
 
@@ -96,26 +96,34 @@ export async function POST(request: NextRequest) {
         const resetUrl = `${appUrl}/auth/reset-password?token=${resetToken}`
 
         // Send email via EmailService
-        const { data, error } = await EmailService.sendPasswordReset({
+        const emailResult = await EmailService.sendPasswordReset({
             to: email,
             userName: username,
             resetUrl,
             expiresIn: 1, // 1 hour
         })
 
-        if (error) {
-            apiError('Error sending password reset email:', error)
+        if (!emailResult) {
+            apiWarn('[Auth] Password reset email skipped - email service unavailable')
+        } else if (emailResult.error) {
+            apiError('Error sending password reset email:', emailResult.error)
             return NextResponse.json(
                 { error: 'Failed to send password reset email' },
                 { status: 500 }
             )
         }
 
-        apiLog(`Password reset email sent to ${email}, emailId: ${data?.id}`)
+        apiLog(
+            `Password reset email ${emailResult ? 'sent' : 'skipped'} for ${email}`,
+            emailResult?.data?.id ? { emailId: emailResult.data.id } : undefined
+        )
 
         return NextResponse.json({
             success: true,
-            message: 'Password reset email sent successfully',
+            message: emailResult
+                ? 'Password reset email sent successfully'
+                : 'Email service unavailable; password reset email skipped',
+            emailSent: Boolean(emailResult),
         })
     } catch (error) {
         apiError('Error in send-password-reset route:', error)

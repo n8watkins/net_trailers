@@ -5,10 +5,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { Resend } from 'resend'
 import { getAdminAuth } from '@/lib/firebase-admin'
-
-const resend = new Resend(process.env.RESEND_API_KEY)
+import { Resend } from 'resend'
 
 interface NotificationRequest {
     recipientUserId: string // Firebase UID to get email from
@@ -57,13 +55,12 @@ export async function POST(request: NextRequest) {
         }
 
         // Skip if Resend API key is not configured
-        if (
-            !process.env.RESEND_API_KEY ||
-            process.env.RESEND_API_KEY === 'your_resend_api_key_here'
-        ) {
+        const resendApiKey = process.env.RESEND_API_KEY
+        if (!resendApiKey || resendApiKey === 'your_resend_api_key_here') {
             console.log('Resend API key not configured, skipping email notification')
             return NextResponse.json({ success: true, skipped: true, reason: 'no-api-key' })
         }
+        const resend = new Resend(resendApiKey)
 
         // Get recipient's email and name from Firebase Auth
         const auth = getAdminAuth()

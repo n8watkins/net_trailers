@@ -1,10 +1,12 @@
 import { create } from 'zustand'
 import { Content, getTitle } from '../typings'
-import { UserList } from '../types/userLists'
+import { UserList, UpdateListRequest, CreateListRequest } from '../types/userLists'
 import { UserListsService } from '../services/userListsService'
 import { StorageAdapter, StorageLogger } from '../services/storageAdapter'
 import { firebaseTracker } from '../utils/firebaseCallTracker'
 import { syncManager } from '../utils/firebaseSyncManager'
+import { DEFAULT_NOTIFICATION_PREFERENCES } from '../types/notifications'
+import type { NotificationPreferences } from '../types/notifications'
 
 /**
  * User store state (works for both auth and guest users)
@@ -23,6 +25,7 @@ export interface UserState {
     childSafetyMode?: boolean
     improveRecommendations?: boolean
     showRecommendations?: boolean
+    notifications?: NotificationPreferences
 }
 
 /**
@@ -35,23 +38,10 @@ export interface UserActions {
     removeLikedMovie: (contentId: number) => Promise<void> | void
     addHiddenMovie: (content: Content) => Promise<void> | void
     removeHiddenMovie: (contentId: number) => Promise<void> | void
-    createList: (request: {
-        name: string
-        emoji?: string
-        color?: string
-        isPublic?: boolean
-        collectionType: 'manual' | 'ai-generated'
-        displayAsRow?: boolean
-        description?: string
-        originalQuery?: string
-        canGenerateMore?: boolean
-    }) => Promise<string> | string
+    createList: (request: CreateListRequest) => Promise<string> | string
     addToList: (listId: string, content: Content) => Promise<void> | void
     removeFromList: (listId: string, contentId: number) => Promise<void> | void
-    updateList: (
-        listId: string,
-        updates: { name?: string; emoji?: string; color?: string }
-    ) => Promise<void> | void
+    updateList: (listId: string, updates: Omit<UpdateListRequest, 'id'>) => Promise<void> | void
     deleteList: (listId: string) => Promise<void> | void
     updatePreferences: (prefs: Partial<UserState>) => Promise<void> | void
     syncWithStorage?: (userId: string) => Promise<void> // Only for Firebase adapter
@@ -86,6 +76,11 @@ export function createUserStore(options: CreateUserStoreOptions) {
     const { adapter, logger, idField, trackingContext, enableFirebaseSync, enableGuestFeatures } =
         options
 
+    const cloneDefaultNotifications = (): NotificationPreferences => ({
+        ...DEFAULT_NOTIFICATION_PREFERENCES,
+        types: { ...DEFAULT_NOTIFICATION_PREFERENCES.types },
+    })
+
     const getDefaultState = (): UserState => ({
         [idField]: undefined,
         likedMovies: [],
@@ -98,6 +93,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
         childSafetyMode: false,
         improveRecommendations: true,
         showRecommendations: false, // Disabled by default
+        notifications: cloneDefaultNotifications(),
         ...(adapter.isAsync && { syncStatus: 'synced' as const }),
     })
 
@@ -134,6 +130,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                 childSafetyMode: state.childSafetyMode ?? false,
                 improveRecommendations: state.improveRecommendations ?? true,
                 showRecommendations: state.showRecommendations ?? false,
+                notifications: state.notifications ?? cloneDefaultNotifications(),
             })
             logger.log(`✅ [${trackingContext}] Saved to ${adapter.name}`)
         } catch (error) {
@@ -303,17 +300,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
             logger.log(`🗑️ [${trackingContext}] Removed from hidden:`, contentId)
         },
 
-        createList: async (request: {
-            name: string
-            emoji?: string
-            color?: string
-            isPublic?: boolean
-            collectionType: 'manual' | 'ai-generated'
-            displayAsRow?: boolean
-            description?: string
-            originalQuery?: string
-            canGenerateMore?: boolean
-        }) => {
+        createList: async (request: CreateListRequest) => {
             const state = get()
             if (adapter.isAsync) set({ syncStatus: 'syncing' })
 
@@ -542,6 +529,8 @@ export function createUserStore(options: CreateUserStoreOptions) {
                                 childSafetyMode: firebaseData.childSafetyMode ?? false,
                                 improveRecommendations: firebaseData.improveRecommendations ?? true,
                                 showRecommendations: firebaseData.showRecommendations ?? false,
+                                notifications:
+                                    firebaseData.notifications ?? cloneDefaultNotifications(),
                                 syncStatus: 'synced',
                             })
 
@@ -591,6 +580,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                     childSafetyMode: false, // Always false for guests
                     improveRecommendations: loadedData.improveRecommendations ?? true,
                     showRecommendations: loadedData.showRecommendations ?? false,
+                    notifications: loadedData.notifications ?? cloneDefaultNotifications(),
                 })
                 logger.log(`🔄 [${trackingContext}] Synced from localStorage:`, {
                     guestId,
@@ -634,6 +624,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
 
             set({
                 ...data,
+                notifications: data.notifications ?? cloneDefaultNotifications(),
                 lastActive: typeof window !== 'undefined' ? Date.now() : 0,
             })
             logger.log(

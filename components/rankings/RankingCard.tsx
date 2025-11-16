@@ -71,7 +71,7 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
                 {topItems.length > 0 && (
                     <div className="relative h-48 bg-gradient-to-br from-zinc-800/50 to-zinc-900">
                         <div className="absolute inset-0 flex justify-center items-center gap-2 p-4">
-                            {topItems.map((item, index) => (
+                            {topItems.map((item) => (
                                 <div key={item.content.id} className="relative flex-1 h-full">
                                     <Image
                                         src={getPosterPath(item.content)}
@@ -119,7 +119,7 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
                     {showAuthor && (
                         <div className="flex items-center gap-2 text-sm">
                             <Link
-                                href={`/users/${ranking.userId}`}
+                                href={`/users/${ranking.userUsername || ranking.userId}`}
                                 onClick={(e) => e.stopPropagation()}
                                 className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                             >

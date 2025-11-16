@@ -110,6 +110,7 @@ function ListDropdown({
             createList({
                 name: newListName.trim(),
                 isPublic: false,
+                collectionType: 'manual',
             })
             showSuccess('List created', `Created "${newListName.trim()}" list`)
             setNewListName('')

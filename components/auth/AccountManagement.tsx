@@ -119,6 +119,7 @@ export default function AccountManagement() {
                     likedCount: 0,
                     hiddenCount: 0,
                     listsCount: 0,
+                    watchHistoryCount: 0,
                     totalItems: 0,
                     isEmpty: true,
                 })

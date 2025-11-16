@@ -1,4 +1,6 @@
+import { Suspense } from 'react'
 import SmartSearchClient from '../../components/pages/SmartSearchClient'
+import NetflixLoader from '../../components/common/NetflixLoader'
 
 export const metadata = {
     title: 'Smart Search - Net Trailers',
@@ -6,5 +8,9 @@ export const metadata = {
 }
 
 export default function SmartSearchPage() {
-    return <SmartSearchClient />
+    return (
+        <Suspense fallback={<NetflixLoader message="Loading smart search..." />}>
+            <SmartSearchClient />
+        </Suspense>
+    )
 }

@@ -9,8 +9,10 @@
  * - Notifications
  */
 
-import { Movie, TVShow } from '../typings'
+import { Movie, TVShow, Content } from '../typings'
 import type { CreateNotificationRequest } from '../types/notifications'
+import type { ForumCategory, Thread, Poll } from '../types/forum'
+import { Timestamp } from 'firebase/firestore'
 
 // Sample movies for seeding (25 popular movies)
 export const sampleMovies: Movie[] = [
@@ -119,6 +121,7 @@ export const sampleMovies: Movie[] = [
     {
         id: 424,
         title: "Schindler's List",
+        original_title: "Schindler's List",
         overview:
             'The true story of how businessman Oskar Schindler saved over a thousand Jewish lives from the Nazis while they worked as slaves in his factory during World War II.',
         poster_path: '/sF1U4EUQS8YHUYjNl3pMGNIQyr0.jpg',
@@ -407,6 +410,7 @@ export const sampleMovies: Movie[] = [
     {
         id: 510,
         title: "One Flew Over the Cuckoo's Nest",
+        original_title: "One Flew Over the Cuckoo's Nest",
         overview:
             'A criminal pleads insanity and is admitted to a mental institution, where he rebels against the oppressive nurse.',
         poster_path: '/2Sns5oMb47z8kSoAcwL6ywMa2Jb.jpg',
@@ -443,6 +447,7 @@ export const sampleTVShows: TVShow[] = [
     {
         id: 1396,
         name: 'Breaking Bad',
+        original_name: 'Breaking Bad',
         overview:
             'A high school chemistry teacher diagnosed with terminal lung cancer teams up with a former student to manufacture and sell crystallized methamphetamine.',
         poster_path: '/ggFHVNu6YYI5L9pCfOacjizRGt.jpg',
@@ -452,10 +457,14 @@ export const sampleTVShows: TVShow[] = [
         vote_count: 12137,
         genre_ids: [18],
         media_type: 'tv',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 1399,
         name: 'Game of Thrones',
+        original_name: 'Game of Thrones',
         overview:
             'Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war.',
         poster_path: '/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg',
@@ -465,10 +474,14 @@ export const sampleTVShows: TVShow[] = [
         vote_count: 21916,
         genre_ids: [10765, 18, 10759],
         media_type: 'tv',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 94605,
         name: 'Arcane',
+        original_name: 'Arcane',
         overview:
             'Amid the stark discord of twin cities Piltover and Zaun, two sisters fight on rival sides of a war between magic technologies and clashing convictions.',
         poster_path: '/fqldf2t8ztc9aiwn3k6mlX3tvRT.jpg',
@@ -478,10 +491,14 @@ export const sampleTVShows: TVShow[] = [
         vote_count: 3382,
         genre_ids: [16, 10765, 10759, 18],
         media_type: 'tv',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 60625,
         name: 'Rick and Morty',
+        original_name: 'Rick and Morty',
         overview:
             'A genius scientist and his grandson go on wild sci-fi adventures across the multiverse.',
         poster_path: '/gdIrmf2DdY5mgN6ycVP0XlzKzbE.jpg',
@@ -491,10 +508,14 @@ export const sampleTVShows: TVShow[] = [
         vote_count: 9090,
         genre_ids: [16, 35, 10765],
         media_type: 'tv',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 82856,
         name: 'The Mandalorian',
+        original_name: 'The Mandalorian',
         overview:
             'After the fall of the Empire, a lone gunfighter makes his way through the lawless galaxy.',
         poster_path: '/eU1i6eHXlzMOlEq0ku1Rzq7Y4wA.jpg',
@@ -504,10 +525,14 @@ export const sampleTVShows: TVShow[] = [
         vote_count: 8791,
         genre_ids: [10765, 10759, 18],
         media_type: 'tv',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 85271,
         name: 'WandaVision',
+        original_name: 'WandaVision',
         overview:
             'Wanda Maximoff and Vision—two super-powered beings living idealized suburban lives—begin to suspect that everything is not as it seems.',
         poster_path: '/glKDfE6btIRcVB5zrjspRIs4r52.jpg',
@@ -517,10 +542,14 @@ export const sampleTVShows: TVShow[] = [
         vote_count: 11261,
         genre_ids: [10765, 9648, 18],
         media_type: 'tv',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 60059,
         name: 'Better Call Saul',
+        original_name: 'Better Call Saul',
         overview:
             'Six years before Saul Goodman meets Walter White. We meet him when the man who will become Saul Goodman is known as Jimmy McGill.',
         poster_path: '/fC2HDm5t0kHl7mTm7jxMR31b7by.jpg',
@@ -530,10 +559,14 @@ export const sampleTVShows: TVShow[] = [
         vote_count: 4835,
         genre_ids: [35, 18, 80],
         media_type: 'tv',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 100088,
         name: 'The Last of Us',
+        original_name: 'The Last of Us',
         overview:
             'Twenty years after modern civilization has been destroyed, Joel must smuggle Ellie out of an oppressive quarantine zone.',
         poster_path: '/uKvVjHNqB5VmOrdxqAt2F7J78ED.jpg',
@@ -543,10 +576,14 @@ export const sampleTVShows: TVShow[] = [
         vote_count: 5702,
         genre_ids: [18, 10765],
         media_type: 'tv',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 1402,
         name: 'The Walking Dead',
+        original_name: 'The Walking Dead',
         overview:
             'Sheriff Deputy Rick Grimes wakes up from a coma to learn the world is in ruins and must lead a group of survivors to stay alive.',
         poster_path: '/vxuoMW6YBt6UsxvMfRNwRl9LtWS.jpg',
@@ -556,10 +593,14 @@ export const sampleTVShows: TVShow[] = [
         vote_count: 14000,
         genre_ids: [18, 10765],
         media_type: 'tv',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 1668,
         name: 'Friends',
+        original_name: 'Friends',
         overview:
             'The misadventures of a group of friends as they navigate the pitfalls of work, life and love in Manhattan.',
         poster_path: '/f496cm9enuEsZkSPzCwnTESEK5s.jpg',
@@ -569,10 +610,14 @@ export const sampleTVShows: TVShow[] = [
         vote_count: 6000,
         genre_ids: [35],
         media_type: 'tv',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 1434,
         name: 'Family Guy',
+        original_name: 'Family Guy',
         overview:
             'Sick, twisted, politically incorrect and Freakin Sweet animated series featuring the adventures of the dysfunctional Griffin family.',
         poster_path: '/y0HUz4eUNUe3TeEd8fQWYazPaC7.jpg',
@@ -582,10 +627,14 @@ export const sampleTVShows: TVShow[] = [
         vote_count: 4000,
         genre_ids: [16, 35],
         media_type: 'tv',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 1622,
         name: 'Supernatural',
+        original_name: 'Supernatural',
         overview:
             'When they were boys, Sam and Dean Winchester lost their mother to a mysterious and demonic supernatural force.',
         poster_path: '/KoYWXbnYuS3b0GyQPkbuexlVK9.jpg',
@@ -595,10 +644,14 @@ export const sampleTVShows: TVShow[] = [
         vote_count: 5000,
         genre_ids: [18, 9648, 10765],
         media_type: 'tv',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 46952,
         name: 'The Boys',
+        original_name: 'The Boys',
         overview:
             'A group of vigilantes known informally as "The Boys" set out to take down corrupt superheroes with no more than blue-collar grit and a willingness to fight dirty.',
         poster_path: '/2zmTngn1tYC1AvfnrFLhxeD82hz.jpg',
@@ -608,10 +661,14 @@ export const sampleTVShows: TVShow[] = [
         vote_count: 8000,
         genre_ids: [10765, 10759],
         media_type: 'tv',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 4057,
         name: 'Criminal Minds',
+        original_name: 'Criminal Minds',
         overview:
             "An elite team of FBI profilers analyze the country's most twisted criminal minds, anticipating their next moves before they strike again.",
         poster_path: '/7TCwgX7oQKxcWYEhSPRmaHe6ULN.jpg',
@@ -621,10 +678,14 @@ export const sampleTVShows: TVShow[] = [
         vote_count: 3500,
         genre_ids: [80, 18, 9648],
         media_type: 'tv',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 61889,
         name: 'Stranger Things',
+        original_name: 'Stranger Things',
         overview:
             'When a young boy vanishes, a small town uncovers a mystery involving secret experiments, terrifying supernatural forces, and one strange little girl.',
         poster_path: '/49WJfeN0moxb9IPfGn8AIqMGskD.jpg',
@@ -634,10 +695,14 @@ export const sampleTVShows: TVShow[] = [
         vote_count: 16000,
         genre_ids: [18, 10765, 9648],
         media_type: 'tv',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 37854,
         name: 'One Piece',
+        original_name: 'One Piece',
         overview:
             'Years ago, the fearsome Pirate King, Gol D. Roger was executed leaving a huge pile of treasure and the famous "One Piece" behind.',
         poster_path: '/cMD9Ygz11zjJzAovURpO75Qg7rT.jpg',
@@ -647,10 +712,14 @@ export const sampleTVShows: TVShow[] = [
         vote_count: 4500,
         genre_ids: [16, 35, 10759],
         media_type: 'tv',
+        origin_country: ['JP'],
+        original_language: 'ja',
+        popularity: 50.0,
     },
     {
         id: 95396,
         name: 'Severance',
+        original_name: 'Severance',
         overview:
             'Mark Scout leads a team at Lumon Industries, whose employees have undergone a severance procedure, which surgically divides their memories between their work and personal lives.',
         poster_path: '/ux27XEb42I01CysCt5VnfpEYz1s.jpg',
@@ -660,10 +729,14 @@ export const sampleTVShows: TVShow[] = [
         vote_count: 1100,
         genre_ids: [18, 9648, 10765],
         media_type: 'tv',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 84773,
         name: 'The Lord of the Rings: The Rings of Power',
+        original_name: 'The Lord of the Rings: The Rings of Power',
         overview:
             'Beginning in a time of relative peace, we follow an ensemble cast of characters as they confront the re-emergence of evil to Middle-earth.',
         poster_path: '/mYLOqiStMxDK3fYZFirgrMt8z5d.jpg',
@@ -673,10 +746,14 @@ export const sampleTVShows: TVShow[] = [
         vote_count: 2800,
         genre_ids: [10759, 10765, 18],
         media_type: 'tv',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 60574,
         name: 'Peaky Blinders',
+        original_name: 'Peaky Blinders',
         overview:
             'A gangster family epic set in 1919 Birmingham, England and centered on a gang who sew razor blades in the peaks of their caps.',
         poster_path: '/vUUqzWa2LnHIVqkaKVlVGkVcZIW.jpg',
@@ -686,10 +763,14 @@ export const sampleTVShows: TVShow[] = [
         vote_count: 6500,
         genre_ids: [18, 80],
         media_type: 'tv',
+        origin_country: ['GB'],
+        original_language: 'en',
+        popularity: 50.0,
     },
     {
         id: 87108,
         name: 'Chernobyl',
+        original_name: 'Chernobyl',
         overview:
             'The true story of one of the worst man-made catastrophes in history: the catastrophic nuclear accident at Chernobyl.',
         poster_path: '/hlLXt2tOPT6RRnjiUmoxyG1LTFi.jpg',
@@ -699,6 +780,95 @@ export const sampleTVShows: TVShow[] = [
         vote_count: 5800,
         genre_ids: [18],
         media_type: 'tv',
+        origin_country: ['US'],
+        original_language: 'en',
+        popularity: 50.0,
+    },
+]
+
+const LOCAL_SEED_THREAD_PREFIX = 'seed-local-thread-'
+const LOCAL_SEED_POLL_PREFIX = 'seed-local-poll-'
+
+interface ThreadSeedData {
+    title: string
+    content: string
+    category: ForumCategory
+    tags: string[]
+}
+
+interface PollSeedData {
+    question: string
+    description?: string
+    category: ForumCategory
+    options: string[]
+    isMultipleChoice: boolean
+}
+
+const THREAD_SEED_DATA: ThreadSeedData[] = [
+    {
+        title: 'What are your thoughts on the new Dune Part 2?',
+        content:
+            "Just watched Dune Part 2 and I'm blown away! The visuals were stunning and the story kept me engaged throughout. What did everyone else think? I especially loved the desert battle scenes.",
+        category: 'movies',
+        tags: ['dune', 'sci-fi', 'discussion'],
+    },
+    {
+        title: 'Best TV shows of 2024 so far?',
+        content:
+            "We're halfway through 2024 and there have been some incredible shows. What are your top picks? Mine are The Bear Season 3, Shogun, and True Detective Night Country.",
+        category: 'tv-shows',
+        tags: ['2024', 'tv-shows', 'recommendations'],
+    },
+    {
+        title: 'Looking for hidden gem horror movies',
+        content:
+            "I've watched all the popular horror films and I'm looking for some underrated gems. Any recommendations for lesser-known horror movies that deserve more attention?",
+        category: 'recommendations',
+        tags: ['horror', 'recommendations', 'hidden-gems'],
+    },
+    {
+        title: 'Ranking Nolan films - Let the debates begin!',
+        content:
+            "I just finished rewatching all of Christopher Nolan's films and I'm curious how everyone would rank them. My personal top 3 are: 1. The Prestige, 2. Interstellar, 3. Inception. Fight me!",
+        category: 'rankings',
+        tags: ['christopher-nolan', 'rankings', 'debate'],
+    },
+    {
+        title: 'Anyone else disappointed with the Marvel Phase 5?',
+        content:
+            "I've been a huge MCU fan since the beginning, but Phase 5 hasn't been hitting the same for me. The storytelling feels rushed and the character development is lacking. Am I alone in this?",
+        category: 'movies',
+        tags: ['marvel', 'mcu', 'discussion'],
+    },
+]
+
+const POLL_SEED_DATA: PollSeedData[] = [
+    {
+        question: 'What is the best Christopher Nolan film?',
+        description: 'Cast your vote for the greatest Nolan masterpiece!',
+        category: 'movies',
+        options: ['The Dark Knight', 'Inception', 'Interstellar', 'The Prestige', 'Oppenheimer'],
+        isMultipleChoice: false,
+    },
+    {
+        question: 'Which streaming service has the best original content?',
+        description: 'Time to settle this debate once and for all!',
+        category: 'tv-shows',
+        options: ['Netflix', 'HBO Max', 'Apple TV+', 'Disney+', 'Amazon Prime'],
+        isMultipleChoice: false,
+    },
+    {
+        question: 'What genres do you want to see more of? (Select all)',
+        description: 'Help us understand what the community loves!',
+        category: 'general',
+        options: ['Sci-Fi', 'Horror', 'Thriller', 'Comedy', 'Documentary'],
+        isMultipleChoice: true,
+    },
+    {
+        question: 'Best animated movie of all time?',
+        category: 'movies',
+        options: ['Spirited Away', 'The Lion King', 'Toy Story', 'Spider-Verse'],
+        isMultipleChoice: false,
     },
 ]
 
@@ -711,6 +881,242 @@ export interface SeedDataOptions {
     notificationCount?: number
     threadCount?: number
     pollCount?: number
+}
+
+interface ForumSeedOptions {
+    userId: string
+    userName: string
+    userAvatar?: string
+    count: number
+    isGuest: boolean
+}
+
+export async function seedForumThreads({
+    userId,
+    userName,
+    userAvatar,
+    count,
+    isGuest,
+}: ForumSeedOptions): Promise<string[]> {
+    if (count <= 0) {
+        console.log('  ⏭️  Skipping forum threads (threadCount = 0)')
+        return []
+    }
+
+    console.log(`  🧵 Seeding ${count} forum thread${count === 1 ? '' : 's'}...`)
+    const selectedThreads = THREAD_SEED_DATA.slice(0, Math.min(count, THREAD_SEED_DATA.length))
+    const createdThreadIds: string[] = []
+    const { useForumStore } = await import('../stores/forumStore')
+
+    if (isGuest) {
+        const baseTime = Date.now()
+        const generatedThreads: Thread[] = selectedThreads.map((threadData, index) => ({
+            id: `${LOCAL_SEED_THREAD_PREFIX}${userId}_${baseTime}_${index}`,
+            title: threadData.title,
+            content: threadData.content,
+            category: threadData.category,
+            userId,
+            userName,
+            createdAt: Timestamp.fromMillis(baseTime - index * 60 * 60 * 1000),
+            updatedAt: Timestamp.fromMillis(baseTime - index * 60 * 60 * 1000),
+            isPinned: false,
+            isLocked: false,
+            views: Math.floor(Math.random() * 500) + 50,
+            replyCount: Math.floor(Math.random() * 40) + 5,
+            lastReplyAt: Timestamp.fromMillis(baseTime - index * 30 * 60 * 1000),
+            lastReplyBy: { userId, userName },
+            tags: threadData.tags,
+            likes: Math.floor(Math.random() * 80) + 10,
+            images: [],
+            ...(userAvatar ? { userAvatar } : {}),
+        }))
+
+        createdThreadIds.push(...generatedThreads.map((thread) => thread.id))
+
+        useForumStore.setState((state) => ({
+            threads: [
+                ...state.threads.filter(
+                    (thread) => !thread.id.startsWith(LOCAL_SEED_THREAD_PREFIX)
+                ),
+                ...generatedThreads,
+            ],
+        }))
+
+        console.log('    ✅ Added guest threads to local forum store')
+        return createdThreadIds
+    }
+
+    const appendedThreads: Thread[] = []
+
+    for (const threadData of selectedThreads) {
+        try {
+            const now = Timestamp.now()
+            const threadId = await useForumStore
+                .getState()
+                .createThread(
+                    userId,
+                    userName,
+                    userAvatar,
+                    threadData.title,
+                    threadData.content,
+                    threadData.category,
+                    threadData.tags
+                )
+            createdThreadIds.push(threadId)
+            appendedThreads.push({
+                id: threadId,
+                title: threadData.title,
+                content: threadData.content,
+                category: threadData.category,
+                userId,
+                userName,
+                createdAt: now,
+                updatedAt: now,
+                isPinned: false,
+                isLocked: false,
+                views: 0,
+                replyCount: 0,
+                likes: 0,
+                tags: threadData.tags,
+                images: [],
+                ...(userAvatar ? { userAvatar } : {}),
+            })
+            console.log(`    ✅ Created thread: ${threadData.title}`)
+            await new Promise((resolve) => setTimeout(resolve, 200))
+        } catch (error) {
+            console.error(`    ❌ Failed to create thread "${threadData.title}":`, error)
+        }
+    }
+
+    if (appendedThreads.length) {
+        const createdIdSet = new Set(appendedThreads.map((thread) => thread.id))
+        useForumStore.setState((state) => ({
+            threads: [
+                ...state.threads.filter((thread) => !createdIdSet.has(thread.id)),
+                ...appendedThreads,
+            ],
+        }))
+        console.log('    📬 Forum store updated with new threads')
+    }
+
+    return createdThreadIds
+}
+
+export async function seedForumPolls({
+    userId,
+    userName,
+    userAvatar,
+    count,
+    isGuest,
+}: ForumSeedOptions): Promise<string[]> {
+    if (count <= 0) {
+        console.log('  ⏭️  Skipping forum polls (pollCount = 0)')
+        return []
+    }
+
+    console.log(`  📊 Seeding ${count} forum poll${count === 1 ? '' : 's'}...`)
+    const selectedPolls = POLL_SEED_DATA.slice(0, Math.min(count, POLL_SEED_DATA.length))
+    const createdPollIds: string[] = []
+    const { useForumStore } = await import('../stores/forumStore')
+
+    if (isGuest) {
+        const baseTime = Date.now()
+        const generatedPolls: Poll[] = selectedPolls.map((pollData, index) => {
+            const voteCounts = pollData.options.map(() => Math.floor(Math.random() * 40) + 10)
+            const totalVotes = voteCounts.reduce((sum, count) => sum + count, 0)
+
+            return {
+                id: `${LOCAL_SEED_POLL_PREFIX}${userId}_${baseTime}_${index}`,
+                question: pollData.question,
+                category: pollData.category,
+                userId,
+                userName,
+                createdAt: Timestamp.fromMillis(baseTime - index * 90 * 60 * 1000),
+                options: pollData.options.map((optionText, optionIndex) => ({
+                    id: `seed-option-${optionIndex}`,
+                    text: optionText,
+                    votes: voteCounts[optionIndex],
+                    percentage:
+                        totalVotes > 0
+                            ? Math.round((voteCounts[optionIndex] / totalVotes) * 100)
+                            : 0,
+                })),
+                totalVotes,
+                isMultipleChoice: pollData.isMultipleChoice,
+                allowAddOptions: false,
+                tags: [],
+                ...(pollData.description ? { description: pollData.description } : {}),
+                ...(userAvatar ? { userAvatar } : {}),
+            }
+        })
+
+        createdPollIds.push(...generatedPolls.map((poll) => poll.id))
+
+        useForumStore.setState((state) => ({
+            polls: [
+                ...state.polls.filter((poll) => !poll.id.startsWith(LOCAL_SEED_POLL_PREFIX)),
+                ...generatedPolls,
+            ],
+        }))
+
+        console.log('    ✅ Added guest polls to local forum store')
+        return createdPollIds
+    }
+
+    const appendedPolls: Poll[] = []
+
+    for (const pollData of selectedPolls) {
+        try {
+            const pollId = await useForumStore
+                .getState()
+                .createPoll(
+                    userId,
+                    userName,
+                    userAvatar,
+                    pollData.question,
+                    pollData.options,
+                    pollData.category,
+                    pollData.description,
+                    pollData.isMultipleChoice,
+                    undefined
+                )
+            createdPollIds.push(pollId)
+            appendedPolls.push({
+                id: pollId,
+                question: pollData.question,
+                category: pollData.category,
+                userId,
+                userName,
+                createdAt: Timestamp.now(),
+                options: pollData.options.map((optionText, optionIndex) => ({
+                    id: `seed-option-${optionIndex}`,
+                    text: optionText,
+                    votes: 0,
+                    percentage: 0,
+                })),
+                totalVotes: 0,
+                isMultipleChoice: pollData.isMultipleChoice,
+                allowAddOptions: false,
+                tags: [],
+                ...(pollData.description ? { description: pollData.description } : {}),
+                ...(userAvatar ? { userAvatar } : {}),
+            })
+            console.log(`    ✅ Created poll: ${pollData.question}`)
+            await new Promise((resolve) => setTimeout(resolve, 200))
+        } catch (error) {
+            console.error(`    ❌ Failed to create poll "${pollData.question}":`, error)
+        }
+    }
+
+    if (appendedPolls.length) {
+        const createdIdSet = new Set(appendedPolls.map((poll) => poll.id))
+        useForumStore.setState((state) => ({
+            polls: [...state.polls.filter((poll) => !createdIdSet.has(poll.id)), ...appendedPolls],
+        }))
+        console.log('    📬 Forum store updated with new polls')
+    }
+
+    return createdPollIds
 }
 
 /**
@@ -735,7 +1141,21 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
 
     // Determine which store to use
     const sessionType = useSessionStore.getState().sessionType
-    const isGuest = sessionType === 'guest'
+    const isGuestId = typeof userId === 'string' && userId.startsWith('guest_')
+    const isGuest = isGuestId || sessionType === 'guest'
+
+    // Ensure the underlying stores know which ID we're seeding for so writes persist
+    if (isGuest) {
+        const guestState = useGuestStore.getState()
+        if (!guestState.guestId || guestState.guestId !== userId) {
+            useGuestStore.setState({ guestId: userId })
+        }
+    } else {
+        const authState = useAuthStore.getState()
+        if (!authState.userId || authState.userId !== userId) {
+            useAuthStore.setState({ userId })
+        }
+    }
 
     console.log('🌱 Seeding data...', { userId, sessionType, isGuest })
 
@@ -914,6 +1334,7 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
             ? useGuestStore.getState().userCreatedWatchlists
             : useAuthStore.getState().userCreatedWatchlists
         const existingNames = new Set(existingLists.map((list) => list.name))
+        const listByName = new Map(existingLists.map((list) => [list.name, list]))
 
         const collections = [
             {
@@ -976,6 +1397,20 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
             // Skip if collection already exists
             if (existingNames.has(collection.name)) {
                 console.log(`    ⏭️  Skipping duplicate collection: ${collection.name}`)
+                const existing = listByName.get(collection.name)
+                if (existing && !existing.isPublic) {
+                    console.log(`    🔓 Making existing collection public: ${collection.name}`)
+                    try {
+                        await (isGuest
+                            ? useGuestStore.getState().updateList(existing.id, { isPublic: true })
+                            : useAuthStore.getState().updateList(existing.id, { isPublic: true }))
+                    } catch (error) {
+                        console.error(
+                            `    ❌ Failed to update existing collection visibility: ${collection.name}`,
+                            error
+                        )
+                    }
+                }
                 continue
             }
 
@@ -987,7 +1422,7 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                     emoji: collection.emoji,
                     color: collection.color,
                     collectionType: 'manual',
-                    isPublic: false,
+                    isPublic: true,
                 })
             } else {
                 listId = await useAuthStore.getState().createList({
@@ -995,7 +1430,7 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                     emoji: collection.emoji,
                     color: collection.color,
                     collectionType: 'manual',
-                    isPublic: false,
+                    isPublic: true,
                 })
             }
 
@@ -1109,8 +1544,8 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
         const profile = useProfileStore.getState().profile
         const userProfile = {
             id: userId,
-            name: profile?.username || useAuthStore.getState().email || 'User',
-            avatar: profile?.avatarUrl || useAuthStore.getState().photoURL || undefined,
+            name: profile?.username || 'User',
+            avatar: profile?.avatarUrl ?? null,
         }
 
         console.log('  👤 User profile for rankings:', userProfile)
@@ -1120,9 +1555,15 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
         await useRankingStore.getState().loadUserRankings(userId)
         const existingRankings = useRankingStore.getState().rankings
         const existingTitles = new Set(existingRankings.map((r) => r.title))
+        const rankingByTitle = new Map(existingRankings.map((ranking) => [ranking.title, ranking]))
         console.log(`  📊 Found ${existingRankings.length} existing rankings`)
 
-        const sampleRankings = [
+        const sampleRankings: Array<{
+            title: string
+            description: string
+            items: Content[]
+            tags: string[]
+        }> = [
             {
                 title: 'Top 10 Mind-Bending Movies',
                 description: 'Films that make you question reality and challenge your perception',
@@ -1144,14 +1585,15 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                 title: 'Best Animated Masterpieces',
                 description: 'The most beautiful and emotionally powerful animated films ever made',
                 items: [
-                    sampleMovies[9], // Spirited Away
-                    sampleMovies[7], // Your Name
-                    sampleMovies[11], // Cinema Paradiso (not animated, will skip)
-                    sampleMovies[21], // Dilwale (not animated, will skip)
-                    sampleMovies[10], // LOTR Return (not animated, will skip)
-                ]
-                    .slice(0, 2)
-                    .concat(sampleTVShows.slice(0, 3)), // Add some TV shows for variety
+                    ...[
+                        sampleMovies[9], // Spirited Away
+                        sampleMovies[7], // Your Name
+                        sampleMovies[11],
+                        sampleMovies[21],
+                        sampleMovies[10],
+                    ].slice(0, 2),
+                    ...sampleTVShows.slice(0, 3), // Add some TV shows for variety
+                ],
                 tags: ['Animation', 'Anime', 'Family'],
             },
             {
@@ -1210,7 +1652,16 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
 
                 // Skip if ranking already exists
                 if (existingTitles.has(rankingData.title)) {
-                    console.log(`    ⏭️  Skipping duplicate ranking: ${rankingData.title}`)
+                    const existing = rankingByTitle.get(rankingData.title)
+                    if (existing && !existing.isPublic) {
+                        console.log(`    🔓 Making existing ranking public: ${rankingData.title}`)
+                        await useRankingStore.getState().updateRanking(userProfile.id, {
+                            id: existing.id,
+                            isPublic: true,
+                        })
+                    } else {
+                        console.log(`    ⏭️  Skipping duplicate ranking: ${rankingData.title}`)
+                    }
                     continue
                 }
 
@@ -1221,13 +1672,18 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                 // Step 1: Create the ranking with basic info
                 const rankingId = await useRankingStore
                     .getState()
-                    .createRanking(userProfile.id, userProfile.name, userProfile.avatar, {
-                        title: rankingData.title,
-                        description: rankingData.description,
-                        isPublic: false, // Keep test rankings private
-                        itemCount: rankingData.items.length,
-                        tags: rankingData.tags,
-                    })
+                    .createRanking(
+                        userProfile.id,
+                        userProfile.name,
+                        userProfile.avatar ?? undefined,
+                        {
+                            title: rankingData.title,
+                            description: rankingData.description,
+                            isPublic: true,
+                            itemCount: rankingData.items.length,
+                            tags: rankingData.tags,
+                        }
+                    )
 
                 console.log(`  🆔 Ranking created with ID: ${rankingId}`)
 
@@ -1236,12 +1692,20 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                 }
 
                 // Step 2: Update with ranked items
-                console.log(`  🔧 Updating ranking ${rankingId} with items...`)
+                const validItems = rankingData.items.filter(Boolean)
+                if (validItems.length === 0) {
+                    console.warn(
+                        `    ⚠️ Skipping ranking update due to missing content items: ${rankingData.title}`
+                    )
+                    continue
+                }
+
+                console.log(`  🔧 Updating ranking ${rankingId} with ${validItems.length} items...`)
                 await useRankingStore.getState().updateRanking(userProfile.id, {
                     id: rankingId,
-                    rankedItems: rankingData.items.map((item, index) => ({
+                    rankedItems: validItems.map((item, index) => ({
                         position: index + 1,
-                        content: item as any, // Use the full Movie/TVShow object with all properties
+                        content: item as Movie | TVShow,
                         note:
                             index === 0
                                 ? 'Absolute masterpiece - a must watch!'
@@ -1252,6 +1716,7 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                                     : undefined,
                         addedAt: Date.now(),
                     })),
+                    itemCount: validItems.length,
                 })
 
                 console.log(`    ✅ Created ranking: ${rankingData.title}`)
@@ -1266,55 +1731,51 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
     }
 
     // ===================================
-    // 8. Forum Threads and Polls (auth only)
+    // 8. Forum Threads and Polls
     // ===================================
+    const { useProfileStore } = await import('../stores/profileStore')
+    const profile = useProfileStore.getState().profile
+    const userName = profile?.username || 'User'
+    const userAvatar = profile?.avatarUrl ?? undefined
+
+    let threadIds: string[] = []
+    let pollIds: string[] = []
+
+    try {
+        threadIds = await seedForumThreads({
+            userId,
+            userName,
+            userAvatar,
+            count: threadCount,
+            isGuest,
+        })
+    } catch (error) {
+        console.error('    ❌ Failed to seed forum threads:', error)
+    }
+
+    try {
+        pollIds = await seedForumPolls({
+            userId,
+            userName,
+            userAvatar,
+            count: pollCount,
+            isGuest,
+        })
+    } catch (error) {
+        console.error('    ❌ Failed to seed forum polls:', error)
+    }
+    console.log('    📈 Forum seed summary:', {
+        threadsCreated: threadIds.length,
+        pollsCreated: pollIds.length,
+    })
+
     if (!isGuest) {
-        console.log('\n📝 Creating forum threads and polls...')
-        const { useForumStore } = await import('../stores/forumStore')
-        const { SEED_THREADS, SEED_POLLS } = await import('./forumSeedData')
-
-        // Create sample threads
-        const threadsToCreate = SEED_THREADS.slice(0, threadCount)
-        for (const threadData of threadsToCreate) {
-            try {
-                await useForumStore
-                    .getState()
-                    .createThread(
-                        userId,
-                        threadData.title,
-                        threadData.content,
-                        threadData.category,
-                        threadData.tags
-                    )
-                console.log(`    ✅ Created thread: ${threadData.title}`)
-                await new Promise((resolve) => setTimeout(resolve, 200))
-            } catch (error) {
-                console.error(`❌ Failed to create thread "${threadData.title}":`, error)
-            }
+        try {
+            await useAuthStore.getState().syncWithFirebase?.(userId)
+            console.log('  💾 Auth store synced to Firestore')
+        } catch (error) {
+            console.error('  ❌ Failed to sync seeded auth data:', error)
         }
-
-        // Create sample polls
-        const pollsToCreate = SEED_POLLS.slice(0, pollCount)
-        for (const pollData of pollsToCreate) {
-            try {
-                const optionTexts = pollData.options.map((opt) => opt.text)
-                await useForumStore.getState().createPoll(
-                    userId,
-                    pollData.question,
-                    optionTexts,
-                    pollData.category,
-                    pollData.description,
-                    pollData.isMultipleChoice,
-                    undefined // No expiration
-                )
-                console.log(`    ✅ Created poll: ${pollData.question}`)
-                await new Promise((resolve) => setTimeout(resolve, 200))
-            } catch (error) {
-                console.error(`❌ Failed to create poll "${pollData.question}":`, error)
-            }
-        }
-    } else {
-        console.log('  ⏭️  Skipping forum content (guest mode)')
     }
 
     // Wait a bit to ensure all async saves complete before page reload
@@ -1343,7 +1804,7 @@ export async function clearUserData(): Promise<void> {
         if (guestId) {
             localStorage.removeItem(`nettrailer_guest_data_${guestId}`)
             // Reload guest data
-            useGuestStore.getState().loadGuestData(guestId)
+            await useGuestStore.getState().syncFromLocalStorage?.(guestId)
         }
     } else {
         // For authenticated users, we'll just clear the local state
@@ -1351,8 +1812,8 @@ export async function clearUserData(): Promise<void> {
         useAuthStore.setState({
             likedMovies: [],
             hiddenMovies: [],
-            lists: {},
-            watchHistory: [],
+            defaultWatchlist: [],
+            userCreatedWatchlists: [],
         })
     }
 

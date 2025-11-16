@@ -31,6 +31,10 @@ export const useListsReadOnly = () => {
             emoji: '📺',
             color: '#E50914',
             isPublic: false,
+            collectionType: 'manual',
+            displayAsRow: true,
+            order: 0,
+            enabled: true,
             createdAt: Date.now(),
             updatedAt: Date.now(),
         }

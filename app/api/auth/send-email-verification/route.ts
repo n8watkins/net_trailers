@@ -9,7 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { EmailService } from '@/lib/email/email-service'
 import { withAuth } from '@/lib/auth-middleware'
-import { apiError, apiLog } from '@/utils/debugLogger'
+import { apiError, apiLog, apiWarn } from '@/utils/debugLogger'
 import crypto from 'crypto'
 import { getAdminDb } from '@/lib/firebase-admin'
 
@@ -87,25 +87,33 @@ async function handleSendVerification(request: NextRequest, userId: string): Pro
         const verificationUrl = `${appUrl}/auth/verify-email?token=${verificationToken}`
 
         // Send email via EmailService
-        const { data, error } = await EmailService.sendEmailVerification({
+        const emailResult = await EmailService.sendEmailVerification({
             to: email,
             userName: username,
             verificationUrl,
         })
 
-        if (error) {
-            apiError('Error sending email verification:', error)
+        if (!emailResult) {
+            apiWarn('[Auth] Email verification skipped - email service unavailable')
+        } else if (emailResult.error) {
+            apiError('Error sending email verification:', emailResult.error)
             return NextResponse.json(
                 { error: 'Failed to send verification email' },
                 { status: 500 }
             )
         }
 
-        apiLog(`Email verification sent to ${email}, emailId: ${data?.id}`)
+        apiLog(
+            `Email verification ${emailResult ? 'sent' : 'skipped'} for ${email}`,
+            emailResult?.data?.id ? { emailId: emailResult.data.id } : undefined
+        )
 
         return NextResponse.json({
             success: true,
-            message: 'Verification email sent successfully',
+            message: emailResult
+                ? 'Verification email sent successfully'
+                : 'Email service unavailable; verification email skipped',
+            emailSent: Boolean(emailResult),
         })
     } catch (error) {
         apiError('Error in send-email-verification route:', error)

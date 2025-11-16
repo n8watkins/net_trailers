@@ -302,7 +302,6 @@ export const useForumStore = create<ForumState>((set, get) => ({
                 category,
                 userId,
                 userName,
-                userAvatar,
                 createdAt: now,
                 updatedAt: now,
                 isPinned: false,
@@ -310,8 +309,9 @@ export const useForumStore = create<ForumState>((set, get) => ({
                 views: 0,
                 replyCount: 0,
                 likes: 0,
-                tags: tags || [],
-                images: images || [],
+                tags: tags ?? [],
+                images: images ?? [],
+                ...(userAvatar ? { userAvatar } : {}),
             }
 
             const docRef = await addDoc(threadsRef, threadData)
@@ -342,7 +342,7 @@ export const useForumStore = create<ForumState>((set, get) => ({
                 content,
                 userId,
                 userName,
-                userAvatar,
+                ...(userAvatar ? { userAvatar } : {}),
                 createdAt: now,
                 updatedAt: undefined,
                 isEdited: false,
@@ -643,7 +643,7 @@ export const useForumStore = create<ForumState>((set, get) => ({
 
             // Calculate expiration date if provided
             let expiresAt: Timestamp | undefined
-            if (expiresInDays) {
+            if (typeof expiresInDays === 'number' && expiresInDays > 0) {
                 const expireDate = new Date()
                 expireDate.setDate(expireDate.getDate() + expiresInDays)
                 expiresAt = Timestamp.fromDate(expireDate)
@@ -657,21 +657,21 @@ export const useForumStore = create<ForumState>((set, get) => ({
                 percentage: 0,
             }))
 
-            const pollData = {
+            const pollData: Record<string, unknown> = {
                 id: '', // Will be set by Firestore
                 question,
-                description: description || undefined,
                 category,
                 userId,
                 userName,
-                userAvatar,
                 createdAt: now,
-                expiresAt: expiresAt || undefined,
                 options: pollOptions,
                 totalVotes: 0,
                 isMultipleChoice,
                 allowAddOptions: false,
                 tags: [],
+                ...(description ? { description } : {}),
+                ...(userAvatar ? { userAvatar } : {}),
+                ...(expiresAt ? { expiresAt } : {}),
             }
 
             const docRef = await addDoc(pollsRef, pollData)

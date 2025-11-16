@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import {
     DocumentTextIcon,
@@ -20,19 +20,25 @@ export default function ChangelogPage() {
         new Set(['1.6.0']) // Latest version expanded by default
     )
 
+    const updateUrlHash = useCallback((hash?: string) => {
+        if (typeof window === 'undefined') return
+        const basePath = `${window.location.pathname}${window.location.search || ''}`
+        window.history.pushState(null, '', hash ? `${basePath}#${hash}` : basePath)
+    }, [])
+
     const toggleVersion = (version: string) => {
         setExpandedVersions((prev) => {
             const newSet = new Set(prev)
             if (newSet.has(version)) {
                 newSet.delete(version)
                 // Clear hash if collapsing
-                if (window.location.hash === `#v${version}`) {
-                    window.history.pushState(null, '', window.location.pathname)
+                if (typeof window !== 'undefined' && window.location.hash === `#v${version}`) {
+                    updateUrlHash()
                 }
             } else {
                 newSet.add(version)
                 // Update hash when expanding
-                window.history.pushState(null, '', `#v${version}`)
+                updateUrlHash(`v${version}`)
             }
             return newSet
         })

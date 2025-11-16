@@ -1,10 +1,12 @@
 'use client'
 
+import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
+import NetflixLoader from '../../components/common/NetflixLoader'
 
-export default function UnsubscribedPage() {
+function UnsubscribedContent() {
     const searchParams = useSearchParams()
     const success = searchParams?.get('success') === 'true'
 
@@ -80,5 +82,13 @@ export default function UnsubscribedPage() {
                 </div>
             </div>
         </div>
+    )
+}
+
+export default function UnsubscribedPage() {
+    return (
+        <Suspense fallback={<NetflixLoader message="Loading preference update..." />}>
+            <UnsubscribedContent />
+        </Suspense>
     )
 }

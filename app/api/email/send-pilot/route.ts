@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { EmailService } from '../../../../lib/email/email-service'
 import { Content } from '../../../../typings'
 import { withAuth } from '../../../../lib/auth-middleware'
-import { apiError } from '@/utils/debugLogger'
+import { apiError, apiWarn } from '@/utils/debugLogger'
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
@@ -121,22 +121,27 @@ async function handleSendPilot(request: NextRequest, userId: string): Promise<Ne
         }
 
         // Send email using EmailService
-        const { data, error } = await EmailService.sendTrendingContent({
+        const emailResult = await EmailService.sendTrendingContent({
             to: email,
             userName: userName || '',
             movies,
             tvShows,
         })
 
-        if (error) {
-            apiError('Error sending email:', error)
+        if (!emailResult) {
+            apiWarn('[PilotEmail] Email service unavailable - skipping send')
+        } else if (emailResult.error) {
+            apiError('Error sending email:', emailResult.error)
             return NextResponse.json({ error: 'Failed to send email' }, { status: 500 })
         }
 
         return NextResponse.json({
             success: true,
-            message: 'Pilot email sent successfully',
-            emailId: data?.id,
+            message: emailResult
+                ? 'Pilot email sent successfully'
+                : 'Email service unavailable; pilot email skipped',
+            emailSent: Boolean(emailResult),
+            emailId: emailResult?.data?.id,
         })
     } catch (error) {
         apiError('Error in send-pilot route:', error)

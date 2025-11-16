@@ -60,8 +60,9 @@ export async function POST(request: NextRequest) {
         }
 
         // Constant-time comparison using crypto.timingSafeEqual
-        const authBuffer = Buffer.from(authHeader)
-        const expectedBuffer = Buffer.from(expectedHeader)
+        const encoder = new TextEncoder()
+        const authBuffer = encoder.encode(authHeader)
+        const expectedBuffer = encoder.encode(expectedHeader)
 
         let isValid = false
         try {
@@ -278,7 +279,10 @@ async function sendCollectionUpdateEmail(
         }
 
         // Fetch content details from TMDB for the new items
-        const contentItems = await fetchContentDetails(newContentIds, collection.mediaType)
+        const contentItems = await fetchContentDetails(
+            newContentIds,
+            collection.mediaType === 'both' ? undefined : collection.mediaType
+        )
 
         if (contentItems.length === 0) {
             apiLog(`[Cron] No content details fetched, skipping email`)

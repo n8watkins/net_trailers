@@ -76,6 +76,14 @@ const Settings: React.FC = () => {
     // Get direct store access for preferences updates
     const authStoreUpdatePrefs = useAuthStore((state) => state.updatePreferences)
     const guestStoreUpdatePrefs = useGuestStore((state) => state.updatePreferences)
+    const authNotificationPreferences = useAuthStore((state) => state.notifications)
+    const guestNotificationPreferences = useGuestStore((state) => state.notifications)
+    const notificationPreferences = React.useMemo(
+        () =>
+            (isGuest ? guestNotificationPreferences : authNotificationPreferences) ??
+            DEFAULT_NOTIFICATION_PREFERENCES,
+        [isGuest, authNotificationPreferences, guestNotificationPreferences]
+    )
 
     // Detect authentication provider
     const authProvider = React.useMemo(() => {
@@ -146,9 +154,7 @@ const Settings: React.FC = () => {
             defaultVolume: userData.defaultVolume ?? 50,
             improveRecommendations: userData.improveRecommendations ?? true,
             showRecommendations: userData.showRecommendations ?? false,
-            notifications:
-                userData.userSession?.preferences?.notifications ??
-                DEFAULT_NOTIFICATION_PREFERENCES,
+            notifications: notificationPreferences,
         }
     }, [
         userData.childSafetyMode,
@@ -156,7 +162,7 @@ const Settings: React.FC = () => {
         userData.defaultVolume,
         userData.improveRecommendations,
         userData.showRecommendations,
-        userData.userSession?.preferences?.notifications,
+        notificationPreferences,
     ])
 
     // 3) Initialize with store values directly (they default to false/true/50 during SSR anyway)
@@ -171,9 +177,7 @@ const Settings: React.FC = () => {
     const [showRecommendations, setShowRecommendations] = useState<boolean>(
         () => userData.showRecommendations ?? false
     )
-    const [notifications, setNotifications] = useState(
-        () => userData.userSession?.preferences?.notifications ?? DEFAULT_NOTIFICATION_PREFERENCES
-    )
+    const [notifications, setNotifications] = useState(() => notificationPreferences)
 
     // Track original preferences to detect changes
     const [originalPreferences, setOriginalPreferences] = useState({
@@ -182,8 +186,7 @@ const Settings: React.FC = () => {
         defaultVolume: userData.defaultVolume ?? 50,
         improveRecommendations: userData.improveRecommendations ?? true,
         showRecommendations: userData.showRecommendations ?? false,
-        notifications:
-            userData.userSession?.preferences?.notifications ?? DEFAULT_NOTIFICATION_PREFERENCES,
+        notifications: notificationPreferences,
     })
 
     // Initialize skeleton state based on whether data is available

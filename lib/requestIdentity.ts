@@ -8,6 +8,7 @@ export interface RequestIdentity {
 
 export async function getRequestIdentity(request: NextRequest): Promise<RequestIdentity> {
     const authHeader = request.headers.get('authorization')
+    const requestWithIp = request as NextRequest & { ip?: string | null }
 
     if (authHeader && authHeader.startsWith('Bearer ')) {
         const token = authHeader.substring(7)
@@ -25,7 +26,7 @@ export async function getRequestIdentity(request: NextRequest): Promise<RequestI
     const xff = request.headers.get('x-forwarded-for')
     const ip =
         (xff && xff.split(',')[0].trim()) ||
-        request.ip ||
+        requestWithIp.ip ||
         request.headers.get('x-real-ip') ||
         'unknown'
 

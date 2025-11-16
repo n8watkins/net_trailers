@@ -1,7 +1,7 @@
 import { useSessionData } from './useSessionData'
 import { authError } from '../utils/debugLogger'
 import { Content } from '../typings'
-import { UserList, CreateListRequest } from '../types/userLists'
+import { UserList, CreateListRequest, UpdateListRequest } from '../types/userLists'
 import { useInteractionTracking } from './useInteractionTracking'
 
 /**
@@ -16,6 +16,10 @@ const createDefaultWatchlistVirtual = (items: Content[]): UserList => ({
     emoji: '📺',
     color: '#E50914',
     isPublic: false,
+    collectionType: 'manual',
+    displayAsRow: true,
+    order: 0,
+    enabled: true,
     createdAt: Date.now(),
     updatedAt: Date.now(),
 })
@@ -27,7 +31,7 @@ const createDefaultWatchlistVirtual = (items: Content[]): UserList => ({
  */
 const createListManagementOps = (sessionData: ReturnType<typeof useSessionData>) => ({
     createList: (request: CreateListRequest) => sessionData.createList(request),
-    updateList: (listId: string, updates: { name?: string; emoji?: string; color?: string }) => {
+    updateList: (listId: string, updates: Omit<UpdateListRequest, 'id'>) => {
         return sessionData.updateList(listId, updates)
     },
     deleteList: (listId: string) => {
@@ -183,6 +187,7 @@ export default function useUserData() {
                 likedCount: sessionData.likedMovies.length,
                 hiddenCount: sessionData.hiddenMovies.length,
                 listsCount: sessionData.userCreatedWatchlists.length,
+                watchHistoryCount: 0,
                 totalItems:
                     sessionData.defaultWatchlist.length +
                     sessionData.likedMovies.length +
@@ -232,8 +237,26 @@ export default function useUserData() {
                 useNotificationStore.getState().clearNotifications()
                 console.log(`[useUserData] ✅ Cleared ${notifCountBefore} notifications from store`)
 
-                // Note: Guest users cannot create rankings, forum threads, or polls
-                // These are community features that require authentication
+                // Clear any seeded forum threads or polls for this guest session
+                if (guestId) {
+                    const { useForumStore } = await import('../stores/forumStore')
+                    const forumState = useForumStore.getState()
+                    const threadsCleared = forumState.threads.filter(
+                        (thread) => thread.userId === guestId
+                    ).length
+                    const pollsCleared = forumState.polls.filter(
+                        (poll) => poll.userId === guestId
+                    ).length
+
+                    useForumStore.setState((state) => ({
+                        threads: state.threads.filter((thread) => thread.userId !== guestId),
+                        polls: state.polls.filter((poll) => poll.userId !== guestId),
+                    }))
+
+                    console.log(
+                        `[useUserData] ✅ Cleared ${threadsCleared} threads and ${pollsCleared} polls from store`
+                    )
+                }
 
                 console.log('[useUserData] ✅ clearAccountData completed for guest')
             },
@@ -308,6 +331,7 @@ export default function useUserData() {
                 likedCount: sessionData.likedMovies.length,
                 hiddenCount: sessionData.hiddenMovies.length,
                 listsCount: sessionData.userCreatedWatchlists.length,
+                watchHistoryCount: 0,
                 totalItems:
                     sessionData.defaultWatchlist.length +
                     sessionData.likedMovies.length +
@@ -320,7 +344,9 @@ export default function useUserData() {
             }),
             clearAccountData: async () => {
                 const { auth, db } = await import('../firebase')
-                const { doc, setDoc } = await import('firebase/firestore')
+                const { doc, setDoc, collection, query, where, getDocs } = await import(
+                    'firebase/firestore'
+                )
 
                 if (!auth.currentUser) {
                     throw new Error('No authenticated user found')
@@ -411,6 +437,43 @@ export default function useUserData() {
                     }
                 }
                 console.log('[useUserData] ✅ Cleared all rankings from Firestore')
+
+                // Clear forum threads and polls
+                const { useForumStore } = await import('../stores/forumStore')
+                console.log('[useUserData] 🗑️ Clearing forum threads and polls...')
+
+                const threadsRef = collection(db, 'threads')
+                const threadSnapshot = await getDocs(
+                    query(threadsRef, where('userId', '==', userId))
+                )
+                for (const threadDoc of threadSnapshot.docs) {
+                    try {
+                        await useForumStore.getState().deleteThread(userId, threadDoc.id)
+                        console.log(`[useUserData] ✅ Deleted thread ${threadDoc.id}`)
+                    } catch (error) {
+                        console.error(
+                            `[useUserData] Failed to delete thread ${threadDoc.id}:`,
+                            error
+                        )
+                    }
+                }
+
+                const pollsRef = collection(db, 'polls')
+                const pollSnapshot = await getDocs(query(pollsRef, where('userId', '==', userId)))
+                for (const pollDoc of pollSnapshot.docs) {
+                    try {
+                        await useForumStore.getState().deletePoll(userId, pollDoc.id)
+                        console.log(`[useUserData] ✅ Deleted poll ${pollDoc.id}`)
+                    } catch (error) {
+                        console.error(`[useUserData] Failed to delete poll ${pollDoc.id}:`, error)
+                    }
+                }
+
+                useForumStore.setState((state) => ({
+                    threads: state.threads.filter((thread) => thread.userId !== userId),
+                    polls: state.polls.filter((poll) => poll.userId !== userId),
+                }))
+                console.log('[useUserData] ✅ Cleared forum data from store')
 
                 // Then clear local cache
                 sessionData.clearLocalCache()

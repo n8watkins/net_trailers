@@ -9,7 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { getAdminDb } from '@/lib/firebase-admin'
-import { Firestore } from 'firebase/firestore'
+import { Firestore } from 'firebase-admin/firestore'
 import { EmailService } from '@/lib/email/email-service'
 import { Content } from '@/typings'
 import { apiLog, apiError, apiWarn } from '@/utils/debugLogger'
@@ -48,8 +48,9 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
         }
 
-        const authBuffer = Buffer.from(authHeader)
-        const expectedBuffer = Buffer.from(expectedHeader)
+        const encoder = new TextEncoder()
+        const authBuffer = encoder.encode(authHeader)
+        const expectedBuffer = encoder.encode(expectedHeader)
 
         let isValid = false
         try {

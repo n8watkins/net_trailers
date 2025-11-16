@@ -159,7 +159,7 @@ export async function createComment(
 
     // Send email notification after successful comment creation
     // Don't await to avoid blocking the comment creation
-    sendCommentEmailNotification(userId, username, comment, request.parentCommentId).catch(
+    sendCommentEmailNotification(userId, username, comment, request.parentCommentId ?? null).catch(
         (error) => {
             console.error('Error sending comment email notification:', error)
             // Don't throw - email failure shouldn't fail comment creation

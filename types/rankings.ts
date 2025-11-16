@@ -1,6 +1,5 @@
 import { Content } from '../typings'
 import { ShareSettings } from './sharing'
-import { Timestamp } from 'firebase/firestore'
 
 // Re-export Content for convenience
 export type { Content }
@@ -27,6 +26,7 @@ export interface Ranking {
     userId: string // Creator's user ID
     userName: string // Creator's display name (for community display)
     userAvatar: string | null // Creator's avatar URL (for community display)
+    userUsername?: string // Creator's unique username for profile links
 
     // Content
     title: string // e.g., "Top 10 Psychological Thrillers"
@@ -70,7 +70,7 @@ export interface RankingComment {
 
     // Comment type and target
     type: 'ranking' | 'position' // Overall ranking or specific position
-    positionNumber?: number // If type='position', which position (1, 2, 3, etc.)
+    positionNumber?: number | null // If type='position', which position (1, 2, 3, etc.)
 
     // Content
     text: string
@@ -84,7 +84,7 @@ export interface RankingComment {
 
     // One level of replies
     replies?: RankingComment[] // Nested comments (one level only)
-    parentCommentId?: string // If this is a reply, parent comment ID
+    parentCommentId?: string | null // If this is a reply, parent comment ID
 }
 
 /**
@@ -126,6 +126,7 @@ export interface UpdateRankingRequest {
     title?: string
     description?: string
     isPublic?: boolean
+    itemCount?: number
     rankedItems?: RankedItem[]
     tags?: string[]
 }

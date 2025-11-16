@@ -44,6 +44,12 @@ interface RankingCreatorProps {
     onCancel?: () => void
 }
 
+interface LocalRankedItem {
+    content: Content
+    note: string
+    addedAt?: number
+}
+
 export function RankingCreator({ existingRanking, onComplete, onCancel }: RankingCreatorProps) {
     const isEditMode = !!existingRanking
     const [mouseDownOnBackdrop, setMouseDownOnBackdrop] = useState(false)
@@ -81,7 +87,13 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
             // Set selected items and ranked items from existing ranking
             const contents = existingRanking.rankedItems.map((item) => item.content)
             setSelectedItems(contents)
-            setRankedItems(existingRanking.rankedItems)
+            setRankedItems(
+                existingRanking.rankedItems.map((item) => ({
+                    content: item.content,
+                    note: item.note ?? '',
+                    addedAt: item.addedAt,
+                }))
+            )
 
             // Skip to step 3 in edit mode (already have items)
             setCurrentStep(3)
@@ -91,7 +103,7 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
     const [tagSearchQuery, setTagSearchQuery] = useState('')
 
     // Step 3: Ordering and notes
-    const [rankedItems, setRankedItems] = useState<Array<{ content: Content; note: string }>>([])
+    const [rankedItems, setRankedItems] = useState<LocalRankedItem[]>([])
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
 
     // Pagination for Step 1 (content browsing)
