@@ -119,6 +119,10 @@
         }
     }
 
+    .animate-fade-down {
+        animation: fade-in-down 0.2s ease-out forwards;
+    }
+
     /* Smooth bounce animation for loading dots */
     @keyframes smooth-bounce {
         0%,

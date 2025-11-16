@@ -22,7 +22,8 @@ import { useProfileStore } from '../../stores/profileStore'
 import { useDebugSettings } from '../../components/debug/DebugControls'
 import { LikedContentSection } from '../../components/profile/LikedContentSection'
 import { WatchLaterSection } from '../../components/profile/WatchLaterSection'
-import { RankingsCollectionsSection } from '../../components/profile/RankingsCollectionsSection'
+import { RankingsSection } from '../../components/profile/RankingsSection'
+import { CollectionsSection } from '../../components/profile/CollectionsSection'
 import { ForumActivitySection } from '../../components/profile/ForumActivitySection'
 import { useProfileActions } from '../../hooks/useProfileActions'
 import type { Thread, Poll } from '../../types/forum'
@@ -118,7 +119,7 @@ export default function ProfilePage() {
         .slice(0, 2)
 
     const likedContent = userData.likedMovies || []
-    const watchLaterPreview = (userData.defaultWatchlist || []).slice(0, 5)
+    const watchLaterPreview = (userData.defaultWatchlist || []).slice(0, 6)
     const collections = (userData.userCreatedWatchlists || []).filter((list) => list?.isPublic)
 
     // Show loading screen while data is being fetched
@@ -233,8 +234,15 @@ export default function ProfilePage() {
                 />
             </div>
 
-            {/* Rankings and Collections */}
-            <RankingsCollectionsSection rankings={rankings} collections={collections} />
+            {/* Rankings */}
+            <div className="mb-6">
+                <RankingsSection rankings={rankings} />
+            </div>
+
+            {/* Collections */}
+            <div className="mb-6">
+                <CollectionsSection collections={collections} />
+            </div>
 
             {/* Forum Activity */}
             {!isGuest && <ForumActivitySection threads={userThreads} polls={userPolls} />}

@@ -275,16 +275,16 @@ export function SmartInput({
             container: 'rounded-2xl',
             icon: 'h-6 w-6 sm:h-7 sm:w-7',
             input: showSurpriseMe
-                ? 'pl-12 sm:pl-14 pr-24 sm:pr-28 py-4 sm:py-5 text-base sm:text-lg md:text-xl leading-relaxed'
-                : 'pl-4 sm:pl-5 pr-24 sm:pr-28 py-4 sm:py-5 text-base sm:text-lg md:text-xl leading-relaxed',
+                ? 'pl-12 sm:pl-14 pr-32 sm:pr-36 py-4 sm:py-5 text-base sm:text-lg md:text-xl leading-relaxed'
+                : 'pl-4 sm:pl-5 pr-32 sm:pr-36 py-4 sm:py-5 text-base sm:text-lg md:text-xl leading-relaxed',
             button: 'h-6 w-6 sm:h-7 sm:w-7',
         },
         large: {
             container: 'rounded-2xl',
             icon: 'h-6 w-6 sm:h-7 sm:w-7',
             input: showSurpriseMe
-                ? 'pl-12 sm:pl-14 pr-24 sm:pr-28 py-4 sm:py-5 text-base sm:text-lg md:text-xl leading-relaxed'
-                : 'pl-4 sm:pl-5 pr-24 sm:pr-28 py-4 sm:py-5 text-base sm:text-lg md:text-xl leading-relaxed',
+                ? 'pl-12 sm:pl-14 pr-32 sm:pr-36 py-4 sm:py-5 text-base sm:text-lg md:text-xl leading-relaxed'
+                : 'pl-4 sm:pl-5 pr-32 sm:pr-36 py-4 sm:py-5 text-base sm:text-lg md:text-xl leading-relaxed',
             button: 'h-6 w-6 sm:h-7 sm:w-7',
         },
     }

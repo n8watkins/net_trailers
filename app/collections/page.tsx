@@ -210,11 +210,11 @@ const Collections = () => {
     const getListIcon = (list: UserList, isSelected: boolean = false) => {
         // Return emoji if the list has one (custom lists)
         if (list.emoji) {
-            return <span className="text-lg">{list.emoji}</span>
+            return <span className="text-sm">{list.emoji}</span>
         }
 
         // Default icons for system lists
-        const iconClass = `w-5 h-5 text-white`
+        const iconClass = `w-4 h-4 text-white`
         return <EyeIcon className={iconClass} />
     }
 
@@ -246,45 +246,60 @@ const Collections = () => {
     }
 
     const titleActions = (
-        <div className="relative" ref={manageDropdownRef}>
+        <div className="flex items-center space-x-3">
+            {/* New Collection Button */}
             <button
-                onClick={() => setShowManageDropdown(!showManageDropdown)}
-                className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 text-gray-400 hover:text-white transition-all duration-200"
+                onClick={() => openCollectionBuilderModal()}
+                className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-blue-600/80 hover:bg-blue-600 text-white transition-all duration-200"
             >
-                <Cog6ToothIcon className="w-5 h-5" />
-                <span className="font-medium">Manage</span>
-                <ChevronDownIcon
-                    className={`w-4 h-4 transition-transform ${
-                        showManageDropdown ? 'rotate-180' : ''
-                    }`}
-                />
+                <PlusIcon className="w-5 h-5 text-white" />
+                <span className="font-medium">New Collection</span>
             </button>
 
-            {/* Dropdown Menu */}
-            {showManageDropdown && (
-                <div className="absolute top-full mt-2 right-0 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-xl z-50 min-w-[200px] overflow-hidden">
-                    <button
-                        onClick={() => {
-                            openListModal(undefined)
-                            setShowManageDropdown(false)
-                        }}
-                        className="w-full flex items-center space-x-3 px-4 py-3 text-white hover:bg-gray-800 transition-colors text-left"
-                    >
-                        <RectangleStackIcon className="w-5 h-5 text-gray-400" />
-                        <span>Manage Collections</span>
-                    </button>
-                    <button
-                        onClick={() => {
-                            handleExportCSV()
-                            setShowManageDropdown(false)
-                        }}
-                        className="w-full flex items-center space-x-3 px-4 py-3 text-white hover:bg-gray-800 transition-colors text-left"
-                    >
-                        <ArrowDownTrayIcon className="w-5 h-5 text-gray-400" />
-                        <span>Export to CSV</span>
-                    </button>
-                </div>
-            )}
+            {/* Manage Dropdown */}
+            <div className="relative" ref={manageDropdownRef}>
+                <button
+                    type="button"
+                    onClick={() => setShowManageDropdown(!showManageDropdown)}
+                    className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 text-gray-400 hover:text-white transition-all duration-200 cursor-pointer"
+                >
+                    <Cog6ToothIcon className="w-5 h-5 pointer-events-none" />
+                    <span className="font-medium pointer-events-none">Manage</span>
+                    <ChevronDownIcon
+                        className={`w-4 h-4 transition-transform pointer-events-none ${
+                            showManageDropdown ? 'rotate-180' : ''
+                        }`}
+                    />
+                </button>
+
+                {/* Dropdown Menu */}
+                {showManageDropdown && (
+                    <div className="absolute top-full mt-2 right-0 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-xl z-50 min-w-[200px] overflow-hidden animate-fade-down">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                openListModal(undefined)
+                                setShowManageDropdown(false)
+                            }}
+                            className="w-full flex items-center space-x-3 px-4 py-3 text-white hover:bg-gray-800 transition-colors text-left cursor-pointer"
+                        >
+                            <RectangleStackIcon className="w-5 h-5 text-gray-400 pointer-events-none" />
+                            <span className="pointer-events-none">Manage Collections</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                handleExportCSV()
+                                setShowManageDropdown(false)
+                            }}
+                            className="w-full flex items-center space-x-3 px-4 py-3 text-white hover:bg-gray-800 transition-colors text-left cursor-pointer"
+                        >
+                            <ArrowDownTrayIcon className="w-5 h-5 text-gray-400 pointer-events-none" />
+                            <span className="pointer-events-none">Export to CSV</span>
+                        </button>
+                    </div>
+                )}
+            </div>
         </div>
     )
 
@@ -302,18 +317,9 @@ const Collections = () => {
 
             {isInitialized && isGuest && <GuestModeNotification align="left" />}
 
-            {/* Stats */}
-            {allLists.some((list) => list.items.length > 0) && (
-                <div className="py-3 mb-4 border-b border-gray-700/30">
-                    <div className="text-lg font-semibold text-white">
-                        {allLists.reduce((total, list) => total + list.items.length, 0)} items total
-                    </div>
-                </div>
-            )}
-
             {/* Collection Filter Buttons */}
-            <div className="bg-[#1a1a1a] border border-gray-800 rounded-2xl p-6 space-y-6">
-                <div className="flex flex-wrap gap-4">
+            <div className="bg-[#1a1a1a] border border-gray-800 rounded-2xl p-6">
+                <div className="flex flex-wrap gap-3">
                     {/* Collection Pills - Watch Later (default collection) will be first */}
                     {allLists
                         .sort((a, b) => {
@@ -330,7 +336,7 @@ const Collections = () => {
                                 <button
                                     key={list.id}
                                     onClick={() => setSelectedListId(list.id)}
-                                    className={`flex items-center space-x-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-200 ${getListStyle(
+                                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${getListStyle(
                                         list,
                                         isSelected
                                     )}`}
@@ -351,44 +357,36 @@ const Collections = () => {
                                 </button>
                             )
                         })}
-
-                    {/* New Collection Button */}
-                    <button
-                        onClick={() => openCollectionBuilderModal()}
-                        className="flex items-center space-x-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-200 bg-gray-800/80 text-white hover:bg-gray-700/80 border border-gray-600 hover:border-gray-400 hover:scale-105"
-                    >
-                        <PlusIcon className="w-5 h-5 text-white" />
-                        <RectangleStackIcon className="w-5 h-5 text-white" />
-                        <span>New Collection</span>
-                    </button>
                 </div>
+            </div>
 
-                {/* Selected Collection Title and Count */}
-                {selectedListId &&
-                    (() => {
-                        const selectedList = allLists.find((l) => l.id === selectedListId)
-                        return (
-                            <div className="border-t border-gray-800 pt-6">
-                                <div className="flex items-center space-x-3 mb-4">
-                                    {/* Collection Icon */}
-                                    <div className="flex items-center justify-center">
-                                        {selectedList?.emoji ? (
-                                            <span className="text-3xl">{selectedList.emoji}</span>
-                                        ) : (
-                                            <EyeIcon className="w-8 h-8 text-white" />
-                                        )}
-                                    </div>
-                                    {/* Collection Title */}
-                                    <h2 className="text-2xl font-bold text-white">
-                                        {selectedList?.name || 'Collection'}
-                                    </h2>
-                                    {/* Item Count */}
-                                    <span className="text-lg text-gray-400 font-medium">
-                                        {getListCount(selectedListId)} items
-                                    </span>
+            {/* Selected Collection Details - Separate Container */}
+            {selectedListId &&
+                (() => {
+                    const selectedList = allLists.find((l) => l.id === selectedListId)
+                    return (
+                        <div>
+                            <div className="flex items-end space-x-4 mb-6">
+                                {/* Collection Icon */}
+                                <div className="flex items-center justify-center">
+                                    {selectedList?.emoji ? (
+                                        <span className="text-5xl">{selectedList.emoji}</span>
+                                    ) : (
+                                        <EyeIcon className="w-12 h-12 text-white" />
+                                    )}
                                 </div>
+                                {/* Collection Title */}
+                                <h2 className="text-4xl font-bold text-white">
+                                    {selectedList?.name || 'Collection'}
+                                </h2>
+                                {/* Item Count */}
+                                <span className="text-xl text-gray-400 font-medium pb-0.5">
+                                    {getListCount(selectedListId)} items
+                                </span>
+                            </div>
 
-                                {/* Search Bar */}
+                            {/* Search Bar */}
+                            <div className="mb-8">
                                 <SearchBar
                                     value={searchQuery}
                                     onChange={setSearchQuery}
@@ -397,9 +395,9 @@ const Collections = () => {
                                     voiceInput
                                 />
                             </div>
-                        )
-                    })()}
-            </div>
+                        </div>
+                    )
+                })()}
         </div>
     ) : undefined
 

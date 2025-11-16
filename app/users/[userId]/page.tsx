@@ -21,7 +21,8 @@ import type { Ranking } from '../../../types/rankings'
 import type { ThreadSummary, PollSummary, PollOptionSummary } from '../../../types/forum'
 import { LikedContentSection } from '../../../components/profile/LikedContentSection'
 import { WatchLaterSection } from '../../../components/profile/WatchLaterSection'
-import { RankingsCollectionsSection } from '../../../components/profile/RankingsCollectionsSection'
+import { RankingsSection } from '../../../components/profile/RankingsSection'
+import { CollectionsSection } from '../../../components/profile/CollectionsSection'
 import { ForumActivitySection } from '../../../components/profile/ForumActivitySection'
 import { PROFILE_CONFIG } from '../../../config/profile'
 
@@ -86,7 +87,7 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
     const watchLaterPreview = Array.isArray(userData.defaultWatchlist)
         ? (userData.defaultWatchlist as (Movie | TVShow)[]).slice(
               0,
-              PROFILE_CONFIG.CONTENT_PREVIEW_LIMIT
+              PROFILE_CONFIG.WATCH_LATER_PREVIEW_LIMIT
           )
         : []
 
@@ -349,13 +350,15 @@ export default function UserProfilePage() {
                 />
             </div>
 
-            {/* Rankings and Collections */}
-            <RankingsCollectionsSection
-                rankings={publicRankings}
-                collections={collections}
-                userId={userId}
-                isPublic={true}
-            />
+            {/* Rankings */}
+            <div className="mb-6">
+                <RankingsSection rankings={publicRankings} userId={userId} isPublic={true} />
+            </div>
+
+            {/* Collections */}
+            <div className="mb-6">
+                <CollectionsSection collections={collections} userId={userId} isPublic={true} />
+            </div>
 
             {/* Forum Activity */}
             <ForumActivitySection threads={forumThreads} polls={forumPolls} />

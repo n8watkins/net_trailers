@@ -114,7 +114,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                 {/* Avatar Button - Not Logged In */}
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-600 hover:bg-gray-500 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.6)] transition-all duration-300 focus:outline-none"
+                    className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-600 hover:bg-gray-500 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.6)] transition-all duration-300 focus:outline-none focus-visible:outline-none active:outline-none focus:ring-0 focus-visible:ring-0"
                     aria-label="User menu"
                     aria-expanded={isOpen}
                 >
@@ -277,7 +277,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                 {/* Avatar Button - Not Logged In */}
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-600 hover:bg-gray-500 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.6)] transition-all duration-300 focus:outline-none"
+                    className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-600 hover:bg-gray-500 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.6)] transition-all duration-300 focus:outline-none focus-visible:outline-none active:outline-none focus:ring-0 focus-visible:ring-0"
                     aria-label="User menu"
                     aria-expanded={isOpen}
                 >
@@ -292,7 +292,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
             {/* Avatar Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-red-600 hover:bg-red-700 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.6)] transition-all duration-300 focus:outline-none"
+                className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-red-600 hover:bg-red-700 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.6)] transition-all duration-300 focus:outline-none focus-visible:outline-none active:outline-none focus:ring-0 focus-visible:ring-0"
                 aria-label="Profile menu"
                 aria-expanded={isOpen}
             >

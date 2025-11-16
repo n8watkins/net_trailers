@@ -5,6 +5,7 @@
 
 'use client'
 
+import { useEffect } from 'react'
 import { MagnifyingGlassIcon, MicrophoneIcon } from '@heroicons/react/24/outline'
 import { useVoiceInput } from '../../hooks/useVoiceInput'
 import { useToast } from '../../hooks/useToast'
@@ -17,7 +18,7 @@ interface SearchBarProps {
     /** Placeholder text */
     placeholder?: string
     /** Focus ring color theme */
-    focusColor?: 'purple' | 'green' | 'blue' | 'gray'
+    focusColor?: 'purple' | 'green' | 'blue' | 'gray' | 'yellow'
     /** Enable voice input */
     voiceInput?: boolean
     /** Optional DOM id for the underlying input */
@@ -37,7 +38,7 @@ export default function SearchBar({
 }: SearchBarProps) {
     const { showError } = useToast()
 
-    const { isListening, isSupported, startListening, stopListening } = useVoiceInput({
+    const { isListening, isSupported, transcript, startListening, stopListening } = useVoiceInput({
         onResult: (transcript) => {
             onChange(transcript)
         },
@@ -47,11 +48,19 @@ export default function SearchBar({
         sourceId: voiceSourceId,
     })
 
+    useEffect(() => {
+        if (!voiceInput) return
+        if (isListening && transcript) {
+            onChange(transcript)
+        }
+    }, [voiceInput, isListening, transcript, onChange])
+
     const focusColorClasses = {
         purple: 'focus:ring-purple-500',
         green: 'focus:ring-green-500',
         blue: 'focus:ring-blue-500',
         gray: 'focus:ring-gray-400',
+        yellow: 'focus:ring-yellow-500',
     }
 
     const handleVoiceClick = async () => {

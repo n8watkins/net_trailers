@@ -6,7 +6,7 @@
 
 export const PROFILE_CONFIG = {
     /** Number of items to preview in Watch Later section */
-    WATCH_LATER_PREVIEW_LIMIT: 5,
+    WATCH_LATER_PREVIEW_LIMIT: 6,
 
     /** Number of items to preview in collections/rankings sections */
     CONTENT_PREVIEW_LIMIT: 12,

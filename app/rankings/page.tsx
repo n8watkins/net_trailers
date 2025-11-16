@@ -21,13 +21,8 @@ import { getUserComments } from '../../utils/firestore/rankingComments'
 import { getUserLikedRankings } from '../../utils/firestore/rankings'
 import { formatDistanceToNow } from 'date-fns'
 import Link from 'next/link'
-import {
-    TrophyIcon,
-    PlusIcon,
-    ChatBubbleLeftIcon,
-    HeartIcon,
-    MagnifyingGlassIcon,
-} from '@heroicons/react/24/outline'
+import { TrophyIcon, PlusIcon, ChatBubbleLeftIcon, HeartIcon } from '@heroicons/react/24/outline'
+import SearchBar from '../../components/common/SearchBar'
 
 export default function RankingsPage() {
     const router = useRouter()
@@ -226,14 +221,13 @@ export default function RankingsPage() {
 
                     {/* Search Input */}
                     {rankings.length > 0 && (
-                        <div className="relative mb-6 w-full sm:max-w-lg">
-                            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                            <input
-                                type="text"
-                                placeholder="Search your rankings..."
+                        <div className="mb-6 w-full sm:max-w-lg">
+                            <SearchBar
                                 value={rankingsSearch}
-                                onChange={(e) => setRankingsSearch(e.target.value)}
-                                className="w-full pl-10 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
+                                onChange={setRankingsSearch}
+                                placeholder="Search your rankings..."
+                                focusColor="yellow"
+                                voiceInput
                             />
                         </div>
                     )}
@@ -267,14 +261,13 @@ export default function RankingsPage() {
                 <>
                     {/* Search Input */}
                     {userComments.length > 0 && (
-                        <div className="relative mb-6 w-full sm:max-w-lg">
-                            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                            <input
-                                type="text"
-                                placeholder="Search your comments..."
+                        <div className="mb-6 w-full sm:max-w-lg">
+                            <SearchBar
                                 value={commentsSearch}
-                                onChange={(e) => setCommentsSearch(e.target.value)}
-                                className="w-full pl-10 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
+                                onChange={setCommentsSearch}
+                                placeholder="Search your comments..."
+                                focusColor="yellow"
+                                voiceInput
                             />
                         </div>
                     )}
@@ -338,14 +331,13 @@ export default function RankingsPage() {
                 <>
                     {/* Search Input */}
                     {likedRankings.length > 0 && (
-                        <div className="relative mb-6 w-full sm:max-w-lg">
-                            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                            <input
-                                type="text"
-                                placeholder="Search liked rankings..."
+                        <div className="mb-6 w-full sm:max-w-lg">
+                            <SearchBar
                                 value={likedSearch}
-                                onChange={(e) => setLikedSearch(e.target.value)}
-                                className="w-full pl-10 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
+                                onChange={setLikedSearch}
+                                placeholder="Search liked rankings..."
+                                focusColor="yellow"
+                                voiceInput
                             />
                         </div>
                     )}

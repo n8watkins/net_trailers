@@ -143,7 +143,11 @@ class VoiceInputManager {
         if (this.state.isListening && this.activeSession) {
             // Interrupt the existing session before starting a new one
             devLog(`🎙️ VoiceInput: preempting ${this.activeSession.sourceId} for ${sourceId}`)
-            await this.stopCurrentSession('Voice input switched to another control.')
+            await this.stopCurrentSession({
+                message: 'Voice input switched to another control.',
+                notify: false,
+                playSound: false,
+            })
         }
 
         this.isStarting = true
@@ -313,16 +317,32 @@ class VoiceInputManager {
         }
     }
 
-    private async stopCurrentSession(message?: string) {
+    private async stopCurrentSession(options?: {
+        message?: string
+        notify?: boolean
+        playSound?: boolean
+        immediateState?: boolean
+    }) {
         if (!this.recognition) return
 
+        const {
+            message,
+            notify = Boolean(message),
+            playSound = true,
+            immediateState = true,
+        } = options ?? {}
         const previousSession = this.activeSession
+        const wasListening = this.state.isListening
 
-        if (message && previousSession?.callbacks.onError) {
+        if (message && notify && previousSession?.callbacks.onError) {
             previousSession.callbacks.onError(message)
         }
 
-        if (!this.state.isListening) {
+        if (immediateState && wasListening) {
+            this.setState({ isListening: false, activeSourceId: null, transcript: '' })
+        }
+
+        if (!wasListening) {
             this.activeSession = null
             this.setState({ isListening: false, activeSourceId: null, transcript: '' })
             return
@@ -332,7 +352,9 @@ class VoiceInputManager {
             this.pendingOnEndResolvers.push(resolve)
             try {
                 this.recognition?.stop()
-                this.playBeep(400, 0.1)
+                if (playSound) {
+                    this.playBeep(400, 0.1)
+                }
             } catch (error) {
                 console.warn('VoiceInput stop error:', error)
                 resolve()

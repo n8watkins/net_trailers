@@ -42,10 +42,10 @@ export function LikedContentSection({
                 </div>
                 {likedContent.length > 0 ? (
                     <div className="flex gap-3 flex-wrap">
-                        {likedContent.slice(0, 5).map((content) => (
+                        {likedContent.slice(0, 6).map((content) => (
                             <div
                                 key={content.id}
-                                className="w-24 aspect-[2/3] relative overflow-hidden rounded-lg"
+                                className="w-32 aspect-[2/3] relative overflow-hidden rounded-lg hover:scale-105 transition-transform duration-200"
                             >
                                 {content.poster_path && (
                                     <img

@@ -23,6 +23,7 @@ export interface Entity {
 interface SmartInputProps {
     onEntitiesChange: (entities: Entity[]) => void
     onTextChange: (text: string) => void
+    onEnter?: () => void
     placeholder?: string
     className?: string
 }
@@ -40,6 +41,7 @@ interface SmartInputProps {
 export function SmartInput({
     onEntitiesChange,
     onTextChange,
+    onEnter,
     placeholder = 'Describe your row: genres, actors, directors, movies, studios...',
     className = '',
 }: SmartInputProps) {
@@ -225,6 +227,14 @@ export function SmartInput({
 
     // Keyboard navigation
     const handleKeyDown = (e: React.KeyboardEvent) => {
+        // Handle Enter key when dropdown is NOT shown
+        if (!showDropdown && e.key === 'Enter' && onEnter) {
+            e.preventDefault()
+            onEnter()
+            return
+        }
+
+        // Handle keyboard navigation when dropdown IS shown
         if (!showDropdown) return
 
         switch (e.key) {

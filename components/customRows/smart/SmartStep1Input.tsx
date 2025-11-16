@@ -55,6 +55,7 @@ export function SmartStep1Input({ onContinue, initialData }: SmartStep1InputProp
             <SmartInput
                 onEntitiesChange={setEntities}
                 onTextChange={setRawText}
+                onEnter={canContinue ? handleContinue : undefined}
                 placeholder="Try: 'dark sci-fi thrillers @Christopher Nolan' or 'wholesome 90s family movies'"
             />
 
