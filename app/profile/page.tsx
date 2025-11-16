@@ -22,6 +22,7 @@ import {
     TrashIcon,
     BookmarkIcon,
     TrophyIcon,
+    EyeIcon,
 } from '@heroicons/react/24/outline'
 import useAuth from '../../hooks/useAuth'
 import useUserData from '../../hooks/useUserData'
@@ -188,6 +189,17 @@ export default function ProfilePage() {
                             Edit Profile
                         </Link>
 
+                        {/* View Public Profile Button - Auth only */}
+                        {!isGuest && currentUserId && (
+                            <Link
+                                href={`/users/${currentUserId}`}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-400 rounded-lg transition-colors text-sm font-medium"
+                            >
+                                <EyeIcon className="w-4 h-4" />
+                                View Public Profile
+                            </Link>
+                        )}
+
                         {/* Dev Tools - Controlled by debug console toggle */}
                         {process.env.NODE_ENV === 'development' && debugSettings.showSeedButton && (
                             <div className="flex items-center gap-2">
@@ -325,11 +337,11 @@ export default function ProfilePage() {
                 )}
             </div>
 
-            {/* Content Breakdown */}
+            {/* Activity Summary */}
             <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-6">
-                <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-3 mb-6">
                     <ChartBarIcon className="w-6 h-6 text-gray-400" />
-                    <h2 className="text-xl font-semibold text-white">Content Breakdown</h2>
+                    <h2 className="text-xl font-semibold text-white">Activity Summary</h2>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -364,61 +376,6 @@ export default function ProfilePage() {
                             <p className="text-2xl font-bold text-white">{stats.tvShowsWatched}</p>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            {/* Quick Links */}
-            <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-xl p-6">
-                <h2 className="text-xl font-semibold text-white mb-4">Quick Links</h2>
-                <div
-                    className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 ${isGuest ? 'lg:grid-cols-3' : 'lg:grid-cols-6'}`}
-                >
-                    <Link
-                        href="/watch-history"
-                        className="flex items-center gap-3 p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
-                    >
-                        <ClockIcon className="w-5 h-5 text-purple-400" />
-                        <span className="text-white font-medium">Watch History</span>
-                    </Link>
-                    <Link
-                        href="/collections"
-                        className="flex items-center gap-3 p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
-                    >
-                        <RectangleStackIcon className="w-5 h-5 text-blue-400" />
-                        <span className="text-white font-medium">My Collections</span>
-                    </Link>
-                    {!isGuest && (
-                        <>
-                            <Link
-                                href="/rankings"
-                                className="flex items-center gap-3 p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
-                            >
-                                <TrophyIcon className="w-5 h-5 text-yellow-400" />
-                                <span className="text-white font-medium">My Rankings</span>
-                            </Link>
-                            <Link
-                                href="/community?tab=forums"
-                                className="flex items-center gap-3 p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
-                            >
-                                <ChatBubbleLeftRightIcon className="w-5 h-5 text-cyan-400" />
-                                <span className="text-white font-medium">My Threads</span>
-                            </Link>
-                            <Link
-                                href="/community?tab=polls"
-                                className="flex items-center gap-3 p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
-                            >
-                                <PollIcon className="w-5 h-5 text-pink-400" />
-                                <span className="text-white font-medium">My Polls</span>
-                            </Link>
-                        </>
-                    )}
-                    <Link
-                        href="/settings"
-                        className="flex items-center gap-3 p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg transition-colors"
-                    >
-                        <UserIcon className="w-5 h-5 text-green-400" />
-                        <span className="text-white font-medium">Settings</span>
-                    </Link>
                 </div>
             </div>
         </div>

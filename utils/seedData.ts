@@ -13,7 +13,7 @@ import { Movie, TVShow } from '../typings'
 import type { CreateNotificationRequest } from '../types/notifications'
 
 // Sample movies for seeding (25 popular movies)
-const sampleMovies: Movie[] = [
+export const sampleMovies: Movie[] = [
     {
         id: 550,
         title: 'Fight Club',
@@ -439,7 +439,7 @@ const sampleMovies: Movie[] = [
     },
 ]
 
-const sampleTVShows: TVShow[] = [
+export const sampleTVShows: TVShow[] = [
     {
         id: 1396,
         name: 'Breaking Bad',
