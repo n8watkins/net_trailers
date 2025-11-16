@@ -6,7 +6,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import SubPageLayout from '@/components/layout/SubPageLayout'
@@ -40,12 +40,13 @@ const toDate = (timestamp: Timestamp | Date | number): Date => {
 }
 
 interface ThreadDetailPageProps {
-    params: {
+    params: Promise<{
         id: string
-    }
+    }>
 }
 
 export default function ThreadDetailPage({ params }: ThreadDetailPageProps) {
+    const resolvedParams = use(params)
     const router = useRouter()
     const { isGuest, isInitialized } = useAuthStatus()
     const getUserId = useSessionStore((state) => state.getUserId)
@@ -72,11 +73,11 @@ export default function ThreadDetailPage({ params }: ThreadDetailPageProps) {
 
     // Load thread and replies
     useEffect(() => {
-        if (isInitialized && params.id) {
-            loadThreadById(params.id)
-            loadThreadReplies(params.id)
+        if (isInitialized && resolvedParams.id) {
+            loadThreadById(resolvedParams.id)
+            loadThreadReplies(resolvedParams.id)
         }
-    }, [isInitialized, params.id])
+    }, [isInitialized, resolvedParams.id, loadThreadById, loadThreadReplies])
 
     const handleReply = async () => {
         if (!replyContent.trim() || isGuest || !currentThread || !userId) return

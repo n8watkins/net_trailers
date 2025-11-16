@@ -186,6 +186,7 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
 export default function UserProfilePage() {
     const params = useParams()
     const identifier = params?.userId as string
+    const userId = identifier // Alias for clarity in JSX
 
     const [profileData, setProfileData] = useState<PublicProfilePayload | null>(null)
     const [isLoadingProfile, setIsLoadingProfile] = useState(true)
@@ -302,11 +303,7 @@ export default function UserProfilePage() {
     const profile = profileData.profile
 
     return (
-        <SubPageLayout
-            title={`${profile.username}'s Profile`}
-            icon={<UserIcon className="w-8 h-8" />}
-            iconColor="text-blue-400"
-        >
+        <SubPageLayout>
             {/* Profile Header */}
             <div className="bg-gradient-to-br from-zinc-900 to-zinc-800 border border-zinc-700 rounded-xl p-8 mb-8">
                 <div className="flex items-start gap-6">
@@ -316,12 +313,12 @@ export default function UserProfilePage() {
                             <img
                                 src={profile.avatarUrl}
                                 alt={profile.username}
-                                className="w-24 h-24 rounded-full ring-4 ring-blue-500/30 object-cover"
+                                className="w-32 h-32 rounded-full ring-4 ring-blue-500/30 object-cover"
                                 referrerPolicy="no-referrer"
                             />
                         ) : (
-                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center ring-4 ring-blue-500/30">
-                                <span className="text-3xl font-bold text-white">
+                            <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center ring-4 ring-blue-500/30">
+                                <span className="text-4xl font-bold text-white">
                                     {profile.username[0]?.toUpperCase()}
                                 </span>
                             </div>
@@ -329,16 +326,17 @@ export default function UserProfilePage() {
                     </div>
 
                     {/* Profile Info */}
-                    <div className="flex-1">
-                        <h1 className="text-3xl font-bold text-white mb-2">
+                    <div className="flex-shrink-0 min-w-0" style={{ width: '200px' }}>
+                        <h1 className="text-3xl font-bold text-white mb-2 truncate">
                             {profile.displayName || profile.username}
                         </h1>
-                        <p className="text-gray-500 text-sm mb-2">@{profile.username}</p>
-                        {profile.bio && <p className="text-gray-400 mb-4">{profile.bio}</p>}
+                        {profile.bio && (
+                            <p className="text-gray-400 mb-4 line-clamp-2">{profile.bio}</p>
+                        )}
 
                         {profile.favoriteGenres && profile.favoriteGenres.length > 0 && (
                             <div className="flex flex-wrap gap-2 mt-4">
-                                {profile.favoriteGenres.map((genre) => (
+                                {profile.favoriteGenres.slice(0, 3).map((genre) => (
                                     <span
                                         key={genre}
                                         className="px-3 py-1 rounded-full border border-zinc-700 bg-zinc-900/80 text-gray-300 text-xs tracking-wide uppercase"
@@ -349,114 +347,162 @@ export default function UserProfilePage() {
                             </div>
                         )}
                     </div>
+
+                    {/* Quick Links Stats */}
+                    <div className="grid grid-cols-2 gap-3 flex-1">
+                        {[
+                            {
+                                label: 'Rankings',
+                                value: stats.totalRankings,
+                                icon: TrophyIcon,
+                                iconColor: 'text-yellow-400',
+                                bgAccent: 'from-yellow-900/20 to-yellow-800/5',
+                                hoverColor:
+                                    'hover:border-yellow-500/60 hover:shadow-lg hover:shadow-yellow-500/20',
+                                scrollTo: 'rankings-section',
+                            },
+                            {
+                                label: 'Collections',
+                                value: stats.totalCollections,
+                                icon: RectangleStackIcon,
+                                iconColor: 'text-purple-400',
+                                bgAccent: 'from-purple-900/20 to-purple-800/5',
+                                hoverColor:
+                                    'hover:border-purple-500/60 hover:shadow-lg hover:shadow-purple-500/20',
+                                scrollTo: 'collections-section',
+                            },
+                            {
+                                label: 'Liked',
+                                value: stats.totalLiked,
+                                icon: FilmIcon,
+                                iconColor: 'text-pink-400',
+                                bgAccent: 'from-pink-900/20 to-pink-800/5',
+                                hoverColor:
+                                    'hover:border-pink-500/60 hover:shadow-lg hover:shadow-pink-500/20',
+                                scrollTo: 'liked-section',
+                            },
+                            {
+                                label: 'Forum',
+                                value: stats.totalThreads + stats.totalPolls,
+                                icon: ChatBubbleLeftRightIcon,
+                                iconColor: 'text-green-400',
+                                bgAccent: 'from-green-900/20 to-green-800/5',
+                                hoverColor:
+                                    'hover:border-green-500/60 hover:shadow-lg hover:shadow-green-500/20',
+                                scrollTo: 'forum-section',
+                            },
+                        ].map(
+                            ({
+                                icon: Icon,
+                                label,
+                                value,
+                                iconColor,
+                                bgAccent,
+                                hoverColor,
+                                scrollTo,
+                            }) => (
+                                <button
+                                    key={label}
+                                    onClick={() => {
+                                        const element = document.getElementById(scrollTo)
+                                        element?.scrollIntoView({
+                                            behavior: 'smooth',
+                                            block: 'start',
+                                        })
+                                    }}
+                                    className={`group bg-gradient-to-br ${bgAccent} border border-zinc-700/50 ${hoverColor} rounded-xl p-5 transition-all duration-300 cursor-pointer hover:scale-105 active:scale-95 text-left`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <Icon
+                                            className={`w-6 h-6 ${iconColor} flex-shrink-0 group-hover:scale-110 transition-transform`}
+                                        />
+                                        <p className="text-2xl font-bold text-white group-hover:text-white">
+                                            {value}{' '}
+                                            <span className="text-sm font-medium text-gray-300 group-hover:text-white uppercase tracking-wide">
+                                                {label}
+                                            </span>
+                                        </p>
+                                    </div>
+                                </button>
+                            )
+                        )}
+                    </div>
                 </div>
             </div>
 
-            {/* Highlight Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
-                {[
-                    {
-                        label: 'Rankings',
-                        value: stats.totalRankings,
-                        icon: TrophyIcon,
-                        accent: 'from-yellow-900/30 to-yellow-800/10',
-                        iconColor: 'text-yellow-400',
-                    },
-                    {
-                        label: 'Ranking Likes',
-                        value: stats.totalLikes,
-                        icon: HeartIcon,
-                        accent: 'from-red-900/30 to-red-800/10',
-                        iconColor: 'text-red-400',
-                    },
-                    {
-                        label: 'Views',
-                        value: stats.totalViews,
-                        icon: EyeIcon,
-                        accent: 'from-blue-900/30 to-blue-800/10',
-                        iconColor: 'text-blue-400',
-                    },
-                    {
-                        label: 'Collections',
-                        value: stats.totalCollections,
-                        icon: RectangleStackIcon,
-                        accent: 'from-purple-900/30 to-purple-800/10',
-                        iconColor: 'text-purple-400',
-                    },
-                    {
-                        label: 'Liked Content',
-                        value: stats.totalLiked,
-                        icon: FilmIcon,
-                        accent: 'from-pink-900/30 to-pink-800/10',
-                        iconColor: 'text-pink-400',
-                    },
-                    {
-                        label: 'Forum Posts',
-                        value: stats.totalThreads + stats.totalPolls,
-                        icon: ChatBubbleLeftRightIcon,
-                        accent: 'from-green-900/30 to-green-800/10',
-                        iconColor: 'text-green-400',
-                        sublabel: `${stats.totalThreads} threads · ${stats.totalPolls} polls`,
-                    },
-                ].map(({ icon: Icon, label, value, accent, iconColor, sublabel }) => (
-                    <div
-                        key={label}
-                        className={`bg-gradient-to-br ${accent} border border-white/5 rounded-xl p-4`}
-                    >
-                        <Icon className={`w-6 h-6 ${iconColor} mb-3`} />
-                        <p className="text-sm text-gray-400">{label}</p>
-                        <p className="text-3xl font-semibold text-white">{value}</p>
-                        {sublabel && <p className="text-xs text-gray-500 mt-1">{sublabel}</p>}
-                    </div>
-                ))}
-            </div>
-
             {watchLaterPreview.length > 0 && (
-                <div className="bg-zinc-900/70 border border-zinc-800 rounded-xl p-6 mb-8">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
-                            <ClockIcon className="w-6 h-6 text-indigo-400" />
-                            <div>
-                                <h2 className="text-xl font-semibold text-white">
-                                    Watch Later Spotlight
-                                </h2>
-                                <p className="text-gray-400 text-sm">
-                                    A peek at what {profile.username} is planning to watch next
-                                </p>
-                            </div>
-                        </div>
-                        <span className="text-sm text-gray-500">
-                            {watchLaterPreview.length} picks
-                        </span>
+                <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4 mb-6">
+                    <div className="flex items-center gap-2 mb-3">
+                        <ClockIcon className="w-5 h-5 text-indigo-400" />
+                        <h2 className="text-lg font-semibold text-white">
+                            Watch Later ({watchLaterPreview.length})
+                        </h2>
                     </div>
-                    <div className="overflow-x-auto pb-2">
-                        <div className="flex gap-4">
-                            {watchLaterPreview.slice(0, 12).map((content) => (
-                                <div key={content.id} className="min-w-[160px] flex-shrink-0">
-                                    <ContentCard content={content} />
-                                </div>
-                            ))}
-                        </div>
+                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
+                        {watchLaterPreview.slice(0, 10).map((content) => (
+                            <div
+                                key={content.id}
+                                className="aspect-[2/3] relative overflow-hidden rounded"
+                            >
+                                <ContentCard content={content} />
+                            </div>
+                        ))}
                     </div>
                 </div>
             )}
 
             <div className="space-y-12">
-                <section>
+                <section id="rankings-section">
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-2">
                             <TrophyIcon className="w-6 h-6 text-yellow-500" />
                             <h2 className="text-2xl font-bold text-white">Public Rankings</h2>
                         </div>
                         <Link
-                            href="/rankings"
+                            href={`/users/${userId}/rankings`}
                             className="text-sm text-blue-400 hover:text-blue-300"
                         >
-                            Explore rankings
+                            View all ({publicRankings.length})
                         </Link>
                     </div>
                     {publicRankings.length > 0 ? (
-                        <RankingGrid rankings={publicRankings} showAuthor={false} />
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                            {publicRankings.slice(0, 10).map((ranking) => (
+                                <Link
+                                    key={ranking.id}
+                                    href={`/rankings/${ranking.id}`}
+                                    className="group bg-zinc-900/50 rounded-lg p-3 border border-zinc-800 hover:border-yellow-700/50 transition-all cursor-pointer"
+                                >
+                                    <h3 className="text-sm font-semibold text-white group-hover:text-yellow-400 transition-colors line-clamp-2 mb-2">
+                                        {ranking.title}
+                                    </h3>
+                                    <div className="grid grid-cols-3 gap-1 mb-2">
+                                        {ranking.rankedItems?.slice(0, 3).map((item, idx) => (
+                                            <div
+                                                key={idx}
+                                                className="aspect-[2/3] relative overflow-hidden rounded"
+                                            >
+                                                {item.content?.poster_path && (
+                                                    <img
+                                                        src={`https://image.tmdb.org/t/p/w185${item.content.poster_path}`}
+                                                        alt=""
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs text-gray-500">
+                                        <span className="flex items-center gap-1">
+                                            ❤️ {ranking.likes || 0}
+                                        </span>
+                                        <span className="flex items-center gap-1">
+                                            👁️ {ranking.views || 0}
+                                        </span>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
                     ) : (
                         <div className="text-center py-12 bg-zinc-900 rounded-lg border border-zinc-800">
                             <TrophyIcon className="w-16 h-16 text-gray-600 mx-auto mb-4" />
@@ -465,56 +511,55 @@ export default function UserProfilePage() {
                     )}
                 </section>
 
-                <section>
+                <section id="collections-section">
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-2">
                             <RectangleStackIcon className="w-6 h-6 text-purple-500" />
                             <h2 className="text-2xl font-bold text-white">Public Collections</h2>
                         </div>
                         <Link
-                            href="/collections"
+                            href={`/users/${userId}/collections`}
                             className="text-sm text-blue-400 hover:text-blue-300"
                         >
-                            Browse collections
+                            View all ({collections.length})
                         </Link>
                     </div>
                     {collections.length > 0 ? (
-                        <div className="grid gap-6">
-                            {collections.map((collection) => (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                            {collections.slice(0, 10).map((collection) => (
                                 <div
                                     key={collection.id}
-                                    className="bg-zinc-900 rounded-lg p-6 border border-zinc-800 hover:border-zinc-700 transition-colors"
+                                    className="group bg-zinc-900/50 rounded-lg p-3 border border-zinc-800 hover:border-purple-700/50 transition-all"
                                 >
-                                    <div className="flex items-center gap-3 mb-4">
+                                    <div className="flex items-center gap-2 mb-2">
                                         {collection.emoji && (
-                                            <span className="text-3xl">{collection.emoji}</span>
+                                            <span className="text-xl">{collection.emoji}</span>
                                         )}
-                                        <div>
-                                            <h3 className="text-xl font-semibold text-white">
-                                                {collection.name}
-                                            </h3>
-                                            <p className="text-gray-400 text-sm">
-                                                {collection.items?.length || 0} items
-                                            </p>
-                                        </div>
+                                        <h3 className="text-sm font-semibold text-white group-hover:text-purple-400 transition-colors line-clamp-2 flex-1">
+                                            {collection.name}
+                                        </h3>
                                     </div>
-                                    {collection.description && (
-                                        <p className="text-gray-400 mb-4">
-                                            {collection.description}
-                                        </p>
-                                    )}
-                                    {collection.items && collection.items.length > 0 && (
-                                        <div className="flex gap-2 overflow-x-auto">
-                                            {collection.items.slice(0, 10).map((item) => (
-                                                <div
-                                                    key={item.id}
-                                                    className="min-w-[140px] flex-shrink-0"
-                                                >
-                                                    <ContentCard content={item} />
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
+                                    <div className="grid grid-cols-3 gap-1 mb-2">
+                                        {collection.items?.slice(0, 3).map((item) => (
+                                            <div
+                                                key={item.id}
+                                                className="aspect-[2/3] relative overflow-hidden rounded"
+                                            >
+                                                {item.poster_path && (
+                                                    <img
+                                                        src={`https://image.tmdb.org/t/p/w185${item.poster_path}`}
+                                                        alt=""
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs text-gray-500">
+                                        <span className="flex items-center gap-1">
+                                            📚 {collection.items?.length || 0} items
+                                        </span>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -526,20 +571,28 @@ export default function UserProfilePage() {
                     )}
                 </section>
 
-                <section>
+                <section id="liked-section">
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-2">
                             <HeartIcon className="w-6 h-6 text-red-500" />
                             <h2 className="text-2xl font-bold text-white">Liked Content</h2>
                         </div>
-                        <Link href="/liked" className="text-sm text-blue-400 hover:text-blue-300">
-                            View liked items
+                        <Link
+                            href={`/users/${userId}/liked`}
+                            className="text-sm text-blue-400 hover:text-blue-300"
+                        >
+                            View all ({likedContent.length})
                         </Link>
                     </div>
                     {likedContent.length > 0 ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                            {likedContent.slice(0, PREVIEW_LIMIT).map((content) => (
-                                <ContentCard key={content.id} content={content} />
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                            {likedContent.slice(0, 5).map((content) => (
+                                <div
+                                    key={content.id}
+                                    className="aspect-[2/3] relative overflow-hidden rounded"
+                                >
+                                    <ContentCard content={content} />
+                                </div>
                             ))}
                         </div>
                     ) : (
@@ -550,7 +603,7 @@ export default function UserProfilePage() {
                     )}
                 </section>
 
-                <section>
+                <section id="forum-section">
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-2">
                             <ChatBubbleLeftRightIcon className="w-6 h-6 text-green-500" />
@@ -563,86 +616,81 @@ export default function UserProfilePage() {
                             Visit community
                         </Link>
                     </div>
-                    <div className="space-y-8">
-                        <div>
-                            <h3 className="text-xl font-semibold text-white mb-4">
+
+                    {/* Bento Grid Layout - Side by Side on Large Screens */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Threads Column */}
+                        <div className="bg-zinc-900/50 rounded-lg p-6 border border-zinc-800">
+                            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                                <ChatBubbleLeftRightIcon className="w-5 h-5 text-green-400" />
                                 Threads ({forumThreads.length})
                             </h3>
                             {forumThreads.length > 0 ? (
-                                <div className="space-y-4">
-                                    {forumThreads.map((thread) => (
-                                        <div
+                                <div className="space-y-3">
+                                    {forumThreads.slice(0, 3).map((thread) => (
+                                        <Link
                                             key={thread.id}
-                                            className="bg-zinc-900 rounded-lg p-4 border border-zinc-800"
+                                            href={`/community/threads/${thread.id}`}
+                                            className="group hover:bg-zinc-800/50 rounded-lg p-3 transition-colors cursor-pointer border border-transparent hover:border-zinc-700 block"
                                         >
-                                            <h4 className="text-white font-semibold mb-2">
+                                            <h4 className="text-white font-medium text-sm mb-1 line-clamp-1 group-hover:text-green-400 transition-colors">
                                                 {thread.title}
                                             </h4>
-                                            <p className="text-gray-400 text-sm line-clamp-2 mb-2">
+                                            <p className="text-gray-400 text-xs line-clamp-1 mb-2">
                                                 {thread.content}
                                             </p>
-                                            <div className="flex items-center gap-4 text-xs text-gray-500">
-                                                <span>{thread.replyCount} replies</span>
-                                                <span>{thread.likes} likes</span>
-                                                <span>{thread.views} views</span>
+                                            <div className="flex items-center gap-3 text-xs text-gray-500">
+                                                <span className="flex items-center gap-1">
+                                                    💬 {thread.replyCount}
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                    ❤️ {thread.likes}
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                    👁️ {thread.views}
+                                                </span>
                                             </div>
-                                        </div>
+                                        </Link>
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-gray-400 text-center py-8">
-                                    No threads created yet
+                                <p className="text-gray-500 text-center py-8 text-sm">
+                                    No threads yet
                                 </p>
                             )}
                         </div>
-                        <div>
-                            <h3 className="text-xl font-semibold text-white mb-4">
+
+                        {/* Polls Column */}
+                        <div className="bg-zinc-900/50 rounded-lg p-6 border border-zinc-800">
+                            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                                <ChartBarIcon className="w-5 h-5 text-blue-400" />
                                 Polls ({forumPolls.length})
                             </h3>
                             {forumPolls.length > 0 ? (
-                                <div className="space-y-4">
-                                    {forumPolls.map((poll) => (
-                                        <div
+                                <div className="space-y-3">
+                                    {forumPolls.slice(0, 3).map((poll) => (
+                                        <Link
                                             key={poll.id}
-                                            className="bg-zinc-900 rounded-lg p-4 border border-zinc-800"
+                                            href={`/community/polls/${poll.id}`}
+                                            className="group hover:bg-zinc-800/50 rounded-lg p-3 transition-colors cursor-pointer border border-transparent hover:border-zinc-700 block"
                                         >
-                                            <h4 className="text-white font-semibold mb-4">
+                                            <h4 className="text-white font-medium text-sm mb-2 line-clamp-2 group-hover:text-blue-400 transition-colors">
                                                 {poll.question}
                                             </h4>
-                                            <div className="space-y-2">
-                                                {poll.options.map((option) => (
-                                                    <div
-                                                        key={option.id}
-                                                        className="bg-zinc-800 rounded p-2"
-                                                    >
-                                                        <div className="flex justify-between items-center mb-1">
-                                                            <span className="text-white text-sm">
-                                                                {option.text}
-                                                            </span>
-                                                            <span className="text-gray-400 text-xs">
-                                                                {option.percentage ?? 0}%
-                                                            </span>
-                                                        </div>
-                                                        <div className="w-full bg-zinc-700 rounded-full h-2">
-                                                            <div
-                                                                className="bg-blue-600 h-2 rounded-full"
-                                                                style={{
-                                                                    width: `${option.percentage ?? 0}%`,
-                                                                }}
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                ))}
+                                            <div className="flex items-center justify-between text-xs">
+                                                <span className="text-gray-400">
+                                                    {poll.options.length} options
+                                                </span>
+                                                <span className="text-gray-500">
+                                                    🗳️ {poll.totalVotes} votes
+                                                </span>
                                             </div>
-                                            <p className="text-gray-500 text-xs mt-2">
-                                                {poll.totalVotes} total votes
-                                            </p>
-                                        </div>
+                                        </Link>
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-gray-400 text-center py-8">
-                                    No polls created yet
+                                <p className="text-gray-500 text-center py-8 text-sm">
+                                    No polls yet
                                 </p>
                             )}
                         </div>

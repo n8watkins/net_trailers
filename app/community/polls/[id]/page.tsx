@@ -6,7 +6,7 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import SubPageLayout from '@/components/layout/SubPageLayout'
@@ -38,12 +38,13 @@ const toDate = (timestamp: Timestamp | Date | number): Date => {
 }
 
 interface PollDetailPageProps {
-    params: {
+    params: Promise<{
         id: string
-    }
+    }>
 }
 
 export default function PollDetailPage({ params }: PollDetailPageProps) {
+    const resolvedParams = use(params)
     const router = useRouter()
     const { isGuest, isInitialized } = useAuthStatus()
     const getUserId = useSessionStore((state) => state.getUserId)
@@ -58,10 +59,10 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
 
     // Load poll
     useEffect(() => {
-        if (isInitialized && params.id) {
-            loadPollById(params.id)
+        if (isInitialized && resolvedParams.id) {
+            loadPollById(resolvedParams.id)
         }
-    }, [isInitialized, params.id])
+    }, [isInitialized, resolvedParams.id, loadPollById])
 
     // Check if user has already voted
     useEffect(() => {
