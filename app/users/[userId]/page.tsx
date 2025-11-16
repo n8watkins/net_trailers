@@ -8,33 +8,23 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import Link from 'next/link'
 import SubPageLayout from '../../../components/layout/SubPageLayout'
-import { RankingGrid } from '../../../components/rankings/RankingGrid'
 import NetflixLoader from '../../../components/common/NetflixLoader'
-import ContentCard from '../../../components/common/ContentCard'
-import {
-    UserIcon,
-    TrophyIcon,
-    HeartIcon,
-    EyeIcon,
-    RectangleStackIcon,
-    ChatBubbleLeftRightIcon,
-    ChartBarIcon,
-    FilmIcon,
-    ClockIcon,
-} from '@heroicons/react/24/outline'
+import { UserIcon } from '@heroicons/react/24/outline'
 import { FirebaseError } from 'firebase/app'
 import { db } from '../../../firebase'
 import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore'
+import type { PublicProfilePayload } from '@/lib/publicProfile'
 import type { Movie, TVShow } from '../../../typings'
 import type { UserList } from '../../../types/userLists'
 import type { Ranking } from '../../../types/rankings'
-import type { PublicProfilePayload } from '@/lib/publicProfile'
+import { LikedContentSection } from '../../../components/profile/LikedContentSection'
+import { WatchLaterSection } from '../../../components/profile/WatchLaterSection'
+import { RankingsCollectionsSection } from '../../../components/profile/RankingsCollectionsSection'
+import { ForumActivitySection } from '../../../components/profile/ForumActivitySection'
+import { PROFILE_CONFIG } from '../../../config/profile'
 
 type PublicProfileIdentity = PublicProfilePayload['profile']
-
-const PREVIEW_LIMIT = 12
 
 const toMillisClient = (value: unknown): number | null => {
     if (value === null || value === undefined) return null
@@ -93,7 +83,10 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
         ? (userData.userCreatedWatchlists as UserList[]).filter((list) => list?.isPublic)
         : []
     const watchLaterPreview = Array.isArray(userData.defaultWatchlist)
-        ? (userData.defaultWatchlist as (Movie | TVShow)[]).slice(0, PREVIEW_LIMIT)
+        ? (userData.defaultWatchlist as (Movie | TVShow)[]).slice(
+              0,
+              PROFILE_CONFIG.CONTENT_PREVIEW_LIMIT
+          )
         : []
 
     const rankingsSnap = await getDocs(
@@ -102,7 +95,7 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
     const allRankings = rankingsSnap.docs.map((doc) => doc.data() as Ranking)
     const publicRankings = sortByRecency(allRankings.filter((ranking) => ranking.isPublic)).slice(
         0,
-        20
+        PROFILE_CONFIG.MAX_PUBLIC_RANKINGS
     )
 
     const threadsSnap = await getDocs(
@@ -123,7 +116,7 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
                 updatedAt: toMillisClient(data.updatedAt),
             }
         })
-    ).slice(0, 10)
+    ).slice(0, PROFILE_CONFIG.MAX_THREAD_SUMMARIES)
 
     const pollsSnap = await getDocs(query(collection(db, 'polls'), where('userId', '==', userId)))
     const pollSummaries: PublicProfilePayload['forum']['polls'] = sortByRecency(
@@ -157,7 +150,7 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
                 expiresAt: toMillisClient(data.expiresAt),
             }
         })
-    ).slice(0, 10)
+    ).slice(0, PROFILE_CONFIG.MAX_POLL_SUMMARIES)
 
     const stats: PublicProfilePayload['stats'] = {
         totalRankings: publicRankings.length,
@@ -352,320 +345,25 @@ export default function UserProfilePage() {
 
             {/* Bento Grid Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                {/* Liked Content Section */}
-                <section
-                    id="liked-section"
-                    className="bg-gradient-to-br from-red-900/20 to-pink-900/10 border border-red-800/30 rounded-xl p-6"
-                >
-                    <div className="flex items-center gap-3 mb-4">
-                        <HeartIcon className="w-6 h-6 text-red-400" />
-                        <h2 className="text-2xl font-bold text-white">Liked Content</h2>
-                        <Link
-                            href={`/users/${userId}/liked`}
-                            className="text-base text-red-400 hover:text-red-300 underline"
-                        >
-                            View all {likedContent.length}
-                        </Link>
-                    </div>
-                    {likedContent.length > 0 ? (
-                        <div className="flex gap-3 flex-wrap">
-                            {likedContent.slice(0, 5).map((content) => (
-                                <div
-                                    key={content.id}
-                                    className="w-24 aspect-[2/3] relative overflow-hidden rounded-lg"
-                                >
-                                    {content.poster_path && (
-                                        <img
-                                            src={`https://image.tmdb.org/t/p/w185${content.poster_path}`}
-                                            alt=""
-                                            className="w-full h-full object-cover"
-                                        />
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-12 bg-black/20 rounded-lg border border-red-800/20">
-                            <HeartIcon className="w-16 h-16 text-red-900 mx-auto mb-4" />
-                            <p className="text-gray-400">No liked content yet</p>
-                        </div>
-                    )}
-                </section>
-
-                {/* Watch Later Section */}
-                {watchLaterPreview.length > 0 && (
-                    <section className="bg-gradient-to-br from-indigo-900/20 to-blue-900/10 border border-indigo-800/30 rounded-xl p-6">
-                        <div className="flex items-center gap-2 mb-4">
-                            <ClockIcon className="w-6 h-6 text-indigo-400" />
-                            <h2 className="text-2xl font-bold text-white">Watch Later</h2>
-                        </div>
-                        <div className="flex gap-3 flex-wrap">
-                            {watchLaterPreview.slice(0, 5).map((content) => (
-                                <div
-                                    key={content.id}
-                                    className="w-24 aspect-[2/3] relative overflow-hidden rounded-lg"
-                                >
-                                    {content.poster_path && (
-                                        <img
-                                            src={`https://image.tmdb.org/t/p/w185${content.poster_path}`}
-                                            alt=""
-                                            className="w-full h-full object-cover"
-                                        />
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-                )}
+                <LikedContentSection likedContent={likedContent} userId={userId} isPublic={true} />
+                <WatchLaterSection
+                    watchLaterPreview={watchLaterPreview}
+                    totalCount={watchLaterPreview.length}
+                    userId={userId}
+                    isPublic={true}
+                />
             </div>
 
-            {/* Rankings and Collections - Bento Container */}
-            <div className="bg-gradient-to-br from-zinc-900/80 to-zinc-800/50 border border-zinc-700 rounded-xl p-6 mb-6">
-                <div className="flex gap-6">
-                    {/* Rankings Section - Takes 1/2 width */}
-                    <section id="rankings-section" className="flex-1">
-                        <div className="flex items-center gap-3 mb-4">
-                            <TrophyIcon className="w-6 h-6 text-yellow-400" />
-                            <h2 className="text-2xl font-bold text-white">Rankings</h2>
-                            <Link
-                                href={`/users/${userId}/rankings`}
-                                className="text-base text-yellow-400 hover:text-yellow-300 underline"
-                            >
-                                View all {publicRankings.length}
-                            </Link>
-                        </div>
-                        {publicRankings.length > 0 ? (
-                            <div className="flex gap-3">
-                                {publicRankings.slice(0, 3).map((ranking) => (
-                                    <Link
-                                        key={ranking.id}
-                                        href={`/rankings/${ranking.id}`}
-                                        className="group bg-gradient-to-br from-yellow-900/20 to-orange-900/10 border border-yellow-800/30 hover:border-yellow-700/50 rounded-xl p-4 transition-all cursor-pointer flex-1 min-w-0"
-                                    >
-                                        <h3 className="text-sm font-bold text-white group-hover:text-yellow-400 transition-colors line-clamp-2 mb-3 h-10">
-                                            {ranking.title}
-                                        </h3>
-                                        <div className="flex gap-2 mb-3">
-                                            {ranking.rankedItems?.slice(0, 3).map((item, idx) => (
-                                                <div
-                                                    key={idx}
-                                                    className="flex-1 aspect-[2/3] relative overflow-hidden rounded"
-                                                >
-                                                    {item.content?.poster_path && (
-                                                        <img
-                                                            src={`https://image.tmdb.org/t/p/w185${item.content.poster_path}`}
-                                                            alt=""
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <div className="flex items-center gap-3 text-xs text-gray-400">
-                                            <span className="flex items-center gap-1.5">
-                                                <HeartIcon className="w-3 h-3" />
-                                                <span className="font-medium">
-                                                    {ranking.likes || 0}
-                                                </span>
-                                            </span>
-                                            <span className="flex items-center gap-1.5">
-                                                <EyeIcon className="w-3 h-3" />
-                                                <span className="font-medium">
-                                                    {ranking.views || 0}
-                                                </span>
-                                            </span>
-                                            <span className="flex items-center gap-1.5">
-                                                <ChatBubbleLeftRightIcon className="w-3 h-3" />
-                                                <span className="font-medium">
-                                                    {ranking.comments?.length || 0}
-                                                </span>
-                                            </span>
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center py-12 bg-gradient-to-br from-yellow-900/20 to-orange-900/10 border border-yellow-800/30 rounded-xl">
-                                <TrophyIcon className="w-16 h-16 text-yellow-900 mx-auto mb-4" />
-                                <p className="text-gray-400">No rankings yet</p>
-                            </div>
-                        )}
-                    </section>
+            {/* Rankings and Collections */}
+            <RankingsCollectionsSection
+                rankings={publicRankings}
+                collections={collections}
+                userId={userId}
+                isPublic={true}
+            />
 
-                    {/* Collections Section - Takes 1/2 width */}
-                    <section id="collections-section" className="flex-1">
-                        <div className="flex items-center gap-3 mb-4">
-                            <RectangleStackIcon className="w-6 h-6 text-purple-400" />
-                            <h2 className="text-2xl font-bold text-white">Collections</h2>
-                            <Link
-                                href={`/users/${userId}/collections`}
-                                className="text-base text-purple-400 hover:text-purple-300 underline"
-                            >
-                                View all {collections.length}
-                            </Link>
-                        </div>
-                        {collections.length > 0 ? (
-                            <div className="flex gap-3">
-                                {collections.slice(0, 3).map((collection) => (
-                                    <Link
-                                        key={collection.id}
-                                        href={`/users/${userId}/collections/${collection.id}`}
-                                        className="group bg-gradient-to-br from-purple-900/20 to-violet-900/10 border border-purple-800/30 hover:border-purple-700/50 rounded-xl p-4 transition-all cursor-pointer flex-1 min-w-0"
-                                    >
-                                        <div className="flex items-center gap-2 mb-3 h-10">
-                                            {collection.emoji && (
-                                                <span className="text-xl flex-shrink-0">
-                                                    {collection.emoji}
-                                                </span>
-                                            )}
-                                            <h3 className="text-sm font-bold text-white group-hover:text-purple-400 transition-colors line-clamp-2 flex-1 min-w-0">
-                                                {collection.name}
-                                            </h3>
-                                        </div>
-                                        <div className="flex gap-2 mb-3">
-                                            {collection.items?.slice(0, 3).map((item) => (
-                                                <div
-                                                    key={item.id}
-                                                    className="flex-1 aspect-[2/3] relative overflow-hidden rounded"
-                                                >
-                                                    {item.poster_path && (
-                                                        <img
-                                                            src={`https://image.tmdb.org/t/p/w185${item.poster_path}`}
-                                                            alt=""
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <div className="flex items-center text-xs text-gray-400">
-                                            <span className="flex items-center gap-1.5">
-                                                <RectangleStackIcon className="w-3 h-3" />
-                                                <span className="font-medium">
-                                                    {collection.items?.length || 0} items
-                                                </span>
-                                            </span>
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center py-12 bg-gradient-to-br from-purple-900/20 to-violet-900/10 border border-purple-800/30 rounded-xl">
-                                <RectangleStackIcon className="w-16 h-16 text-purple-900 mx-auto mb-4" />
-                                <p className="text-gray-400">No collections yet</p>
-                            </div>
-                        )}
-                    </section>
-                </div>
-            </div>
-
-            <div className="space-y-12">
-                <section id="forum-section">
-                    <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-2">
-                            <ChatBubbleLeftRightIcon className="w-6 h-6 text-green-500" />
-                            <h2 className="text-2xl font-bold text-white">Forum Activity</h2>
-                        </div>
-                        <Link
-                            href="/community"
-                            className="text-sm text-blue-400 hover:text-blue-300"
-                        >
-                            Visit community
-                        </Link>
-                    </div>
-
-                    {/* Bento Grid Layout - Side by Side on Large Screens */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Threads Column */}
-                        <div className="bg-zinc-900/50 rounded-lg p-6 border border-zinc-800">
-                            <div className="flex items-center gap-3 mb-4">
-                                <ChatBubbleLeftRightIcon className="w-5 h-5 text-green-400" />
-                                <h3 className="text-lg font-semibold text-white">Threads</h3>
-                                <Link
-                                    href="/community?tab=threads"
-                                    className="text-base text-green-400 hover:text-green-300 underline"
-                                >
-                                    View all {forumThreads.length}
-                                </Link>
-                            </div>
-                            {forumThreads.length > 0 ? (
-                                <div className="space-y-3">
-                                    {forumThreads.slice(0, 3).map((thread) => (
-                                        <Link
-                                            key={thread.id}
-                                            href={`/community/threads/${thread.id}`}
-                                            className="group hover:bg-zinc-800/50 rounded-lg p-3 transition-colors cursor-pointer border border-transparent hover:border-zinc-700 block"
-                                        >
-                                            <h4 className="text-white font-medium text-sm mb-1 line-clamp-1 group-hover:text-green-400 transition-colors">
-                                                {thread.title}
-                                            </h4>
-                                            <p className="text-gray-400 text-xs line-clamp-1 mb-2">
-                                                {thread.content}
-                                            </p>
-                                            <div className="flex items-center gap-3 text-xs text-gray-500">
-                                                <span className="flex items-center gap-1">
-                                                    💬 {thread.replyCount}
-                                                </span>
-                                                <span className="flex items-center gap-1">
-                                                    ❤️ {thread.likes}
-                                                </span>
-                                                <span className="flex items-center gap-1">
-                                                    👁️ {thread.views}
-                                                </span>
-                                            </div>
-                                        </Link>
-                                    ))}
-                                </div>
-                            ) : (
-                                <p className="text-gray-500 text-center py-8 text-sm">
-                                    No threads yet
-                                </p>
-                            )}
-                        </div>
-
-                        {/* Polls Column */}
-                        <div className="bg-zinc-900/50 rounded-lg p-6 border border-zinc-800">
-                            <div className="flex items-center gap-3 mb-4">
-                                <ChartBarIcon className="w-5 h-5 text-blue-400" />
-                                <h3 className="text-lg font-semibold text-white">Polls</h3>
-                                <Link
-                                    href="/community?tab=polls"
-                                    className="text-base text-blue-400 hover:text-blue-300 underline"
-                                >
-                                    View all {forumPolls.length}
-                                </Link>
-                            </div>
-                            {forumPolls.length > 0 ? (
-                                <div className="space-y-3">
-                                    {forumPolls.slice(0, 3).map((poll) => (
-                                        <Link
-                                            key={poll.id}
-                                            href={`/community/polls/${poll.id}`}
-                                            className="group hover:bg-zinc-800/50 rounded-lg p-3 transition-colors cursor-pointer border border-transparent hover:border-zinc-700 block"
-                                        >
-                                            <h4 className="text-white font-medium text-sm mb-2 line-clamp-2 group-hover:text-blue-400 transition-colors">
-                                                {poll.question}
-                                            </h4>
-                                            <div className="flex items-center justify-between text-xs">
-                                                <span className="text-gray-400">
-                                                    {poll.options.length} options
-                                                </span>
-                                                <span className="text-gray-500">
-                                                    🗳️ {poll.totalVotes} votes
-                                                </span>
-                                            </div>
-                                        </Link>
-                                    ))}
-                                </div>
-                            ) : (
-                                <p className="text-gray-500 text-center py-8 text-sm">
-                                    No polls yet
-                                </p>
-                            )}
-                        </div>
-                    </div>
-                </section>
-            </div>
+            {/* Forum Activity */}
+            <ForumActivitySection threads={forumThreads} polls={forumPolls} />
         </SubPageLayout>
     )
 }

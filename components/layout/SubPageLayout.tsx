@@ -17,9 +17,9 @@ import { useModalStore } from '../../stores/modalStore'
 
 interface SubPageLayoutProps {
     /** Page title (e.g., "Watch History") */
-    title: string
+    title?: string
     /** Icon element to display next to title */
-    icon: ReactNode
+    icon?: ReactNode
     /** Icon color class (e.g., "text-purple-400") */
     iconColor?: string
     /** Description text below title */
@@ -57,25 +57,37 @@ export default function SubPageLayout({
             <main className="relative pb-24 px-4 sm:px-6 lg:px-8 pt-44">
                 <div className="max-w-[1800px] mx-auto flex flex-col space-y-6 py-8">
                     {/* Page Header */}
-                    <div className="space-y-4">
-                        {/* Title Section with Actions */}
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-3">
-                                <div className={`w-8 h-8 ${iconColor}`}>{icon}</div>
-                                <h1 className="text-3xl font-bold text-white md:text-4xl">
-                                    {title}
-                                </h1>
-                            </div>
-                            {/* Title Actions (e.g., manage dropdown) */}
-                            {titleActions && <div>{titleActions}</div>}
+                    {(title || icon || description || headerActions || titleActions) && (
+                        <div className="space-y-4">
+                            {/* Title Section with Actions */}
+                            {(title || icon || titleActions) && (
+                                <div className="flex items-center justify-between">
+                                    {(title || icon) && (
+                                        <div className="flex items-center space-x-3">
+                                            {icon && (
+                                                <div className={`w-8 h-8 ${iconColor}`}>{icon}</div>
+                                            )}
+                                            {title && (
+                                                <h1 className="text-3xl font-bold text-white md:text-4xl">
+                                                    {title}
+                                                </h1>
+                                            )}
+                                        </div>
+                                    )}
+                                    {/* Title Actions (e.g., manage dropdown) */}
+                                    {titleActions && <div>{titleActions}</div>}
+                                </div>
+                            )}
+
+                            {/* Description */}
+                            {description && (
+                                <p className="text-gray-400 max-w-2xl">{description}</p>
+                            )}
+
+                            {/* Header Actions (search, filters, etc.) */}
+                            {headerActions && <div className="pt-2">{headerActions}</div>}
                         </div>
-
-                        {/* Description */}
-                        {description && <p className="text-gray-400 max-w-2xl">{description}</p>}
-
-                        {/* Header Actions (search, filters, etc.) */}
-                        {headerActions && <div className="pt-2">{headerActions}</div>}
-                    </div>
+                    )}
 
                     {/* Main Content Area */}
                     <div className={contentClassName}>{children}</div>
