@@ -383,25 +383,25 @@ function RankingsTab({
                     ))}
                 </div>
 
+                {/* Search Rankings Input - Above the tag container */}
+                <div className="relative">
+                    <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search rankings..."
+                        className="w-full pl-12 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
+                    />
+                </div>
+
                 {/* Tag Filter Container - Similar to Collections */}
                 <div className="bg-[#1a1a1a] border border-gray-800 rounded-2xl p-6">
-                    <div className="flex items-start gap-4 mb-4">
-                        {/* Search Rankings Input - Main Search */}
-                        <div className="flex-1">
-                            <div className="relative">
-                                <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                <input
-                                    type="text"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="Search rankings..."
-                                    className="w-full pl-12 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
-                                />
-                            </div>
-                        </div>
+                    <div className="flex items-center gap-4 mb-4">
+                        <label className="text-sm font-medium text-gray-400">Filter by Tag</label>
 
                         {/* Tag Search Input - Smaller, to the side */}
-                        <div className="w-64">
+                        <div className="flex-1 max-w-xs ml-auto">
                             <div className="relative">
                                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                 <input
@@ -409,7 +409,7 @@ function RankingsTab({
                                     value={tagSearchQuery}
                                     onChange={(e) => setTagSearchQuery(e.target.value)}
                                     placeholder="Search tags..."
-                                    className="w-full pl-10 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
+                                    className="w-full pl-10 pr-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
                                 />
                                 {tagSearchQuery && (
                                     <button
