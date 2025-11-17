@@ -17,16 +17,18 @@ export async function POST() {
             apiLog('[Surprise Query] Rate limited - using fallback')
             // Use fallback if rate limited
             const fallbackQueries = [
-                'mind-bending thrillers with plot twists',
-                'heartwarming family movies',
-                'epic sci-fi adventures in space',
-                'classic 90s comedies',
-                'edge-of-your-seat horror',
-                'inspiring true stories',
-                'romantic comedies with happy endings',
-                'dark psychological thrillers',
-                'feel-good musicals',
-                'gritty crime dramas',
+                'All Wes Anderson films',
+                'Tom Hanks best performances',
+                'Star Wars complete saga',
+                'Best Pixar movies',
+                'Denzel Washington filmography',
+                'Christopher Nolan ranked',
+                'Marvel Cinematic Universe phases',
+                'Studio Ghibli complete collection',
+                'Tarantino films ranked',
+                'James Bond 007 movies',
+                'Best 80s action classics',
+                'Coen Brothers complete works',
             ]
             const randomQuery = fallbackQueries[Math.floor(Math.random() * fallbackQueries.length)]
             return NextResponse.json({ query: randomQuery })
@@ -42,7 +44,7 @@ export async function POST() {
                 {
                     parts: [
                         {
-                            text: 'Generate a single creative and interesting movie/TV show search query. The query should be descriptive, emotional, or thematic (like mind-bending thrillers with plot twists or heartwarming family movies about second chances). Return ONLY the query text without quotes and without a period at the end. Make it unique and interesting.',
+                            text: 'Generate a creative idea for a movie/TV show ranking or collection. This should be something specific and rankable with multiple items. Examples: "All Christopher Nolan films", "Leonardo DiCaprio\'s best performances", "Marvel Cinematic Universe movies", "Studio Ghibli complete filmography", "Quentin Tarantino ranked", "Best 90s action movies", "Most iconic sci-fi franchises". Focus on: complete filmographies, franchises, director collections, actor\'s best work, genre-specific lists, or thematic compilations. Return ONLY the ranking idea without quotes and without a period at the end. Make it specific and interesting to rank.',
                         },
                     ],
                 },
@@ -93,16 +95,18 @@ export async function POST() {
         apiError('Surprise query error:', error)
         // Fallback to curated list if Gemini fails
         const fallbackQueries = [
-            'mind-bending thrillers with plot twists',
-            'heartwarming family movies',
-            'epic sci-fi adventures in space',
-            'classic 90s comedies',
-            'edge-of-your-seat horror',
-            'inspiring true stories',
-            'romantic comedies with happy endings',
-            'dark psychological thrillers',
-            'feel-good musicals',
-            'gritty crime dramas',
+            'All Wes Anderson films',
+            'Tom Hanks best performances',
+            'Star Wars complete saga',
+            'Best Pixar movies',
+            'Denzel Washington filmography',
+            'Christopher Nolan ranked',
+            'Marvel Cinematic Universe phases',
+            'Studio Ghibli complete collection',
+            'Tarantino films ranked',
+            'James Bond 007 movies',
+            'Best 80s action classics',
+            'Coen Brothers complete works',
         ]
         const randomQuery = fallbackQueries[Math.floor(Math.random() * fallbackQueries.length)]
         return NextResponse.json({ query: randomQuery })
