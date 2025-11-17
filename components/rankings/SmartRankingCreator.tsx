@@ -208,14 +208,26 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
 
         setIsLoading(true)
         try {
+            // Get Firebase auth token
+            const currentUser = auth.currentUser
+            if (!currentUser) {
+                throw new Error('You must be logged in to use AI search')
+            }
+
+            const token = await currentUser.getIdToken()
+
             const response = await fetch('/api/generate-row', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
                 body: JSON.stringify({ query: q }),
             })
 
             if (!response.ok) {
-                throw new Error('Failed to generate content')
+                const errorData = await response.json().catch(() => ({}))
+                throw new Error(errorData.error || 'Failed to generate content')
             }
 
             const data = await response.json()
@@ -235,7 +247,9 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
             setTitle(data.rowName || q)
             setCurrentStep(2)
         } catch (error) {
-            showError('Failed to generate ranking content')
+            const message =
+                error instanceof Error ? error.message : 'Failed to generate ranking content'
+            showError(message)
         } finally {
             setIsLoading(false)
         }
