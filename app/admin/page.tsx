@@ -14,6 +14,7 @@ export default function AdminDashboard() {
     const router = useRouter()
     const getUserId = useSessionStore((state) => state.getUserId)
     const sessionType = useSessionStore((state) => state.sessionType)
+    const isInitialized = useSessionStore((state) => state.isInitialized)
     const userId = getUserId()
     const isAuth = sessionType === 'authenticated'
     const { showSuccess, showError } = useToast()
@@ -22,12 +23,21 @@ export default function AdminDashboard() {
     const [loading, setLoading] = useState(false)
     const [lastTrendingRun, setLastTrendingRun] = useState<Date | null>(null)
 
-    // Auth check
+    // Auth check - wait for session to initialize before redirecting
     useEffect(() => {
+        // Don't redirect while session is initializing
+        if (!isInitialized) return
+
+        // Redirect if not authenticated or not admin
         if (!isAuth || !userId || !ADMIN_UIDS.includes(userId)) {
+            console.log('Admin check failed:', {
+                isAuth,
+                userId,
+                isAdmin: userId && ADMIN_UIDS.includes(userId),
+            })
             router.push('/')
         }
-    }, [isAuth, userId, router])
+    }, [isAuth, userId, isInitialized, router])
 
     // Load stats
     useEffect(() => {
@@ -110,6 +120,16 @@ export default function AdminDashboard() {
         }
     }
 
+    // Show loading while session initializes
+    if (!isInitialized) {
+        return (
+            <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+                <div className="text-white text-xl">Loading...</div>
+            </div>
+        )
+    }
+
+    // Show unauthorized if not admin
     if (!isAuth || !userId || !ADMIN_UIDS.includes(userId)) {
         return (
             <div className="min-h-screen bg-gray-900 flex items-center justify-center">
