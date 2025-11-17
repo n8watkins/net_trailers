@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/useToast'
 import { useRankingStore } from '@/stores/rankingStore'
 import { auth } from '@/firebase'
 import { SmartInput } from '@/components/common/SmartInput'
+import SubPageLayout from '@/components/layout/SubPageLayout'
 import {
     SparklesIcon,
     ArrowPathIcon,
@@ -24,6 +25,7 @@ import {
     PlusIcon,
     ArrowsUpDownIcon,
     FolderOpenIcon,
+    TrophyIcon,
 } from '@heroicons/react/24/outline'
 import {
     DndContext,
@@ -363,58 +365,63 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
     // Guest check
     if (sessionType === 'guest') {
         return (
-            <div className="min-h-screen bg-black text-white flex items-center justify-center p-4">
-                <div className="max-w-md text-center">
-                    <h2 className="text-2xl font-bold mb-4">Authentication Required</h2>
-                    <p className="text-gray-400 mb-6">
-                        Sign in to create rankings and share them with the community.
-                    </p>
-                    <button
-                        onClick={() => router.push('/auth')}
-                        className="px-6 py-3 bg-yellow-500 text-black font-medium rounded-lg hover:bg-yellow-400 transition-colors"
-                    >
-                        Sign In
-                    </button>
+            <SubPageLayout
+                title="Create Ranking"
+                icon={<TrophyIcon className="w-8 h-8" />}
+                iconColor="text-yellow-500"
+            >
+                <div className="flex items-center justify-center min-h-[60vh]">
+                    <div className="max-w-md text-center">
+                        <h2 className="text-2xl font-bold mb-4">Authentication Required</h2>
+                        <p className="text-gray-400 mb-6">
+                            Sign in to create rankings and share them with the community.
+                        </p>
+                        <button
+                            onClick={() => router.push('/auth')}
+                            className="px-6 py-3 bg-yellow-500 text-black font-medium rounded-lg hover:bg-yellow-400 transition-colors"
+                        >
+                            Sign In
+                        </button>
+                    </div>
                 </div>
-            </div>
+            </SubPageLayout>
         )
     }
 
-    return (
-        <div className="min-h-screen bg-black text-white">
-            {/* Header */}
-            <div className="border-b border-zinc-800">
-                <div className="max-w-5xl mx-auto px-4 py-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-2xl font-bold mb-1">
-                                {currentStep === 1 && '✨ Smart Ranking Creator'}
-                                {currentStep === 2 && '🎯 Order & Customize'}
-                                {currentStep === 3 && '📝 Name & Share'}
-                            </h1>
-                            <p className="text-sm text-gray-400">
-                                {currentStep === 1 &&
-                                    'Ask AI for an exhaustive list or import a collection'}
-                                {currentStep === 2 && 'Arrange items and add your notes'}
-                                {currentStep === 3 && 'Give your ranking a title and publish'}
-                            </p>
-                        </div>
-                        {onSwitchToTraditional && (
-                            <button
-                                onClick={onSwitchToTraditional}
-                                className="text-sm text-gray-400 hover:text-white transition-colors"
-                            >
-                                Switch to Traditional
-                            </button>
-                        )}
-                    </div>
-                </div>
-            </div>
+    const stepTitle =
+        currentStep === 1
+            ? 'Smart Ranking Creator'
+            : currentStep === 2
+              ? 'Order & Customize'
+              : 'Name & Share'
+    const stepDescription =
+        currentStep === 1
+            ? 'Ask AI for an exhaustive list or import a collection'
+            : currentStep === 2
+              ? 'Arrange items and add your notes'
+              : 'Give your ranking a title and publish'
 
-            <div className="max-w-5xl mx-auto px-4 py-8">
+    return (
+        <SubPageLayout
+            title={stepTitle}
+            icon={<TrophyIcon className="w-8 h-8" />}
+            iconColor="text-yellow-500"
+            description={stepDescription}
+            titleActions={
+                onSwitchToTraditional ? (
+                    <button
+                        onClick={onSwitchToTraditional}
+                        className="text-sm text-gray-400 hover:text-white transition-colors"
+                    >
+                        Switch to Traditional
+                    </button>
+                ) : undefined
+            }
+        >
+            <div className="max-w-5xl mx-auto">
                 {/* Step 1: Smart Query */}
                 {currentStep === 1 && (
-                    <div className="space-y-6">
+                    <div className="space-y-8">
                         {/* Import Collection Button */}
                         <div className="flex justify-end">
                             <button
@@ -427,7 +434,7 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                         </div>
 
                         {/* Hero-style Smart Input */}
-                        <div className="text-center space-y-6">
+                        <div className="text-center space-y-6 py-8">
                             <div className="space-y-2">
                                 <h2 className="text-3xl font-bold">What do you want to rank?</h2>
                                 <p className="text-gray-400">
@@ -705,62 +712,65 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                         </button>
                     </div>
                 )}
-            </div>
 
-            {/* Import Collection Modal */}
-            {showImportModal && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-zinc-900 rounded-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
-                        <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
-                            <h3 className="text-xl font-bold">Import Collection</h3>
-                            <button
-                                onClick={() => setShowImportModal(false)}
-                                className="text-gray-400 hover:text-white transition-colors"
-                            >
-                                <XMarkIcon className="w-6 h-6" />
-                            </button>
-                        </div>
-                        <div className="p-6 overflow-y-auto max-h-[60vh]">
-                            {collections.filter((col) => col.items && col.items.length >= 3)
-                                .length === 0 ? (
-                                <p className="text-center text-gray-400 py-8">
-                                    No collections with 3+ items found.
-                                    <br />
-                                    Create a collection first!
-                                </p>
-                            ) : (
-                                <div className="space-y-3">
-                                    {collections
-                                        .filter((col) => col.items && col.items.length >= 3)
-                                        .map((collection) => (
-                                            <button
-                                                key={collection.id}
-                                                onClick={() => handleImportCollection(collection)}
-                                                className="w-full p-4 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors text-left"
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    {collection.emoji && (
-                                                        <span className="text-2xl">
-                                                            {collection.emoji}
-                                                        </span>
-                                                    )}
-                                                    <div className="flex-1">
-                                                        <h4 className="font-medium">
-                                                            {collection.name}
-                                                        </h4>
-                                                        <p className="text-sm text-gray-400">
-                                                            {collection.items?.length || 0} items
-                                                        </p>
+                {/* Import Collection Modal */}
+                {showImportModal && (
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                        <div className="bg-zinc-900 rounded-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+                            <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
+                                <h3 className="text-xl font-bold">Import Collection</h3>
+                                <button
+                                    onClick={() => setShowImportModal(false)}
+                                    className="text-gray-400 hover:text-white transition-colors"
+                                >
+                                    <XMarkIcon className="w-6 h-6" />
+                                </button>
+                            </div>
+                            <div className="p-6 overflow-y-auto max-h-[60vh]">
+                                {collections.filter((col) => col.items && col.items.length >= 3)
+                                    .length === 0 ? (
+                                    <p className="text-center text-gray-400 py-8">
+                                        No collections with 3+ items found.
+                                        <br />
+                                        Create a collection first!
+                                    </p>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {collections
+                                            .filter((col) => col.items && col.items.length >= 3)
+                                            .map((collection) => (
+                                                <button
+                                                    key={collection.id}
+                                                    onClick={() =>
+                                                        handleImportCollection(collection)
+                                                    }
+                                                    className="w-full p-4 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors text-left"
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        {collection.emoji && (
+                                                            <span className="text-2xl">
+                                                                {collection.emoji}
+                                                            </span>
+                                                        )}
+                                                        <div className="flex-1">
+                                                            <h4 className="font-medium">
+                                                                {collection.name}
+                                                            </h4>
+                                                            <p className="text-sm text-gray-400">
+                                                                {collection.items?.length || 0}{' '}
+                                                                items
+                                                            </p>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </button>
-                                        ))}
-                                </div>
-                            )}
+                                                </button>
+                                            ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )}
+            </div>
+        </SubPageLayout>
     )
 }
