@@ -15,6 +15,7 @@ npm test             # Run Jest tests
 npm run test:watch   # Run tests in watch mode
 npm run test:coverage # Run tests with coverage report
 npm run test:ci      # Run tests in CI mode (no watch, with coverage)
+npm run migrate:genres # Migrate existing collections from TMDB genre IDs to unified genre IDs
 ```
 
 ## Architecture Overview
@@ -68,6 +69,8 @@ The app uses **Zustand** with **17 focused stores** (migrated from monolithic "g
 
 - `types/atoms.ts` - Shared type definitions (UserPreferences, UserSession, SessionType, etc.)
 - `types/userLists.ts` - Collection types (CollectionType, UserList, AdvancedFilters, ShareSettings)
+    - **Note**: `genres` field uses `string[]` (unified genre IDs) not `number[]` (TMDB IDs)
+- `types/customRows.ts` - Custom row types with `string[]` genre fields
 - `types/rankings.ts` - Ranking and comment types
 - `types/forum.ts` - Forum types (Thread, ThreadReply, Poll, PollVote, ForumCategory, etc.)
 
@@ -241,6 +244,77 @@ The app handles both movies and TV shows through a unified type system:
 - **Limits**: 20 collections for authenticated users, 3 for guests
 - **Advanced filters**: Year range, rating, cast, director, popularity, vote count
 - **Sharing**: Generate shareable links with public view pages
+
+#### Unified Genre System
+
+The app uses a **unified genre system** that provides seamless genre handling across movies and TV shows:
+
+**Core Concept:**
+
+- Users see consistent genre names (Action, Fantasy, Sci-Fi, Romance, etc.) regardless of media type
+- Behind the scenes, genres automatically map to correct TMDB genre IDs based on media type
+- Collections store genres as string arrays like `['action', 'fantasy']` instead of numeric TMDB IDs
+
+**Key Files:**
+
+- `constants/unifiedGenres.ts` - 24 unified genre definitions with TMDB mappings
+- `utils/genreMapping.ts` - Translation utilities (unified IDs ↔ TMDB IDs)
+- `utils/collectionGenreUtils.ts` - Extract unified genres from content
+- `scripts/migrate-genres-to-unified.ts` - Migration script for existing collections
+
+**Storage Format:**
+
+```typescript
+// Old format (deprecated)
+genres: [28, 14] // TMDB IDs
+
+// New format (current)
+genres: ['action', 'fantasy'] // Unified IDs
+```
+
+**Critical Mappings:**
+
+- **Fantasy** → Movies: 14 (Fantasy) | TV: 10765 (Sci-Fi & Fantasy)
+- **Sci-Fi** → Movies: 878 (Science Fiction) | TV: 10765 (Sci-Fi & Fantasy)
+- **Romance** → Movies: 10749 (Romance) | TV: 18 (Drama - closest equivalent)
+- **Action** → Movies: 28 (Action) | TV: 10759 (Action & Adventure)
+- **Adventure** → Movies: 12 (Adventure) | TV: 10759 (Action & Adventure)
+- **War** → Movies: 10752 (War) | TV: 10768 (War & Politics)
+
+**Smart Deduplication:**
+When users select multiple unified genres that map to the same TMDB genre, the system automatically deduplicates:
+
+```typescript
+// Example: User selects "Fantasy" + "Sci-Fi" for TV
+// Both map to TMDB genre 10765 (Sci-Fi & Fantasy)
+// System deduplicates to single API call with genre=10765
+translateToTMDBGenres(['fantasy', 'scifi'], 'tv')
+// Returns: [10765]  // Deduplicated!
+```
+
+**API Translation Layer:**
+The `/api/custom-rows/[id]/content` route handles translation:
+
+1. Receives collection with unified genres: `['fantasy', 'romance']`
+2. Translates to TMDB IDs based on media type
+3. For "both" media type, generates separate movie/TV genre sets
+4. Makes TMDB API calls with correct genre IDs
+
+**Type Definitions:**
+
+- `types/userLists.ts` - `genres?: string[]` (unified IDs)
+- `types/customRows.ts` - All genre fields use `string[]`
+- `constants/unifiedGenres.ts` - `UnifiedGenre` interface with movie/TV ID mappings
+
+**Migration:**
+Existing collections can be migrated from TMDB IDs to unified IDs:
+
+```bash
+npm run migrate:genres
+```
+
+**Child Safety Integration:**
+Each unified genre has a `childSafe` flag. When child safety mode is enabled, only child-safe genres appear in selectors.
 
 ### Rankings & Community
 
@@ -416,6 +490,16 @@ const showModal = useModalStore((state) => state.modal.isOpen)
 - Loading states should be set before async operations and cleared after
 - Collections should validate media type before adding content
 
+### Genre Handling
+
+- **Always use unified genre IDs** (`string[]`) not TMDB genre IDs (`number[]`)
+- Use `getUnifiedGenresByMediaType(mediaType)` to get available genres for genre selectors
+- Use `translateToTMDBGenres(unifiedGenres, mediaType)` when making TMDB API calls
+- Use `inferTopGenresFromContent(content, limit)` to extract genres from content items
+- For collections with media type "both", use `translateToTMDBGenresForBoth(unifiedGenres)`
+- Genre deduplication happens automatically in translation utilities
+- Child safety filtering: Use `getChildSafeUnifiedGenres(mediaType)` to filter genres
+
 ### Testing
 
 - Jest configured with React Testing Library and jsdom environment
@@ -435,6 +519,10 @@ const showModal = useModalStore((state) => state.modal.isOpen)
 - When working on state: Use Zustand stores directly (`useAppStore`, `useSessionStore`, etc.)
 - **Smart Search**: Requires NEXT_PUBLIC_GEMINI_API_KEY environment variable
 - **Auto-updating collections**: Requires CRON_SECRET environment variable
+- **Unified Genre System**: Collections use `string[]` (unified IDs) not `number[]` (TMDB IDs)
+    - Always translate to TMDB IDs before making API calls
+    - Use utilities from `utils/genreMapping.ts` for translation
+    - Migration script available: `npm run migrate:genres`
 
 ## Development Server Management
 
