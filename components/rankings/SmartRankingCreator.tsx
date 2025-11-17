@@ -362,32 +362,6 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
         }
     }
 
-    // Guest check
-    if (sessionType === 'guest') {
-        return (
-            <SubPageLayout
-                title="Create Ranking"
-                icon={<TrophyIcon className="w-8 h-8" />}
-                iconColor="text-yellow-500"
-            >
-                <div className="flex items-center justify-center min-h-[60vh]">
-                    <div className="max-w-md text-center">
-                        <h2 className="text-2xl font-bold mb-4">Authentication Required</h2>
-                        <p className="text-gray-400 mb-6">
-                            Sign in to create rankings and share them with the community.
-                        </p>
-                        <button
-                            onClick={() => router.push('/auth')}
-                            className="px-6 py-3 bg-yellow-500 text-black font-medium rounded-lg hover:bg-yellow-400 transition-colors"
-                        >
-                            Sign In
-                        </button>
-                    </div>
-                </div>
-            </SubPageLayout>
-        )
-    }
-
     const stepTitle =
         currentStep === 1
             ? 'Smart Ranking Creator'
