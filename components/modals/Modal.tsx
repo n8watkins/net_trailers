@@ -876,6 +876,7 @@ function Modal() {
                             {/* Content Metadata - Show immediately with card data, enhanced data loads in background */}
                             <ContentMetadata
                                 content={(enhancedMovieData || currentMovie) as Content}
+                                isLoadingEnhancedData={!enhancedMovieData}
                                 showDebugButton={
                                     process.env.NODE_ENV === 'development' &&
                                     debugSettings.showApiResults

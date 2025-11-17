@@ -211,6 +211,20 @@
     .drop-shadow-glow-red {
         filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.8));
     }
+
+    /* Shimmer animation for skeleton loading */
+    @keyframes shimmer {
+        0% {
+            transform: translateX(-100%);
+        }
+        100% {
+            transform: translateX(100%);
+        }
+    }
+
+    .animate-shimmer {
+        animation: shimmer 2s infinite;
+    }
 }
 
 /* Custom overlay scrollbar styles */

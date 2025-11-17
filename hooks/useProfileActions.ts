@@ -32,6 +32,8 @@ export function useProfileActions() {
                 watchHistoryCount: 20,
                 createCollections: true,
                 notificationCount: 8,
+                threadCount: 5, // Seed forum threads
+                pollCount: 4, // Seed forum polls
             })
             setIsSeeding(false)
         } catch (error) {

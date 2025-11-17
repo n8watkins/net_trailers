@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useSessionStore } from '@/stores/sessionStore'
 import { ArrowLeft, LogIn, Eye, TrendingUp, Users } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
@@ -30,6 +30,8 @@ const ADMIN_UIDS = [process.env.NEXT_PUBLIC_ADMIN_UID || 'YOUR_FIREBASE_UID_HERE
 
 export default function ActivityPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const filterUserId = searchParams.get('userId')
     const getUserId = useSessionStore((state) => state.getUserId)
     const sessionType = useSessionStore((state) => state.sessionType)
     const isInitialized = useSessionStore((state) => state.isInitialized)
@@ -49,6 +51,7 @@ export default function ActivityPage() {
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState<'logins' | 'views' | 'all'>('all')
     const [timeframe, setTimeframe] = useState<'week' | 'month'>('month')
+    const [filteredUserEmail, setFilteredUserEmail] = useState<string | null>(null)
 
     // Auth check
     useEffect(() => {
@@ -63,25 +66,38 @@ export default function ActivityPage() {
         if (isAuth && userId && ADMIN_UIDS.includes(userId)) {
             loadActivity()
         }
-    }, [isAuth, userId, activeTab, timeframe])
+    }, [isAuth, userId, activeTab, timeframe, filterUserId])
 
     const loadActivity = async () => {
         setLoading(true)
         try {
-            const response = await fetch(
-                `/api/admin/activity?type=${activeTab}&period=${timeframe}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
-                    },
-                }
-            )
+            const params = new URLSearchParams({
+                type: activeTab,
+                period: timeframe,
+            })
+            if (filterUserId) {
+                params.append('userId', filterUserId)
+            }
+
+            const response = await fetch(`/api/admin/activity?${params.toString()}`, {
+                headers: {
+                    Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
+                },
+            })
 
             if (response.ok) {
                 const data = await response.json()
                 setActivities(data.activities)
                 setActivityByDay(data.activityByDay)
                 setStats(data.stats)
+
+                // Set filtered user email if filtering
+                if (filterUserId && data.activities.length > 0) {
+                    const firstActivity = data.activities.find(
+                        (a: Activity) => a.userId === filterUserId
+                    )
+                    setFilteredUserEmail(firstActivity?.userEmail || null)
+                }
             } else {
                 showError('Failed to load activity')
             }
@@ -143,6 +159,28 @@ export default function ActivityPage() {
                         </div>
                     </div>
                 </div>
+
+                {/* User Filter Banner */}
+                {filterUserId && filteredUserEmail && (
+                    <div className="mb-6 bg-blue-900/20 border border-blue-800 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm text-blue-400 font-medium">
+                                    Filtering activity for: {filteredUserEmail}
+                                </p>
+                                <p className="text-xs text-blue-300 mt-1">
+                                    Showing only activity from this user
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => router.push('/admin/activity')}
+                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors"
+                            >
+                                Clear Filter
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {/* Tabs */}
                 <div className="flex gap-2 mb-6">

@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
         const url = new URL(request.url)
         const type = url.searchParams.get('type') || 'all' // 'logins', 'views', 'all'
         const period = url.searchParams.get('period') || 'month' // 'week', 'month'
+        const userId = url.searchParams.get('userId') // Optional user filter
 
         // Calculate period boundaries
         const now = Date.now()
@@ -63,6 +64,11 @@ export async function GET(request: NextRequest) {
         let filteredActivities = activities
         if (type !== 'all') {
             filteredActivities = activities.filter((a: any) => a.type === type)
+        }
+
+        // Filter by userId if specified
+        if (userId) {
+            filteredActivities = filteredActivities.filter((a: any) => a.userId === userId)
         }
 
         // Group by day for statistics

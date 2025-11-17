@@ -17,12 +17,14 @@ interface ContentMetadataProps {
     content: Content
     onDebugClick?: (e: React.MouseEvent) => void
     showDebugButton?: boolean
+    isLoadingEnhancedData?: boolean
 }
 
 export default function ContentMetadata({
     content,
     onDebugClick,
     showDebugButton = false,
+    isLoadingEnhancedData = false,
 }: ContentMetadataProps) {
     if (!content) return null
 
@@ -106,16 +108,23 @@ export default function ContentMetadata({
                 </p>
             )}
 
-            {/* Director & Cast */}
+            {/* Director & Cast - Show skeleton only while loading, hide if data loaded but empty */}
             <div className="space-y-2 text-sm">
-                {getDirector(content) && (
+                {/* Director - show if exists, or show skeleton if still loading */}
+                {getDirector(content) ? (
                     <div>
                         <span className="text-gray-400">Director: </span>
                         <span className="text-white">{getDirector(content)}</span>
                     </div>
-                )}
+                ) : isLoadingEnhancedData ? (
+                    <div className="animate-pulse">
+                        <span className="text-gray-400">Director: </span>
+                        <span className="inline-block h-5 w-48 bg-gray-700/50 rounded"></span>
+                    </div>
+                ) : null}
 
-                {getMainCast(content, 3).length > 0 && (
+                {/* Cast - show if exists, or show skeleton if still loading */}
+                {getMainCast(content, 3).length > 0 ? (
                     <div>
                         <span className="text-gray-400">Cast: </span>
                         <span className="text-white">
@@ -124,14 +133,25 @@ export default function ContentMetadata({
                                 .join(', ')}
                         </span>
                     </div>
-                )}
+                ) : isLoadingEnhancedData ? (
+                    <div className="animate-pulse">
+                        <span className="text-gray-400">Cast: </span>
+                        <span className="inline-block h-5 w-64 bg-gray-700/50 rounded"></span>
+                    </div>
+                ) : null}
 
-                {getGenreNames(content).length > 0 && (
+                {/* Genres - show if exists, or show skeleton if still loading */}
+                {getGenreNames(content).length > 0 ? (
                     <div>
                         <span className="text-gray-400">Genres: </span>
                         <span className="text-white">{getGenreNames(content).join(', ')}</span>
                     </div>
-                )}
+                ) : isLoadingEnhancedData ? (
+                    <div className="animate-pulse">
+                        <span className="text-gray-400">Genres: </span>
+                        <span className="inline-block h-5 w-56 bg-gray-700/50 rounded"></span>
+                    </div>
+                ) : null}
             </div>
         </div>
     )

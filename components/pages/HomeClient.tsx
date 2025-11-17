@@ -17,6 +17,7 @@ import { SystemRowStorage } from '../../utils/systemRowStorage'
 import { useCacheStore } from '../../stores/cacheStore'
 import { processTrendingUpdates } from '../../utils/trendingNotifications'
 import NetflixLoader from '../common/NetflixLoader'
+import { Cog6ToothIcon } from '@heroicons/react/24/solid'
 
 interface HomeClientProps {
     data: HomeData
@@ -26,6 +27,7 @@ interface HomeClientProps {
 export default function HomeClient({ data, filter }: HomeClientProps) {
     const { modal } = useModalStore()
     const showModal = modal.isOpen
+    const openRowEditorModal = useModalStore((state) => state.openRowEditorModal)
     const getUserId = useSessionStore((state) => state.getUserId)
     const sessionType = useSessionStore((state) => state.sessionType)
     const isInitialized = useSessionStore((state) => state.isInitialized)
@@ -203,6 +205,18 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
                         />
                     </div>
                     <section className="relative z-10 pb-52 space-y-8">
+                        {/* Manage Page Button - Floating in top right */}
+                        <div className="sticky top-20 z-20 flex justify-end px-4 sm:px-6 md:px-8 lg:px-16">
+                            <button
+                                onClick={() => openRowEditorModal('home')}
+                                className="flex items-center gap-2 px-4 py-2 bg-gray-800/90 hover:bg-gray-700/90 text-white rounded-lg transition-colors shadow-lg backdrop-blur-sm border border-gray-700"
+                                title="Manage page layout"
+                            >
+                                <Cog6ToothIcon className="w-5 h-5" />
+                                <span className="hidden sm:inline">Manage Page</span>
+                            </button>
+                        </div>
+
                         {/* Personalized Recommendations Row */}
                         <RecommendedForYouRow />
 

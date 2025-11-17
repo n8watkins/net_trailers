@@ -335,5 +335,13 @@ export function CollectionRowLoader({ collection, pageType }: CollectionRowLoade
 
     const rowTitle = collection.emoji ? `${collection.emoji} ${collection.name}` : collection.name
 
-    return <Row title={rowTitle} content={content} apiEndpoint={apiEndpoint} pageType={pageType} />
+    return (
+        <Row
+            title={rowTitle}
+            content={content}
+            apiEndpoint={apiEndpoint}
+            pageType={pageType}
+            collection={collection}
+        />
+    )
 }

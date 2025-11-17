@@ -30,6 +30,8 @@ export default function AdminDashboard() {
     const { showSuccess, showError } = useToast()
     const [stats, setStats] = useState<any>(null)
     const [trendingStats, setTrendingStats] = useState<any>(null)
+    const [activityStats, setActivityStats] = useState<any>(null)
+    const [activeUsers, setActiveUsers] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
     const [lastTrendingRun, setLastTrendingRun] = useState<Date | null>(null)
 
@@ -71,6 +73,43 @@ export default function AdminDashboard() {
                 const trendingData = await trendingResponse.json()
                 setTrendingStats(trendingData)
                 setLastTrendingRun(trendingData.lastRun ? new Date(trendingData.lastRun) : null)
+            }
+
+            // Load activity stats
+            const activityResponse = await fetch('/api/admin/activity?period=month', {
+                headers: {
+                    Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
+                },
+            })
+            if (activityResponse.ok) {
+                const activityData = await activityResponse.json()
+                setActivityStats(activityData.stats)
+
+                // Get unique users from activities
+                const userMap = new Map()
+                activityData.activities.forEach((activity: any) => {
+                    if (activity.userId && activity.userEmail) {
+                        if (!userMap.has(activity.userId)) {
+                            userMap.set(activity.userId, {
+                                userId: activity.userId,
+                                email: activity.userEmail,
+                                lastActive: activity.timestamp,
+                                activityCount: 0,
+                            })
+                        }
+                        const user = userMap.get(activity.userId)
+                        user.activityCount++
+                        if (activity.timestamp > user.lastActive) {
+                            user.lastActive = activity.timestamp
+                        }
+                    }
+                })
+
+                // Sort by most recent activity
+                const users = Array.from(userMap.values()).sort(
+                    (a, b) => b.lastActive - a.lastActive
+                )
+                setActiveUsers(users.slice(0, 10)) // Top 10 most active
             }
         } catch (error) {
             console.error('Error loading stats:', error)
@@ -204,11 +243,14 @@ export default function AdminDashboard() {
                         <div className="flex items-center justify-between mb-4">
                             <Eye className="h-8 w-8 text-purple-500" />
                             <span className="text-2xl font-bold text-white">
-                                {stats?.signupsThisWeek || 0}
+                                {activityStats?.total || 0}
                             </span>
                         </div>
                         <h3 className="text-gray-400 text-sm mb-1">Activity This Month →</h3>
-                        <span className="text-xs text-gray-500">Logins and page views</span>
+                        <span className="text-xs text-gray-500">
+                            {activityStats?.uniqueUsers || 0} users,{' '}
+                            {activityStats?.uniqueGuests || 0} guests
+                        </span>
                     </button>
 
                     {/* System Health */}
@@ -359,6 +401,44 @@ export default function AdminDashboard() {
                             </div>
                         </div>
                     </div>
+                </div>
+
+                {/* Active Users */}
+                <div className="mt-8 bg-gray-800 rounded-xl p-6">
+                    <h2 className="text-xl font-semibold text-white mb-4">
+                        Active Users This Month ({activeUsers.length})
+                    </h2>
+                    {activeUsers.length > 0 ? (
+                        <div className="space-y-2">
+                            {activeUsers.map((user) => (
+                                <button
+                                    key={user.userId}
+                                    onClick={() =>
+                                        router.push(`/admin/activity?userId=${user.userId}`)
+                                    }
+                                    className="w-full flex items-center justify-between p-4 bg-gray-900 rounded-lg hover:bg-gray-850 transition-colors text-left"
+                                >
+                                    <div>
+                                        <p className="text-white font-medium">{user.email}</p>
+                                        <p className="text-xs text-gray-500">
+                                            {user.activityCount} events
+                                        </p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-xs text-gray-400">Last active</p>
+                                        <p className="text-sm text-white">
+                                            {new Date(user.lastActive).toLocaleDateString()}
+                                        </p>
+                                        <p className="text-xs text-gray-500">
+                                            {new Date(user.lastActive).toLocaleTimeString()}
+                                        </p>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-gray-400">No user activity recorded this month</p>
+                    )}
                 </div>
 
                 {/* System Logs */}

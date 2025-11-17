@@ -146,7 +146,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
         '/notifications',
         '/settings',
     ]
-    const showSubNav = subNavPaths.includes(pathname)
+    const showSubNav = subNavPaths.some((path) => pathname.startsWith(path))
 
     const triggerTestToasts = () => {
         // Test all toast types with realistic messages
@@ -424,7 +424,8 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                         <nav className="mx-auto max-w-7xl px-4 py-4" aria-label="User navigation">
                             <div className="flex gap-8 overflow-x-auto scrollbar-hide">
                                 {subNavItems.map((item) => {
-                                    const isActive = pathname === item.href
+                                    // Check if current path starts with the item's href (handles nested routes like /settings/preferences)
+                                    const isActive = pathname.startsWith(item.href)
                                     const Icon = isActive ? item.iconSolid : item.icon
 
                                     return (

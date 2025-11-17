@@ -16,11 +16,27 @@ export function usePageViewTracking() {
     const pathname = usePathname()
     const getUserId = useSessionStore((state) => state.getUserId)
     const sessionType = useSessionStore((state) => state.sessionType)
+    const isInitialized = useSessionStore((state) => state.isInitialized)
 
     useEffect(() => {
         const trackPageView = async () => {
+            // Don't track admin pages
+            if (pathname.startsWith('/admin')) {
+                return
+            }
+
+            // Wait for session to initialize
+            if (!isInitialized || sessionType === 'initializing') {
+                return
+            }
+
             const userId = getUserId()
             const isAuth = sessionType === 'authenticated'
+
+            // Don't track if we don't have a user ID
+            if (!userId) {
+                return
+            }
 
             try {
                 await fetch('/api/admin/activity', {
@@ -42,5 +58,5 @@ export function usePageViewTracking() {
 
         // Track page view on route change
         trackPageView()
-    }, [pathname, getUserId, sessionType])
+    }, [pathname, getUserId, sessionType, isInitialized])
 }

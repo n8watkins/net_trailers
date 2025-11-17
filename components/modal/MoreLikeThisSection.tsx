@@ -14,6 +14,7 @@ import { PlusIcon } from '@heroicons/react/24/outline'
 import { RectangleStackIcon } from '@heroicons/react/24/solid'
 import { useModalStore } from '../../stores/modalStore'
 import useUserData from '../../hooks/useUserData'
+import MoreLikeThisSkeleton from './MoreLikeThisSkeleton'
 
 interface MoreLikeThisSectionProps {
     /** Current content being viewed */
@@ -70,16 +71,9 @@ export default function MoreLikeThisSection({ content }: MoreLikeThisSectionProp
         fetchSimilar()
     }, [content.id])
 
-    // Don't render if loading initially
+    // Show skeleton while loading to maintain consistent height
     if (isLoading && filteredRecommendations.length === 0) {
-        return (
-            <div className="space-y-4">
-                <h3 className="text-lg sm:text-xl font-semibold text-white">More Like This</h3>
-                <div className="flex items-center justify-center py-12">
-                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-red-500 border-t-transparent"></div>
-                </div>
-            </div>
-        )
+        return <MoreLikeThisSkeleton />
     }
 
     // Don't render if error

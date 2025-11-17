@@ -6,6 +6,8 @@ import { useSessionData } from '../../hooks/useSessionData'
 import { filterDislikedContent } from '../../utils/contentFilter'
 import { useModalStore } from '../../stores/modalStore'
 import { uiLog, uiWarn } from '../../utils/debugLogger'
+import { Collection } from '../../types/userLists'
+import CollectionEditorModal from '../modals/CollectionEditorModal'
 
 // Helper for infinite scroll logging with emoji prefix
 const debugLog = (emoji: string, message: string, data?: any): void => {
@@ -17,8 +19,9 @@ interface Props {
     content: Content[]
     apiEndpoint?: string // Optional endpoint for loading more content
     pageType?: 'home' | 'movies' | 'tv' // Page type for row editing
+    collection?: Collection | null // Optional collection data for editing
 }
-function Row({ title, content, apiEndpoint, pageType }: Props) {
+function Row({ title, content, apiEndpoint, pageType, collection }: Props) {
     const openRowEditorModal = useModalStore((state) => state.openRowEditorModal)
     const rowRef = useRef<HTMLDivElement>(null)
     const sentinelRef = useRef<HTMLDivElement>(null)
@@ -32,6 +35,24 @@ function Row({ title, content, apiEndpoint, pageType }: Props) {
     const [isLoading, setIsLoading] = useState(false)
     const [hasMore, setHasMore] = useState(true)
     const sessionData = useSessionData()
+
+    // Collection editor state
+    const [showCollectionEditor, setShowCollectionEditor] = useState(false)
+
+    // Handler to open collection editor
+    const handleEditCollection = () => {
+        if (collection) {
+            setShowCollectionEditor(true)
+        }
+    }
+
+    // Handler to close collection editor
+    const handleCloseCollectionEditor = () => {
+        setShowCollectionEditor(false)
+    }
+
+    // Show pencil for all collections - the modal will handle what can be edited based on collection type
+    const canEditCollection = !!collection
 
     // Keep refs in sync with state for Intersection Observer
     useEffect(() => {
@@ -413,11 +434,11 @@ function Row({ title, content, apiEndpoint, pageType }: Props) {
                 <h2 className="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold transition duration-200 hover:text-gray-300">
                     {title}
                 </h2>
-                {pageType && (
+                {canEditCollection && (
                     <button
-                        onClick={() => openRowEditorModal(pageType)}
-                        className="opacity-0 group-hover/title:opacity-100 transition-opacity duration-200 p-1.5 hover:bg-gray-800/50 rounded-lg group/pencil flex items-center"
-                        title="Edit rows"
+                        onClick={handleEditCollection}
+                        className="opacity-0 group-hover/title:opacity-100 transition-opacity duration-200 p-1.5 hover:bg-gray-800/50 rounded-lg group/pencil flex items-center relative z-[250]"
+                        title="Edit collection"
                     >
                         <PencilIcon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-300 hover:scale-110 transition-all duration-200" />
                     </button>
@@ -511,6 +532,15 @@ function Row({ title, content, apiEndpoint, pageType }: Props) {
                     <ChevronRightIcon className="h-14 w-14 text-white drop-shadow-2xl transition-transform duration-300 relative z-10 group-hover/chevron:scale-110" />
                 </div>
             </div>
+
+            {/* Collection Editor Modal */}
+            {collection && (
+                <CollectionEditorModal
+                    collection={collection}
+                    isOpen={showCollectionEditor}
+                    onClose={handleCloseCollectionEditor}
+                />
+            )}
         </div>
     )
 }
