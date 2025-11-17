@@ -24,17 +24,39 @@ export function WizardStep1Basic({
     onNext,
     canProgress,
 }: WizardStep1BasicProps) {
+    // Handler for multi-select media type buttons
+    const handleMediaTypeToggle = (type: 'movie' | 'tv') => {
+        const currentType = formData.mediaType
+        let newType: 'movie' | 'tv' | 'both'
+
+        if (currentType === 'both') {
+            // If both selected, switch to the opposite type
+            newType = type === 'movie' ? 'tv' : 'movie'
+        } else if (currentType === type) {
+            // If clicking the already selected type, do nothing
+            return
+        } else {
+            // If different type selected, set to both
+            newType = 'both'
+        }
+
+        onChange({ mediaType: newType, genres: [] })
+    }
+
+    const isMovieSelected = formData.mediaType === 'movie' || formData.mediaType === 'both'
+    const isTVSelected = formData.mediaType === 'tv' || formData.mediaType === 'both'
+
     return (
         <div className="space-y-6">
             {/* Media Type Selection */}
             <div>
                 <label className="block text-sm font-medium text-gray-200 mb-3">Media Type *</label>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                     <button
                         type="button"
-                        onClick={() => onChange({ mediaType: 'movie', genres: [] })}
+                        onClick={() => handleMediaTypeToggle('movie')}
                         className={`flex flex-col items-center justify-center gap-2 px-4 py-4 rounded-lg border-2 transition-all ${
-                            formData.mediaType === 'movie'
+                            isMovieSelected
                                 ? 'border-red-600 bg-red-600/20 text-white'
                                 : 'border-gray-700 bg-[#1a1a1a] text-gray-400 hover:border-gray-600'
                         }`}
@@ -44,30 +66,15 @@ export function WizardStep1Basic({
                     </button>
                     <button
                         type="button"
-                        onClick={() => onChange({ mediaType: 'tv', genres: [] })}
+                        onClick={() => handleMediaTypeToggle('tv')}
                         className={`flex flex-col items-center justify-center gap-2 px-4 py-4 rounded-lg border-2 transition-all ${
-                            formData.mediaType === 'tv'
+                            isTVSelected
                                 ? 'border-red-600 bg-red-600/20 text-white'
                                 : 'border-gray-700 bg-[#1a1a1a] text-gray-400 hover:border-gray-600'
                         }`}
                     >
                         <TvIcon className="w-6 h-6" />
                         <span className="text-sm font-medium">TV Shows</span>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => onChange({ mediaType: 'both', genres: [] })}
-                        className={`flex flex-col items-center justify-center gap-2 px-4 py-4 rounded-lg border-2 transition-all ${
-                            formData.mediaType === 'both'
-                                ? 'border-red-600 bg-red-600/20 text-white'
-                                : 'border-gray-700 bg-[#1a1a1a] text-gray-400 hover:border-gray-600'
-                        }`}
-                    >
-                        <div className="flex gap-1">
-                            <FilmIcon className="w-5 h-5" />
-                            <TvIcon className="w-5 h-5" />
-                        </div>
-                        <span className="text-sm font-medium">Both</span>
                     </button>
                 </div>
             </div>
@@ -116,9 +123,7 @@ export function WizardStep1Basic({
                         } ${formData.genres.length < 2 ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         <div className="font-semibold mb-1">Match ANY</div>
-                        <div className="text-xs opacity-80">
-                            Content with any selected genre
-                        </div>
+                        <div className="text-xs opacity-80">Content with any selected genre</div>
                     </button>
                 </div>
             </div>

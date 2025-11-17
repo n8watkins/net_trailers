@@ -183,11 +183,27 @@ export default function CollectionEditorModal({
         setEnableInfiniteContent((prev) => !prev)
     }
 
-    const handleMediaTypeChange = (nextType: 'movie' | 'tv' | 'both') => {
-        if (mediaType === nextType) return
-        setMediaType(nextType)
+    const handleMediaTypeToggle = (type: 'movie' | 'tv') => {
+        const currentType = mediaType
+        let newType: 'movie' | 'tv' | 'both'
+
+        if (currentType === 'both') {
+            // If both selected, switch to the opposite type
+            newType = type === 'movie' ? 'tv' : 'movie'
+        } else if (currentType === type) {
+            // If clicking the already selected type, do nothing
+            return
+        } else {
+            // If different type selected, set to both
+            newType = 'both'
+        }
+
+        setMediaType(newType)
         setSelectedGenres([])
     }
+
+    const isMovieSelected = mediaType === 'movie' || mediaType === 'both'
+    const isTVSelected = mediaType === 'tv' || mediaType === 'both'
 
     // Filter content based on search and removed IDs
     const visibleContent = content
@@ -394,12 +410,12 @@ export default function CollectionEditorModal({
                                     <p className="text-sm font-medium text-gray-300 mb-3">
                                         Media Type
                                     </p>
-                                    <div className="inline-flex items-center rounded-full bg-gray-800/80 border border-gray-700 p-1 text-sm font-medium">
+                                    <div className="inline-flex items-center rounded-full bg-gray-800/80 border border-gray-700 p-1 text-sm font-medium gap-1">
                                         <button
                                             type="button"
-                                            onClick={() => handleMediaTypeChange('movie')}
+                                            onClick={() => handleMediaTypeToggle('movie')}
                                             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full transition-colors ${
-                                                mediaType === 'movie'
+                                                isMovieSelected
                                                     ? 'bg-red-600 text-white'
                                                     : 'text-gray-400 hover:text-white'
                                             }`}
@@ -409,28 +425,15 @@ export default function CollectionEditorModal({
                                         </button>
                                         <button
                                             type="button"
-                                            onClick={() => handleMediaTypeChange('tv')}
+                                            onClick={() => handleMediaTypeToggle('tv')}
                                             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full transition-colors ${
-                                                mediaType === 'tv'
+                                                isTVSelected
                                                     ? 'bg-red-600 text-white'
                                                     : 'text-gray-400 hover:text-white'
                                             }`}
                                         >
                                             <TvIcon className="w-4 h-4" />
                                             TV
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleMediaTypeChange('both')}
-                                            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full transition-colors ${
-                                                mediaType === 'both'
-                                                    ? 'bg-red-600 text-white'
-                                                    : 'text-gray-400 hover:text-white'
-                                            }`}
-                                        >
-                                            <FilmIcon className="w-4 h-4" />
-                                            <TvIcon className="w-4 h-4" />
-                                            Both
                                         </button>
                                     </div>
                                 </div>

@@ -8,6 +8,6 @@ interface LegacyThreadRedirectProps {
     }
 }
 
-export default function LegacyThreadRedirect({ params }: LegacyThreadRedirectProps) {
+export default async function LegacyThreadRedirect({ params }: LegacyThreadRedirectProps) {
     redirect(`/community/thread/${params.id}`)
 }
