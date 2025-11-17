@@ -313,17 +313,6 @@ function RankingsTab({
 
     return (
         <div className="space-y-6">
-            {/* Create Ranking Button */}
-            <div className="flex justify-end">
-                <button
-                    onClick={() => router.push('/rankings/create')}
-                    className="rounded-full px-6 py-3 font-semibold transition-all duration-200 flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-black shadow-lg hover:scale-105"
-                >
-                    <TrophyIcon className="w-5 h-5" />
-                    <span>Create Ranking</span>
-                </button>
-            </div>
-
             {/* Filters Section - Collections-style Layout */}
             <div className="space-y-6">
                 {/* Stats Bar */}
@@ -353,27 +342,38 @@ function RankingsTab({
                     )}
                 </div>
 
-                {/* Media Type Filter Pills */}
-                <div className="flex flex-wrap gap-2">
-                    {[
-                        { value: 'all', label: 'All' },
-                        { value: 'movie', label: 'Movies' },
-                        { value: 'tv', label: 'TV Shows' },
-                    ].map((option) => (
-                        <button
-                            key={option.value}
-                            onClick={() =>
-                                setFilterByMediaType(option.value as typeof filterByMediaType)
-                            }
-                            className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
-                                filterByMediaType === option.value
-                                    ? 'bg-yellow-500 text-black shadow-lg scale-105'
-                                    : 'bg-gray-800/80 text-gray-300 hover:bg-gray-700/80 hover:scale-105'
-                            }`}
-                        >
-                            {option.label}
-                        </button>
-                    ))}
+                {/* Media Type Filter Pills and Create Button */}
+                <div className="flex flex-wrap gap-2 items-center justify-between">
+                    <div className="flex flex-wrap gap-2">
+                        {[
+                            { value: 'all', label: 'All' },
+                            { value: 'movie', label: 'Movies' },
+                            { value: 'tv', label: 'TV Shows' },
+                        ].map((option) => (
+                            <button
+                                key={option.value}
+                                onClick={() =>
+                                    setFilterByMediaType(option.value as typeof filterByMediaType)
+                                }
+                                className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                                    filterByMediaType === option.value
+                                        ? 'bg-yellow-500 text-black shadow-lg scale-105'
+                                        : 'bg-gray-800/80 text-gray-300 hover:bg-gray-700/80 hover:scale-105'
+                                }`}
+                            >
+                                {option.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Create Ranking Button */}
+                    <button
+                        onClick={() => router.push('/rankings/new')}
+                        className="rounded-full px-5 py-2.5 font-semibold transition-all duration-200 flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-black shadow-lg hover:scale-105"
+                    >
+                        <TrophyIcon className="w-5 h-5" />
+                        <span className="hidden sm:inline">Create Ranking</span>
+                    </button>
                 </div>
 
                 {/* Search Rankings Input - Above the tag container */}

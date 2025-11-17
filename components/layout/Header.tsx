@@ -39,7 +39,7 @@ import useAuth from '../../hooks/useAuth'
 import AuthModal from '../modals/AuthModal'
 import AvatarDropdown from '../auth/AvatarDropdown'
 import GenresDropdown from '../content/GenresDropdown'
-import MyListsDropdown from '../content/MyListsDropdown'
+import ProfileDropdown from '../content/ProfileDropdown'
 import { useToast } from '../../hooks/useToast'
 import { useDebugSettings } from '../debug/DebugControls'
 import { useModalStore } from '../../stores/modalStore'
@@ -306,9 +306,6 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                             <li>
                                 <GenresDropdown />
                             </li>
-                            <li>
-                                <MyListsDropdown />
-                            </li>
                             {process.env.NODE_ENV === 'development' &&
                                 debugSettings.showToastDebug && (
                                     <li>
@@ -338,9 +335,14 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                             </div>
                         </div>
 
-                        {/* Community Link - After Search Bar */}
+                        {/* Profile Dropdown - After Search Bar */}
+                        <div className="ml-4">
+                            <ProfileDropdown />
+                        </div>
+
+                        {/* Community Link - After Profile */}
                         <div
-                            className={`headerLink cursor-pointer flex items-center space-x-1 select-none ml-4 ${
+                            className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${
                                 pathname?.startsWith('/community')
                                     ? 'text-white hover:text-white font-semibold'
                                     : ''

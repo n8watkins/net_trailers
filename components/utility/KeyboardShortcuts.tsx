@@ -4,6 +4,7 @@ interface KeyboardShortcut {
     key: string
     description: string
     icon?: string
+    disabled?: boolean
 }
 
 interface KeyboardShortcutsProps {
@@ -17,7 +18,9 @@ export default function KeyboardShortcuts({ shortcuts, className = '' }: Keyboar
             {shortcuts.map((shortcut, index) => (
                 <div
                     key={index}
-                    className="flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-sm border border-white/20 rounded-md text-xs sm:text-sm"
+                    className={`flex items-center gap-1.5 px-2 py-1 bg-black/40 backdrop-blur-sm border border-white/20 rounded-md text-xs sm:text-sm ${
+                        shortcut.disabled ? 'opacity-40' : ''
+                    }`}
                 >
                     <kbd className="px-1.5 py-0.5 bg-white/10 border border-white/30 rounded text-white font-mono font-semibold min-w-[1.5rem] text-center">
                         {shortcut.key}

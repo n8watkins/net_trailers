@@ -7,12 +7,10 @@ import {
     InformationCircleIcon,
     CommandLineIcon,
     AcademicCapIcon,
-    ArrowDownTrayIcon,
 } from '@heroicons/react/24/outline'
 import useAuth from '../../hooks/useAuth'
 import { useRouter } from 'next/navigation'
 import useUserData from '../../hooks/useUserData'
-import { exportUserDataToCSV } from '../../utils/csvExport'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import { getCachedUserData } from '../../utils/authCache'
 
@@ -38,8 +36,6 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
     const { user, logOut } = useAuth()
     const { isAuthenticated, isLoading, hasOptimisticAuth } = useAuthStatus()
     const userData = useUserData()
-    const { likedMovies, hiddenMovies, defaultWatchlist } = userData
-    const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
     const router = useRouter()
 
     // Load cached user data for optimistic UI (only on client side)
@@ -78,13 +74,6 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
         onOpenAboutModal?.()
     }
 
-    const handleExportCSV = () => {
-        setIsOpen(false)
-        if (userSession?.preferences) {
-            exportUserDataToCSV(userSession.preferences)
-        }
-    }
-
     const getInitials = (email: string) => {
         return email.charAt(0).toUpperCase()
     }
@@ -114,7 +103,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                 {/* Avatar Button - Not Logged In */}
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-600 hover:bg-gray-500 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.6)] transition-all duration-300 focus:outline-none focus-visible:outline-none active:outline-none focus:ring-0 focus-visible:ring-0"
+                    className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-600 hover:bg-gray-500 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.6)] focus:shadow-[0_0_15px_rgba(255,255,255,0.6)] transition-all duration-300"
                     aria-label="User menu"
                     aria-expanded={isOpen}
                 >
@@ -123,7 +112,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
 
                 {/* Dropdown Menu - Not Logged In */}
                 {isOpen && (
-                    <div className="absolute right-0 mt-2 w-64 sm:w-72 bg-black/95 backdrop-blur-sm border border-red-500/40 rounded-xl shadow-2xl shadow-red-500/20 z-[110] py-1 animate-fade-in-down">
+                    <div className="absolute right-0 mt-2 w-64 sm:w-72 bg-[#0f0f0f]/95 backdrop-blur-sm border border-red-500/40 rounded-xl shadow-2xl shadow-red-500/20 z-[110] py-1 animate-fade-in-down">
                         {/* Guest Account Status */}
                         <div className="px-5 py-6 border-b border-gray-700/50">
                             <div className="flex items-center space-x-3">
@@ -174,20 +163,6 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                                     Settings
                                 </div>
                             </button>
-
-                            {(likedMovies.length > 0 ||
-                                hiddenMovies.length > 0 ||
-                                defaultWatchlist.length > 0) && (
-                                <button
-                                    onClick={handleExportCSV}
-                                    className="group flex items-center justify-between w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
-                                >
-                                    <div className="flex items-center">
-                                        <ArrowDownTrayIcon className="w-6 h-6 mr-4 group-hover:text-red-500 transition-colors duration-200" />
-                                        Export Data
-                                    </div>
-                                </button>
-                            )}
 
                             <div className="h-px bg-gray-700/50 mx-5 my-2"></div>
 
@@ -277,7 +252,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                 {/* Avatar Button - Not Logged In */}
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-600 hover:bg-gray-500 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.6)] transition-all duration-300 focus:outline-none focus-visible:outline-none active:outline-none focus:ring-0 focus-visible:ring-0"
+                    className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-600 hover:bg-gray-500 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.6)] transition-all duration-300"
                     aria-label="User menu"
                     aria-expanded={isOpen}
                 >
@@ -292,7 +267,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
             {/* Avatar Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-red-600 hover:bg-red-700 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.6)] transition-all duration-300 focus:outline-none focus-visible:outline-none active:outline-none focus:ring-0 focus-visible:ring-0"
+                className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-red-600 hover:bg-red-700 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.6)] focus:shadow-[0_0_15px_rgba(255,255,255,0.6)] transition-all duration-300"
                 aria-label="Profile menu"
                 aria-expanded={isOpen}
             >
@@ -313,7 +288,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
 
             {/* Dropdown Menu */}
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-64 sm:w-72 bg-black/95 backdrop-blur-sm border border-red-500/40 rounded-xl shadow-2xl shadow-red-500/20 z-[110] py-1 animate-fade-in-down">
+                <div className="absolute right-0 mt-2 w-64 sm:w-72 bg-[#0f0f0f]/95 backdrop-blur-sm border border-red-500/40 rounded-xl shadow-2xl shadow-red-500/20 z-[110] py-1 animate-fade-in-down">
                     {/* User Info Header */}
                     <div className="px-5 py-6 border-b border-gray-700/50">
                         <div className="flex items-center space-x-3">
@@ -350,20 +325,6 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                                 Settings
                             </div>
                         </button>
-
-                        {(likedMovies.length > 0 ||
-                            hiddenMovies.length > 0 ||
-                            defaultWatchlist.length > 0) && (
-                            <button
-                                onClick={handleExportCSV}
-                                className="group flex items-center justify-between w-full px-5 py-4 text-base text-gray-300 hover:bg-white/10 hover:text-white transition-all duration-200"
-                            >
-                                <div className="flex items-center">
-                                    <ArrowDownTrayIcon className="w-6 h-6 mr-4 group-hover:text-red-500 transition-colors duration-200" />
-                                    Export Data
-                                </div>
-                            </button>
-                        )}
 
                         <div className="h-px bg-gray-700/50 mx-5 my-2"></div>
 

@@ -8,7 +8,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { XMarkIcon } from '@heroicons/react/24/outline'
 import { Notification } from '../../types/notifications'
 import { useNotificationStore } from '../../stores/notificationStore'
 import { useSessionStore } from '../../stores/sessionStore'
@@ -23,7 +22,7 @@ export default function NotificationItem({ notification }: NotificationItemProps
     const router = useRouter()
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
-    const { markNotificationAsRead, deleteNotification, closePanel } = useNotificationStore()
+    const { markNotificationAsRead, closePanel } = useNotificationStore()
     const { openModal } = useModalStore()
     const [isLoading, setIsLoading] = useState(false)
 
@@ -89,14 +88,6 @@ export default function NotificationItem({ notification }: NotificationItemProps
         }
     }
 
-    // Handle delete
-    const handleDelete = async (e: React.MouseEvent) => {
-        e.stopPropagation() // Prevent triggering click handler
-        if (!userId) return
-
-        await deleteNotification(userId, notification.id)
-    }
-
     // Get category label based on notification type
     const getCategoryLabel = () => {
         switch (notification.type) {
@@ -147,12 +138,12 @@ export default function NotificationItem({ notification }: NotificationItemProps
                 notification.actionUrl
                     ? isLoading
                         ? 'cursor-wait opacity-70'
-                        : 'cursor-pointer hover:bg-red-950/30'
+                        : 'cursor-pointer hover:bg-red-950/40'
                     : 'cursor-default'
             } ${
                 !notification.isRead
-                    ? 'bg-gradient-to-r from-red-950/20 to-transparent border-l-4 border-l-red-600'
-                    : 'bg-transparent opacity-60'
+                    ? 'bg-gradient-to-r from-red-900/50 via-red-950/30 to-red-950/10'
+                    : 'bg-transparent opacity-70'
             }`}
             onClick={handleClick}
         >
@@ -173,7 +164,7 @@ export default function NotificationItem({ notification }: NotificationItemProps
                 <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-medium text-red-400">{categoryLabel}</span>
                     <time
-                        className="flex-shrink-0 text-sm text-gray-500"
+                        className="flex-shrink-0 text-sm text-gray-300 font-medium"
                         dateTime={new Date(notification.createdAt).toISOString()}
                     >
                         {getTimeAgo(notification.createdAt)}
@@ -191,18 +182,9 @@ export default function NotificationItem({ notification }: NotificationItemProps
 
                 {/* Message/Description if available */}
                 {notification.message && (
-                    <p className="text-sm text-gray-400 line-clamp-2">{notification.message}</p>
+                    <p className="text-sm text-gray-300 line-clamp-2">{notification.message}</p>
                 )}
             </div>
-
-            {/* Delete button */}
-            <button
-                onClick={handleDelete}
-                className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-gray-900/90 opacity-0 transition-all hover:bg-red-600 group-hover:opacity-100"
-                aria-label="Delete notification"
-            >
-                <XMarkIcon className="h-5 w-5 text-gray-400 hover:text-white" aria-hidden="true" />
-            </button>
         </div>
     )
 }

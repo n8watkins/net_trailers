@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { BellIcon, CheckIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { BellIcon, CheckIcon } from '@heroicons/react/24/outline'
 import { useNotificationStore } from '../../stores/notificationStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { NotificationType } from '../../types/notifications'
@@ -28,7 +28,6 @@ export default function NotificationsPageClient() {
         subscribe,
         unsubscribeFromNotifications,
         markAllNotificationsAsRead,
-        deleteAllNotifications,
     } = useNotificationStore()
 
     // Show loading state while initializing or loading notifications
@@ -68,13 +67,6 @@ export default function NotificationsPageClient() {
         await markAllNotificationsAsRead(userId)
     }
 
-    const handleClearAll = async () => {
-        if (!userId || isGuest) return
-        if (confirm('Are you sure you want to delete all notifications? This cannot be undone.')) {
-            await deleteAllNotifications(userId)
-        }
-    }
-
     const headerActions = !isLoading ? (
         isGuest ? (
             <GuestModeNotification align="left" />
@@ -93,29 +85,15 @@ export default function NotificationsPageClient() {
                     </p>
 
                     {/* Actions */}
-                    <div className="flex items-center gap-2">
-                        {/* Mark all as read */}
-                        {unreadCount > 0 && (
-                            <button
-                                onClick={handleMarkAllAsRead}
-                                className="flex items-center gap-2 rounded-lg bg-gray-800/50 px-4 py-2.5 text-sm font-medium text-gray-300 transition-all duration-200 hover:bg-gray-700/50 hover:text-white border border-gray-600 hover:border-gray-400"
-                            >
-                                <CheckIcon className="h-4 w-4" />
-                                <span>Mark all read</span>
-                            </button>
-                        )}
-
-                        {/* Clear all */}
-                        {notifications.length > 0 && (
-                            <button
-                                onClick={handleClearAll}
-                                className="flex items-center gap-2 rounded-lg bg-gray-800/50 px-4 py-2.5 text-sm font-medium text-gray-400 transition-all duration-200 hover:bg-gray-700/50 hover:text-red-400 border border-gray-600"
-                            >
-                                <TrashIcon className="h-4 w-4" />
-                                <span>Clear all</span>
-                            </button>
-                        )}
-                    </div>
+                    {unreadCount > 0 && (
+                        <button
+                            onClick={handleMarkAllAsRead}
+                            className="flex items-center gap-2 rounded-lg bg-gray-800/50 px-4 py-2.5 text-sm font-medium text-gray-300 transition-all duration-200 hover:bg-gray-700/50 hover:text-white border border-gray-600 hover:border-gray-400"
+                        >
+                            <CheckIcon className="h-4 w-4" />
+                            <span>Mark all read</span>
+                        </button>
+                    )}
                 </div>
 
                 {/* Filters - Always visible */}

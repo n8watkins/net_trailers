@@ -1483,24 +1483,12 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                 actionUrl: '/tv/61889',
             },
             {
-                type: 'collection_update',
-                title: 'Collection Updated',
-                message: 'Marvel Universe collection has 3 new titles added',
-                actionUrl: '/collections',
-            },
-            {
                 type: 'trending_update',
                 title: 'Trending This Week',
                 message: 'Inception is gaining popularity - watch it before it leaves!',
                 contentId: 27205,
                 imageUrl: 'https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg',
                 actionUrl: '/movie/27205',
-            },
-            {
-                type: 'system',
-                title: 'New Feature Available',
-                message: 'Check out the new watch history tracking feature!',
-                actionUrl: '/watch-history',
             },
             {
                 type: 'new_release',
@@ -1517,6 +1505,20 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                 contentId: 94605,
                 imageUrl: 'https://image.tmdb.org/t/p/w500/fqldf2t8ztc9aiwn3k6mlX3tvRT.jpg',
                 actionUrl: '/tv/94605',
+            },
+            {
+                type: 'share_activity',
+                title: 'Collection Shared',
+                message: 'Someone viewed your "Epic Sci-Fi Adventures" collection!',
+                actionUrl: '/collections',
+            },
+            {
+                type: 'new_release',
+                title: 'Watchlist Alert',
+                message: 'The Matrix Resurrections is now available to stream!',
+                contentId: 603,
+                imageUrl: 'https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg',
+                actionUrl: '/movie/603',
             },
         ]
 

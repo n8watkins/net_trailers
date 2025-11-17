@@ -13,6 +13,7 @@ function GenresDropdown() {
     const [isOpen, setIsOpen] = useState(false)
     const [selectedType, setSelectedType] = useState<'movie' | 'tv'>('movie')
     const dropdownRef = useRef<HTMLDivElement>(null)
+    const timeoutRef = useRef<NodeJS.Timeout>()
     const router = useRouter()
     const { isEnabled: childSafetyEnabled } = useChildSafety()
 
@@ -32,6 +33,28 @@ function GenresDropdown() {
         setIsOpen(false)
     }
 
+    const handleMouseEnter = () => {
+        // Clear any pending close timeout
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current)
+        }
+        // Add delay before opening dropdown
+        timeoutRef.current = setTimeout(() => {
+            setIsOpen(true)
+        }, 300) // Delay before opening
+    }
+
+    const handleMouseLeave = () => {
+        // Clear any pending open timeout
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current)
+        }
+        // Add delay before closing dropdown
+        timeoutRef.current = setTimeout(() => {
+            setIsOpen(false)
+        }, 300) // Delay before closing
+    }
+
     // Use child-safe genre lists when child safety mode is enabled
     const currentGenres =
         selectedType === 'movie'
@@ -43,7 +66,12 @@ function GenresDropdown() {
               : tvGenres
 
     return (
-        <div className="relative" ref={dropdownRef}>
+        <div
+            className="relative"
+            ref={dropdownRef}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+        >
             <button
                 className="headerLink cursor-pointer flex items-center space-x-1 hover:text-white transition-colors select-none"
                 onClick={() => setIsOpen(!isOpen)}
@@ -56,7 +84,7 @@ function GenresDropdown() {
             </button>
 
             {isOpen && (
-                <div className="absolute top-full left-0 mt-2 w-80 bg-black/95 backdrop-blur-sm border border-red-500/40 rounded-lg shadow-xl shadow-red-500/20 z-[110] max-h-96 overflow-hidden animate-dropdown-enter">
+                <div className="absolute top-full left-0 mt-2 w-80 bg-[#0f0f0f]/95 backdrop-blur-sm border border-red-500/40 rounded-lg shadow-xl shadow-red-500/20 z-[110] max-h-96 overflow-hidden animate-dropdown-enter">
                     {/* Type Selector */}
                     <div className="flex border-b border-gray-700">
                         <button
@@ -84,7 +112,8 @@ function GenresDropdown() {
                     </div>
 
                     {/* Genres Grid */}
-                    <div className="max-h-80 overflow-y-auto scrollbar-thin scrollbar-track-gray-800 scrollbar-thumb-red-600 hover:scrollbar-thumb-red-500 scrollbar-thumb-rounded-full scrollbar-track-rounded-full p-4">
+                    {/* SCROLLBAR: Track transparent to match dropdown background, thumb is red */}
+                    <div className="max-h-80 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-red-600 hover:scrollbar-thumb-red-500 scrollbar-thumb-rounded-full scrollbar-track-rounded-full p-4">
                         <div className="grid grid-cols-2 gap-2">
                             {currentGenres.map((genre) => (
                                 <button

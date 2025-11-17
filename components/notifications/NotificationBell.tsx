@@ -45,7 +45,7 @@ export default function NotificationBell() {
     if (!mounted) {
         return (
             <button
-                className="group relative flex items-center justify-center rounded-full p-2 transition-all hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+                className="group relative flex items-center justify-center rounded-full p-2 transition-all hover:bg-white/10"
                 aria-label="Notifications"
                 aria-expanded={false}
                 aria-haspopup="true"
@@ -72,7 +72,7 @@ export default function NotificationBell() {
     return (
         <button
             onClick={togglePanel}
-            className="group relative flex items-center justify-center rounded-full p-2 transition-all hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+            className="group relative flex items-center justify-center rounded-full p-2 transition-all hover:bg-white/10 hover:shadow-[0_0_15px_rgba(239,68,68,0.6)] focus:shadow-[0_0_15px_rgba(239,68,68,0.6)]"
             aria-label={`Notifications${hasUnread ? ` (${safeUnreadCount} unread)` : ''}`}
             aria-expanded={safeIsPanelOpen}
             aria-haspopup="true"
@@ -97,13 +97,6 @@ export default function NotificationBell() {
                     aria-hidden="true"
                 >
                     {safeUnreadCount > 99 ? '99+' : safeUnreadCount}
-                </span>
-            )}
-
-            {/* Pulse animation for new notifications */}
-            {hasUnread && (
-                <span className="absolute right-0 top-0 flex h-5 w-5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
                 </span>
             )}
         </button>

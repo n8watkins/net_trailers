@@ -126,21 +126,6 @@ export default function RankingsPage() {
             title="My Rankings"
             icon={<TrophyIcon className="w-8 h-8" />}
             iconColor="text-yellow-500"
-            headerActions={
-                <button
-                    onClick={handleCreateNew}
-                    className={`flex items-center gap-2 px-4 py-2 font-medium rounded-lg transition-colors ${
-                        isGuest
-                            ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                            : 'bg-yellow-500 hover:bg-yellow-400 text-black'
-                    }`}
-                    disabled={isGuest}
-                    title={isGuest ? 'Sign in to create rankings' : 'Create a new ranking'}
-                >
-                    <PlusIcon className="w-5 h-5" />
-                    <span>Create Ranking {isGuest && '(Sign in required)'}</span>
-                </button>
-            }
         >
             {/* Guest Mode Notification */}
             {isGuest && (
@@ -150,62 +135,83 @@ export default function RankingsPage() {
             )}
 
             {/* Tabs */}
-            <div className="flex gap-2 mb-6 border-b border-zinc-800">
+            <div className="flex justify-between items-end mb-6 border-b border-zinc-800">
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => setActiveTab('rankings')}
+                        className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors border-b-2 ${
+                            activeTab === 'rankings'
+                                ? 'border-yellow-500 text-yellow-500'
+                                : 'border-transparent text-gray-400 hover:text-white'
+                        }`}
+                    >
+                        <TrophyIcon className="w-5 h-5" />
+                        <span>Your Rankings</span>
+                        {isLoading ? (
+                            <span className="ml-1 text-sm text-gray-500 animate-pulse">(...)</span>
+                        ) : rankings.length > 0 ? (
+                            <span className="ml-1 text-sm text-gray-500">({rankings.length})</span>
+                        ) : null}
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('comments')}
+                        className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors border-b-2 ${
+                            activeTab === 'comments'
+                                ? 'border-yellow-500 text-yellow-500'
+                                : 'border-transparent text-gray-400 hover:text-white'
+                        }`}
+                        disabled={isGuest}
+                    >
+                        <ChatBubbleLeftIcon className="w-5 h-5" />
+                        <span>Your Comments</span>
+                        {!isGuest &&
+                            (isLoadingComments ? (
+                                <span className="ml-1 text-sm text-gray-500 animate-pulse">
+                                    (...)
+                                </span>
+                            ) : userComments.length > 0 ? (
+                                <span className="ml-1 text-sm text-gray-500">
+                                    ({userComments.length})
+                                </span>
+                            ) : null)}
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('liked')}
+                        className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors border-b-2 ${
+                            activeTab === 'liked'
+                                ? 'border-yellow-500 text-yellow-500'
+                                : 'border-transparent text-gray-400 hover:text-white'
+                        }`}
+                        disabled={isGuest}
+                    >
+                        <HeartIcon className="w-5 h-5" />
+                        <span>Liked Rankings</span>
+                        {!isGuest &&
+                            (isLoadingLiked ? (
+                                <span className="ml-1 text-sm text-gray-500 animate-pulse">
+                                    (...)
+                                </span>
+                            ) : likedRankings.length > 0 ? (
+                                <span className="ml-1 text-sm text-gray-500">
+                                    ({likedRankings.length})
+                                </span>
+                            ) : null)}
+                    </button>
+                </div>
+
+                {/* Create Ranking Button */}
                 <button
-                    onClick={() => setActiveTab('rankings')}
-                    className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors border-b-2 ${
-                        activeTab === 'rankings'
-                            ? 'border-yellow-500 text-yellow-500'
-                            : 'border-transparent text-gray-400 hover:text-white'
-                    }`}
-                >
-                    <TrophyIcon className="w-5 h-5" />
-                    <span>Your Rankings</span>
-                    {isLoading ? (
-                        <span className="ml-1 text-sm text-gray-500 animate-pulse">(...)</span>
-                    ) : rankings.length > 0 ? (
-                        <span className="ml-1 text-sm text-gray-500">({rankings.length})</span>
-                    ) : null}
-                </button>
-                <button
-                    onClick={() => setActiveTab('comments')}
-                    className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors border-b-2 ${
-                        activeTab === 'comments'
-                            ? 'border-yellow-500 text-yellow-500'
-                            : 'border-transparent text-gray-400 hover:text-white'
+                    onClick={handleCreateNew}
+                    className={`flex items-center gap-2 px-4 py-2 mb-1 font-medium rounded-lg transition-colors ${
+                        isGuest
+                            ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                            : 'bg-yellow-500 hover:bg-yellow-400 text-black'
                     }`}
                     disabled={isGuest}
+                    title={isGuest ? 'Sign in to create rankings' : 'Create a new ranking'}
                 >
-                    <ChatBubbleLeftIcon className="w-5 h-5" />
-                    <span>Your Comments</span>
-                    {!isGuest &&
-                        (isLoadingComments ? (
-                            <span className="ml-1 text-sm text-gray-500 animate-pulse">(...)</span>
-                        ) : userComments.length > 0 ? (
-                            <span className="ml-1 text-sm text-gray-500">
-                                ({userComments.length})
-                            </span>
-                        ) : null)}
-                </button>
-                <button
-                    onClick={() => setActiveTab('liked')}
-                    className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors border-b-2 ${
-                        activeTab === 'liked'
-                            ? 'border-yellow-500 text-yellow-500'
-                            : 'border-transparent text-gray-400 hover:text-white'
-                    }`}
-                    disabled={isGuest}
-                >
-                    <HeartIcon className="w-5 h-5" />
-                    <span>Liked Rankings</span>
-                    {!isGuest &&
-                        (isLoadingLiked ? (
-                            <span className="ml-1 text-sm text-gray-500 animate-pulse">(...)</span>
-                        ) : likedRankings.length > 0 ? (
-                            <span className="ml-1 text-sm text-gray-500">
-                                ({likedRankings.length})
-                            </span>
-                        ) : null)}
+                    <PlusIcon className="w-5 h-5" />
+                    <span>Create Ranking {isGuest && '(Sign in required)'}</span>
                 </button>
             </div>
 

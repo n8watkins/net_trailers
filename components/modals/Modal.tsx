@@ -904,26 +904,43 @@ function Modal() {
                         <KeyboardShortcuts
                             shortcuts={[
                                 { key: 'ESC', description: 'Close' },
-                                trailer && {
+                                {
                                     key: 'SPACE',
                                     description: playing ? 'Pause' : 'Play',
+                                    disabled: !trailer,
                                 },
-                                trailer && { key: 'M', description: muted ? 'Unmute' : 'Mute' },
-                                trailer && { key: 'F', description: 'Fullscreen', icon: '⛶' },
-                                currentMovie && {
+                                {
+                                    key: 'M',
+                                    description: muted ? 'Unmute' : 'Mute',
+                                    disabled: !trailer,
+                                },
+                                {
+                                    key: 'F',
+                                    description: 'Fullscreen',
+                                    icon: '⛶',
+                                    disabled: !trailer,
+                                },
+                                {
                                     key: 'L',
-                                    description: isLiked(currentMovie.id) ? 'Unlike' : 'Like',
+                                    description:
+                                        currentMovie && isLiked(currentMovie.id)
+                                            ? 'Unlike'
+                                            : 'Like',
                                     icon: '👍',
+                                    disabled: !currentMovie,
                                 },
-                                currentMovie && {
+                                {
                                     key: 'H',
-                                    description: isHidden(currentMovie.id) ? 'Show' : 'Hide',
+                                    description:
+                                        currentMovie && isHidden(currentMovie.id) ? 'Show' : 'Hide',
+                                    disabled: !currentMovie,
                                 },
-                                trailer && { key: 'R', description: 'Watch on YouTube' },
-                            ].filter(
-                                (s): s is { key: string; description: string; icon?: string } =>
-                                    Boolean(s)
-                            )}
+                                {
+                                    key: 'R',
+                                    description: 'Watch on YouTube',
+                                    disabled: !trailer,
+                                },
+                            ]}
                             className="opacity-80"
                         />
                     </div>
