@@ -11,7 +11,6 @@ service cloud.firestore {
       // Prevent creation of documents with mismatched IDs and enforce schema
       allow create: if request.auth != null
                     && request.auth.uid == userId
-                    && request.auth.uid == resource.id
                     && isValidUserData(request.resource.data);
 
       // Only allow updates to documents owned by the caller that match the schema
