@@ -4,11 +4,18 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Content } from '@/typings'
 import { UserList } from '@/types/userLists'
-import { RankedItem, RANKING_CONSTRAINTS } from '@/types/rankings'
+import {
+    RankedItem,
+    RANKING_CONSTRAINTS,
+    CreateRankingRequest,
+    UpdateRankingRequest,
+} from '@/types/rankings'
 import { useSessionStore } from '@/stores/sessionStore'
-import { useCustomRowsStore } from '@/stores/customRowsStore'
+import { useAuthStore } from '@/stores/authStore'
+import { useGuestStore } from '@/stores/guestStore'
 import { useToast } from '@/hooks/useToast'
 import { useRankingStore } from '@/stores/rankingStore'
+import { auth } from '@/firebase'
 import { SmartInput } from '@/components/common/SmartInput'
 import {
     SparklesIcon,
@@ -19,18 +26,106 @@ import {
     FolderOpenIcon,
 } from '@heroicons/react/24/outline'
 import {
-    DragDropContext,
-    Droppable,
-    Draggable,
-    DropResult,
-    DroppableProvided,
-    DraggableProvided,
-    DraggableStateSnapshot,
-} from '@hello-pangea/dnd'
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from '@dnd-kit/core'
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    useSortable,
+    verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import Image from 'next/image'
 
 interface SmartRankingCreatorProps {
     onSwitchToTraditional?: () => void
+}
+
+// Sortable Item Component
+function SortableItem({
+    item,
+    index,
+    itemNote,
+    onNoteChange,
+    onRemove,
+}: {
+    item: Content
+    index: number
+    itemNote: string
+    onNoteChange: (value: string) => void
+    onRemove: () => void
+}) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+        id: item.id.toString(),
+    })
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+    }
+
+    return (
+        <div ref={setNodeRef} style={style} className={`bg-zinc-900 rounded-lg p-4`}>
+            <div className="flex gap-4">
+                {/* Drag handle */}
+                <div
+                    {...attributes}
+                    {...listeners}
+                    className="flex items-center cursor-grab active:cursor-grabbing"
+                >
+                    <ArrowsUpDownIcon className="w-5 h-5 text-gray-500" />
+                </div>
+
+                {/* Position */}
+                <div className="flex items-center">
+                    <span className="text-2xl font-bold text-yellow-500">#{index + 1}</span>
+                </div>
+
+                {/* Poster */}
+                {item.poster_path && (
+                    <Image
+                        src={`https://image.tmdb.org/t/p/w92${item.poster_path}`}
+                        alt={getContentTitle(item)}
+                        width={48}
+                        height={72}
+                        className="rounded"
+                    />
+                )}
+
+                {/* Content */}
+                <div className="flex-1">
+                    <h3 className="font-medium mb-1">{getContentTitle(item)}</h3>
+                    <p className="text-sm text-gray-400 mb-2">
+                        {getContentYear(item)} • ⭐ {item.vote_average?.toFixed(1) || 'N/A'}
+                    </p>
+                    <textarea
+                        value={itemNote}
+                        onChange={(e) => onNoteChange(e.target.value)}
+                        placeholder="Add your note (optional)..."
+                        maxLength={200}
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 resize-none"
+                        rows={2}
+                    />
+                </div>
+
+                {/* Remove button */}
+                <button
+                    onClick={onRemove}
+                    className="text-gray-400 hover:text-red-500 transition-colors"
+                >
+                    <XMarkIcon className="w-5 h-5" />
+                </button>
+            </div>
+        </div>
+    )
 }
 
 // Utility to get title from content
@@ -47,12 +142,23 @@ const getContentYear = (content: Content): string => {
 export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRankingCreatorProps) {
     const router = useRouter()
     const { sessionType, activeSessionId } = useSessionStore()
-    const customRowsStore = useCustomRowsStore()
+    const getUserId = useSessionStore((state) => state.getUserId)
+    const userId = getUserId()
+    const authCollections = useAuthStore((state) => state.userCreatedWatchlists)
+    const guestCollections = useGuestStore((state) => state.userCreatedWatchlists)
     const { createRanking, updateRanking } = useRankingStore()
     const { showSuccess, showError } = useToast()
 
-    // Get custom rows
-    const customRows = customRowsStore.customRows || []
+    // Get collections based on session type
+    const collections = sessionType === 'authenticated' ? authCollections : guestCollections
+
+    // Drag and drop sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    )
 
     // Step tracking
     const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1)
@@ -143,14 +249,17 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
     }
 
     // Drag and drop reordering
-    const handleDragEnd = (result: DropResult) => {
-        if (!result.destination) return
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event
 
-        const items = Array.from(selectedItems)
-        const [reorderedItem] = items.splice(result.source.index, 1)
-        items.splice(result.destination.index, 0, reorderedItem)
+        if (!over || active.id === over.id) return
 
-        setSelectedItems(items)
+        setSelectedItems((items) => {
+            const oldIndex = items.findIndex((item) => item.id.toString() === active.id)
+            const newIndex = items.findIndex((item) => item.id.toString() === over.id)
+
+            return arrayMove(items, oldIndex, newIndex)
+        })
     }
 
     // Remove item from ranking
@@ -203,6 +312,16 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
             return
         }
 
+        // Get current user info from Firebase Auth
+        const currentUser = auth.currentUser
+        if (!currentUser) {
+            showError('You must be logged in to create a ranking')
+            return
+        }
+
+        const username = currentUser.displayName || 'Unknown User'
+        const avatarUrl = currentUser.photoURL || undefined
+
         setIsLoading(true)
         try {
             const rankedItems: RankedItem[] = selectedItems.map((content, index) => ({
@@ -212,21 +331,27 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                 addedAt: Date.now(),
             }))
 
-            const newRanking = await createRanking(
-                title,
-                description,
+            const createRequest: CreateRankingRequest = {
+                title: title.trim(),
+                itemCount: selectedItems.length,
                 isPublic,
-                selectedItems.length
-            )
+            }
 
-            if (newRanking && typeof newRanking === 'object' && 'id' in newRanking) {
+            if (description.trim()) {
+                createRequest.description = description.trim()
+            }
+
+            const rankingId = await createRanking(userId, username, avatarUrl, createRequest)
+
+            if (rankingId) {
                 // Update with ranked items
-                await updateRanking(newRanking.id, {
-                    id: newRanking.id,
+                const updateRequest: UpdateRankingRequest = {
+                    id: rankingId,
                     rankedItems,
-                })
+                }
+                await updateRanking(userId, updateRequest)
                 showSuccess('Ranking created!')
-                router.push(`/rankings/${newRanking.id}`)
+                router.push(`/rankings/${rankingId}`)
             }
         } catch (error) {
             showError('Failed to create ranking')
@@ -449,108 +574,34 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                         </div>
 
                         {/* Drag and drop list */}
-                        <DragDropContext onDragEnd={handleDragEnd}>
-                            <Droppable droppableId="ranking-items">
-                                {(provided: DroppableProvided) => (
-                                    <div
-                                        {...provided.droppableProps}
-                                        ref={provided.innerRef}
-                                        className="space-y-3"
-                                    >
-                                        {selectedItems.map((item, index) => (
-                                            <Draggable
-                                                key={item.id}
-                                                draggableId={item.id.toString()}
-                                                index={index}
-                                            >
-                                                {(
-                                                    provided: DraggableProvided,
-                                                    snapshot: DraggableStateSnapshot
-                                                ) => (
-                                                    <div
-                                                        ref={provided.innerRef}
-                                                        {...provided.draggableProps}
-                                                        className={`bg-zinc-900 rounded-lg p-4 ${
-                                                            snapshot.isDragging
-                                                                ? 'ring-2 ring-yellow-500'
-                                                                : ''
-                                                        }`}
-                                                    >
-                                                        <div className="flex gap-4">
-                                                            {/* Drag handle */}
-                                                            <div
-                                                                {...provided.dragHandleProps}
-                                                                className="flex items-center"
-                                                            >
-                                                                <ArrowsUpDownIcon className="w-5 h-5 text-gray-500 cursor-grab active:cursor-grabbing" />
-                                                            </div>
-
-                                                            {/* Position */}
-                                                            <div className="flex items-center">
-                                                                <span className="text-2xl font-bold text-yellow-500">
-                                                                    #{index + 1}
-                                                                </span>
-                                                            </div>
-
-                                                            {/* Poster */}
-                                                            {item.poster_path && (
-                                                                <Image
-                                                                    src={`https://image.tmdb.org/t/p/w92${item.poster_path}`}
-                                                                    alt={getContentTitle(item)}
-                                                                    width={48}
-                                                                    height={72}
-                                                                    className="rounded"
-                                                                />
-                                                            )}
-
-                                                            {/* Content */}
-                                                            <div className="flex-1">
-                                                                <h3 className="font-medium mb-1">
-                                                                    {getContentTitle(item)}
-                                                                </h3>
-                                                                <p className="text-sm text-gray-400 mb-2">
-                                                                    {getContentYear(item)} • ⭐{' '}
-                                                                    {item.vote_average?.toFixed(
-                                                                        1
-                                                                    ) || 'N/A'}
-                                                                </p>
-                                                                <textarea
-                                                                    value={itemNotes[item.id] || ''}
-                                                                    onChange={(e) =>
-                                                                        setItemNotes({
-                                                                            ...itemNotes,
-                                                                            [item.id]:
-                                                                                e.target.value,
-                                                                        })
-                                                                    }
-                                                                    placeholder="Add your note (optional)..."
-                                                                    maxLength={
-                                                                        RANKING_CONSTRAINTS.MAX_NOTE_LENGTH
-                                                                    }
-                                                                    className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 resize-none"
-                                                                    rows={2}
-                                                                />
-                                                            </div>
-
-                                                            {/* Remove button */}
-                                                            <button
-                                                                onClick={() =>
-                                                                    handleRemoveItem(item.id)
-                                                                }
-                                                                className="text-gray-400 hover:text-red-500 transition-colors"
-                                                            >
-                                                                <XMarkIcon className="w-5 h-5" />
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </Draggable>
-                                        ))}
-                                        {provided.placeholder}
-                                    </div>
-                                )}
-                            </Droppable>
-                        </DragDropContext>
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={handleDragEnd}
+                        >
+                            <SortableContext
+                                items={selectedItems.map((item) => item.id.toString())}
+                                strategy={verticalListSortingStrategy}
+                            >
+                                <div className="space-y-3">
+                                    {selectedItems.map((item, index) => (
+                                        <SortableItem
+                                            key={item.id}
+                                            item={item}
+                                            index={index}
+                                            itemNote={itemNotes[item.id] || ''}
+                                            onNoteChange={(value) =>
+                                                setItemNotes({
+                                                    ...itemNotes,
+                                                    [item.id]: value,
+                                                })
+                                            }
+                                            onRemove={() => handleRemoveItem(item.id)}
+                                        />
+                                    ))}
+                                </div>
+                            </SortableContext>
+                        </DndContext>
                     </div>
                 )}
 
@@ -670,9 +721,8 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                             </button>
                         </div>
                         <div className="p-6 overflow-y-auto max-h-[60vh]">
-                            {customRows.filter(
-                                (row: UserList) => row.items && row.items.length >= 3
-                            ).length === 0 ? (
+                            {collections.filter((col) => col.items && col.items.length >= 3)
+                                .length === 0 ? (
                                 <p className="text-center text-gray-400 py-8">
                                     No collections with 3+ items found.
                                     <br />
@@ -680,11 +730,9 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                                 </p>
                             ) : (
                                 <div className="space-y-3">
-                                    {customRows
-                                        .filter(
-                                            (row: UserList) => row.items && row.items.length >= 3
-                                        )
-                                        .map((collection: UserList) => (
+                                    {collections
+                                        .filter((col) => col.items && col.items.length >= 3)
+                                        .map((collection) => (
                                             <button
                                                 key={collection.id}
                                                 onClick={() => handleImportCollection(collection)}
