@@ -20,13 +20,13 @@ type CreationMode = 'traditional' | 'smart'
 /**
  * CollectionBuilderModal Component
  *
- * Modal wrapper for collection creation.
+ * Shared modal wrapper for collection creation with unified click-outside-to-close logic.
  * Supports two modes:
- * - Traditional: Manual collection creation with name, emoji, color
+ * - Traditional: Manual collection creation with step-by-step wizard
  * - Smart: AI-powered with natural language query
  *
- * This component reuses the Smart Row Builder and Traditional Wizard
- * but creates collections instead of custom rows.
+ * This component provides the modal container and click handling.
+ * Child components (SimplifiedSmartBuilder, CustomRowWizard) are content-only.
  */
 function CollectionBuilderModal() {
     const router = useRouter()
@@ -37,6 +37,7 @@ function CollectionBuilderModal() {
     const { createList, addToList } = useUserData()
 
     const [mode, setMode] = useState<CreationMode>('smart')
+    const [mouseDownOnBackdrop, setMouseDownOnBackdrop] = useState(false)
 
     // Feature flag: Use simplified builder
     const USE_SIMPLIFIED_BUILDER = true
@@ -46,6 +47,24 @@ function CollectionBuilderModal() {
     const isAuthenticated = sessionType === 'authenticated'
 
     if (!isOpen) return null
+
+    // Unified click-outside-to-close logic (from SimplifiedSmartBuilder)
+    const handleBackdropMouseDown = (e: React.MouseEvent) => {
+        const target = e.target as HTMLElement
+        // Only mark if click is OUTSIDE modal content
+        if (!target.closest('[data-modal-content]')) {
+            setMouseDownOnBackdrop(true)
+        }
+    }
+
+    const handleBackdropMouseUp = (e: React.MouseEvent) => {
+        const target = e.target as HTMLElement
+        // Only close if BOTH mousedown AND mouseup happened outside
+        if (!target.closest('[data-modal-content]') && mouseDownOnBackdrop) {
+            closeCollectionBuilderModal()
+        }
+        setMouseDownOnBackdrop(false)
+    }
 
     const handleComplete = async (formData: CustomRowFormData) => {
         if (!userId) {
@@ -114,37 +133,52 @@ function CollectionBuilderModal() {
     }
 
     return (
-        <>
-            {/* Render selected mode */}
-            {mode === 'smart' ? (
-                USE_SIMPLIFIED_BUILDER ? (
-                    <SimplifiedSmartBuilder
-                        onClose={closeCollectionBuilderModal}
-                        onComplete={handleComplete}
-                        isAuthenticated={isAuthenticated}
-                        onSignIn={handleSignIn}
-                        mode={mode}
-                        onModeChange={setMode}
-                    />
-                ) : (
-                    <SmartRowBuilder
-                        onClose={closeCollectionBuilderModal}
-                        onComplete={handleComplete}
-                        isAuthenticated={isAuthenticated}
-                        onSignIn={handleSignIn}
-                    />
-                )
-            ) : (
-                <CustomRowWizard
-                    onClose={closeCollectionBuilderModal}
-                    onComplete={handleComplete}
-                    isAuthenticated={isAuthenticated}
-                    onSignIn={handleSignIn}
-                    mode={mode}
-                    onModeChange={setMode}
-                />
-            )}
-        </>
+        <div
+            className="fixed inset-0 z-[56000] overflow-y-auto"
+            onMouseDown={handleBackdropMouseDown}
+            onMouseUp={handleBackdropMouseUp}
+        >
+            {/* Backdrop */}
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" />
+
+            {/* Modal Container */}
+            <div className="relative min-h-screen flex items-center justify-center p-4">
+                <div
+                    data-modal-content
+                    className="relative bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-lg shadow-2xl max-w-6xl w-full border border-gray-700"
+                >
+                    {/* Render selected mode content */}
+                    {mode === 'smart' ? (
+                        USE_SIMPLIFIED_BUILDER ? (
+                            <SimplifiedSmartBuilder
+                                onClose={closeCollectionBuilderModal}
+                                onComplete={handleComplete}
+                                isAuthenticated={isAuthenticated}
+                                onSignIn={handleSignIn}
+                                mode={mode}
+                                onModeChange={setMode}
+                            />
+                        ) : (
+                            <SmartRowBuilder
+                                onClose={closeCollectionBuilderModal}
+                                onComplete={handleComplete}
+                                isAuthenticated={isAuthenticated}
+                                onSignIn={handleSignIn}
+                            />
+                        )
+                    ) : (
+                        <CustomRowWizard
+                            onClose={closeCollectionBuilderModal}
+                            onComplete={handleComplete}
+                            isAuthenticated={isAuthenticated}
+                            onSignIn={handleSignIn}
+                            mode={mode}
+                            onModeChange={setMode}
+                        />
+                    )}
+                </div>
+            </div>
+        </div>
     )
 }
 
