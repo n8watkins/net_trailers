@@ -2,20 +2,22 @@
 
 import React from 'react'
 import { CheckIcon } from '@heroicons/react/24/solid'
-import { MOVIE_GENRES, TV_GENRES } from '../../constants/genres'
+import { getUnifiedGenresByMediaType } from '../../constants/unifiedGenres'
 import { CUSTOM_ROW_CONSTRAINTS } from '../../types/customRows'
 
 interface GenrePillsProps {
-    selectedGenres: number[]
-    onChange: (genres: number[]) => void
+    selectedGenres: string[] // Now uses unified genre IDs like 'action', 'fantasy'
+    onChange: (genres: string[]) => void
     mediaType: 'movie' | 'tv' | 'both'
     maxGenres?: number
+    childSafeMode?: boolean
 }
 
 /**
  * GenrePills Component
  *
- * Displays genres as clickable pills that can be selected/deselected.
+ * Displays unified genres as clickable pills that can be selected/deselected.
+ * Automatically maps to correct TMDB genre IDs behind the scenes.
  * More professional and visual than a dropdown.
  */
 export function GenrePills({
@@ -23,16 +25,12 @@ export function GenrePills({
     onChange,
     mediaType,
     maxGenres = CUSTOM_ROW_CONSTRAINTS.MAX_GENRES_PER_ROW,
+    childSafeMode = false,
 }: GenrePillsProps) {
-    // For "both", use genres that exist in both movie and TV genre lists
-    const availableGenres =
-        mediaType === 'both'
-            ? MOVIE_GENRES.filter((mg) => TV_GENRES.some((tg) => tg.id === mg.id))
-            : mediaType === 'movie'
-              ? MOVIE_GENRES
-              : TV_GENRES
+    // Get unified genres filtered by media type and child safety
+    const availableGenres = getUnifiedGenresByMediaType(mediaType, childSafeMode)
 
-    const handleToggleGenre = (genreId: number) => {
+    const handleToggleGenre = (genreId: string) => {
         if (selectedGenres.includes(genreId)) {
             // Remove genre
             onChange(selectedGenres.filter((id) => id !== genreId))
@@ -44,7 +42,7 @@ export function GenrePills({
         }
     }
 
-    const isGenreSelected = (genreId: number) => selectedGenres.includes(genreId)
+    const isGenreSelected = (genreId: string) => selectedGenres.includes(genreId)
     const atMaxGenres = selectedGenres.length >= maxGenres
 
     return (

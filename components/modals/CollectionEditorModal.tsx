@@ -1,12 +1,13 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import Image from 'next/image'
 import {
     XMarkIcon,
-    SparklesIcon,
     QuestionMarkCircleIcon,
     MagnifyingGlassIcon,
+    FilmIcon,
+    TvIcon,
 } from '@heroicons/react/24/outline'
 import { CheckIcon } from '@heroicons/react/24/solid'
 import { UserList } from '../../types/userLists'
@@ -16,6 +17,9 @@ import { useToast } from '../../hooks/useToast'
 import IconPickerModal from './IconPickerModal'
 import ColorPickerModal from './ColorPickerModal'
 import InlineSearchBar from './InlineSearchBar'
+import { GenrePills } from '../customRows/GenrePills'
+import { getUnifiedGenresByMediaType } from '../../constants/unifiedGenres'
+import { useChildSafety } from '../../hooks/useChildSafety'
 
 interface CollectionEditorModalProps {
     collection: UserList | null
@@ -28,6 +32,17 @@ export default function CollectionEditorModal({
     isOpen,
     onClose,
 }: CollectionEditorModalProps) {
+    const { isChildSafetyEnabled } = useChildSafety()
+
+    const GENRE_LOOKUP = useMemo(() => {
+        const map = new Map<string, string>()
+        const allGenres = getUnifiedGenresByMediaType('both', isChildSafetyEnabled)
+        allGenres.forEach((genre) => {
+            map.set(genre.id, genre.name)
+        })
+        return map
+    }, [isChildSafetyEnabled])
+
     const { updateList, addToList, removeFromList } = useUserData()
     const { showSuccess, showError } = useToast()
 
@@ -38,6 +53,9 @@ export default function CollectionEditorModal({
     const [isPublic, setIsPublic] = useState(false)
     const [displayAsRow, setDisplayAsRow] = useState(true)
     const [enableInfiniteContent, setEnableInfiniteContent] = useState(false)
+    const [mediaType, setMediaType] = useState<'movie' | 'tv' | 'both'>('both')
+    const [selectedGenres, setSelectedGenres] = useState<string[]>([])
+    const [genreLogic, setGenreLogic] = useState<'AND' | 'OR'>('AND')
 
     // UI state
     const [showIconPicker, setShowIconPicker] = useState(false)
@@ -58,12 +76,31 @@ export default function CollectionEditorModal({
             setColor(collection.color || '#3b82f6')
             setIsPublic(collection.isPublic || false)
             setDisplayAsRow(collection.displayAsRow ?? true)
-            setEnableInfiniteContent(!!(collection.genres && collection.genres.length > 0))
+            setMediaType(collection.mediaType || 'both')
+            setSelectedGenres(collection.genres || [])
+            setGenreLogic(
+                collection.genreLogic || ((collection.genres?.length ?? 0) >= 2 ? 'AND' : 'OR')
+            )
+            setEnableInfiniteContent(
+                collection.canGenerateMore ?? !!(collection.genres && collection.genres.length > 0)
+            )
             setContent(collection.items || [])
             setRemovedIds(new Set())
             setSearchFilter('')
         }
     }, [collection, isOpen])
+
+    useEffect(() => {
+        if (enableInfiniteContent && selectedGenres.length === 0) {
+            setEnableInfiniteContent(false)
+        }
+    }, [enableInfiniteContent, selectedGenres.length])
+
+    useEffect(() => {
+        if (selectedGenres.length < 2 && genreLogic === 'AND') {
+            setGenreLogic('OR')
+        }
+    }, [genreLogic, selectedGenres.length])
 
     if (!isOpen || !collection) return null
 
@@ -76,6 +113,9 @@ export default function CollectionEditorModal({
         setIsPublic(false)
         setDisplayAsRow(true)
         setEnableInfiniteContent(false)
+        setMediaType('both')
+        setSelectedGenres([])
+        setGenreLogic('AND')
         setContent([])
         setRemovedIds(new Set())
         setSearchFilter('')
@@ -84,6 +124,11 @@ export default function CollectionEditorModal({
     const handleSave = async () => {
         if (!name.trim()) {
             showError('Please enter a collection name')
+            return
+        }
+
+        if (enableInfiniteContent && selectedGenres.length === 0) {
+            showError('Add at least one genre', 'Infinite content requires genre filters')
             return
         }
 
@@ -97,8 +142,10 @@ export default function CollectionEditorModal({
                 color,
                 isPublic,
                 displayAsRow,
-                // If infinite content is disabled, clear genres
-                genres: enableInfiniteContent ? collection.genres : [],
+                genres: selectedGenres,
+                genreLogic,
+                mediaType,
+                canGenerateMore: enableInfiniteContent && selectedGenres.length > 0,
             })
 
             // Handle removed items
@@ -108,9 +155,10 @@ export default function CollectionEditorModal({
 
             showSuccess('Collection updated!', `"${name}" has been saved`)
             handleClose()
-        } catch (error: any) {
+        } catch (error) {
             console.error('Save collection error:', error)
-            showError('Failed to save collection', error.message)
+            const description = error instanceof Error ? error.message : undefined
+            showError('Failed to save collection', description)
         } finally {
             setIsSaving(false)
         }
@@ -127,6 +175,20 @@ export default function CollectionEditorModal({
         addToList(collection.id, newContent)
     }
 
+    const handleToggleInfinite = () => {
+        if (!enableInfiniteContent && selectedGenres.length === 0) {
+            showError('Add at least one genre', 'Select genres before enabling infinite content.')
+            return
+        }
+        setEnableInfiniteContent((prev) => !prev)
+    }
+
+    const handleMediaTypeChange = (nextType: 'movie' | 'tv' | 'both') => {
+        if (mediaType === nextType) return
+        setMediaType(nextType)
+        setSelectedGenres([])
+    }
+
     // Filter content based on search and removed IDs
     const visibleContent = content
         .filter((item) => !removedIds.has(item.id))
@@ -135,6 +197,9 @@ export default function CollectionEditorModal({
             const title = getTitle(item).toLowerCase()
             return title.includes(searchFilter.toLowerCase().trim())
         })
+
+    const canAdjustGenreLogic = selectedGenres.length >= 2
+    const selectedGenreNames = selectedGenres.map((id) => GENRE_LOOKUP.get(id) || `Genre ${id}`)
 
     return (
         <div className="fixed inset-0 z-[56000] overflow-y-auto">
@@ -249,9 +314,7 @@ export default function CollectionEditorModal({
                                     </label>
                                     <button
                                         type="button"
-                                        onClick={() =>
-                                            setEnableInfiniteContent(!enableInfiniteContent)
-                                        }
+                                        onClick={handleToggleInfinite}
                                         className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
                                             enableInfiniteContent ? 'bg-red-600' : 'bg-gray-600'
                                         }`}
@@ -314,6 +377,129 @@ export default function CollectionEditorModal({
                                             }`}
                                         />
                                     </button>
+                                </div>
+                            </div>
+
+                            {/* Discovery Settings */}
+                            <div className="bg-gray-900/40 rounded-lg border border-gray-800 p-4 space-y-6">
+                                <div>
+                                    <h3 className="text-white font-semibold">Discovery Settings</h3>
+                                    <p className="text-sm text-gray-400">
+                                        Configure how infinite recommendations are generated
+                                    </p>
+                                </div>
+
+                                {/* Media Type Selection */}
+                                <div>
+                                    <p className="text-sm font-medium text-gray-300 mb-3">
+                                        Media Type
+                                    </p>
+                                    <div className="inline-flex items-center rounded-full bg-gray-800/80 border border-gray-700 p-1 text-sm font-medium">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleMediaTypeChange('movie')}
+                                            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full transition-colors ${
+                                                mediaType === 'movie'
+                                                    ? 'bg-red-600 text-white'
+                                                    : 'text-gray-400 hover:text-white'
+                                            }`}
+                                        >
+                                            <FilmIcon className="w-4 h-4" />
+                                            Movies
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleMediaTypeChange('tv')}
+                                            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full transition-colors ${
+                                                mediaType === 'tv'
+                                                    ? 'bg-red-600 text-white'
+                                                    : 'text-gray-400 hover:text-white'
+                                            }`}
+                                        >
+                                            <TvIcon className="w-4 h-4" />
+                                            TV
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleMediaTypeChange('both')}
+                                            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full transition-colors ${
+                                                mediaType === 'both'
+                                                    ? 'bg-red-600 text-white'
+                                                    : 'text-gray-400 hover:text-white'
+                                            }`}
+                                        >
+                                            <FilmIcon className="w-4 h-4" />
+                                            <TvIcon className="w-4 h-4" />
+                                            Both
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Genre Selection */}
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-sm font-medium text-gray-300">Genres</p>
+                                        <span className="text-xs text-gray-400">
+                                            {selectedGenres.length === 0
+                                                ? 'No genres selected'
+                                                : `${selectedGenres.length} selected`}
+                                        </span>
+                                    </div>
+                                    {selectedGenres.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 text-xs text-white">
+                                            {selectedGenreNames.map((name, index) => (
+                                                <span
+                                                    key={`${name}-${index}`}
+                                                    className="px-3 py-1 rounded-full bg-gray-800 border border-gray-700"
+                                                >
+                                                    {name}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                    <GenrePills
+                                        selectedGenres={selectedGenres}
+                                        onChange={setSelectedGenres}
+                                        mediaType={mediaType}
+                                        childSafeMode={isChildSafetyEnabled}
+                                    />
+                                </div>
+
+                                {/* Genre Logic */}
+                                <div>
+                                    <p className="text-sm font-medium text-gray-300 mb-1">
+                                        Genre Matching
+                                    </p>
+                                    <p className="text-xs text-gray-400 mb-3">
+                                        Infinite recommendations try to match ALL genres first, then
+                                        relax to ANY if needed.
+                                    </p>
+                                    <div className="inline-flex items-center rounded-full bg-gray-800/80 border border-gray-700 p-1 text-sm font-medium">
+                                        <button
+                                            type="button"
+                                            onClick={() => setGenreLogic('AND')}
+                                            disabled={!canAdjustGenreLogic}
+                                            className={`px-4 py-1.5 rounded-full transition-colors ${
+                                                genreLogic === 'AND'
+                                                    ? 'bg-red-600 text-white'
+                                                    : 'text-gray-400 hover:text-white'
+                                            } ${!canAdjustGenreLogic ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        >
+                                            Match ALL
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setGenreLogic('OR')}
+                                            disabled={!canAdjustGenreLogic}
+                                            className={`px-4 py-1.5 rounded-full transition-colors ${
+                                                genreLogic === 'OR'
+                                                    ? 'bg-red-600 text-white'
+                                                    : 'text-gray-400 hover:text-white'
+                                            } ${!canAdjustGenreLogic ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        >
+                                            Match ANY
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 

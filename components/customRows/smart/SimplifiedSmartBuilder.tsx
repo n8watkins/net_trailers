@@ -2,12 +2,7 @@
 
 import React, { useState } from 'react'
 import Image from 'next/image'
-import {
-    XMarkIcon,
-    SparklesIcon,
-    ArrowPathIcon,
-    QuestionMarkCircleIcon,
-} from '@heroicons/react/24/outline'
+import { XMarkIcon, SparklesIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline'
 import { WizardStep4Confirmation } from '../WizardStep4Confirmation'
 import NetflixLoader from '../../common/NetflixLoader'
 import { SmartInput } from '../../common/SmartInput'
@@ -15,6 +10,7 @@ import type { CustomRowFormData } from '@/types/customRows'
 import { Content } from '@/typings'
 import { useToast } from '@/hooks/useToast'
 import { authenticatedFetch, AuthRequiredError } from '@/lib/authenticatedFetch'
+import { inferMediaTypeFromContent, inferTopGenresFromContent } from '@/utils/collectionGenreUtils'
 
 interface SimplifiedSmartBuilderProps {
     onClose: () => void
@@ -38,7 +34,7 @@ interface GeneratedRow {
     movies: GeneratedMovie[]
     rowName: string
     mediaType: 'movie' | 'tv' | 'both'
-    genreFallback: number[]
+    genreFallback: string[] // Unified genre IDs like 'action', 'fantasy'
 }
 
 /**
@@ -224,12 +220,22 @@ export function SimplifiedSmartBuilder({
                 .map((id) => contentMap.get(id))
                 .filter((c): c is Content => c !== undefined)
 
+            const fallbackGenres = Array.isArray(generatedRow.genreFallback)
+                ? generatedRow.genreFallback
+                : []
+            const inferredGenres = inferTopGenresFromContent(previewContent, 2)
+            const normalizedGenres = Array.from(
+                new Set([...fallbackGenres, ...inferredGenres])
+            ).slice(0, 2)
+            const inferredMediaType =
+                generatedRow.mediaType || inferMediaTypeFromContent(previewContent, 'both')
+            const infiniteEnabled = enableInfiniteContent && normalizedGenres.length > 0
+
             const formData: CustomRowFormData = {
                 name: generatedRow.rowName,
-                // Only include genres if infinite content is enabled (for fallback pagination)
-                genres: enableInfiniteContent ? generatedRow.genreFallback : [],
-                genreLogic: 'OR',
-                mediaType: generatedRow.mediaType,
+                genres: normalizedGenres,
+                genreLogic: normalizedGenres.length >= 2 ? 'AND' : 'OR',
+                mediaType: inferredMediaType,
                 enabled: true,
                 advancedFilters: {
                     contentIds: activeMovieIds,
@@ -242,6 +248,7 @@ export function SimplifiedSmartBuilder({
                 // Collection visibility and display settings
                 isPublic,
                 displayAsRow,
+                enableInfiniteContent: infiniteEnabled,
             }
 
             console.log('Creating collection with preview content:', previewContent.length, 'items')

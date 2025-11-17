@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { filterContentByAdultFlag } from '../../../../../utils/contentFilter'
 import { filterMatureTVShows } from '../../../../../utils/tvContentRatings'
 import { apiError, apiWarn } from '../../../../../utils/debugLogger'
+import {
+    translateToTMDBGenres,
+    translateToTMDBGenresForBoth,
+} from '../../../../../utils/genreMapping'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -43,13 +47,22 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
         const searchParams = request.nextUrl.searchParams
         const page = searchParams.get('page') || '1'
+        const parsedPage = parseInt(page, 10)
+        const pageNumber = Number.isNaN(parsedPage) ? 1 : parsedPage
         const childSafetyMode = searchParams.get('childSafetyMode')
         const childSafeMode = childSafetyMode === 'true'
 
         // Get row configuration from query params
         const genresParam = searchParams.get('genres')
         const contentIdsParam = searchParams.get('contentIds') // Gemini-curated content list
-        const genreLogic = (searchParams.get('genreLogic') || 'OR') as GenreLogic
+        const baseGenreLogic = (searchParams.get('genreLogic') || 'OR') as GenreLogic
+        const fallbackGenreLogicParam = searchParams.get('fallbackGenreLogic')
+        const fallbackGenreLogic =
+            fallbackGenreLogicParam === 'AND' || fallbackGenreLogicParam === 'OR'
+                ? (fallbackGenreLogicParam as GenreLogic)
+                : null
+        const genreLogic =
+            fallbackGenreLogic && pageNumber > 1 ? fallbackGenreLogic : baseGenreLogic
         const mediaType = (searchParams.get('mediaType') || 'movie') as MediaType
 
         // Handle curated content lists (Gemini recommendations)
@@ -195,7 +208,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
         // Page 2+ for curated rows: Fall back to genre-based content
         // This happens when user scrolls past curated content (if infinite is enabled)
-        if (contentIdsParam && parseInt(page) > 1 && genresParam) {
+        if (contentIdsParam && pageNumber > 1 && genresParam) {
             // Continue with genre-based discovery below
             // (fall through to genre logic)
         }
@@ -208,15 +221,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             )
         }
 
-        const genres = genresParam.split(',').map((g) => parseInt(g.trim(), 10))
-
-        // Apply genre logic parameter
-        // AND logic: with_genres=16,10402 (comma-separated)
-        // OR logic: with_genres=35|53 (pipe-separated)
-        const genreParam =
-            genreLogic === 'AND'
-                ? genres.join(',') // AND: comma-separated
-                : genres.join('|') // OR: pipe-separated
+        // Parse unified genre IDs (e.g., "action,fantasy,scifi")
+        const unifiedGenreIds = genresParam.split(',').map((g) => g.trim())
 
         let enrichedResults: any[] = []
         let totalPages = 0
@@ -224,14 +230,30 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
         // Handle "both" media type by fetching from both endpoints
         if (mediaType === 'both') {
+            // Translate unified genres to TMDB IDs for both media types
+            const { movieIds, tvIds } = translateToTMDBGenresForBoth(unifiedGenreIds)
+
+            // Format genres for TMDB API
+            // AND logic: with_genres=16,10402 (comma-separated)
+            // OR logic: with_genres=35|53 (pipe-separated)
+            const movieGenreParam =
+                genreLogic === 'AND'
+                    ? movieIds.join(',') // AND: comma-separated
+                    : movieIds.join('|') // OR: pipe-separated
+
+            const tvGenreParam =
+                genreLogic === 'AND'
+                    ? tvIds.join(',') // AND: comma-separated
+                    : tvIds.join('|') // OR: pipe-separated
+
             // Build movie URL
-            let movieUrl = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&page=${page}&sort_by=popularity.desc&with_genres=${genreParam}`
+            let movieUrl = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&page=${page}&sort_by=popularity.desc&with_genres=${movieGenreParam}`
             if (childSafeMode) {
                 movieUrl += '&certification_country=US&certification.lte=PG-13'
             }
 
             // Build TV URL
-            const tvUrl = `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&page=${page}&sort_by=popularity.desc&with_genres=${genreParam}`
+            const tvUrl = `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&page=${page}&sort_by=popularity.desc&with_genres=${tvGenreParam}`
 
             // Fetch both in parallel
             const [movieResponse, tvResponse] = await Promise.all([fetch(movieUrl), fetch(tvUrl)])
@@ -275,6 +297,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             totalResults = movieData.total_results + tvData.total_results
         } else {
             // Single media type (movie or tv)
+            // Translate unified genres to TMDB IDs
+            const tmdbGenreIds = translateToTMDBGenres(unifiedGenreIds, mediaType)
+
+            // Format genres for TMDB API
+            const genreParam =
+                genreLogic === 'AND'
+                    ? tmdbGenreIds.join(',') // AND: comma-separated
+                    : tmdbGenreIds.join('|') // OR: pipe-separated
+
             const discoverEndpoint = mediaType === 'movie' ? 'discover/movie' : 'discover/tv'
             let url = `${BASE_URL}/${discoverEndpoint}?api_key=${API_KEY}&language=en-US&page=${page}&sort_by=popularity.desc&with_genres=${genreParam}`
 
@@ -328,7 +359,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             return NextResponse.json(
                 {
                     results: enrichedResults,
-                    page: parseInt(page),
+                    page: pageNumber,
                     total_pages: totalPages,
                     total_results: totalResults,
                     child_safety_enabled: true,
@@ -347,7 +378,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         return NextResponse.json(
             {
                 results: enrichedResults,
-                page: parseInt(page),
+                page: pageNumber,
                 total_pages: totalPages,
                 total_results: totalResults,
             },

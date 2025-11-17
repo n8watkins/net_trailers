@@ -2,52 +2,49 @@
 
 import React from 'react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
-import { Genre, MOVIE_GENRES, TV_GENRES } from '../../constants/genres'
+import { getUnifiedGenresByMediaType } from '../../constants/unifiedGenres'
 import { CUSTOM_ROW_CONSTRAINTS } from '../../types/customRows'
 
 interface GenreMultiSelectProps {
-    selectedGenres: number[]
-    onChange: (genres: number[]) => void
+    selectedGenres: string[] // Now uses unified genre IDs like 'action', 'fantasy'
+    onChange: (genres: string[]) => void
     mediaType: 'movie' | 'tv' | 'both'
     maxGenres?: number
+    childSafeMode?: boolean
 }
 
 /**
  * GenreMultiSelect Component
  *
- * Allows users to select multiple genres for custom rows.
+ * Allows users to select multiple unified genres for custom rows.
  * Displays selected genres as chips that can be removed.
+ * Automatically maps to correct TMDB genre IDs behind the scenes.
  * Enforces max genre limit from constraints.
- * For "both" media type, shows genres that exist in both movies and TV.
  */
 export function GenreMultiSelect({
     selectedGenres,
     onChange,
     mediaType,
     maxGenres = CUSTOM_ROW_CONSTRAINTS.MAX_GENRES_PER_ROW,
+    childSafeMode = false,
 }: GenreMultiSelectProps) {
-    // For "both", use genres that exist in both movie and TV genre lists
-    const availableGenres =
-        mediaType === 'both'
-            ? MOVIE_GENRES.filter((mg) => TV_GENRES.some((tg) => tg.id === mg.id))
-            : mediaType === 'movie'
-              ? MOVIE_GENRES
-              : TV_GENRES
+    // Get unified genres filtered by media type and child safety
+    const availableGenres = getUnifiedGenresByMediaType(mediaType, childSafeMode)
 
     // Filter out already selected genres
     const unselectedGenres = availableGenres.filter((g) => !selectedGenres.includes(g.id))
 
-    const handleAddGenre = (genreId: number) => {
+    const handleAddGenre = (genreId: string) => {
         if (selectedGenres.length < maxGenres) {
             onChange([...selectedGenres, genreId])
         }
     }
 
-    const handleRemoveGenre = (genreId: number) => {
+    const handleRemoveGenre = (genreId: string) => {
         onChange(selectedGenres.filter((id) => id !== genreId))
     }
 
-    const getGenreName = (genreId: number): string => {
+    const getGenreName = (genreId: string): string => {
         return availableGenres.find((g) => g.id === genreId)?.name || 'Unknown'
     }
 

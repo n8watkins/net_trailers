@@ -68,7 +68,7 @@ export interface UserList {
     enabled: boolean // Toggle visibility without deletion
 
     // TMDB-based collection settings (for collectionType: 'tmdb-genre')
-    genres?: number[] // TMDB genre IDs (required for tmdb-genre type)
+    genres?: string[] // Unified genre IDs like 'action', 'fantasy', 'romance' (required for tmdb-genre type)
     genreLogic?: 'AND' | 'OR' // How to combine genres (default: 'OR')
     mediaType?: 'movie' | 'tv' | 'both' // Content type(s) to show (default: 'both')
     advancedFilters?: AdvancedFilters // Advanced filtering options
@@ -165,6 +165,9 @@ export interface UpdateListRequest {
     // Auto-update settings
     autoUpdateEnabled?: boolean
     updateFrequency?: 'daily' | 'weekly' | 'never'
+
+    // Infinite content settings
+    canGenerateMore?: boolean
 }
 
 export interface AddToListRequest {

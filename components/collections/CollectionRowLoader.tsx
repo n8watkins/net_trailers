@@ -31,14 +31,15 @@ export function CollectionRowLoader({ collection, pageType }: CollectionRowLoade
     const { isEnabled: childSafetyMode } = useChildSafety()
     const userId = getUserId()
 
+    const isManualCollection =
+        collection.collectionType === 'manual' || collection.collectionType === 'ai-generated'
+
     useEffect(() => {
         // For manual/ai-generated collections, use items directly
-        if (
-            collection.collectionType === 'manual' ||
-            collection.collectionType === 'ai-generated'
-        ) {
-            setContent(collection.items || [])
+        if (isManualCollection) {
+            setContent(deduplicateContent(collection.items || []))
             setIsLoading(false)
+            setError(null)
             return
         }
 
@@ -199,14 +200,17 @@ export function CollectionRowLoader({ collection, pageType }: CollectionRowLoade
 
         loadContent()
     }, [
-        collection.id,
+        childSafetyMode,
+        collection.advancedFilters?.contentIds?.join(','),
         collection.collectionType,
         collection.genres?.join(','),
         collection.genreLogic,
-        collection.mediaType,
+        collection.id,
         collection.isSpecialCollection,
+        collection.items,
+        collection.mediaType,
+        isManualCollection,
         userId,
-        childSafetyMode,
     ])
 
     // Don't render if disabled
@@ -244,10 +248,28 @@ export function CollectionRowLoader({ collection, pageType }: CollectionRowLoade
 
     // Build API endpoint for infinite scroll
     let apiEndpoint: string | undefined
+    const hasGenres = collection.genres && collection.genres.length > 0
+    const infiniteEnabled = (collection.canGenerateMore ?? false) && !!hasGenres
 
-    // Manual/AI collections don't need infinite scroll (they have fixed items)
-    if (collection.collectionType === 'manual' || collection.collectionType === 'ai-generated') {
-        apiEndpoint = undefined
+    if (isManualCollection) {
+        if (infiniteEnabled && hasGenres) {
+            const manualEndpoint = new URL(
+                `/api/custom-rows/${collection.id}/content`,
+                window.location.origin
+            )
+            manualEndpoint.searchParams.append('genres', collection.genres!.join(','))
+            manualEndpoint.searchParams.append('genreLogic', collection.genreLogic || 'OR')
+            if (collection.genreLogic === 'AND') {
+                manualEndpoint.searchParams.append('fallbackGenreLogic', 'OR')
+            }
+            if (collection.mediaType) {
+                manualEndpoint.searchParams.append('mediaType', collection.mediaType)
+            }
+            if (childSafetyMode) {
+                manualEndpoint.searchParams.append('childSafetyMode', 'true')
+            }
+            apiEndpoint = manualEndpoint.pathname + manualEndpoint.search
+        }
     } else {
         // TMDB-based collections support infinite scroll
         const hasCuratedContent =
@@ -289,10 +311,16 @@ export function CollectionRowLoader({ collection, pageType }: CollectionRowLoade
                 if (hasGenres) {
                     apiEndpointUrl.searchParams.append('genres', collection.genres!.join(','))
                     apiEndpointUrl.searchParams.append('genreLogic', collection.genreLogic || 'OR')
+                    if (collection.genreLogic === 'AND') {
+                        apiEndpointUrl.searchParams.append('fallbackGenreLogic', 'OR')
+                    }
                 }
             } else if (hasGenres) {
                 apiEndpointUrl.searchParams.append('genres', collection.genres!.join(','))
                 apiEndpointUrl.searchParams.append('genreLogic', collection.genreLogic || 'OR')
+                if (collection.genreLogic === 'AND') {
+                    apiEndpointUrl.searchParams.append('fallbackGenreLogic', 'OR')
+                }
             }
 
             if (collection.mediaType) {
@@ -305,12 +333,7 @@ export function CollectionRowLoader({ collection, pageType }: CollectionRowLoade
         }
     }
 
-    return (
-        <Row
-            title={collection.name}
-            content={content}
-            apiEndpoint={apiEndpoint}
-            pageType={pageType}
-        />
-    )
+    const rowTitle = collection.emoji ? `${collection.emoji} ${collection.name}` : collection.name
+
+    return <Row title={rowTitle} content={content} apiEndpoint={apiEndpoint} pageType={pageType} />
 }

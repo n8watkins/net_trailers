@@ -21,6 +21,8 @@
         "test:clear-user": "npx tsx scripts/clear-test-user.ts",
         "delete-all-user-data": "npx tsx scripts/delete-all-user-data.ts",
         "seed:rankings": "npx tsx scripts/seedRankings.ts",
+        "migrate:genres": "npx tsx scripts/migrate-genres-to-unified.ts",
+        "migrate:genres:dry-run": "npx tsx scripts/migrate-genres-to-unified.ts --dry-run",
         "analyze": "ANALYZE=true npm run build",
         "prepare": "husky"
     },

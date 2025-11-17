@@ -66,7 +66,7 @@ export const SYSTEM_MOVIE_COLLECTIONS: Collection[] = [
         displayAsRow: true,
         order: 2,
         enabled: true,
-        genres: [28], // Action
+        genres: ['action'], // Action
         genreLogic: 'OR',
         mediaType: 'movie',
         isSystemCollection: true,
@@ -85,7 +85,7 @@ export const SYSTEM_MOVIE_COLLECTIONS: Collection[] = [
         displayAsRow: true,
         order: 3,
         enabled: true,
-        genres: [35], // Comedy
+        genres: ['comedy'], // Comedy
         genreLogic: 'OR',
         mediaType: 'movie',
         isSystemCollection: true,
@@ -104,7 +104,7 @@ export const SYSTEM_MOVIE_COLLECTIONS: Collection[] = [
         displayAsRow: true,
         order: 4,
         enabled: true,
-        genres: [878], // Science Fiction
+        genres: ['scifi'], // Science Fiction
         genreLogic: 'OR',
         mediaType: 'movie',
         isSystemCollection: true,
@@ -123,7 +123,7 @@ export const SYSTEM_MOVIE_COLLECTIONS: Collection[] = [
         displayAsRow: true,
         order: 5,
         enabled: true,
-        genres: [27], // Horror
+        genres: ['horror'], // Horror
         genreLogic: 'OR',
         mediaType: 'movie',
         isSystemCollection: true,
@@ -142,7 +142,7 @@ export const SYSTEM_MOVIE_COLLECTIONS: Collection[] = [
         displayAsRow: true,
         order: 6,
         enabled: true,
-        genres: [10749], // Romance
+        genres: ['romance'], // Romance
         genreLogic: 'OR',
         mediaType: 'movie',
         isSystemCollection: true,
@@ -207,7 +207,7 @@ export const SYSTEM_TV_COLLECTIONS: Collection[] = [
         displayAsRow: true,
         order: 2,
         enabled: true,
-        genres: [10759], // Action & Adventure
+        genres: ['action'], // Action & Adventure
         genreLogic: 'OR',
         mediaType: 'tv',
         isSystemCollection: true,
@@ -226,7 +226,7 @@ export const SYSTEM_TV_COLLECTIONS: Collection[] = [
         displayAsRow: true,
         order: 3,
         enabled: true,
-        genres: [35], // Comedy
+        genres: ['comedy'], // Comedy
         genreLogic: 'OR',
         mediaType: 'tv',
         isSystemCollection: true,
@@ -245,7 +245,7 @@ export const SYSTEM_TV_COLLECTIONS: Collection[] = [
         displayAsRow: true,
         order: 4,
         enabled: true,
-        genres: [10765], // Sci-Fi & Fantasy
+        genres: ['scifi'], // Sci-Fi & Fantasy
         genreLogic: 'OR',
         mediaType: 'tv',
         isSystemCollection: true,
@@ -264,7 +264,7 @@ export const SYSTEM_TV_COLLECTIONS: Collection[] = [
         displayAsRow: true,
         order: 5,
         enabled: true,
-        genres: [10762], // Kids
+        genres: ['kids'], // Kids
         genreLogic: 'OR',
         mediaType: 'tv',
         isSystemCollection: true,
@@ -283,7 +283,7 @@ export const SYSTEM_TV_COLLECTIONS: Collection[] = [
         displayAsRow: true,
         order: 6,
         enabled: true,
-        genres: [10764], // Reality
+        genres: ['reality'], // Reality
         genreLogic: 'OR',
         mediaType: 'tv',
         isSystemCollection: true,
@@ -348,7 +348,7 @@ export const SYSTEM_HOME_COLLECTIONS: Collection[] = [
         displayAsRow: true,
         order: 2,
         enabled: true,
-        genres: [16], // Animation
+        genres: ['animation'], // Animation
         genreLogic: 'OR',
         mediaType: 'both',
         isSystemCollection: true,
@@ -367,7 +367,7 @@ export const SYSTEM_HOME_COLLECTIONS: Collection[] = [
         displayAsRow: true,
         order: 3,
         enabled: true,
-        genres: [10751], // Family
+        genres: ['family'], // Family
         genreLogic: 'OR',
         mediaType: 'both',
         isSystemCollection: true,
@@ -386,7 +386,7 @@ export const SYSTEM_HOME_COLLECTIONS: Collection[] = [
         displayAsRow: true,
         order: 4,
         enabled: true,
-        genres: [99], // Documentary
+        genres: ['documentary'], // Documentary
         genreLogic: 'OR',
         mediaType: 'both',
         isSystemCollection: true,
@@ -405,7 +405,7 @@ export const SYSTEM_HOME_COLLECTIONS: Collection[] = [
         displayAsRow: true,
         order: 5,
         enabled: true,
-        genres: [9648], // Mystery
+        genres: ['mystery'], // Mystery
         genreLogic: 'OR',
         mediaType: 'both',
         isSystemCollection: true,
@@ -424,7 +424,7 @@ export const SYSTEM_HOME_COLLECTIONS: Collection[] = [
         displayAsRow: true,
         order: 6,
         enabled: true,
-        genres: [10749, 18], // Romance + Drama (multi-genre with AND logic)
+        genres: ['romance', 'drama'], // Romance + Drama (multi-genre with AND logic)
         genreLogic: 'AND',
         mediaType: 'both',
         isSystemCollection: true,

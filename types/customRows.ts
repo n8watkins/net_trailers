@@ -9,7 +9,7 @@
 export interface BaseRowConfig {
     id: string // UUID v4 or system-{type}-{name}
     name: string // User-facing title (3-50 chars)
-    genres: number[] // TMDB genre IDs (1-5 genres for custom rows, 0 for special system rows like Trending/Top Rated)
+    genres: string[] // Unified genre IDs like 'action', 'fantasy' (1-5 genres for custom rows, 0 for special system rows)
     genreLogic: 'AND' | 'OR' // How to combine genres
     mediaType: 'movie' | 'tv' | 'both' // Content type(s) to show
     order: number // Display order (0-based, lower = higher)
@@ -100,7 +100,7 @@ export interface SystemRowPreference {
     enabled: boolean // Whether the row is enabled
     order: number // Custom order position (overrides default)
     customName?: string // Custom name override (only for editable system rows)
-    customGenres?: number[] // Custom genre override (only for editable system rows)
+    customGenres?: string[] // Custom unified genre IDs (only for editable system rows)
     customGenreLogic?: 'AND' | 'OR' // Custom genre logic override
 }
 
@@ -114,7 +114,7 @@ export interface SystemRowPreferences {
  */
 export interface CustomRowFormData {
     name: string
-    genres: number[]
+    genres: string[] // Unified genre IDs like 'action', 'fantasy'
     genreLogic: 'AND' | 'OR'
     mediaType: 'movie' | 'tv' | 'both'
     enabled: boolean
@@ -124,6 +124,7 @@ export interface CustomRowFormData {
     previewContent?: any[] // Preview content from TMDB (for collections)
     isPublic?: boolean // Whether the collection is public
     displayAsRow?: boolean // Whether to display the collection as a row on home
+    enableInfiniteContent?: boolean // Whether to allow infinite TMDB content
 }
 
 /**

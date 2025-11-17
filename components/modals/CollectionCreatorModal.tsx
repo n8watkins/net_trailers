@@ -20,6 +20,7 @@ import useUserData from '../../hooks/useUserData'
 import Image from 'next/image'
 import { Content, getTitle, getYear, isMovie } from '../../typings'
 import { authenticatedFetch, AuthRequiredError } from '@/lib/authenticatedFetch'
+import { inferMediaTypeFromContent, inferTopGenresFromContent } from '@/utils/collectionGenreUtils'
 
 const ITEMS_PER_PAGE = 8 // 2 rows x 4 columns
 
@@ -126,8 +127,7 @@ export default function CollectionCreatorModal() {
     const getUserId = useSessionStore((state) => state.getUserId)
     const { createList, addToList } = useUserData()
     const { showSuccess, showError } = useToast()
-    const { query, mode, conversationHistory, addResults, addToConversation } =
-        useSmartSearchStore()
+    const { query, mode, addResults, addToConversation } = useSmartSearchStore()
 
     const [selectedEmoji, setSelectedEmoji] = useState('📺')
     const [selectedColor, setSelectedColor] = useState('#3b82f6') // blue-500
@@ -188,6 +188,13 @@ export default function CollectionCreatorModal() {
         setIsCreating(true)
 
         try {
+            const derivedGenres = inferTopGenresFromContent(collectionCreatorModal.content, 2)
+            const derivedMediaType = inferMediaTypeFromContent(
+                collectionCreatorModal.content,
+                'both'
+            )
+            const infiniteEnabled = derivedGenres.length > 0
+
             // Create the list using useUserData hook
             const newListResult = createList({
                 name: collectionCreatorModal.name.trim(),
@@ -197,9 +204,15 @@ export default function CollectionCreatorModal() {
                 displayAsRow,
                 collectionType: 'ai-generated', // This is from smart search
                 originalQuery: query, // Store the original search query
-                canGenerateMore: true, // AI-generated collections can always generate more
+                canGenerateMore: infiniteEnabled,
                 autoUpdateEnabled: false, // AI-generated collections don't auto-update
                 updateFrequency: 'never',
+                genres: derivedGenres,
+                genreLogic: derivedGenres.length >= 2 ? 'AND' : 'OR',
+                mediaType: derivedMediaType,
+                advancedFilters: {
+                    contentIds: collectionCreatorModal.content.map((item) => item.id),
+                },
             })
 
             // Handle both sync and async returns

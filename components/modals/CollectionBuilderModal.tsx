@@ -5,12 +5,15 @@ import { useRouter } from 'next/navigation'
 import { useModalStore } from '../../stores/modalStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useToast } from '../../hooks/useToast'
-import { useAuthStatus } from '../../hooks/useAuthStatus'
 import useUserData from '../../hooks/useUserData'
 import { SimplifiedSmartBuilder } from '../customRows/smart/SimplifiedSmartBuilder'
 import { SmartRowBuilder } from '../customRows/smart/SmartRowBuilder'
 import { CustomRowWizard } from '../customRows/CustomRowWizard'
 import { CustomRowFormData } from '../../types/customRows'
+import {
+    inferMediaTypeFromContent,
+    inferTopGenresFromContent,
+} from '../../utils/collectionGenreUtils'
 
 type CreationMode = 'traditional' | 'smart'
 
@@ -31,7 +34,6 @@ function CollectionBuilderModal() {
     const getUserId = useSessionStore((state: any) => state.getUserId)
     const sessionType = useSessionStore((state: any) => state.sessionType)
     const { showSuccess, showError } = useToast()
-    const { isGuest } = useAuthStatus()
     const { createList, addToList } = useUserData()
 
     const [mode, setMode] = useState<CreationMode>('smart')
@@ -52,6 +54,17 @@ function CollectionBuilderModal() {
         }
 
         try {
+            const previewContent = formData.previewContent ?? []
+            const normalizedGenres = (
+                formData.genres?.length
+                    ? formData.genres
+                    : inferTopGenresFromContent(previewContent, 2)
+            ).slice(0, 2)
+            const derivedMediaType =
+                formData.mediaType || inferMediaTypeFromContent(previewContent, 'both')
+            const infiniteEnabled = formData.enableInfiniteContent ?? normalizedGenres.length > 0
+            const genreLogic = formData.genreLogic || (normalizedGenres.length >= 2 ? 'AND' : 'OR')
+
             // Create collection from the form data
             const newListResult = createList({
                 name: formData.name,
@@ -62,6 +75,11 @@ function CollectionBuilderModal() {
                 collectionType: mode === 'smart' ? 'ai-generated' : 'manual',
                 autoUpdateEnabled: false, // Collections created here don't auto-update
                 updateFrequency: 'never',
+                genres: normalizedGenres,
+                genreLogic,
+                mediaType: derivedMediaType,
+                advancedFilters: formData.advancedFilters,
+                canGenerateMore: infiniteEnabled,
             })
 
             // Handle both sync and async returns

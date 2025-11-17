@@ -207,6 +207,11 @@ export class UserListsService {
             sanitizedUpdates.updateFrequency = request.updateFrequency
         }
 
+        // Infinite content toggle
+        if (request.canGenerateMore !== undefined) {
+            sanitizedUpdates.canGenerateMore = request.canGenerateMore
+        }
+
         const updatedList = {
             ...state.userCreatedWatchlists[listIndex],
             ...sanitizedUpdates,

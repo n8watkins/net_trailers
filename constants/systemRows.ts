@@ -37,7 +37,7 @@ export const SYSTEM_MOVIE_ROWS: SystemRowConfig[] = [
     {
         id: 'system-movie-action',
         name: 'Action-Packed',
-        genres: [28], // Action
+        genres: ['action'], // Action
         genreLogic: 'OR',
         mediaType: 'movie',
         order: 2,
@@ -45,7 +45,7 @@ export const SYSTEM_MOVIE_ROWS: SystemRowConfig[] = [
     {
         id: 'system-movie-comedy',
         name: 'Comedy Classics',
-        genres: [35], // Comedy
+        genres: ['comedy'], // Comedy
         genreLogic: 'OR',
         mediaType: 'movie',
         order: 3,
@@ -53,7 +53,7 @@ export const SYSTEM_MOVIE_ROWS: SystemRowConfig[] = [
     {
         id: 'system-movie-scifi',
         name: 'Sci-Fi Adventures',
-        genres: [878], // Science Fiction
+        genres: ['scifi'], // Science Fiction
         genreLogic: 'OR',
         mediaType: 'movie',
         order: 4,
@@ -61,7 +61,7 @@ export const SYSTEM_MOVIE_ROWS: SystemRowConfig[] = [
     {
         id: 'system-movie-horror',
         name: 'Horror Thrills',
-        genres: [27], // Horror
+        genres: ['horror'], // Horror
         genreLogic: 'OR',
         mediaType: 'movie',
         order: 5,
@@ -69,7 +69,7 @@ export const SYSTEM_MOVIE_ROWS: SystemRowConfig[] = [
     {
         id: 'system-movie-romance',
         name: 'Romantic Films',
-        genres: [10749], // Romance
+        genres: ['romance'], // Romance
         genreLogic: 'OR',
         mediaType: 'movie',
         order: 6,
@@ -105,7 +105,7 @@ export const SYSTEM_TV_ROWS: SystemRowConfig[] = [
     {
         id: 'system-tv-action',
         name: 'Action & Adventure',
-        genres: [10759], // Action & Adventure
+        genres: ['action'], // Action & Adventure
         genreLogic: 'OR',
         mediaType: 'tv',
         order: 2,
@@ -113,7 +113,7 @@ export const SYSTEM_TV_ROWS: SystemRowConfig[] = [
     {
         id: 'system-tv-comedy',
         name: 'Comedy Series',
-        genres: [35], // Comedy
+        genres: ['comedy'], // Comedy
         genreLogic: 'OR',
         mediaType: 'tv',
         order: 3,
@@ -121,7 +121,7 @@ export const SYSTEM_TV_ROWS: SystemRowConfig[] = [
     {
         id: 'system-tv-scifi',
         name: 'Sci-Fi & Fantasy',
-        genres: [10765], // Sci-Fi & Fantasy
+        genres: ['scifi'], // Sci-Fi & Fantasy
         genreLogic: 'OR',
         mediaType: 'tv',
         order: 4,
@@ -129,7 +129,7 @@ export const SYSTEM_TV_ROWS: SystemRowConfig[] = [
     {
         id: 'system-tv-kids',
         name: 'Kids Shows',
-        genres: [10762], // Kids
+        genres: ['kids'], // Kids
         genreLogic: 'OR',
         mediaType: 'tv',
         order: 5,
@@ -137,7 +137,7 @@ export const SYSTEM_TV_ROWS: SystemRowConfig[] = [
     {
         id: 'system-tv-reality',
         name: 'Reality TV',
-        genres: [10764], // Reality
+        genres: ['reality'], // Reality
         genreLogic: 'OR',
         mediaType: 'tv',
         order: 6,
@@ -173,7 +173,7 @@ export const SYSTEM_HOME_ROWS: SystemRowConfig[] = [
     {
         id: 'system-home-animation',
         name: 'Animated Favorites',
-        genres: [16], // Animation
+        genres: ['animation'], // Animation
         genreLogic: 'OR',
         mediaType: 'both',
         order: 2,
@@ -181,7 +181,7 @@ export const SYSTEM_HOME_ROWS: SystemRowConfig[] = [
     {
         id: 'system-home-family',
         name: 'Family Fun',
-        genres: [10751], // Family
+        genres: ['family'], // Family
         genreLogic: 'OR',
         mediaType: 'both',
         order: 3,
@@ -189,7 +189,7 @@ export const SYSTEM_HOME_ROWS: SystemRowConfig[] = [
     {
         id: 'system-home-documentary',
         name: 'Documentaries',
-        genres: [99], // Documentary
+        genres: ['documentary'], // Documentary
         genreLogic: 'OR',
         mediaType: 'both',
         order: 4,
@@ -197,7 +197,7 @@ export const SYSTEM_HOME_ROWS: SystemRowConfig[] = [
     {
         id: 'system-home-mystery',
         name: 'Mystery & Suspense',
-        genres: [9648], // Mystery
+        genres: ['mystery'], // Mystery
         genreLogic: 'OR',
         mediaType: 'both',
         order: 5,
@@ -205,7 +205,7 @@ export const SYSTEM_HOME_ROWS: SystemRowConfig[] = [
     {
         id: 'system-home-romance-drama',
         name: 'Romantic Dramas',
-        genres: [10749, 18], // Romance + Drama (multi-genre with AND logic)
+        genres: ['romance', 'drama'], // Romance + Drama (multi-genre with AND logic)
         genreLogic: 'AND',
         mediaType: 'both',
         order: 6,
