@@ -44,7 +44,7 @@ export async function POST() {
                 {
                     parts: [
                         {
-                            text: 'Generate a creative idea for a movie/TV show ranking or collection. This should be something specific and rankable with multiple items. Examples: "All Christopher Nolan films", "Leonardo DiCaprio\'s best performances", "Marvel Cinematic Universe movies", "Studio Ghibli complete filmography", "Quentin Tarantino ranked", "Best 90s action movies", "Most iconic sci-fi franchises". Focus on: complete filmographies, franchises, director collections, actor\'s best work, genre-specific lists, or thematic compilations. Return ONLY the ranking idea without quotes and without a period at the end. Make it specific and interesting to rank.',
+                            text: 'Generate a creative idea for ranking movies or TV shows (complete series, not individual episodes). This should be something specific and rankable with multiple films or shows. Examples: "All Christopher Nolan films", "Leonardo DiCaprio\'s best performances", "Marvel Cinematic Universe movies", "Studio Ghibli complete filmography", "Quentin Tarantino ranked", "Best 90s action movies", "Most iconic sci-fi franchises", "Every Wes Anderson film ranked". Focus on: complete filmographies, movie franchises, director collections, actor\'s best work, complete TV series (not episodes), genre-specific lists, or thematic compilations. IMPORTANT: Rank complete movies or complete TV shows, never individual episodes. Return ONLY the ranking idea without quotes and without a period at the end. Make it specific and interesting to rank.',
                         },
                     ],
                 },
