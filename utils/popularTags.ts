@@ -17,9 +17,9 @@ export interface PopularTag {
 export const POPULAR_TAGS: PopularTag[] = [
     {
         id: 'mcu',
-        name: 'Marvel Cinematic Universe',
+        name: 'MCU',
         emoji: '🦸',
-        description: 'MCU movies and shows',
+        description: 'Marvel Cinematic Universe movies and shows',
         movieIds: [
             // Phase 1
             1726, // Iron Man
@@ -73,9 +73,9 @@ export const POPULAR_TAGS: PopularTag[] = [
     },
     {
         id: 'dc',
-        name: 'DC Universe',
+        name: 'DC',
         emoji: '🦇',
-        description: 'DC Comics adaptations',
+        description: 'DC Universe movies and shows',
         movieIds: [
             // Dark Knight Trilogy
             272, // Batman Begins
@@ -155,9 +155,9 @@ export const POPULAR_TAGS: PopularTag[] = [
     },
     {
         id: 'harry-potter',
-        name: 'Wizarding World',
+        name: 'Harry Potter',
         emoji: '⚡',
-        description: 'Harry Potter & Fantastic Beasts',
+        description: 'Wizarding World - Harry Potter & Fantastic Beasts',
         movieIds: [
             671, // Harry Potter and the Philosopher's Stone
             672, // Harry Potter and the Chamber of Secrets
@@ -175,7 +175,7 @@ export const POPULAR_TAGS: PopularTag[] = [
     },
     {
         id: 'lotr',
-        name: 'Middle-earth',
+        name: 'LOTR',
         emoji: '🧙',
         description: 'Lord of the Rings & The Hobbit',
         movieIds: [
@@ -192,7 +192,7 @@ export const POPULAR_TAGS: PopularTag[] = [
     },
     {
         id: 'pixar',
-        name: 'Pixar Classics',
+        name: 'Pixar',
         emoji: '🎨',
         description: 'Pixar animated films',
         movieIds: [
@@ -221,9 +221,9 @@ export const POPULAR_TAGS: PopularTag[] = [
     },
     {
         id: 'disney-renaissance',
-        name: 'Disney Animated Classics',
+        name: 'Disney Animation',
         emoji: '👸',
-        description: 'Classic Disney animation',
+        description: 'Classic Disney animated films',
         movieIds: [
             10144, // The Little Mermaid
             10020, // Beauty and the Beast
@@ -248,9 +248,9 @@ export const POPULAR_TAGS: PopularTag[] = [
     },
     {
         id: 'horror',
-        name: 'Horror Essentials',
+        name: 'Horror',
         emoji: '👻',
-        description: 'Scary movies and shows',
+        description: 'Horror movies and shows',
         movieIds: [
             694, // The Shining
             539, // Psycho
@@ -263,14 +263,10 @@ export const POPULAR_TAGS: PopularTag[] = [
             284052, // The Conjuring 2
             447332, // A Quiet Place
             521777, // A Quiet Place Part II
-            760161, // Orphan: First Kill
             760741, // Scream (2022)
             646385, // Scream VI
-            678512, // Sound of Freedom
             663712, // Terrifier 2
             891699, // M3GAN
-            840430, // The Exorcist: Believer
-            762430, // Talk to Me
             810693, // Evil Dead Rise
             840326, // Saw X
             968051, // The Nun II
@@ -290,9 +286,9 @@ export const POPULAR_TAGS: PopularTag[] = [
     },
     {
         id: 'sci-fi',
-        name: 'Sci-Fi Masterpieces',
+        name: 'Sci-Fi',
         emoji: '🚀',
-        description: 'Science fiction classics',
+        description: 'Science fiction films and shows',
         movieIds: [
             157336, // Interstellar
             27205, // Inception
@@ -331,9 +327,9 @@ export const POPULAR_TAGS: PopularTag[] = [
     },
     {
         id: 'anime',
-        name: 'Anime Favorites',
+        name: 'Anime',
         emoji: '🎌',
-        description: 'Popular anime series',
+        description: 'Popular anime films and series',
         movieIds: [
             129, // Spirited Away
             4935, // Howl's Moving Castle
@@ -391,9 +387,9 @@ export const POPULAR_TAGS: PopularTag[] = [
     },
     {
         id: 'comedy',
-        name: 'Comedy Gold',
+        name: 'Comedy',
         emoji: '😂',
-        description: 'Hilarious movies and shows',
+        description: 'Comedy films and shows',
         movieIds: [
             293660, // Deadpool
             383498, // Deadpool 2
@@ -424,9 +420,9 @@ export const POPULAR_TAGS: PopularTag[] = [
     },
     {
         id: 'romance',
-        name: 'Romance & Drama',
+        name: 'Romance',
         emoji: '💕',
-        description: 'Love stories and dramas',
+        description: 'Romance films and shows',
         movieIds: [
             597, // Titanic
             11036, // The Notebook
@@ -448,9 +444,9 @@ export const POPULAR_TAGS: PopularTag[] = [
     },
     {
         id: 'action',
-        name: 'Action Blockbusters',
+        name: 'Action',
         emoji: '💥',
-        description: 'High-octane action films',
+        description: 'Action films and shows',
         movieIds: [
             245891, // John Wick
             324552, // John Wick: Chapter 2
@@ -480,18 +476,18 @@ export const POPULAR_TAGS: PopularTag[] = [
     },
     {
         id: 'netflix-originals',
-        name: 'Netflix Originals',
+        name: 'Netflix',
         emoji: '📺',
-        description: 'Popular Netflix shows',
+        description: 'Netflix original films and shows',
         movieIds: [
-            333339, // Ready Player One
-            680, // Pulp Fiction
-            419704, // Glass
             419430, // Bird Box
             452832, // Red Notice
             762430, // The Gray Man
-            840326, // Knives Out
             661374, // Glass Onion
+            840326, // Knives Out
+            568124, // The Adam Project
+            631842, // Don't Look Up
+            447362, // The Irishman
         ],
         tvShowIds: [
             66732, // Stranger Things
@@ -510,7 +506,7 @@ export const POPULAR_TAGS: PopularTag[] = [
     },
     {
         id: 'christopher-nolan',
-        name: 'Christopher Nolan',
+        name: 'Nolan',
         emoji: '🎬',
         description: 'Directed by Christopher Nolan',
         movieIds: [
@@ -529,7 +525,7 @@ export const POPULAR_TAGS: PopularTag[] = [
     },
     {
         id: 'tarantino',
-        name: 'Quentin Tarantino',
+        name: 'Tarantino',
         emoji: '🎥',
         description: 'Directed by Quentin Tarantino',
         movieIds: [
@@ -573,9 +569,9 @@ export const POPULAR_TAGS: PopularTag[] = [
     },
     {
         id: 'oscar-winners',
-        name: 'Oscar Winners',
+        name: 'Oscars',
         emoji: '🏆',
-        description: 'Academy Award winners',
+        description: 'Oscar-winning films',
         movieIds: [
             278, // The Shawshank Redemption
             238, // The Godfather
@@ -604,9 +600,9 @@ export const POPULAR_TAGS: PopularTag[] = [
     },
     {
         id: 'mystery-thriller',
-        name: 'Mystery & Thriller',
+        name: 'Thriller',
         emoji: '🕵️',
-        description: 'Edge-of-your-seat thrillers',
+        description: 'Mystery and thriller films',
         movieIds: [
             102651, // Malignant
             546554, // Knives Out
@@ -637,9 +633,9 @@ export const POPULAR_TAGS: PopularTag[] = [
     },
     {
         id: 'studio-ghibli',
-        name: 'Studio Ghibli',
+        name: 'Ghibli',
         emoji: '🌸',
-        description: 'Beloved Ghibli animated classics',
+        description: 'Studio Ghibli animated films',
         movieIds: [
             129, // Spirited Away
             810, // My Neighbor Totoro
@@ -661,9 +657,9 @@ export const POPULAR_TAGS: PopularTag[] = [
     },
     {
         id: 'james-bond',
-        name: 'James Bond 007',
+        name: '007',
         emoji: '🕴️',
-        description: '007 spy thriller franchise',
+        description: 'James Bond spy thriller franchise',
         movieIds: [
             646, // Skyfall
             37724, // Casino Royale
@@ -735,71 +731,28 @@ export const POPULAR_TAGS: PopularTag[] = [
     },
     {
         id: 'biographical',
-        name: 'Based on True Stories',
+        name: 'Biographical',
         emoji: '📖',
         description: 'Biographical and true story films',
         movieIds: [
             424, // Schindler's List
-            244786, // Whiplash
-            1422, // The Departed
             129, // 127 Hours
-            19995, // Avatar
-            335984, // Blade Runner 2049
-            12477, // Gravity
-            157336, // Interstellar
-            70160, // The Hunter
-            106646, // Shutter Island
             13223, // The Social Network
             14161, // Moneyball
             205596, // The Imitation Game
-            194662, // Birdman
             314365, // The Big Short
-            321612, // Beauty and the Beast
-            376867, // Moonlight
-            340102, // The New Mutants
-            382322, // The King's Man
-            531428, // Portrait of a Lady on Fire
+            872585, // Oppenheimer
+            466420, // Killers of the Flower Moon
+            244786, // Whiplash
+            857, // Saving Private Ryan
+            120467, // Dunkirk
+            381284, // Bohemian Rhapsody
         ],
         tvShowIds: [
-            1396, // Breaking Bad
-            1408, // House
-            4614, // NCIS
             46533, // Chernobyl
-        ],
-    },
-    {
-        id: 'psychological-thriller',
-        name: 'Psychological Thrillers',
-        emoji: '🧠',
-        description: 'Mind-bending psychological films',
-        movieIds: [
-            155, // The Dark Knight
-            680, // Pulp Fiction
-            13, // Forrest Gump
-            550, // Fight Club
-            496243, // Parasite
-            120, // The Lord of the Rings: The Fellowship of the Ring
-            27205, // Inception
-            155, // Se7en
-            106646, // Shutter Island
-            680, // No Country for Old Men
-            77, // Memento
-            489931, // Gone Girl
-            209112, // The Gift
-            313369, // La La Land
-            274, // The Silence of the Lambs
-            745, // The Sixth Sense
-            769, // GoodFellas
-            600, // Full Metal Jacket
-            329, // Jurassic Park
-            278, // The Shawshank Redemption
-        ],
-        tvShowIds: [
-            1396, // Breaking Bad
-            1408, // House
-            60059, // Better Call Saul
-            61889, // Mindhunter
-            46952, // The Blacklist
+            60574, // Peaky Blinders
+            1405, // Narcos
+            73586, // Narcos: Mexico
         ],
     },
     {
@@ -838,42 +791,39 @@ export const POPULAR_TAGS: PopularTag[] = [
     },
     {
         id: 'musicals',
-        name: 'Musicals & Music',
+        name: 'Musicals',
         emoji: '🎵',
         description: 'Musical films and shows',
         movieIds: [
             313369, // La La Land
             360814, // The Greatest Showman
-            293660, // Deadpool
             321612, // Beauty and the Beast
-            284052, // Doctor Strange
             12445, // Grease
             109439, // Les Misérables
             335984, // The Lion King
             246567, // Into the Woods
             181808, // Pitch Perfect
             194662, // Chicago
-            862, // Toy Story
-            329, // The Jungle Book
             284053, // Coco
-            508442, // Soul
-            379686, // Raya and the Last Dragon
             326359, // Sing
-            438631, // Dune
             383498, // Sing 2
             447365, // Tick, Tick... Boom!
+            508442, // Soul
+            329865, // Moana
+            109445, // Frozen
+            329996, // Frozen II
         ],
         tvShowIds: [
             69050, // Glee
-            95557, // Inventing Anna
             125392, // Wednesday
+            80547, // Schmigadoon!
         ],
     },
     {
         id: 'fantasy',
-        name: 'Fantasy Adventures',
+        name: 'Fantasy',
         emoji: '🐉',
-        description: 'Epic fantasy worlds and adventures',
+        description: 'Epic fantasy films and shows',
         movieIds: [
             120, // The Lord of the Rings: The Fellowship of the Ring
             122, // The Lord of the Rings: The Return of the King
@@ -906,7 +856,7 @@ export const POPULAR_TAGS: PopularTag[] = [
     },
     {
         id: 'heist-crime',
-        name: 'Heist & Crime',
+        name: 'Heist',
         emoji: '💰',
         description: 'Heist films and crime dramas',
         movieIds: [
