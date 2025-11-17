@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Content, getTitle, getYear, getContentType } from '../../typings'
 import Image from 'next/image'
 import { BASE_URL } from '../../constants/movie'
@@ -25,6 +25,9 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
     const [carouselContent, setCarouselContent] = useState<Content[]>([])
     const [isTransitioning, setIsTransitioning] = useState(false)
     const [imagesLoaded, setImagesLoaded] = useState<Set<number>>(new Set())
+
+    // Ref to store the interval ID for auto-advance
+    const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
     // Select 5 random items for carousel and preload images
     useEffect(() => {
@@ -64,20 +67,38 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
         }
     }, [trending, hiddenMovies])
 
-    // Auto-advance carousel every 8 seconds with smooth transition
-    useEffect(() => {
+    // Helper function to start the auto-advance timer
+    const startAutoAdvance = useCallback(() => {
+        // Clear any existing interval
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current)
+        }
+
+        // Only start if we have multiple items
         if (carouselContent.length <= 1) return
 
-        const interval = setInterval(() => {
+        // Create new interval
+        intervalRef.current = setInterval(() => {
             setIsTransitioning(true)
             setTimeout(() => {
                 setCurrentIndex((prev) => (prev + 1) % carouselContent.length)
                 setTimeout(() => setIsTransitioning(false), 300) // Longer delay for fade in
             }, 300) // Fade out duration
         }, 8000)
-
-        return () => clearInterval(interval)
     }, [carouselContent.length])
+
+    // Auto-advance carousel every 8 seconds with smooth transition
+    useEffect(() => {
+        startAutoAdvance()
+
+        // Cleanup on unmount or when dependencies change
+        return () => {
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current)
+                intervalRef.current = null
+            }
+        }
+    }, [startAutoAdvance])
 
     const goToSlide = useCallback(
         (index: number) => {
@@ -87,8 +108,11 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
                 setCurrentIndex(index)
                 setTimeout(() => setIsTransitioning(false), 300) // Longer delay for fade in
             }, 300) // Fade out duration
+
+            // Reset the auto-advance timer when user manually clicks
+            startAutoAdvance()
         },
-        [currentIndex]
+        [currentIndex, startAutoAdvance]
     )
 
     const featuredContent = carouselContent[currentIndex] || null
