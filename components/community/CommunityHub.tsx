@@ -42,7 +42,7 @@ import {
     MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline'
 
-export type TabType = 'rankings' | 'threads' | 'polls'
+export type TabType = 'rankings' | 'threads' | 'polls' | 'forums'
 
 interface CommunityHubProps {
     activeTab: TabType
@@ -250,9 +250,13 @@ export default function CommunityHub({ activeTab }: CommunityHubProps) {
                 />
             )}
 
-            {activeTab === 'threads' && <ThreadsTab searchQuery={searchQuery} />}
+            {activeTab === 'threads' && (
+                <ThreadsTab searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+            )}
 
-            {activeTab === 'polls' && <PollsTab searchQuery={searchQuery} />}
+            {activeTab === 'polls' && (
+                <PollsTab searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+            )}
         </SubPageLayout>
     )
 }
@@ -607,7 +611,13 @@ function RankingsTab({
 }
 
 // Threads Tab Component
-function ThreadsTab({ searchQuery }: { searchQuery: string }) {
+function ThreadsTab({
+    searchQuery,
+    setSearchQuery,
+}: {
+    searchQuery: string
+    setSearchQuery: (query: string) => void
+}) {
     const { threads, isLoadingThreads, loadThreads, createThread } = useForumStore()
     const getUserId = useSessionStore((state) => state.getUserId)
     const { isGuest } = useAuthStatus()
@@ -828,7 +838,13 @@ function ThreadsTab({ searchQuery }: { searchQuery: string }) {
 }
 
 // Polls Tab Component
-function PollsTab({ searchQuery }: { searchQuery: string }) {
+function PollsTab({
+    searchQuery,
+    setSearchQuery,
+}: {
+    searchQuery: string
+    setSearchQuery: (query: string) => void
+}) {
     const { polls, isLoadingPolls, loadPolls, createPoll, voteOnPoll, getUserVote } =
         useForumStore()
     const getUserId = useSessionStore((state) => state.getUserId)

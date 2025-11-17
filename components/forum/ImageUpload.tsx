@@ -130,7 +130,7 @@ const ImageUpload = forwardRef<ImageUploadHandle, ImageUploadProps>(function Ima
     }, [selectedFiles, storagePath, onImagesChange, isUploading, disabled])
 
     const handleDrop = useCallback(
-        (e: React.DragEvent<HTMLDivElement>) => {
+        (e: React.DragEvent<HTMLElement>) => {
             e.preventDefault()
             if (disabled) return
             handleFileSelect(e.dataTransfer.files)
@@ -138,7 +138,7 @@ const ImageUpload = forwardRef<ImageUploadHandle, ImageUploadProps>(function Ima
         [handleFileSelect, disabled]
     )
 
-    const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    const handleDragOver = useCallback((e: React.DragEvent<HTMLElement>) => {
         e.preventDefault()
     }, [])
 
