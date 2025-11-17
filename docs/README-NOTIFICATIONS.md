@@ -1,21 +1,56 @@
 # Notification System - Complete Guide
 
+## 🎯 START HERE: MASTER-PLAN.md
+
+**📖 [MASTER-PLAN.md](./MASTER-PLAN.md)** - Complete overview of all plans, implementation roadmap, and documentation references.
+
+**Use this if:**
+
+- You're another AI taking over this project
+- You need the complete picture of what was planned
+- You want to see implementation status and next steps
+- You need to understand how all docs connect together
+
+---
+
 ## 📚 Documentation Index
 
 This directory contains all documentation for the notification and account limiting systems.
 
 ### Quick Start
 
-1. **Want to understand costs?** → Read `COST-SUMMARY.md` (5 min read)
-2. **Want to implement account limits?** → Read `account-limits-integration.md` (15 min)
-3. **Want to implement trending notifications?** → Read `trending-cron-implementation.md` (30 min)
-4. **Want full technical details?** → Read `costs-and-limits.md` (20 min)
+1. **Want the complete plan?** → Read `MASTER-PLAN.md` (30 min) ⭐ **NEW**
+2. **Want to understand costs?** → Read `COST-SUMMARY.md` (5 min read)
+3. **Want to implement account limits?** → Read `account-limits-integration.md` (15 min)
+4. **Want to implement trending notifications?** → Read `trending-cron-implementation.md` (30 min)
+5. **Want full technical details?** → Read `costs-and-limits.md` (20 min)
 
 ---
 
 ## 📄 Document Overview
 
-### COST-SUMMARY.md ⭐ START HERE
+### MASTER-PLAN.md ⭐⭐⭐ MASTER REFERENCE
+
+**Complete implementation plan with all documentation references**
+
+- Executive summary of project goals
+- Links to all 10 documentation files with context
+- Complete implementation roadmap (Phases 0-4)
+- Cost summary at different scales (10, 50, 1000 users)
+- Security architecture overview
+- Technical architecture diagrams
+- Data models and schemas
+- Testing strategy for all features
+- Monitoring and alerting setup
+- Troubleshooting guide
+- Knowledge transfer for another AI/developer
+- Quick start guide for immediate implementation
+
+**Read if:** You need the complete picture or are taking over this project
+
+---
+
+### COST-SUMMARY.md ⭐ START HERE (for costs only)
 
 **Quick reference guide for costs and protection**
 
