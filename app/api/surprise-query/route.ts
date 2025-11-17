@@ -17,18 +17,18 @@ export async function POST() {
             apiLog('[Surprise Query] Rate limited - using fallback')
             // Use fallback if rate limited
             const fallbackQueries = [
-                'All Wes Anderson films',
-                'Tom Hanks best performances',
-                'Star Wars complete saga',
+                'Wes Anderson filmography',
+                'Best Tom Hanks performances',
+                'Star Wars saga ranked',
                 'Best Pixar movies',
-                'Denzel Washington filmography',
-                'Christopher Nolan ranked',
-                'Marvel Cinematic Universe phases',
+                'Denzel Washington collection',
+                'Christopher Nolan filmography',
+                'Marvel Cinematic Universe ranked',
                 'Studio Ghibli complete collection',
                 'Tarantino films ranked',
-                'James Bond 007 movies',
-                'Best 80s action classics',
-                'Coen Brothers complete works',
+                'Best James Bond movies',
+                'Top 80s action classics',
+                'Coen Brothers filmography',
             ]
             const randomQuery = fallbackQueries[Math.floor(Math.random() * fallbackQueries.length)]
             return NextResponse.json({ query: randomQuery })
@@ -44,7 +44,7 @@ export async function POST() {
                 {
                     parts: [
                         {
-                            text: 'Generate a simple, straightforward idea for ranking movies or TV shows (complete series, not individual episodes). Keep it clean and direct - avoid complex thematic criteria or compound meanings. GOOD examples: "All Christopher Nolan films", "Best Pixar movies", "Tom Hanks performances", "Marvel Cinematic Universe", "Studio Ghibli films", "Quentin Tarantino ranked", "90s action movies", "Wes Anderson complete filmography", "Best zombie shows", "Denzel Washington movies". BAD examples (too complex): "Pixar movies ranked by emotional impact and life lessons", "Films exploring existential dread through metaphor". Focus on: complete filmographies, franchises, director/actor collections, decade + genre combos, simple thematic lists. Keep it simple and rankable. IMPORTANT: Rank complete movies or TV shows only, never individual episodes. Return ONLY the ranking idea without quotes and without a period at the end.',
+                            text: 'Generate a ranking title for movies or TV shows. Use ranking language like "Best", "Worst", "Top", or for complete collections use "filmography" or "collection". This will be the actual title of the ranking. GOOD examples: "Best Pixar movies", "Worst Adam Sandler films", "Top sci-fi movies of the 90s", "Christopher Nolan filmography", "Tom Hanks collection", "Marvel Cinematic Universe ranked", "Best zombie shows", "Worst superhero movies", "Tarantino films ranked", "Studio Ghibli complete collection". BAD examples: "All Christopher Nolan films" (use "filmography" instead), "Pixar movies ranked by emotional impact" (too complex), "Leonardo DiCaprio performances" (missing ranking language). Focus on: Best/Worst + genre, Top + decade/genre, Actor/Director filmography or collection, Franchise rankings. Keep titles simple and clear. IMPORTANT: Rank complete movies or TV shows only, never individual episodes. Return ONLY the ranking title without quotes and without a period at the end.',
                         },
                     ],
                 },
@@ -95,18 +95,18 @@ export async function POST() {
         apiError('Surprise query error:', error)
         // Fallback to curated list if Gemini fails
         const fallbackQueries = [
-            'All Wes Anderson films',
-            'Tom Hanks best performances',
-            'Star Wars complete saga',
+            'Wes Anderson filmography',
+            'Best Tom Hanks performances',
+            'Star Wars saga ranked',
             'Best Pixar movies',
-            'Denzel Washington filmography',
-            'Christopher Nolan ranked',
-            'Marvel Cinematic Universe phases',
+            'Denzel Washington collection',
+            'Christopher Nolan filmography',
+            'Marvel Cinematic Universe ranked',
             'Studio Ghibli complete collection',
             'Tarantino films ranked',
-            'James Bond 007 movies',
-            'Best 80s action classics',
-            'Coen Brothers complete works',
+            'Best James Bond movies',
+            'Top 80s action classics',
+            'Coen Brothers filmography',
         ]
         const randomQuery = fallbackQueries[Math.floor(Math.random() * fallbackQueries.length)]
         return NextResponse.json({ query: randomQuery })
