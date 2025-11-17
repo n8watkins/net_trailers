@@ -24,7 +24,7 @@ import { useSessionStore } from '@/stores/sessionStore'
 import { useSearch } from '@/hooks/useSearch'
 import { useToast } from '@/hooks/useToast'
 import { auth } from '@/firebase'
-import { POPULAR_TAGS, getTagById } from '@/utils/popularTags'
+import { POPULAR_TAGS, getTagById, searchTags } from '@/utils/popularTags'
 import {
     TrophyIcon,
     MagnifyingGlassIcon,
@@ -125,14 +125,14 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
         title.trim().length >= RANKING_CONSTRAINTS.MIN_TITLE_LENGTH &&
         title.trim().length <= RANKING_CONSTRAINTS.MAX_TITLE_LENGTH
 
-    // Filter tags based on search query
-    const filteredTags = POPULAR_TAGS.filter((tag) =>
-        tag.name.toLowerCase().includes(tagSearchQuery.toLowerCase())
-    )
+    // Filter tags based on search query using enhanced searchTags function
+    const filteredTags = tagSearchQuery ? searchTags(tagSearchQuery) : POPULAR_TAGS
 
     const handleAddTag = () => {
-        const newTag = tagInput.trim()
-        if (newTag && !tags.includes(newTag) && tags.length < RANKING_CONSTRAINTS.MAX_TAGS) {
+        const newTag = tagInput.trim().toLowerCase()
+        // Check for duplicates (case-insensitive)
+        const isDuplicate = tags.some((tag) => tag.toLowerCase() === newTag)
+        if (newTag && !isDuplicate && tags.length < RANKING_CONSTRAINTS.MAX_TAGS) {
             setTags([...tags, newTag])
             setTagInput('')
         }
@@ -1391,21 +1391,31 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                                             </p>
                                             <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-2">
                                                 {POPULAR_TAGS.filter(
-                                                    (popularTag) => !tags.includes(popularTag.name)
+                                                    (popularTag) =>
+                                                        !tags.some(
+                                                            (tag) =>
+                                                                tag.toLowerCase() ===
+                                                                popularTag.name.toLowerCase()
+                                                        )
                                                 )
                                                     .slice(0, 15)
                                                     .map((popularTag) => (
                                                         <button
                                                             key={popularTag.id}
                                                             onClick={() => {
+                                                                const isDuplicate = tags.some(
+                                                                    (tag) =>
+                                                                        tag.toLowerCase() ===
+                                                                        popularTag.name.toLowerCase()
+                                                                )
                                                                 if (
                                                                     tags.length <
                                                                         RANKING_CONSTRAINTS.MAX_TAGS &&
-                                                                    !tags.includes(popularTag.name)
+                                                                    !isDuplicate
                                                                 ) {
                                                                     setTags([
                                                                         ...tags,
-                                                                        popularTag.name,
+                                                                        popularTag.name.toLowerCase(),
                                                                     ])
                                                                 }
                                                             }}

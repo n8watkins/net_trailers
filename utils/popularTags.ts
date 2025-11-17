@@ -10,6 +10,7 @@ export interface PopularTag {
     name: string
     emoji: string
     description: string
+    searchTerms: string[] // Alternative search terms/aliases
     movieIds: number[] // TMDB movie IDs
     tvShowIds: number[] // TMDB TV show IDs
 }
@@ -20,6 +21,7 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: 'MCU',
         emoji: '🦸',
         description: 'Marvel Cinematic Universe movies and shows',
+        searchTerms: ['marvel', 'marvel cinematic universe', 'avengers', 'iron man', 'superhero'],
         movieIds: [
             // Phase 1
             1726, // Iron Man
@@ -76,6 +78,7 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: 'DC',
         emoji: '🦇',
         description: 'DC Universe movies and shows',
+        searchTerms: ['dc comics', 'dc universe', 'batman', 'superman', 'justice league', 'dceu'],
         movieIds: [
             // Dark Knight Trilogy
             272, // Batman Begins
@@ -124,6 +127,7 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: 'Star Wars',
         emoji: '⭐',
         description: 'A galaxy far, far away',
+        searchTerms: ['star wars', 'jedi', 'sith', 'skywalker', 'force awakens', 'mandalorian'],
         movieIds: [
             // Original Trilogy
             11, // A New Hope
@@ -158,6 +162,13 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: 'Harry Potter',
         emoji: '⚡',
         description: 'Wizarding World - Harry Potter & Fantastic Beasts',
+        searchTerms: [
+            'harry potter',
+            'wizarding world',
+            'hogwarts',
+            'fantastic beasts',
+            'dumbledore',
+        ],
         movieIds: [
             671, // Harry Potter and the Philosopher's Stone
             672, // Harry Potter and the Chamber of Secrets
@@ -178,6 +189,7 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: 'LOTR',
         emoji: '🧙',
         description: 'Lord of the Rings & The Hobbit',
+        searchTerms: ['lotr', 'lord of the rings', 'middle earth', 'hobbit', 'tolkien', 'gandalf'],
         movieIds: [
             120, // The Fellowship of the Ring
             121, // The Two Towers
@@ -195,6 +207,7 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: 'Pixar',
         emoji: '🎨',
         description: 'Pixar animated films',
+        searchTerms: ['pixar', 'toy story', 'finding nemo', 'up', 'inside out', 'monsters inc'],
         movieIds: [
             862, // Toy Story
             863, // Toy Story 2
@@ -224,6 +237,7 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: 'Disney Animation',
         emoji: '👸',
         description: 'Classic Disney animated films',
+        searchTerms: ['disney', 'disney animation', 'frozen', 'lion king', 'moana', 'princess'],
         movieIds: [
             10144, // The Little Mermaid
             10020, // Beauty and the Beast
@@ -251,6 +265,7 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: 'Horror',
         emoji: '👻',
         description: 'Horror movies and shows',
+        searchTerms: ['horror', 'scary', 'thriller horror', 'conjuring', 'scream', 'supernatural'],
         movieIds: [
             694, // The Shining
             539, // Psycho
@@ -289,6 +304,7 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: 'Sci-Fi',
         emoji: '🚀',
         description: 'Science fiction films and shows',
+        searchTerms: ['sci-fi', 'science fiction', 'sci fi', 'scifi', 'space', 'future'],
         movieIds: [
             157336, // Interstellar
             27205, // Inception
@@ -330,6 +346,14 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: 'Anime',
         emoji: '🎌',
         description: 'Popular anime films and series',
+        searchTerms: [
+            'anime',
+            'japanese animation',
+            'manga',
+            'one piece',
+            'attack on titan',
+            'demon slayer',
+        ],
         movieIds: [
             129, // Spirited Away
             4935, // Howl's Moving Castle
@@ -363,6 +387,7 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: 'True Crime',
         emoji: '🔍',
         description: 'Crime dramas and documentaries',
+        searchTerms: ['true crime', 'crime', 'detective', 'investigation', 'criminal'],
         movieIds: [
             19404, // Zodiac
             475557, // Joker
@@ -390,6 +415,7 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: 'Comedy',
         emoji: '😂',
         description: 'Comedy films and shows',
+        searchTerms: ['comedy', 'funny', 'humor', 'laugh', 'hilarious', 'sitcom'],
         movieIds: [
             293660, // Deadpool
             383498, // Deadpool 2
@@ -423,6 +449,7 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: 'Romance',
         emoji: '💕',
         description: 'Romance films and shows',
+        searchTerms: ['romance', 'romantic', 'love story', 'love', 'relationship', 'dating'],
         movieIds: [
             597, // Titanic
             11036, // The Notebook
@@ -447,6 +474,7 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: 'Action',
         emoji: '💥',
         description: 'Action films and shows',
+        searchTerms: ['action', 'fight', 'adventure', 'explosive', 'combat', 'adrenaline'],
         movieIds: [
             245891, // John Wick
             324552, // John Wick: Chapter 2
@@ -479,6 +507,7 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: 'Netflix',
         emoji: '📺',
         description: 'Netflix original films and shows',
+        searchTerms: ['netflix', 'netflix original', 'netflix series', 'stranger things', 'crown'],
         movieIds: [
             419430, // Bird Box
             452832, // Red Notice
@@ -509,6 +538,14 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: 'Nolan',
         emoji: '🎬',
         description: 'Directed by Christopher Nolan',
+        searchTerms: [
+            'nolan',
+            'christopher nolan',
+            'inception',
+            'tenet',
+            'interstellar',
+            'dark knight',
+        ],
         movieIds: [
             27205, // Inception
             157336, // Interstellar
@@ -528,6 +565,7 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: 'Tarantino',
         emoji: '🎥',
         description: 'Directed by Quentin Tarantino',
+        searchTerms: ['tarantino', 'quentin tarantino', 'pulp fiction', 'kill bill', 'django'],
         movieIds: [
             680, // Pulp Fiction
             24, // Kill Bill: Vol. 1
@@ -546,6 +584,7 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: 'Based on Books',
         emoji: '📚',
         description: 'Literary adaptations',
+        searchTerms: ['based on books', 'book adaptation', 'novel', 'literary', 'bestseller'],
         movieIds: [
             120, // The Lord of the Rings
             671, // Harry Potter
@@ -572,6 +611,7 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: 'Oscars',
         emoji: '🏆',
         description: 'Oscar-winning films',
+        searchTerms: ['oscar', 'oscars', 'academy award', 'best picture', 'award winning'],
         movieIds: [
             278, // The Shawshank Redemption
             238, // The Godfather
@@ -603,6 +643,14 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: 'Thriller',
         emoji: '🕵️',
         description: 'Mystery and thriller films',
+        searchTerms: [
+            'thriller',
+            'mystery',
+            'suspense',
+            'detective',
+            'investigation',
+            'crime thriller',
+        ],
         movieIds: [
             102651, // Malignant
             546554, // Knives Out
@@ -636,6 +684,7 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: 'Ghibli',
         emoji: '🌸',
         description: 'Studio Ghibli animated films',
+        searchTerms: ['ghibli', 'studio ghibli', 'spirited away', 'totoro', 'miyazaki', 'japanese'],
         movieIds: [
             129, // Spirited Away
             810, // My Neighbor Totoro
@@ -660,6 +709,7 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: '007',
         emoji: '🕴️',
         description: 'James Bond spy thriller franchise',
+        searchTerms: ['007', 'james bond', 'bond', 'spy', 'secret agent', 'mi6'],
         movieIds: [
             646, // Skyfall
             37724, // Casino Royale
@@ -684,6 +734,7 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: 'Fast & Furious',
         emoji: '🏎️',
         description: 'High-octane car action franchise',
+        searchTerms: ['fast and furious', 'fast & furious', 'fast furious', 'vin diesel', 'cars'],
         movieIds: [
             9799, // The Fast and the Furious
             584, // 2 Fast 2 Furious
@@ -705,6 +756,14 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: 'Classic Hollywood',
         emoji: '🎬',
         description: 'Golden age cinema classics',
+        searchTerms: [
+            'classic',
+            'classic hollywood',
+            'golden age',
+            'old movies',
+            'vintage',
+            'godfather',
+        ],
         movieIds: [
             238, // The Godfather
             240, // The Godfather Part II
@@ -734,6 +793,14 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: 'Biographical',
         emoji: '📖',
         description: 'Biographical and true story films',
+        searchTerms: [
+            'biographical',
+            'biography',
+            'biopic',
+            'true story',
+            'based on true events',
+            'real life',
+        ],
         movieIds: [
             424, // Schindler's List
             129, // 127 Hours
@@ -760,6 +827,7 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: 'Sports',
         emoji: '⚽',
         description: 'Sports movies and shows',
+        searchTerms: ['sports', 'athletic', 'competition', 'game', 'team', 'championship'],
         movieIds: [
             1366, // Rocky
             1367, // Rocky II
@@ -794,6 +862,7 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: 'Musicals',
         emoji: '🎵',
         description: 'Musical films and shows',
+        searchTerms: ['musical', 'musicals', 'broadway', 'singing', 'dance', 'songs'],
         movieIds: [
             313369, // La La Land
             360814, // The Greatest Showman
@@ -824,6 +893,7 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: 'Fantasy',
         emoji: '🐉',
         description: 'Epic fantasy films and shows',
+        searchTerms: ['fantasy', 'magic', 'mythical', 'dragons', 'epic fantasy', 'wizards'],
         movieIds: [
             120, // The Lord of the Rings: The Fellowship of the Ring
             122, // The Lord of the Rings: The Return of the King
@@ -859,6 +929,7 @@ export const POPULAR_TAGS: PopularTag[] = [
         name: 'Heist',
         emoji: '💰',
         description: 'Heist films and crime dramas',
+        searchTerms: ['heist', 'robbery', 'theft', 'crime', 'oceans', 'money heist'],
         movieIds: [
             161, // Ocean's Eleven
             163, // Ocean's Twelve
@@ -910,13 +981,14 @@ export function getTagContentIds(tagId: string): number[] {
 }
 
 /**
- * Search tags by name
+ * Search tags by name, description, or search terms (aliases)
  */
 export function searchTags(query: string): PopularTag[] {
     const lowerQuery = query.toLowerCase()
     return POPULAR_TAGS.filter(
         (tag) =>
             tag.name.toLowerCase().includes(lowerQuery) ||
-            tag.description.toLowerCase().includes(lowerQuery)
+            tag.description.toLowerCase().includes(lowerQuery) ||
+            tag.searchTerms.some((term) => term.toLowerCase().includes(lowerQuery))
     )
 }
