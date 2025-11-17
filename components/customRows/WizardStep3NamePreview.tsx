@@ -4,7 +4,7 @@ import { uiLog } from '../../utils/debugLogger'
 import React, { useState, useEffect } from 'react'
 import { SparklesIcon, PencilIcon, ArrowPathIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { CustomRowFormData, CUSTOM_ROW_CONSTRAINTS } from '../../types/customRows'
-import { MOVIE_GENRES, TV_GENRES } from '../../constants/genres'
+import { getUnifiedGenresByMediaType } from '../../constants/unifiedGenres'
 import { Content, getTitle } from '../../typings'
 import Image from 'next/image'
 import { useToast } from '@/hooks/useToast'
@@ -46,10 +46,10 @@ export function WizardStep3NamePreview({
     const [currentTMDBPage, setCurrentTMDBPage] = useState(1)
     const { showError } = useToast()
 
-    // Get genre names for display
-    const genreList = formData.mediaType === 'tv' ? TV_GENRES : MOVIE_GENRES
+    // Get genre names for display using unified genres
+    const allGenres = getUnifiedGenresByMediaType(formData.mediaType || 'both')
     const selectedGenreNames = formData.genres
-        .map((id) => genreList.find((g) => g.id === id)?.name)
+        .map((genreId) => allGenres.find((g) => g.id === genreId)?.name)
         .filter(Boolean)
 
     // Check if name is valid

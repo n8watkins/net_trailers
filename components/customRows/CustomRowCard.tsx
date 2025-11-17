@@ -12,7 +12,7 @@ import {
     ClockIcon,
 } from '@heroicons/react/24/outline'
 import { DisplayRow } from '../../types/customRows'
-import { MOVIE_GENRES, TV_GENRES } from '../../constants/genres'
+import { getUnifiedGenresByMediaType } from '../../constants/unifiedGenres'
 
 /**
  * Format timestamp to relative time (e.g., "2 hours ago")
@@ -57,8 +57,11 @@ export function CustomRowCard({
 }: CustomRowCardProps) {
     const [showDeleteModal, setShowDeleteModal] = useState(false)
 
-    const genres = row.mediaType === 'movie' || row.mediaType === 'both' ? MOVIE_GENRES : TV_GENRES
-    const genreNames = row.genres.map((id) => genres.find((g) => g.id === id)?.name).filter(Boolean)
+    // Get unified genres and map to names
+    const allGenres = getUnifiedGenresByMediaType(row.mediaType || 'both')
+    const genreNames = row.genres
+        .map((genreId) => allGenres.find((g) => g.id === genreId)?.name)
+        .filter(Boolean)
 
     const handleDelete = () => {
         onDelete(row)

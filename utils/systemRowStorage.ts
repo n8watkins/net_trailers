@@ -122,7 +122,7 @@ class GuestSystemRowStorage {
     static updateSystemRowGenres(
         guestId: string,
         systemRowId: string,
-        customGenres: number[],
+        customGenres: string[],
         customGenreLogic: 'AND' | 'OR'
     ): void {
         const data = this.loadGuestData(guestId)
@@ -266,7 +266,7 @@ export class SystemRowStorage {
     static async updateSystemRowGenres(
         userId: string,
         systemRowId: string,
-        customGenres: number[],
+        customGenres: string[],
         customGenreLogic: 'AND' | 'OR',
         isGuest: boolean
     ): Promise<void> {

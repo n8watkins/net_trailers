@@ -32,7 +32,7 @@ export default function CollectionEditorModal({
     isOpen,
     onClose,
 }: CollectionEditorModalProps) {
-    const { isChildSafetyEnabled } = useChildSafety()
+    const { isEnabled: isChildSafetyEnabled } = useChildSafety()
 
     const GENRE_LOOKUP = useMemo(() => {
         const map = new Map<string, string>()

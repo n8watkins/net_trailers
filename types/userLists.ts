@@ -128,7 +128,7 @@ export interface CreateListRequest {
     displayAsRow?: boolean // Defaults to true
 
     // TMDB-based collection options
-    genres?: number[]
+    genres?: string[]
     genreLogic?: 'AND' | 'OR'
     mediaType?: 'movie' | 'tv' | 'both'
     advancedFilters?: AdvancedFilters
@@ -157,7 +157,7 @@ export interface UpdateListRequest {
     order?: number
 
     // TMDB-based collection options
-    genres?: number[]
+    genres?: string[]
     genreLogic?: 'AND' | 'OR'
     mediaType?: 'movie' | 'tv' | 'both'
     advancedFilters?: AdvancedFilters

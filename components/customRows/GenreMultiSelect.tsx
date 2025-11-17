@@ -76,7 +76,7 @@ export function GenreMultiSelect({
                         value=""
                         onChange={(e) => {
                             if (e.target.value) {
-                                handleAddGenre(parseInt(e.target.value))
+                                handleAddGenre(e.target.value)
                                 e.target.value = '' // Reset select
                             }
                         }}

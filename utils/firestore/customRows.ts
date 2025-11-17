@@ -496,7 +496,7 @@ export class CustomRowsFirestore {
     static async updateSystemRowGenres(
         userId: string,
         systemRowId: string,
-        customGenres: number[],
+        customGenres: string[],
         customGenreLogic: 'AND' | 'OR'
     ): Promise<void> {
         // Validate userId

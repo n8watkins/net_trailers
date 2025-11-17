@@ -10,7 +10,7 @@ import {
     Squares2X2Icon,
     ArrowPathIcon,
 } from '@heroicons/react/24/solid'
-import { MOVIE_GENRES, TV_GENRES, Genre } from '../../constants/genres'
+import { getUnifiedGenresByMediaType, UnifiedGenre } from '../../constants/unifiedGenres'
 import { SortableCustomRowCard } from '../customRows/SortableCustomRowCard'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useCustomRowsStore } from '../../stores/customRowsStore'
@@ -39,10 +39,10 @@ interface SystemCollectionEditModalProps {
     collection: {
         id: string
         name: string
-        genres: number[]
+        genres: string[]
         genreLogic: 'AND' | 'OR'
     }
-    onSave: (id: string, name: string, genres: number[], genreLogic: 'AND' | 'OR') => Promise<void>
+    onSave: (id: string, name: string, genres: string[], genreLogic: 'AND' | 'OR') => Promise<void>
     onCancel: () => void
     mediaType: 'movie' | 'tv' | 'both'
 }
@@ -59,14 +59,13 @@ function SystemCollectionEditModal({
     mediaType,
 }: SystemCollectionEditModalProps) {
     const [name, setName] = useState(collection.name)
-    const [selectedGenres, setSelectedGenres] = useState<number[]>(collection.genres)
+    const [selectedGenres, setSelectedGenres] = useState<string[]>(collection.genres)
     const [genreLogic, setGenreLogic] = useState<'AND' | 'OR'>(collection.genreLogic)
 
-    // Get appropriate genres based on media type
-    const availableGenres: Genre[] =
-        mediaType === 'tv' ? TV_GENRES : mediaType === 'movie' ? MOVIE_GENRES : MOVIE_GENRES
+    // Get appropriate unified genres based on media type
+    const availableGenres: UnifiedGenre[] = getUnifiedGenresByMediaType(mediaType)
 
-    const toggleGenre = (genreId: number) => {
+    const toggleGenre = (genreId: string) => {
         setSelectedGenres((prev) =>
             prev.includes(genreId) ? prev.filter((id) => id !== genreId) : [...prev, genreId]
         )
@@ -191,7 +190,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
     const [editingSystemRow, setEditingSystemRow] = useState<{
         id: string
         name: string
-        genres: number[]
+        genres: string[]
         genreLogic: 'AND' | 'OR'
     } | null>(null)
 
@@ -406,7 +405,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
     const handleUpdateSystemRow = async (
         systemRowId: string,
         newName: string,
-        newGenres: number[],
+        newGenres: string[],
         newGenreLogic: 'AND' | 'OR'
     ) => {
         if (!userId) return

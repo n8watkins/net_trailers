@@ -37,8 +37,7 @@ export function inferTopGenresFromContent(content: Content[], limit: number = 2)
         if (tmdbGenreIds.length === 0) return
 
         // Determine media type for this item
-        const mediaType: 'movie' | 'tv' =
-            isMovie(item) || item.media_type === 'movie' ? 'movie' : 'tv'
+        const mediaType: 'movie' | 'tv' = isMovie(item) ? 'movie' : 'tv'
 
         const voteBoost = Number.isFinite(item.vote_average) ? item.vote_average / 15 : 0
         const popularityBoost = Number.isFinite(item.popularity)
@@ -74,8 +73,8 @@ export function inferMediaTypeFromContent(
         return fallback
     }
 
-    const hasMovies = content.some((item) => isMovie(item) || item.media_type === 'movie')
-    const hasTv = content.some((item) => isTVShow(item) || item.media_type === 'tv')
+    const hasMovies = content.some((item) => isMovie(item))
+    const hasTv = content.some((item) => isTVShow(item))
 
     if (hasMovies && hasTv) return 'both'
     if (hasMovies) return 'movie'
