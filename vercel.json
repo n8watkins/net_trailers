@@ -11,6 +11,10 @@
         {
             "path": "/api/cron/send-like-digests",
             "schedule": "0 18 * * *"
+        },
+        {
+            "path": "/api/cron/update-trending",
+            "schedule": "0 */6 * * *"
         }
     ]
 }

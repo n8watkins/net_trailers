@@ -1,7 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import useAuth from '../../hooks/useAuth'
+import { getPublicAccountStats, canCreateAccount } from '@/utils/accountLimits'
+import { useToast } from '@/hooks/useToast'
 
 interface AuthModalProps {
     isOpen: boolean
@@ -19,6 +21,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 's
     const [isSignUp, setIsSignUp] = useState(initialMode === 'signup')
     const [isLoading, setIsLoading] = useState(false)
     const [showForgotPassword, setShowForgotPassword] = useState(false)
+    const [accountStats, setAccountStats] = useState<{
+        used: number
+        max: number
+        available: number
+        percentUsed: number
+    } | null>(null)
 
     const {
         signIn,
@@ -32,6 +40,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 's
         passResetSuccess,
     } = useAuth()
 
+    const { showError } = useToast()
+
     const {
         register,
         handleSubmit,
@@ -42,12 +52,35 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 's
 
     const password = watch('password')
 
+    // Load account stats when modal opens in signup mode
+    useEffect(() => {
+        if (isOpen && isSignUp) {
+            loadAccountStats()
+        }
+    }, [isOpen, isSignUp])
+
+    const loadAccountStats = async () => {
+        try {
+            const stats = await getPublicAccountStats()
+            setAccountStats(stats)
+        } catch (error) {
+            console.error('Error loading account stats:', error)
+        }
+    }
+
     const onSubmit: SubmitHandler<FormInputs> = async (data) => {
         setIsLoading(true)
         try {
             if (showForgotPassword) {
                 await handleForgotPassword(data.email)
             } else if (isSignUp) {
+                // Check account limit before attempting signup
+                const { allowed, reason } = await canCreateAccount()
+                if (!allowed) {
+                    showError(reason || 'Cannot create account at this time')
+                    setIsLoading(false)
+                    return
+                }
                 await signUp(data.email, data.password)
             } else {
                 await signIn(data.email, data.password)
@@ -66,6 +99,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 's
     const handleGoogleSignIn = async () => {
         setIsLoading(true)
         try {
+            // Check account limit if in signup mode
+            if (isSignUp) {
+                const { allowed, reason } = await canCreateAccount()
+                if (!allowed) {
+                    showError(reason || 'Cannot create account at this time')
+                    setIsLoading(false)
+                    return
+                }
+            }
             await signInWithGoogle()
             onClose()
         } catch (err) {
@@ -169,6 +211,39 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 's
                                       : 'Welcome back to NetTrailer'}
                             </p>
                         </div>
+
+                        {/* Account Stats Badge (signup mode only) */}
+                        {isSignUp && !showForgotPassword && accountStats && (
+                            <div className="mb-4 p-3 bg-gray-800 rounded-lg border border-gray-700">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-sm text-gray-400">
+                                        Portfolio Demo Accounts
+                                    </span>
+                                    <span className="text-sm font-medium text-white">
+                                        {accountStats.used} / {accountStats.max}
+                                    </span>
+                                </div>
+                                <div className="w-full bg-gray-700 rounded-full h-2">
+                                    <div
+                                        className={`h-2 rounded-full transition-all ${
+                                            accountStats.percentUsed >= 90
+                                                ? 'bg-red-500'
+                                                : accountStats.percentUsed >= 70
+                                                  ? 'bg-yellow-500'
+                                                  : 'bg-green-500'
+                                        }`}
+                                        style={{ width: `${accountStats.percentUsed}%` }}
+                                    />
+                                </div>
+                                {accountStats.percentUsed >= 80 && (
+                                    <p className="text-xs text-yellow-400 mt-2">
+                                        {accountStats.available === 0
+                                            ? 'Account limit reached'
+                                            : `Only ${accountStats.available} spot${accountStats.available === 1 ? '' : 's'} remaining`}
+                                    </p>
+                                )}
+                            </div>
+                        )}
 
                         {/* Form */}
                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mb-6">

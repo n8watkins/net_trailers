@@ -1,0 +1,357 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useSessionStore } from '@/stores/sessionStore'
+import { getAccountStats } from '@/utils/accountLimits'
+import { BarChart, Users, TrendingUp, Settings, PlayCircle, RefreshCw } from 'lucide-react'
+import { useToast } from '@/hooks/useToast'
+
+// Admin UIDs - Add your Firebase UID here
+const ADMIN_UIDS = [process.env.NEXT_PUBLIC_ADMIN_UID || 'YOUR_FIREBASE_UID_HERE']
+
+export default function AdminDashboard() {
+    const router = useRouter()
+    const getUserId = useSessionStore((state) => state.getUserId)
+    const sessionType = useSessionStore((state) => state.sessionType)
+    const userId = getUserId()
+    const isAuth = sessionType === 'authenticated'
+    const { showSuccess, showError } = useToast()
+    const [stats, setStats] = useState<any>(null)
+    const [trendingStats, setTrendingStats] = useState<any>(null)
+    const [loading, setLoading] = useState(false)
+    const [lastTrendingRun, setLastTrendingRun] = useState<Date | null>(null)
+
+    // Auth check
+    useEffect(() => {
+        if (!isAuth || !userId || !ADMIN_UIDS.includes(userId)) {
+            router.push('/')
+        }
+    }, [isAuth, userId, router])
+
+    // Load stats
+    useEffect(() => {
+        if (isAuth && userId && ADMIN_UIDS.includes(userId)) {
+            loadAllStats()
+        }
+    }, [isAuth, userId])
+
+    const loadAllStats = async () => {
+        try {
+            const accountData = await getAccountStats()
+            setStats(accountData)
+
+            // Load trending stats
+            const trendingResponse = await fetch('/api/admin/trending-stats', {
+                headers: {
+                    Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
+                },
+            })
+            if (trendingResponse.ok) {
+                const trendingData = await trendingResponse.json()
+                setTrendingStats(trendingData)
+                setLastTrendingRun(trendingData.lastRun ? new Date(trendingData.lastRun) : null)
+            }
+        } catch (error) {
+            console.error('Error loading stats:', error)
+        }
+    }
+
+    const runTrendingCheck = async (demoMode = false) => {
+        setLoading(true)
+        try {
+            const response = await fetch(
+                `/api/cron/update-trending${demoMode ? '?demo=true' : ''}`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
+                    },
+                }
+            )
+            const result = await response.json()
+
+            if (response.ok) {
+                showSuccess(
+                    `Trending check complete: ${result.newItems} new items, ${result.notifications} notifications created`
+                )
+                await loadAllStats()
+            } else {
+                showError(result.error || 'Failed to run trending check')
+            }
+        } catch (error) {
+            showError('Failed to run trending check')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const resetDemoAccounts = async () => {
+        if (!confirm('Reset demo accounts to 5? This will delete test accounts.')) return
+
+        setLoading(true)
+        try {
+            const response = await fetch('/api/admin/reset-demo', {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
+                },
+            })
+
+            if (response.ok) {
+                showSuccess('Demo accounts reset to 5')
+                await loadAllStats()
+            } else {
+                showError('Failed to reset accounts')
+            }
+        } catch (error) {
+            showError('Failed to reset accounts')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    if (!isAuth || !userId || !ADMIN_UIDS.includes(userId)) {
+        return (
+            <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+                <div className="text-white text-xl">Unauthorized</div>
+            </div>
+        )
+    }
+
+    return (
+        <div className="min-h-screen bg-gray-900 p-8">
+            <div className="max-w-7xl mx-auto">
+                {/* Header */}
+                <div className="mb-8">
+                    <h1 className="text-3xl font-bold text-white mb-2">Admin Dashboard</h1>
+                    <p className="text-gray-400">Portfolio project operations center</p>
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    {/* Account Stats */}
+                    <div className="bg-gray-800 rounded-xl p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <Users className="h-8 w-8 text-blue-500" />
+                            <span className="text-2xl font-bold text-white">
+                                {stats?.totalAccounts || 0}
+                            </span>
+                        </div>
+                        <h3 className="text-gray-400 text-sm mb-1">Total Accounts</h3>
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-500">
+                                Limit: {stats?.maxAccounts || 50}
+                            </span>
+                            <span className="text-xs text-green-500">
+                                {(stats?.maxAccounts || 50) - (stats?.totalAccounts || 0)} remaining
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Today's Signups */}
+                    <div className="bg-gray-800 rounded-xl p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <BarChart className="h-8 w-8 text-green-500" />
+                            <span className="text-2xl font-bold text-white">
+                                {stats?.signupsToday || 0}
+                            </span>
+                        </div>
+                        <h3 className="text-gray-400 text-sm mb-1">Today's Signups</h3>
+                        <span className="text-xs text-gray-500">
+                            Last:{' '}
+                            {stats?.lastSignup
+                                ? new Date(stats.lastSignup).toLocaleTimeString()
+                                : 'Never'}
+                        </span>
+                    </div>
+
+                    {/* Trending Stats */}
+                    <div className="bg-gray-800 rounded-xl p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <TrendingUp className="h-8 w-8 text-purple-500" />
+                            <span className="text-2xl font-bold text-white">
+                                {trendingStats?.totalNotifications || 0}
+                            </span>
+                        </div>
+                        <h3 className="text-gray-400 text-sm mb-1">Trending Notifications</h3>
+                        <span className="text-xs text-gray-500">
+                            Last run: {lastTrendingRun?.toLocaleString() || 'Never'}
+                        </span>
+                    </div>
+
+                    {/* System Health */}
+                    <div className="bg-gray-800 rounded-xl p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <Settings className="h-8 w-8 text-orange-500" />
+                            <span className="text-sm font-medium text-green-500">Healthy</span>
+                        </div>
+                        <h3 className="text-gray-400 text-sm mb-1">System Status</h3>
+                        <span className="text-xs text-gray-500">All systems operational</span>
+                    </div>
+                </div>
+
+                {/* Action Panels */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Trending Controls */}
+                    <div className="bg-gray-800 rounded-xl p-6">
+                        <h2 className="text-xl font-semibold text-white mb-4">
+                            Trending System Controls
+                        </h2>
+
+                        <div className="space-y-4">
+                            <div className="p-4 bg-gray-900 rounded-lg">
+                                <h3 className="text-sm font-medium text-gray-300 mb-2">
+                                    Production Mode
+                                </h3>
+                                <p className="text-xs text-gray-500 mb-3">
+                                    Run real trending check against TMDB API
+                                </p>
+                                <button
+                                    onClick={() => runTrendingCheck(false)}
+                                    disabled={loading}
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 text-white rounded-lg transition"
+                                >
+                                    <PlayCircle className="h-4 w-4" />
+                                    {loading ? 'Running...' : 'Check Trending Now'}
+                                </button>
+                            </div>
+
+                            <div className="p-4 bg-gray-900 rounded-lg">
+                                <h3 className="text-sm font-medium text-gray-300 mb-2">
+                                    Demo Mode
+                                </h3>
+                                <p className="text-xs text-gray-500 mb-3">
+                                    Guarantee finding new items for demonstration
+                                </p>
+                                <button
+                                    onClick={() => runTrendingCheck(true)}
+                                    disabled={loading}
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 text-white rounded-lg transition"
+                                >
+                                    <RefreshCw className="h-4 w-4" />
+                                    {loading ? 'Running...' : 'Trigger Demo'}
+                                </button>
+                            </div>
+
+                            {/* Cron Schedule Info */}
+                            <div className="p-3 bg-blue-900/20 border border-blue-800 rounded-lg">
+                                <p className="text-xs text-blue-400">
+                                    <strong>Automatic Schedule:</strong> Every 6 hours (0:00, 6:00,
+                                    12:00, 18:00 UTC)
+                                </p>
+                                <p className="text-xs text-blue-400 mt-1">
+                                    Next run:{' '}
+                                    {new Date(
+                                        Date.now() + (6 - (new Date().getHours() % 6)) * 3600000
+                                    ).toLocaleString()}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Account Management */}
+                    <div className="bg-gray-800 rounded-xl p-6">
+                        <h2 className="text-xl font-semibold text-white mb-4">
+                            Account Management
+                        </h2>
+
+                        <div className="space-y-4">
+                            {/* Account Graph */}
+                            <div className="p-4 bg-gray-900 rounded-lg">
+                                <h3 className="text-sm font-medium text-gray-300 mb-3">
+                                    Account Usage
+                                </h3>
+                                <div className="relative pt-1">
+                                    <div className="flex mb-2 items-center justify-between">
+                                        <div>
+                                            <span className="text-xs font-semibold inline-block text-blue-400">
+                                                {Math.round(
+                                                    ((stats?.totalAccounts || 0) /
+                                                        (stats?.maxAccounts || 50)) *
+                                                        100
+                                                )}
+                                                %
+                                            </span>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="text-xs font-semibold inline-block text-gray-400">
+                                                {stats?.totalAccounts || 0} /{' '}
+                                                {stats?.maxAccounts || 50}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-gray-700">
+                                        <div
+                                            style={{
+                                                width: `${((stats?.totalAccounts || 0) / (stats?.maxAccounts || 50)) * 100}%`,
+                                            }}
+                                            className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Demo Reset */}
+                            <div className="p-4 bg-gray-900 rounded-lg">
+                                <h3 className="text-sm font-medium text-gray-300 mb-2">
+                                    Demo Reset
+                                </h3>
+                                <p className="text-xs text-gray-500 mb-3">
+                                    Reset account count for portfolio demos (keeps first 5 accounts)
+                                </p>
+                                <button
+                                    onClick={resetDemoAccounts}
+                                    disabled={loading}
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-700 text-white rounded-lg transition"
+                                >
+                                    Reset to 5 Accounts
+                                </button>
+                            </div>
+
+                            {/* Recent Activity */}
+                            <div className="p-4 bg-gray-900 rounded-lg">
+                                <h3 className="text-sm font-medium text-gray-300 mb-2">
+                                    Recent Activity
+                                </h3>
+                                <div className="space-y-1">
+                                    <p className="text-xs text-gray-400">
+                                        Last signup:{' '}
+                                        {stats?.lastSignup
+                                            ? new Date(stats.lastSignup).toLocaleString()
+                                            : 'Never'}
+                                    </p>
+                                    <p className="text-xs text-gray-400">
+                                        Today: {stats?.signupsToday || 0} signups
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* System Logs */}
+                <div className="mt-8 bg-gray-800 rounded-xl p-6">
+                    <h2 className="text-xl font-semibold text-white mb-4">System Logs</h2>
+                    <div className="bg-gray-900 rounded-lg p-4 h-48 overflow-y-auto">
+                        <div className="space-y-2 font-mono text-xs">
+                            <p className="text-gray-400">
+                                [{new Date().toISOString()}] Admin dashboard accessed
+                            </p>
+                            {lastTrendingRun && (
+                                <p className="text-green-400">
+                                    [{lastTrendingRun.toISOString()}] Trending check completed
+                                </p>
+                            )}
+                            {stats?.lastSignup && (
+                                <p className="text-blue-400">
+                                    [{new Date(stats.lastSignup).toISOString()}] New account created
+                                </p>
+                            )}
+                            <p className="text-gray-500">Waiting for system events...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}

@@ -499,6 +499,29 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // System collections (account limits & trending)
+    match /system/stats {
+      // Public read for account stats display
+      allow read: if true;
+      // Server-only writes (no client writes allowed)
+      allow write: if false;
+    }
+
+    match /system/trending {
+      // Public read for trending stats (admin dashboard)
+      allow read: if true;
+      // Server-only writes (no client writes allowed)
+      allow write: if false;
+    }
+
+    // Signup log collection
+    match /signupLog/{userId} {
+      // Admins can read (would need admin UID check for production)
+      allow read: if request.auth != null;
+      // Server-only writes
+      allow write: if false;
+    }
+
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;
