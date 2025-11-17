@@ -429,6 +429,7 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                                     shimmer="wave"
                                     showSurpriseMe={true}
                                     onSurpriseMe={handleSurpriseMe}
+                                    surpriseIcon="sparkles"
                                     placeholder="e.g., All James Bond movies, Paul Thomas Anderson filmography, Best heist films..."
                                 />
                             </div>

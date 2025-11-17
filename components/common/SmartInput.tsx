@@ -1,7 +1,12 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { XMarkIcon, MicrophoneIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import {
+    XMarkIcon,
+    MicrophoneIcon,
+    MagnifyingGlassIcon,
+    SparklesIcon,
+} from '@heroicons/react/24/outline'
 import { useTypewriter } from '../../hooks/useTypewriter'
 import { useVoiceInput } from '../../hooks/useVoiceInput'
 import { useToast } from '../../hooks/useToast'
@@ -53,6 +58,7 @@ interface SmartInputProps {
         | 'double'
     showSurpriseMe?: boolean
     onSurpriseMe?: () => void
+    surpriseIcon?: 'dice' | 'sparkles' // Icon to use for surprise button (default: dice)
     voiceSourceId?: string
 }
 
@@ -86,6 +92,7 @@ export function SmartInput({
     shimmer = 'none',
     showSurpriseMe = false,
     onSurpriseMe: _onSurpriseMe,
+    surpriseIcon = 'dice',
     voiceSourceId,
 }: SmartInputProps) {
     const { showError } = useToast()
@@ -548,7 +555,11 @@ export function SmartInput({
                             `}
                             aria-label="Surprise me with a search idea"
                         >
-                            <DiceIcon className="w-full h-full" />
+                            {surpriseIcon === 'sparkles' ? (
+                                <SparklesIcon className="w-full h-full" />
+                            ) : (
+                                <DiceIcon className="w-full h-full" />
+                            )}
                         </button>
                     </div>
                 )}
