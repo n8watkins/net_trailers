@@ -199,10 +199,28 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setLoading(true)
         setGlobalLoading(true)
         await signInWithEmailAndPassword(auth, email, password)
-            .then((userCredential) => {
+            .then(async (userCredential) => {
                 const user = userCredential.user
                 const displayName = user.displayName || user.email?.split('@')[0] || 'Nathan'
                 showSuccess(`Welcome back, ${displayName}!`)
+
+                // Record login activity
+                try {
+                    await fetch('/api/admin/activity', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            type: 'login',
+                            userId: user.uid,
+                            userEmail: user.email,
+                            userAgent: navigator.userAgent,
+                        }),
+                    })
+                } catch (error) {
+                    console.error('Failed to record login activity:', error)
+                    // Don't fail the login if activity recording fails
+                }
+
                 // Don't redirect - stay on current page
                 setLoading(false)
             })
@@ -251,6 +269,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 } else {
                     showSuccess(`Welcome back, ${displayName}!`)
                 }
+
+                // Record login activity (for both new and returning users)
+                try {
+                    await fetch('/api/admin/activity', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            type: 'login',
+                            userId: user.uid,
+                            userEmail: user.email,
+                            userAgent: navigator.userAgent,
+                        }),
+                    })
+                } catch (error) {
+                    console.error('Failed to record login activity:', error)
+                    // Don't fail the login if activity recording fails
+                }
+
                 // Don't redirect - stay on current page
             })
             .catch((error) => {

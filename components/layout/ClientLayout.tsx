@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
+import { usePageViewTracking } from '../../hooks/useActivityTracking'
 import KeyboardShortcutsModal from '../modals/KeyboardShortcutsModal'
 import TutorialModal from '../modals/TutorialModal'
 import Footer from './Footer'
@@ -99,6 +100,9 @@ function ClientLayout({ children }: ClientLayoutProps) {
 
         return () => clearTimeout(timer)
     }, [])
+
+    // Track page views for analytics
+    usePageViewTracking()
 
     // Set up global keyboard shortcuts
     useKeyboardShortcuts({
