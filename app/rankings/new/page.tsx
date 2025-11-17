@@ -6,20 +6,22 @@
 
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import SubPageLayout from '../../../components/layout/SubPageLayout'
 import { RankingCreator } from '../../../components/rankings/RankingCreator'
+import SmartRankingCreator from '../../../components/rankings/SmartRankingCreator'
 import { useAuthStatus } from '../../../hooks/useAuthStatus'
 import { GuestModeNotification } from '../../../components/auth/GuestModeNotification'
 import NetflixLoader from '../../../components/common/NetflixLoader'
-import { TrophyIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { TrophyIcon, ArrowLeftIcon, SparklesIcon } from '@heroicons/react/24/outline'
 import { useToast } from '../../../hooks/useToast'
 
 export default function NewRankingPage() {
     const router = useRouter()
     const { isGuest, isInitialized, isLoading } = useAuthStatus()
     const { showSuccess } = useToast()
+    const [mode, setMode] = useState<'smart' | 'traditional'>('smart')
 
     // Redirect guests to rankings page
     useEffect(() => {
@@ -71,5 +73,9 @@ export default function NewRankingPage() {
         )
     }
 
-    return <RankingCreator onComplete={handleComplete} onCancel={handleCancel} />
+    return mode === 'smart' ? (
+        <SmartRankingCreator onSwitchToTraditional={() => setMode('traditional')} />
+    ) : (
+        <RankingCreator onComplete={handleComplete} onCancel={handleCancel} />
+    )
 }
