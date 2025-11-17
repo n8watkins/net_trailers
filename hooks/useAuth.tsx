@@ -162,10 +162,26 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setLoading(true)
         setGlobalLoading(true)
         await createUserWithEmailAndPassword(auth, email, password)
-            .then((userCredential) => {
+            .then(async (userCredential) => {
                 const user = userCredential.user
                 const displayName = user.displayName || user.email?.split('@')[0] || 'there'
                 showSuccess(`Welcome ${displayName}! Account created successfully.`)
+
+                // Record account creation in system stats
+                try {
+                    await fetch('/api/auth/record-signup', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            userId: user.uid,
+                            email: user.email,
+                        }),
+                    })
+                } catch (error) {
+                    console.error('Failed to record account creation:', error)
+                    // Don't fail the signup if stats recording fails
+                }
+
                 // Don't redirect - stay on current page
                 setLoading(false)
             })
@@ -206,10 +222,35 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setGlobalLoading(true)
         const provider = new GoogleAuthProvider()
         await signInWithPopup(auth, provider)
-            .then((result) => {
+            .then(async (result) => {
                 const user = result.user
                 const displayName = user.displayName || user.email?.split('@')[0] || 'there'
-                showSuccess(`Welcome ${displayName}!`)
+
+                // Check if this is a new user (getAdditionalUserInfo would be better but requires import)
+                // For Google sign-in, we'll check the creation time
+                const isNewUser =
+                    result.user.metadata.creationTime === result.user.metadata.lastSignInTime
+
+                if (isNewUser) {
+                    showSuccess(`Welcome ${displayName}! Account created successfully.`)
+
+                    // Record account creation in system stats
+                    try {
+                        await fetch('/api/auth/record-signup', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                userId: user.uid,
+                                email: user.email,
+                            }),
+                        })
+                    } catch (error) {
+                        console.error('Failed to record account creation:', error)
+                        // Don't fail the signup if stats recording fails
+                    }
+                } else {
+                    showSuccess(`Welcome back, ${displayName}!`)
+                }
                 // Don't redirect - stay on current page
             })
             .catch((error) => {
