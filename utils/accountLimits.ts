@@ -14,8 +14,11 @@ export interface AccountStats {
     totalAccounts: number
     maxAccounts: number
     lastSignup: number | null
-    signupsToday: number
+    signupsThisWeek: number
+    signupsThisMonth: number
     lastReset?: number
+    currentWeekStart?: number
+    currentMonthStart?: number
 }
 
 /**
@@ -30,8 +33,11 @@ export async function getAccountStats(): Promise<AccountStats> {
             totalAccounts: data?.totalAccounts || 0,
             maxAccounts: parseInt(process.env.NEXT_PUBLIC_MAX_TOTAL_ACCOUNTS || '50'),
             lastSignup: data?.lastSignup || null,
-            signupsToday: data?.signupsToday || 0,
+            signupsThisWeek: data?.signupsThisWeek || 0,
+            signupsThisMonth: data?.signupsThisMonth || 0,
             lastReset: data?.lastReset || undefined,
+            currentWeekStart: data?.currentWeekStart || undefined,
+            currentMonthStart: data?.currentMonthStart || undefined,
         }
     } catch (error) {
         console.error('Error getting account stats:', error)
@@ -39,7 +45,8 @@ export async function getAccountStats(): Promise<AccountStats> {
             totalAccounts: 0,
             maxAccounts: 50,
             lastSignup: null,
-            signupsToday: 0,
+            signupsThisWeek: 0,
+            signupsThisMonth: 0,
         }
     }
 }

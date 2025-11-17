@@ -8,6 +8,28 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin'
 import { FieldValue } from 'firebase-admin/firestore'
 
+/**
+ * Get the start of the current week (Monday at 00:00:00)
+ */
+function getWeekStart(timestamp: number): number {
+    const date = new Date(timestamp)
+    const day = date.getUTCDay()
+    const diff = date.getUTCDate() - day + (day === 0 ? -6 : 1) // Adjust when day is Sunday
+    date.setUTCDate(diff)
+    date.setUTCHours(0, 0, 0, 0)
+    return date.getTime()
+}
+
+/**
+ * Get the start of the current month (1st at 00:00:00)
+ */
+function getMonthStart(timestamp: number): number {
+    const date = new Date(timestamp)
+    date.setUTCDate(1)
+    date.setUTCHours(0, 0, 0, 0)
+    return date.getTime()
+}
+
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json()
@@ -28,14 +50,22 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 })
         }
 
-        // Update system stats
+        // Calculate time periods
+        const now = Date.now()
+        const currentWeekStart = getWeekStart(now)
+        const currentMonthStart = getMonthStart(now)
+
+        // Update system stats with weekly/monthly tracking
         const systemStatsRef = db.doc('system/stats')
         await systemStatsRef.set(
             {
                 totalAccounts: FieldValue.increment(1),
-                signupsToday: FieldValue.increment(1),
-                lastSignup: Date.now(),
+                signupsThisWeek: FieldValue.increment(1),
+                signupsThisMonth: FieldValue.increment(1),
+                lastSignup: now,
                 lastSignupEmail: email,
+                currentWeekStart,
+                currentMonthStart,
             },
             { merge: true }
         )

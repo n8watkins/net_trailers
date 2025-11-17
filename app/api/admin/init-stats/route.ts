@@ -10,6 +10,35 @@ import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin'
 // Admin authorization
 const ADMIN_TOKEN = process.env.NEXT_PUBLIC_ADMIN_TOKEN || 'your-secret-admin-token'
 
+/**
+ * Get the start of the current week (Monday at 00:00:00)
+ */
+function getWeekStart(timestamp: number): number {
+    const date = new Date(timestamp)
+    const day = date.getUTCDay()
+    const diff = date.getUTCDate() - day + (day === 0 ? -6 : 1) // Adjust when day is Sunday
+    date.setUTCDate(diff)
+    date.setUTCHours(0, 0, 0, 0)
+    return date.getTime()
+}
+
+/**
+ * Get the start of the current month (1st at 00:00:00)
+ */
+function getMonthStart(timestamp: number): number {
+    const date = new Date(timestamp)
+    date.setUTCDate(1)
+    date.setUTCHours(0, 0, 0, 0)
+    return date.getTime()
+}
+
+/**
+ * Count users created within a time period
+ */
+function countUsersInPeriod(users: Array<{ createdAt: string }>, periodStart: number): number {
+    return users.filter((user) => new Date(user.createdAt).getTime() >= periodStart).length
+}
+
 export async function POST(request: NextRequest) {
     try {
         // Verify admin authorization
@@ -61,6 +90,15 @@ export async function POST(request: NextRequest) {
 
         const previousCount = existingDoc.exists ? existingDoc.data()?.totalAccounts || 0 : 0
 
+        // Calculate time periods
+        const now = Date.now()
+        const currentWeekStart = getWeekStart(now)
+        const currentMonthStart = getMonthStart(now)
+
+        // Count signups in current week and month
+        const signupsThisWeek = countUsersInPeriod(users, currentWeekStart)
+        const signupsThisMonth = countUsersInPeriod(users, currentMonthStart)
+
         // Find the most recent signup
         const sortedUsers = users.sort(
             (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -71,22 +109,30 @@ export async function POST(request: NextRequest) {
         await systemStatsRef.set(
             {
                 totalAccounts: userCount,
-                signupsToday: 0, // Reset daily count
+                signupsThisWeek,
+                signupsThisMonth,
                 lastSignup,
-                lastReset: Date.now(),
-                updatedAt: Date.now(),
+                lastReset: now,
+                updatedAt: now,
+                currentWeekStart,
+                currentMonthStart,
             },
             { merge: true }
         )
 
-        console.log(`✅ Updated system/stats with totalAccounts: ${userCount}`)
+        console.log(`✅ Updated system/stats:`)
+        console.log(`   Total accounts: ${userCount}`)
+        console.log(`   Signups this week: ${signupsThisWeek}`)
+        console.log(`   Signups this month: ${signupsThisMonth}`)
 
         return NextResponse.json({
             success: true,
             userCount,
             previousCount,
+            signupsThisWeek,
+            signupsThisMonth,
             lastSignup: lastSignup ? new Date(lastSignup).toISOString() : null,
-            message: `Account statistics initialized. Found ${userCount} users.`,
+            message: `Account statistics initialized. Found ${userCount} users (${signupsThisWeek} this week, ${signupsThisMonth} this month).`,
         })
     } catch (error) {
         console.error('Error initializing account stats:', error)
