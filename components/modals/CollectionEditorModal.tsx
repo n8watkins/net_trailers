@@ -584,36 +584,85 @@ export default function CollectionEditorModal({
                                         Select which content types to display (at least one
                                         required)
                                     </p>
-                                    <div className="inline-flex items-center rounded-full bg-gray-800/80 border border-gray-700 p-1 text-sm font-medium gap-1">
+                                    <div className="space-y-2">
+                                        {/* Movies Toggle */}
                                         <button
                                             type="button"
                                             onClick={() =>
                                                 !canOnlyToggle && handleMediaTypeToggle('movie')
                                             }
                                             disabled={canOnlyToggle}
-                                            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full transition-colors ${
+                                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg border-2 transition-all ${
                                                 isMovieSelected
-                                                    ? 'bg-red-600 text-white'
-                                                    : 'text-gray-400 hover:text-white'
-                                            } ${canOnlyToggle ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                    ? 'bg-red-600/20 border-red-600 text-white'
+                                                    : 'bg-gray-800/40 border-gray-700 text-gray-400 hover:border-gray-600 hover:text-white'
+                                            } ${canOnlyToggle ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                                         >
-                                            <FilmIcon className="w-4 h-4" />
-                                            Movies
+                                            <div
+                                                className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                                                    isMovieSelected
+                                                        ? 'bg-red-600 border-red-600'
+                                                        : 'border-gray-600'
+                                                }`}
+                                            >
+                                                {isMovieSelected && (
+                                                    <svg
+                                                        className="w-3 h-3 text-white"
+                                                        fill="none"
+                                                        viewBox="0 0 24 24"
+                                                        stroke="currentColor"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth={3}
+                                                            d="M5 13l4 4L19 7"
+                                                        />
+                                                    </svg>
+                                                )}
+                                            </div>
+                                            <FilmIcon className="w-5 h-5" />
+                                            <span className="font-medium">Movies</span>
                                         </button>
+
+                                        {/* TV Toggle */}
                                         <button
                                             type="button"
                                             onClick={() =>
                                                 !canOnlyToggle && handleMediaTypeToggle('tv')
                                             }
                                             disabled={canOnlyToggle}
-                                            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full transition-colors ${
+                                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg border-2 transition-all ${
                                                 isTVSelected
-                                                    ? 'bg-red-600 text-white'
-                                                    : 'text-gray-400 hover:text-white'
-                                            } ${canOnlyToggle ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                    ? 'bg-red-600/20 border-red-600 text-white'
+                                                    : 'bg-gray-800/40 border-gray-700 text-gray-400 hover:border-gray-600 hover:text-white'
+                                            } ${canOnlyToggle ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                                         >
-                                            <TvIcon className="w-4 h-4" />
-                                            TV
+                                            <div
+                                                className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                                                    isTVSelected
+                                                        ? 'bg-red-600 border-red-600'
+                                                        : 'border-gray-600'
+                                                }`}
+                                            >
+                                                {isTVSelected && (
+                                                    <svg
+                                                        className="w-3 h-3 text-white"
+                                                        fill="none"
+                                                        viewBox="0 0 24 24"
+                                                        stroke="currentColor"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth={3}
+                                                            d="M5 13l4 4L19 7"
+                                                        />
+                                                    </svg>
+                                                )}
+                                            </div>
+                                            <TvIcon className="w-5 h-5" />
+                                            <span className="font-medium">TV Shows</span>
                                         </button>
                                     </div>
                                 </div>
