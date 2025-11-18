@@ -7,6 +7,8 @@ import { useChildSafety } from './useChildSafety'
 import { useDebounce } from '../utils/debounce'
 import { useSearchFilters, applyFilters } from './search/useSearchFilters'
 import { useSearchPagination } from './search/useSearchPagination'
+import { filterDislikedContent } from '../utils/contentFilter'
+import { useSessionData } from './useSessionData'
 
 /**
  * Hook for managing search functionality with filtering, pagination, and real-time updates
@@ -67,6 +69,7 @@ export function useSearch() {
     const addToSearchHistory = useSearchStore((state) => state.addToSearchHistory)
 
     const { isEnabled: childSafetyEnabled } = useChildSafety()
+    const { hiddenMovies } = useSessionData()
     const debouncedQuery = useDebounce(query, 300)
     const abortControllerRef = useRef<AbortController | undefined>(undefined)
     const lastQueryRef = useRef<string>('')

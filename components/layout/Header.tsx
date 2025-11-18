@@ -289,20 +289,6 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                 <HomeIcon className="h-5 w-5 relative z-10" />
                                 <span className="relative z-10">Home</span>
                             </li>
-                            <li
-                                className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${pathname === '/tv' ? 'text-white hover:text-white font-semibold' : ''}`}
-                                onClick={() => router.push('/tv')}
-                            >
-                                <TvIcon className="h-5 w-5 relative z-10" />
-                                <span className="relative z-10">TV Shows</span>
-                            </li>
-                            <li
-                                className={`headerLink cursor-pointer flex items-center space-x-1 select-none ${pathname === '/movies' ? 'text-white hover:text-white font-semibold' : ''}`}
-                                onClick={() => router.push('/movies')}
-                            >
-                                <FilmIcon className="h-5 w-5 relative z-10" />
-                                <span className="relative z-10">Movies</span>
-                            </li>
                             <li>
                                 <GenresDropdown />
                             </li>
@@ -509,38 +495,6 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                                     />
                                                 </svg>
                                                 <span>Home</span>
-                                            </button>
-                                        </li>
-                                        <li>
-                                            <button
-                                                className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
-                                                    pathname === '/tv'
-                                                        ? 'text-white font-semibold bg-red-600/20'
-                                                        : 'hover:bg-white/10'
-                                                }`}
-                                                onClick={() => {
-                                                    router.push('/tv')
-                                                    setShowMobileMenu(false)
-                                                }}
-                                            >
-                                                <TvIcon className="h-5 w-5" />
-                                                <span>TV Shows</span>
-                                            </button>
-                                        </li>
-                                        <li>
-                                            <button
-                                                className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
-                                                    pathname === '/movies'
-                                                        ? 'text-white font-semibold bg-red-600/20'
-                                                        : 'hover:bg-white/10'
-                                                }`}
-                                                onClick={() => {
-                                                    router.push('/movies')
-                                                    setShowMobileMenu(false)
-                                                }}
-                                            >
-                                                <FilmIcon className="h-5 w-5" />
-                                                <span>Movies</span>
                                             </button>
                                         </li>
                                         <li>

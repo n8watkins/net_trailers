@@ -8,7 +8,7 @@ import { useModalStore } from '../../stores/modalStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { CollectionRowLoader } from '../collections/CollectionRowLoader'
 import { autoMigrateIfNeeded } from '../../utils/migrations/customRowsToCollections'
-import { getSystemCollectionsForPage } from '../../constants/systemCollections'
+import { ALL_SYSTEM_COLLECTIONS } from '../../constants/systemCollections'
 import RecommendedForYouRow from '../recommendations/RecommendedForYouRow'
 import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
@@ -158,7 +158,8 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
 
     // Combine system collections with user collections
     const allCollections = useMemo(() => {
-        const systemCollections = getSystemCollectionsForPage('home')
+        // Get ALL system collections (movies, TV, and both)
+        const systemCollections = ALL_SYSTEM_COLLECTIONS
         const userCollections = sessionType === 'authenticated' ? authCollections : guestCollections
 
         // Filter out deleted system collections and apply custom preferences
@@ -176,8 +177,8 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
                 }
             })
 
-        // User collections that should display as rows
-        const userRows = userCollections.filter((c) => c.displayAsRow && c.mediaType === 'both')
+        // User collections that should display as rows (all media types)
+        const userRows = userCollections.filter((c) => c.displayAsRow)
 
         // Combine and sort by order
         return [...activeSystemCollections, ...userRows].sort((a, b) => a.order - b.order)

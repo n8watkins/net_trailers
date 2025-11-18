@@ -77,24 +77,6 @@ function Footer({
                                 </li>
                                 <li>
                                     <Link
-                                        href="/tv"
-                                        className="text-gray-300 hover:text-white transition-colors duration-200 flex items-center space-x-2"
-                                    >
-                                        <TvIcon className="h-4 w-4" />
-                                        <span>TV Shows</span>
-                                    </Link>
-                                </li>
-                                <li>
-                                    <Link
-                                        href="/movies"
-                                        className="text-gray-300 hover:text-white transition-colors duration-200 flex items-center space-x-2"
-                                    >
-                                        <FilmIcon className="h-4 w-4" />
-                                        <span>Movies</span>
-                                    </Link>
-                                </li>
-                                <li>
-                                    <Link
                                         href="/collections"
                                         className="text-gray-300 hover:text-white transition-colors duration-200 flex items-center space-x-2"
                                     >
