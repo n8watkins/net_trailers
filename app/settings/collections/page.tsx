@@ -20,7 +20,7 @@ import CollectionEditorModal from '../../../components/modals/CollectionEditorMo
 import { SystemRowStorage } from '../../../utils/systemRowStorage'
 import { fixCollectionDisplaySettings } from '../../../utils/migrations/fixCollectionDisplaySettings'
 import { CustomRowsFirestore } from '../../../utils/firestore/customRows'
-import { getSystemRowsByMediaType } from '../../../constants/systemCollections'
+import { getSystemCollectionsByMediaType } from '../../../constants/systemCollections'
 
 // Helper function to convert hex color to rgba with opacity
 const hexToRgba = (hex: string, opacity: number): string => {
@@ -241,9 +241,9 @@ export default function CollectionsPage() {
         try {
             // Get all system rows across all media types
             const allSystemRows = [
-                ...getSystemRowsByMediaType('both'),
-                ...getSystemRowsByMediaType('movie'),
-                ...getSystemRowsByMediaType('tv'),
+                ...getSystemCollectionsByMediaType('both'),
+                ...getSystemCollectionsByMediaType('movie'),
+                ...getSystemCollectionsByMediaType('tv'),
             ]
 
             // Build reset preferences - enable all system rows with default order
