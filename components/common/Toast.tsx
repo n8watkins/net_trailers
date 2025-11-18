@@ -42,17 +42,31 @@ interface ToastProps {
  * Part of the unified toast system - handles all 6 toast types consistently
  */
 const Toast: React.FC<ToastProps> = ({ toast, onClose, duration = TOAST_DURATION }) => {
+    // Use refs for animation state to prevent re-render issues
     const [isVisible, setIsVisible] = useState(false)
     const [isExiting, setIsExiting] = useState(false)
     const timersRef = useRef<{ main?: NodeJS.Timeout; exit?: NodeJS.Timeout }>({})
+    const onCloseRef = useRef(onClose)
+    const hasInitialized = useRef(false)
 
+    // Keep onClose ref up to date without triggering re-animation
     useEffect(() => {
+        onCloseRef.current = onClose
+    }, [onClose])
+
+    // Initialize animation only once per toast
+    useEffect(() => {
+        if (hasInitialized.current) return
+        hasInitialized.current = true
+
+        // Start entrance animation
         setIsVisible(true)
 
+        // Set up auto-dismiss timer
         timersRef.current.main = setTimeout(() => {
             setIsExiting(true)
             timersRef.current.exit = setTimeout(() => {
-                onClose(toast.id)
+                onCloseRef.current(toast.id)
             }, TOAST_EXIT_DURATION)
         }, duration)
 
@@ -61,12 +75,12 @@ const Toast: React.FC<ToastProps> = ({ toast, onClose, duration = TOAST_DURATION
             if (timersRef.current.main) clearTimeout(timersRef.current.main)
             if (timersRef.current.exit) clearTimeout(timersRef.current.exit)
         }
-    }, [toast.id, onClose, duration])
+    }, [toast.id, duration])
 
     const handleClose = () => {
         setIsExiting(true)
         timersRef.current.exit = setTimeout(() => {
-            onClose(toast.id)
+            onCloseRef.current(toast.id)
         }, TOAST_EXIT_DURATION)
     }
 

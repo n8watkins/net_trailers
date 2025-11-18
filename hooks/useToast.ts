@@ -1,4 +1,4 @@
-import { useAppStore } from '../stores/appStore'
+import { useToastStore } from '../stores/toastStore'
 import { ToastMessage } from '../components/common/Toast'
 
 /**
@@ -7,6 +7,8 @@ import { ToastMessage } from '../components/common/Toast'
  * Provides a simple API for showing all types of toast notifications.
  * Replaces the old error toast system with consistent UX across all toast types.
  * Toast messages auto-dismiss after 3 seconds with a maximum of 2 toasts displayed at once.
+ *
+ * Now reads directly from toastStore to avoid re-render issues from appStore updates.
  *
  * @returns Object containing toast state and notification functions
  *
@@ -31,9 +33,9 @@ import { ToastMessage } from '../components/common/Toast'
  * ```
  */
 export const useToast = () => {
-    const toasts = useAppStore((state) => state.toasts)
-    const showToast = useAppStore((state) => state.showToast)
-    const dismissToast = useAppStore((state) => state.dismissToast)
+    const toasts = useToastStore((state) => state.toasts)
+    const showToast = useToastStore((state) => state.showToast)
+    const dismissToast = useToastStore((state) => state.dismissToast)
 
     const removeToast = (id: string) => {
         dismissToast(id)
