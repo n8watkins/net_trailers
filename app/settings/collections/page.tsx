@@ -523,15 +523,17 @@ function CollectionCard({ collection, onToggle, onEdit }: CollectionCardProps) {
                     <h3 className="text-white text-sm font-medium truncate">{collection.name}</h3>
                 </div>
 
-                {/* Edit Button - Top Right */}
-                <button
-                    onClick={onEdit}
-                    className="flex-shrink-0 flex items-center justify-center p-1 hover:bg-gray-800 rounded transition-colors"
-                    title="Edit collection"
-                    aria-label="Edit collection"
-                >
-                    <PencilIcon className="w-4 h-4 text-gray-400 hover:text-white" />
-                </button>
+                {/* Edit Button - Only for user-created collections */}
+                {!collection.isSystem && (
+                    <button
+                        onClick={onEdit}
+                        className="flex-shrink-0 flex items-center justify-center p-1 hover:bg-gray-800 rounded transition-colors"
+                        title="Edit collection"
+                        aria-label="Edit collection"
+                    >
+                        <PencilIcon className="w-4 h-4 text-gray-400 hover:text-white" />
+                    </button>
+                )}
             </div>
 
             {/* Bottom Row: Item Count and Toggle */}
