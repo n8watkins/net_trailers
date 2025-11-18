@@ -19,6 +19,8 @@ import {
 import CollectionEditorModal from '../../../components/modals/CollectionEditorModal'
 import { SystemRowStorage } from '../../../utils/systemRowStorage'
 import { fixCollectionDisplaySettings } from '../../../utils/migrations/fixCollectionDisplaySettings'
+import { CustomRowsFirestore } from '../../../utils/firestore/customRows'
+import { getSystemRowsByMediaType } from '../../../constants/systemCollections'
 
 // Helper function to convert hex color to rgba with opacity
 const hexToRgba = (hex: string, opacity: number): string => {
@@ -43,6 +45,7 @@ export default function CollectionsPage() {
     const getAllDisplayRows = useCustomRowsStore((state) => state.getAllDisplayRows)
     const toggleSystemRow = useCustomRowsStore((state) => state.toggleSystemRow)
     const setSystemRowPreferences = useCustomRowsStore((state) => state.setSystemRowPreferences)
+    const setDeletedSystemRows = useCustomRowsStore((state) => state.setDeletedSystemRows)
 
     // Get user collections
     const authCollections = useAuthStore((state) => state.userCreatedWatchlists)
@@ -71,11 +74,19 @@ export default function CollectionsPage() {
     const [isMigrating, setIsMigrating] = useState(false)
 
     // Load system row preferences from storage on mount
+    // Only load if preferences don't already exist to avoid clobbering in-flight changes
     useEffect(() => {
         if (!userId) return
 
         const loadPreferences = async () => {
             try {
+                // Check if preferences already exist for this user
+                const existingPrefs = useCustomRowsStore.getState().systemRowPreferences.get(userId)
+                if (existingPrefs && Object.keys(existingPrefs).length > 0) {
+                    // Preferences already loaded, skip to avoid race condition
+                    return
+                }
+
                 const preferences = await SystemRowStorage.getSystemRowPreferences(
                     userId,
                     sessionType === 'guest'
@@ -205,17 +216,22 @@ export default function CollectionsPage() {
         const collection = userCollectionsFromRows.find((c: UserList) => c.id === collectionId)
         if (!collection) return
 
-        await updateList(collectionId, {
-            displayAsRow: !collection.displayAsRow,
-        })
-        showSuccess('Collection updated')
+        try {
+            await updateList(collectionId, {
+                displayAsRow: !collection.displayAsRow,
+            })
+            showSuccess('Collection updated')
+        } catch (error) {
+            console.error('Failed to toggle user collection:', error)
+            showError('Failed to update collection')
+        }
     }
 
-    const handleToggle = (collectionId: string, isSystem: boolean) => {
+    const handleToggle = async (collectionId: string, isSystem: boolean) => {
         if (isSystem) {
-            handleToggleSystem(collectionId)
+            await handleToggleSystem(collectionId)
         } else {
-            handleToggleUser(collectionId)
+            await handleToggleUser(collectionId)
         }
     }
 
@@ -223,28 +239,40 @@ export default function CollectionsPage() {
         if (!userId) return
 
         try {
-            // Reset all system collections to enabled
-            const systemPreferences =
-                useCustomRowsStore.getState().systemRowPreferences.get(userId) || {}
-            const resetPrefs: any = {}
+            // Get all system rows across all media types
+            const allSystemRows = [
+                ...getSystemRowsByMediaType('both'),
+                ...getSystemRowsByMediaType('movie'),
+                ...getSystemRowsByMediaType('tv'),
+            ]
 
-            // Enable all system collections
-            Object.keys(systemPreferences).forEach((rowId) => {
-                resetPrefs[rowId] = {
+            // Build reset preferences - enable all system rows with default order
+            const resetPrefs: any = {}
+            allSystemRows.forEach((row) => {
+                resetPrefs[row.id] = {
                     enabled: true,
-                    order: systemPreferences[rowId]?.order ?? 0,
+                    order: row.order,
                 }
             })
 
-            // Update in-memory state
+            // Clear deleted system rows (restore all deleted rows)
+            setDeletedSystemRows(userId, [])
+
+            // Update in-memory preferences
             useCustomRowsStore.getState().setSystemRowPreferences(userId, resetPrefs)
 
-            // Persist to storage
-            await SystemRowStorage.setSystemRowPreferences(
-                userId,
-                resetPrefs,
-                isAuth ? false : true
-            )
+            // Persist both preferences and cleared deletions to storage
+            if (isAuth) {
+                // For authenticated users, use Firestore
+                await CustomRowsFirestore.resetDefaultRows(userId, 'both')
+                await CustomRowsFirestore.resetDefaultRows(userId, 'movie')
+                await CustomRowsFirestore.resetDefaultRows(userId, 'tv')
+            } else {
+                // For guest users, use localStorage
+                SystemRowStorage.resetDefaultRows(userId, 'both')
+                SystemRowStorage.resetDefaultRows(userId, 'movie')
+                SystemRowStorage.resetDefaultRows(userId, 'tv')
+            }
 
             showSuccess('Reset to default collection settings')
         } catch (error) {
