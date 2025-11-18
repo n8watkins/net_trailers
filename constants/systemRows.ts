@@ -1,155 +1,27 @@
 /**
  * System/Default Rows
  *
+ * @deprecated - This file is deprecated in favor of systemCollections.ts
+ * which uses the unified Collection interface.
+ *
+ * This file is kept for backward compatibility with legacy code
+ * that may still reference SystemRowConfig types.
+ *
  * Pre-configured rows that all users see by default.
- * Core rows (Trending/Top Rated) cannot be deleted, only disabled.
- * Other system rows can be deleted and restored via "Reset Default Rows".
+ * All rows are now unified with mediaType: 'both' by default.
+ * Users can customize mediaType via the collection editor.
  */
 
 import { SystemRowConfig } from '../types/customRows'
 
 /**
- * System rows for Movies page (mediaType: 'movie')
+ * All system rows - unified with mediaType: 'both'
+ * Users can edit these to change mediaType to 'movie' or 'tv' only if desired
  */
-export const SYSTEM_MOVIE_ROWS: SystemRowConfig[] = [
+export const ALL_SYSTEM_ROWS: SystemRowConfig[] = [
+    // Core rows - cannot be deleted but can be edited
     {
-        id: 'system-movie-trending',
-        name: 'Trending Movies',
-        genres: [], // Special: uses trending API
-        genreLogic: 'OR',
-        mediaType: 'movie',
-        order: 0,
-        isSpecialRow: true,
-        canDelete: false, // Core row - cannot be deleted
-        canEdit: false, // Core row - cannot be edited
-    },
-    {
-        id: 'system-movie-top-rated',
-        name: 'Top Rated Movies',
-        genres: [], // Special: uses top-rated API
-        genreLogic: 'OR',
-        mediaType: 'movie',
-        order: 1,
-        isSpecialRow: true,
-        canDelete: false, // Core row - cannot be deleted
-        canEdit: false, // Core row - cannot be edited
-    },
-    {
-        id: 'system-movie-action',
-        name: 'Action-Packed',
-        genres: ['action'], // Action
-        genreLogic: 'OR',
-        mediaType: 'movie',
-        order: 2,
-    },
-    {
-        id: 'system-movie-comedy',
-        name: 'Comedy Classics',
-        genres: ['comedy'], // Comedy
-        genreLogic: 'OR',
-        mediaType: 'movie',
-        order: 3,
-    },
-    {
-        id: 'system-movie-scifi',
-        name: 'Sci-Fi Adventures',
-        genres: ['scifi'], // Science Fiction
-        genreLogic: 'OR',
-        mediaType: 'movie',
-        order: 4,
-    },
-    {
-        id: 'system-movie-horror',
-        name: 'Horror Thrills',
-        genres: ['horror'], // Horror
-        genreLogic: 'OR',
-        mediaType: 'movie',
-        order: 5,
-    },
-    {
-        id: 'system-movie-romance',
-        name: 'Romantic Films',
-        genres: ['romance'], // Romance
-        genreLogic: 'OR',
-        mediaType: 'movie',
-        order: 6,
-    },
-]
-
-/**
- * System rows for TV Shows page (mediaType: 'tv')
- */
-export const SYSTEM_TV_ROWS: SystemRowConfig[] = [
-    {
-        id: 'system-tv-trending',
-        name: 'Trending TV Shows',
-        genres: [], // Special: uses trending API
-        genreLogic: 'OR',
-        mediaType: 'tv',
-        order: 0,
-        isSpecialRow: true,
-        canDelete: false, // Core row - cannot be deleted
-        canEdit: false, // Core row - cannot be edited
-    },
-    {
-        id: 'system-tv-top-rated',
-        name: 'Top Rated TV Shows',
-        genres: [], // Special: uses top-rated API
-        genreLogic: 'OR',
-        mediaType: 'tv',
-        order: 1,
-        isSpecialRow: true,
-        canDelete: false, // Core row - cannot be deleted
-        canEdit: false, // Core row - cannot be edited
-    },
-    {
-        id: 'system-tv-action',
-        name: 'Action & Adventure',
-        genres: ['action'], // Action & Adventure
-        genreLogic: 'OR',
-        mediaType: 'tv',
-        order: 2,
-    },
-    {
-        id: 'system-tv-comedy',
-        name: 'Comedy Series',
-        genres: ['comedy'], // Comedy
-        genreLogic: 'OR',
-        mediaType: 'tv',
-        order: 3,
-    },
-    {
-        id: 'system-tv-scifi',
-        name: 'Sci-Fi & Fantasy',
-        genres: ['scifi'], // Sci-Fi & Fantasy
-        genreLogic: 'OR',
-        mediaType: 'tv',
-        order: 4,
-    },
-    {
-        id: 'system-tv-kids',
-        name: 'Kids Shows',
-        genres: ['kids'], // Kids
-        genreLogic: 'OR',
-        mediaType: 'tv',
-        order: 5,
-    },
-    {
-        id: 'system-tv-reality',
-        name: 'Reality TV',
-        genres: ['reality'], // Reality
-        genreLogic: 'OR',
-        mediaType: 'tv',
-        order: 6,
-    },
-]
-
-/**
- * System rows for Home page (mediaType: 'both')
- */
-export const SYSTEM_HOME_ROWS: SystemRowConfig[] = [
-    {
-        id: 'system-home-trending',
+        id: 'system-trending',
         name: 'Trending',
         genres: [], // Special: uses trending API
         genreLogic: 'OR',
@@ -157,10 +29,10 @@ export const SYSTEM_HOME_ROWS: SystemRowConfig[] = [
         order: 0,
         isSpecialRow: true,
         canDelete: false, // Core row - cannot be deleted
-        canEdit: false, // Core row - cannot be edited
+        canEdit: true, // Can customize mediaType
     },
     {
-        id: 'system-home-top-rated',
+        id: 'system-top-rated',
         name: 'Top Rated',
         genres: [], // Special: uses top-rated API
         genreLogic: 'OR',
@@ -168,69 +40,87 @@ export const SYSTEM_HOME_ROWS: SystemRowConfig[] = [
         order: 1,
         isSpecialRow: true,
         canDelete: false, // Core row - cannot be deleted
-        canEdit: false, // Core row - cannot be edited
+        canEdit: true, // Can customize mediaType
     },
+    // Genre rows - can be customized or deleted
     {
-        id: 'system-home-animation',
-        name: 'Animated Favorites',
-        genres: ['animation'], // Animation
+        id: 'system-action',
+        name: 'Action-Packed',
+        genres: ['action'],
         genreLogic: 'OR',
         mediaType: 'both',
         order: 2,
     },
     {
-        id: 'system-home-family',
-        name: 'Family Fun',
-        genres: ['family'], // Family
+        id: 'system-comedy',
+        name: 'Comedy Favorites',
+        genres: ['comedy'],
         genreLogic: 'OR',
         mediaType: 'both',
         order: 3,
     },
     {
-        id: 'system-home-documentary',
-        name: 'Documentaries',
-        genres: ['documentary'], // Documentary
+        id: 'system-scifi',
+        name: 'Sci-Fi & Fantasy',
+        genres: ['scifi', 'fantasy'],
         genreLogic: 'OR',
         mediaType: 'both',
         order: 4,
     },
     {
-        id: 'system-home-mystery',
-        name: 'Mystery & Suspense',
-        genres: ['mystery'], // Mystery
+        id: 'system-animation',
+        name: 'Animated Favorites',
+        genres: ['animation'],
         genreLogic: 'OR',
         mediaType: 'both',
         order: 5,
     },
     {
-        id: 'system-home-romance-drama',
-        name: 'Romantic Dramas',
-        genres: ['romance', 'drama'], // Romance + Drama (multi-genre with AND logic)
-        genreLogic: 'AND',
+        id: 'system-horror',
+        name: 'Horror Thrills',
+        genres: ['horror'],
+        genreLogic: 'OR',
         mediaType: 'both',
         order: 6,
+    },
+    {
+        id: 'system-family',
+        name: 'Family Fun',
+        genres: ['family'],
+        genreLogic: 'OR',
+        mediaType: 'both',
+        order: 7,
+    },
+    {
+        id: 'system-documentary',
+        name: 'Documentaries',
+        genres: ['documentary'],
+        genreLogic: 'OR',
+        mediaType: 'both',
+        order: 8,
+    },
+    {
+        id: 'system-romance-drama',
+        name: 'Romantic Dramas',
+        genres: ['romance', 'drama'],
+        genreLogic: 'AND',
+        mediaType: 'both',
+        order: 9,
     },
 ]
 
 /**
- * All system rows combined
+ * @deprecated Legacy exports - all rows are now unified
+ * Kept for backward compatibility only
  */
-export const ALL_SYSTEM_ROWS: SystemRowConfig[] = [
-    ...SYSTEM_MOVIE_ROWS,
-    ...SYSTEM_TV_ROWS,
-    ...SYSTEM_HOME_ROWS,
-]
+export const SYSTEM_MOVIE_ROWS: SystemRowConfig[] = ALL_SYSTEM_ROWS
+export const SYSTEM_TV_ROWS: SystemRowConfig[] = ALL_SYSTEM_ROWS
+export const SYSTEM_HOME_ROWS: SystemRowConfig[] = ALL_SYSTEM_ROWS
 
 /**
- * Get system rows by media type
+ * @deprecated Legacy function - all rows are now unified
+ * Get system rows by media type (returns all rows)
  */
 export function getSystemRowsByMediaType(mediaType: 'movie' | 'tv' | 'both'): SystemRowConfig[] {
-    switch (mediaType) {
-        case 'movie':
-            return SYSTEM_MOVIE_ROWS
-        case 'tv':
-            return SYSTEM_TV_ROWS
-        case 'both':
-            return SYSTEM_HOME_ROWS
-    }
+    return ALL_SYSTEM_ROWS
 }

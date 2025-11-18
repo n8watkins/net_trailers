@@ -2,302 +2,23 @@
  * System Collections
  *
  * Pre-configured collections that all users see by default.
- * These replace the old systemRows.ts with a unified Collection interface.
+ * Streamlined to show unified collections with mediaType: 'both' by default.
+ * Users can customize mediaType, genres, and other properties via the collection editor.
  *
- * Core collections (Trending/Top Rated) cannot be deleted.
- * Other system collections can be customized by users.
+ * Core collections (Trending/Top Rated) cannot be deleted but can be edited.
+ * All other system collections can be customized or deleted by users.
  */
 
 import { Collection } from '../types/userLists'
 
 /**
- * System collections for Movies page (mediaType: 'movie')
+ * All system collections - unified with mediaType: 'both'
+ * Users can edit these to change mediaType to 'movie' or 'tv' only if desired
  */
-export const SYSTEM_MOVIE_COLLECTIONS: Collection[] = [
+export const ALL_SYSTEM_COLLECTIONS: Collection[] = [
+    // Core collections - cannot be deleted but can be edited for mediaType
     {
-        id: 'system-movie-trending',
-        name: 'Trending Movies',
-        description: 'Popular movies trending right now',
-        isPublic: false,
-        createdAt: 0,
-        updatedAt: 0,
-        items: [],
-        collectionType: 'tmdb-genre',
-        displayAsRow: true,
-        order: 0,
-        enabled: true,
-        genres: [],
-        genreLogic: 'OR',
-        mediaType: 'movie',
-        isSpecialCollection: true,
-        isSystemCollection: true,
-        canDelete: false,
-        canEdit: false,
-    },
-    {
-        id: 'system-movie-top-rated',
-        name: 'Top Rated Movies',
-        description: 'Highest rated movies of all time',
-        isPublic: false,
-        createdAt: 0,
-        updatedAt: 0,
-        items: [],
-        collectionType: 'tmdb-genre',
-        displayAsRow: true,
-        order: 1,
-        enabled: true,
-        genres: [],
-        genreLogic: 'OR',
-        mediaType: 'movie',
-        isSpecialCollection: true,
-        isSystemCollection: true,
-        canDelete: false,
-        canEdit: false,
-    },
-    {
-        id: 'system-movie-action',
-        name: 'Action-Packed',
-        description: 'Explosive action movies',
-        isPublic: false,
-        createdAt: 0,
-        updatedAt: 0,
-        items: [],
-        collectionType: 'tmdb-genre',
-        displayAsRow: true,
-        order: 2,
-        enabled: true,
-        genres: ['action'], // Action
-        genreLogic: 'OR',
-        mediaType: 'movie',
-        isSystemCollection: true,
-        canDelete: true,
-        canEdit: true, // Users can edit to change mediaType
-    },
-    {
-        id: 'system-movie-comedy',
-        name: 'Comedy Classics',
-        description: 'Hilarious comedy movies',
-        isPublic: false,
-        createdAt: 0,
-        updatedAt: 0,
-        items: [],
-        collectionType: 'tmdb-genre',
-        displayAsRow: true,
-        order: 3,
-        enabled: true,
-        genres: ['comedy'], // Comedy
-        genreLogic: 'OR',
-        mediaType: 'movie',
-        isSystemCollection: true,
-        canDelete: true,
-        canEdit: true,
-    },
-    {
-        id: 'system-movie-scifi',
-        name: 'Sci-Fi Adventures',
-        description: 'Futuristic science fiction movies',
-        isPublic: false,
-        createdAt: 0,
-        updatedAt: 0,
-        items: [],
-        collectionType: 'tmdb-genre',
-        displayAsRow: true,
-        order: 4,
-        enabled: true,
-        genres: ['scifi'], // Science Fiction
-        genreLogic: 'OR',
-        mediaType: 'movie',
-        isSystemCollection: true,
-        canDelete: true,
-        canEdit: true,
-    },
-    {
-        id: 'system-movie-horror',
-        name: 'Horror Thrills',
-        description: 'Spine-chilling horror movies',
-        isPublic: false,
-        createdAt: 0,
-        updatedAt: 0,
-        items: [],
-        collectionType: 'tmdb-genre',
-        displayAsRow: true,
-        order: 5,
-        enabled: true,
-        genres: ['horror'], // Horror
-        genreLogic: 'OR',
-        mediaType: 'movie',
-        isSystemCollection: true,
-        canDelete: true,
-        canEdit: true,
-    },
-    {
-        id: 'system-movie-romance',
-        name: 'Romantic Films',
-        description: 'Heartwarming romance movies',
-        isPublic: false,
-        createdAt: 0,
-        updatedAt: 0,
-        items: [],
-        collectionType: 'tmdb-genre',
-        displayAsRow: true,
-        order: 6,
-        enabled: true,
-        genres: ['romance'], // Romance
-        genreLogic: 'OR',
-        mediaType: 'movie',
-        isSystemCollection: true,
-        canDelete: true,
-        canEdit: true,
-    },
-]
-
-/**
- * System collections for TV Shows page (mediaType: 'tv')
- */
-export const SYSTEM_TV_COLLECTIONS: Collection[] = [
-    {
-        id: 'system-tv-trending',
-        name: 'Trending TV Shows',
-        description: 'Popular TV shows trending right now',
-        isPublic: false,
-        createdAt: 0,
-        updatedAt: 0,
-        items: [],
-        collectionType: 'tmdb-genre',
-        displayAsRow: true,
-        order: 0,
-        enabled: true,
-        genres: [],
-        genreLogic: 'OR',
-        mediaType: 'tv',
-        isSpecialCollection: true,
-        isSystemCollection: true,
-        canDelete: false,
-        canEdit: false,
-    },
-    {
-        id: 'system-tv-top-rated',
-        name: 'Top Rated TV Shows',
-        description: 'Highest rated TV shows of all time',
-        isPublic: false,
-        createdAt: 0,
-        updatedAt: 0,
-        items: [],
-        collectionType: 'tmdb-genre',
-        displayAsRow: true,
-        order: 1,
-        enabled: true,
-        genres: [],
-        genreLogic: 'OR',
-        mediaType: 'tv',
-        isSpecialCollection: true,
-        isSystemCollection: true,
-        canDelete: false,
-        canEdit: false,
-    },
-    {
-        id: 'system-tv-action',
-        name: 'Action & Adventure',
-        description: 'Thrilling action and adventure series',
-        isPublic: false,
-        createdAt: 0,
-        updatedAt: 0,
-        items: [],
-        collectionType: 'tmdb-genre',
-        displayAsRow: true,
-        order: 2,
-        enabled: true,
-        genres: ['action'], // Action & Adventure
-        genreLogic: 'OR',
-        mediaType: 'tv',
-        isSystemCollection: true,
-        canDelete: true,
-        canEdit: true,
-    },
-    {
-        id: 'system-tv-comedy',
-        name: 'Comedy Series',
-        description: 'Funny and entertaining comedy shows',
-        isPublic: false,
-        createdAt: 0,
-        updatedAt: 0,
-        items: [],
-        collectionType: 'tmdb-genre',
-        displayAsRow: true,
-        order: 3,
-        enabled: true,
-        genres: ['comedy'], // Comedy
-        genreLogic: 'OR',
-        mediaType: 'tv',
-        isSystemCollection: true,
-        canDelete: true,
-        canEdit: true,
-    },
-    {
-        id: 'system-tv-scifi',
-        name: 'Sci-Fi & Fantasy',
-        description: 'Science fiction and fantasy series',
-        isPublic: false,
-        createdAt: 0,
-        updatedAt: 0,
-        items: [],
-        collectionType: 'tmdb-genre',
-        displayAsRow: true,
-        order: 4,
-        enabled: true,
-        genres: ['scifi'], // Sci-Fi & Fantasy
-        genreLogic: 'OR',
-        mediaType: 'tv',
-        isSystemCollection: true,
-        canDelete: true,
-        canEdit: true,
-    },
-    {
-        id: 'system-tv-kids',
-        name: 'Kids Shows',
-        description: 'Fun and educational shows for kids',
-        isPublic: false,
-        createdAt: 0,
-        updatedAt: 0,
-        items: [],
-        collectionType: 'tmdb-genre',
-        displayAsRow: true,
-        order: 5,
-        enabled: true,
-        genres: ['kids'], // Kids
-        genreLogic: 'OR',
-        mediaType: 'tv',
-        isSystemCollection: true,
-        canDelete: true,
-        canEdit: true,
-    },
-    {
-        id: 'system-tv-reality',
-        name: 'Reality TV',
-        description: 'Entertaining reality television',
-        isPublic: false,
-        createdAt: 0,
-        updatedAt: 0,
-        items: [],
-        collectionType: 'tmdb-genre',
-        displayAsRow: true,
-        order: 6,
-        enabled: true,
-        genres: ['reality'], // Reality
-        genreLogic: 'OR',
-        mediaType: 'tv',
-        isSystemCollection: true,
-        canDelete: true,
-        canEdit: true,
-    },
-]
-
-/**
- * System collections for Home page (mediaType: 'both')
- */
-export const SYSTEM_HOME_COLLECTIONS: Collection[] = [
-    {
-        id: 'system-home-trending',
+        id: 'system-trending',
         name: 'Trending',
         description: 'Popular movies and TV shows trending right now',
         isPublic: false,
@@ -314,10 +35,10 @@ export const SYSTEM_HOME_COLLECTIONS: Collection[] = [
         isSpecialCollection: true,
         isSystemCollection: true,
         canDelete: false,
-        canEdit: false,
+        canEdit: true, // Users can customize mediaType
     },
     {
-        id: 'system-home-top-rated',
+        id: 'system-top-rated',
         name: 'Top Rated',
         description: 'Highest rated movies and TV shows',
         isPublic: false,
@@ -334,12 +55,13 @@ export const SYSTEM_HOME_COLLECTIONS: Collection[] = [
         isSpecialCollection: true,
         isSystemCollection: true,
         canDelete: false,
-        canEdit: false,
+        canEdit: true, // Users can customize mediaType
     },
+    // Genre collections - can be customized or deleted
     {
-        id: 'system-home-animation',
-        name: 'Animated Favorites',
-        description: 'Best animated movies and shows',
+        id: 'system-action',
+        name: 'Action-Packed',
+        description: 'Explosive action movies and shows',
         isPublic: false,
         createdAt: 0,
         updatedAt: 0,
@@ -348,7 +70,7 @@ export const SYSTEM_HOME_COLLECTIONS: Collection[] = [
         displayAsRow: true,
         order: 2,
         enabled: true,
-        genres: ['animation'], // Animation
+        genres: ['action'],
         genreLogic: 'OR',
         mediaType: 'both',
         isSystemCollection: true,
@@ -356,9 +78,9 @@ export const SYSTEM_HOME_COLLECTIONS: Collection[] = [
         canEdit: true,
     },
     {
-        id: 'system-home-family',
-        name: 'Family Fun',
-        description: 'Great content for the whole family',
+        id: 'system-comedy',
+        name: 'Comedy Favorites',
+        description: 'Hilarious comedy movies and shows',
         isPublic: false,
         createdAt: 0,
         updatedAt: 0,
@@ -367,7 +89,7 @@ export const SYSTEM_HOME_COLLECTIONS: Collection[] = [
         displayAsRow: true,
         order: 3,
         enabled: true,
-        genres: ['family'], // Family
+        genres: ['comedy'],
         genreLogic: 'OR',
         mediaType: 'both',
         isSystemCollection: true,
@@ -375,9 +97,9 @@ export const SYSTEM_HOME_COLLECTIONS: Collection[] = [
         canEdit: true,
     },
     {
-        id: 'system-home-documentary',
-        name: 'Documentaries',
-        description: 'Informative and engaging documentaries',
+        id: 'system-scifi',
+        name: 'Sci-Fi & Fantasy',
+        description: 'Futuristic science fiction and fantasy',
         isPublic: false,
         createdAt: 0,
         updatedAt: 0,
@@ -386,7 +108,7 @@ export const SYSTEM_HOME_COLLECTIONS: Collection[] = [
         displayAsRow: true,
         order: 4,
         enabled: true,
-        genres: ['documentary'], // Documentary
+        genres: ['scifi', 'fantasy'],
         genreLogic: 'OR',
         mediaType: 'both',
         isSystemCollection: true,
@@ -394,9 +116,9 @@ export const SYSTEM_HOME_COLLECTIONS: Collection[] = [
         canEdit: true,
     },
     {
-        id: 'system-home-mystery',
-        name: 'Mystery & Suspense',
-        description: 'Edge-of-your-seat mysteries and thrillers',
+        id: 'system-animation',
+        name: 'Animated Favorites',
+        description: 'Best animated movies and shows',
         isPublic: false,
         createdAt: 0,
         updatedAt: 0,
@@ -405,7 +127,7 @@ export const SYSTEM_HOME_COLLECTIONS: Collection[] = [
         displayAsRow: true,
         order: 5,
         enabled: true,
-        genres: ['mystery'], // Mystery
+        genres: ['animation'],
         genreLogic: 'OR',
         mediaType: 'both',
         isSystemCollection: true,
@@ -413,9 +135,9 @@ export const SYSTEM_HOME_COLLECTIONS: Collection[] = [
         canEdit: true,
     },
     {
-        id: 'system-home-romance-drama',
-        name: 'Romantic Dramas',
-        description: 'Heartfelt stories with romance and drama',
+        id: 'system-horror',
+        name: 'Horror Thrills',
+        description: 'Spine-chilling horror content',
         isPublic: false,
         createdAt: 0,
         updatedAt: 0,
@@ -424,7 +146,64 @@ export const SYSTEM_HOME_COLLECTIONS: Collection[] = [
         displayAsRow: true,
         order: 6,
         enabled: true,
-        genres: ['romance', 'drama'], // Romance + Drama (multi-genre with AND logic)
+        genres: ['horror'],
+        genreLogic: 'OR',
+        mediaType: 'both',
+        isSystemCollection: true,
+        canDelete: true,
+        canEdit: true,
+    },
+    {
+        id: 'system-family',
+        name: 'Family Fun',
+        description: 'Great content for the whole family',
+        isPublic: false,
+        createdAt: 0,
+        updatedAt: 0,
+        items: [],
+        collectionType: 'tmdb-genre',
+        displayAsRow: true,
+        order: 7,
+        enabled: true,
+        genres: ['family'],
+        genreLogic: 'OR',
+        mediaType: 'both',
+        isSystemCollection: true,
+        canDelete: true,
+        canEdit: true,
+    },
+    {
+        id: 'system-documentary',
+        name: 'Documentaries',
+        description: 'Informative and engaging documentaries',
+        isPublic: false,
+        createdAt: 0,
+        updatedAt: 0,
+        items: [],
+        collectionType: 'tmdb-genre',
+        displayAsRow: true,
+        order: 8,
+        enabled: true,
+        genres: ['documentary'],
+        genreLogic: 'OR',
+        mediaType: 'both',
+        isSystemCollection: true,
+        canDelete: true,
+        canEdit: true,
+    },
+    {
+        id: 'system-romance-drama',
+        name: 'Romantic Dramas',
+        description: 'Heartfelt stories with romance and drama',
+        isPublic: false,
+        createdAt: 0,
+        updatedAt: 0,
+        items: [],
+        collectionType: 'tmdb-genre',
+        displayAsRow: true,
+        order: 9,
+        enabled: true,
+        genres: ['romance', 'drama'],
         genreLogic: 'AND',
         mediaType: 'both',
         isSystemCollection: true,
@@ -434,32 +213,17 @@ export const SYSTEM_HOME_COLLECTIONS: Collection[] = [
 ]
 
 /**
- * All system collections combined
- */
-export const ALL_SYSTEM_COLLECTIONS: Collection[] = [
-    ...SYSTEM_MOVIE_COLLECTIONS,
-    ...SYSTEM_TV_COLLECTIONS,
-    ...SYSTEM_HOME_COLLECTIONS,
-]
-
-/**
- * Get system collections by media type
+ * @deprecated Legacy function - all collections are now unified
+ * Get system collections by media type (returns all collections)
  */
 export function getSystemCollectionsByMediaType(mediaType: 'movie' | 'tv' | 'both'): Collection[] {
-    switch (mediaType) {
-        case 'movie':
-            return SYSTEM_MOVIE_COLLECTIONS
-        case 'tv':
-            return SYSTEM_TV_COLLECTIONS
-        case 'both':
-            return SYSTEM_HOME_COLLECTIONS
-    }
+    return ALL_SYSTEM_COLLECTIONS
 }
 
 /**
- * Get system collections for a specific page (includes enabled collections)
+ * @deprecated Legacy function - pages no longer exist
+ * Get system collections for a specific page (returns all enabled collections)
  */
 export function getSystemCollectionsForPage(page: 'home' | 'movies' | 'tv'): Collection[] {
-    const mediaType = page === 'home' ? 'both' : page === 'movies' ? 'movie' : 'tv'
-    return getSystemCollectionsByMediaType(mediaType).filter((c) => c.enabled)
+    return ALL_SYSTEM_COLLECTIONS.filter((c) => c.enabled)
 }
