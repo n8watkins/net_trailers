@@ -25,34 +25,47 @@ NetTrailers uses Google Gemini AI across 6 API endpoints to power intelligent co
 
 ---
 
-## 1. Smart Search in Hero Banner
+## 1. Genre Mapping (Smart Search)
 
-### **Endpoint**: `/api/gemini/analyze`
+### **Endpoint**: `/api/genre-mapping`
 
+**Actual Route**: `/api/gemini/analyze` (technical implementation)
 **Location**: Hero banner at top of homepage
 **Component**: `components/smartSearch/SmartSearchInput.tsx` → `components/layout/Banner.tsx`
 
 ### Purpose
 
-Analyzes natural language queries to understand semantic meaning and extract:
+Maps natural language queries to TMDB genre IDs by analyzing semantic meaning. We provide Gemini with a comprehensive list of genres and their TMDB IDs, and it intelligently selects the most relevant ones.
 
-- Genre preferences (mapped to TMDB genre IDs)
+**What it returns:**
+
+- **TMDB genre IDs** (numbers like 28, 35, 878) - not genre names
 - Time periods/year ranges
 - Content ratings/certifications
 - Vibe/mood concepts
 - Specific movie/TV recommendations
 
+**How it works:**
+
+1. We give Gemini a mapping of genres → TMDB IDs (e.g., "Action → 28", "Comedy → 35")
+2. User types natural language query
+3. Gemini selects relevant genre IDs from our provided list
+4. Returns numeric TMDB genre IDs for API queries
+
 ### Example Use Cases
 
 ```
 User types: "rainy day vibes"
-→ Gemini returns: conceptQuery + genres [18, 10749] (Drama, Romance) + movie recommendations
+→ We provide Gemini: list of all genres with IDs
+→ Gemini returns: [18, 10749] (Drama, Romance IDs)
+→ App uses these IDs to query TMDB
 
 User types: "dark sci-fi thriller"
-→ Gemini returns: genres [878, 53] (Sci-Fi, Thriller) + recommendations
+→ Gemini maps to IDs: [878, 53] (Sci-Fi, Thriller)
+→ Returns TMDB-compatible genre IDs
 
 User types: "comedy of errors"
-→ Gemini returns: conceptQuery + genres [35] (Comedy) + 10-15 title recommendations
+→ Gemini returns: [35] (Comedy ID) + specific title recommendations
 ```
 
 ### Prompt Strategy
@@ -60,9 +73,10 @@ User types: "comedy of errors"
 - **Temperature**: 0.3 (low - for consistent, accurate genre mapping)
 - **Max tokens**: 1000
 - **Instructions**:
-    - Map user input to exact TMDB genre IDs
+    - We provide complete genre mapping (Action: 28, Adventure: 12, etc.)
+    - Gemini must select from OUR provided list
+    - Returns TMDB genre IDs (numbers) for API compatibility
     - Detect media type preference (movie/tv/both)
-    - Return specific title recommendations with reasoning
     - Extract year ranges and rating preferences
 
 ### Input
@@ -82,12 +96,12 @@ User types: "comedy of errors"
 
 ```typescript
 {
-  genreIds: number[],                    // TMDB genre IDs
+  genreIds: number[],                    // TMDB genre IDs (e.g., [28, 35] for Action + Comedy)
   yearRange: { min: number, max: number } | null,
   certification: string[] | null,        // e.g., ["R", "PG-13"]
   mediaType: 'movie' | 'tv' | 'both',
-  conceptQuery: string | null,           // Semantic description
-  movieRecommendations: Array<{          // Specific titles
+  conceptQuery: string | null,           // Semantic description for complex vibes
+  movieRecommendations: Array<{          // Specific titles when query is conceptual
     title: string,
     year: number,
     reason: string
@@ -95,20 +109,37 @@ User types: "comedy of errors"
 }
 ```
 
+### Genre Mapping Provided to Gemini
+
+**Movie Genres:**
+
+- 28: Action | 12: Adventure | 16: Animation | 35: Comedy | 80: Crime
+- 99: Documentary | 18: Drama | 10751: Family | 14: Fantasy | 36: History
+- 27: Horror | 10402: Music | 9648: Mystery | 10749: Romance | 878: Science Fiction
+- 53: Thriller | 10752: War | 37: Western
+
+**TV Genres:**
+
+- 10759: Action & Adventure | 16: Animation | 35: Comedy | 80: Crime
+- 99: Documentary | 18: Drama | 10751: Family | 10762: Kids | 9648: Mystery
+- 10765: Sci-Fi & Fantasy | 10768: War & Politics | 37: Western
+
 ### Integration Flow
 
-1. User types in hero search bar
+1. User types in hero search bar (e.g., "rainy day vibes")
 2. Frontend calls `/api/gemini/analyze` with query
-3. Gemini returns genre IDs + recommendations
-4. App searches TMDB using genre filters
-5. Results displayed instantly
+3. Gemini receives our genre mapping and selects IDs: [18, 10749]
+4. Returns numeric TMDB genre IDs (not names)
+5. App queries TMDB API using these genre IDs
+6. Results displayed instantly
 
 ---
 
-## 2. AI-Generated Collections (Full Generation)
+## 2. Generate Collection (Full AI Generation)
 
-### **Endpoint**: `/api/generate-row`
+### **Endpoint**: `/api/generate-collection`
 
+**Actual Route**: `/api/generate-row` (technical implementation)
 **Location**: Multiple places
 
 - Smart collection builder: `components/customRows/smart/SimplifiedSmartBuilder.tsx`
@@ -189,10 +220,11 @@ User query: "keanu reeves movies"
 
 ---
 
-## 3. Creative Row Naming
+## 3. Generate Name (Creative Collection Naming)
 
-### **Endpoint**: `/api/generate-row-name`
+### **Endpoint**: `/api/generate-name`
 
+**Actual Route**: `/api/generate-row-name` (technical implementation)
 **Location**: Collection creation wizard
 **Component**: `components/customRows/CustomRowForm.tsx`
 
@@ -485,14 +517,14 @@ Follow-up: "make it darker"
 
 ## Summary Matrix
 
-| Endpoint                 | Location             | Temperature | Max Tokens | Purpose                           | Rate Limited     |
-| ------------------------ | -------------------- | ----------- | ---------- | --------------------------------- | ---------------- |
-| `/api/gemini/analyze`    | Hero search          | 0.3         | 1000       | Semantic analysis + genre mapping | ✅               |
-| `/api/generate-row`      | Collections/Rankings | 0.4         | 4000       | Full AI collection generation     | ✅               |
-| `/api/generate-row-name` | Collection wizard    | 0.9         | 5000       | Creative naming                   | ✅               |
-| `/api/smart-suggestions` | Smart builder        | 0.3 / 0.95  | 1000 / 50  | Live preview + naming             | ✅               |
-| `/api/surprise-query`    | Rankings             | 1.0         | 100        | Random query generation           | ⚠️ (2s cooldown) |
-| `/api/ai-suggestions`    | Manual collections   | 0.4         | 4000       | Conversational refinement         | ✅               |
+| Endpoint                   | Location             | Temperature | Max Tokens | Purpose                   | Rate Limited     |
+| -------------------------- | -------------------- | ----------- | ---------- | ------------------------- | ---------------- |
+| `/api/genre-mapping`       | Hero search          | 0.3         | 1000       | Map queries to genre IDs  | ✅               |
+| `/api/generate-collection` | Collections/Rankings | 0.4         | 4000       | Full AI generation        | ✅               |
+| `/api/generate-name`       | Collection wizard    | 0.9         | 5000       | Creative naming           | ✅               |
+| `/api/smart-suggestions`   | Smart builder        | 0.3 / 0.95  | 1000 / 50  | Live preview + naming     | ✅               |
+| `/api/surprise-query`      | Rankings             | 1.0         | 100        | Random query generation   | ⚠️ (2s cooldown) |
+| `/api/ai-suggestions`      | Manual collections   | 0.4         | 4000       | Conversational refinement | ✅               |
 
 ---
 
@@ -524,8 +556,9 @@ Follow-up: "make it darker"
 
 As of **2025-01-18**, the following endpoints now filter hidden content:
 
-- ✅ `/api/generate-row` - Server-side Firestore fetch
-- ❌ `/api/gemini/analyze` - Returns concepts only (no filtering needed)
+- ✅ `/api/generate-collection` - Server-side Firestore fetch
+- ❌ `/api/genre-mapping` - Returns genre IDs only (no content to filter)
+- ❌ `/api/generate-name` - Returns names only (no content)
 - ❌ Other endpoints - Return suggestions/names only (no content)
 
 ---
