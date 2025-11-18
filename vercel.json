@@ -15,6 +15,10 @@
         {
             "path": "/api/cron/update-trending",
             "schedule": "0 */6 * * *"
+        },
+        {
+            "path": "/api/cron/reset-stats",
+            "schedule": "0 0 * * *"
         }
     ]
 }

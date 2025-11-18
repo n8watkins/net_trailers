@@ -8,9 +8,18 @@ import { useGuestStore } from '../../../stores/guestStore'
 import { useToast } from '../../../hooks/useToast'
 import { DisplayRow } from '../../../types/customRows'
 import { UserList } from '../../../types/userLists'
-import { EyeIcon, EyeSlashIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
+import {
+    EyeIcon,
+    EyeSlashIcon,
+    ChevronDownIcon,
+    PencilIcon,
+    GlobeAltIcon,
+    LockClosedIcon,
+} from '@heroicons/react/24/outline'
+import { useModalStore } from '../../../stores/modalStore'
 
 export default function CollectionsPage() {
+    const openRowEditorModal = useModalStore((state) => state.openRowEditorModal)
     const getUserId = useSessionStore((state) => state.getUserId)
     const sessionType = useSessionStore((state) => state.sessionType)
     const userId = getUserId()
@@ -58,6 +67,8 @@ export default function CollectionsPage() {
                 enabled: row.enabled,
                 itemCount: 20, // Placeholder for system collections
                 mediaType: row.mediaType,
+                isPublic: false, // System collections are not shareable
+                collection: row, // Store full collection for editing
             })),
             ...userCollectionsFromRows.map((col: UserList) => ({
                 id: col.id,
@@ -67,6 +78,8 @@ export default function CollectionsPage() {
                 enabled: col.displayAsRow ?? true,
                 itemCount: col.items?.length || 0,
                 mediaType: col.mediaType || 'both',
+                isPublic: col.isPublic ?? false,
+                collection: col, // Store full collection for editing
             })),
         ]
 
@@ -91,6 +104,11 @@ export default function CollectionsPage() {
     const homeCollections = allCollections.filter((col) => col.mediaType === 'both')
     const movieCollections = allCollections.filter((col) => col.mediaType === 'movie')
     const tvCollections = allCollections.filter((col) => col.mediaType === 'tv')
+
+    // Find collections that don't match any page type (edge case)
+    const uncategorizedCollections = allCollections.filter(
+        (col) => col.mediaType !== 'both' && col.mediaType !== 'movie' && col.mediaType !== 'tv'
+    )
 
     // Stats
     const totalCollections = allCollections.length
@@ -179,7 +197,11 @@ export default function CollectionsPage() {
                         isOpen={homeOpen}
                         onToggle={() => setHomeOpen(!homeOpen)}
                     >
-                        <CollectionGrid collections={homeCollections} onToggle={handleToggle} />
+                        <CollectionGrid
+                            collections={homeCollections}
+                            onToggle={handleToggle}
+                            onEdit={openRowEditorModal}
+                        />
                     </AccordionSection>
                 )}
 
@@ -192,7 +214,11 @@ export default function CollectionsPage() {
                         isOpen={moviesOpen}
                         onToggle={() => setMoviesOpen(!moviesOpen)}
                     >
-                        <CollectionGrid collections={movieCollections} onToggle={handleToggle} />
+                        <CollectionGrid
+                            collections={movieCollections}
+                            onToggle={handleToggle}
+                            onEdit={openRowEditorModal}
+                        />
                     </AccordionSection>
                 )}
 
@@ -205,7 +231,28 @@ export default function CollectionsPage() {
                         isOpen={tvOpen}
                         onToggle={() => setTvOpen(!tvOpen)}
                     >
-                        <CollectionGrid collections={tvCollections} onToggle={handleToggle} />
+                        <CollectionGrid
+                            collections={tvCollections}
+                            onToggle={handleToggle}
+                            onEdit={openRowEditorModal}
+                        />
+                    </AccordionSection>
+                )}
+
+                {/* Uncategorized Collections - For edge cases */}
+                {uncategorizedCollections.length > 0 && (
+                    <AccordionSection
+                        title="Other Collections"
+                        icon="📂"
+                        count={uncategorizedCollections.length}
+                        isOpen={true}
+                        onToggle={() => {}}
+                    >
+                        <CollectionGrid
+                            collections={uncategorizedCollections}
+                            onToggle={handleToggle}
+                            onEdit={openRowEditorModal}
+                        />
                     </AccordionSection>
                 )}
             </div>
@@ -274,18 +321,22 @@ interface CollectionGridProps {
         enabled: boolean
         itemCount: number
         mediaType: string
+        isPublic: boolean
+        collection: any
     }>
     onToggle: (id: string, isSystem: boolean) => void
+    onEdit: (collection: any) => void
 }
 
-function CollectionGrid({ collections, onToggle }: CollectionGridProps) {
+function CollectionGrid({ collections, onToggle, onEdit }: CollectionGridProps) {
     return (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 mt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mt-4">
             {collections.map((collection) => (
                 <CollectionCard
                     key={collection.id}
                     collection={collection}
                     onToggle={() => onToggle(collection.id, collection.isSystem)}
+                    onEdit={() => onEdit(collection.collection)}
                 />
             ))}
         </div>
@@ -302,44 +353,77 @@ interface CollectionCardProps {
         enabled: boolean
         itemCount: number
         mediaType: string
+        isPublic: boolean
     }
     onToggle: () => void
+    onEdit: () => void
 }
 
-function CollectionCard({ collection, onToggle }: CollectionCardProps) {
+function CollectionCard({ collection, onToggle, onEdit }: CollectionCardProps) {
     return (
-        <div className="group relative bg-[#0a0a0a] rounded-lg border border-[#313131] hover:border-[#454545] transition-all overflow-hidden">
-            {/* Status Badge - Top Right Corner */}
-            <div className="absolute top-2 right-2 z-10">
-                {collection.enabled ? (
-                    <div className="w-2 h-2 rounded-full bg-green-500" title="Enabled" />
-                ) : (
-                    <div className="w-2 h-2 rounded-full bg-gray-600" title="Hidden" />
+        <div className="bg-[#0a0a0a] rounded-lg border border-[#313131] hover:border-[#454545] transition-all p-3">
+            {/* Header Row */}
+            <div className="flex items-start justify-between mb-2">
+                {/* Name with inline emoji */}
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span className="text-xl flex-shrink-0">{collection.emoji || '📺'}</span>
+                    <h3 className="text-white text-sm font-medium truncate">{collection.name}</h3>
+                </div>
+
+                {/* Status indicator */}
+                <div className="flex-shrink-0">
+                    {collection.enabled ? (
+                        <div className="w-2 h-2 rounded-full bg-green-500" title="Enabled" />
+                    ) : (
+                        <div className="w-2 h-2 rounded-full bg-gray-600" title="Hidden" />
+                    )}
+                </div>
+            </div>
+
+            {/* Badges Row - Only show for user collections */}
+            <div className="flex items-center gap-2 mb-3 min-h-[20px]">
+                {!collection.isSystem && (
+                    <>
+                        {collection.isPublic ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-green-900/30 text-green-400 text-xs font-medium">
+                                <GlobeAltIcon className="w-3 h-3" />
+                                Public
+                            </span>
+                        ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-800/50 text-gray-400 text-xs font-medium">
+                                <LockClosedIcon className="w-3 h-3" />
+                                Private
+                            </span>
+                        )}
+                    </>
                 )}
             </div>
 
-            {/* Main Content */}
-            <div className="p-4 flex flex-col items-center text-center">
-                {/* Large Emoji */}
-                <div className="text-4xl mb-2">{collection.emoji || '📺'}</div>
+            {/* Item Count */}
+            <p className="text-gray-500 text-xs mb-3">
+                {collection.itemCount} {collection.itemCount === 1 ? 'item' : 'items'}
+            </p>
 
-                {/* Collection Name */}
-                <h3 className="text-white text-sm font-medium mb-1 line-clamp-2 min-h-[2.5rem]">
-                    {collection.name}
-                </h3>
-
-                {/* Item Count */}
-                <p className="text-gray-500 text-xs mb-3">
-                    {collection.itemCount} {collection.itemCount === 1 ? 'item' : 'items'}
-                </p>
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2">
+                {/* Edit Button - Icon Only */}
+                <button
+                    onClick={onEdit}
+                    className="flex items-center justify-center p-1.5 bg-gray-800 hover:bg-gray-700 text-white rounded-md transition-colors"
+                    title="Edit collection"
+                    aria-label="Edit collection"
+                >
+                    <PencilIcon className="w-4 h-4" />
+                </button>
 
                 {/* Toggle Switch */}
                 <button
                     onClick={onToggle}
-                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                    className={`flex-shrink-0 relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
                         collection.enabled ? 'bg-green-600' : 'bg-gray-600'
                     }`}
                     aria-label={collection.enabled ? 'Hide collection' : 'Show collection'}
+                    title={collection.enabled ? 'Hide from page' : 'Show on page'}
                 >
                     <span
                         className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
@@ -347,28 +431,6 @@ function CollectionCard({ collection, onToggle }: CollectionCardProps) {
                         }`}
                     />
                 </button>
-            </div>
-
-            {/* Hover Overlay - Show Status Text */}
-            <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                <div className="text-center px-2">
-                    <div className="flex items-center justify-center gap-2 text-white text-sm font-medium mb-1">
-                        {collection.enabled ? (
-                            <>
-                                <EyeIcon className="w-4 h-4 text-green-400" />
-                                <span className="text-green-400">Enabled</span>
-                            </>
-                        ) : (
-                            <>
-                                <EyeSlashIcon className="w-4 h-4 text-gray-400" />
-                                <span className="text-gray-400">Hidden</span>
-                            </>
-                        )}
-                    </div>
-                    {collection.isSystem && (
-                        <p className="text-xs text-gray-400">System Collection</p>
-                    )}
-                </div>
             </div>
         </div>
     )

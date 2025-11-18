@@ -16,6 +16,7 @@ import {
     Eye,
 } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
+import type { AdminStats, TrendingStats, ActivityStats, ActiveUser } from '@/types/admin'
 
 // Admin UIDs - Add your Firebase UID here
 const ADMIN_UIDS = [process.env.NEXT_PUBLIC_ADMIN_UID || 'YOUR_FIREBASE_UID_HERE']
@@ -28,11 +29,12 @@ export default function AdminDashboard() {
     const userId = getUserId()
     const isAuth = sessionType === 'authenticated'
     const { showSuccess, showError } = useToast()
-    const [stats, setStats] = useState<any>(null)
-    const [trendingStats, setTrendingStats] = useState<any>(null)
-    const [activityStats, setActivityStats] = useState<any>(null)
-    const [activeUsers, setActiveUsers] = useState<any[]>([])
+    const [stats, setStats] = useState<AdminStats | null>(null)
+    const [trendingStats, setTrendingStats] = useState<TrendingStats | null>(null)
+    const [activityStats, setActivityStats] = useState<ActivityStats | null>(null)
+    const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([])
     const [loading, setLoading] = useState(false)
+    const [statsLoading, setStatsLoading] = useState(true)
     const [lastTrendingRun, setLastTrendingRun] = useState<Date | null>(null)
 
     // Auth check - wait for session to initialize before redirecting
@@ -59,60 +61,79 @@ export default function AdminDashboard() {
     }, [isAuth, userId])
 
     const loadAllStats = async () => {
+        setStatsLoading(true)
         try {
+            // Load account stats
             const accountData = await getAccountStats()
-            setStats(accountData)
+            setStats(accountData as AdminStats)
 
             // Load trending stats
-            const trendingResponse = await fetch('/api/admin/trending-stats', {
-                headers: {
-                    Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
-                },
-            })
-            if (trendingResponse.ok) {
-                const trendingData = await trendingResponse.json()
-                setTrendingStats(trendingData)
-                setLastTrendingRun(trendingData.lastRun ? new Date(trendingData.lastRun) : null)
+            try {
+                const trendingResponse = await fetch('/api/admin/trending-stats', {
+                    headers: {
+                        Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
+                    },
+                })
+                if (trendingResponse.ok) {
+                    const trendingData = await trendingResponse.json()
+                    setTrendingStats(trendingData)
+                    setLastTrendingRun(trendingData.lastRun ? new Date(trendingData.lastRun) : null)
+                } else {
+                    console.error('Failed to load trending stats')
+                }
+            } catch (error) {
+                console.error('Error loading trending stats:', error)
             }
 
             // Load activity stats
-            const activityResponse = await fetch('/api/admin/activity?period=month', {
-                headers: {
-                    Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
-                },
-            })
-            if (activityResponse.ok) {
-                const activityData = await activityResponse.json()
-                setActivityStats(activityData.stats)
-
-                // Get unique users from activities
-                const userMap = new Map()
-                activityData.activities.forEach((activity: any) => {
-                    if (activity.userId && activity.userEmail) {
-                        if (!userMap.has(activity.userId)) {
-                            userMap.set(activity.userId, {
-                                userId: activity.userId,
-                                email: activity.userEmail,
-                                lastActive: activity.timestamp,
-                                activityCount: 0,
-                            })
-                        }
-                        const user = userMap.get(activity.userId)
-                        user.activityCount++
-                        if (activity.timestamp > user.lastActive) {
-                            user.lastActive = activity.timestamp
-                        }
-                    }
+            try {
+                const activityResponse = await fetch('/api/admin/activity?period=month', {
+                    headers: {
+                        Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
+                    },
                 })
+                if (activityResponse.ok) {
+                    const activityData = await activityResponse.json()
+                    setActivityStats(activityData.stats)
 
-                // Sort by most recent activity
-                const users = Array.from(userMap.values()).sort(
-                    (a, b) => b.lastActive - a.lastActive
-                )
-                setActiveUsers(users.slice(0, 10)) // Top 10 most active
+                    // Get unique users from activities
+                    const userMap = new Map<string, ActiveUser>()
+                    activityData.activities.forEach((activity: any) => {
+                        if (activity.userId && activity.userEmail) {
+                            if (!userMap.has(activity.userId)) {
+                                userMap.set(activity.userId, {
+                                    userId: activity.userId,
+                                    email: activity.userEmail,
+                                    lastActive: activity.timestamp,
+                                    activityCount: 0,
+                                })
+                            }
+                            const user = userMap.get(activity.userId)!
+                            user.activityCount++
+                            if (activity.timestamp > user.lastActive) {
+                                user.lastActive = activity.timestamp
+                            }
+                        }
+                    })
+
+                    // Sort by most recent activity
+                    const users = Array.from(userMap.values()).sort(
+                        (a, b) => b.lastActive - a.lastActive
+                    )
+                    setActiveUsers(users.slice(0, 10)) // Top 10 most active
+                } else {
+                    console.error('Failed to load activity stats')
+                    showError('Failed to load activity statistics')
+                }
+            } catch (error) {
+                console.error('Error loading activity stats:', error)
+                showError('Failed to load activity statistics')
             }
         } catch (error) {
             console.error('Error loading stats:', error)
+            showError('Failed to load admin statistics. Please refresh the page.')
+        } finally {
+            setStatsLoading(false)
         }
     }
 
@@ -202,21 +223,36 @@ export default function AdminDashboard() {
                     <button
                         onClick={() => router.push('/admin/accounts')}
                         className="bg-gray-800 rounded-xl p-6 text-left hover:bg-gray-750 transition-colors cursor-pointer"
+                        disabled={statsLoading}
                     >
                         <div className="flex items-center justify-between mb-4">
                             <Users className="h-8 w-8 text-blue-500" />
-                            <span className="text-2xl font-bold text-white">
-                                {stats?.totalAccounts || 0}
-                            </span>
+                            {statsLoading ? (
+                                <div className="h-8 w-16 bg-gray-700 rounded animate-pulse" />
+                            ) : (
+                                <span className="text-2xl font-bold text-white">
+                                    {stats?.totalAccounts || 0}
+                                </span>
+                            )}
                         </div>
                         <h3 className="text-gray-400 text-sm mb-1">Total Accounts →</h3>
                         <div className="flex items-center justify-between">
-                            <span className="text-xs text-gray-500">
-                                Limit: {stats?.maxAccounts || 50}
-                            </span>
-                            <span className="text-xs text-green-500">
-                                {(stats?.maxAccounts || 50) - (stats?.totalAccounts || 0)} remaining
-                            </span>
+                            {statsLoading ? (
+                                <>
+                                    <div className="h-3 w-16 bg-gray-700 rounded animate-pulse" />
+                                    <div className="h-3 w-20 bg-gray-700 rounded animate-pulse" />
+                                </>
+                            ) : (
+                                <>
+                                    <span className="text-xs text-gray-500">
+                                        Limit: {stats?.maxAccounts || 50}
+                                    </span>
+                                    <span className="text-xs text-green-500">
+                                        {(stats?.maxAccounts || 50) - (stats?.totalAccounts || 0)}{' '}
+                                        remaining
+                                    </span>
+                                </>
+                            )}
                         </div>
                     </button>
 
