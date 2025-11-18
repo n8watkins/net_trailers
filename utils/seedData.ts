@@ -1531,12 +1531,6 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                 actionUrl: '/tv/94605',
             },
             {
-                type: 'share_activity',
-                title: 'Collection Shared',
-                message: 'Someone viewed your "Epic Sci-Fi Adventures" collection!',
-                actionUrl: '/collections',
-            },
-            {
                 type: 'new_release',
                 title: 'Watchlist Alert',
                 message: 'The Matrix Resurrections is now available to stream!',

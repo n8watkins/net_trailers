@@ -139,16 +139,6 @@ export default function NotificationsPageClient() {
                         Collections ({getTypeCount('collection_update')})
                     </button>
                     <button
-                        onClick={() => setFilter('share_activity')}
-                        className={`rounded-full px-4 py-2 text-sm transition-colors ${
-                            filter === 'share_activity'
-                                ? 'bg-red-600 text-white'
-                                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                        }`}
-                    >
-                        Shares ({getTypeCount('share_activity')})
-                    </button>
-                    <button
                         onClick={() => setFilter('system')}
                         className={`rounded-full px-4 py-2 text-sm transition-colors ${
                             filter === 'system'

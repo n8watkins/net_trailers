@@ -97,8 +97,6 @@ export default function NotificationItem({ notification }: NotificationItemProps
                 return 'New Release'
             case 'collection_update':
                 return 'Collection Update'
-            case 'share_activity':
-                return 'Share Activity'
             case 'system':
                 return 'System'
             default:
@@ -114,7 +112,6 @@ export default function NotificationItem({ notification }: NotificationItemProps
             'Now Trending 🔥:',
             'New Release:',
             'Collection Update:',
-            'Share Activity:',
             'System:',
         ]
 

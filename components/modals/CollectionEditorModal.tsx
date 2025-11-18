@@ -453,17 +453,17 @@ export default function CollectionEditorModal({
                                             </>
                                         )}
 
-                                        {/* Display as Row Toggle */}
+                                        {/* Display on Page Toggle */}
                                         <div className="flex items-center justify-between">
                                             <label className="text-sm font-medium text-white flex items-center gap-1.5">
                                                 <span>🏠</span>
-                                                Display as Row
+                                                Display on Page
                                             </label>
                                             <button
                                                 type="button"
                                                 onClick={() => setDisplayAsRow(!displayAsRow)}
                                                 className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                                    displayAsRow ? 'bg-blue-600' : 'bg-gray-600'
+                                                    displayAsRow ? 'bg-green-600' : 'bg-gray-600'
                                                 }`}
                                             >
                                                 <span
