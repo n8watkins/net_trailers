@@ -71,7 +71,7 @@ export const SYSTEM_MOVIE_COLLECTIONS: Collection[] = [
         mediaType: 'movie',
         isSystemCollection: true,
         canDelete: true,
-        canEdit: true,
+        canEdit: true, // Users can edit to change mediaType
     },
     {
         id: 'system-movie-comedy',

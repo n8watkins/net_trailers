@@ -21,10 +21,9 @@ import { Cog6ToothIcon } from '@heroicons/react/24/solid'
 
 interface HomeClientProps {
     data: HomeData
-    filter?: string
 }
 
-export default function HomeClient({ data, filter }: HomeClientProps) {
+export default function HomeClient({ data }: HomeClientProps) {
     const { modal } = useModalStore()
     const showModal = modal.isOpen
     const openRowEditorModal = useModalStore((state) => state.openRowEditorModal)

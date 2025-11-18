@@ -4,16 +4,9 @@ import HomeClient from '../components/pages/HomeClient'
 import NetflixLoader from '../components/common/NetflixLoader'
 import NetflixError from '../components/common/NetflixError'
 
-interface HomePageProps {
-    searchParams: Promise<{ filter?: string }>
-}
-
-async function HomeContent({ searchParams }: HomePageProps) {
-    const params = await searchParams
-    const filter = params.filter
-
+async function HomeContent() {
     try {
-        const data = await fetchHomeData(filter)
+        const data = await fetchHomeData()
 
         // Check if we have any content
         const hasAnyContent =
@@ -29,17 +22,17 @@ async function HomeContent({ searchParams }: HomePageProps) {
             return <NetflixError />
         }
 
-        return <HomeClient data={data} filter={filter} />
+        return <HomeClient data={data} />
     } catch (error) {
         console.error('Error fetching home data:', error)
         return <NetflixError />
     }
 }
 
-export default function Home(props: HomePageProps) {
+export default function Home() {
     return (
         <Suspense fallback={<NetflixLoader message="Loading NetTrailer..." />}>
-            <HomeContent {...props} />
+            <HomeContent />
         </Suspense>
     )
 }

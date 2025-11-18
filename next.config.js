@@ -59,6 +59,21 @@ const nextConfig = {
     experimental: {
         // optimizePackageImports: ['@heroicons/react'],
     },
+    // Redirects for removed routes
+    async redirects() {
+        return [
+            {
+                source: '/tv',
+                destination: '/',
+                permanent: true, // 301 redirect
+            },
+            {
+                source: '/movies',
+                destination: '/',
+                permanent: true, // 301 redirect
+            },
+        ]
+    },
     // Security headers
     async headers() {
         return [
