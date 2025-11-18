@@ -54,20 +54,37 @@ export default function AdminDashboard() {
         }
     }, [isAuth, userId, isInitialized, router])
 
-    // Load stats
+    // Load stats - wait for Firebase Auth to be ready
     useEffect(() => {
-        if (isAuth && userId && ADMIN_UIDS.includes(userId)) {
-            loadAllStats()
-        }
+        if (!isAuth || !userId || !ADMIN_UIDS.includes(userId)) return
+
+        // Wait for Firebase Auth to initialize
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            if (user) {
+                loadAllStats()
+            }
+        })
+
+        return () => unsubscribe()
     }, [isAuth, userId])
 
     const loadAllStats = async () => {
         setStatsLoading(true)
         try {
+            // Wait for Firebase Auth to be ready
+            const user = auth.currentUser
+            if (!user) {
+                console.error('No Firebase user available')
+                showError('Authentication required - please refresh the page')
+                setStatsLoading(false)
+                return
+            }
+
             // Get Firebase ID token for secure API calls
-            const idToken = await auth.currentUser?.getIdToken()
+            const idToken = await user.getIdToken()
             if (!idToken) {
-                showError('Authentication required')
+                showError('Failed to get authentication token')
+                setStatsLoading(false)
                 return
             }
 
@@ -148,10 +165,18 @@ export default function AdminDashboard() {
     const runTrendingCheck = async (demoMode = false) => {
         setLoading(true)
         try {
-            // Get Firebase ID token
-            const idToken = await auth.currentUser?.getIdToken()
+            // Get Firebase user and ID token
+            const user = auth.currentUser
+            if (!user) {
+                showError('Authentication required - please refresh the page')
+                setLoading(false)
+                return
+            }
+
+            const idToken = await user.getIdToken()
             if (!idToken) {
-                showError('Authentication required')
+                showError('Failed to get authentication token')
+                setLoading(false)
                 return
             }
 
@@ -185,10 +210,18 @@ export default function AdminDashboard() {
 
         setLoading(true)
         try {
-            // Get Firebase ID token for secure API calls
-            const idToken = await auth.currentUser?.getIdToken()
+            // Get Firebase user and ID token
+            const user = auth.currentUser
+            if (!user) {
+                showError('Authentication required - please refresh the page')
+                setLoading(false)
+                return
+            }
+
+            const idToken = await user.getIdToken()
             if (!idToken) {
-                showError('Authentication required')
+                showError('Failed to get authentication token')
+                setLoading(false)
                 return
             }
 

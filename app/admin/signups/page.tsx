@@ -53,10 +53,17 @@ export default function SignupsPage() {
     const loadUsers = async () => {
         setLoading(true)
         try {
-            // Get Firebase ID token for secure API calls
-            const idToken = await auth.currentUser?.getIdToken()
+            // Get Firebase user and ID token
+            const user = auth.currentUser
+            if (!user) {
+                showError('Authentication required - please refresh the page')
+                setLoading(false)
+                return
+            }
+
+            const idToken = await user.getIdToken()
             if (!idToken) {
-                showError('Authentication required')
+                showError('Failed to get authentication token')
                 setLoading(false)
                 return
             }
