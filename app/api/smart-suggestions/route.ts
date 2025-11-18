@@ -143,7 +143,7 @@ For this selection, create a name that's SO surprisingly cool it delights the us
 Response: Just the name, nothing else.`
 
     try {
-        // Use multi-model router with automatic fallback
+        // Use multi-model router with automatic fallback (prioritize Flash-Lite for high-frequency name generation)
         const result = await routeGeminiRequest(
             {
                 contents: [{ parts: [{ text: prompt }] }],
@@ -152,7 +152,8 @@ Response: Just the name, nothing else.`
                     maxOutputTokens: 50,
                 },
             },
-            apiKey
+            apiKey,
+            FLASH_LITE_PRIORITY // Use Flash-Lite first for 1,000 RPD quota
         )
 
         if (!result.success) return null
