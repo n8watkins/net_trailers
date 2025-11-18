@@ -1,5 +1,12 @@
 import { TMDBApiClient } from './tmdbApi'
-import type { Entity } from '../components/customRows/smart/SmartInput'
+
+// Entity type for internal use only (deprecated - Gemini now handles entity detection)
+interface Entity {
+    type: 'genre' | 'person' | 'company'
+    id: number | string
+    name: string
+    subtitle?: string
+}
 
 export interface Suggestion {
     type:
