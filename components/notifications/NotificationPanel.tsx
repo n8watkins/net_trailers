@@ -72,7 +72,7 @@ export default function NotificationPanel() {
             ref={panelRef}
             // DROPDOWN STYLING: Updated to match avatar/genre dropdowns - slightly brighter than pure black
             // To revert: replace with "border border-red-900/30 bg-gray-900 shadow-2xl shadow-red-950/20"
-            className="absolute right-0 top-full z-50 mt-2 w-[420px] rounded-lg bg-[#0f0f0f]/95 backdrop-blur-sm border border-red-500/40 shadow-2xl shadow-red-500/20"
+            className="absolute right-0 top-full z-50 mt-2 w-[520px] rounded-lg bg-[#0f0f0f]/95 backdrop-blur-sm border border-red-500/40 shadow-2xl shadow-red-500/20"
             role="dialog"
             aria-label="Notifications"
         >

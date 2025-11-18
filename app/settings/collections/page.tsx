@@ -119,6 +119,7 @@ export default function CollectionsPage() {
                 itemCount: col.items?.length || 0,
                 mediaType: col.mediaType || 'both',
                 isPublic: col.isPublic ?? false,
+                color: col.color || '#3b82f6', // Default blue
                 collection: col, // Store full collection for editing
             })),
         ]
@@ -491,6 +492,7 @@ interface CollectionGridProps {
         itemCount: number
         mediaType: string
         isPublic: boolean
+        color?: string
         collection: any
     }>
     onToggle: (id: string, isSystem: boolean) => void
@@ -523,6 +525,7 @@ interface CollectionCardProps {
         itemCount: number
         mediaType: string
         isPublic: boolean
+        color?: string
     }
     onToggle: () => void
     onEdit: () => void
@@ -530,7 +533,13 @@ interface CollectionCardProps {
 
 function CollectionCard({ collection, onToggle, onEdit }: CollectionCardProps) {
     return (
-        <div className="bg-[#0a0a0a] rounded-lg border border-[#313131] hover:border-[#454545] transition-all p-3">
+        <div
+            className="bg-[#0a0a0a] rounded-lg border hover:border-[#454545] transition-all p-3"
+            style={{
+                borderColor: collection.color || '#313131',
+                borderLeftWidth: collection.color && !collection.isSystem ? '4px' : '1px',
+            }}
+        >
             {/* Header Row with Status Dot and Edit Button */}
             <div className="flex items-start justify-between mb-3">
                 {/* Name with emoji and status dot */}

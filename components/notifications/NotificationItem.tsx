@@ -150,7 +150,7 @@ export default function NotificationItem({ notification }: NotificationItemProps
                     <img
                         src={notification.imageUrl}
                         alt=""
-                        className="h-28 w-20 rounded object-cover ring-1 ring-red-900/30"
+                        className="h-32 w-24 rounded object-cover ring-1 ring-red-900/30"
                     />
                 </div>
             )}
