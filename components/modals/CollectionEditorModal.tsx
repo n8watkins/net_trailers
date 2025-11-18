@@ -21,6 +21,9 @@ import InlineSearchBar from './InlineSearchBar'
 import { GenrePills } from '../customRows/GenrePills'
 import { getUnifiedGenresByMediaType } from '../../constants/unifiedGenres'
 import { useChildSafety } from '../../hooks/useChildSafety'
+import { useCustomRowsStore } from '../../stores/customRowsStore'
+import { useSessionStore } from '../../stores/sessionStore'
+import { SystemRowStorage } from '../../utils/systemRowStorage'
 
 interface CollectionEditorModalProps {
     collection: UserList | null
@@ -34,6 +37,11 @@ export default function CollectionEditorModal({
     onClose,
 }: CollectionEditorModalProps) {
     const { isEnabled: isChildSafetyEnabled } = useChildSafety()
+    const getUserId = useSessionStore((state) => state.getUserId)
+    const sessionType = useSessionStore((state) => state.sessionType)
+    const userId = getUserId()
+    const isAuth = sessionType === 'authenticated'
+    const toggleSystemRow = useCustomRowsStore((state) => state.toggleSystemRow)
 
     const GENRE_LOOKUP = useMemo(() => {
         const map = new Map<string, string>()
@@ -186,12 +194,50 @@ export default function CollectionEditorModal({
             }
 
             // Update collection metadata
-            await updateList(collection.id, updates)
+            if (isSystemCollection) {
+                // For system collections, update the system row preferences
+                if (!userId) {
+                    showError('No user ID found')
+                    return
+                }
 
-            // Handle removed items (only for user-created collections)
-            if (canEditFull) {
-                for (const removedId of removedIds) {
-                    await removeFromList(collection.id, removedId)
+                // Get current preferences
+                const currentPrefs =
+                    useCustomRowsStore.getState().systemRowPreferences.get(userId) || {}
+
+                // Build the updated preference for this row
+                const updatedPref = {
+                    enabled: displayAsRow,
+                    customName: canEditLimited
+                        ? name.trim()
+                        : currentPrefs[collection.id]?.customName,
+                    order: currentPrefs[collection.id]?.order ?? 0,
+                    customGenres: canEditLimited
+                        ? selectedGenres
+                        : currentPrefs[collection.id]?.customGenres,
+                    customGenreLogic: canEditLimited
+                        ? genreLogic
+                        : currentPrefs[collection.id]?.customGenreLogic,
+                }
+
+                // Update in-memory state
+                const newPrefs = {
+                    ...currentPrefs,
+                    [collection.id]: updatedPref,
+                }
+                useCustomRowsStore.getState().setSystemRowPreferences(userId, newPrefs)
+
+                // Persist to storage
+                await SystemRowStorage.setSystemRowPreferences(userId, newPrefs, !isAuth)
+            } else {
+                // For user-created collections, use the regular update method
+                await updateList(collection.id, updates)
+
+                // Handle removed items (only for user-created collections)
+                if (canEditFull) {
+                    for (const removedId of removedIds) {
+                        await removeFromList(collection.id, removedId)
+                    }
                 }
             }
 
