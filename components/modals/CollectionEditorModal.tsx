@@ -72,6 +72,7 @@ export default function CollectionEditorModal({
     const [showIconPicker, setShowIconPicker] = useState(false)
     const [showColorPicker, setShowColorPicker] = useState(false)
     const [showInfiniteTooltip, setShowInfiniteTooltip] = useState(false)
+    const [showGenreModal, setShowGenreModal] = useState(false)
     const [searchFilter, setSearchFilter] = useState('')
     const [isSaving, setIsSaving] = useState(false)
     const [mounted, setMounted] = useState(false)
@@ -700,74 +701,50 @@ export default function CollectionEditorModal({
                                     </p>
                                 </div>
 
-                                {/* Genre Selection */}
+                                {/* Compact Genre Selection */}
                                 <div className="space-y-3">
                                     <div className="flex items-center justify-between">
                                         <p className="text-sm font-medium text-gray-300">Genres</p>
-                                        <span className="text-xs text-gray-400">
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                !canOnlyToggle && setShowGenreModal(true)
+                                            }
+                                            disabled={canOnlyToggle}
+                                            className={`text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ${canOnlyToggle ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        >
                                             {selectedGenres.length === 0
-                                                ? 'No genres selected'
-                                                : `${selectedGenres.length} selected`}
-                                        </span>
+                                                ? 'Add Genres'
+                                                : 'Edit Genres'}
+                                        </button>
                                     </div>
-                                    {selectedGenres.length > 0 && (
-                                        <div className="flex flex-wrap gap-2 text-xs text-white">
-                                            {selectedGenreNames.map((name, index) => (
-                                                <span
-                                                    key={`${name}-${index}`}
-                                                    className="px-3 py-1 rounded-full bg-gray-800 border border-gray-700"
-                                                >
-                                                    {name}
+                                    {selectedGenres.length > 0 ? (
+                                        <div className="space-y-2">
+                                            <div className="flex flex-wrap gap-2">
+                                                {selectedGenreNames.map((name, index) => (
+                                                    <span
+                                                        key={`${name}-${index}`}
+                                                        className="px-3 py-1 text-xs rounded-full bg-gray-800 border border-gray-700 text-white"
+                                                    >
+                                                        {name}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                            <div className="flex items-center gap-2 text-xs text-gray-400">
+                                                <span>Matching:</span>
+                                                <span className="px-2 py-0.5 rounded bg-gray-800 border border-gray-700 text-white">
+                                                    {genreLogic === 'AND'
+                                                        ? 'Match ALL'
+                                                        : 'Match ANY'}
                                                 </span>
-                                            ))}
+                                            </div>
                                         </div>
+                                    ) : (
+                                        <p className="text-xs text-gray-400">
+                                            No genres selected. Click &quot;Add Genres&quot; to
+                                            choose genres for this collection.
+                                        </p>
                                     )}
-                                    {!canOnlyToggle && (
-                                        <GenrePills
-                                            selectedGenres={selectedGenres}
-                                            onChange={setSelectedGenres}
-                                            mediaType={mediaType}
-                                            childSafeMode={isChildSafetyEnabled}
-                                        />
-                                    )}
-                                </div>
-
-                                {/* Genre Logic */}
-                                <div>
-                                    <p className="text-sm font-medium text-gray-300 mb-1">
-                                        Genre Matching
-                                    </p>
-                                    <p className="text-xs text-gray-400 mb-3">
-                                        {canOnlyToggle
-                                            ? 'This collection uses the following genre matching logic'
-                                            : 'Infinite recommendations try to match ALL genres first, then relax to ANY if needed.'}
-                                    </p>
-                                    <div className="inline-flex items-center rounded-full bg-gray-800/80 border border-gray-700 p-1 text-sm font-medium">
-                                        <button
-                                            type="button"
-                                            onClick={() => !canOnlyToggle && setGenreLogic('AND')}
-                                            disabled={canOnlyToggle || !canAdjustGenreLogic}
-                                            className={`px-4 py-1.5 rounded-full transition-colors ${
-                                                genreLogic === 'AND'
-                                                    ? 'bg-red-600 text-white'
-                                                    : 'text-gray-400 hover:text-white'
-                                            } ${canOnlyToggle || !canAdjustGenreLogic ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                        >
-                                            Match ALL
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => !canOnlyToggle && setGenreLogic('OR')}
-                                            disabled={canOnlyToggle || !canAdjustGenreLogic}
-                                            className={`px-4 py-1.5 rounded-full transition-colors ${
-                                                genreLogic === 'OR'
-                                                    ? 'bg-red-600 text-white'
-                                                    : 'text-gray-400 hover:text-white'
-                                            } ${canOnlyToggle || !canAdjustGenreLogic ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                        >
-                                            Match ANY
-                                        </button>
-                                    </div>
                                 </div>
                             </div>
 
@@ -921,7 +898,124 @@ export default function CollectionEditorModal({
         </div>
     )
 
+    // Genre Modal
+    const genreModal = showGenreModal && (
+        <div className="fixed inset-0 z-[100000] overflow-y-auto">
+            {/* Backdrop */}
+            <div
+                className="fixed inset-0 z-[99999] bg-black/80 backdrop-blur-sm"
+                onClick={() => setShowGenreModal(false)}
+            />
+
+            {/* Modal */}
+            <div className="relative min-h-screen flex items-center justify-center p-4 z-[100000]">
+                <div
+                    className="relative z-[100000] bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-lg shadow-2xl max-w-4xl w-full border border-gray-700"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {/* Header */}
+                    <div className="flex items-center justify-between p-6 border-b border-gray-700">
+                        <div>
+                            <h3 className="text-xl font-bold text-white">Edit Genres</h3>
+                            <p className="text-gray-400 text-sm mt-1">
+                                Select genres and matching rule for this collection
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => setShowGenreModal(false)}
+                            className="text-gray-400 hover:text-white transition-colors"
+                        >
+                            <XMarkIcon className="w-6 h-6" />
+                        </button>
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-6 max-h-[calc(90vh-200px)] overflow-y-auto space-y-6">
+                        {/* Genre Logic */}
+                        <div>
+                            <p className="text-sm font-medium text-gray-300 mb-2">
+                                Genre Matching Rule
+                            </p>
+                            <p className="text-xs text-gray-400 mb-3">
+                                Choose how genres should be matched when finding content
+                            </p>
+                            <div className="inline-flex items-center rounded-full bg-gray-800/80 border border-gray-700 p-1 text-sm font-medium">
+                                <button
+                                    type="button"
+                                    onClick={() => setGenreLogic('AND')}
+                                    disabled={!canAdjustGenreLogic}
+                                    className={`px-6 py-2 rounded-full transition-colors ${
+                                        genreLogic === 'AND'
+                                            ? 'bg-red-600 text-white'
+                                            : 'text-gray-400 hover:text-white'
+                                    } ${!canAdjustGenreLogic ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                >
+                                    Match ALL Genres
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setGenreLogic('OR')}
+                                    disabled={!canAdjustGenreLogic}
+                                    className={`px-6 py-2 rounded-full transition-colors ${
+                                        genreLogic === 'OR'
+                                            ? 'bg-red-600 text-white'
+                                            : 'text-gray-400 hover:text-white'
+                                    } ${!canAdjustGenreLogic ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                >
+                                    Match ANY Genre
+                                </button>
+                            </div>
+                            {!canAdjustGenreLogic && (
+                                <p className="text-xs text-gray-400 mt-2">
+                                    Select 2 or more genres to enable matching rule selection
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Genre Pills */}
+                        <div>
+                            <p className="text-sm font-medium text-gray-300 mb-2">Select Genres</p>
+                            <p className="text-xs text-gray-400 mb-3">
+                                Click genres to add or remove them from your collection
+                            </p>
+                            <GenrePills
+                                selectedGenres={selectedGenres}
+                                onChange={setSelectedGenres}
+                                mediaType={mediaType}
+                                childSafeMode={isChildSafetyEnabled}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="p-6 border-t border-gray-700">
+                        <div className="flex items-center justify-end gap-3">
+                            <button
+                                onClick={() => setShowGenreModal(false)}
+                                className="px-6 py-2.5 bg-gray-700 text-white rounded-lg font-medium transition-all duration-200 hover:bg-gray-600"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => setShowGenreModal(false)}
+                                className="flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium transition-all duration-200 hover:bg-blue-700"
+                            >
+                                <CheckIcon className="w-5 h-5" />
+                                Done
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+
     // Render via portal to document.body to escape any parent stacking contexts
     if (!mounted || typeof window === 'undefined') return null
-    return createPortal(modalContent, document.body)
+    return (
+        <>
+            {createPortal(modalContent, document.body)}
+            {showGenreModal && createPortal(genreModal, document.body)}
+        </>
+    )
 }
