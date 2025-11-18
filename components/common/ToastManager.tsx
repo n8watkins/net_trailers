@@ -9,15 +9,12 @@ import { useToastStore } from '../../stores/toastStore'
  */
 const ToastManager: React.FC = () => {
     const toasts = useToastStore((state) => state.toasts)
-    const dismissToast = useToastStore((state) => state.dismissToast)
 
-    // Stable callback reference - won't change on re-renders
-    const handleRemoveToast = useCallback(
-        (id: string) => {
-            dismissToast(id)
-        },
-        [dismissToast]
-    )
+    // Get dismissToast directly from the store to ensure stability
+    // Zustand actions are stable and don't change between renders
+    const handleRemoveToast = useCallback((id: string) => {
+        useToastStore.getState().dismissToast(id)
+    }, [])
 
     return <ToastContainer toasts={toasts} onRemoveToast={handleRemoveToast} />
 }

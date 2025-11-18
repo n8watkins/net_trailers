@@ -34,6 +34,7 @@ interface ToastProps {
     toast: ToastMessage
     onClose: (id: string) => void
     duration?: number
+    isActive: boolean
 }
 
 /**
@@ -43,28 +44,60 @@ interface ToastProps {
  * Memoized with stable refs to prevent animation resets from parent re-renders
  */
 const Toast: React.FC<ToastProps> = React.memo(
-    ({ toast, onClose, duration = TOAST_DURATION }) => {
+    ({ toast, onClose, duration = TOAST_DURATION, isActive }) => {
         // Use refs for animation state to prevent re-render issues
         const [isVisible, setIsVisible] = useState(false)
         const [isExiting, setIsExiting] = useState(false)
         const timersRef = useRef<{ main?: NodeJS.Timeout; exit?: NodeJS.Timeout }>({})
+        const entranceRef = useRef<number | null>(null)
         const onCloseRef = useRef(onClose)
-        const hasInitialized = useRef(false)
 
         // Keep onClose ref up to date without triggering re-animation
         useEffect(() => {
             onCloseRef.current = onClose
         }, [onClose])
 
-        // Initialize animation only once per toast
+        const clearTimers = () => {
+            if (timersRef.current.main) {
+                clearTimeout(timersRef.current.main)
+            }
+            if (timersRef.current.exit) {
+                clearTimeout(timersRef.current.exit)
+            }
+            timersRef.current = {}
+        }
+
+        const cancelEntrance = () => {
+            if (entranceRef.current !== null) {
+                cancelAnimationFrame(entranceRef.current)
+                entranceRef.current = null
+            }
+        }
+
+        // Handle entrance animation per toast ID
         useEffect(() => {
-            if (hasInitialized.current) return
-            hasInitialized.current = true
+            setIsVisible(false)
+            setIsExiting(false)
+            clearTimers()
+            cancelEntrance()
 
-            // Start entrance animation
-            setIsVisible(true)
+            entranceRef.current = requestAnimationFrame(() => {
+                setIsVisible(true)
+            })
 
-            // Set up auto-dismiss timer
+            return () => {
+                cancelEntrance()
+            }
+        }, [toast.id])
+
+        // Auto-dismiss only when toast is active (oldest visible)
+        useEffect(() => {
+            clearTimers()
+
+            if (!isActive) {
+                return
+            }
+
             timersRef.current.main = setTimeout(() => {
                 setIsExiting(true)
                 timersRef.current.exit = setTimeout(() => {
@@ -73,13 +106,12 @@ const Toast: React.FC<ToastProps> = React.memo(
             }, duration)
 
             return () => {
-                // Clean up all timers on unmount
-                if (timersRef.current.main) clearTimeout(timersRef.current.main)
-                if (timersRef.current.exit) clearTimeout(timersRef.current.exit)
+                clearTimers()
             }
-        }, [toast.id, duration])
+        }, [toast.id, duration, isActive])
 
         const handleClose = () => {
+            clearTimers()
             setIsExiting(true)
             timersRef.current.exit = setTimeout(() => {
                 onCloseRef.current(toast.id)
@@ -114,12 +146,12 @@ const Toast: React.FC<ToastProps> = React.memo(
 
         return (
             <div
-                className={`${getToastStyles()} border rounded-lg shadow-xl p-4 sm:p-6 w-full transition-all duration-500 ease-out ${
+                className={`${getToastStyles()} border rounded-lg shadow-xl p-4 sm:p-6 w-full transition-[opacity,transform] duration-500 ease-out ${
                     !isVisible
-                        ? 'opacity-0 transform -translate-x-full scale-95'
+                        ? 'opacity-0 -translate-x-6'
                         : isExiting
-                          ? 'opacity-0 transform translate-x-full scale-95'
-                          : 'opacity-100 transform translate-x-0 scale-100'
+                          ? 'opacity-0 translate-x-6'
+                          : 'opacity-100 translate-x-0'
                 }`}
             >
                 <div className="flex items-start">
@@ -179,8 +211,11 @@ const Toast: React.FC<ToastProps> = React.memo(
         )
     },
     (prevProps, nextProps) => {
-        // Only re-render if toast ID changes (meaning it's a different toast)
-        return prevProps.toast.id === nextProps.toast.id
+        return (
+            prevProps.toast.id === nextProps.toast.id &&
+            prevProps.isActive === nextProps.isActive &&
+            prevProps.duration === nextProps.duration
+        )
     }
 )
 

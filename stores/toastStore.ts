@@ -55,7 +55,7 @@ const generateToastId = (): string => {
     return `toast_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 }
 
-export const useToastStore = create<ToastStore>((set, get) => ({
+export const useToastStore = create<ToastStore>((set) => ({
     // Initial state
     toasts: [],
 
@@ -104,7 +104,6 @@ export const useToastStore = create<ToastStore>((set, get) => ({
         }
 
         // Add the new toast at the beginning (top)
-        // Don't remove old toasts immediately - let them fade out via CSS
         set((state) => ({
             toasts: [toast, ...state.toasts],
         }))
@@ -116,9 +115,12 @@ export const useToastStore = create<ToastStore>((set, get) => ({
             }))
         }, 600) // Wait for fade animation to complete (500ms transition + 100ms buffer)
 
-        // Note: Auto-dismiss is handled by Toast component for proper cleanup
         if (process.env.NODE_ENV === 'development') {
-            devLog('🍞 [ToastStore] Toast shown:', { type, title, message })
+            devLog('🍞 [ToastStore] Toast shown:', {
+                type,
+                title,
+                message,
+            })
         }
     },
 

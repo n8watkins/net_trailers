@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useRef, useLayoutEffect, useState } from 'react'
+import React, { memo, useRef, useLayoutEffect, useState } from 'react'
 import Toast, { ToastMessage } from './Toast'
 
 interface ToastContainerProps {
@@ -67,7 +67,7 @@ const ToastContainer: React.FC<ToastContainerProps> = memo(
                                     toastRefs.current.delete(toast.id)
                                 }
                             }}
-                            className="pointer-events-auto transition-all duration-500 ease-out absolute top-0 right-0 w-full"
+                            className="pointer-events-auto transition-all duration-300 ease-out absolute top-0 right-0 w-full"
                             style={{
                                 opacity: isThirdOrMore ? 0 : 1,
                                 transform: isThirdOrMore
@@ -76,7 +76,11 @@ const ToastContainer: React.FC<ToastContainerProps> = memo(
                                 zIndex: 100 - index,
                             }}
                         >
-                            <Toast toast={toast} onClose={onRemoveToast} />
+                            <Toast
+                                toast={toast}
+                                onClose={onRemoveToast}
+                                isActive={index === toasts.length - 1}
+                            />
                         </div>
                     )
                 })}
