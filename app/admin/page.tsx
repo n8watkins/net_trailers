@@ -263,6 +263,18 @@ export default function AdminDashboard() {
         )
     }
 
+    // Show loading while stats are being loaded
+    if (statsLoading) {
+        return (
+            <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                    <div className="text-white text-xl">Loading admin dashboard...</div>
+                </div>
+            </div>
+        )
+    }
+
     return (
         <div className="min-h-screen bg-gray-900 p-8">
             <div className="max-w-7xl mx-auto">
@@ -278,36 +290,21 @@ export default function AdminDashboard() {
                     <button
                         onClick={() => router.push('/admin/accounts')}
                         className="bg-gray-800 rounded-xl p-6 text-left hover:bg-gray-750 transition-colors cursor-pointer"
-                        disabled={statsLoading}
                     >
                         <div className="flex items-center justify-between mb-4">
                             <Users className="h-8 w-8 text-blue-500" />
-                            {statsLoading ? (
-                                <div className="h-8 w-16 bg-gray-700 rounded animate-pulse" />
-                            ) : (
-                                <span className="text-2xl font-bold text-white">
-                                    {stats?.totalAccounts || 0}
-                                </span>
-                            )}
+                            <span className="text-2xl font-bold text-white">
+                                {stats?.totalAccounts || 0}
+                            </span>
                         </div>
                         <h3 className="text-gray-400 text-sm mb-1">Total Accounts →</h3>
                         <div className="flex items-center justify-between">
-                            {statsLoading ? (
-                                <>
-                                    <div className="h-3 w-16 bg-gray-700 rounded animate-pulse" />
-                                    <div className="h-3 w-20 bg-gray-700 rounded animate-pulse" />
-                                </>
-                            ) : (
-                                <>
-                                    <span className="text-xs text-gray-500">
-                                        Limit: {stats?.maxAccounts || 50}
-                                    </span>
-                                    <span className="text-xs text-green-500">
-                                        {(stats?.maxAccounts || 50) - (stats?.totalAccounts || 0)}{' '}
-                                        remaining
-                                    </span>
-                                </>
-                            )}
+                            <span className="text-xs text-gray-500">
+                                Limit: {stats?.maxAccounts || 50}
+                            </span>
+                            <span className="text-xs text-green-500">
+                                {(stats?.maxAccounts || 50) - (stats?.totalAccounts || 0)} remaining
+                            </span>
                         </div>
                     </button>
 
