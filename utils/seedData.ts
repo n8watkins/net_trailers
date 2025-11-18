@@ -1394,27 +1394,47 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
         ]
 
         for (const collection of collections) {
-            // Skip if collection already exists
+            // Skip if collection already exists, but ensure it has proper display settings
             if (existingNames.has(collection.name)) {
-                console.log(`    ⏭️  Skipping duplicate collection: ${collection.name}`)
+                console.log(`    ⏭️  Collection already exists: ${collection.name}`)
                 const existing = listByName.get(collection.name)
-                if (existing && !existing.isPublic) {
-                    console.log(`    🔓 Making existing collection public: ${collection.name}`)
-                    try {
-                        await (isGuest
-                            ? useGuestStore.getState().updateList(existing.id, { isPublic: true })
-                            : useAuthStore.getState().updateList(existing.id, { isPublic: true }))
-                    } catch (error) {
-                        console.error(
-                            `    ❌ Failed to update existing collection visibility: ${collection.name}`,
-                            error
-                        )
+                if (existing) {
+                    // Update existing collection to ensure it has proper display settings
+                    const updates: Partial<typeof existing> = {}
+
+                    if (!existing.isPublic) {
+                        console.log(`    🔓 Making existing collection public: ${collection.name}`)
+                        updates.isPublic = true
+                    }
+
+                    if (existing.mediaType !== 'both') {
+                        console.log(`    📺 Setting mediaType to 'both' for: ${collection.name}`)
+                        updates.mediaType = 'both'
+                    }
+
+                    if (existing.displayAsRow !== true) {
+                        console.log(`    👁️  Enabling displayAsRow for: ${collection.name}`)
+                        updates.displayAsRow = true
+                    }
+
+                    if (Object.keys(updates).length > 0) {
+                        try {
+                            await (isGuest
+                                ? useGuestStore.getState().updateList(existing.id, updates)
+                                : useAuthStore.getState().updateList(existing.id, updates))
+                            console.log(`    ✅ Updated existing collection: ${collection.name}`)
+                        } catch (error) {
+                            console.error(
+                                `    ❌ Failed to update existing collection: ${collection.name}`,
+                                error
+                            )
+                        }
                     }
                 }
                 continue
             }
 
-            // Create the list first
+            // Create the list first with display settings
             let listId: string
             if (isGuest) {
                 listId = await useGuestStore.getState().createList({
@@ -1423,6 +1443,8 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                     color: collection.color,
                     collectionType: 'manual',
                     isPublic: true,
+                    mediaType: 'both', // Display on home page
+                    displayAsRow: true, // Enable display as row
                 })
             } else {
                 listId = await useAuthStore.getState().createList({
@@ -1431,6 +1453,8 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                     color: collection.color,
                     collectionType: 'manual',
                     isPublic: true,
+                    mediaType: 'both', // Display on home page
+                    displayAsRow: true, // Enable display as row
                 })
             }
 

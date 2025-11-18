@@ -169,6 +169,7 @@ export default function HomeClient({ data, filter }: HomeClientProps) {
                 return {
                     ...c,
                     name: pref?.customName || c.name, // Apply custom name if set
+                    enabled: pref?.enabled ?? c.enabled, // Apply custom enabled state if set
                     order: pref?.order ?? c.order, // Apply custom order if set
                     genres: pref?.customGenres || c.genres, // Apply custom genres if set
                     genreLogic: pref?.customGenreLogic || c.genreLogic, // Apply custom genre logic if set

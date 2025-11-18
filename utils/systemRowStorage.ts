@@ -229,6 +229,24 @@ export class SystemRowStorage {
     }
 
     /**
+     * Set system row preferences (full replacement)
+     */
+    static async setSystemRowPreferences(
+        userId: string,
+        preferences: SystemRowPreferences,
+        isGuest: boolean
+    ): Promise<void> {
+        if (isGuest) {
+            // For guests, save to localStorage
+            const data = GuestSystemRowStorage['loadGuestData'](userId)
+            data.systemRowPreferences = preferences
+            GuestSystemRowStorage['saveGuestData'](userId, data)
+            return
+        }
+        return CustomRowsFirestore.setSystemRowPreferences(userId, preferences)
+    }
+
+    /**
      * Update system row custom name
      */
     static async updateSystemRowName(

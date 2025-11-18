@@ -16,15 +16,16 @@ import {
     GlobeAltIcon,
     LockClosedIcon,
 } from '@heroicons/react/24/outline'
-import { useModalStore } from '../../../stores/modalStore'
+import CollectionEditorModal from '../../../components/modals/CollectionEditorModal'
+import { SystemRowStorage } from '../../../utils/systemRowStorage'
+import { fixCollectionDisplaySettings } from '../../../utils/migrations/fixCollectionDisplaySettings'
 
 export default function CollectionsPage() {
-    const openRowEditorModal = useModalStore((state) => state.openRowEditorModal)
     const getUserId = useSessionStore((state) => state.getUserId)
     const sessionType = useSessionStore((state) => state.sessionType)
     const userId = getUserId()
 
-    const { showSuccess } = useToast()
+    const { showSuccess, showError } = useToast()
 
     // Get all display rows (system + custom)
     const getAllDisplayRows = useCustomRowsStore((state) => state.getAllDisplayRows)
@@ -49,6 +50,13 @@ export default function CollectionsPage() {
     const [moviesOpen, setMoviesOpen] = useState(false)
     const [tvOpen, setTvOpen] = useState(false)
 
+    // Collection editor modal state
+    const [editingCollection, setEditingCollection] = useState<any>(null)
+    const [showEditorModal, setShowEditorModal] = useState(false)
+
+    // Migration state
+    const [isMigrating, setIsMigrating] = useState(false)
+
     // Get all collections
     const allDisplayRows = userId ? getAllDisplayRows(userId) : []
 
@@ -56,20 +64,30 @@ export default function CollectionsPage() {
     const systemCollections = allDisplayRows.filter((row) => row.isSystemRow)
     const userCollectionsFromRows = userCollections || []
 
+    // Get system row preferences to check enabled state
+    const systemRowPreferencesMap = useCustomRowsStore((state) => state.systemRowPreferences)
+    const systemRowPreferences = userId ? systemRowPreferencesMap.get(userId) || {} : {}
+
     // Combine and normalize all collections
     const allCollections = useMemo(() => {
         const combined = [
-            ...systemCollections.map((row) => ({
-                id: row.id,
-                name: row.name,
-                emoji: row.emoji,
-                isSystem: true,
-                enabled: row.enabled,
-                itemCount: 20, // Placeholder for system collections
-                mediaType: row.mediaType,
-                isPublic: false, // System collections are not shareable
-                collection: row, // Store full collection for editing
-            })),
+            ...systemCollections.map((row) => {
+                // Check the system row preferences for enabled state (defaults to true if not set)
+                const pref = systemRowPreferences[row.id]
+                const isEnabled = pref?.enabled ?? true
+
+                return {
+                    id: row.id,
+                    name: row.name,
+                    emoji: row.emoji,
+                    isSystem: true,
+                    enabled: isEnabled, // Use preference enabled state, not base enabled
+                    itemCount: 20, // Placeholder for system collections
+                    mediaType: row.mediaType,
+                    isPublic: false, // System collections are not shareable
+                    collection: row, // Store full collection for editing
+                }
+            }),
             ...userCollectionsFromRows.map((col: UserList) => ({
                 id: col.id,
                 name: col.name,
@@ -98,17 +116,27 @@ export default function CollectionsPage() {
         }
 
         return filtered
-    }, [systemCollections, userCollectionsFromRows, searchQuery, statusFilter])
+    }, [
+        systemCollections,
+        userCollectionsFromRows,
+        searchQuery,
+        statusFilter,
+        systemRowPreferences,
+    ])
 
-    // Group by page type
-    const homeCollections = allCollections.filter((col) => col.mediaType === 'both')
-    const movieCollections = allCollections.filter((col) => col.mediaType === 'movie')
-    const tvCollections = allCollections.filter((col) => col.mediaType === 'tv')
-
-    // Find collections that don't match any page type (edge case)
-    const uncategorizedCollections = allCollections.filter(
-        (col) => col.mediaType !== 'both' && col.mediaType !== 'movie' && col.mediaType !== 'tv'
+    // Group by actual display location
+    // Home page shows collections with mediaType === 'both'
+    // Movies page shows collections with mediaType === 'movie'
+    // TV page shows collections with mediaType === 'tv'
+    // Unassigned are collections where enabled === false (displayAsRow === false)
+    const homeCollections = allCollections.filter((col) => col.mediaType === 'both' && col.enabled)
+    const movieCollections = allCollections.filter(
+        (col) => col.mediaType === 'movie' && col.enabled
     )
+    const tvCollections = allCollections.filter((col) => col.mediaType === 'tv' && col.enabled)
+
+    // Unassigned collections (disabled/not displayed on any page)
+    const unassignedCollections = allCollections.filter((col) => !col.enabled)
 
     // Stats
     const totalCollections = allCollections.length
@@ -118,8 +146,24 @@ export default function CollectionsPage() {
     // Toggle handlers
     const handleToggleSystem = async (collectionId: string) => {
         if (!userId) return
+
+        // Update in-memory state first for immediate UI update
         toggleSystemRow(userId, collectionId)
-        showSuccess('Collection updated')
+
+        // Persist to storage
+        try {
+            const updatedPrefs =
+                useCustomRowsStore.getState().systemRowPreferences.get(userId) || {}
+            await SystemRowStorage.setSystemRowPreferences(
+                userId,
+                updatedPrefs,
+                isAuth ? false : true
+            )
+            showSuccess('Collection updated')
+        } catch (error) {
+            console.error('Failed to persist system row toggle:', error)
+            showError('Failed to update collection')
+        }
     }
 
     const handleToggleUser = async (collectionId: string) => {
@@ -140,14 +184,104 @@ export default function CollectionsPage() {
         }
     }
 
+    const handleResetToDefaults = async () => {
+        if (!userId) return
+
+        try {
+            // Reset all system collections to enabled
+            const systemPreferences =
+                useCustomRowsStore.getState().systemRowPreferences.get(userId) || {}
+            const resetPrefs: any = {}
+
+            // Enable all system collections
+            Object.keys(systemPreferences).forEach((rowId) => {
+                resetPrefs[rowId] = {
+                    enabled: true,
+                    order: systemPreferences[rowId]?.order ?? 0,
+                }
+            })
+
+            // Update in-memory state
+            useCustomRowsStore.getState().setSystemRowPreferences(userId, resetPrefs)
+
+            // Persist to storage
+            await SystemRowStorage.setSystemRowPreferences(
+                userId,
+                resetPrefs,
+                isAuth ? false : true
+            )
+
+            showSuccess('Reset to default collection settings')
+        } catch (error) {
+            console.error('Failed to reset to defaults:', error)
+            showError('Failed to reset collection settings')
+        }
+    }
+
+    const handleEditCollection = (collection: any) => {
+        setEditingCollection(collection)
+        setShowEditorModal(true)
+    }
+
+    const handleCloseEditor = () => {
+        setShowEditorModal(false)
+        setEditingCollection(null)
+    }
+
+    const handleMigrateCollections = async () => {
+        setIsMigrating(true)
+        try {
+            const result = await fixCollectionDisplaySettings()
+
+            if (result.success) {
+                if (result.updated > 0) {
+                    showSuccess(
+                        `Fixed ${result.updated} collection${result.updated === 1 ? '' : 's'}`
+                    )
+                } else {
+                    showSuccess('All collections already have correct settings')
+                }
+            } else {
+                showError(
+                    `Migration completed with ${result.errors} error${result.errors === 1 ? '' : 's'}`
+                )
+            }
+        } catch (error) {
+            console.error('Migration failed:', error)
+            showError('Failed to migrate collections')
+        } finally {
+            setIsMigrating(false)
+        }
+    }
+
     return (
         <div className="p-6 md:p-8 min-h-screen">
             {/* Header */}
-            <div className="mb-8">
-                <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
-                    Collection Management
-                </h1>
-                <p className="text-gray-400">Control which collections appear on your pages</p>
+            <div className="mb-8 flex items-start justify-between">
+                <div>
+                    <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
+                        Collection Management
+                    </h1>
+                    <p className="text-gray-400">Control which collections appear on your pages</p>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2">
+                    <button
+                        onClick={handleMigrateCollections}
+                        disabled={isMigrating}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed text-white text-sm rounded-lg border border-blue-500 transition-colors"
+                        title="Fix collections that aren't displaying properly"
+                    >
+                        {isMigrating ? 'Fixing...' : 'Fix Collections'}
+                    </button>
+                    <button
+                        onClick={handleResetToDefaults}
+                        className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm rounded-lg border border-gray-600 transition-colors"
+                    >
+                        Reset to Defaults
+                    </button>
+                </div>
             </div>
 
             {/* Stats */}
@@ -200,7 +334,7 @@ export default function CollectionsPage() {
                         <CollectionGrid
                             collections={homeCollections}
                             onToggle={handleToggle}
-                            onEdit={openRowEditorModal}
+                            onEdit={handleEditCollection}
                         />
                     </AccordionSection>
                 )}
@@ -217,7 +351,7 @@ export default function CollectionsPage() {
                         <CollectionGrid
                             collections={movieCollections}
                             onToggle={handleToggle}
-                            onEdit={openRowEditorModal}
+                            onEdit={handleEditCollection}
                         />
                     </AccordionSection>
                 )}
@@ -234,24 +368,28 @@ export default function CollectionsPage() {
                         <CollectionGrid
                             collections={tvCollections}
                             onToggle={handleToggle}
-                            onEdit={openRowEditorModal}
+                            onEdit={handleEditCollection}
                         />
                     </AccordionSection>
                 )}
 
-                {/* Uncategorized Collections - For edge cases */}
-                {uncategorizedCollections.length > 0 && (
+                {/* Unassigned Collections */}
+                {unassignedCollections.length > 0 && (
                     <AccordionSection
-                        title="Other Collections"
+                        title="Unassigned Collections"
                         icon="📂"
-                        count={uncategorizedCollections.length}
+                        count={unassignedCollections.length}
                         isOpen={true}
                         onToggle={() => {}}
                     >
+                        <div className="mb-3 text-sm text-gray-400">
+                            These collections are not displayed on any page. Edit them to assign to
+                            Home, Movies, or TV.
+                        </div>
                         <CollectionGrid
-                            collections={uncategorizedCollections}
+                            collections={unassignedCollections}
                             onToggle={handleToggle}
-                            onEdit={openRowEditorModal}
+                            onEdit={handleEditCollection}
                         />
                     </AccordionSection>
                 )}
@@ -262,6 +400,15 @@ export default function CollectionsPage() {
                 <div className="text-center py-12">
                     <p className="text-gray-400">No collections found</p>
                 </div>
+            )}
+
+            {/* Collection Editor Modal */}
+            {editingCollection && (
+                <CollectionEditorModal
+                    collection={editingCollection}
+                    isOpen={showEditorModal}
+                    onClose={handleCloseEditor}
+                />
             )}
         </div>
     )
@@ -362,76 +509,29 @@ interface CollectionCardProps {
 function CollectionCard({ collection, onToggle, onEdit }: CollectionCardProps) {
     return (
         <div className="bg-[#0a0a0a] rounded-lg border border-[#313131] hover:border-[#454545] transition-all p-3">
-            {/* Header Row */}
-            <div className="flex items-start justify-between mb-2">
+            {/* Header Row with Edit Button */}
+            <div className="flex items-start justify-between mb-3">
                 {/* Name with inline emoji */}
                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <span className="text-xl flex-shrink-0">{collection.emoji || '📺'}</span>
+                    <span className="text-lg flex-shrink-0">{collection.emoji || '📺'}</span>
                     <h3 className="text-white text-sm font-medium truncate">{collection.name}</h3>
                 </div>
 
-                {/* Status indicator */}
-                <div className="flex-shrink-0">
-                    {collection.enabled ? (
-                        <div className="w-2 h-2 rounded-full bg-green-500" title="Enabled" />
-                    ) : (
-                        <div className="w-2 h-2 rounded-full bg-gray-600" title="Hidden" />
-                    )}
-                </div>
-            </div>
-
-            {/* Badges Row - Only show for user collections */}
-            <div className="flex items-center gap-2 mb-3 min-h-[20px]">
-                {!collection.isSystem && (
-                    <>
-                        {collection.isPublic ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-green-900/30 text-green-400 text-xs font-medium">
-                                <GlobeAltIcon className="w-3 h-3" />
-                                Public
-                            </span>
-                        ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-800/50 text-gray-400 text-xs font-medium">
-                                <LockClosedIcon className="w-3 h-3" />
-                                Private
-                            </span>
-                        )}
-                    </>
-                )}
-            </div>
-
-            {/* Item Count */}
-            <p className="text-gray-500 text-xs mb-3">
-                {collection.itemCount} {collection.itemCount === 1 ? 'item' : 'items'}
-            </p>
-
-            {/* Action Buttons */}
-            <div className="flex items-center gap-2">
-                {/* Edit Button - Icon Only */}
+                {/* Edit Button - Top Right */}
                 <button
                     onClick={onEdit}
-                    className="flex items-center justify-center p-1.5 bg-gray-800 hover:bg-gray-700 text-white rounded-md transition-colors"
+                    className="flex-shrink-0 flex items-center justify-center p-1 hover:bg-gray-800 rounded transition-colors"
                     title="Edit collection"
                     aria-label="Edit collection"
                 >
-                    <PencilIcon className="w-4 h-4" />
-                </button>
-
-                {/* Toggle Switch */}
-                <button
-                    onClick={onToggle}
-                    className={`flex-shrink-0 relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                        collection.enabled ? 'bg-green-600' : 'bg-gray-600'
-                    }`}
-                    aria-label={collection.enabled ? 'Hide collection' : 'Show collection'}
-                    title={collection.enabled ? 'Hide from page' : 'Show on page'}
-                >
-                    <span
-                        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                            collection.enabled ? 'translate-x-5' : 'translate-x-0.5'
-                        }`}
-                    />
+                    <PencilIcon className="w-4 h-4 text-gray-400 hover:text-white" />
                 </button>
             </div>
+
+            {/* Item Count - Right below title */}
+            <p className="text-gray-500 text-xs">
+                {collection.itemCount} {collection.itemCount === 1 ? 'item' : 'items'}
+            </p>
         </div>
     )
 }
