@@ -15,7 +15,10 @@ export async function POST() {
         const now = Date.now()
         const timeSinceLastRequest = now - lastRequestTime
         if (timeSinceLastRequest < RATE_LIMIT_MS) {
-            apiLog('[Surprise Query] Rate limited - using fallback')
+            const waitTime = RATE_LIMIT_MS - timeSinceLastRequest
+            apiWarn(
+                `[Surprise Query] ⚠️ RATE LIMITED - Last request was ${timeSinceLastRequest}ms ago (need ${RATE_LIMIT_MS}ms). Wait ${waitTime}ms more.`
+            )
             // Use fallback if rate limited
             const fallbackQueries = [
                 'Wes Anderson filmography',
@@ -32,9 +35,11 @@ export async function POST() {
                 'Coen Brothers filmography',
             ]
             const randomQuery = fallbackQueries[Math.floor(Math.random() * fallbackQueries.length)]
-            return NextResponse.json({ query: randomQuery })
+            apiLog('[Surprise Query] Returning rate-limit fallback query:', randomQuery)
+            return NextResponse.json({ query: randomQuery, _rateLimited: true })
         }
         lastRequestTime = now
+        apiLog('[Surprise Query] Rate limit OK - proceeding with Gemini call')
 
         if (!GEMINI_API_KEY) {
             throw new Error('Gemini API key not configured')
@@ -71,7 +76,26 @@ export async function POST() {
             throw new Error(result.error || 'Failed to generate query from Gemini')
         }
 
-        let generatedQuery = extractGeminiText(result.data)?.trim() || 'epic adventures'
+        // DEBUG: Log raw Gemini response
+        apiLog('[Surprise Query] Raw Gemini response:', JSON.stringify(result.data, null, 2))
+
+        const extractedText = extractGeminiText(result.data)
+        apiLog('[Surprise Query] Extracted text:', extractedText)
+
+        if (!extractedText) {
+            apiError('[Surprise Query] extractGeminiText returned null/undefined!')
+            apiLog('[Surprise Query] Result data structure:', {
+                hasCandidates: !!result.data?.candidates,
+                candidatesLength: result.data?.candidates?.length,
+                firstCandidate: result.data?.candidates?.[0],
+            })
+        }
+
+        let generatedQuery = extractedText?.trim() || 'epic adventures'
+
+        if (generatedQuery === 'epic adventures') {
+            apiError('[Surprise Query] Using fallback "epic adventures" - extraction failed!')
+        }
 
         // Clean up the query: remove quotes, trailing periods, and take only first line
         generatedQuery = generatedQuery
@@ -82,14 +106,14 @@ export async function POST() {
             .replace(/^-\s*/, '') // Remove leading dashes
             .trim()
 
-        apiLog('[Surprise Query] Generated query:', generatedQuery)
+        apiLog('[Surprise Query] Final cleaned query:', generatedQuery)
 
         return NextResponse.json({
             query: generatedQuery,
             _meta: result.metadata, // Include router metadata
         })
     } catch (error) {
-        apiError('Surprise query error:', error)
+        apiError('[Surprise Query] ❌ ERROR CAUGHT - Using error fallback:', error)
         // Fallback to curated list if Gemini fails
         const fallbackQueries = [
             'Wes Anderson filmography',
@@ -106,6 +130,7 @@ export async function POST() {
             'Coen Brothers filmography',
         ]
         const randomQuery = fallbackQueries[Math.floor(Math.random() * fallbackQueries.length)]
-        return NextResponse.json({ query: randomQuery })
+        apiLog('[Surprise Query] Returning error fallback query:', randomQuery)
+        return NextResponse.json({ query: randomQuery, _error: true })
     }
 }
