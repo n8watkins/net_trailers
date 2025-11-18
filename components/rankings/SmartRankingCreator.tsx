@@ -15,6 +15,8 @@ import { useAuthStore } from '@/stores/authStore'
 import { useGuestStore } from '@/stores/guestStore'
 import { useToast } from '@/hooks/useToast'
 import { useRankingStore } from '@/stores/rankingStore'
+import { useSessionData } from '@/hooks/useSessionData'
+import { filterDislikedContent } from '@/utils/contentFilter'
 import { auth, db } from '@/firebase'
 import { doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore'
 import { SmartInput } from '@/components/common/SmartInput'
@@ -205,6 +207,7 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
     const guestCollections = useGuestStore((state) => state.userCreatedWatchlists)
     const { createRanking, updateRanking } = useRankingStore()
     const { showSuccess, showError } = useToast()
+    const { hiddenMovies } = useSessionData()
 
     // Get collections based on session type
     const collections = sessionType === 'authenticated' ? authCollections : guestCollections
@@ -308,12 +311,15 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                 overview: movie.reason || '',
             }))
 
-            setSelectedItems(content)
+            // Filter out hidden content from AI suggestions
+            const filteredContent = filterDislikedContent(content, hiddenMovies)
+
+            setSelectedItems(filteredContent)
             setTitle(data.rowName || q)
             setLastSearchQuery(q) // Save query for display and draft
 
             // Track original content IDs
-            const contentIds = new Set(content.map((item) => item.id))
+            const contentIds = new Set(filteredContent.map((item) => item.id))
             setOriginalContentIds(contentIds)
             setManuallyAddedIds(new Set())
             setRemovedContentIds(new Set())

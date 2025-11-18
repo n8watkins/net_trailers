@@ -6,6 +6,8 @@ import {
     translateToTMDBGenres,
     translateToTMDBGenresForBoth,
 } from '../../../../../utils/genreMapping'
+import { verifyIdToken, getAdminDb } from '../../../../../lib/firebase-admin'
+import { Content } from '../../../../../typings'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -40,6 +42,45 @@ type GenreLogic = 'AND' | 'OR'
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         await params // Consume params to satisfy Next.js requirements
+
+        // Fetch user's hidden movies based on auth context (optional - this is a public endpoint)
+        let hiddenMovieIds: number[] = []
+
+        try {
+            // Check for optional Authorization header
+            const authHeader = request.headers.get('authorization')
+
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                const idToken = authHeader.substring(7) // Remove 'Bearer ' prefix
+
+                try {
+                    // Verify token with Firebase Admin SDK
+                    const decodedToken = await verifyIdToken(idToken)
+                    const userId = decodedToken.uid
+
+                    // Fetch user's hidden movies from Firestore
+                    const db = getAdminDb()
+                    const userDoc = await db.collection('users').doc(userId).get()
+
+                    if (userDoc.exists) {
+                        const userData = userDoc.data()
+                        const hiddenMovies = (userData?.hiddenMovies || []) as Content[]
+                        hiddenMovieIds = hiddenMovies.map((m) => m.id)
+                    }
+                } catch (authError) {
+                    apiWarn('Auth verification failed:', authError)
+                    // Continue without filtering - not critical for public endpoint
+                }
+            }
+
+            // Note: Guest users won't have server-side filtering
+            // They already get client-side filtering via Row.tsx
+        } catch (error) {
+            apiWarn('Error fetching hidden movies:', error)
+            // Continue without filtering - client-side safety net will handle it
+        }
+
+        const hiddenIdsSet = new Set(hiddenMovieIds)
 
         if (!API_KEY) {
             return NextResponse.json({ error: 'TMDB API key not configured' }, { status: 500 })
@@ -354,7 +395,17 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                 return true
             })
 
-            const hiddenCount = beforeCount - enrichedResults.length
+            const childSafetyHiddenCount = beforeCount - enrichedResults.length
+
+            // Filter out user's hidden movies
+            let userHiddenCount = 0
+            if (hiddenIdsSet.size > 0) {
+                const beforeUserFilter = enrichedResults.length
+                enrichedResults = enrichedResults.filter((item: any) => !hiddenIdsSet.has(item.id))
+                userHiddenCount = beforeUserFilter - enrichedResults.length
+            }
+
+            const totalHiddenCount = childSafetyHiddenCount + userHiddenCount
 
             return NextResponse.json(
                 {
@@ -363,7 +414,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                     total_pages: totalPages,
                     total_results: totalResults,
                     child_safety_enabled: true,
-                    hidden_count: hiddenCount,
+                    hidden_count: totalHiddenCount,
                 },
                 {
                     status: 200,
@@ -374,13 +425,23 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             )
         }
 
+        // Filter out user's hidden movies (for normal mode)
+        let filteredResults = enrichedResults
+        let userHiddenCount = 0
+        if (hiddenIdsSet.size > 0) {
+            const beforeUserFilter = enrichedResults.length
+            filteredResults = enrichedResults.filter((item: any) => !hiddenIdsSet.has(item.id))
+            userHiddenCount = beforeUserFilter - filteredResults.length
+        }
+
         // Return normal results
         return NextResponse.json(
             {
-                results: enrichedResults,
+                results: filteredResults,
                 page: pageNumber,
                 total_pages: totalPages,
                 total_results: totalResults,
+                hidden_count: userHiddenCount > 0 ? userHiddenCount : undefined,
             },
             {
                 status: 200,

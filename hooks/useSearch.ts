@@ -171,8 +171,12 @@ export function useSearch() {
                 const data = await response.json()
 
                 setSearch((prev) => {
+                    // Filter out hidden content from API results
+                    const apiResults = data.results || []
+                    const filteredApiResults = filterDislikedContent(apiResults, hiddenMovies)
+
                     const newResults =
-                        page === 1 ? data.results || [] : [...prev.results, ...(data.results || [])]
+                        page === 1 ? filteredApiResults : [...prev.results, ...filteredApiResults]
 
                     return {
                         ...prev,
@@ -201,7 +205,7 @@ export function useSearch() {
                 // AbortError is expected when cancelling requests, ignore it
             }
         },
-        [setSearch, addToSearchHistory, clearResults, childSafetyEnabled]
+        [setSearch, addToSearchHistory, clearResults, childSafetyEnabled, hiddenMovies]
     )
 
     // Effect to trigger search when debounced query changes

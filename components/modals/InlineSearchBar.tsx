@@ -11,6 +11,8 @@ import Image from 'next/image'
 import { Content, getTitle, isMovie } from '../../typings'
 import { useVoiceInput } from '../../hooks/useVoiceInput'
 import { useToast } from '../../hooks/useToast'
+import { useSessionData } from '../../hooks/useSessionData'
+import { filterDislikedContent } from '../../utils/contentFilter'
 
 interface InlineSearchBarProps {
     onAddContent: (content: Content) => void
@@ -24,6 +26,7 @@ export default function InlineSearchBar({
     placeholder = 'Search to add movies or TV shows...',
 }: InlineSearchBarProps) {
     const { showError } = useToast()
+    const { hiddenMovies } = useSessionData()
     const [query, setQuery] = useState('')
     const [results, setResults] = useState<Content[]>([])
     const [isLoading, setIsLoading] = useState(false)
@@ -69,8 +72,10 @@ export default function InlineSearchBar({
                 )
                 if (response.ok) {
                     const data = await response.json()
+                    // Filter out hidden content
+                    const withoutHidden = filterDislikedContent(data.results, hiddenMovies)
                     // Filter out already added content
-                    const filtered = data.results.filter(
+                    const filtered = withoutHidden.filter(
                         (item: Content) => !existingContentIds.includes(item.id)
                     )
                     setResults(filtered.slice(0, 10)) // Limit to 10 results

@@ -3,6 +3,8 @@ import { withAuth } from '@/lib/auth-middleware'
 import { consumeGeminiRateLimit } from '@/lib/geminiRateLimiter'
 import { sanitizeInput } from '@/utils/inputSanitization'
 import { apiLog, apiError, apiWarn } from '@/utils/debugLogger'
+import { getAdminDb } from '@/lib/firebase-admin'
+import { Content } from '@/typings'
 
 /**
  * Simplified Smart Row Generator - Single API call does everything
@@ -29,6 +31,22 @@ async function handleGenerateRow(request: NextRequest, userId: string): Promise<
             return NextResponse.json({ error: queryResult.error }, { status: 400 })
         }
         const sanitizedQuery = queryResult.sanitized
+
+        // Fetch user's hidden movies from Firestore
+        let hiddenMovieIds: number[] = []
+        try {
+            const db = getAdminDb()
+            const userDoc = await db.collection('users').doc(userId).get()
+
+            if (userDoc.exists) {
+                const userData = userDoc.data()
+                const hiddenMovies = (userData?.hiddenMovies || []) as Content[]
+                hiddenMovieIds = hiddenMovies.map((m) => m.id)
+            }
+        } catch (error) {
+            apiWarn('Error fetching hidden movies:', error)
+            // Continue without filtering - not critical for functionality
+        }
 
         const apiKey = process.env.GEMINI_API_KEY
         if (!apiKey) {
@@ -99,8 +117,8 @@ async function handleGenerateRow(request: NextRequest, userId: string): Promise<
             geminiResult.mediaType || 'movie'
         )
 
-        // Filter out any excluded IDs (double-check in case Gemini ignored the instruction)
-        const excludedIdsSet = new Set(excludedIds || [])
+        // Filter out any excluded IDs and hidden movies (double-check in case Gemini ignored the instruction)
+        const excludedIdsSet = new Set([...(excludedIds || []), ...hiddenMovieIds])
         const filteredMovies = enrichedMovies.filter((m) => !excludedIdsSet.has(m.tmdbId))
 
         const finalResult = {
