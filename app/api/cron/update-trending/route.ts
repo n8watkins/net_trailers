@@ -1,18 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb } from '@/lib/firebase-admin'
 import { compareTrendingContent, getTrendingTitle } from '@/utils/trendingComparison'
+import { validateAdminRequest } from '@/utils/adminMiddleware'
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY
+const CRON_SECRET = process.env.CRON_SECRET
 
 export async function GET(req: NextRequest) {
     try {
         // Auth check - allow cron or admin
         const authHeader = req.headers.get('authorization')
-        const cronSecret = process.env.CRON_SECRET
-        const adminToken = process.env.NEXT_PUBLIC_ADMIN_TOKEN
+        const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : authHeader
 
-        const isCron = authHeader === `Bearer ${cronSecret}`
-        const isAdmin = authHeader === `Bearer ${adminToken}`
+        // Check if it's a cron request
+        const isCron = token === CRON_SECRET
+
+        // Check if it's an admin request via Firebase Auth
+        let isAdmin = false
+        if (!isCron) {
+            const authResult = await validateAdminRequest(req)
+            isAdmin = authResult.authorized
+        }
 
         if (!isCron && !isAdmin) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useSessionStore } from '@/stores/sessionStore'
 import { ArrowLeft, LogIn, Eye, TrendingUp, Users } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
+import { auth } from '@/firebase'
 
 interface Activity {
     id: string
@@ -71,6 +72,14 @@ export default function ActivityPage() {
     const loadActivity = async () => {
         setLoading(true)
         try {
+            // Get Firebase ID token for secure API calls
+            const idToken = await auth.currentUser?.getIdToken()
+            if (!idToken) {
+                showError('Authentication required')
+                setLoading(false)
+                return
+            }
+
             const params = new URLSearchParams({
                 type: activeTab,
                 period: timeframe,
@@ -81,7 +90,7 @@ export default function ActivityPage() {
 
             const response = await fetch(`/api/admin/activity?${params.toString()}`, {
                 headers: {
-                    Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
+                    Authorization: `Bearer ${idToken}`,
                 },
             })
 

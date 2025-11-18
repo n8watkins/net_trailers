@@ -6,21 +6,20 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminAuth } from '@/lib/firebase-admin'
-
-// Admin authorization
-const ADMIN_TOKEN = process.env.NEXT_PUBLIC_ADMIN_TOKEN || 'your-secret-admin-token'
+import {
+    validateAdminRequest,
+    createUnauthorizedResponse,
+    createForbiddenResponse,
+} from '@/utils/adminMiddleware'
 
 export async function GET(request: NextRequest) {
     try {
-        // Verify admin authorization
-        const authHeader = request.headers.get('authorization')
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-        }
-
-        const token = authHeader.substring(7)
-        if (token !== ADMIN_TOKEN) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        // Validate admin access via Firebase Auth
+        const authResult = await validateAdminRequest(request)
+        if (!authResult.authorized) {
+            return authResult.error?.includes('not an administrator')
+                ? createForbiddenResponse(authResult.error)
+                : createUnauthorizedResponse(authResult.error)
         }
 
         const auth = getAdminAuth()

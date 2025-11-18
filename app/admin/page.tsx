@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { auth } from '@/firebase'
 import { useSessionStore } from '@/stores/sessionStore'
 import { getAccountStats } from '@/utils/accountLimits'
 import {
@@ -63,6 +64,13 @@ export default function AdminDashboard() {
     const loadAllStats = async () => {
         setStatsLoading(true)
         try {
+            // Get Firebase ID token for secure API calls
+            const idToken = await auth.currentUser?.getIdToken()
+            if (!idToken) {
+                showError('Authentication required')
+                return
+            }
+
             // Load account stats
             const accountData = await getAccountStats()
             setStats(accountData as AdminStats)
@@ -71,7 +79,7 @@ export default function AdminDashboard() {
             try {
                 const trendingResponse = await fetch('/api/admin/trending-stats', {
                     headers: {
-                        Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
+                        Authorization: `Bearer ${idToken}`,
                     },
                 })
                 if (trendingResponse.ok) {
@@ -89,7 +97,7 @@ export default function AdminDashboard() {
             try {
                 const activityResponse = await fetch('/api/admin/activity?period=month', {
                     headers: {
-                        Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
+                        Authorization: `Bearer ${idToken}`,
                     },
                 })
                 if (activityResponse.ok) {
@@ -140,11 +148,18 @@ export default function AdminDashboard() {
     const runTrendingCheck = async (demoMode = false) => {
         setLoading(true)
         try {
+            // Get Firebase ID token
+            const idToken = await auth.currentUser?.getIdToken()
+            if (!idToken) {
+                showError('Authentication required')
+                return
+            }
+
             const response = await fetch(
                 `/api/cron/update-trending${demoMode ? '?demo=true' : ''}`,
                 {
                     headers: {
-                        Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
+                        Authorization: `Bearer ${idToken}`,
                     },
                 }
             )
@@ -170,10 +185,17 @@ export default function AdminDashboard() {
 
         setLoading(true)
         try {
+            // Get Firebase ID token for secure API calls
+            const idToken = await auth.currentUser?.getIdToken()
+            if (!idToken) {
+                showError('Authentication required')
+                return
+            }
+
             const response = await fetch('/api/admin/reset-demo', {
                 method: 'POST',
                 headers: {
-                    Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
+                    Authorization: `Bearer ${idToken}`,
                 },
             })
 
