@@ -124,19 +124,19 @@ export default function CollectionsPage() {
         systemRowPreferences,
     ])
 
-    // Group by actual display location
-    // Home page shows collections with mediaType === 'both'
-    // Movies page shows collections with mediaType === 'movie'
-    // TV page shows collections with mediaType === 'tv'
-    // Unassigned are collections where enabled === false (displayAsRow === false)
-    const homeCollections = allCollections.filter((col) => col.mediaType === 'both' && col.enabled)
-    const movieCollections = allCollections.filter(
-        (col) => col.mediaType === 'movie' && col.enabled
-    )
-    const tvCollections = allCollections.filter((col) => col.mediaType === 'tv' && col.enabled)
+    // Group by media type (category assignment)
+    // Collections stay in their category regardless of enabled state
+    // The green/red dot on each card indicates if it's currently displaying
+    const homeCollections = allCollections.filter((col) => col.mediaType === 'both')
+    const movieCollections = allCollections.filter((col) => col.mediaType === 'movie')
+    const tvCollections = allCollections.filter((col) => col.mediaType === 'tv')
 
-    // Unassigned collections (disabled/not displayed on any page)
-    const unassignedCollections = allCollections.filter((col) => !col.enabled)
+    // Unassigned collections (no mediaType set - edge case)
+    const unassignedCollections = allCollections.filter(
+        (col) =>
+            !col.mediaType ||
+            (col.mediaType !== 'both' && col.mediaType !== 'movie' && col.mediaType !== 'tv')
+    )
 
     // Stats
     const totalCollections = allCollections.length
@@ -383,8 +383,8 @@ export default function CollectionsPage() {
                         onToggle={() => {}}
                     >
                         <div className="mb-3 text-sm text-gray-400">
-                            These collections are not displayed on any page. Edit them to assign to
-                            Home, Movies, or TV.
+                            These collections have no page assignment. Edit them to assign to Home,
+                            Movies, or TV.
                         </div>
                         <CollectionGrid
                             collections={unassignedCollections}
@@ -509,11 +509,17 @@ interface CollectionCardProps {
 function CollectionCard({ collection, onToggle, onEdit }: CollectionCardProps) {
     return (
         <div className="bg-[#0a0a0a] rounded-lg border border-[#313131] hover:border-[#454545] transition-all p-3">
-            {/* Header Row with Edit Button */}
+            {/* Header Row with Status Dot and Edit Button */}
             <div className="flex items-start justify-between mb-3">
-                {/* Name with inline emoji */}
+                {/* Name with emoji and status dot */}
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                     <span className="text-lg flex-shrink-0">{collection.emoji || '📺'}</span>
+                    <div
+                        className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                            collection.enabled ? 'bg-green-500' : 'bg-red-500'
+                        }`}
+                        title={collection.enabled ? 'Currently displaying' : 'Hidden'}
+                    />
                     <h3 className="text-white text-sm font-medium truncate">{collection.name}</h3>
                 </div>
 
@@ -528,10 +534,28 @@ function CollectionCard({ collection, onToggle, onEdit }: CollectionCardProps) {
                 </button>
             </div>
 
-            {/* Item Count - Right below title */}
-            <p className="text-gray-500 text-xs">
-                {collection.itemCount} {collection.itemCount === 1 ? 'item' : 'items'}
-            </p>
+            {/* Bottom Row: Item Count and Toggle */}
+            <div className="flex items-center justify-between">
+                <p className="text-gray-500 text-xs">
+                    {collection.itemCount} {collection.itemCount === 1 ? 'item' : 'items'}
+                </p>
+
+                {/* Toggle Switch */}
+                <button
+                    onClick={onToggle}
+                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                        collection.enabled ? 'bg-green-600' : 'bg-gray-600'
+                    }`}
+                    aria-label={collection.enabled ? 'Hide collection' : 'Show collection'}
+                    title={collection.enabled ? 'Hide from page' : 'Show on page'}
+                >
+                    <span
+                        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                            collection.enabled ? 'translate-x-5' : 'translate-x-0.5'
+                        }`}
+                    />
+                </button>
+            </div>
         </div>
     )
 }
