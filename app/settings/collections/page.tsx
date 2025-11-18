@@ -347,40 +347,52 @@ export default function CollectionsPage() {
                 </div>
             </div>
 
-            {/* Stats */}
+            {/* Stats - Clickable Filter Buttons */}
             <div className="mb-6 flex flex-wrap gap-4">
-                <div className="bg-[#1a1a1a] rounded-lg px-4 py-3 border border-[#313131]">
+                <button
+                    onClick={() => setStatusFilter('all')}
+                    className={`rounded-lg px-4 py-3 border-2 transition-all ${
+                        statusFilter === 'all'
+                            ? 'bg-white/10 border-white shadow-lg'
+                            : 'bg-[#1a1a1a] border-[#313131] hover:border-[#454545]'
+                    }`}
+                >
                     <span className="text-gray-400 text-sm">Total:</span>
                     <span className="ml-2 text-white font-semibold">{totalCollections}</span>
-                </div>
-                <div className="bg-[#1a1a1a] rounded-lg px-4 py-3 border border-[#313131]">
+                </button>
+                <button
+                    onClick={() => setStatusFilter('enabled')}
+                    className={`rounded-lg px-4 py-3 border-2 transition-all ${
+                        statusFilter === 'enabled'
+                            ? 'bg-green-600/20 border-green-600 shadow-lg'
+                            : 'bg-[#1a1a1a] border-[#313131] hover:border-[#454545]'
+                    }`}
+                >
                     <span className="text-gray-400 text-sm">Enabled:</span>
                     <span className="ml-2 text-green-400 font-semibold">{enabledCount}</span>
-                </div>
-                <div className="bg-[#1a1a1a] rounded-lg px-4 py-3 border border-[#313131]">
+                </button>
+                <button
+                    onClick={() => setStatusFilter('hidden')}
+                    className={`rounded-lg px-4 py-3 border-2 transition-all ${
+                        statusFilter === 'hidden'
+                            ? 'bg-red-600/20 border-red-600 shadow-lg'
+                            : 'bg-[#1a1a1a] border-[#313131] hover:border-[#454545]'
+                    }`}
+                >
                     <span className="text-gray-400 text-sm">Hidden:</span>
                     <span className="ml-2 text-gray-500 font-semibold">{hiddenCount}</span>
-                </div>
+                </button>
             </div>
 
-            {/* Search and Filters */}
-            <div className="mb-6 flex flex-col sm:flex-row gap-4">
+            {/* Search */}
+            <div className="mb-6">
                 <input
                     type="text"
                     placeholder="Search collections..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="flex-1 px-4 py-2 bg-[#1a1a1a] border border-[#313131] rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-600"
+                    className="w-full px-4 py-2 bg-[#1a1a1a] border border-[#313131] rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-600"
                 />
-                <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-                    className="px-4 py-2 bg-[#1a1a1a] border border-[#313131] rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-600"
-                >
-                    <option value="all">All Collections</option>
-                    <option value="enabled">Enabled Only</option>
-                    <option value="hidden">Hidden Only</option>
-                </select>
             </div>
 
             {/* Accordion Sections */}
