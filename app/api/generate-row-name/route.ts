@@ -3,6 +3,7 @@ import { withAuth } from '@/lib/auth-middleware'
 import { consumeGeminiRateLimit } from '@/lib/geminiRateLimiter'
 import { sanitizeInput } from '@/utils/inputSanitization'
 import { apiError } from '@/utils/debugLogger'
+import { routeGeminiRequest, extractGeminiText } from '@/lib/geminiRouter'
 
 /**
  * POST /api/generate-row-name
@@ -152,51 +153,31 @@ For: ${genreNames} - create a name that's SO cool and witty that it surprises an
 
 Response: Just the name, nothing else. Make it LEGENDARY.`
 
-        // Call Gemini API
-        const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent?key=${apiKey}`,
+        // Call Gemini API with multi-model router
+        const result = await routeGeminiRequest(
             {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    temperature: 0.9,
+                    maxOutputTokens: 5000, // Gemini 2.5 thinking mode uses 999+ tokens, need large allocation
                 },
-                body: JSON.stringify({
-                    contents: [
-                        {
-                            parts: [
-                                {
-                                    text: prompt,
-                                },
-                            ],
-                        },
-                    ],
-                    generationConfig: {
-                        temperature: 0.9,
-                        topK: 40,
-                        topP: 0.95,
-                        maxOutputTokens: 5000, // Gemini 2.5 thinking mode uses 999+ tokens, need large allocation
-                    },
-                }),
-            }
+            },
+            apiKey
         )
 
-        if (!response.ok) {
-            const errorText = await response.text()
-            apiError('Gemini API error:', response.status, errorText)
+        if (!result.success) {
+            apiError('Gemini router error:', result.error)
             return NextResponse.json(
                 {
                     error: 'AI service error',
-                    message: 'Failed to generate name. Please try again.',
+                    message: result.error || 'Failed to generate name. Please try again.',
                 },
                 { status: 500 }
             )
         }
 
-        const data = await response.json()
-
         // Extract generated text
-        const generatedText =
-            data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || 'Untitled Row'
+        const generatedText = extractGeminiText(result.data)?.trim() || 'Untitled Row'
 
         // Clean up the response (remove quotes, extra formatting)
         const cleanedName = generatedText
@@ -206,6 +187,7 @@ Response: Just the name, nothing else. Make it LEGENDARY.`
 
         return NextResponse.json({
             name: cleanedName,
+            _meta: result.metadata, // Include router metadata
         })
     } catch (error) {
         apiError('Error generating row name:', error)

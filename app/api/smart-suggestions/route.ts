@@ -5,6 +5,7 @@ import { getRequestIdentity } from '@/lib/requestIdentity'
 import { TMDBApiClient } from '@/utils/tmdbApi'
 import { sanitizeInput } from '@/utils/inputSanitization'
 import { apiError, apiWarn } from '@/utils/debugLogger'
+import { routeGeminiRequest, extractGeminiText } from '@/lib/geminiRouter'
 
 export async function POST(request: NextRequest) {
     try {
@@ -142,25 +143,21 @@ For this selection, create a name that's SO surprisingly cool it delights the us
 Response: Just the name, nothing else.`
 
     try {
-        const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent?key=${apiKey}`,
+        // Use multi-model router with automatic fallback
+        const result = await routeGeminiRequest(
             {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: {
-                        temperature: 0.95,
-                        maxOutputTokens: 50,
-                    },
-                }),
-            }
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    temperature: 0.95,
+                    maxOutputTokens: 50,
+                },
+            },
+            apiKey
         )
 
-        if (!response.ok) return null
+        if (!result.success) return null
 
-        const data = await response.json()
-        const name = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
+        const name = extractGeminiText(result.data)?.trim()
 
         return name
             ? name

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { sanitizeInput } from '@/utils/inputSanitization'
 import { apiLog, apiError } from '@/utils/debugLogger'
+import { routeGeminiRequest, extractGeminiText } from '@/lib/geminiRouter'
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY
 
@@ -62,25 +63,15 @@ export async function POST() {
             maxTokens: requestBody.generationConfig.maxOutputTokens,
         })
 
-        const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent?key=${GEMINI_API_KEY}`,
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestBody),
-            }
-        )
+        // Call Gemini API with multi-model router
+        const result = await routeGeminiRequest(requestBody, GEMINI_API_KEY)
 
-        if (!response.ok) {
-            apiError('[Surprise Query] Gemini API error:', response.status, response.statusText)
-            throw new Error('Failed to generate query from Gemini')
+        if (!result.success) {
+            apiError('[Surprise Query] Gemini router error:', result.error)
+            throw new Error(result.error || 'Failed to generate query from Gemini')
         }
 
-        const data = await response.json()
-        let generatedQuery =
-            data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || 'epic adventures'
+        let generatedQuery = extractGeminiText(result.data)?.trim() || 'epic adventures'
 
         // Clean up the query: remove quotes, trailing periods, and take only first line
         generatedQuery = generatedQuery
@@ -93,7 +84,10 @@ export async function POST() {
 
         apiLog('[Surprise Query] Generated query:', generatedQuery)
 
-        return NextResponse.json({ query: generatedQuery })
+        return NextResponse.json({
+            query: generatedQuery,
+            _meta: result.metadata, // Include router metadata
+        })
     } catch (error) {
         apiError('Surprise query error:', error)
         // Fallback to curated list if Gemini fails

@@ -5,6 +5,7 @@ import { sanitizeInput } from '@/utils/inputSanitization'
 import { apiLog, apiError, apiWarn } from '@/utils/debugLogger'
 import { getAdminDb } from '@/lib/firebase-admin'
 import { Content } from '@/typings'
+import { routeGeminiRequest, extractGeminiText } from '@/lib/geminiRouter'
 
 /**
  * Simplified Smart Row Generator - Single API call does everything
@@ -72,34 +73,27 @@ async function handleGenerateRow(request: NextRequest, userId: string): Promise<
             userId,
         })
 
-        // Call Gemini API
-        const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent?key=${apiKey}`,
+        // Call Gemini API with multi-model router
+        const result = await routeGeminiRequest(
             {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: {
-                        temperature: 0.4, // Balanced creativity
-                        maxOutputTokens: 4000, // Increased to handle full response with row name
-                    },
-                }),
-            }
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    temperature: 0.4, // Balanced creativity
+                    maxOutputTokens: 4000, // Increased to handle full response with row name
+                },
+            },
+            apiKey
         )
 
-        if (!response.ok) {
-            const errorText = await response.text()
-            apiError('Gemini API error response:', errorText)
-            throw new Error(`Gemini API error: ${response.status}`)
+        if (!result.success) {
+            apiError('Gemini router error:', result.error)
+            throw new Error(result.error || 'Gemini request failed')
         }
 
-        const data = await response.json()
-
-        const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text
+        const resultText = extractGeminiText(result.data)
 
         if (!resultText) {
-            apiError('❌ Gemini response structure:', data)
+            apiError('❌ Gemini response structure:', result.data)
             throw new Error('No response from Gemini')
         }
 
@@ -133,7 +127,10 @@ async function handleGenerateRow(request: NextRequest, userId: string): Promise<
             mediaType: finalResult.mediaType,
             userId,
         })
-        return NextResponse.json(finalResult)
+        return NextResponse.json({
+            ...finalResult,
+            _meta: result.metadata, // Include router metadata
+        })
     } catch (error) {
         apiError('Generate row error:', error)
         return NextResponse.json(

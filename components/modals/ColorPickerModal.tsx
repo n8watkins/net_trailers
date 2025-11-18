@@ -36,8 +36,10 @@ function ColorPickerModal({
     if (!isOpen) return null
 
     const handleColorSelect = (color: string) => {
-        onSelectColor(color)
-        onClose()
+        setTimeout(() => {
+            onSelectColor(color)
+            onClose()
+        }, 100)
     }
 
     return (

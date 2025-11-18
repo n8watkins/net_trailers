@@ -6,6 +6,7 @@ import { consumeGeminiRateLimit } from '@/lib/geminiRateLimiter'
 import { getRequestIdentity } from '@/lib/requestIdentity'
 import { sanitizeInput } from '@/utils/inputSanitization'
 import { apiLog, apiError } from '@/utils/debugLogger'
+import { routeGeminiRequest, extractGeminiText } from '@/lib/geminiRouter'
 
 export async function POST(request: NextRequest) {
     try {
@@ -57,29 +58,24 @@ export async function POST(request: NextRequest) {
             userId,
         })
 
-        const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent?key=${apiKey}`,
+        // Call Gemini API with multi-model router
+        const result = await routeGeminiRequest(
             {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: {
-                        temperature: 0.4,
-                        maxOutputTokens: 4000,
-                    },
-                }),
-            }
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    temperature: 0.4,
+                    maxOutputTokens: 4000,
+                },
+            },
+            apiKey
         )
 
-        if (!response.ok) {
-            const errorText = await response.text()
-            apiError('[AI Suggestions] Gemini API error:', errorText)
-            throw new Error('Gemini API request failed')
+        if (!result.success) {
+            apiError('[AI Suggestions] Gemini router error:', result.error)
+            throw new Error(result.error || 'Gemini request failed')
         }
 
-        const data = await response.json()
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text
+        const text = extractGeminiText(result.data)
 
         if (!text) {
             throw new Error('No response from Gemini')
@@ -110,6 +106,7 @@ export async function POST(request: NextRequest) {
             generatedName: parsed.rowName,
             genreFallback: parsed.genreFallback,
             mediaType: parsed.mediaType,
+            _meta: result.metadata, // Include router metadata
         })
     } catch (error: any) {
         apiError('[AI Suggestions] Error:', error)

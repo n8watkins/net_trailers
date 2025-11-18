@@ -3,6 +3,7 @@ import { consumeGeminiRateLimit } from '@/lib/geminiRateLimiter'
 import { getRequestIdentity } from '@/lib/requestIdentity'
 import { sanitizeInput } from '@/utils/inputSanitization'
 import { apiError } from '@/utils/debugLogger'
+import { routeGeminiRequest, extractGeminiText } from '@/lib/geminiRouter'
 
 /**
  * Gemini API endpoint for semantic analysis of user input
@@ -39,27 +40,23 @@ export async function POST(request: NextRequest) {
 
         const prompt = buildAnalysisPrompt(sanitizedText, mediaType)
 
-        const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent?key=${apiKey}`,
+        // Use multi-model router with automatic fallback
+        const result = await routeGeminiRequest(
             {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: {
-                        temperature: 0.3,
-                        maxOutputTokens: 1000,
-                    },
-                }),
-            }
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    temperature: 0.3,
+                    maxOutputTokens: 1000,
+                },
+            },
+            apiKey
         )
 
-        if (!response.ok) {
-            throw new Error(`Gemini API error: ${response.status}`)
+        if (!result.success) {
+            throw new Error(result.error || 'Gemini request failed')
         }
 
-        const data = await response.json()
-        const analysisText = data.candidates?.[0]?.content?.parts?.[0]?.text
+        const analysisText = extractGeminiText(result.data)
 
         if (!analysisText) {
             throw new Error('No analysis returned from Gemini')
@@ -80,6 +77,8 @@ export async function POST(request: NextRequest) {
             mediaType: analysis.mediaType || 'both',
             conceptQuery: analysis.conceptQuery || null,
             movieRecommendations: analysis.movieRecommendations || [],
+            // Include router metadata (which model was used, timing, etc.)
+            _meta: result.metadata,
         })
     } catch (error) {
         apiError('Gemini analysis error:', error)

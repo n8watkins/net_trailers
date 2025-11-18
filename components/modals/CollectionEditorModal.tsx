@@ -11,7 +11,6 @@ import {
     TvIcon,
     TrashIcon,
 } from '@heroicons/react/24/outline'
-import { CheckIcon } from '@heroicons/react/24/solid'
 import { UserList } from '../../types/userLists'
 import { Content, getTitle, getYear } from '../../typings'
 import useUserData from '../../hooks/useUserData'
@@ -76,6 +75,11 @@ export default function CollectionEditorModal({
     const [searchFilter, setSearchFilter] = useState('')
     const [isSaving, setIsSaving] = useState(false)
     const [mounted, setMounted] = useState(false)
+    const [highlightMediaType, setHighlightMediaType] = useState(false)
+
+    // Media type enabled states (independent toggles)
+    const [isMovieEnabled, setIsMovieEnabled] = useState(true)
+    const [isTVEnabled, setIsTVEnabled] = useState(true)
 
     // Content management
     const [content, setContent] = useState<Content[]>([])
@@ -95,7 +99,11 @@ export default function CollectionEditorModal({
             setColor(collection.color || '#3b82f6')
             setIsPublic(collection.isPublic || false)
             setDisplayAsRow(collection.displayAsRow ?? true)
-            setMediaType(collection.mediaType || 'both')
+            const collectionMediaType = collection.mediaType || 'both'
+            setMediaType(collectionMediaType)
+            // Set individual enabled states based on media type
+            setIsMovieEnabled(collectionMediaType === 'movie' || collectionMediaType === 'both')
+            setIsTVEnabled(collectionMediaType === 'tv' || collectionMediaType === 'both')
             setSelectedGenres(collection.genres || [])
             setGenreLogic(
                 collection.genreLogic || ((collection.genres?.length ?? 0) >= 2 ? 'AND' : 'OR')
@@ -106,6 +114,7 @@ export default function CollectionEditorModal({
             setContent(collection.items || [])
             setRemovedIds(new Set())
             setSearchFilter('')
+            setHighlightMediaType(false)
         }
     }, [collection, isOpen])
 
@@ -115,11 +124,28 @@ export default function CollectionEditorModal({
         }
     }, [enableInfiniteContent, selectedGenres.length])
 
+    // Auto-set genre logic based on infinite content toggle
     useEffect(() => {
-        if (selectedGenres.length < 2 && genreLogic === 'AND') {
-            setGenreLogic('OR')
+        if (enableInfiniteContent) {
+            setGenreLogic('OR') // Match ANY for infinite generation
+        } else {
+            setGenreLogic('AND') // Match ALL by default (more strict)
         }
-    }, [genreLogic, selectedGenres.length])
+    }, [enableInfiniteContent])
+
+    // Sync mediaType with individual enabled states
+    useEffect(() => {
+        if (isMovieEnabled && isTVEnabled) {
+            setMediaType('both')
+        } else if (isMovieEnabled) {
+            setMediaType('movie')
+        } else if (isTVEnabled) {
+            setMediaType('tv')
+        } else {
+            // Both disabled - keep as 'both' for storage but UI shows both off
+            setMediaType('both')
+        }
+    }, [isMovieEnabled, isTVEnabled])
 
     if (!isOpen || !collection) return null
 
@@ -129,7 +155,10 @@ export default function CollectionEditorModal({
     const canEditLimited = isSystemCollection && collection.canEdit // Editable system collections (Action, Comedy, etc.)
     const canOnlyToggle = isSystemCollection && !collection.canEdit // Non-editable system collections (Trending, Top Rated)
 
-    const handleClose = () => {
+    const handleClose = async () => {
+        // Save changes before closing
+        await handleSave()
+
         onClose()
         // Reset state
         setName('')
@@ -139,11 +168,14 @@ export default function CollectionEditorModal({
         setDisplayAsRow(true)
         setEnableInfiniteContent(false)
         setMediaType('both')
+        setIsMovieEnabled(true)
+        setIsTVEnabled(true)
         setSelectedGenres([])
         setGenreLogic('AND')
         setContent([])
         setRemovedIds(new Set())
         setSearchFilter('')
+        setHighlightMediaType(false)
     }
 
     const handleDelete = async () => {
@@ -285,8 +317,8 @@ export default function CollectionEditorModal({
                 }
             }
 
-            showSuccess('Collection updated!', `"${name || collection.name}" has been saved`)
-            handleClose()
+            // Don't show success toast for auto-save on close
+            // Don't call handleClose here anymore (creates circular call)
         } catch (error) {
             console.error('Save collection error:', error)
             const description = error instanceof Error ? error.message : undefined
@@ -316,30 +348,31 @@ export default function CollectionEditorModal({
     }
 
     const handleMediaTypeToggle = (type: 'movie' | 'tv') => {
-        const currentType = mediaType
-        let newType: 'movie' | 'tv' | 'both'
-
-        if (currentType === 'both') {
-            // If both selected, clicking one will deselect it (leaving only the other)
-            newType = type === 'movie' ? 'tv' : 'movie'
-        } else if (currentType === type) {
-            // If clicking the only selected type, show error (can't deselect both)
-            showError(
-                'At least one media type required',
-                'Select at least one media type to display content.'
-            )
-            return
+        // Simple unrestricted toggle
+        if (type === 'movie') {
+            setIsMovieEnabled(!isMovieEnabled)
         } else {
-            // If clicking the unselected type, select both
-            newType = 'both'
+            setIsTVEnabled(!isTVEnabled)
         }
-
-        setMediaType(newType)
+        // Clear genres when changing media type
         setSelectedGenres([])
     }
 
-    const isMovieSelected = mediaType === 'movie' || mediaType === 'both'
-    const isTVSelected = mediaType === 'tv' || mediaType === 'both'
+    const handleDisplayOnPageToggle = () => {
+        // Check if trying to enable when no media types are selected
+        if (!displayAsRow && !isMovieEnabled && !isTVEnabled) {
+            showError('Enable a media type to display on page')
+            // Highlight the media type container
+            setHighlightMediaType(true)
+            // Fade back after 2 seconds
+            setTimeout(() => setHighlightMediaType(false), 2000)
+            return
+        }
+        setDisplayAsRow(!displayAsRow)
+    }
+
+    // Check if any media type is enabled
+    const hasMediaTypeEnabled = isMovieEnabled || isTVEnabled
 
     // Filter content based on search and removed IDs
     const visibleContent = content
@@ -350,7 +383,6 @@ export default function CollectionEditorModal({
             return title.includes(searchFilter.toLowerCase().trim())
         })
 
-    const canAdjustGenreLogic = selectedGenres.length >= 2
     const selectedGenreNames = selectedGenres.map((id) => GENRE_LOOKUP.get(id) || `Genre ${id}`)
 
     const modalContent = (
@@ -371,9 +403,6 @@ export default function CollectionEditorModal({
                     <div className="flex items-center justify-between p-6 border-b border-gray-700">
                         <div>
                             <h2 className="text-2xl font-bold text-white">Edit Collection</h2>
-                            <p className="text-gray-400 text-sm mt-1">
-                                Modify your collection settings and content
-                            </p>
                         </div>
 
                         <div className="flex items-center gap-3">
@@ -508,93 +537,68 @@ export default function CollectionEditorModal({
 
                                     {/* Toggle Settings - Compact Width */}
                                     <div className="relative p-3 bg-gray-800/50 rounded-lg border border-gray-700 space-y-3 max-w-md">
-                                        {/* Infinite Content Toggle - Only for user-created collections */}
-                                        {canEditFull && (
-                                            <>
-                                                <div className="flex items-center justify-between">
-                                                    <label className="text-sm font-medium text-white flex items-center gap-1.5">
-                                                        <span>♾️</span>
-                                                        Infinite Content
-                                                        <button
-                                                            type="button"
-                                                            onMouseEnter={() =>
-                                                                setShowInfiniteTooltip(true)
-                                                            }
-                                                            onMouseLeave={() =>
-                                                                setShowInfiniteTooltip(false)
-                                                            }
-                                                            onClick={() =>
-                                                                setShowInfiniteTooltip(
-                                                                    !showInfiniteTooltip
-                                                                )
-                                                            }
-                                                            className="text-gray-400 hover:text-white"
-                                                        >
-                                                            <QuestionMarkCircleIcon className="w-4 h-4" />
-                                                        </button>
-                                                    </label>
-                                                    <button
-                                                        type="button"
-                                                        onClick={handleToggleInfinite}
-                                                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                                            enableInfiniteContent
-                                                                ? 'bg-red-600'
-                                                                : 'bg-gray-600'
-                                                        }`}
-                                                    >
-                                                        <span
-                                                            className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                                                                enableInfiniteContent
-                                                                    ? 'translate-x-5'
-                                                                    : 'translate-x-0.5'
-                                                            }`}
-                                                        />
-                                                    </button>
-                                                </div>
-                                                {showInfiniteTooltip && (
-                                                    <div className="absolute z-10 top-full left-0 mt-1 p-2 bg-gray-900 border border-gray-700 rounded-md shadow-xl max-w-xs">
-                                                        <p className="text-xs text-gray-300">
-                                                            After your curated titles, show more
-                                                            similar content based on genres
-                                                        </p>
-                                                    </div>
-                                                )}
-                                            </>
+                                        {/* Infinite Content Toggle - Show for both user collections and system collections */}
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-sm font-medium text-white flex items-center gap-1.5">
+                                                <span>♾️</span>
+                                                Infinite Content
+                                                <button
+                                                    type="button"
+                                                    onMouseEnter={() =>
+                                                        setShowInfiniteTooltip(true)
+                                                    }
+                                                    onMouseLeave={() =>
+                                                        setShowInfiniteTooltip(false)
+                                                    }
+                                                    onClick={() =>
+                                                        setShowInfiniteTooltip(!showInfiniteTooltip)
+                                                    }
+                                                    className="text-gray-400 hover:text-white"
+                                                >
+                                                    <QuestionMarkCircleIcon className="w-4 h-4" />
+                                                </button>
+                                            </label>
+                                            <button
+                                                type="button"
+                                                onClick={
+                                                    canEditFull ? handleToggleInfinite : undefined
+                                                }
+                                                disabled={!canEditFull}
+                                                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                                                    enableInfiniteContent || !canEditFull
+                                                        ? 'bg-red-600'
+                                                        : 'bg-gray-600'
+                                                } ${!canEditFull ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                            >
+                                                <span
+                                                    className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                                                        enableInfiniteContent || !canEditFull
+                                                            ? 'translate-x-5'
+                                                            : 'translate-x-0.5'
+                                                    }`}
+                                                />
+                                            </button>
+                                        </div>
+                                        {showInfiniteTooltip && (
+                                            <div className="absolute z-10 top-full left-0 mt-1 p-2 bg-gray-900 border border-gray-700 rounded-md shadow-xl max-w-xs">
+                                                <p className="text-xs text-gray-300">
+                                                    {canEditFull
+                                                        ? 'After your curated titles, show more similar content based on genres'
+                                                        : 'This collection automatically generates fresh trending content daily'}
+                                                </p>
+                                            </div>
                                         )}
 
-                                        {/* Display on Page and Media Type - Side by side */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {/* Display on Page Toggle */}
-                                            <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
-                                                <div className="flex items-center justify-between">
-                                                    <label className="text-sm font-medium text-white flex items-center gap-1.5">
-                                                        <span>🏠</span>
-                                                        Display on Page
-                                                    </label>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            setDisplayAsRow(!displayAsRow)
-                                                        }
-                                                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                                            displayAsRow
-                                                                ? 'bg-green-600'
-                                                                : 'bg-gray-600'
-                                                        }`}
-                                                    >
-                                                        <span
-                                                            className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                                                                displayAsRow
-                                                                    ? 'translate-x-5'
-                                                                    : 'translate-x-0.5'
-                                                            }`}
-                                                        />
-                                                    </button>
-                                                </div>
-                                            </div>
-
+                                        {/* Media Type and Display Controls - Vertical Layout */}
+                                        <div className="space-y-3">
                                             {/* Media Type Selection */}
-                                            <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
+                                            <div
+                                                className={`bg-gray-800/50 rounded-lg border p-4 transition-all duration-500 ${
+                                                    highlightMediaType
+                                                        ? 'border-yellow-500 bg-yellow-500/20'
+                                                        : 'border-gray-700'
+                                                }`}
+                                            >
                                                 <div className="space-y-3">
                                                     <p className="text-sm font-medium text-white">
                                                         Media Type
@@ -614,14 +618,14 @@ export default function CollectionEditorModal({
                                                                 }
                                                                 disabled={canOnlyToggle}
                                                                 className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                                                    isMovieSelected
+                                                                    isMovieEnabled
                                                                         ? 'bg-red-600'
                                                                         : 'bg-gray-600'
                                                                 } ${canOnlyToggle ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                             >
                                                                 <span
                                                                     className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                                                                        isMovieSelected
+                                                                        isMovieEnabled
                                                                             ? 'translate-x-5'
                                                                             : 'translate-x-0.5'
                                                                     }`}
@@ -643,14 +647,14 @@ export default function CollectionEditorModal({
                                                                 }
                                                                 disabled={canOnlyToggle}
                                                                 className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                                                    isTVSelected
+                                                                    isTVEnabled
                                                                         ? 'bg-red-600'
                                                                         : 'bg-gray-600'
                                                                 } ${canOnlyToggle ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                             >
                                                                 <span
                                                                     className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                                                                        isTVSelected
+                                                                        isTVEnabled
                                                                             ? 'translate-x-5'
                                                                             : 'translate-x-0.5'
                                                                     }`}
@@ -659,6 +663,75 @@ export default function CollectionEditorModal({
                                                         </div>
                                                     </div>
                                                 </div>
+                                            </div>
+
+                                            {/* Display on Page Toggle */}
+                                            <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
+                                                <div className="flex items-center justify-between">
+                                                    <label className="text-sm font-medium text-white flex items-center gap-1.5">
+                                                        <span>🏠</span>
+                                                        Display on Page
+                                                    </label>
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleDisplayOnPageToggle}
+                                                        disabled={!hasMediaTypeEnabled}
+                                                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                                                            displayAsRow
+                                                                ? 'bg-green-600'
+                                                                : 'bg-gray-600'
+                                                        } ${!hasMediaTypeEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                    >
+                                                        <span
+                                                            className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                                                                displayAsRow
+                                                                    ? 'translate-x-5'
+                                                                    : 'translate-x-0.5'
+                                                            }`}
+                                                        />
+                                                    </button>
+                                                </div>
+                                                {!hasMediaTypeEnabled && (
+                                                    <p className="text-xs text-gray-400 mt-2">
+                                                        Select a media type to enable this option
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Genres - Compact display below media type */}
+                                        <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-3">
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between">
+                                                    <p className="text-xs font-medium text-gray-300">
+                                                        Genres
+                                                    </p>
+                                                    {!canOnlyToggle && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowGenreModal(true)}
+                                                            className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors whitespace-nowrap"
+                                                        >
+                                                            Edit
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                {canOnlyToggle || selectedGenres.length === 0 ? (
+                                                    <p className="text-xs text-gray-400">
+                                                        All genres
+                                                    </p>
+                                                ) : (
+                                                    <div className="flex flex-wrap gap-1.5">
+                                                        {selectedGenreNames.map((name, index) => (
+                                                            <span
+                                                                key={`${name}-${index}`}
+                                                                className="px-2 py-0.5 text-xs rounded bg-red-600 text-white"
+                                                            >
+                                                                {name}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
 
@@ -689,64 +762,6 @@ export default function CollectionEditorModal({
                                     </div>
                                 </>
                             )}
-
-                            {/* Discovery Settings - Show for all collections */}
-                            <div className="bg-gray-900/40 rounded-lg border border-gray-800 p-4 space-y-6">
-                                <div>
-                                    <h3 className="text-white font-semibold">Discovery Settings</h3>
-                                    <p className="text-sm text-gray-400">
-                                        {canOnlyToggle
-                                            ? 'View collection discovery configuration'
-                                            : 'Configure how infinite recommendations are generated'}
-                                    </p>
-                                </div>
-
-                                {/* Compact Genre Selection */}
-                                <div className="space-y-3">
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-sm font-medium text-gray-300">Genres</p>
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                !canOnlyToggle && setShowGenreModal(true)
-                                            }
-                                            disabled={canOnlyToggle}
-                                            className={`text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ${canOnlyToggle ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                        >
-                                            {selectedGenres.length === 0
-                                                ? 'Add Genres'
-                                                : 'Edit Genres'}
-                                        </button>
-                                    </div>
-                                    {selectedGenres.length > 0 ? (
-                                        <div className="space-y-2">
-                                            <div className="flex flex-wrap gap-2">
-                                                {selectedGenreNames.map((name, index) => (
-                                                    <span
-                                                        key={`${name}-${index}`}
-                                                        className="px-3 py-1 text-xs rounded-full bg-gray-800 border border-gray-700 text-white"
-                                                    >
-                                                        {name}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                            <div className="flex items-center gap-2 text-xs text-gray-400">
-                                                <span>Matching:</span>
-                                                <span className="px-2 py-0.5 rounded bg-gray-800 border border-gray-700 text-white">
-                                                    {genreLogic === 'AND'
-                                                        ? 'Match ALL'
-                                                        : 'Match ANY'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <p className="text-xs text-gray-400">
-                                            No genres selected. Click &quot;Add Genres&quot; to
-                                            choose genres for this collection.
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
 
                             {/* Content Management - Only for user-created collections */}
                             {canEditFull && (
@@ -867,32 +882,6 @@ export default function CollectionEditorModal({
                             )}
                         </div>
                     </div>
-
-                    {/* Footer with Action Buttons */}
-                    <div className="p-6 border-t border-gray-700">
-                        <div className="flex items-center justify-end gap-3">
-                            <button
-                                onClick={handleClose}
-                                className="px-6 py-2.5 bg-gray-700 text-white rounded-lg font-medium transition-all duration-200 hover:bg-gray-600"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleSave}
-                                disabled={(canOnlyToggle ? false : !name.trim()) || isSaving}
-                                className="flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium transition-all duration-200 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {isSaving ? (
-                                    'Saving...'
-                                ) : (
-                                    <>
-                                        <CheckIcon className="w-5 h-5" />
-                                        Save Changes
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -918,7 +907,7 @@ export default function CollectionEditorModal({
                         <div>
                             <h3 className="text-xl font-bold text-white">Edit Genres</h3>
                             <p className="text-gray-400 text-sm mt-1">
-                                Select genres and matching rule for this collection
+                                Select genres for this collection
                             </p>
                         </div>
                         <button
@@ -930,48 +919,7 @@ export default function CollectionEditorModal({
                     </div>
 
                     {/* Content */}
-                    <div className="p-6 max-h-[calc(90vh-200px)] overflow-y-auto space-y-6">
-                        {/* Genre Logic */}
-                        <div>
-                            <p className="text-sm font-medium text-gray-300 mb-2">
-                                Genre Matching Rule
-                            </p>
-                            <p className="text-xs text-gray-400 mb-3">
-                                Choose how genres should be matched when finding content
-                            </p>
-                            <div className="inline-flex items-center rounded-full bg-gray-800/80 border border-gray-700 p-1 text-sm font-medium">
-                                <button
-                                    type="button"
-                                    onClick={() => setGenreLogic('AND')}
-                                    disabled={!canAdjustGenreLogic}
-                                    className={`px-6 py-2 rounded-full transition-colors ${
-                                        genreLogic === 'AND'
-                                            ? 'bg-red-600 text-white'
-                                            : 'text-gray-400 hover:text-white'
-                                    } ${!canAdjustGenreLogic ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                >
-                                    Match ALL Genres
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setGenreLogic('OR')}
-                                    disabled={!canAdjustGenreLogic}
-                                    className={`px-6 py-2 rounded-full transition-colors ${
-                                        genreLogic === 'OR'
-                                            ? 'bg-red-600 text-white'
-                                            : 'text-gray-400 hover:text-white'
-                                    } ${!canAdjustGenreLogic ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                >
-                                    Match ANY Genre
-                                </button>
-                            </div>
-                            {!canAdjustGenreLogic && (
-                                <p className="text-xs text-gray-400 mt-2">
-                                    Select 2 or more genres to enable matching rule selection
-                                </p>
-                            )}
-                        </div>
-
+                    <div className="p-6 max-h-[calc(90vh-200px)] overflow-y-auto">
                         {/* Genre Pills */}
                         <div>
                             <p className="text-sm font-medium text-gray-300 mb-2">Select Genres</p>
@@ -1000,7 +948,6 @@ export default function CollectionEditorModal({
                                 onClick={() => setShowGenreModal(false)}
                                 className="flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium transition-all duration-200 hover:bg-blue-700"
                             >
-                                <CheckIcon className="w-5 h-5" />
                                 Done
                             </button>
                         </div>

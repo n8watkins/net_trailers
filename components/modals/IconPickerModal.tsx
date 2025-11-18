@@ -66,8 +66,10 @@ function IconPickerModal({ isOpen, selectedIcon, onSelectIcon, onClose }: IconPi
     if (!isOpen) return null
 
     const handleIconSelect = (icon: string) => {
-        onSelectIcon(icon)
-        onClose()
+        setTimeout(() => {
+            onSelectIcon(icon)
+            onClose()
+        }, 100)
     }
 
     const currentCategory = categories.find((cat) => cat.name === activeCategory) || categories[0]
@@ -78,15 +80,15 @@ function IconPickerModal({ isOpen, selectedIcon, onSelectIcon, onClose }: IconPi
             className="absolute top-full left-0 mt-2 bg-[#141414] rounded-lg shadow-2xl border border-gray-600 z-[1500] w-[280px]"
         >
             {/* Category Tabs */}
-            <div className="flex px-1.5">
-                {categories.map((category) => (
+            <div className="flex rounded-t-lg">
+                {categories.map((category, index) => (
                     <button
                         key={category.name}
                         onClick={() => setActiveCategory(category.name)}
-                        className={`text-2xl transition-all duration-200 flex items-center justify-center ${
+                        className={`text-2xl flex items-center justify-center ${
                             activeCategory === category.name
-                                ? `w-12 h-12 ${categoryColors[category.name as keyof typeof categoryColors]} pb-3`
-                                : 'w-10 h-10 hover:bg-white/5 rounded-md'
+                                ? `w-12 h-12 ${categoryColors[category.name as keyof typeof categoryColors]} pb-3 ${index === 0 ? 'rounded-tl-lg' : ''}`
+                                : `w-10 h-10 hover:bg-white/5 rounded-md ${index === 0 ? 'rounded-tl-lg' : ''}`
                         }`}
                     >
                         {category.label}
@@ -96,9 +98,11 @@ function IconPickerModal({ isOpen, selectedIcon, onSelectIcon, onClose }: IconPi
 
             {/* Icon Grid - Full width with negative margins */}
             <div
-                className={`-mb-1.5 grid grid-cols-6 gap-2.5 p-3 rounded-lg border border-gray-700 ${
-                    categoryColors[activeCategory as keyof typeof categoryColors]
-                }`}
+                className={`-mb-1.5 grid grid-cols-6 gap-2.5 p-3 ${
+                    activeCategory === categories[0].name
+                        ? 'rounded-b-lg rounded-tr-lg border-t border-gray-600'
+                        : 'rounded-lg'
+                } ${categoryColors[activeCategory as keyof typeof categoryColors]}`}
             >
                 {currentCategory.icons.map((emoji) => (
                     <button
