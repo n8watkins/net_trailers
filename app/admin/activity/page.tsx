@@ -289,8 +289,19 @@ export default function ActivityPage() {
                                                             : 'Page View'}
                                                     </h4>
                                                     <p className="text-sm text-gray-400">
-                                                        {activity.userEmail || 'Guest'}{' '}
-                                                        {activity.page && `• ${activity.page}`}
+                                                        {activity.userId ? (
+                                                            <>
+                                                                {activity.userEmail || 'User'}
+                                                                {activity.page &&
+                                                                    ` • ${activity.page}`}
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                Guest
+                                                                {activity.page &&
+                                                                    ` • ${activity.page}`}
+                                                            </>
+                                                        )}
                                                     </p>
                                                 </div>
                                             </div>

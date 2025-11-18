@@ -7,6 +7,7 @@
 import { useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { useSessionStore } from '@/stores/sessionStore'
+import { auth } from '@/firebase'
 
 /**
  * Track page views automatically
@@ -38,6 +39,9 @@ export function usePageViewTracking() {
                 return
             }
 
+            // Get user email if authenticated
+            const userEmail = isAuth && auth.currentUser ? auth.currentUser.email : null
+
             try {
                 await fetch('/api/admin/activity', {
                     method: 'POST',
@@ -46,6 +50,7 @@ export function usePageViewTracking() {
                         type: 'view',
                         userId: isAuth ? userId : null,
                         guestId: !isAuth ? userId : null,
+                        userEmail: userEmail,
                         page: pathname,
                         userAgent: navigator.userAgent,
                     }),

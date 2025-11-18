@@ -245,11 +245,14 @@ export default function AdminDashboard() {
         }
     }
 
-    // Show loading while session initializes
-    if (!isInitialized) {
+    // Show loading while session initializes or stats are loading
+    if (!isInitialized || statsLoading) {
         return (
             <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-                <div className="text-white text-xl">Loading...</div>
+                <div className="flex flex-col items-center gap-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                    <div className="text-white text-xl">Loading admin dashboard...</div>
+                </div>
             </div>
         )
     }
@@ -259,18 +262,6 @@ export default function AdminDashboard() {
         return (
             <div className="min-h-screen bg-gray-900 flex items-center justify-center">
                 <div className="text-white text-xl">Unauthorized</div>
-            </div>
-        )
-    }
-
-    // Show loading while stats are being loaded
-    if (statsLoading) {
-        return (
-            <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-                    <div className="text-white text-xl">Loading admin dashboard...</div>
-                </div>
             </div>
         )
     }
