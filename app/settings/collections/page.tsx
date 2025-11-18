@@ -113,9 +113,9 @@ export default function CollectionsPage() {
     const systemRowPreferencesMap = useCustomRowsStore((state) => state.systemRowPreferences)
     const systemRowPreferences = userId ? systemRowPreferencesMap.get(userId) || {} : {}
 
-    // Combine and normalize all collections
-    const allCollections = useMemo(() => {
-        const combined = [
+    // Combine and normalize all collections (unfiltered base list)
+    const baseCollections = useMemo(() => {
+        return [
             ...systemCollections.map((row) => {
                 // Check the system row preferences for enabled state (defaults to true if not set)
                 const pref = systemRowPreferences[row.id]
@@ -146,9 +146,13 @@ export default function CollectionsPage() {
                 collection: col, // Store full collection for editing
             })),
         ]
+    }, [systemCollections, userCollectionsFromRows, systemRowPreferences])
+
+    // Apply filters to get filtered collections for display
+    const allCollections = useMemo(() => {
+        let filtered = baseCollections
 
         // Apply search filter
-        let filtered = combined
         if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase()
             filtered = filtered.filter((col) => col.name.toLowerCase().includes(query))
@@ -162,13 +166,7 @@ export default function CollectionsPage() {
         }
 
         return filtered
-    }, [
-        systemCollections,
-        userCollectionsFromRows,
-        searchQuery,
-        statusFilter,
-        systemRowPreferences,
-    ])
+    }, [baseCollections, searchQuery, statusFilter])
 
     // Group by media type (category assignment)
     // Collections stay in their category regardless of enabled state
@@ -184,10 +182,10 @@ export default function CollectionsPage() {
             (col.mediaType !== 'both' && col.mediaType !== 'movie' && col.mediaType !== 'tv')
     )
 
-    // Stats
-    const totalCollections = allCollections.length
-    const enabledCount = allCollections.filter((col) => col.enabled).length
-    const hiddenCount = allCollections.filter((col) => !col.enabled).length
+    // Stats - calculated from base (unfiltered) collections
+    const totalCollections = baseCollections.length
+    const enabledCount = baseCollections.filter((col) => col.enabled).length
+    const hiddenCount = baseCollections.filter((col) => !col.enabled).length
 
     // Toggle handlers
     const handleToggleSystem = async (collectionId: string) => {
