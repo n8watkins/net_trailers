@@ -355,7 +355,7 @@ export default function CollectionsPage() {
                             : 'bg-[#1a1a1a] border-[#313131] hover:border-[#454545]'
                     }`}
                 >
-                    <span className="text-gray-400 text-sm">Total:</span>
+                    <span className="text-gray-400 text-sm">All:</span>
                     <span className="ml-2 text-white font-semibold">{totalCollections}</span>
                 </button>
                 <button
