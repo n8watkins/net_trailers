@@ -561,27 +561,104 @@ export default function CollectionEditorModal({
                                             </>
                                         )}
 
-                                        {/* Display on Page Toggle */}
-                                        <div className="flex items-center justify-between">
-                                            <label className="text-sm font-medium text-white flex items-center gap-1.5">
-                                                <span>🏠</span>
-                                                Display on Page
-                                            </label>
-                                            <button
-                                                type="button"
-                                                onClick={() => setDisplayAsRow(!displayAsRow)}
-                                                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                                    displayAsRow ? 'bg-green-600' : 'bg-gray-600'
-                                                }`}
-                                            >
-                                                <span
-                                                    className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                                                        displayAsRow
-                                                            ? 'translate-x-5'
-                                                            : 'translate-x-0.5'
-                                                    }`}
-                                                />
-                                            </button>
+                                        {/* Display on Page and Media Type - Side by side */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {/* Display on Page Toggle */}
+                                            <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
+                                                <div className="flex items-center justify-between">
+                                                    <label className="text-sm font-medium text-white flex items-center gap-1.5">
+                                                        <span>🏠</span>
+                                                        Display on Page
+                                                    </label>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setDisplayAsRow(!displayAsRow)
+                                                        }
+                                                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                                                            displayAsRow
+                                                                ? 'bg-green-600'
+                                                                : 'bg-gray-600'
+                                                        }`}
+                                                    >
+                                                        <span
+                                                            className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                                                                displayAsRow
+                                                                    ? 'translate-x-5'
+                                                                    : 'translate-x-0.5'
+                                                            }`}
+                                                        />
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* Media Type Selection */}
+                                            <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
+                                                <div className="space-y-3">
+                                                    <p className="text-sm font-medium text-white">
+                                                        Media Type
+                                                    </p>
+                                                    <div className="space-y-2">
+                                                        {/* Movies Toggle */}
+                                                        <div className="flex items-center justify-between">
+                                                            <label className="text-sm font-medium text-white flex items-center gap-2">
+                                                                <FilmIcon className="w-4 h-4" />
+                                                                Movies
+                                                            </label>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    !canOnlyToggle &&
+                                                                    handleMediaTypeToggle('movie')
+                                                                }
+                                                                disabled={canOnlyToggle}
+                                                                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                                                                    isMovieSelected
+                                                                        ? 'bg-red-600'
+                                                                        : 'bg-gray-600'
+                                                                } ${canOnlyToggle ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                            >
+                                                                <span
+                                                                    className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                                                                        isMovieSelected
+                                                                            ? 'translate-x-5'
+                                                                            : 'translate-x-0.5'
+                                                                    }`}
+                                                                />
+                                                            </button>
+                                                        </div>
+
+                                                        {/* TV Shows Toggle */}
+                                                        <div className="flex items-center justify-between">
+                                                            <label className="text-sm font-medium text-white flex items-center gap-2">
+                                                                <TvIcon className="w-4 h-4" />
+                                                                TV Shows
+                                                            </label>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    !canOnlyToggle &&
+                                                                    handleMediaTypeToggle('tv')
+                                                                }
+                                                                disabled={canOnlyToggle}
+                                                                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                                                                    isTVSelected
+                                                                        ? 'bg-red-600'
+                                                                        : 'bg-gray-600'
+                                                                } ${canOnlyToggle ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                            >
+                                                                <span
+                                                                    className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                                                                        isTVSelected
+                                                                            ? 'translate-x-5'
+                                                                            : 'translate-x-0.5'
+                                                                    }`}
+                                                                />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
 
                                         {/* Public Collection Toggle - Only for user-created collections */}
@@ -621,70 +698,6 @@ export default function CollectionEditorModal({
                                             ? 'View collection discovery configuration'
                                             : 'Configure how infinite recommendations are generated'}
                                     </p>
-                                </div>
-
-                                {/* Media Type Selection */}
-                                <div>
-                                    <p className="text-sm font-medium text-gray-300 mb-1">
-                                        Media Type
-                                    </p>
-                                    <p className="text-xs text-gray-400 mb-3">
-                                        Select which content types to display (at least one
-                                        required)
-                                    </p>
-                                    <div className="space-y-2">
-                                        {/* Movies Toggle */}
-                                        <div className="flex items-center justify-between">
-                                            <label className="text-sm font-medium text-white flex items-center gap-2">
-                                                <FilmIcon className="w-5 h-5" />
-                                                Movies
-                                            </label>
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    !canOnlyToggle && handleMediaTypeToggle('movie')
-                                                }
-                                                disabled={canOnlyToggle}
-                                                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                                    isMovieSelected ? 'bg-red-600' : 'bg-gray-600'
-                                                } ${canOnlyToggle ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                            >
-                                                <span
-                                                    className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                                                        isMovieSelected
-                                                            ? 'translate-x-5'
-                                                            : 'translate-x-0.5'
-                                                    }`}
-                                                />
-                                            </button>
-                                        </div>
-
-                                        {/* TV Shows Toggle */}
-                                        <div className="flex items-center justify-between">
-                                            <label className="text-sm font-medium text-white flex items-center gap-2">
-                                                <TvIcon className="w-5 h-5" />
-                                                TV Shows
-                                            </label>
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    !canOnlyToggle && handleMediaTypeToggle('tv')
-                                                }
-                                                disabled={canOnlyToggle}
-                                                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                                    isTVSelected ? 'bg-red-600' : 'bg-gray-600'
-                                                } ${canOnlyToggle ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                            >
-                                                <span
-                                                    className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                                                        isTVSelected
-                                                            ? 'translate-x-5'
-                                                            : 'translate-x-0.5'
-                                                    }`}
-                                                />
-                                            </button>
-                                        </div>
-                                    </div>
                                 </div>
 
                                 {/* Genre Selection */}
