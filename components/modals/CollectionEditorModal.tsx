@@ -9,6 +9,7 @@ import {
     MagnifyingGlassIcon,
     FilmIcon,
     TvIcon,
+    TrashIcon,
 } from '@heroicons/react/24/outline'
 import { CheckIcon } from '@heroicons/react/24/solid'
 import { UserList } from '../../types/userLists'
@@ -42,6 +43,7 @@ export default function CollectionEditorModal({
     const userId = getUserId()
     const isAuth = sessionType === 'authenticated'
     const toggleSystemRow = useCustomRowsStore((state) => state.toggleSystemRow)
+    const deleteSystemRow = useCustomRowsStore((state) => state.deleteSystemRow)
 
     const GENRE_LOOKUP = useMemo(() => {
         const map = new Map<string, string>()
@@ -52,7 +54,7 @@ export default function CollectionEditorModal({
         return map
     }, [isChildSafetyEnabled])
 
-    const { updateList, addToList, removeFromList } = useUserData()
+    const { updateList, addToList, removeFromList, deleteList } = useUserData()
     const { showSuccess, showError } = useToast()
 
     // Collection metadata
@@ -141,6 +143,37 @@ export default function CollectionEditorModal({
         setContent([])
         setRemovedIds(new Set())
         setSearchFilter('')
+    }
+
+    const handleDelete = async () => {
+        if (!collection) return
+
+        const confirmMessage = isSystemCollection
+            ? `Are you sure you want to delete "${collection.name}"? This system collection can be restored later.`
+            : `Are you sure you want to delete "${collection.name}"? This action cannot be undone.`
+
+        if (!window.confirm(confirmMessage)) return
+
+        try {
+            if (isSystemCollection) {
+                if (!userId) {
+                    showError('No user ID found')
+                    return
+                }
+                // Delete system collection
+                await deleteSystemRow(userId, collection.id)
+                showSuccess('Collection deleted!', `"${collection.name}" has been removed`)
+            } else {
+                // Delete user-created collection
+                await deleteList(collection.id)
+                showSuccess('Collection deleted!', `"${collection.name}" has been removed`)
+            }
+            handleClose()
+        } catch (error) {
+            console.error('Delete collection error:', error)
+            const description = error instanceof Error ? error.message : undefined
+            showError('Failed to delete collection', description)
+        }
     }
 
     const handleSave = async () => {
@@ -584,7 +617,7 @@ export default function CollectionEditorModal({
                                         Select which content types to display (at least one
                                         required)
                                     </p>
-                                    <div className="space-y-2">
+                                    <div className="flex gap-2">
                                         {/* Movies Toggle */}
                                         <button
                                             type="button"
@@ -592,35 +625,12 @@ export default function CollectionEditorModal({
                                                 !canOnlyToggle && handleMediaTypeToggle('movie')
                                             }
                                             disabled={canOnlyToggle}
-                                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg border-2 transition-all ${
+                                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 transition-all ${
                                                 isMovieSelected
                                                     ? 'bg-red-600/20 border-red-600 text-white'
                                                     : 'bg-gray-800/40 border-gray-700 text-gray-400 hover:border-gray-600 hover:text-white'
                                             } ${canOnlyToggle ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                                         >
-                                            <div
-                                                className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                                                    isMovieSelected
-                                                        ? 'bg-red-600 border-red-600'
-                                                        : 'border-gray-600'
-                                                }`}
-                                            >
-                                                {isMovieSelected && (
-                                                    <svg
-                                                        className="w-3 h-3 text-white"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="currentColor"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth={3}
-                                                            d="M5 13l4 4L19 7"
-                                                        />
-                                                    </svg>
-                                                )}
-                                            </div>
                                             <FilmIcon className="w-5 h-5" />
                                             <span className="font-medium">Movies</span>
                                         </button>
@@ -632,35 +642,12 @@ export default function CollectionEditorModal({
                                                 !canOnlyToggle && handleMediaTypeToggle('tv')
                                             }
                                             disabled={canOnlyToggle}
-                                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg border-2 transition-all ${
+                                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 transition-all ${
                                                 isTVSelected
                                                     ? 'bg-red-600/20 border-red-600 text-white'
                                                     : 'bg-gray-800/40 border-gray-700 text-gray-400 hover:border-gray-600 hover:text-white'
                                             } ${canOnlyToggle ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                                         >
-                                            <div
-                                                className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                                                    isTVSelected
-                                                        ? 'bg-red-600 border-red-600'
-                                                        : 'border-gray-600'
-                                                }`}
-                                            >
-                                                {isTVSelected && (
-                                                    <svg
-                                                        className="w-3 h-3 text-white"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="currentColor"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth={3}
-                                                            d="M5 13l4 4L19 7"
-                                                        />
-                                                    </svg>
-                                                )}
-                                            </div>
                                             <TvIcon className="w-5 h-5" />
                                             <span className="font-medium">TV Shows</span>
                                         </button>
@@ -860,27 +847,42 @@ export default function CollectionEditorModal({
 
                     {/* Footer with Action Buttons */}
                     <div className="p-6 border-t border-gray-700">
-                        <div className="flex space-x-3">
-                            <button
-                                onClick={handleSave}
-                                disabled={(canOnlyToggle ? false : !name.trim()) || isSaving}
-                                className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold transition-all duration-200 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {isSaving ? (
-                                    'Saving...'
-                                ) : (
-                                    <>
-                                        <CheckIcon className="w-5 h-5" />
-                                        Save Changes
-                                    </>
-                                )}
-                            </button>
-                            <button
-                                onClick={handleClose}
-                                className="px-6 py-3 bg-gray-700 text-white rounded-lg font-semibold transition-all duration-200 hover:bg-gray-600"
-                            >
-                                Cancel
-                            </button>
+                        <div className="flex items-center gap-3">
+                            {/* Delete button - show for user collections and deletable system collections */}
+                            {(canEditFull ||
+                                (canEditLimited && collection.canDelete !== false)) && (
+                                <button
+                                    onClick={handleDelete}
+                                    className="px-4 py-3 bg-red-600/20 border-2 border-red-600 text-red-400 rounded-lg font-semibold transition-all duration-200 hover:bg-red-600/30 hover:text-red-300 flex items-center gap-2"
+                                    title="Delete collection"
+                                >
+                                    <TrashIcon className="w-5 h-5" />
+                                    <span className="hidden sm:inline">Delete</span>
+                                </button>
+                            )}
+
+                            <div className="flex-1 flex gap-3">
+                                <button
+                                    onClick={handleSave}
+                                    disabled={(canOnlyToggle ? false : !name.trim()) || isSaving}
+                                    className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold transition-all duration-200 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isSaving ? (
+                                        'Saving...'
+                                    ) : (
+                                        <>
+                                            <CheckIcon className="w-5 h-5" />
+                                            Save Changes
+                                        </>
+                                    )}
+                                </button>
+                                <button
+                                    onClick={handleClose}
+                                    className="px-6 py-3 bg-gray-700 text-white rounded-lg font-semibold transition-all duration-200 hover:bg-gray-600"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
