@@ -20,6 +20,18 @@ import CollectionEditorModal from '../../../components/modals/CollectionEditorMo
 import { SystemRowStorage } from '../../../utils/systemRowStorage'
 import { fixCollectionDisplaySettings } from '../../../utils/migrations/fixCollectionDisplaySettings'
 
+// Helper function to convert hex color to rgba with opacity
+const hexToRgba = (hex: string, opacity: number): string => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+    if (result) {
+        const r = parseInt(result[1], 16)
+        const g = parseInt(result[2], 16)
+        const b = parseInt(result[3], 16)
+        return `rgba(${r}, ${g}, ${b}, ${opacity})`
+    }
+    return `rgba(10, 10, 10, ${opacity})` // Fallback to very dark
+}
+
 export default function CollectionsPage() {
     const getUserId = useSessionStore((state) => state.getUserId)
     const sessionType = useSessionStore((state) => state.sessionType)
@@ -532,12 +544,14 @@ interface CollectionCardProps {
 }
 
 function CollectionCard({ collection, onToggle, onEdit }: CollectionCardProps) {
+    const collectionColor = collection.color || '#6b7280' // Default gray
+
     return (
         <div
-            className="bg-[#0a0a0a] rounded-lg border hover:border-[#454545] transition-all p-3"
+            className="rounded-lg border-2 hover:opacity-90 transition-all p-3"
             style={{
-                borderColor: collection.color || '#313131',
-                borderLeftWidth: collection.color && !collection.isSystem ? '4px' : '1px',
+                backgroundColor: hexToRgba(collectionColor, 0.1),
+                borderColor: collectionColor,
             }}
         >
             {/* Header Row with Status Dot and Edit Button */}
