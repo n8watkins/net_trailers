@@ -10,58 +10,55 @@ export async function POST(request: NextRequest) {
     try {
         const { rateLimitKey } = await getRequestIdentity(request)
         const body = await request.json()
-        const { entities, rawText, seed } = body
+        const { rawText, seed } = body
         let mediaType = body.mediaType || 'both'
 
-        if (!entities || !Array.isArray(entities)) {
-            return NextResponse.json({ error: 'Invalid entities' }, { status: 400 })
+        // Sanitize rawText - required now that we don't have entities
+        if (!rawText || rawText.trim().length < 5) {
+            return NextResponse.json(
+                { error: 'Query text is required (minimum 5 characters)' },
+                { status: 400 }
+            )
         }
 
-        // Sanitize rawText if present
-        let sanitizedRawText = ''
-        if (rawText && rawText.trim().length >= 5) {
-            const textResult = sanitizeInput(rawText, 5, 500)
-            if (!textResult.isValid) {
-                return NextResponse.json({ error: textResult.error }, { status: 400 })
-            }
-            sanitizedRawText = textResult.sanitized
+        const textResult = sanitizeInput(rawText, 5, 500)
+        if (!textResult.isValid) {
+            return NextResponse.json({ error: textResult.error }, { status: 400 })
         }
+        const sanitizedRawText = textResult.sanitized
 
         let geminiInsights = null
-        if (sanitizedRawText) {
-            try {
-                const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-                const authHeader = request.headers.get('authorization')
-                if (authHeader) {
-                    headers.Authorization = authHeader
-                }
-
-                const geminiResponse = await fetch(`${request.nextUrl.origin}/api/gemini/analyze`, {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify({
-                        text: sanitizedRawText,
-                        entities,
-                        mediaType,
-                    }),
-                })
-
-                if (geminiResponse.ok) {
-                    geminiInsights = await geminiResponse.json()
-                    if (geminiInsights.mediaType) {
-                        mediaType = geminiInsights.mediaType
-                    }
-                }
-            } catch (error) {
-                apiWarn('Gemini analysis failed, continuing with TMDB only:', error)
+        try {
+            const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+            const authHeader = request.headers.get('authorization')
+            if (authHeader) {
+                headers.Authorization = authHeader
             }
+
+            const geminiResponse = await fetch(`${request.nextUrl.origin}/api/gemini/analyze`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({
+                    text: sanitizedRawText,
+                    mediaType,
+                }),
+            })
+
+            if (geminiResponse.ok) {
+                geminiInsights = await geminiResponse.json()
+                if (geminiInsights.mediaType) {
+                    mediaType = geminiInsights.mediaType
+                }
+            }
+        } catch (error) {
+            apiWarn('Gemini analysis failed, continuing with TMDB only:', error)
         }
 
         if (!['movie', 'tv', 'both'].includes(mediaType)) {
             mediaType = 'both'
         }
 
-        const inputData = { entities, mediaType, rawText: sanitizedRawText }
+        const inputData = { entities: [], mediaType, rawText: sanitizedRawText }
         const tmdbResult = await generateSmartSuggestions(inputData, seed)
 
         const mergedResult = geminiInsights
@@ -88,7 +85,6 @@ export async function POST(request: NextRequest) {
 
             const nameResult = await generateCreativeRowName(
                 request.nextUrl.origin,
-                entities,
                 sanitizedRawText,
                 mediaType,
                 geminiInsights
@@ -109,21 +105,15 @@ export async function POST(request: NextRequest) {
 
 async function generateCreativeRowName(
     origin: string,
-    entities: any[],
     rawText: string,
     mediaType: string,
     geminiInsights: any
 ): Promise<string | null> {
-    const people = entities.filter((e: any) => e.type === 'person')
-
-    if (people.length === 0 && !rawText) {
+    if (!rawText) {
         return null
     }
 
-    let context = rawText || ''
-    if (people.length > 0) {
-        context += ` featuring ${people.map((p: any) => p.name).join(', ')}`
-    }
+    const context = rawText
 
     const apiKey = process.env.GEMINI_API_KEY
     if (!apiKey) return null

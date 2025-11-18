@@ -375,14 +375,29 @@ export default function CollectionEditorModal({
                             </p>
                         </div>
 
-                        {/* Close button */}
-                        <button
-                            type="button"
-                            onClick={handleClose}
-                            className="text-gray-400 hover:text-white transition-colors"
-                        >
-                            <XMarkIcon className="w-6 h-6" />
-                        </button>
+                        <div className="flex items-center gap-3">
+                            {/* Delete button - show for user collections and deletable system collections */}
+                            {(canEditFull ||
+                                (isSystemCollection && collection.canDelete === true)) && (
+                                <button
+                                    onClick={handleDelete}
+                                    className="px-3 py-2 bg-red-600/20 border border-red-600 text-red-400 rounded-lg font-medium transition-all duration-200 hover:bg-red-600/30 hover:text-red-300 flex items-center gap-2"
+                                    title="Delete collection"
+                                >
+                                    <TrashIcon className="w-5 h-5" />
+                                    <span className="hidden sm:inline">Delete</span>
+                                </button>
+                            )}
+
+                            {/* Close button */}
+                            <button
+                                type="button"
+                                onClick={handleClose}
+                                className="text-gray-400 hover:text-white transition-colors"
+                            >
+                                <XMarkIcon className="w-6 h-6" />
+                            </button>
+                        </div>
                     </div>
 
                     {/* Content */}
@@ -865,42 +880,27 @@ export default function CollectionEditorModal({
 
                     {/* Footer with Action Buttons */}
                     <div className="p-6 border-t border-gray-700">
-                        <div className="flex items-center gap-3">
-                            {/* Delete button - show for user collections and deletable system collections */}
-                            {(canEditFull ||
-                                (isSystemCollection && collection.canDelete === true)) && (
-                                <button
-                                    onClick={handleDelete}
-                                    className="px-4 py-3 bg-red-600/20 border-2 border-red-600 text-red-400 rounded-lg font-semibold transition-all duration-200 hover:bg-red-600/30 hover:text-red-300 flex items-center gap-2"
-                                    title="Delete collection"
-                                >
-                                    <TrashIcon className="w-5 h-5" />
-                                    <span className="hidden sm:inline">Delete</span>
-                                </button>
-                            )}
-
-                            <div className="flex-1 flex gap-3">
-                                <button
-                                    onClick={handleSave}
-                                    disabled={(canOnlyToggle ? false : !name.trim()) || isSaving}
-                                    className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold transition-all duration-200 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {isSaving ? (
-                                        'Saving...'
-                                    ) : (
-                                        <>
-                                            <CheckIcon className="w-5 h-5" />
-                                            Save Changes
-                                        </>
-                                    )}
-                                </button>
-                                <button
-                                    onClick={handleClose}
-                                    className="px-6 py-3 bg-gray-700 text-white rounded-lg font-semibold transition-all duration-200 hover:bg-gray-600"
-                                >
-                                    Cancel
-                                </button>
-                            </div>
+                        <div className="flex items-center justify-end gap-3">
+                            <button
+                                onClick={handleClose}
+                                className="px-6 py-2.5 bg-gray-700 text-white rounded-lg font-medium transition-all duration-200 hover:bg-gray-600"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSave}
+                                disabled={(canOnlyToggle ? false : !name.trim()) || isSaving}
+                                className="flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium transition-all duration-200 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isSaving ? (
+                                    'Saving...'
+                                ) : (
+                                    <>
+                                        <CheckIcon className="w-5 h-5" />
+                                        Save Changes
+                                    </>
+                                )}
+                            </button>
                         </div>
                     </div>
                 </div>

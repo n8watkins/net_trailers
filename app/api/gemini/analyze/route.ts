@@ -10,7 +10,7 @@ import { apiError } from '@/utils/debugLogger'
 export async function POST(request: NextRequest) {
     try {
         const { rateLimitKey } = await getRequestIdentity(request)
-        const { text, entities, mediaType } = await request.json()
+        const { text, mediaType } = await request.json()
 
         // Sanitize and validate input (allow queries with 1+ characters for smart search)
         const sanitizationResult = sanitizeInput(text, 1, 500)
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        const prompt = buildAnalysisPrompt(sanitizedText, entities, mediaType)
+        const prompt = buildAnalysisPrompt(sanitizedText, mediaType)
 
         const response = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent?key=${apiKey}`,
@@ -90,18 +90,11 @@ export async function POST(request: NextRequest) {
     }
 }
 
-function buildAnalysisPrompt(text: string, entities: any[], mediaType: string): string {
-    const taggedPeople = entities.filter((e) => e.type === 'person').map((e) => e.name)
-    const taggedContent = entities
-        .filter((e) => e.type === 'movie' || e.type === 'tv')
-        .map((e) => e.name)
-
+function buildAnalysisPrompt(text: string, mediaType: string): string {
     return `You are an expert film/TV analyst. Analyze this user's description and map it to TMDB genre IDs.
 
 User Input: "${text}"
 Media Type: ${mediaType}
-${taggedPeople.length > 0 ? `Tagged People: ${taggedPeople.join(', ')}` : ''}
-${taggedContent.length > 0 ? `Tagged Titles: ${taggedContent.join(', ')}` : ''}
 
 **IMPORTANT: You MUST use these exact TMDB genre IDs:**
 

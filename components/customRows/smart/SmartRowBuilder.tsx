@@ -6,7 +6,6 @@ import { SmartStep1Input } from './SmartStep1Input'
 import { SmartStep2Suggestions } from './SmartStep2Suggestions'
 import { SmartStep3Preview } from './SmartStep3Preview'
 import { WizardStep4Confirmation } from '../WizardStep4Confirmation'
-import type { Entity } from './SmartInput'
 import type { Suggestion } from '@/utils/smartRowSuggestions'
 import type { CustomRowFormData } from '@/types/customRows'
 
@@ -39,11 +38,9 @@ export function SmartRowBuilder({
 
     // Step 1 data
     const [step1Data, setStep1Data] = useState<{
-        entities: Entity[]
         rawText: string
         mediaType: 'movie' | 'tv' | 'both'
     }>({
-        entities: [],
         rawText: '',
         mediaType: 'movie',
     })
@@ -109,7 +106,7 @@ export function SmartRowBuilder({
     // Reset for "Create Another"
     const handleCreateAnother = () => {
         setCurrentStep(1)
-        setStep1Data({ entities: [], rawText: '', mediaType: 'movie' })
+        setStep1Data({ rawText: '', mediaType: 'movie' })
         setStep2Data({ selectedSuggestions: [], selectedRowName: '', mediaType: 'movie' })
         setFormData({
             name: '',
@@ -249,7 +246,7 @@ export function SmartRowBuilder({
  * Convert suggestions to CustomRowFormData
  */
 function convertSuggestionsToFormData(
-    step1Data: { entities: Entity[]; rawText: string; mediaType: 'movie' | 'tv' | 'both' },
+    step1Data: { rawText: string; mediaType: 'movie' | 'tv' | 'both' },
     suggestions: Suggestion[],
     rowName: string
 ): CustomRowFormData {
