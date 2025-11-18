@@ -468,8 +468,8 @@ export default function CollectionEditorModal({
                                             />
                                         </div>
 
-                                        {/* Color Picker - Only for user-created collections */}
-                                        {canEditFull && (
+                                        {/* Color Picker - Available for user collections and editable system collections */}
+                                        {(canEditFull || canEditLimited) && (
                                             <div className="relative flex-shrink-0">
                                                 <button
                                                     onClick={() => setShowColorPicker(true)}

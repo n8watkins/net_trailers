@@ -36,6 +36,7 @@ export const ALL_SYSTEM_COLLECTIONS: Collection[] = [
         isSystemCollection: true,
         canDelete: false,
         canEdit: true, // Users can customize mediaType
+        color: '#6366f1', // Indigo
     },
     {
         id: 'system-top-rated',
@@ -56,6 +57,7 @@ export const ALL_SYSTEM_COLLECTIONS: Collection[] = [
         isSystemCollection: true,
         canDelete: false,
         canEdit: true, // Users can customize mediaType
+        color: '#6366f1', // Indigo
     },
     // Genre collections - can be customized or deleted
     {
@@ -76,6 +78,7 @@ export const ALL_SYSTEM_COLLECTIONS: Collection[] = [
         isSystemCollection: true,
         canDelete: true,
         canEdit: true,
+        color: '#6366f1', // Indigo
     },
     {
         id: 'system-comedy',
@@ -95,6 +98,7 @@ export const ALL_SYSTEM_COLLECTIONS: Collection[] = [
         isSystemCollection: true,
         canDelete: true,
         canEdit: true,
+        color: '#6366f1', // Indigo
     },
     {
         id: 'system-scifi',
@@ -114,6 +118,7 @@ export const ALL_SYSTEM_COLLECTIONS: Collection[] = [
         isSystemCollection: true,
         canDelete: true,
         canEdit: true,
+        color: '#6366f1', // Indigo
     },
     {
         id: 'system-animation',
@@ -133,6 +138,7 @@ export const ALL_SYSTEM_COLLECTIONS: Collection[] = [
         isSystemCollection: true,
         canDelete: true,
         canEdit: true,
+        color: '#6366f1', // Indigo
     },
     {
         id: 'system-horror',
@@ -152,6 +158,7 @@ export const ALL_SYSTEM_COLLECTIONS: Collection[] = [
         isSystemCollection: true,
         canDelete: true,
         canEdit: true,
+        color: '#6366f1', // Indigo
     },
     {
         id: 'system-family',
@@ -171,6 +178,7 @@ export const ALL_SYSTEM_COLLECTIONS: Collection[] = [
         isSystemCollection: true,
         canDelete: true,
         canEdit: true,
+        color: '#6366f1', // Indigo
     },
     {
         id: 'system-documentary',
@@ -190,6 +198,7 @@ export const ALL_SYSTEM_COLLECTIONS: Collection[] = [
         isSystemCollection: true,
         canDelete: true,
         canEdit: true,
+        color: '#6366f1', // Indigo
     },
     {
         id: 'system-romance-drama',
@@ -209,6 +218,7 @@ export const ALL_SYSTEM_COLLECTIONS: Collection[] = [
         isSystemCollection: true,
         canDelete: true,
         canEdit: true,
+        color: '#6366f1', // Indigo
     },
 ]
 
