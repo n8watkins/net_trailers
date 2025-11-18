@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { PlusIcon, XMarkIcon, SparklesIcon } from '@heroicons/react/24/solid'
 import { useToast } from '@/hooks/useToast'
 import { authenticatedFetch, AuthRequiredError } from '@/lib/authenticatedFetch'
+import { UNIFIED_GENRES, findUnifiedGenre } from '@/constants/unifiedGenres'
 
 interface SmartStep2SuggestionsProps {
     inputData: {
@@ -18,36 +19,6 @@ interface SmartStep2SuggestionsProps {
     }) => void
 }
 
-// TMDB Genre mapping
-const GENRE_MAP: Record<number, string> = {
-    28: 'Action',
-    12: 'Adventure',
-    16: 'Animation',
-    35: 'Comedy',
-    80: 'Crime',
-    99: 'Documentary',
-    18: 'Drama',
-    10751: 'Family',
-    14: 'Fantasy',
-    36: 'History',
-    27: 'Horror',
-    10402: 'Music',
-    9648: 'Mystery',
-    10749: 'Romance',
-    878: 'Science Fiction',
-    53: 'Thriller',
-    10752: 'War',
-    37: 'Western',
-    10759: 'Action & Adventure',
-    10762: 'Kids',
-    10763: 'News',
-    10764: 'Reality',
-    10765: 'Sci-Fi & Fantasy',
-    10766: 'Soap',
-    10767: 'Talk',
-    10768: 'War & Politics',
-}
-
 /**
  * SmartStep2Suggestions - Configure filters before preview
  */
@@ -57,7 +28,7 @@ export function SmartStep2Suggestions({
     onContinue,
 }: SmartStep2SuggestionsProps) {
     const [rowName, setRowName] = useState('')
-    const [genreIds, setGenreIds] = useState<number[]>([])
+    const [genreIds, setGenreIds] = useState<string[]>([]) // Unified genre IDs (e.g., ['action', 'scifi'])
     const [mediaType, setMediaType] = useState<'movie' | 'tv' | 'both'>('both')
     const [people, setPeople] = useState<
         Array<{
@@ -186,14 +157,14 @@ export function SmartStep2Suggestions({
         }
     }
 
-    const addGenre = (genreId: number) => {
+    const addGenre = (genreId: string) => {
         if (!genreIds.includes(genreId)) {
             setGenreIds([...genreIds, genreId])
         }
         setShowGenreModal(false)
     }
 
-    const removeGenre = (genreId: number) => {
+    const removeGenre = (genreId: string) => {
         setGenreIds(genreIds.filter((id) => id !== genreId))
     }
 
@@ -460,7 +431,7 @@ export function SmartStep2Suggestions({
                                     key={id}
                                     className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-600/20 text-red-400 rounded-full border border-red-600/50"
                                 >
-                                    {GENRE_MAP[id] || `Genre ${id}`}
+                                    {findUnifiedGenre(id)?.name || `Genre ${id}`}
                                     <button
                                         onClick={() => removeGenre(id)}
                                         className="hover:text-red-300 transition-colors"
@@ -511,17 +482,23 @@ export function SmartStep2Suggestions({
                             </button>
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                            {Object.entries(GENRE_MAP)
-                                .filter(([id]) => !genreIds.includes(Number(id)))
-                                .map(([id, name]) => (
-                                    <button
-                                        key={id}
-                                        onClick={() => addGenre(Number(id))}
-                                        className="px-4 py-2 bg-gray-800 text-gray-300 rounded-lg hover:bg-red-600 hover:text-white transition-colors text-sm"
-                                    >
-                                        {name}
-                                    </button>
-                                ))}
+                            {UNIFIED_GENRES.filter((genre) => {
+                                // Filter out already selected genres
+                                if (genreIds.includes(genre.id)) return false
+
+                                // Filter by media type availability
+                                if (mediaType === 'movie') return genre.movieIds.length > 0
+                                if (mediaType === 'tv') return genre.tvIds.length > 0
+                                return true // 'both' shows all genres
+                            }).map((genre) => (
+                                <button
+                                    key={genre.id}
+                                    onClick={() => addGenre(genre.id)}
+                                    className="px-4 py-2 bg-gray-800 text-gray-300 rounded-lg hover:bg-red-600 hover:text-white transition-colors text-sm"
+                                >
+                                    {genre.name}
+                                </button>
+                            ))}
                         </div>
                     </div>
                 </div>

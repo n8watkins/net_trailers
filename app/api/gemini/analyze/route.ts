@@ -91,56 +91,46 @@ export async function POST(request: NextRequest) {
 }
 
 function buildAnalysisPrompt(text: string, mediaType: string): string {
-    return `You are an expert film/TV analyst. Analyze this user's description and map it to TMDB genre IDs.
+    return `You are an expert film/TV analyst. Analyze this user's description and map it to unified genre IDs.
 
 User Input: "${text}"
 Media Type: ${mediaType}
 
-**IMPORTANT: You MUST use these exact TMDB genre IDs:**
+**IMPORTANT: You MUST use these exact unified genre IDs (they work for both movies and TV):**
 
-MOVIE GENRES:
-- 28: Action
-- 12: Adventure
-- 16: Animation
-- 35: Comedy
-- 80: Crime
-- 99: Documentary
-- 18: Drama
-- 10751: Family
-- 14: Fantasy
-- 36: History
-- 27: Horror
-- 10402: Music
-- 9648: Mystery
-- 10749: Romance
-- 878: Science Fiction
-- 10770: TV Movie
-- 53: Thriller
-- 10752: War
-- 37: Western
+UNIFIED GENRES:
+- "action": Action
+- "adventure": Adventure
+- "animation": Animation
+- "comedy": Comedy
+- "crime": Crime
+- "documentary": Documentary
+- "drama": Drama
+- "family": Family
+- "fantasy": Fantasy
+- "history": History
+- "horror": Horror
+- "kids": Kids (TV only)
+- "music": Music
+- "mystery": Mystery
+- "news": News (TV only)
+- "reality": Reality (TV only)
+- "romance": Romance
+- "scifi": Science Fiction
+- "soap": Soap (TV only)
+- "talk": Talk (TV only)
+- "thriller": Thriller
+- "war": War
+- "politics": Politics (TV only)
+- "western": Western
 
-TV GENRES:
-- 10759: Action & Adventure
-- 16: Animation
-- 35: Comedy
-- 80: Crime
-- 99: Documentary
-- 18: Drama
-- 10751: Family
-- 10762: Kids
-- 9648: Mystery
-- 10763: News
-- 10764: Reality
-- 10765: Sci-Fi & Fantasy
-- 10766: Soap
-- 10767: Talk
-- 10768: War & Politics
-- 37: Western
+**NOTE**: Use lowercase string IDs, not numbers. The system automatically maps these to correct TMDB IDs based on media type.
+Example: "romance" → Maps to genre 10749 for movies, genre 18 (Drama) for TV shows
 
-Return ONLY this JSON structure with TMDB genre IDs:
+Return ONLY this JSON structure with unified genre IDs:
 {
   "mediaType": "movie"|"tv"|"both",
-  "genreIds": [80, 18],
+  "genreIds": ["crime", "drama"],
   "yearRange": { "min": 1980, "max": 1989 } | null,
   "certification": ["R", "PG-13"] | null,
   "recommendations": [
@@ -162,18 +152,19 @@ Return ONLY this JSON structure with TMDB genre IDs:
 }
 
 Examples:
-- "gangster movies" → {"genreIds": [80, 18]}
-- "scary films" → {"genreIds": [27]}
-- "space adventures" → {"genreIds": [878, 12]}
-- "action comedies" → {"genreIds": [28, 35]}
+- "gangster movies" → {"genreIds": ["crime", "drama"]}
+- "scary films" → {"genreIds": ["horror"]}
+- "space adventures" → {"genreIds": ["scifi", "adventure"]}
+- "action comedies" → {"genreIds": ["action", "comedy"]}
+- "romantic dramas" → {"genreIds": ["romance", "drama"]}
 
 CONCEPT QUERY Examples:
 
 Pure Concept:
-- "comedy of errors" → provide conceptQuery plus 10-15 titles and genreIds [35]
+- "comedy of errors" → provide conceptQuery plus 10-15 titles and genreIds ["comedy"]
 
 Hybrid Genre+Vibe:
-- "dark scifi thriller" → conceptQuery + movieRecommendations + genreIds [878, 53]
+- "dark scifi thriller" → conceptQuery + movieRecommendations + genreIds ["scifi", "thriller"]
 
 Stay concise and return valid JSON only.`
 }

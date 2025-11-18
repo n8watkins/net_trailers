@@ -43,7 +43,7 @@ function ColorPickerModal({
     return (
         <div
             ref={dropdownRef}
-            className="absolute bottom-full left-0 mb-2 bg-[#141414] rounded-lg shadow-2xl border border-gray-600 p-1.5 z-[1500] w-[176px]"
+            className="absolute top-full left-0 mt-2 bg-[#141414] rounded-lg shadow-2xl border border-gray-600 p-1.5 z-[1500] w-[176px]"
         >
             <div className="grid grid-cols-4 gap-1.5">
                 {colors.map((color) => (

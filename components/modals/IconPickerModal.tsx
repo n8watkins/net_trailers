@@ -75,10 +75,10 @@ function IconPickerModal({ isOpen, selectedIcon, onSelectIcon, onClose }: IconPi
     return (
         <div
             ref={dropdownRef}
-            className="absolute bottom-full left-0 mb-2 bg-[#141414] rounded-lg shadow-2xl border border-gray-600 p-1.5 z-[1500] w-[280px]"
+            className="absolute top-full left-0 mt-2 bg-[#141414] rounded-lg shadow-2xl border border-gray-600 z-[1500] w-[280px]"
         >
             {/* Category Tabs */}
-            <div className="flex -mx-1.5 px-1.5">
+            <div className="flex px-1.5">
                 {categories.map((category) => (
                     <button
                         key={category.name}
@@ -96,7 +96,7 @@ function IconPickerModal({ isOpen, selectedIcon, onSelectIcon, onClose }: IconPi
 
             {/* Icon Grid - Full width with negative margins */}
             <div
-                className={`-mx-1.5 -mb-1.5 grid grid-cols-6 gap-2.5 p-3 rounded-lg border border-gray-700 ${
+                className={`-mb-1.5 grid grid-cols-6 gap-2.5 p-3 rounded-lg border border-gray-700 ${
                     categoryColors[activeCategory as keyof typeof categoryColors]
                 }`}
             >

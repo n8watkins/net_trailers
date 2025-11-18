@@ -35,11 +35,11 @@ NetTrailers uses Google Gemini AI across 6 API endpoints to power intelligent co
 
 ### Purpose
 
-Maps natural language queries to TMDB genre IDs by analyzing semantic meaning. We provide Gemini with a comprehensive list of genres and their TMDB IDs, and it intelligently selects the most relevant ones.
+Maps natural language queries to **unified genre IDs** by analyzing semantic meaning. Uses our unified genre system that automatically handles movie/TV genre differences.
 
 **What it returns:**
 
-- **TMDB genre IDs** (numbers like 28, 35, 878) - not genre names
+- **Unified genre IDs** (strings like "action", "scifi", "romance") - works for both movies and TV
 - Time periods/year ranges
 - Content ratings/certifications
 - Vibe/mood concepts
@@ -47,25 +47,36 @@ Maps natural language queries to TMDB genre IDs by analyzing semantic meaning. W
 
 **How it works:**
 
-1. We give Gemini a mapping of genres → TMDB IDs (e.g., "Action → 28", "Comedy → 35")
+1. We give Gemini a list of unified genres (e.g., "action", "comedy", "scifi")
 2. User types natural language query
-3. Gemini selects relevant genre IDs from our provided list
-4. Returns numeric TMDB genre IDs for API queries
+3. Gemini selects relevant genre IDs from our unified list
+4. Returns string genre IDs like `["scifi", "thriller"]`
+5. Our genre system automatically translates to correct TMDB IDs based on media type
+
+**Why unified genres?**
+
+- **Romance** example: Genre ID `"romance"` automatically maps to:
+    - Movies: TMDB ID 10749 (Romance)
+    - TV Shows: TMDB ID 18 (Drama - closest equivalent)
+- **Fantasy/Sci-Fi** example: Genre IDs `"fantasy"` and `"scifi"` map to:
+    - Movies: Separate TMDB IDs 14 (Fantasy) and 878 (Sci-Fi)
+    - TV Shows: Combined TMDB ID 10765 (Sci-Fi & Fantasy)
 
 ### Example Use Cases
 
 ```
 User types: "rainy day vibes"
-→ We provide Gemini: list of all genres with IDs
-→ Gemini returns: [18, 10749] (Drama, Romance IDs)
-→ App uses these IDs to query TMDB
+→ Gemini returns: ["drama", "romance"]
+→ App translates for movies: [18, 10749]
+→ App translates for TV: [18, 18] → deduplicated to [18]
 
 User types: "dark sci-fi thriller"
-→ Gemini maps to IDs: [878, 53] (Sci-Fi, Thriller)
-→ Returns TMDB-compatible genre IDs
+→ Gemini returns: ["scifi", "thriller"]
+→ Movies: [878, 53] | TV: [10765] (no thriller genre for TV)
 
-User types: "comedy of errors"
-→ Gemini returns: [35] (Comedy ID) + specific title recommendations
+User types: "romantic dramas"
+→ Gemini returns: ["romance", "drama"]
+→ Movies: [10749, 18] | TV: [18] (deduplicated)
 ```
 
 ### Prompt Strategy
@@ -73,9 +84,9 @@ User types: "comedy of errors"
 - **Temperature**: 0.3 (low - for consistent, accurate genre mapping)
 - **Max tokens**: 1000
 - **Instructions**:
-    - We provide complete genre mapping (Action: 28, Adventure: 12, etc.)
-    - Gemini must select from OUR provided list
-    - Returns TMDB genre IDs (numbers) for API compatibility
+    - We provide unified genre IDs ("action", "scifi", "romance", etc.)
+    - Gemini selects from OUR provided list
+    - Returns unified genre IDs (strings) that work across media types
     - Detect media type preference (movie/tv/both)
     - Extract year ranges and rating preferences
 
@@ -92,7 +103,7 @@ User types: "comedy of errors"
 
 ```typescript
 {
-  genreIds: number[],                    // TMDB genre IDs (e.g., [28, 35] for Action + Comedy)
+  genreIds: string[],                    // Unified genre IDs (e.g., ["action", "comedy"])
   yearRange: { min: number, max: number } | null,
   certification: string[] | null,        // e.g., ["R", "PG-13"]
   mediaType: 'movie' | 'tv' | 'both',
@@ -105,29 +116,30 @@ User types: "comedy of errors"
 }
 ```
 
-### Genre Mapping Provided to Gemini
+### Unified Genres Provided to Gemini
 
-**Movie Genres:**
+**All Genres** (work for both movies and TV):
 
-- 28: Action | 12: Adventure | 16: Animation | 35: Comedy | 80: Crime
-- 99: Documentary | 18: Drama | 10751: Family | 14: Fantasy | 36: History
-- 27: Horror | 10402: Music | 9648: Mystery | 10749: Romance | 878: Science Fiction
-- 53: Thriller | 10752: War | 37: Western
+- "action", "adventure", "animation", "comedy", "crime"
+- "documentary", "drama", "family", "fantasy", "history"
+- "horror", "kids", "music", "mystery", "news"
+- "reality", "romance", "scifi", "soap", "talk"
+- "thriller", "war", "politics", "western"
 
-**TV Genres:**
+**Note**: Some genres are media-specific:
 
-- 10759: Action & Adventure | 16: Animation | 35: Comedy | 80: Crime
-- 99: Documentary | 18: Drama | 10751: Family | 10762: Kids | 9648: Mystery
-- 10765: Sci-Fi & Fantasy | 10768: War & Politics | 37: Western
+- Movie-only: "history", "horror", "music", "thriller"
+- TV-only: "kids", "news", "reality", "soap", "talk", "politics"
 
 ### Integration Flow
 
-1. User types in hero search bar (e.g., "rainy day vibes")
+1. User types in hero search bar (e.g., "romantic sci-fi")
 2. Frontend calls `/api/gemini/analyze` with query
-3. Gemini receives our genre mapping and selects IDs: [18, 10749]
-4. Returns numeric TMDB genre IDs (not names)
-5. App queries TMDB API using these genre IDs
-6. Results displayed instantly
+3. Gemini selects unified IDs: `["romance", "scifi"]`
+4. For movies → translates to TMDB IDs: [10749, 878]
+5. For TV → translates to TMDB IDs: [18, 10765]
+6. App queries TMDB API with correct genre IDs per media type
+7. Results displayed with proper genre filtering
 
 ---
 
