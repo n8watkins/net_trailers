@@ -205,19 +205,29 @@ export default function CollectionEditorModal({
                 const currentPrefs =
                     useCustomRowsStore.getState().systemRowPreferences.get(userId) || {}
 
-                // Build the updated preference for this row
-                const updatedPref = {
+                // Build the updated preference for this row (only include defined values)
+                const updatedPref: any = {
                     enabled: displayAsRow,
-                    customName: canEditLimited
-                        ? name.trim()
-                        : currentPrefs[collection.id]?.customName,
                     order: currentPrefs[collection.id]?.order ?? 0,
-                    customGenres: canEditLimited
-                        ? selectedGenres
-                        : currentPrefs[collection.id]?.customGenres,
-                    customGenreLogic: canEditLimited
-                        ? genreLogic
-                        : currentPrefs[collection.id]?.customGenreLogic,
+                }
+
+                // Only add optional fields if they have values
+                if (canEditLimited && name.trim()) {
+                    updatedPref.customName = name.trim()
+                } else if (currentPrefs[collection.id]?.customName) {
+                    updatedPref.customName = currentPrefs[collection.id].customName
+                }
+
+                if (canEditLimited && selectedGenres.length > 0) {
+                    updatedPref.customGenres = selectedGenres
+                } else if (currentPrefs[collection.id]?.customGenres) {
+                    updatedPref.customGenres = currentPrefs[collection.id].customGenres
+                }
+
+                if (canEditLimited) {
+                    updatedPref.customGenreLogic = genreLogic
+                } else if (currentPrefs[collection.id]?.customGenreLogic) {
+                    updatedPref.customGenreLogic = currentPrefs[collection.id].customGenreLogic
                 }
 
                 // Update in-memory state
