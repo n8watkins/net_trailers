@@ -8,7 +8,7 @@ import {
     EyeIcon,
     EyeSlashIcon,
 } from '@heroicons/react/24/outline'
-import { TOAST_DURATION, TOAST_EXIT_DURATION } from '../../stores/appStore'
+import { TOAST_DURATION, TOAST_EXIT_DURATION } from '../../stores/toastStore'
 
 /**
  * Toast message interface for the unified notification system

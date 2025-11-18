@@ -1,4 +1,4 @@
-import React, { memo, useCallback } from 'react'
+import React, { memo, useCallback, useRef, useLayoutEffect, useState } from 'react'
 import Toast, { ToastMessage } from './Toast'
 
 interface ToastContainerProps {
@@ -17,13 +17,25 @@ interface ToastContainerProps {
  */
 const ToastContainer: React.FC<ToastContainerProps> = memo(
     ({ toasts, onRemoveToast }) => {
+        const toastRefs = useRef<Map<string, HTMLDivElement>>(new Map())
+        const [toastHeights, setToastHeights] = useState<Map<string, number>>(new Map())
+
+        // Measure toast heights after render
+        useLayoutEffect(() => {
+            const newHeights = new Map<string, number>()
+            toastRefs.current.forEach((element, id) => {
+                if (element) {
+                    newHeights.set(id, element.offsetHeight)
+                }
+            })
+            setToastHeights(newHeights)
+        }, [toasts])
+
         if (toasts.length === 0) {
             return null
         }
 
-        // Use a larger fixed height that accommodates most toasts
-        // This ensures consistent spacing without overlap
-        const TOAST_HEIGHT = 120 // Increased from 110 to prevent overlap
+        const GAP = 12 // 12px gap between toasts
 
         return (
             <div
@@ -34,17 +46,27 @@ const ToastContainer: React.FC<ToastContainerProps> = memo(
                 style={{ minHeight: '300px' }}
             >
                 {toasts.map((toast, index) => {
-                    // Calculate position: 0 = top, 1 = second (pushed down), 2+ = fading out
-                    const isFirst = index === 0
-                    const isSecond = index === 1
-                    const isThirdOrMore = index >= 2
+                    // Calculate position based on actual heights of previous toasts
+                    let verticalOffset = 0
+                    for (let i = 0; i < index; i++) {
+                        const prevToast = toasts[i]
+                        const prevHeight = toastHeights.get(prevToast.id) || 100 // Default fallback
+                        verticalOffset += prevHeight + GAP
+                    }
 
-                    // Calculate vertical offset - each toast gets its own row
-                    const verticalOffset = index * TOAST_HEIGHT
+                    const isThirdOrMore = index >= 2
+                    const isSecond = index === 1
 
                     return (
                         <div
                             key={toast.id}
+                            ref={(el) => {
+                                if (el) {
+                                    toastRefs.current.set(toast.id, el)
+                                } else {
+                                    toastRefs.current.delete(toast.id)
+                                }
+                            }}
                             className="pointer-events-auto transition-all duration-500 ease-out absolute top-0 right-0 w-full"
                             style={{
                                 opacity: isThirdOrMore ? 0 : 1,
