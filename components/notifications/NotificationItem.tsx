@@ -131,7 +131,7 @@ export default function NotificationItem({ notification }: NotificationItemProps
 
     return (
         <div
-            className={`group relative flex gap-4 border-b border-gray-800/50 p-4 transition-all duration-200 ${
+            className={`group relative flex gap-6 border-b border-gray-800/50 p-6 transition-all duration-200 ${
                 notification.actionUrl
                     ? isLoading
                         ? 'cursor-wait opacity-70'
@@ -150,13 +150,13 @@ export default function NotificationItem({ notification }: NotificationItemProps
                     <img
                         src={notification.imageUrl}
                         alt=""
-                        className="h-32 w-24 rounded object-cover ring-1 ring-red-900/30"
+                        className="h-40 w-28 rounded object-cover ring-1 ring-red-900/30"
                     />
                 </div>
             )}
 
             {/* Text content (right side) */}
-            <div className="flex min-w-0 flex-1 flex-col justify-start gap-2">
+            <div className="flex min-w-0 flex-1 flex-col justify-start gap-3">
                 {/* Header: Category + Timestamp */}
                 <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-medium text-red-400">{categoryLabel}</span>
@@ -170,7 +170,7 @@ export default function NotificationItem({ notification }: NotificationItemProps
 
                 {/* Content Title */}
                 <h4
-                    className={`line-clamp-3 text-base font-semibold leading-snug ${
+                    className={`line-clamp-3 text-lg font-semibold leading-snug ${
                         notification.isRead ? 'text-gray-300' : 'text-white'
                     }`}
                 >
@@ -179,7 +179,7 @@ export default function NotificationItem({ notification }: NotificationItemProps
 
                 {/* Message/Description if available */}
                 {notification.message && (
-                    <p className="text-sm text-gray-300 line-clamp-2">{notification.message}</p>
+                    <p className="text-base text-gray-300 line-clamp-2">{notification.message}</p>
                 )}
             </div>
         </div>
