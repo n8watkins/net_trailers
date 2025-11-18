@@ -23,32 +23,27 @@ const ToastContainer: React.FC<ToastContainerProps> = memo(
 
         return (
             <div
-                className="fixed top-4 right-4 sm:right-6 md:right-8 lg:right-12 z-[100001] pointer-events-none w-full max-w-sm sm:max-w-md"
+                className="fixed top-4 right-4 sm:right-6 md:right-8 lg:right-12 z-[100001] pointer-events-none w-full max-w-sm sm:max-w-md flex flex-col gap-3"
                 aria-live="polite"
                 aria-atomic="true"
                 role="status"
-                style={{ minHeight: '200px' }}
             >
                 {toasts.map((toast, index) => {
                     // Calculate position: 0 = top, 1 = second (pushed down), 2+ = fading out
-                    const isFirst = index === 0
-                    const isSecond = index === 1
                     const isThirdOrMore = index >= 2
-
-                    // Calculate vertical offset for stacking
-                    // Each toast is ~100px tall with padding/margin, so offset by 110px
-                    const verticalOffset = index * 110
 
                     return (
                         <div
                             key={toast.id}
-                            className="pointer-events-auto transition-all duration-500 ease-out absolute top-0 right-0 w-full"
+                            className="pointer-events-auto transition-all duration-500 ease-out w-full"
                             style={{
                                 opacity: isThirdOrMore ? 0 : 1,
                                 transform: isThirdOrMore
-                                    ? `translateY(${verticalOffset + 40}px) scale(0.95)`
-                                    : `translateY(${verticalOffset}px) scale(${isSecond ? 0.98 : 1})`,
-                                zIndex: 100 - index, // Stack toasts with newest on top
+                                    ? 'translateY(20px) scale(0.95)'
+                                    : 'scale(1)',
+                                marginBottom: isThirdOrMore ? '-100%' : '0',
+                                maxHeight: isThirdOrMore ? '0' : '500px',
+                                overflow: isThirdOrMore ? 'hidden' : 'visible',
                             }}
                         >
                             <Toast toast={toast} onClose={onRemoveToast} />
