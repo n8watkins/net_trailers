@@ -3,13 +3,11 @@
 import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { PlusIcon, XMarkIcon, SparklesIcon } from '@heroicons/react/24/solid'
-import type { Entity } from './SmartInput'
 import { useToast } from '@/hooks/useToast'
 import { authenticatedFetch, AuthRequiredError } from '@/lib/authenticatedFetch'
 
 interface SmartStep2SuggestionsProps {
     inputData: {
-        entities: Entity[]
         rawText: string
     }
     onBack: () => void
@@ -112,22 +110,29 @@ export function SmartStep2Suggestions({
             const genreSuggestion = data.suggestions?.find((s: any) => s.type === 'genre')
             const ids = genreSuggestion?.value || []
 
-            // Extract tagged people from entities
-            const taggedPeople = inputData.entities
-                .filter((e) => e.type === 'person')
-                .map((e) => ({
-                    id: e.id as number,
-                    name: e.name,
-                    type: (e.subtitle?.toLowerCase().includes('direct') ? 'director' : 'actor') as
-                        | 'actor'
-                        | 'director',
-                    required: false, // Default to optional (OR logic) - Gemini will decide if they should be required
-                    image: e.image, // TMDB profile image path
-                }))
+            // Extract people from AI suggestions (cast/director)
+            const castSuggestions = data.suggestions?.filter((s: any) => s.type === 'cast') || []
+            const directorSuggestions =
+                data.suggestions?.filter((s: any) => s.type === 'director') || []
+
+            const suggestedPeople = [
+                ...castSuggestions.map((s: any) => ({
+                    id: s.value,
+                    name: s.name || 'Unknown',
+                    type: 'actor' as const,
+                    required: false,
+                })),
+                ...directorSuggestions.map((s: any) => ({
+                    id: s.value,
+                    name: s.name || 'Unknown',
+                    type: 'director' as const,
+                    required: false,
+                })),
+            ]
 
             setRowName(data.rowNames?.[0] || 'My Custom Row')
             setGenreIds(ids)
-            setPeople(taggedPeople)
+            setPeople(suggestedPeople)
             setMediaType(data.mediaType || 'both')
         } catch (error) {
             if (error instanceof AuthRequiredError) {
