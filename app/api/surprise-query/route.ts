@@ -65,7 +65,7 @@ export async function POST() {
             ],
             generationConfig: {
                 temperature: 1.0,
-                maxOutputTokens: 100,
+                maxOutputTokens: 500, // Increased from 100 to account for Gemini 2.5 Flash's extended thinking mode
             },
         }
 
@@ -84,18 +84,22 @@ export async function POST() {
             throw new Error(result.error || 'Failed to generate query from Gemini')
         }
 
-        // DEBUG: Log raw Gemini response
-        apiLog('[Surprise Query] Raw Gemini response:', JSON.stringify(result.data, null, 2))
+        // DEBUG: Log raw Gemini response - ALWAYS log this to diagnose extraction issue
+        console.error(
+            '🔍 [SURPRISE QUERY DEBUG] Raw Gemini response:',
+            JSON.stringify(result.data, null, 2)
+        )
 
         const extractedText = extractGeminiText(result.data)
-        apiLog('[Surprise Query] Extracted text:', extractedText)
+        console.error('🔍 [SURPRISE QUERY DEBUG] Extracted text:', extractedText)
 
         if (!extractedText) {
-            apiError('[Surprise Query] extractGeminiText returned null/undefined!')
-            apiLog('[Surprise Query] Result data structure:', {
+            console.error('🔍 [SURPRISE QUERY DEBUG] extractGeminiText returned null/undefined!')
+            console.error('🔍 [SURPRISE QUERY DEBUG] Result data structure:', {
                 hasCandidates: !!result.data?.candidates,
                 candidatesLength: result.data?.candidates?.length,
-                firstCandidate: result.data?.candidates?.[0],
+                firstCandidate: JSON.stringify(result.data?.candidates?.[0], null, 2),
+                fullData: JSON.stringify(result.data, null, 2),
             })
         }
 
