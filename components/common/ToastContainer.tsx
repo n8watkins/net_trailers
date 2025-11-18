@@ -30,6 +30,8 @@ const ToastContainer: React.FC<ToastContainerProps> = memo(
             >
                 {toasts.map((toast, index) => {
                     // Calculate position: 0 = top, 1 = second (pushed down), 2+ = fading out
+                    const isFirst = index === 0
+                    const isSecond = index === 1
                     const isThirdOrMore = index >= 2
 
                     return (
@@ -40,7 +42,9 @@ const ToastContainer: React.FC<ToastContainerProps> = memo(
                                 opacity: isThirdOrMore ? 0 : 1,
                                 transform: isThirdOrMore
                                     ? 'translateY(20px) scale(0.95)'
-                                    : 'scale(1)',
+                                    : isSecond
+                                      ? 'scale(0.98)'
+                                      : 'scale(1)',
                                 marginBottom: isThirdOrMore ? '-100%' : '0',
                                 maxHeight: isThirdOrMore ? '0' : '500px',
                                 overflow: isThirdOrMore ? 'hidden' : 'visible',
