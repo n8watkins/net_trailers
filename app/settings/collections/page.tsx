@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useSessionStore } from '../../../stores/sessionStore'
 import { useCustomRowsStore } from '../../../stores/customRowsStore'
 import { useAuthStore } from '../../../stores/authStore'
@@ -30,6 +30,7 @@ export default function CollectionsPage() {
     // Get all display rows (system + custom)
     const getAllDisplayRows = useCustomRowsStore((state) => state.getAllDisplayRows)
     const toggleSystemRow = useCustomRowsStore((state) => state.toggleSystemRow)
+    const setSystemRowPreferences = useCustomRowsStore((state) => state.setSystemRowPreferences)
 
     // Get user collections
     const authCollections = useAuthStore((state) => state.userCreatedWatchlists)
@@ -56,6 +57,27 @@ export default function CollectionsPage() {
 
     // Migration state
     const [isMigrating, setIsMigrating] = useState(false)
+
+    // Load system row preferences from storage on mount
+    useEffect(() => {
+        if (!userId) return
+
+        const loadPreferences = async () => {
+            try {
+                const preferences = await SystemRowStorage.getSystemRowPreferences(
+                    userId,
+                    sessionType === 'guest'
+                )
+                if (preferences && Object.keys(preferences).length > 0) {
+                    setSystemRowPreferences(userId, preferences)
+                }
+            } catch (error) {
+                console.error('Failed to load system row preferences:', error)
+            }
+        }
+
+        loadPreferences()
+    }, [userId, sessionType, setSystemRowPreferences])
 
     // Get all collections
     const allDisplayRows = userId ? getAllDisplayRows(userId) : []
