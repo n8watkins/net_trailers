@@ -286,13 +286,17 @@ export default function CollectionEditorModal({
         let newType: 'movie' | 'tv' | 'both'
 
         if (currentType === 'both') {
-            // If both selected, switch to the opposite type
+            // If both selected, clicking one will deselect it (leaving only the other)
             newType = type === 'movie' ? 'tv' : 'movie'
         } else if (currentType === type) {
-            // If clicking the already selected type, do nothing
+            // If clicking the only selected type, show error (can't deselect both)
+            showError(
+                'At least one media type required',
+                'Select at least one media type to display content.'
+            )
             return
         } else {
-            // If different type selected, set to both
+            // If clicking the unselected type, select both
             newType = 'both'
         }
 
@@ -573,8 +577,12 @@ export default function CollectionEditorModal({
 
                                 {/* Media Type Selection */}
                                 <div>
-                                    <p className="text-sm font-medium text-gray-300 mb-3">
+                                    <p className="text-sm font-medium text-gray-300 mb-1">
                                         Media Type
+                                    </p>
+                                    <p className="text-xs text-gray-400 mb-3">
+                                        Select which content types to display (at least one
+                                        required)
                                     </p>
                                     <div className="inline-flex items-center rounded-full bg-gray-800/80 border border-gray-700 p-1 text-sm font-medium gap-1">
                                         <button
