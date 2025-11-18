@@ -117,27 +117,106 @@ export async function GET(request: NextRequest) {
 
 /**
  * Record activity (login or page view)
+ *
+ * NOTE: This endpoint is intentionally public to allow client-side activity tracking.
+ * However, it includes validation and sanitization to prevent abuse.
  */
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json()
         const { type, userId, guestId, userEmail, page, userAgent } = body
 
+        // Validate required fields
         if (!type || (!userId && !guestId)) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+        }
+
+        // Validate activity type (only allow 'login' or 'view')
+        if (type !== 'login' && type !== 'view') {
+            return NextResponse.json({ error: 'Invalid activity type' }, { status: 400 })
+        }
+
+        // Validate and sanitize userId/guestId format (prevent injection)
+        if (userId && typeof userId !== 'string') {
+            return NextResponse.json({ error: 'Invalid userId format' }, { status: 400 })
+        }
+        if (guestId && typeof guestId !== 'string') {
+            return NextResponse.json({ error: 'Invalid guestId format' }, { status: 400 })
+        }
+
+        // Validate email format if provided
+        if (userEmail) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+            if (typeof userEmail !== 'string' || !emailRegex.test(userEmail)) {
+                return NextResponse.json({ error: 'Invalid email format' }, { status: 400 })
+            }
+        }
+
+        // Validate page URL (must start with /)
+        if (page && (typeof page !== 'string' || !page.startsWith('/'))) {
+            return NextResponse.json({ error: 'Invalid page format' }, { status: 400 })
+        }
+
+        // Sanitize and truncate user agent (prevent large payloads)
+        const sanitizedUserAgent = userAgent
+            ? String(userAgent).slice(0, 500) // Limit to 500 chars
+            : null
+
+        // Rate limiting check: prevent spam from same IP
+        const ip =
+            request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+
+        // Simple in-memory rate limiting (per IP)
+        const rateLimitKey = `activity:${ip}`
+        const now = Date.now()
+
+        // Allow max 30 requests per minute per IP
+        if (!global.activityRateLimits) {
+            global.activityRateLimits = new Map()
+        }
+
+        const ipData = global.activityRateLimits.get(rateLimitKey)
+        if (ipData) {
+            const { count, windowStart } = ipData
+            const windowDuration = 60 * 1000 // 1 minute
+
+            if (now - windowStart < windowDuration) {
+                if (count >= 30) {
+                    return NextResponse.json(
+                        { error: 'Rate limit exceeded. Please try again later.' },
+                        { status: 429 }
+                    )
+                }
+                global.activityRateLimits.set(rateLimitKey, { count: count + 1, windowStart })
+            } else {
+                // Reset window
+                global.activityRateLimits.set(rateLimitKey, { count: 1, windowStart: now })
+            }
+        } else {
+            global.activityRateLimits.set(rateLimitKey, { count: 1, windowStart: now })
+        }
+
+        // Cleanup old entries every 100 requests
+        if (global.activityRateLimits.size > 100) {
+            for (const [key, value] of global.activityRateLimits.entries()) {
+                if (now - value.windowStart > 60 * 1000) {
+                    global.activityRateLimits.delete(key)
+                }
+            }
         }
 
         const db = getAdminDb()
         const activityRef = db.collection('activity')
 
+        // Write sanitized data
         await activityRef.add({
             type, // 'login' or 'view'
             userId: userId || null,
             guestId: guestId || null,
             userEmail: userEmail || null,
             page: page || null,
-            userAgent: userAgent || null,
-            timestamp: Date.now(),
+            userAgent: sanitizedUserAgent,
+            timestamp: now,
         })
 
         return NextResponse.json({ success: true })

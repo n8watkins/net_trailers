@@ -20,6 +20,12 @@ declare global {
          */
         syncManager?: FirebaseSyncManager
     }
+
+    /**
+     * Server-side rate limiting for activity tracking
+     * Tracks requests per IP to prevent spam
+     */
+    var activityRateLimits: Map<string, { count: number; windowStart: number }> | undefined
 }
 
 // This export is necessary to make this file a module

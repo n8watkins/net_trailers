@@ -220,7 +220,43 @@ A Netflix-inspired streaming discovery platform built with modern web technologi
     - Watch history tracking
     - Analytics integration (GA4, Vercel Analytics)
 
-### 🛠 Developer Features
+#### 🔐 Admin Portal
+
+- **Admin Dashboard** (`/admin`) - Portfolio management center
+    - Real-time statistics overview (accounts, signups, activity, system health)
+    - Account usage visualization with limit tracking
+    - Demo reset controls for portfolio presentations
+    - Trending notification system controls (production/demo modes)
+    - Active users monitoring (top 10 most active)
+    - System logs viewer
+
+- **Admin Pages**
+    - `/admin/accounts` - User management with filtering, search, and CSV export
+    - `/admin/signups` - Signup timeline with weekly/monthly views
+    - `/admin/activity` - Activity analytics with login and page view tracking
+    - `/admin/trending-stats` - Trending notification statistics
+
+- **Security**
+    - Dual-layer authentication (client routing + server Firebase ID token validation)
+    - Admin UID-based authorization
+    - Rate limiting on public endpoints (30 requests/minute per IP)
+    - Input validation and sanitization
+    - Firebase Admin SDK for secure server operations
+
+- **Analytics Tracking**
+    - Automatic page view tracking (excludes admin routes)
+    - Login activity monitoring
+    - User engagement metrics
+    - Activity filtering by user, type, and timeframe
+    - Timeline visualization grouped by day
+
+- **Account Limits**
+    - Configurable account cap (default: 50 accounts)
+    - Real-time usage tracking via Firestore
+    - Demo reset to 5 accounts for portfolio demos
+    - Signup velocity monitoring (daily/weekly/monthly)
+
+## 🛠 Developer Features
 
 - **Code Quality**
     - TypeScript 5.9 for type safety across the entire codebase
@@ -301,6 +337,18 @@ _Experience all features or continue as guest to explore the platform_
     # Cron Job Security (Required for auto-updating collections)
     CRON_SECRET=your_random_secret_string
 
+    # Admin Portal (Required for admin access)
+    # Get your Firebase UID from: Firebase Console > Authentication > Users > Copy UID
+    NEXT_PUBLIC_ADMIN_UID=your_firebase_uid_here
+
+    # Firebase Admin SDK (Required for admin API endpoints)
+    # Get from: Firebase Console > Project Settings > Service Accounts > Generate new private key
+    FIREBASE_ADMIN_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+    FIREBASE_ADMIN_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
+
+    # Account Limits (Optional - defaults to 50)
+    NEXT_PUBLIC_MAX_TOTAL_ACCOUNTS=50
+
     # App Configuration (Optional)
     NEXT_PUBLIC_APP_NAME=NetTrailer
     NEXT_PUBLIC_APP_URL=http://localhost:3000
@@ -331,9 +379,48 @@ _Experience all features or continue as guest to explore the platform_
     - **Firestore Security Rules**: Deploy the rules from `firestore.rules`
     - **Firestore Indexes**: Create composite indexes as needed (Firebase will prompt)
 
-5. **Vercel Cron Job Setup** (Optional - for auto-updating collections)
+5. **Admin Portal Setup** (Required for admin access)
 
-    In `vercel.json`, configure the cron job:
+    a. **Get your Firebase Admin UID**:
+    - Go to Firebase Console > Authentication > Users
+    - Create your admin account (via Email/Password or Google)
+    - Copy your User UID from the user list
+    - Add to `.env.local` as `NEXT_PUBLIC_ADMIN_UID`
+
+    b. **Generate Firebase Admin SDK credentials**:
+    - Go to Firebase Console > Project Settings > Service Accounts
+    - Click "Generate new private key"
+    - Download the JSON file
+    - Extract the following fields to `.env.local`:
+        - `FIREBASE_ADMIN_PRIVATE_KEY` (include the full key with `\n` characters)
+        - `FIREBASE_ADMIN_CLIENT_EMAIL`
+
+    c. **Initialize account statistics** (first-time setup):
+
+    ```bash
+    # After starting the dev server, call the init endpoint
+    curl -X POST http://localhost:3000/api/admin/init-stats \
+      -H "Authorization: Bearer YOUR_FIREBASE_ID_TOKEN"
+    ```
+
+    Or access `/admin` in your browser after logging in with your admin account - it will auto-initialize.
+
+    d. **Access the admin dashboard**:
+    - Start the dev server: `npm run dev`
+    - Log in with your admin Firebase account
+    - Navigate to `/admin` in your browser
+    - You should see the admin dashboard with statistics
+
+    **Admin Features**:
+    - Account management and limits
+    - User activity tracking
+    - Signup timeline and statistics
+    - Trending notification controls
+    - Demo reset for portfolio presentations
+
+6. **Vercel Cron Job Setup** (Optional - for auto-updating collections and trending notifications)
+
+    The project includes two cron jobs configured in `vercel.json`:
 
     ```json
     {
@@ -341,12 +428,21 @@ _Experience all features or continue as guest to explore the platform_
             {
                 "path": "/api/cron/update-collections",
                 "schedule": "0 2 * * *"
+            },
+            {
+                "path": "/api/cron/update-trending",
+                "schedule": "0 */6 * * *"
             }
         ]
     }
     ```
 
-6. **Run the development server**
+    - **update-collections**: Runs daily at 2 AM UTC to refresh auto-updating collections
+    - **update-trending**: Runs every 6 hours to check for new trending content
+
+    Both cron jobs can also be triggered manually from the admin dashboard.
+
+7. **Run the development server**
 
     ```bash
     npm run dev
@@ -354,7 +450,7 @@ _Experience all features or continue as guest to explore the platform_
 
     The server will start on port 3000 by default
 
-7. **Open your browser**
+8. **Open your browser**
 
     Navigate to [http://localhost:3000](http://localhost:3000)
 
@@ -671,6 +767,25 @@ getReleaseDate(content)
 /sharedCollections/{linkId}
   - Shared collection snapshots
   - Public read access
+
+/activity/{activityId}
+  - User activity tracking (logins, page views)
+  - Used by admin portal analytics
+  - No automatic cleanup (manual management)
+
+/signupLog/{userId}
+  - Account creation audit log
+  - Tracks email and creation timestamp
+
+/system/stats
+  - Account limit tracking
+  - Signup velocity (daily/weekly/monthly)
+  - Last signup timestamp and email
+
+/system/trending
+  - Trending notification system state
+  - TMDB content snapshots
+  - Last run timestamp and statistics
 ```
 
 ### API Architecture
