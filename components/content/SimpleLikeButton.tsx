@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import ToolTipMod from '../common/ToolTipMod'
 import { Content, getTitle } from '../../typings'
 import { HandThumbUpIcon as HandThumbUpIconOutline } from '@heroicons/react/24/outline'
@@ -15,28 +15,54 @@ function SimpleLikeButton() {
     // Use new schema hooks
     const { isLiked: checkIsLiked, addLikedMovie, removeLikedMovie } = useUserData()
     const { showSuccess } = useToast()
-    const [_isAnimating, setIsAnimating] = useState(false)
+
+    // Animation state (matching ContentCard pattern)
+    const [likeAnimationType, setLikeAnimationType] = useState<'like' | 'unlike' | null>(null)
+    const [likeAnimationIteration, setLikeAnimationIteration] = useState(0)
+    const likeAnimationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
     // Get current liked status
     const isLiked = currentMovie ? checkIsLiked(currentMovie.id) : false
+
+    // Cleanup animation timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (likeAnimationTimeoutRef.current) {
+                clearTimeout(likeAnimationTimeoutRef.current)
+            }
+        }
+    }, [])
+
+    // Trigger animation function (matching ContentCard pattern)
+    const triggerLikeAnimation = (type: 'like' | 'unlike') => {
+        if (likeAnimationTimeoutRef.current) {
+            clearTimeout(likeAnimationTimeoutRef.current)
+        }
+
+        // Force state change even if same animation is triggered consecutively
+        setLikeAnimationType(null)
+        requestAnimationFrame(() => {
+            setLikeAnimationType(type)
+            setLikeAnimationIteration((prev) => prev + 1)
+            likeAnimationTimeoutRef.current = setTimeout(() => {
+                setLikeAnimationType(null)
+            }, 450)
+        })
+    }
 
     // Handle like toggle
     const handleLikeToggle = () => {
         if (!currentMovie) return
 
-        // Trigger animation when liking (not when unliking)
-        if (!isLiked) {
-            setIsAnimating(true)
-            setTimeout(() => setIsAnimating(false), 800) // Animation duration
-        }
-
         const contentObj = currentMovie as Content
         if (isLiked) {
             // Remove if already liked
+            triggerLikeAnimation('unlike')
             removeLikedMovie(contentObj.id)
             showSuccess(`Unliked ${getTitle(contentObj)}`, 'Removed from your liked content')
         } else {
             // Add to liked
+            triggerLikeAnimation('like')
             addLikedMovie(contentObj)
             showSuccess(`Liked ${getTitle(contentObj)}`, 'Added to your liked content')
         }
@@ -49,9 +75,29 @@ function SimpleLikeButton() {
                 onClick={handleLikeToggle}
             >
                 {isLiked ? (
-                    <HandThumbUpIconFilled className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
+                    <HandThumbUpIconFilled
+                        key={`liked-${likeAnimationIteration}`}
+                        className="h-4 w-4 sm:h-6 sm:w-6 text-white"
+                        style={
+                            likeAnimationType
+                                ? {
+                                      animation: `scale-pulse-${likeAnimationType} 0.45s ease-in-out`,
+                                  }
+                                : undefined
+                        }
+                    />
                 ) : (
-                    <HandThumbUpIconOutline className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors" />
+                    <HandThumbUpIconOutline
+                        key={`outline-${likeAnimationIteration}`}
+                        className="h-4 w-4 sm:h-6 sm:w-6 text-white/70 group-hover:text-white transition-colors"
+                        style={
+                            likeAnimationType
+                                ? {
+                                      animation: `scale-pulse-${likeAnimationType} 0.45s ease-in-out`,
+                                  }
+                                : undefined
+                        }
+                    />
                 )}
             </button>
         </ToolTipMod>

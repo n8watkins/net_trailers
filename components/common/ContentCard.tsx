@@ -36,7 +36,9 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const [showHoverActions, setShowHoverActions] = useState(false) // Show hover menu above bookmark button
     const [isCardHovered, setIsCardHovered] = useState(false) // Track card hover state
-    const [likeAnimationType, setLikeAnimationType] = useState<'like' | 'unlike' | null>(null) // Track like button animation type
+    const [likeAnimationType, setLikeAnimationType] = useState<'like' | 'unlike' | null>(null)
+    const [likeAnimationIteration, setLikeAnimationIteration] = useState(0)
+    const likeAnimationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
     // Check if content is liked, hidden, or in any lists
     const liked = content ? isLiked(content.id) : false
@@ -74,6 +76,31 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
             hoverTimeoutRef.current = null
         }
     }, [])
+
+    // Cleanup any pending animation timeout
+    React.useEffect(() => {
+        return () => {
+            if (likeAnimationTimeoutRef.current) {
+                clearTimeout(likeAnimationTimeoutRef.current)
+            }
+        }
+    }, [])
+
+    const triggerLikeAnimation = (type: 'like' | 'unlike') => {
+        if (likeAnimationTimeoutRef.current) {
+            clearTimeout(likeAnimationTimeoutRef.current)
+        }
+
+        // Force state change even if same animation is triggered consecutively
+        setLikeAnimationType(null)
+        requestAnimationFrame(() => {
+            setLikeAnimationType(type)
+            setLikeAnimationIteration((prev) => prev + 1)
+            likeAnimationTimeoutRef.current = setTimeout(() => {
+                setLikeAnimationType(null)
+            }, 450)
+        })
+    }
 
     // Size classes for image portion only
     const getImageSizeClasses = () => {
@@ -233,19 +260,18 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                                             if (content) {
                                                 // Trigger animation based on current state
                                                 if (liked) {
-                                                    setLikeAnimationType('unlike')
+                                                    triggerLikeAnimation('unlike')
                                                     removeLikedMovie(content.id)
                                                     showSuccess(
                                                         `Removed ${getTitle(content)} from Liked`
                                                     )
                                                 } else {
-                                                    setLikeAnimationType('like')
+                                                    triggerLikeAnimation('like')
                                                     addLikedMovie(content)
                                                     showSuccess(
                                                         `Added ${getTitle(content)} to Liked`
                                                     )
                                                 }
-                                                setTimeout(() => setLikeAnimationType(null), 450)
                                             }
                                         }}
                                         className={`group/like ${size === 'compact' ? 'p-2' : 'p-3'} rounded-full border-2 transition-all duration-200 hover:scale-105 ${
@@ -256,6 +282,7 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                                     >
                                         {liked ? (
                                             <HandThumbUpIcon
+                                                key={`liked-${likeAnimationIteration}`}
                                                 className={`${size === 'compact' ? 'h-4 w-4' : 'h-5 w-5'} transition-all duration-200 text-white`}
                                                 style={
                                                     likeAnimationType
@@ -267,6 +294,7 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                                             />
                                         ) : (
                                             <HandThumbUpOutlineIcon
+                                                key={`outline-${likeAnimationIteration}`}
                                                 className={`${size === 'compact' ? 'h-4 w-4' : 'h-5 w-5'} transition-all duration-200 text-white`}
                                                 style={
                                                     likeAnimationType

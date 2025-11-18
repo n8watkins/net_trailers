@@ -36,7 +36,15 @@ export async function POST() {
             ]
             const randomQuery = fallbackQueries[Math.floor(Math.random() * fallbackQueries.length)]
             apiLog('[Surprise Query] Returning rate-limit fallback query:', randomQuery)
-            return NextResponse.json({ query: randomQuery, _rateLimited: true })
+            return NextResponse.json({
+                query: randomQuery,
+                _debug: {
+                    rateLimited: true,
+                    timeSinceLastRequest: timeSinceLastRequest,
+                    waitTimeMs: waitTime,
+                    hadError: false,
+                },
+            })
         }
         lastRequestTime = now
         apiLog('[Surprise Query] Rate limit OK - proceeding with Gemini call')
@@ -111,6 +119,12 @@ export async function POST() {
         return NextResponse.json({
             query: generatedQuery,
             _meta: result.metadata, // Include router metadata
+            _debug: {
+                rawExtracted: extractedText,
+                usedFallback: generatedQuery === 'epic adventures',
+                rateLimited: false,
+                hadError: false,
+            },
         })
     } catch (error) {
         apiError('[Surprise Query] ❌ ERROR CAUGHT - Using error fallback:', error)
@@ -131,6 +145,13 @@ export async function POST() {
         ]
         const randomQuery = fallbackQueries[Math.floor(Math.random() * fallbackQueries.length)]
         apiLog('[Surprise Query] Returning error fallback query:', randomQuery)
-        return NextResponse.json({ query: randomQuery, _error: true })
+        return NextResponse.json({
+            query: randomQuery,
+            _debug: {
+                hadError: true,
+                errorMessage: error instanceof Error ? error.message : String(error),
+                rateLimited: false,
+            },
+        })
     }
 }

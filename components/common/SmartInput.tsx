@@ -261,6 +261,18 @@ export function SmartInput({
             }
 
             const data = await response.json()
+
+            // Debug logging for surprise query
+            console.log('[Surprise Query] Response:', data)
+            if (data._debug) {
+                console.log('[Surprise Query] Debug Info:', {
+                    rateLimited: data._debug.rateLimited,
+                    usedFallback: data._debug.usedFallback,
+                    hadError: data._debug.hadError,
+                    rawExtracted: data._debug.rawExtracted,
+                })
+            }
+
             setLocalValue(data.query)
             onChange(data.query)
             inputRef.current?.focus()
