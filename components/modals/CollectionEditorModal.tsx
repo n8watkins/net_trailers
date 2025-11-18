@@ -147,6 +147,13 @@ export default function CollectionEditorModal({
         }
     }, [isMovieEnabled, isTVEnabled])
 
+    // Auto-disable display on page when both media types are disabled
+    useEffect(() => {
+        if (!isMovieEnabled && !isTVEnabled && displayAsRow) {
+            setDisplayAsRow(false)
+        }
+    }, [isMovieEnabled, isTVEnabled, displayAsRow])
+
     if (!isOpen || !collection) return null
 
     // Determine editing capabilities based on collection properties
@@ -359,11 +366,14 @@ export default function CollectionEditorModal({
     }
 
     const handleDisplayOnPageToggle = () => {
-        // Check if trying to enable when no media types are selected
-        if (!displayAsRow && !isMovieEnabled && !isTVEnabled) {
-            showError('Enable a media type to display on page')
-            // Highlight the media type container
+        // Check if no media types are selected
+        if (!isMovieEnabled && !isTVEnabled) {
+            // Highlight the media type container and show toast simultaneously
             setHighlightMediaType(true)
+            showError(
+                'Enable a media type first',
+                'You must select Movies or TV Shows before displaying this collection on the page'
+            )
             // Fade back after 2 seconds
             setTimeout(() => setHighlightMediaType(false), 2000)
             return
@@ -675,12 +685,11 @@ export default function CollectionEditorModal({
                                                     <button
                                                         type="button"
                                                         onClick={handleDisplayOnPageToggle}
-                                                        disabled={!hasMediaTypeEnabled}
                                                         className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
                                                             displayAsRow
                                                                 ? 'bg-green-600'
                                                                 : 'bg-gray-600'
-                                                        } ${!hasMediaTypeEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                        } ${!hasMediaTypeEnabled ? 'opacity-50 cursor-pointer' : ''}`}
                                                     >
                                                         <span
                                                             className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${

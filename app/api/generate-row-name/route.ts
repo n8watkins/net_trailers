@@ -3,7 +3,7 @@ import { withAuth } from '@/lib/auth-middleware'
 import { consumeGeminiRateLimit } from '@/lib/geminiRateLimiter'
 import { sanitizeInput } from '@/utils/inputSanitization'
 import { apiError } from '@/utils/debugLogger'
-import { routeGeminiRequest, extractGeminiText } from '@/lib/geminiRouter'
+import { routeGeminiRequest, extractGeminiText, FLASH_LITE_PRIORITY } from '@/lib/geminiRouter'
 
 /**
  * POST /api/generate-row-name
@@ -153,7 +153,7 @@ For: ${genreNames} - create a name that's SO cool and witty that it surprises an
 
 Response: Just the name, nothing else. Make it LEGENDARY.`
 
-        // Call Gemini API with multi-model router
+        // Call Gemini API with multi-model router (prioritize Flash-Lite for 1,000 RPD quota)
         const result = await routeGeminiRequest(
             {
                 contents: [{ parts: [{ text: prompt }] }],
@@ -162,7 +162,8 @@ Response: Just the name, nothing else. Make it LEGENDARY.`
                     maxOutputTokens: 5000, // Gemini 2.5 thinking mode uses 999+ tokens, need large allocation
                 },
             },
-            apiKey
+            apiKey,
+            FLASH_LITE_PRIORITY // Use Flash-Lite first for high-frequency name generation
         )
 
         if (!result.success) {

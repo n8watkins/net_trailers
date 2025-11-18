@@ -15,7 +15,7 @@
 import { apiLog, apiWarn, apiError } from '@/utils/debugLogger'
 
 // Model priority order (highest → lowest)
-const MODEL_PRIORITY = [
+const DEFAULT_MODEL_PRIORITY = [
     'gemini-2.5-flash',
     'gemini-2.5-flash-lite',
     'gemini-2.0-flash',
@@ -23,7 +23,16 @@ const MODEL_PRIORITY = [
     'gemini-2.5-pro',
 ] as const
 
-type GeminiModel = (typeof MODEL_PRIORITY)[number]
+// Flash-Lite priority order (for high-frequency endpoints like name generation)
+const FLASH_LITE_PRIORITY = [
+    'gemini-2.5-flash-lite', // Start here - 1,000 RPD quota!
+    'gemini-2.5-flash',
+    'gemini-2.0-flash-lite',
+    'gemini-2.0-flash',
+    'gemini-2.5-pro',
+] as const
+
+type GeminiModel = (typeof DEFAULT_MODEL_PRIORITY)[number]
 
 interface ModelAttempt {
     modelName: GeminiModel
@@ -113,7 +122,8 @@ async function callGeminiModel(
 async function tryModels(
     config: GeminiRequestConfig,
     apiKey: string,
-    passNumber: number
+    passNumber: number,
+    modelPriority: readonly GeminiModel[]
 ): Promise<{
     success: boolean
     data?: any
@@ -122,7 +132,7 @@ async function tryModels(
 }> {
     const attempts: ModelAttempt[] = []
 
-    for (const model of MODEL_PRIORITY) {
+    for (const model of modelPriority) {
         const attemptStart = Date.now()
 
         apiLog(`[Gemini Router] Pass ${passNumber}: Trying ${model}...`, config.generationConfig)
@@ -191,17 +201,24 @@ async function tryModels(
 
 /**
  * Main router function - tries models with automatic fallback
+ *
+ * @param config - Gemini API request configuration
+ * @param apiKey - Gemini API key
+ * @param modelPriority - Optional custom model priority order (defaults to DEFAULT_MODEL_PRIORITY)
  */
 export async function routeGeminiRequest<T = any>(
     config: GeminiRequestConfig,
-    apiKey: string
+    apiKey: string,
+    modelPriority: readonly GeminiModel[] = DEFAULT_MODEL_PRIORITY
 ): Promise<GeminiRouterResponse<T>> {
     const globalStart = Date.now()
 
-    apiLog('[Gemini Router] Starting request with fallback chain')
+    apiLog('[Gemini Router] Starting request with fallback chain', {
+        priorityModel: modelPriority[0],
+    })
 
     // First pass
-    const firstPass = await tryModels(config, apiKey, 1)
+    const firstPass = await tryModels(config, apiKey, 1, modelPriority)
 
     if (firstPass.success) {
         const totalDurationMs = Date.now() - globalStart
@@ -241,7 +258,7 @@ export async function routeGeminiRequest<T = any>(
     await new Promise((resolve) => setTimeout(resolve, 7000)) // Wait 7 seconds
 
     // Second pass
-    const secondPass = await tryModels(config, apiKey, 2)
+    const secondPass = await tryModels(config, apiKey, 2, modelPriority)
 
     const totalDurationMs = Date.now() - globalStart
     const allAttempts = [...firstPass.attempts, ...secondPass.attempts]
@@ -295,3 +312,8 @@ export async function routeGeminiRequest<T = any>(
 export function extractGeminiText(data: any): string | null {
     return data?.candidates?.[0]?.content?.parts?.[0]?.text || null
 }
+
+/**
+ * Export model priority configurations for use in specific endpoints
+ */
+export { FLASH_LITE_PRIORITY, DEFAULT_MODEL_PRIORITY }

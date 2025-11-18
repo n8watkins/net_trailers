@@ -103,20 +103,20 @@ export const useToastStore = create<ToastStore>((set, get) => ({
             contentId: options?.contentId,
         }
 
-        // If we're at max capacity, dismiss the oldest toast to make room
+        // If we're at max capacity, dismiss the oldest toast (last in array) to make room
         const currentToasts = get().toasts
         if (currentToasts.length >= MAX_TOASTS && currentToasts.length > 0) {
-            const oldestToast = currentToasts[0]
+            const oldestToast = currentToasts[currentToasts.length - 1]
             // Dismiss the oldest toast - this will trigger its exit animation
             get().dismissToast(oldestToast.id)
         }
 
-        // Add the new toast after a brief delay to allow exit animation
+        // Add the new toast at the beginning (top) after a brief delay to allow exit animation
         setTimeout(() => {
             set((state) => ({
-                toasts: [...state.toasts, toast].slice(-MAX_TOASTS),
+                toasts: [toast, ...state.toasts].slice(0, MAX_TOASTS),
             }))
-        }, 50) // Small delay for smooth transition
+        }, 100) // Small delay for smooth transition
 
         // Note: Auto-dismiss is handled by Toast component for proper cleanup
         if (process.env.NODE_ENV === 'development') {

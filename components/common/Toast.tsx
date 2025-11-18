@@ -98,12 +98,12 @@ const Toast: React.FC<ToastProps> = ({ toast, onClose, duration = TOAST_DURATION
 
     return (
         <div
-            className={`${getToastStyles()} border rounded-lg shadow-xl p-4 sm:p-6 min-w-80 sm:min-w-96 max-w-sm sm:max-w-md lg:max-w-lg w-auto transition-all duration-300 ease-in-out ${
+            className={`${getToastStyles()} border rounded-lg shadow-xl p-4 sm:p-6 w-full transition-all duration-500 ease-out ${
                 !isVisible
-                    ? 'opacity-0 transform -translate-x-full'
+                    ? 'opacity-0 transform -translate-y-4 scale-95'
                     : isExiting
-                      ? 'opacity-0 transform translate-x-full'
-                      : 'opacity-100 transform translate-x-0'
+                      ? 'opacity-0 transform translate-y-4 scale-95'
+                      : 'opacity-100 transform translate-y-0 scale-100'
             }`}
         >
             <div className="flex items-start">

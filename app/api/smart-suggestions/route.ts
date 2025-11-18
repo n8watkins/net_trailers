@@ -5,7 +5,7 @@ import { getRequestIdentity } from '@/lib/requestIdentity'
 import { TMDBApiClient } from '@/utils/tmdbApi'
 import { sanitizeInput } from '@/utils/inputSanitization'
 import { apiError, apiWarn } from '@/utils/debugLogger'
-import { routeGeminiRequest, extractGeminiText } from '@/lib/geminiRouter'
+import { routeGeminiRequest, extractGeminiText, FLASH_LITE_PRIORITY } from '@/lib/geminiRouter'
 
 export async function POST(request: NextRequest) {
     try {
