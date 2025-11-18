@@ -160,7 +160,7 @@ export default function NotificationsPageClient() {
             iconColor="text-red-400"
             description="Stay updated with your personalized notifications"
             headerActions={headerActions}
-            contentClassName="max-w-6xl mx-auto"
+            contentClassName="max-w-full mx-auto px-8"
         >
             {/* Content */}
             {isLoading ? (
