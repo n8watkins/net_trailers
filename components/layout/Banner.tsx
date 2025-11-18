@@ -5,10 +5,12 @@ import { BASE_URL } from '../../constants/movie'
 import { PlayIcon } from '@heroicons/react/24/solid'
 import { InformationCircleIcon } from '@heroicons/react/24/outline'
 import { useModalStore } from '../../stores/modalStore'
-import useUserData from '../../hooks/useUserData'
 import { filterDislikedContent } from '../../utils/contentFilter'
 import SmartSearchInput from '../smartSearch/SmartSearchInput'
 import { bannerLog } from '../../utils/debugLogger'
+import { useSessionStore } from '@/stores/sessionStore'
+import { useAuthStore } from '@/stores/authStore'
+import { useGuestStore } from '@/stores/guestStore'
 
 interface Props {
     trending: Content[]
@@ -19,7 +21,10 @@ interface Props {
 //pass props to Banner component
 function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
     const { openModal } = useModalStore()
-    const { hiddenMovies } = useUserData()
+    const sessionType = useSessionStore((state) => state.sessionType)
+    const authHiddenMovies = useAuthStore((state) => state.hiddenMovies)
+    const guestHiddenMovies = useGuestStore((state) => state.hiddenMovies)
+    const hiddenMovies = sessionType === 'authenticated' ? authHiddenMovies : guestHiddenMovies
 
     const [currentIndex, setCurrentIndex] = useState(0)
     const [carouselContent, setCarouselContent] = useState<Content[]>([])

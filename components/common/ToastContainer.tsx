@@ -23,31 +23,32 @@ const ToastContainer: React.FC<ToastContainerProps> = memo(
 
         return (
             <div
-                className="fixed top-4 right-4 sm:right-6 md:right-8 lg:right-12 z-[100001] flex flex-col pointer-events-none w-full max-w-sm sm:max-w-md"
+                className="fixed top-4 right-4 sm:right-6 md:right-8 lg:right-12 z-[100001] pointer-events-none w-full max-w-sm sm:max-w-md"
                 aria-live="polite"
                 aria-atomic="true"
                 role="status"
+                style={{ minHeight: '200px' }}
             >
                 {toasts.map((toast, index) => {
-                    // Calculate position: 0 = top, 1 = middle (pushed down), 2+ = fading out
+                    // Calculate position: 0 = top, 1 = second (pushed down), 2+ = fading out
                     const isFirst = index === 0
                     const isSecond = index === 1
                     const isThirdOrMore = index >= 2
 
+                    // Calculate vertical offset for stacking
+                    // Each toast is ~100px tall with padding/margin, so offset by 110px
+                    const verticalOffset = index * 110
+
                     return (
                         <div
                             key={toast.id}
-                            className="pointer-events-auto transition-all duration-500 ease-out"
+                            className="pointer-events-auto transition-all duration-500 ease-out absolute top-0 right-0 w-full"
                             style={{
                                 opacity: isThirdOrMore ? 0 : 1,
                                 transform: isThirdOrMore
-                                    ? 'translateY(20px) scale(0.9)'
-                                    : isSecond
-                                      ? 'translateY(0) scale(0.98)'
-                                      : 'translateY(0) scale(1)',
-                                marginBottom: isThirdOrMore ? '0px' : '12px',
-                                height: isThirdOrMore ? '0px' : 'auto',
-                                overflow: isThirdOrMore ? 'hidden' : 'visible',
+                                    ? `translateY(${verticalOffset + 40}px) scale(0.95)`
+                                    : `translateY(${verticalOffset}px) scale(${isSecond ? 0.98 : 1})`,
+                                zIndex: 100 - index, // Stack toasts with newest on top
                             }}
                         >
                             <Toast toast={toast} onClose={onRemoveToast} />

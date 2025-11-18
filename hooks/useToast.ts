@@ -1,5 +1,5 @@
+import { useCallback } from 'react'
 import { useToastStore } from '../stores/toastStore'
-import { ToastMessage } from '../components/common/Toast'
 
 /**
  * Unified toast notification hook
@@ -33,40 +33,59 @@ import { ToastMessage } from '../components/common/Toast'
  * ```
  */
 export const useToast = () => {
-    const toasts = useToastStore((state) => state.toasts)
     const showToast = useToastStore((state) => state.showToast)
     const dismissToast = useToastStore((state) => state.dismissToast)
 
-    const removeToast = (id: string) => {
-        dismissToast(id)
-    }
+    const removeToast = useCallback(
+        (id: string) => {
+            dismissToast(id)
+        },
+        [dismissToast]
+    )
 
-    const showSuccess = (title: string, message?: string) => {
-        showToast('success', title, message)
-    }
+    const showSuccess = useCallback(
+        (title: string, message?: string) => {
+            showToast('success', title, message)
+        },
+        [showToast]
+    )
 
-    const showError = (title: string, message?: string) => {
-        showToast('error', title, message)
-    }
+    const showError = useCallback(
+        (title: string, message?: string) => {
+            showToast('error', title, message)
+        },
+        [showToast]
+    )
 
-    const showWatchlistAdd = (title: string, message?: string) => {
-        showToast('watchlist-add', title, message)
-    }
+    const showWatchlistAdd = useCallback(
+        (title: string, message?: string) => {
+            showToast('watchlist-add', title, message)
+        },
+        [showToast]
+    )
 
-    const showWatchlistRemove = (title: string, message?: string) => {
-        showToast('watchlist-remove', title, message)
-    }
+    const showWatchlistRemove = useCallback(
+        (title: string, message?: string) => {
+            showToast('watchlist-remove', title, message)
+        },
+        [showToast]
+    )
 
-    const showContentHidden = (title: string, message?: string, onUndo?: () => void) => {
-        showToast('content-hidden', title, message, { onUndo })
-    }
+    const showContentHidden = useCallback(
+        (title: string, message?: string, onUndo?: () => void) => {
+            showToast('content-hidden', title, message, { onUndo })
+        },
+        [showToast]
+    )
 
-    const showContentShown = (title: string, message?: string) => {
-        showToast('content-shown', title, message)
-    }
+    const showContentShown = useCallback(
+        (title: string, message?: string) => {
+            showToast('content-shown', title, message)
+        },
+        [showToast]
+    )
 
     return {
-        toasts,
         removeToast,
         showSuccess,
         showError,

@@ -207,15 +207,21 @@ export function createUserStore(options: CreateUserStoreOptions) {
             if (adapter.isAsync) set({ syncStatus: 'syncing' })
 
             // Mutual exclusion: Remove from hidden if exists
-            const newHiddenMovies = state.hiddenMovies.filter((m) => m.id !== content.id)
+            const wasHidden = state.hiddenMovies.some((m) => m.id === content.id)
+            const newHiddenMovies = wasHidden
+                ? state.hiddenMovies.filter((m) => m.id !== content.id)
+                : state.hiddenMovies
             const newLikedMovies = [...state.likedMovies, content]
 
             const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
-            set({
+            const stateUpdates: Partial<UserStore> = {
                 likedMovies: newLikedMovies,
-                hiddenMovies: newHiddenMovies,
                 lastActive: newLastActive,
-            })
+            }
+            if (wasHidden) {
+                stateUpdates.hiddenMovies = newHiddenMovies
+            }
+            set(stateUpdates)
 
             try {
                 await saveToStorage(get(), 'addLiked')
@@ -259,15 +265,21 @@ export function createUserStore(options: CreateUserStoreOptions) {
             if (adapter.isAsync) set({ syncStatus: 'syncing' })
 
             // Mutual exclusion: Remove from liked if exists
-            const newLikedMovies = state.likedMovies.filter((m) => m.id !== content.id)
+            const wasLiked = state.likedMovies.some((m) => m.id === content.id)
+            const newLikedMovies = wasLiked
+                ? state.likedMovies.filter((m) => m.id !== content.id)
+                : state.likedMovies
             const newHiddenMovies = [...state.hiddenMovies, content]
 
             const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
-            set({
+            const stateUpdates: Partial<UserStore> = {
                 hiddenMovies: newHiddenMovies,
-                likedMovies: newLikedMovies,
                 lastActive: newLastActive,
-            })
+            }
+            if (wasLiked) {
+                stateUpdates.likedMovies = newLikedMovies
+            }
+            set(stateUpdates)
 
             try {
                 await saveToStorage(get(), 'addHidden')

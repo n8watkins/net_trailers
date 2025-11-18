@@ -2,12 +2,14 @@ import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import { Content, getTitle } from '../../typings'
 import { ChevronLeftIcon, ChevronRightIcon, PencilIcon } from '@heroicons/react/24/solid'
 import ContentCard from '../common/ContentCard'
-import { useSessionData } from '../../hooks/useSessionData'
 import { filterDislikedContent } from '../../utils/contentFilter'
 import { useModalStore } from '../../stores/modalStore'
 import { uiLog, uiWarn } from '../../utils/debugLogger'
 import { Collection } from '../../types/userLists'
 import CollectionEditorModal from '../modals/CollectionEditorModal'
+import { useSessionStore } from '../../stores/sessionStore'
+import { useAuthStore } from '../../stores/authStore'
+import { useGuestStore } from '../../stores/guestStore'
 
 // Helper for infinite scroll logging with emoji prefix
 const debugLog = (emoji: string, message: string, data?: any): void => {
@@ -34,7 +36,10 @@ function Row({ title, content, apiEndpoint, pageType, collection }: Props) {
     const [currentPage, setCurrentPage] = useState(1)
     const [isLoading, setIsLoading] = useState(false)
     const [hasMore, setHasMore] = useState(true)
-    const sessionData = useSessionData()
+    const sessionType = useSessionStore((state) => state.sessionType)
+    const authHiddenMovies = useAuthStore((state) => state.hiddenMovies)
+    const guestHiddenMovies = useGuestStore((state) => state.hiddenMovies)
+    const hiddenMovies = sessionType === 'authenticated' ? authHiddenMovies : guestHiddenMovies
 
     // Collection editor state
     const [showCollectionEditor, setShowCollectionEditor] = useState(false)
@@ -74,8 +79,8 @@ function Row({ title, content, apiEndpoint, pageType, collection }: Props) {
 
     // Filter out disliked content (memoized for performance)
     const filteredContent = useMemo(
-        () => filterDislikedContent(allContent, sessionData.hiddenMovies),
-        [allContent, sessionData.hiddenMovies]
+        () => filterDislikedContent(allContent, hiddenMovies),
+        [allContent, hiddenMovies]
     )
 
     // Load next page of content

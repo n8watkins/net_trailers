@@ -116,10 +116,10 @@ const Toast: React.FC<ToastProps> = React.memo(
             <div
                 className={`${getToastStyles()} border rounded-lg shadow-xl p-4 sm:p-6 w-full transition-all duration-500 ease-out ${
                     !isVisible
-                        ? 'opacity-0 transform -translate-y-4 scale-95'
+                        ? 'opacity-0 transform -translate-x-full scale-95'
                         : isExiting
-                          ? 'opacity-0 transform translate-y-4 scale-95'
-                          : 'opacity-100 transform translate-y-0 scale-100'
+                          ? 'opacity-0 transform translate-x-full scale-95'
+                          : 'opacity-100 transform translate-x-0 scale-100'
                 }`}
             >
                 <div className="flex items-start">
