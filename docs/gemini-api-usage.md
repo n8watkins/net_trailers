@@ -287,57 +287,130 @@ Genres: [Sci-Fi]
 
 ---
 
-## 4. Smart Collection Suggestions (Live Preview)
+## 4. Smart Suggestions (Collection Builder Wizard)
 
 ### **Endpoint**: `/api/smart-suggestions`
 
-**Location**: Smart collection builder wizard
+**Location**: Smart Collection Builder Wizard (3-step flow)
+**Entry Point**: Settings → Collections → "+" button → Select "Smart" mode
 **Components**:
 
-- `components/customRows/smart/SmartStep2Suggestions.tsx`
-- `components/customRows/smart/SmartStep3Preview.tsx`
+- `components/customRows/smart/SmartRowBuilder.tsx` (main wizard orchestrator)
+- `components/customRows/smart/SmartStep1Input.tsx` (input step)
+- `components/customRows/smart/SmartStep2Suggestions.tsx` (uses this API)
+- `components/customRows/smart/SmartStep3Preview.tsx` (preview step)
 
 ### Purpose
 
-Provides **live preview** of collection size and suggestions as user types. Combines:
+Powers **Step 2** of the Smart Collection Builder - analyzes user input and provides intelligent suggestions for collection filters. This is the "brain" of the smart wizard that converts natural language + tagged entities into TMDB-compatible collection configuration.
 
-- TMDB-based suggestions (cast, directors, genres)
-- Gemini AI insights (vibes, concepts)
-- Creative row naming
+**What it does:**
+
+1. Analyzes user's typed text + tagged entities (actors, directors)
+2. Calls `/api/genre-mapping` internally for semantic understanding
+3. Generates creative collection names using Gemini
+4. Returns configurable suggestions (genres, cast, directors)
+5. User can toggle/modify these suggestions before creating collection
+
+**Key Features:**
+
+- **Entity extraction**: Tagged people from autocomplete become cast/director filters
+- **Genre inference**: "90s action vibes" → Genre: Action + Year: 1990-1999
+- **Creative naming**: Multiple name suggestions with refresh button
+- **TMDB + Gemini hybrid**: Combines TMDB data with AI insights
+
+### User Flow (3-Step Wizard)
+
+```
+Step 1: Smart Input
+├─ User types: "Christopher Nolan dark themes"
+├─ Autocomplete suggests: @Christopher Nolan (director)
+├─ User tags entity or continues typing
+└─ Click "Continue"
+
+Step 2: Smart Suggestions (THIS API)
+├─ API analyzes input → returns suggestions
+├─ Shows: Genre: Thriller, Drama
+├─ Shows: Director: Christopher Nolan
+├─ Shows: Row name: "Nolan's Dark Mysteries"
+├─ User can:
+│   ├─ Toggle genre chips
+│   ├─ Remove/add people
+│   ├─ Refresh name (calls API again with seed++)
+│   └─ Adjust media type
+└─ Click "Continue to Preview"
+
+Step 3: Preview
+├─ Shows actual content (12 items)
+├─ Shows total results count (~47 results)
+└─ Click "Create Collection"
+```
 
 ### Example Use Cases
 
 ```
-User types: "wes anderson"
-→ Shows: 15 results, suggests row name "Peak Wes", genres [35, 18]
+Input: User types "wes anderson" + tags @Wes Anderson
+→ API analyzes:
+  - Entities: [{type: 'person', name: 'Wes Anderson', id: 5281}]
+  - Raw text: "wes anderson"
+→ Returns:
+  - Genres: [35, 18] (Comedy, Drama)
+  - Director filter: Wes Anderson (ID: 5281)
+  - Row names: ["Peak Wes", "Wes Anderson Collection", "Anderson Essentials"]
+  - Media type: movie
 
-User types: "90s action vibes"
-→ Shows: 200+ results, suggests "90s Bangers", genres [28], year range [1990-1999]
+Input: User types "90s action vibes" (no entities)
+→ API analyzes:
+  - Entities: []
+  - Raw text: "90s action vibes"
+→ Returns:
+  - Genres: [28] (Action)
+  - Year range: 1990-1999 (inferred from "90s")
+  - Row names: ["90s Bangers", "Action Classics", "Retro Action"]
+  - Media type: both
+
+Input: User tags @Tom Hanks + types "dramatic roles"
+→ Returns:
+  - Genres: [18] (Drama)
+  - Cast: Tom Hanks (required: false = OR logic)
+  - Row names: ["Hanks Masterclass", "THE GOAT", "Peak Tom"]
+  - Media type: movie
 ```
 
 ### Prompt Strategy
 
-This endpoint **orchestrates** two Gemini calls:
+This endpoint **orchestrates multiple AI operations**:
 
-1. `/api/gemini/analyze` for semantic understanding
-2. Internal creative naming (similar to `/api/generate-row-name`)
+1. **Semantic Analysis** (via `/api/genre-mapping`):
+    - Temperature: 0.3 (precise)
+    - Purpose: Map text to TMDB genre IDs
+    - Example: "dark vibes" → [53, 27] (Thriller, Horror)
 
-- **Analyze temperature**: 0.3
-- **Naming temperature**: 0.95
-- **Integration**: Merges TMDB + Gemini insights
+2. **Creative Naming** (internal Gemini call):
+    - Temperature: 0.95 (very creative)
+    - Max tokens: 50
+    - Purpose: Generate surprising, witty collection names
+    - Style: Internet slang, memes, pop culture
+
+3. **TMDB Entity Resolution**:
+    - Tagged entities verified against TMDB
+    - Profile images fetched for people
+    - Determines if person is actor or director
 
 ### Input
 
 ```typescript
 {
-  entities: Array<{       // Tagged actors, directors, titles
-    type: 'person' | 'movie' | 'tv',
-    name: string,
-    id: number
+  entities: Array<{
+    type: 'person' | 'movie' | 'tv',  // From autocomplete tagging
+    name: string,                      // e.g., "Christopher Nolan"
+    id: number,                        // TMDB ID
+    subtitle?: string,                 // e.g., "Director"
+    image?: string                     // TMDB profile image path
   }>,
-  rawText: string,        // User's typed query (5-500 chars)
-  mediaType: 'movie' | 'tv' | 'both',
-  seed?: number           // For randomization
+  rawText: string,                     // User's typed text (5-500 chars)
+  mediaType: 'movie' | 'tv' | 'both',  // Selected media type
+  seed?: number                        // For name variation (increments on refresh)
 }
 ```
 
@@ -346,26 +419,125 @@ This endpoint **orchestrates** two Gemini calls:
 ```typescript
 {
   suggestions: Array<{
-    type: 'genre' | 'cast' | 'director' | 'content_list',
-    value: any,
-    confidence: number,   // 0-100
-    reason: string,
-    source: 'tmdb' | 'gemini'
+    type: 'genre' | 'cast' | 'director' | 'content_list' | 'year_range',
+    value: any,              // Genre IDs array, person ID, or content IDs
+    confidence: number,      // 0-100 (how confident AI is)
+    reason: string,          // Human-readable explanation
+    source: 'tmdb' | 'gemini' // Where suggestion came from
   }>,
-  rowNames: string[],     // 3 creative name suggestions
-  mediaType: 'movie' | 'tv' | 'both',
-  estimatedCount?: number // Preview of results
+  rowNames: string[],        // 3 creative name suggestions
+  mediaType: 'movie' | 'tv' | 'both',  // May be inferred by AI
+  estimatedCount?: number    // Preview of how many results
 }
 ```
 
+### Suggestion Types Returned
+
+1. **Genre Suggestions** (type: 'genre'):
+
+    ```typescript
+    {
+      type: 'genre',
+      value: [28, 35],  // TMDB genre IDs (Action, Comedy)
+      confidence: 95,
+      reason: 'AI detected action comedy from your description',
+      source: 'gemini'
+    }
+    ```
+
+2. **Cast Suggestions** (type: 'cast'):
+
+    ```typescript
+    {
+      type: 'cast',
+      value: 2963,  // TMDB person ID (Nicolas Cage)
+      confidence: 100,
+      reason: 'You tagged Nicolas Cage',
+      source: 'tmdb'
+    }
+    ```
+
+3. **Director Suggestions** (type: 'director'):
+    ```typescript
+    {
+      type: 'director',
+      value: 525,  // Christopher Nolan
+      confidence: 100,
+      reason: 'You tagged Christopher Nolan (Director)',
+      source: 'tmdb'
+    }
+    ```
+
 ### Integration Flow
 
-1. User types in smart input (e.g., "christopher nolan")
-2. Autocomplete suggests entities
-3. User selects or continues typing
-4. Live API call to `/api/smart-suggestions`
-5. Shows "~15 results" count + name suggestions
-6. User refines or creates collection
+```
+┌─────────────────────────────────────────────────┐
+│ 1. User in Step 1: Types + Tags Entities       │
+│    Input: "@Tom Hanks dramatic performances"   │
+└────────────┬────────────────────────────────────┘
+             │
+             ▼
+┌─────────────────────────────────────────────────┐
+│ 2. Click Continue → Step 2 loads               │
+│    API: POST /api/smart-suggestions             │
+│    Body: {entities, rawText, mediaType, seed:0} │
+└────────────┬────────────────────────────────────┘
+             │
+             ▼
+┌─────────────────────────────────────────────────┐
+│ 3. API Processing:                              │
+│    a) Extract TMDB data for @Tom Hanks         │
+│    b) Call /api/genre-mapping for "dramatic"   │
+│    c) Generate creative names via Gemini       │
+│    d) Merge suggestions from TMDB + AI         │
+└────────────┬────────────────────────────────────┘
+             │
+             ▼
+┌─────────────────────────────────────────────────┐
+│ 4. Step 2 UI displays:                          │
+│    ✓ Genre chips: [Drama] (toggleable)         │
+│    ✓ Cast: Tom Hanks (removable)               │
+│    ✓ Row name: "Hanks Masterclass" (refresh ↻) │
+│    ✓ Media type: movie (changeable)            │
+└────────────┬────────────────────────────────────┘
+             │
+             ▼
+┌─────────────────────────────────────────────────┐
+│ 5. User clicks refresh name button:            │
+│    → Calls API again with seed: 1              │
+│    → Returns new names from same context       │
+│    → UI updates name options                   │
+└────────────┬────────────────────────────────────┘
+             │
+             ▼
+┌─────────────────────────────────────────────────┐
+│ 6. User continues to Step 3:                    │
+│    → Converts suggestions to TMDB filters      │
+│    → Shows actual content preview              │
+│    → User creates collection                   │
+└─────────────────────────────────────────────────┘
+```
+
+### Special Behaviors
+
+**Name Refresh with Seed:**
+
+- Initial call: `seed: 0` → "Peak Tom"
+- User clicks refresh: `seed: 1` → "Hanks Masterclass"
+- Clicks again: `seed: 2` → "THE GOAT"
+- Seed ensures variety without changing core analysis
+
+**Media Type Inference:**
+
+- User selects "movie" in Step 1
+- API may override to "tv" if input strongly suggests TV
+- Example: "best sitcoms" → API returns mediaType: "tv"
+
+**Entity Role Detection:**
+
+- TMDB subtitle contains "Direct" → Role: director
+- Otherwise → Role: actor
+- Affects how filters are built in Step 3
 
 ---
 
