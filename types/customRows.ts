@@ -122,7 +122,6 @@ export interface CustomRowFormData {
     autoUpdateEnabled?: boolean
     updateFrequency?: 'daily' | 'weekly' | 'never'
     previewContent?: any[] // Preview content from TMDB (for collections)
-    isPublic?: boolean // Whether the collection is public
     displayAsRow?: boolean // Whether to display the collection as a row on home
     enableInfiniteContent?: boolean // Whether to allow infinite TMDB content
 }

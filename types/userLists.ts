@@ -50,7 +50,6 @@ export interface UserList {
     id: string
     name: string
     description?: string
-    isPublic: boolean
     createdAt: number
     updatedAt: number
 
@@ -118,7 +117,6 @@ export interface UserListItem {
  */
 export interface CreateListRequest {
     name: string
-    isPublic?: boolean
     color?: string
     emoji?: string
     description?: string
@@ -148,7 +146,6 @@ export interface CreateListRequest {
 export interface UpdateListRequest {
     id: string
     name?: string
-    isPublic?: boolean
     color?: string
     emoji?: string
     description?: string

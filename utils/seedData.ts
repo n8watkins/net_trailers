@@ -1341,18 +1341,21 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                 name: 'Epic Sci-Fi Adventures',
                 emoji: '🚀',
                 color: '#3B82F6',
+                genres: ['scifi', 'adventure'],
                 items: [sampleMovies[8], sampleMovies[16], sampleMovies[18], sampleTVShows[3]], // Inception, Matrix, Interstellar, Rick & Morty
             },
             {
                 name: 'Mind-Bending Thrillers',
                 emoji: '🧠',
                 color: '#8B5CF6',
+                genres: ['thriller', 'drama'],
                 items: [sampleMovies[0], sampleMovies[1], sampleMovies[20], sampleMovies[19]], // Fight Club, Pulp Fiction, Psycho, 12 Angry Men
             },
             {
                 name: 'Animated Masterpieces',
                 emoji: '🎨',
                 color: '#EC4899',
+                genres: ['animation', 'fantasy'],
                 items: [
                     sampleMovies[7],
                     sampleMovies[9],
@@ -1365,30 +1368,35 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                 name: 'Crime & Drama Classics',
                 emoji: '🎭',
                 color: '#EF4444',
+                genres: ['crime', 'drama'],
                 items: [sampleMovies[5], sampleMovies[4], sampleMovies[13], sampleTVShows[0]], // Godfather, Shawshank, GoodFellas, Breaking Bad
             },
             {
                 name: 'Epic Fantasy Sagas',
                 emoji: '⚔️',
                 color: '#10B981',
+                genres: ['fantasy', 'adventure'],
                 items: [sampleMovies[10], sampleMovies[17], sampleTVShows[1], sampleTVShows[17]], // LOTR Return, LOTR Fellowship, GoT, Rings of Power
             },
             {
                 name: 'Marvel Universe',
                 emoji: '🦸',
                 color: '#F59E0B',
+                genres: ['action', 'scifi'],
                 items: [sampleMovies[14], sampleMovies[15], sampleTVShows[5], sampleTVShows[4]], // Avengers, Infinity War, WandaVision, Mandalorian
             },
             {
                 name: 'Comfort Classics',
                 emoji: '☕',
                 color: '#06B6D4',
+                genres: ['drama', 'comedy'],
                 items: [sampleMovies[2], sampleMovies[12], sampleTVShows[9], sampleTVShows[14]], // Forrest Gump, Cinema Paradiso, Friends, Stranger Things
             },
             {
                 name: 'Dark & Mysterious',
                 emoji: '🌙',
                 color: '#6366F1',
+                genres: ['mystery', 'horror'],
                 items: [sampleTVShows[8], sampleTVShows[11], sampleTVShows[16], sampleTVShows[14]], // Walking Dead, Supernatural, Severance, Stranger Things
             },
         ]
@@ -1401,11 +1409,6 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                 if (existing) {
                     // Update existing collection to ensure it has proper display settings
                     const updates: Partial<typeof existing> = {}
-
-                    if (!existing.isPublic) {
-                        console.log(`    🔓 Making existing collection public: ${collection.name}`)
-                        updates.isPublic = true
-                    }
 
                     if (existing.mediaType !== 'both') {
                         console.log(`    📺 Setting mediaType to 'both' for: ${collection.name}`)
@@ -1442,7 +1445,7 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                     emoji: collection.emoji,
                     color: collection.color,
                     collectionType: 'manual',
-                    isPublic: true,
+                    genres: collection.genres,
                     mediaType: 'both', // Display on home page
                     displayAsRow: true, // Enable display as row
                 })
@@ -1452,7 +1455,7 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                     emoji: collection.emoji,
                     color: collection.color,
                     collectionType: 'manual',
-                    isPublic: true,
+                    genres: collection.genres,
                     mediaType: 'both', // Display on home page
                     displayAsRow: true, // Enable display as row
                 })
@@ -1672,16 +1675,7 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
 
                 // Skip if ranking already exists
                 if (existingTitles.has(rankingData.title)) {
-                    const existing = rankingByTitle.get(rankingData.title)
-                    if (existing && !existing.isPublic) {
-                        console.log(`    🔓 Making existing ranking public: ${rankingData.title}`)
-                        await useRankingStore.getState().updateRanking(userProfile.id, {
-                            id: existing.id,
-                            isPublic: true,
-                        })
-                    } else {
-                        console.log(`    ⏭️  Skipping duplicate ranking: ${rankingData.title}`)
-                    }
+                    console.log(`    ⏭️  Skipping duplicate ranking: ${rankingData.title}`)
                     continue
                 }
 
@@ -1699,7 +1693,6 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                         {
                             title: rankingData.title,
                             description: rankingData.description,
-                            isPublic: true,
                             itemCount: rankingData.items.length,
                             tags: rankingData.tags,
                         }

@@ -138,7 +138,6 @@ export default function CollectionCreatorModal() {
     const [currentPage, setCurrentPage] = useState(0)
     const [searchFilter, setSearchFilter] = useState('')
     const [displayAsRow, setDisplayAsRow] = useState(false)
-    const [isPublic, setIsPublic] = useState(false)
 
     // Filter content based on search
     const filteredContent = useMemo(() => {
@@ -169,7 +168,6 @@ export default function CollectionCreatorModal() {
         setCurrentPage(0)
         setSearchFilter('')
         setDisplayAsRow(false)
-        setIsPublic(false)
     }
 
     const handleCreate = async () => {
@@ -198,7 +196,6 @@ export default function CollectionCreatorModal() {
             // Create the list using useUserData hook
             const newListResult = createList({
                 name: collectionCreatorModal.name.trim(),
-                isPublic,
                 emoji: selectedEmoji,
                 color: selectedColor,
                 displayAsRow,
@@ -452,33 +449,18 @@ export default function CollectionCreatorModal() {
 
                         {/* Collection Options - Centered */}
                         <div className="flex justify-center">
-                            <div className="flex gap-6">
-                                {/* Display as Row Checkbox */}
-                                <label className="flex items-center gap-2 cursor-pointer group">
-                                    <input
-                                        type="checkbox"
-                                        checked={displayAsRow}
-                                        onChange={(e) => setDisplayAsRow(e.target.checked)}
-                                        className="w-5 h-5 rounded border-gray-600 bg-gray-800 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
-                                    />
-                                    <span className="text-sm text-gray-300 group-hover:text-white transition-colors">
-                                        Display as row on home
-                                    </span>
-                                </label>
-
-                                {/* Public Collection Checkbox */}
-                                <label className="flex items-center gap-2 cursor-pointer group">
-                                    <input
-                                        type="checkbox"
-                                        checked={isPublic}
-                                        onChange={(e) => setIsPublic(e.target.checked)}
-                                        className="w-5 h-5 rounded border-gray-600 bg-gray-800 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
-                                    />
-                                    <span className="text-sm text-gray-300 group-hover:text-white transition-colors">
-                                        Public collection
-                                    </span>
-                                </label>
-                            </div>
+                            {/* Display as Row Checkbox */}
+                            <label className="flex items-center gap-2 cursor-pointer group">
+                                <input
+                                    type="checkbox"
+                                    checked={displayAsRow}
+                                    onChange={(e) => setDisplayAsRow(e.target.checked)}
+                                    className="w-5 h-5 rounded border-gray-600 bg-gray-800 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
+                                />
+                                <span className="text-sm text-gray-300 group-hover:text-white transition-colors">
+                                    Display as row on home
+                                </span>
+                            </label>
                         </div>
 
                         {/* Inline Search Bar - Add Individual Content */}

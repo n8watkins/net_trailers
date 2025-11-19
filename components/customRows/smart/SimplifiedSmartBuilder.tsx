@@ -62,7 +62,6 @@ export function SimplifiedSmartBuilder({
     const { showError } = useToast()
 
     // Collection settings
-    const [isPublic, setIsPublic] = useState(false)
     const [displayAsRow, setDisplayAsRow] = useState(true)
 
     // Track all content IDs seen in this session (both removed and kept)
@@ -228,7 +227,6 @@ export function SimplifiedSmartBuilder({
                 // Include preview content for collection creation
                 previewContent,
                 // Collection visibility and display settings
-                isPublic,
                 displayAsRow,
                 enableInfiniteContent: infiniteEnabled,
             }
@@ -250,7 +248,6 @@ export function SimplifiedSmartBuilder({
         setError(null)
         setCurrentStep(1)
         setEnableInfiniteContent(false)
-        setIsPublic(false)
         setDisplayAsRow(true)
         setAllSeenIds(new Set())
         setRemovedIds(new Set())
@@ -465,27 +462,6 @@ export function SimplifiedSmartBuilder({
                                     <span
                                         className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
                                             displayAsRow ? 'translate-x-5' : 'translate-x-0.5'
-                                        }`}
-                                    />
-                                </button>
-                            </div>
-
-                            {/* Public Collection Toggle */}
-                            <div className="flex items-center justify-between">
-                                <label className="text-sm font-medium text-white flex items-center gap-1.5">
-                                    <span>🌐</span>
-                                    Public Collection
-                                </label>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsPublic(!isPublic)}
-                                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                        isPublic ? 'bg-green-600' : 'bg-gray-600'
-                                    }`}
-                                >
-                                    <span
-                                        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                                            isPublic ? 'translate-x-5' : 'translate-x-0.5'
                                         }`}
                                     />
                                 </button>

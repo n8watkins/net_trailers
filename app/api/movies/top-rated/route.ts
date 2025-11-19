@@ -17,10 +17,24 @@ export async function GET(request: NextRequest) {
         const page = searchParams.get('page') || '1'
         const childSafetyMode = searchParams.get('childSafetyMode')
         const childSafeMode = childSafetyMode === 'true'
+        const genresParam = searchParams.get('genres') // Unified genre IDs (e.g., "action,comedy")
 
         let url: string
 
-        if (childSafeMode) {
+        // If genres are specified, use discover endpoint with genre filtering
+        if (genresParam && genresParam.trim().length > 0) {
+            // Import genre mapping utility
+            const { translateToTMDBGenres } = await import('../../../../utils/genreMapping')
+            const unifiedGenreIds = genresParam.split(',').map((g) => g.trim())
+            const tmdbGenreIds = translateToTMDBGenres(unifiedGenreIds, 'movie')
+            const genreFilter = tmdbGenreIds.join('|') // OR logic (pipe-separated)
+
+            url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&page=${page}&sort_by=vote_average.desc&vote_count.gte=300&with_genres=${genreFilter}&include_adult=false`
+
+            if (childSafeMode) {
+                url += '&certification_country=US&certification.lte=PG-13'
+            }
+        } else if (childSafeMode) {
             // ✅ RATING-BASED FILTERING STRATEGY
             // Use discover endpoint with certification filter for all movies
             // certification.lte=PG-13 ensures only G, PG, and PG-13 rated movies

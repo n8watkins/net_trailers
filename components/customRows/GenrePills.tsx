@@ -31,6 +31,14 @@ export function GenrePills({
     const availableGenres = getUnifiedGenresByMediaType(mediaType, childSafeMode)
 
     const handleToggleGenre = (genreId: string) => {
+        // Special handling for "All Genres"
+        if (genreId === 'all') {
+            // Selecting "All Genres" clears all other selections
+            onChange([])
+            return
+        }
+
+        // If selecting a specific genre while "All Genres" is selected, clear everything first
         if (selectedGenres.includes(genreId)) {
             // Remove genre
             onChange(selectedGenres.filter((id) => id !== genreId))
@@ -44,11 +52,29 @@ export function GenrePills({
 
     const isGenreSelected = (genreId: string) => selectedGenres.includes(genreId)
     const atMaxGenres = selectedGenres.length >= maxGenres
+    const isAllGenresSelected = selectedGenres.length === 0
 
     return (
         <div className="space-y-3">
             {/* Genre Pills Grid */}
             <div className="flex flex-wrap gap-2">
+                {/* All Genres Option - only show as selected when no genres are selected */}
+                <button
+                    type="button"
+                    onClick={() => handleToggleGenre('all')}
+                    className={`relative px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                        isAllGenresSelected
+                            ? 'bg-red-600 text-white border-2 border-red-600 hover:bg-red-700 hover:border-red-700'
+                            : 'bg-gray-800 text-gray-300 border-2 border-gray-700 hover:border-gray-600 hover:bg-gray-750'
+                    }`}
+                >
+                    <span className="flex items-center gap-1.5">
+                        {isAllGenresSelected && <CheckIcon className="w-4 h-4" />}
+                        All Genres
+                    </span>
+                </button>
+
+                {/* Regular Genre Pills */}
                 {availableGenres.map((genre) => {
                     const isSelected = isGenreSelected(genre.id)
                     const isDisabled = !isSelected && atMaxGenres
@@ -77,20 +103,6 @@ export function GenrePills({
                         </button>
                     )
                 })}
-            </div>
-
-            {/* Helper Text */}
-            <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-400">
-                    {selectedGenres.length === 0 ? (
-                        <>Select at least {CUSTOM_ROW_CONSTRAINTS.MIN_GENRES_PER_ROW} genre</>
-                    ) : (
-                        <>
-                            {selectedGenres.length} of {maxGenres} selected
-                        </>
-                    )}
-                </span>
-                {atMaxGenres && <span className="text-yellow-500">Maximum genres reached</span>}
             </div>
         </div>
     )

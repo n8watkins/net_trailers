@@ -22,6 +22,7 @@ interface Props {
 }
 function ContentCard({ content, className = '', size = 'normal' }: Props) {
     const posterImage = content?.poster_path
+    const backdropImage = content?.backdrop_path
     const { openModal, openListModal } = useModalStore()
     const {
         addLikedMovie,
@@ -33,12 +34,22 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
     } = useUserData()
     const { showContentHidden, showContentShown, showSuccess } = useToast()
     const [imageLoaded, setImageLoaded] = useState(false)
+    const [posterError, setPosterError] = useState(false)
+    const [backdropError, setBackdropError] = useState(false)
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const [showHoverActions, setShowHoverActions] = useState(false) // Show hover menu above bookmark button
     const [isCardHovered, setIsCardHovered] = useState(false) // Track card hover state
     const [likeAnimationType, setLikeAnimationType] = useState<'like' | 'unlike' | null>(null)
     const [likeAnimationIteration, setLikeAnimationIteration] = useState(0)
     const likeAnimationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+    // Determine which image to use
+    const imageToUse =
+        !posterError && posterImage
+            ? `https://image.tmdb.org/t/p/w500${posterImage}`
+            : !backdropError && backdropImage
+              ? `https://image.tmdb.org/t/p/w500${backdropImage}`
+              : null
 
     // Check if content is liked, hidden, or in any lists
     const liked = content ? isLiked(content.id) : false
@@ -102,6 +113,54 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
         })
     }
 
+    // Handle image load errors
+    const handleImageError = () => {
+        if (!posterError && posterImage) {
+            // First error: poster failed, try backdrop
+            setPosterError(true)
+            setImageLoaded(false) // Reset to try loading backdrop
+        } else if (!backdropError && backdropImage) {
+            // Second error: backdrop also failed, show placeholder
+            setBackdropError(true)
+            setImageLoaded(true) // Show placeholder
+        } else {
+            // No images available at all
+            setImageLoaded(true) // Show placeholder
+        }
+    }
+
+    // Styled placeholder component for when images fail
+    const ImagePlaceholder = () => (
+        <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900 text-gray-300 rounded-md">
+            <div
+                className={`mb-2 opacity-50 ${size === 'compact' ? 'text-2xl' : size === 'small' ? 'text-3xl' : 'text-4xl md:text-5xl'}`}
+            >
+                {isMovie(content) ? '🎬' : '📺'}
+            </div>
+            {content && (
+                <div className="text-center px-4">
+                    <p
+                        className={`font-semibold line-clamp-2 mb-1 ${size === 'compact' ? 'text-xs' : size === 'small' ? 'text-sm' : 'text-sm md:text-base'}`}
+                    >
+                        {getTitle(content)}
+                    </p>
+                    <p
+                        className={`text-gray-400 ${size === 'compact' ? 'text-[10px]' : 'text-xs'}`}
+                    >
+                        {getYear(content)}
+                    </p>
+                    <span
+                        className={`inline-block mt-1 px-2 py-0.5 rounded-full ${size === 'compact' ? 'text-[9px]' : 'text-xs'} ${
+                            isMovie(content) ? 'bg-blue-600/50' : 'bg-green-600/50'
+                        }`}
+                    >
+                        {getContentType(content)}
+                    </span>
+                </div>
+            )}
+        </div>
+    )
+
     // Size classes for image portion only
     const getImageSizeClasses = () => {
         switch (size) {
@@ -153,14 +212,14 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                 } transition-transform duration-300 ease-out origin-center`}
             >
                 {/* Loading Skeleton */}
-                {!imageLoaded && posterImage && (
+                {!imageLoaded && imageToUse && (
                     <div className="w-full h-full bg-gray-800 rounded-md animate-pulse flex items-center justify-center">
                         <div className="w-8 h-8 border-2 border-gray-600 border-t-red-600 rounded-full animate-spin"></div>
                     </div>
                 )}
 
-                {/* Movie Poster with Red Glow */}
-                {posterImage && (
+                {/* Movie Poster with Red Glow or Placeholder */}
+                {imageToUse ? (
                     <div
                         className={`relative w-full h-full
                                   transition-all duration-300 ease-out
@@ -173,7 +232,7 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                                   ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
                     >
                         <Image
-                            src={`https://image.tmdb.org/t/p/w500${posterImage}`}
+                            src={imageToUse}
                             alt={
                                 content
                                     ? `${getTitle(content)} ${getContentType(content)}`
@@ -185,6 +244,7 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                             sizes="(max-width: 640px) 140px, (max-width: 768px) 160px, (max-width: 1024px) 180px, 240px"
                             priority={false}
                             onLoad={() => setImageLoaded(true)}
+                            onError={handleImageError}
                         />
 
                         {/* Additional red glow overlay */}
@@ -193,6 +253,16 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                                   transition-all duration-300 ease-out
                                   ${isCardHovered ? 'shadow-[inset_0_0_10px_rgba(220,38,38,0.1)]' : ''}`}
                         ></div>
+                    </div>
+                ) : (
+                    <div
+                        className={`relative w-full h-full transition-all duration-300 ease-out ${
+                            isCardHovered
+                                ? 'shadow-[0_0_15px_rgba(220,38,38,0.4),0_0_30px_rgba(220,38,38,0.2)] ring-1 ring-red-500/50'
+                                : ''
+                        }`}
+                    >
+                        <ImagePlaceholder />
                     </div>
                 )}
 

@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
         const searchParams = request.nextUrl.searchParams
         const childSafetyMode = searchParams.get('childSafetyMode')
         const childSafeMode = childSafetyMode === 'true'
+        const genresParam = searchParams.get('genres') // Unified genre IDs (e.g., "action,comedy")
 
         // Validate and sanitize page parameter (1-500 as per TMDB limits)
         const rawPage = searchParams.get('page') || '1'
@@ -25,7 +26,16 @@ export async function GET(request: NextRequest) {
 
         let url: string
 
-        if (childSafeMode) {
+        // If genres are specified, use discover endpoint with genre filtering
+        if (genresParam && genresParam.trim().length > 0) {
+            // Import genre mapping utility
+            const { translateToTMDBGenres } = await import('../../../../utils/genreMapping')
+            const unifiedGenreIds = genresParam.split(',').map((g) => g.trim())
+            const tmdbGenreIds = translateToTMDBGenres(unifiedGenreIds, 'tv')
+            const genreFilter = tmdbGenreIds.join('|') // OR logic (pipe-separated)
+
+            url = `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&page=${page}&sort_by=popularity.desc&with_genres=${genreFilter}&include_adult=false`
+        } else if (childSafeMode) {
             // ✅ CURATED CONTENT STRATEGY: Use family-friendly TV genres
             // Animation (16), Kids (10762), Family (10751), Comedy (35), Sci-Fi & Fantasy (10765), Action & Adventure (10759)
             // This ensures more content availability without aggressive filtering

@@ -39,7 +39,7 @@ const ToastContainer: React.FC<ToastContainerProps> = memo(
 
         return (
             <div
-                className="fixed top-4 right-4 sm:right-6 md:right-8 lg:right-12 z-[100001] pointer-events-none w-full max-w-sm sm:max-w-md"
+                className="fixed top-4 right-24 sm:right-32 md:right-40 lg:right-48 z-[100001] pointer-events-none w-full max-w-sm sm:max-w-md"
                 aria-live="polite"
                 aria-atomic="true"
                 role="status"
@@ -72,7 +72,7 @@ const ToastContainer: React.FC<ToastContainerProps> = memo(
                                 opacity: isThirdOrMore ? 0 : 1,
                                 transform: isThirdOrMore
                                     ? `translateY(${verticalOffset + 40}px) scale(0.95)`
-                                    : `translateY(${verticalOffset}px) scale(${isSecond ? 0.98 : 1})`,
+                                    : `translateY(${verticalOffset}px)`,
                                 zIndex: 100 - index,
                             }}
                         >

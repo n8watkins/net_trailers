@@ -89,14 +89,29 @@ export function CollectionRowLoader({ collection, pageType }: CollectionRowLoade
                             ? 'trending'
                             : 'top-rated'
 
+                        // Build query params with optional genres
+                        const movieParams = new URLSearchParams()
+                        const tvParams = new URLSearchParams()
+
+                        if (childSafetyMode) {
+                            movieParams.append('childSafetyMode', 'true')
+                            tvParams.append('childSafetyMode', 'true')
+                        }
+
+                        // Add genres if specified for special collections
+                        if (collection.genres && collection.genres.length > 0) {
+                            const genresStr = collection.genres.join(',')
+                            movieParams.append('genres', genresStr)
+                            tvParams.append('genres', genresStr)
+                        }
+
+                        const movieQuery = movieParams.toString()
+                        const tvQuery = tvParams.toString()
+
                         // Fetch both movies and TV in parallel (no auth required)
                         const [moviesResponse, tvResponse] = await Promise.all([
-                            fetch(
-                                `/api/movies/${apiType}${childSafetyMode ? '?childSafetyMode=true' : ''}`
-                            ),
-                            fetch(
-                                `/api/tv/${apiType}${childSafetyMode ? '?childSafetyMode=true' : ''}`
-                            ),
+                            fetch(`/api/movies/${apiType}${movieQuery ? '?' + movieQuery : ''}`),
+                            fetch(`/api/tv/${apiType}${tvQuery ? '?' + tvQuery : ''}`),
                         ])
 
                         if (!moviesResponse.ok || !tvResponse.ok) {
@@ -140,6 +155,11 @@ export function CollectionRowLoader({ collection, pageType }: CollectionRowLoade
 
                     if (childSafetyMode) {
                         url.searchParams.append('childSafetyMode', 'true')
+                    }
+
+                    // Add genres if specified for special collections
+                    if (collection.genres && collection.genres.length > 0) {
+                        url.searchParams.append('genres', collection.genres.join(','))
                     }
                 } else {
                     // Regular TMDB collection with genre filters or curated content
@@ -286,10 +306,20 @@ export function CollectionRowLoader({ collection, pageType }: CollectionRowLoade
         if (useSpecialEndpoint) {
             const mediaType = collection.mediaType === 'tv' ? 'tv' : 'movies'
 
+            // Build query params for special collections
+            const params = new URLSearchParams()
+            if (childSafetyMode) {
+                params.append('childSafetyMode', 'true')
+            }
+            if (collection.genres && collection.genres.length > 0) {
+                params.append('genres', collection.genres.join(','))
+            }
+            const queryString = params.toString()
+
             if (collection.id.includes('trending')) {
-                apiEndpoint = `/api/${mediaType}/trending${childSafetyMode ? '?childSafetyMode=true' : ''}`
+                apiEndpoint = `/api/${mediaType}/trending${queryString ? '?' + queryString : ''}`
             } else if (collection.id.includes('top-rated')) {
-                apiEndpoint = `/api/${mediaType}/top-rated${childSafetyMode ? '?childSafetyMode=true' : ''}`
+                apiEndpoint = `/api/${mediaType}/top-rated${queryString ? '?' + queryString : ''}`
             } else {
                 apiEndpoint = `/api/movies/trending`
             }

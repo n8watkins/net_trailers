@@ -86,7 +86,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                 {/* Avatar Button - Loading */}
                 <button
                     disabled
-                    className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-700 transition-all duration-200 focus:outline-none cursor-wait"
+                    className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-full bg-gray-700 transition-all duration-200 focus:outline-none cursor-wait"
                     aria-label="Loading user menu"
                 >
                     <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
@@ -103,11 +103,11 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                 {/* Avatar Button - Not Logged In */}
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-600 hover:bg-gray-500 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.6)] focus:shadow-[0_0_15px_rgba(255,255,255,0.6)] transition-all duration-300"
+                    className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-full bg-gray-600 hover:bg-gray-500 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.6)] focus:shadow-[0_0_15px_rgba(255,255,255,0.6)] transition-all duration-300"
                     aria-label="User menu"
                     aria-expanded={isOpen}
                 >
-                    <UserCircleIcon className="w-7 h-7 md:w-8 md:h-8 text-white" />
+                    <UserCircleIcon className="w-6 h-6 md:w-7 md:h-7 text-white" />
                 </button>
 
                 {/* Dropdown Menu - Not Logged In */}
@@ -236,7 +236,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                 {/* Avatar Button - Loading user details */}
                 <button
                     disabled
-                    className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-red-600 transition-all duration-200 focus:outline-none cursor-wait"
+                    className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-full bg-red-600 transition-all duration-200 focus:outline-none cursor-wait"
                     aria-label="Loading user details"
                 >
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -252,11 +252,11 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                 {/* Avatar Button - Not Logged In */}
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-600 hover:bg-gray-500 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.6)] transition-all duration-300"
+                    className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-full bg-gray-600 hover:bg-gray-500 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.6)] transition-all duration-300"
                     aria-label="User menu"
                     aria-expanded={isOpen}
                 >
-                    <UserCircleIcon className="w-7 h-7 md:w-8 md:h-8 text-white" />
+                    <UserCircleIcon className="w-6 h-6 md:w-7 md:h-7 text-white" />
                 </button>
             </div>
         )
@@ -267,7 +267,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
             {/* Avatar Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 rounded-full bg-red-600 hover:bg-red-700 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.6)] focus:shadow-[0_0_15px_rgba(255,255,255,0.6)] transition-all duration-300"
+                className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-full bg-red-600 hover:bg-red-700 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.6)] focus:shadow-[0_0_15px_rgba(255,255,255,0.6)] transition-all duration-300"
                 aria-label="Profile menu"
                 aria-expanded={isOpen}
             >
@@ -275,12 +275,12 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
                     <Image
                         src={displayUser.photoURL}
                         alt="Profile"
-                        width={56}
-                        height={56}
-                        className="w-12 h-12 md:w-14 md:h-14 rounded-full object-cover"
+                        width={44}
+                        height={44}
+                        className="w-10 h-10 md:w-11 md:h-11 rounded-full object-cover"
                     />
                 ) : (
-                    <span className="text-white text-base md:text-lg font-bold">
+                    <span className="text-white text-sm md:text-base font-bold">
                         {getInitials(displayUser.email || 'U')}
                     </span>
                 )}

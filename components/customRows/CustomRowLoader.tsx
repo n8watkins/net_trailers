@@ -54,20 +54,33 @@ export function CustomRowLoader({ row, pageType }: CustomRowLoaderProps) {
                     if (row.mediaType === 'both') {
                         const apiType = row.id.includes('trending') ? 'trending' : 'top-rated'
 
+                        // Build query params with optional genres
+                        const movieParams = new URLSearchParams()
+                        const tvParams = new URLSearchParams()
+
+                        if (childSafetyMode) {
+                            movieParams.append('childSafetyMode', 'true')
+                            tvParams.append('childSafetyMode', 'true')
+                        }
+
+                        // Add genres if specified for special rows
+                        if (row.genres && row.genres.length > 0) {
+                            const genresStr = row.genres.join(',')
+                            movieParams.append('genres', genresStr)
+                            tvParams.append('genres', genresStr)
+                        }
+
+                        const movieQuery = movieParams.toString()
+                        const tvQuery = tvParams.toString()
+
                         // Fetch both movies and TV in parallel
                         const [moviesResponse, tvResponse] = await Promise.all([
-                            fetch(
-                                `/api/movies/${apiType}${childSafetyMode ? '?childSafetyMode=true' : ''}`,
-                                {
-                                    headers: { 'X-User-ID': userId },
-                                }
-                            ),
-                            fetch(
-                                `/api/tv/${apiType}${childSafetyMode ? '?childSafetyMode=true' : ''}`,
-                                {
-                                    headers: { 'X-User-ID': userId },
-                                }
-                            ),
+                            fetch(`/api/movies/${apiType}${movieQuery ? '?' + movieQuery : ''}`, {
+                                headers: { 'X-User-ID': userId },
+                            }),
+                            fetch(`/api/tv/${apiType}${tvQuery ? '?' + tvQuery : ''}`, {
+                                headers: { 'X-User-ID': userId },
+                            }),
                         ])
 
                         if (!moviesResponse.ok || !tvResponse.ok) {
@@ -110,6 +123,11 @@ export function CustomRowLoader({ row, pageType }: CustomRowLoaderProps) {
 
                     if (childSafetyMode) {
                         url.searchParams.append('childSafetyMode', 'true')
+                    }
+
+                    // Add genres if specified for special rows
+                    if (row.genres && row.genres.length > 0) {
+                        url.searchParams.append('genres', row.genres.join(','))
                     }
                 } else {
                     // Regular custom/system row with genre filters or curated content list
@@ -206,10 +224,20 @@ export function CustomRowLoader({ row, pageType }: CustomRowLoaderProps) {
     if (row.isSpecialRow || (row.genres.length === 0 && !hasCuratedContent)) {
         const mediaType = row.mediaType === 'tv' ? 'tv' : 'movies' // Default to movies for 'both'
 
+        // Build query params for special rows
+        const params = new URLSearchParams()
+        if (childSafetyMode) {
+            params.append('childSafetyMode', 'true')
+        }
+        if (row.genres && row.genres.length > 0) {
+            params.append('genres', row.genres.join(','))
+        }
+        const queryString = params.toString()
+
         if (row.id.includes('trending')) {
-            apiEndpoint = `/api/${mediaType}/trending${childSafetyMode ? '?childSafetyMode=true' : ''}`
+            apiEndpoint = `/api/${mediaType}/trending${queryString ? '?' + queryString : ''}`
         } else if (row.id.includes('top-rated')) {
-            apiEndpoint = `/api/${mediaType}/top-rated${childSafetyMode ? '?childSafetyMode=true' : ''}`
+            apiEndpoint = `/api/${mediaType}/top-rated${queryString ? '?' + queryString : ''}`
         } else {
             // Fallback - shouldn't reach here
             apiEndpoint = `/api/movies/trending`

@@ -87,7 +87,6 @@ function CollectionBuilderModal() {
             // Create collection from the form data
             const newListResult = createList({
                 name: formData.name,
-                isPublic: formData.isPublic ?? false,
                 emoji: '📺', // Default emoji for AI-generated collections
                 color: '#3b82f6', // Default blue color
                 displayAsRow: formData.displayAsRow ?? false,

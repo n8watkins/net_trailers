@@ -60,7 +60,6 @@ export default function CollectionEditorModal({
     const [name, setName] = useState('')
     const [emoji, setEmoji] = useState('📺')
     const [color, setColor] = useState('#3b82f6')
-    const [isPublic, setIsPublic] = useState(false)
     const [displayAsRow, setDisplayAsRow] = useState(true)
     const [enableInfiniteContent, setEnableInfiniteContent] = useState(false)
     const [mediaType, setMediaType] = useState<'movie' | 'tv' | 'both'>('both')
@@ -97,7 +96,6 @@ export default function CollectionEditorModal({
             setName(collection.name)
             setEmoji(collection.emoji || '📺')
             setColor(collection.color || '#3b82f6')
-            setIsPublic(collection.isPublic || false)
             setDisplayAsRow(collection.displayAsRow ?? true)
             const collectionMediaType = collection.mediaType || 'both'
             setMediaType(collectionMediaType)
@@ -171,7 +169,6 @@ export default function CollectionEditorModal({
         setName('')
         setEmoji('📺')
         setColor('#3b82f6')
-        setIsPublic(false)
         setDisplayAsRow(true)
         setEnableInfiniteContent(false)
         setMediaType('both')
@@ -257,7 +254,6 @@ export default function CollectionEditorModal({
                     name: name.trim(),
                     emoji,
                     color,
-                    isPublic,
                     displayAsRow,
                     genres: selectedGenres,
                     genreLogic,
@@ -406,7 +402,9 @@ export default function CollectionEditorModal({
             {/* Modal */}
             <div className="relative min-h-screen flex items-center justify-center p-4 z-[99999]">
                 <div
-                    className="relative z-[99999] bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-lg shadow-2xl max-w-6xl w-full border border-gray-700"
+                    className={`relative z-[99999] bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-lg shadow-2xl w-full border border-gray-700 ${
+                        isSystemCollection ? 'max-w-xl' : 'max-w-6xl'
+                    }`}
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
@@ -540,15 +538,24 @@ export default function CollectionEditorModal({
                                                 placeholder="Collection name"
                                                 value={name}
                                                 onChange={(e) => setName(e.target.value)}
-                                                className="w-full max-w-md h-14 px-4 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                disabled={canOnlyToggle}
+                                                className={`w-full max-w-md h-14 px-4 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                                    canOnlyToggle
+                                                        ? 'opacity-50 cursor-not-allowed'
+                                                        : ''
+                                                }`}
                                             />
                                         </div>
                                     </div>
 
                                     {/* Toggle Settings - Compact Width */}
-                                    <div className="relative p-3 bg-gray-800/50 rounded-lg border border-gray-700 space-y-3 max-w-md">
+                                    <div
+                                        className={`p-3 bg-gray-800/50 rounded-lg border border-gray-700 space-y-3 ${
+                                            isSystemCollection ? 'max-w-full' : 'max-w-md'
+                                        }`}
+                                    >
                                         {/* Infinite Content Toggle - Show for both user collections and system collections */}
-                                        <div className="flex items-center justify-between">
+                                        <div className="relative flex items-center justify-between">
                                             <label className="text-sm font-medium text-white flex items-center gap-1.5">
                                                 <span>♾️</span>
                                                 Infinite Content
@@ -563,22 +570,43 @@ export default function CollectionEditorModal({
                                                     onClick={() =>
                                                         setShowInfiniteTooltip(!showInfiniteTooltip)
                                                     }
-                                                    className="text-gray-400 hover:text-white"
+                                                    className="text-gray-400 hover:text-white relative"
                                                 >
                                                     <QuestionMarkCircleIcon className="w-4 h-4" />
+                                                    {showInfiniteTooltip && (
+                                                        <div
+                                                            className={`absolute z-10 top-full left-1/2 -translate-x-1/2 mt-2 p-2 bg-gray-900 border border-gray-700 rounded-md shadow-xl whitespace-normal ${
+                                                                canEditFull
+                                                                    ? 'max-w-xs'
+                                                                    : 'w-64 max-w-none'
+                                                            }`}
+                                                        >
+                                                            <p className="text-xs text-gray-300">
+                                                                {canEditFull
+                                                                    ? 'After your curated titles, show more similar content based on genres'
+                                                                    : 'This is a system collection that is infinite by default'}
+                                                            </p>
+                                                        </div>
+                                                    )}
                                                 </button>
                                             </label>
                                             <button
                                                 type="button"
                                                 onClick={
-                                                    canEditFull ? handleToggleInfinite : undefined
+                                                    canEditFull
+                                                        ? handleToggleInfinite
+                                                        : () => {
+                                                              showError(
+                                                                  'Cannot disable infinite content',
+                                                                  'This is a system collection that is infinite by default'
+                                                              )
+                                                          }
                                                 }
-                                                disabled={!canEditFull}
                                                 className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
                                                     enableInfiniteContent || !canEditFull
                                                         ? 'bg-red-600'
                                                         : 'bg-gray-600'
-                                                } ${!canEditFull ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                } ${!canEditFull ? 'opacity-50 cursor-pointer' : ''}`}
                                             >
                                                 <span
                                                     className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
@@ -589,18 +617,32 @@ export default function CollectionEditorModal({
                                                 />
                                             </button>
                                         </div>
-                                        {showInfiniteTooltip && (
-                                            <div className="absolute z-10 top-full left-0 mt-1 p-2 bg-gray-900 border border-gray-700 rounded-md shadow-xl max-w-xs">
-                                                <p className="text-xs text-gray-300">
-                                                    {canEditFull
-                                                        ? 'After your curated titles, show more similar content based on genres'
-                                                        : 'This collection automatically generates fresh trending content daily'}
-                                                </p>
-                                            </div>
-                                        )}
 
-                                        {/* Media Type and Display Controls - Vertical Layout */}
-                                        <div className="space-y-3">
+                                        {/* Display on Page Toggle */}
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-sm font-medium text-white flex items-center gap-1.5">
+                                                <span>🏠</span>
+                                                Display on Page
+                                            </label>
+                                            <button
+                                                type="button"
+                                                onClick={handleDisplayOnPageToggle}
+                                                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                                                    displayAsRow ? 'bg-green-600' : 'bg-gray-600'
+                                                } ${!hasMediaTypeEnabled ? 'opacity-50 cursor-pointer' : ''}`}
+                                            >
+                                                <span
+                                                    className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                                                        displayAsRow
+                                                            ? 'translate-x-5'
+                                                            : 'translate-x-0.5'
+                                                    }`}
+                                                />
+                                            </button>
+                                        </div>
+
+                                        {/* Media Type and Genres - Side by side */}
+                                        <div className="grid grid-cols-2 gap-3">
                                             {/* Media Type Selection */}
                                             <div
                                                 className={`bg-gray-800/50 rounded-lg border p-4 transition-all duration-500 ${
@@ -675,99 +717,55 @@ export default function CollectionEditorModal({
                                                 </div>
                                             </div>
 
-                                            {/* Display on Page Toggle */}
+                                            {/* Genres */}
                                             <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
-                                                <div className="flex items-center justify-between">
-                                                    <label className="text-sm font-medium text-white flex items-center gap-1.5">
-                                                        <span>🏠</span>
-                                                        Display on Page
-                                                    </label>
-                                                    <button
-                                                        type="button"
-                                                        onClick={handleDisplayOnPageToggle}
-                                                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                                            displayAsRow
-                                                                ? 'bg-green-600'
-                                                                : 'bg-gray-600'
-                                                        } ${!hasMediaTypeEnabled ? 'opacity-50 cursor-pointer' : ''}`}
-                                                    >
-                                                        <span
-                                                            className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                                                                displayAsRow
-                                                                    ? 'translate-x-5'
-                                                                    : 'translate-x-0.5'
-                                                            }`}
-                                                        />
-                                                    </button>
-                                                </div>
-                                                {!hasMediaTypeEnabled && (
-                                                    <p className="text-xs text-gray-400 mt-2">
-                                                        Select a media type to enable this option
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* Genres - Compact display below media type */}
-                                        <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-3">
-                                            <div className="space-y-2">
-                                                <div className="flex items-center justify-between">
-                                                    <p className="text-xs font-medium text-gray-300">
-                                                        Genres
-                                                    </p>
-                                                    {!canOnlyToggle && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setShowGenreModal(true)}
-                                                            className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors whitespace-nowrap"
-                                                        >
-                                                            Edit
-                                                        </button>
-                                                    )}
-                                                </div>
-                                                {canOnlyToggle || selectedGenres.length === 0 ? (
-                                                    <p className="text-xs text-gray-400">
-                                                        All genres
-                                                    </p>
-                                                ) : (
-                                                    <div className="flex flex-wrap gap-1.5">
-                                                        {selectedGenreNames.map((name, index) => (
-                                                            <span
-                                                                key={`${name}-${index}`}
-                                                                className="px-2 py-0.5 text-xs rounded bg-red-600 text-white"
-                                                            >
-                                                                {name}
+                                                <div className="space-y-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-xs text-gray-400">
+                                                                {selectedGenres.length === 0 ? (
+                                                                    <>(Any)</>
+                                                                ) : (
+                                                                    <>({selectedGenres.length})</>
+                                                                )}
                                                             </span>
-                                                        ))}
+                                                            <p className="text-sm font-medium text-white">
+                                                                Genres
+                                                            </p>
+                                                        </div>
+                                                        {!canOnlyToggle && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    setShowGenreModal(true)
+                                                                }
+                                                                className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors whitespace-nowrap"
+                                                            >
+                                                                Edit
+                                                            </button>
+                                                        )}
                                                     </div>
-                                                )}
+                                                    <div className="flex flex-wrap gap-1.5">
+                                                        {selectedGenres.length === 0 ? (
+                                                            <span className="px-2 py-0.5 text-xs rounded bg-red-600 text-white">
+                                                                All Genres
+                                                            </span>
+                                                        ) : (
+                                                            selectedGenreNames.map(
+                                                                (name, index) => (
+                                                                    <span
+                                                                        key={`${name}-${index}`}
+                                                                        className="px-2 py-0.5 text-xs rounded bg-red-600 text-white"
+                                                                    >
+                                                                        {name}
+                                                                    </span>
+                                                                )
+                                                            )
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
-
-                                        {/* Public Collection Toggle - Only for user-created collections */}
-                                        {canEditFull && (
-                                            <div className="flex items-center justify-between">
-                                                <label className="text-sm font-medium text-white flex items-center gap-1.5">
-                                                    <span>🌐</span>
-                                                    Public Collection
-                                                </label>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setIsPublic(!isPublic)}
-                                                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                                        isPublic ? 'bg-green-600' : 'bg-gray-600'
-                                                    }`}
-                                                >
-                                                    <span
-                                                        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                                                            isPublic
-                                                                ? 'translate-x-5'
-                                                                : 'translate-x-0.5'
-                                                        }`}
-                                                    />
-                                                </button>
-                                            </div>
-                                        )}
                                     </div>
                                 </>
                             )}
@@ -898,12 +896,25 @@ export default function CollectionEditorModal({
 
     // Genre Modal
     const genreModal = showGenreModal && (
-        <div className="fixed inset-0 z-[100000] overflow-y-auto">
+        <div
+            className="fixed inset-0 z-[100000] overflow-y-auto"
+            onMouseDown={(e) => {
+                // Check if click started outside modal
+                if (e.target === e.currentTarget) {
+                    const startTarget = e.target
+                    const handleMouseUp = (upEvent: MouseEvent) => {
+                        // Check if click ended outside modal
+                        if (upEvent.target === startTarget) {
+                            setShowGenreModal(false)
+                        }
+                        document.removeEventListener('mouseup', handleMouseUp)
+                    }
+                    document.addEventListener('mouseup', handleMouseUp)
+                }
+            }}
+        >
             {/* Backdrop */}
-            <div
-                className="fixed inset-0 z-[99999] bg-black/80 backdrop-blur-sm"
-                onClick={() => setShowGenreModal(false)}
-            />
+            <div className="fixed inset-0 z-[99999] bg-black/80 backdrop-blur-sm" />
 
             {/* Modal */}
             <div className="relative min-h-screen flex items-center justify-center p-4 z-[100000]">
@@ -914,10 +925,7 @@ export default function CollectionEditorModal({
                     {/* Header */}
                     <div className="flex items-center justify-between p-6 border-b border-gray-700">
                         <div>
-                            <h3 className="text-xl font-bold text-white">Edit Genres</h3>
-                            <p className="text-gray-400 text-sm mt-1">
-                                Select genres for this collection
-                            </p>
+                            <h3 className="text-xl font-bold text-white">Edit Genre Collections</h3>
                         </div>
                         <button
                             onClick={() => setShowGenreModal(false)}
@@ -931,10 +939,15 @@ export default function CollectionEditorModal({
                     <div className="p-6 max-h-[calc(90vh-200px)] overflow-y-auto">
                         {/* Genre Pills */}
                         <div>
-                            <p className="text-sm font-medium text-gray-300 mb-2">Select Genres</p>
-                            <p className="text-xs text-gray-400 mb-3">
-                                Click genres to add or remove them from your collection
-                            </p>
+                            <div className="flex items-baseline justify-between mb-3">
+                                <p className="text-sm font-medium text-gray-300">
+                                    Genres{' '}
+                                    {selectedGenres.length === 0
+                                        ? '(Any)'
+                                        : `(${selectedGenres.length})`}
+                                </p>
+                                <p className="text-xs text-gray-400">Select up to 5</p>
+                            </div>
                             <GenrePills
                                 selectedGenres={selectedGenres}
                                 onChange={setSelectedGenres}
@@ -946,16 +959,13 @@ export default function CollectionEditorModal({
 
                     {/* Footer */}
                     <div className="p-6 border-t border-gray-700">
-                        <div className="flex items-center justify-end gap-3">
+                        <p className="text-base text-gray-300 mb-4 text-center">
+                            Note: Genres can be used for infinite content generation
+                        </p>
+                        <div className="flex items-center justify-center">
                             <button
                                 onClick={() => setShowGenreModal(false)}
-                                className="px-6 py-2.5 bg-gray-700 text-white rounded-lg font-medium transition-all duration-200 hover:bg-gray-600"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={() => setShowGenreModal(false)}
-                                className="flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium transition-all duration-200 hover:bg-blue-700"
+                                className="px-16 py-2.5 bg-blue-600 text-white rounded-lg font-medium transition-all duration-200 hover:bg-blue-700"
                             >
                                 Done
                             </button>
