@@ -52,19 +52,29 @@ function ContentImage({
         if (posterError && backdropError && !alternateImage && !fetchingAlternate && content) {
             setFetchingAlternate(true)
             const mediaType = isMovie(content) ? 'movie' : 'tv'
-            const apiKey =
-                process.env.NEXT_PUBLIC_TMDB_API_KEY || '96fa23e76f0d41cb36975d635d344e2a'
+            const apiKey = process.env.NEXT_PUBLIC_TMDB_API_KEY
+
+            // Fail gracefully if no API key configured
+            if (!apiKey) {
+                if (process.env.NODE_ENV === 'development') {
+                    console.error('TMDB API key not configured, skipping alternate image fetch')
+                }
+                setAlternateError(true)
+                return
+            }
+
+            // Create abort controller for cleanup
+            const abortController = new AbortController()
 
             fetch(
-                `https://api.themoviedb.org/3/${mediaType}/${content.id}/images?api_key=${apiKey}`
+                `https://api.themoviedb.org/3/${mediaType}/${content.id}/images?api_key=${apiKey}`,
+                { signal: abortController.signal }
             )
                 .then((res) => res.json())
                 .then((data) => {
-                    // Try to get highest-rated poster first
                     const posters = data.posters || []
                     const backdrops = data.backdrops || []
 
-                    // Sort by vote_average descending
                     const sortedPosters = [...posters].sort(
                         (a, b) => (b.vote_average || 0) - (a.vote_average || 0)
                     )
@@ -72,20 +82,26 @@ function ContentImage({
                         (a, b) => (b.vote_average || 0) - (a.vote_average || 0)
                     )
 
-                    // Try highest-rated poster first, then highest-rated backdrop
                     const bestImage = sortedPosters[0] || sortedBackdrops[0]
 
                     if (bestImage?.file_path) {
                         setAlternateImage(`https://image.tmdb.org/t/p/w500${bestImage.file_path}`)
                     } else {
-                        // No alternate images available, show placeholder
                         setAlternateError(true)
                     }
                 })
-                .catch(() => {
-                    // API call failed, show placeholder
-                    setAlternateError(true)
+                .catch((error) => {
+                    if (error.name !== 'AbortError') {
+                        if (process.env.NODE_ENV === 'development') {
+                            console.error('Failed to fetch alternate images:', error)
+                        }
+                        setAlternateError(true)
+                    }
                 })
+
+            return () => {
+                abortController.abort()
+            }
         }
     }, [posterError, backdropError, alternateImage, fetchingAlternate, content])
 

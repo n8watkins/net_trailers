@@ -61,11 +61,24 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
         if (posterError && backdropError && !alternateImage && !fetchingAlternate && content) {
             setFetchingAlternate(true)
             const mediaType = isMovie(content) ? 'movie' : 'tv'
-            const apiKey =
-                process.env.NEXT_PUBLIC_TMDB_API_KEY || '96fa23e76f0d41cb36975d635d344e2a'
+            const apiKey = process.env.NEXT_PUBLIC_TMDB_API_KEY
+
+            // Fail gracefully if no API key configured
+            if (!apiKey) {
+                if (process.env.NODE_ENV === 'development') {
+                    console.error('TMDB API key not configured, skipping alternate image fetch')
+                }
+                setAlternateError(true)
+                setImageLoaded(true)
+                return
+            }
+
+            // Create abort controller for cleanup
+            const abortController = new AbortController()
 
             fetch(
-                `https://api.themoviedb.org/3/${mediaType}/${content.id}/images?api_key=${apiKey}`
+                `https://api.themoviedb.org/3/${mediaType}/${content.id}/images?api_key=${apiKey}`,
+                { signal: abortController.signal }
             )
                 .then((res) => res.json())
                 .then((data) => {
@@ -89,10 +102,19 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                         setImageLoaded(true) // Show placeholder
                     }
                 })
-                .catch(() => {
-                    setAlternateError(true)
-                    setImageLoaded(true) // Show placeholder
+                .catch((error) => {
+                    if (error.name !== 'AbortError') {
+                        if (process.env.NODE_ENV === 'development') {
+                            console.error('Failed to fetch alternate images:', error)
+                        }
+                        setAlternateError(true)
+                        setImageLoaded(true) // Show placeholder
+                    }
                 })
+
+            return () => {
+                abortController.abort()
+            }
         }
     }, [posterError, backdropError, alternateImage, fetchingAlternate, content])
 
