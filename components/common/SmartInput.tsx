@@ -10,6 +10,7 @@ import {
 import { useTypewriter } from '../../hooks/useTypewriter'
 import { useVoiceInput } from '../../hooks/useVoiceInput'
 import { useToast } from '../../hooks/useToast'
+import { getRandomQuery } from '../../constants/surpriseQueries'
 
 // Dice SVG icon component
 function DiceIcon({ className }: { className?: string }) {
@@ -59,6 +60,7 @@ interface SmartInputProps {
     showSurpriseMe?: boolean
     onSurpriseMe?: () => void
     surpriseIcon?: 'dice' | 'sparkles' // Icon to use for surprise button (default: dice)
+    surpriseQueryType?: 'hero' | 'collection' | 'ranking' // Type of query to generate (default: hero)
     voiceSourceId?: string
 }
 
@@ -93,6 +95,7 @@ export function SmartInput({
     showSurpriseMe = false,
     onSurpriseMe: _onSurpriseMe,
     surpriseIcon = 'dice',
+    surpriseQueryType = 'hero',
     voiceSourceId,
 }: SmartInputProps) {
     const { showError } = useToast()
@@ -246,35 +249,17 @@ export function SmartInput({
         }
     }
 
-    const handleSurpriseMeClick = async () => {
+    const handleSurpriseMeClick = () => {
         if (isGeneratingSurprise) return
 
         setIsGeneratingSurprise(true)
 
         try {
-            const response = await fetch('/api/surprise-query', {
-                method: 'POST',
-            })
+            // Get random query from local array (instant, no API call!)
+            const query = getRandomQuery(surpriseQueryType)
 
-            if (!response.ok) {
-                throw new Error('Failed to generate surprise query')
-            }
-
-            const data = await response.json()
-
-            // Debug logging for surprise query
-            console.log('[Surprise Query] Response:', data)
-            if (data._debug) {
-                console.log('[Surprise Query] Debug Info:', {
-                    rateLimited: data._debug.rateLimited,
-                    usedFallback: data._debug.usedFallback,
-                    hadError: data._debug.hadError,
-                    rawExtracted: data._debug.rawExtracted,
-                })
-            }
-
-            setLocalValue(data.query)
-            onChange(data.query)
+            setLocalValue(query)
+            onChange(query)
             inputRef.current?.focus()
         } catch (_error) {
             showError('Failed to generate surprise', 'Please try again')

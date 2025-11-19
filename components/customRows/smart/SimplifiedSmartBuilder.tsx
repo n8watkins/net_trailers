@@ -358,6 +358,7 @@ export function SimplifiedSmartBuilder({
                         showSurpriseMe={true}
                         showTypewriter={true}
                         shimmer="wave"
+                        surpriseQueryType="collection"
                     />
 
                     {error && (
