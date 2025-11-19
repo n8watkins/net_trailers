@@ -18,6 +18,7 @@ import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid'
 import { formatDistanceToNow } from 'date-fns'
 import { Timestamp, doc, getDoc } from 'firebase/firestore'
 import { useSessionStore } from '@/stores/sessionStore'
+import { useForumStore } from '@/stores/forumStore'
 import { db } from '@/firebase'
 
 // Helper to convert Firebase Timestamp to Date
@@ -40,6 +41,7 @@ export function ThreadCard({ thread, onClick }: ThreadCardProps) {
     const router = useRouter()
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
+    const { likeThread, unlikeThread } = useForumStore()
     const category = getCategoryInfo(thread.category)
     const [isLiked, setIsLiked] = useState(false)
 
@@ -69,6 +71,25 @@ export function ThreadCard({ thread, onClick }: ThreadCardProps) {
             onClick()
         } else {
             router.push(`/community/thread/${thread.id}`)
+        }
+    }
+
+    const handleLike = async (e: React.MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+
+        if (!userId) return
+
+        try {
+            if (isLiked) {
+                await unlikeThread(userId, thread.id)
+                setIsLiked(false)
+            } else {
+                await likeThread(userId, thread.id)
+                setIsLiked(true)
+            }
+        } catch (error) {
+            console.error('Error toggling thread like:', error)
         }
     }
 
@@ -147,14 +168,18 @@ export function ThreadCard({ thread, onClick }: ThreadCardProps) {
             <div className="flex items-center justify-between pt-3 border-t border-zinc-800">
                 <div className="flex items-center gap-4 text-sm text-gray-400">
                     {/* Likes */}
-                    <div className="flex items-center gap-1">
+                    <button
+                        onClick={handleLike}
+                        disabled={!userId}
+                        className="flex items-center gap-1 hover:text-red-500 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                    >
                         {isLiked ? (
                             <HeartSolidIcon className="w-4 h-4 text-red-500" />
                         ) : (
                             <HeartIcon className="w-4 h-4" />
                         )}
                         <span className={isLiked ? 'text-red-500' : ''}>{thread.likes}</span>
-                    </div>
+                    </button>
 
                     {/* Replies */}
                     <div className="flex items-center gap-1">

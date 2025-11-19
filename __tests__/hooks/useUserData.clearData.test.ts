@@ -298,7 +298,7 @@ describe('useUserData - clearAccountData Isolation', () => {
                 isAuthenticated: false,
                 clearAllData: jest.fn(),
                 // ... other required fields
-            } as ReturnType<typeof useSessionDataModule.useSessionData>)
+            } as ReturnType<(typeof useSessionDataModule)['useSessionData']>)
 
             // Seed guest localStorage
             const guestDataKey = `nettrailer_guest_data_v2_${guestId}`
@@ -457,7 +457,7 @@ describe('useUserData - clearAccountData Isolation', () => {
                 sessionType: 'guest',
                 activeSessionId: guest1Id,
                 clearAllData: jest.fn(),
-            } as ReturnType<typeof useSessionDataModule.useSessionData>)
+            } as ReturnType<(typeof useSessionDataModule)['useSessionData']>)
 
             const { result } = renderHook(() => useUserData())
 
