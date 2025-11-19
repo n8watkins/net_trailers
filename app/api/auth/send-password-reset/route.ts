@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
         }
 
         apiLog(
-            `Password reset email ${emailResult ? 'sent' : 'skipped'} for ${email}`,
+            `Password reset email ${emailResult ? 'sent' : 'skipped'} for ${rawEmail}`,
             emailResult?.data?.id ? { emailId: emailResult.data.id } : undefined
         )
 
