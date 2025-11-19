@@ -78,6 +78,10 @@ describe('/api/auth/reset-password', () => {
         ;(getAdminDb as jest.Mock).mockReturnValue(buildMockDb())
         ;(getAdminAuth as jest.Mock).mockReturnValue({
             updateUser: mockUpdateUser,
+            getUser: jest.fn().mockResolvedValue({
+                uid: 'user-123',
+                providerData: [{ providerId: 'password' }],
+            }),
         })
     })
 

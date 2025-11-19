@@ -58,7 +58,6 @@ export const defaultAuthSession: AuthSession = {
             types: {
                 collection_update: true,
                 new_release: true,
-                share_activity: true,
                 trending_update: true,
                 system: true,
             },
@@ -95,7 +94,6 @@ export const defaultGuestSession: GuestSession = {
             types: {
                 collection_update: true,
                 new_release: true,
-                share_activity: true,
                 trending_update: true,
                 system: true,
             },

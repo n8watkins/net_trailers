@@ -77,7 +77,6 @@ function customRowToCollection(customRow: CustomRow): UserList {
         id: customRow.id,
         name: customRow.name,
         description: `Migrated from custom row`,
-        isPublic: false,
         createdAt: customRow.createdAt,
         updatedAt: customRow.updatedAt,
         items: [], // TMDB-based collections don't use static items

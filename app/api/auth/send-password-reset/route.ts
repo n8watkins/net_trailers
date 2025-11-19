@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { EmailService } from '@/lib/email/email-service'
 import { apiError, apiLog, apiWarn } from '@/utils/debugLogger'
 import crypto from 'crypto'
-import { getAdminDb } from '@/lib/firebase-admin'
+import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin'
 
 // Rate limiting: Max 3 password reset emails per email address per hour
 const rateLimitCache = new Map<string, { count: number; resetAt: number }>()
@@ -80,6 +80,29 @@ export async function POST(request: NextRequest) {
         const userDoc = usersSnapshot.docs[0]
         const userData = userDoc.data()
         const username = userData?.profile?.username || 'User'
+
+        // Check if user has password authentication (not just OAuth)
+        const auth = getAdminAuth()
+        try {
+            const userRecord = await auth.getUser(userDoc.id)
+            const hasPasswordProvider = userRecord.providerData.some(
+                (provider) => provider.providerId === 'password'
+            )
+
+            if (!hasPasswordProvider) {
+                // User only has OAuth providers (Google, etc.) - no password to reset
+                apiLog(`Password reset denied for OAuth-only account: ${email}`)
+                // Return success message anyway (security: don't reveal auth method)
+                return NextResponse.json({
+                    success: true,
+                    message:
+                        'If an account exists with this email, you will receive a password reset link.',
+                })
+            }
+        } catch (authError) {
+            apiError('Error checking user auth providers:', authError)
+            // Continue anyway - don't block legitimate requests due to API errors
+        }
 
         // Generate password reset token (expires in 1 hour)
         const resetToken = crypto.randomBytes(32).toString('hex')

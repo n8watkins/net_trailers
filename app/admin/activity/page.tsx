@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSessionStore } from '@/stores/sessionStore'
 import { ArrowLeft, LogIn, Eye, TrendingUp, Users } from 'lucide-react'
@@ -29,7 +29,7 @@ interface ActivityStats {
 // Admin UIDs
 const ADMIN_UIDS = [process.env.NEXT_PUBLIC_ADMIN_UID || 'YOUR_FIREBASE_UID_HERE']
 
-export default function ActivityPage() {
+function ActivityPageContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const filterUserId = searchParams.get('userId')
@@ -335,5 +335,19 @@ export default function ActivityPage() {
                 </div>
             </div>
         </div>
+    )
+}
+
+export default function ActivityPage() {
+    return (
+        <Suspense
+            fallback={
+                <div className="min-h-screen bg-black flex items-center justify-center">
+                    <div className="text-white">Loading...</div>
+                </div>
+            }
+        >
+            <ActivityPageContent />
+        </Suspense>
     )
 }

@@ -350,7 +350,6 @@ export async function getNotificationStats(userId: string): Promise<Notification
                 collection_update: notifications.filter((n) => n.type === 'collection_update')
                     .length,
                 new_release: notifications.filter((n) => n.type === 'new_release').length,
-                share_activity: notifications.filter((n) => n.type === 'share_activity').length,
                 trending_update: notifications.filter((n) => n.type === 'trending_update').length,
                 system: notifications.filter((n) => n.type === 'system').length,
             },
@@ -366,7 +365,6 @@ export async function getNotificationStats(userId: string): Promise<Notification
             byType: {
                 collection_update: 0,
                 new_release: 0,
-                share_activity: 0,
                 trending_update: 0,
                 system: 0,
             },
