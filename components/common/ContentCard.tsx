@@ -36,9 +36,7 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
     const [imageLoaded, setImageLoaded] = useState(false)
     const [posterError, setPosterError] = useState(false)
     const [backdropError, setBackdropError] = useState(false)
-    const [alternateImage, setAlternateImage] = useState<string | null>(null)
-    const [alternateError, setAlternateError] = useState(false)
-    const [fetchingAlternate, setFetchingAlternate] = useState(false)
+    const [allImagesFailed, setAllImagesFailed] = useState(false)
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const [showHoverActions, setShowHoverActions] = useState(false) // Show hover menu above bookmark button
     const [isCardHovered, setIsCardHovered] = useState(false) // Track card hover state
@@ -52,71 +50,18 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
             ? `https://image.tmdb.org/t/p/w500${posterImage}`
             : !backdropError && backdropImage
               ? `https://image.tmdb.org/t/p/w500${backdropImage}`
-              : !alternateError && alternateImage
-                ? alternateImage
-                : null
+              : null
 
-    // Fetch alternate images from TMDB when both poster and backdrop fail
+    // Handle case when both poster and backdrop fail
+    // Note: We don't fetch alternate images client-side to avoid exposing the API key
+    // TMDB API key must remain server-side only for security
     useEffect(() => {
-        if (posterError && backdropError && !alternateImage && !fetchingAlternate && content) {
-            setFetchingAlternate(true)
-            const mediaType = isMovie(content) ? 'movie' : 'tv'
-            const apiKey = process.env.NEXT_PUBLIC_TMDB_API_KEY
-
-            // Fail gracefully if no API key configured
-            if (!apiKey) {
-                if (process.env.NODE_ENV === 'development') {
-                    console.error('TMDB API key not configured, skipping alternate image fetch')
-                }
-                setAlternateError(true)
-                setImageLoaded(true)
-                return
-            }
-
-            // Create abort controller for cleanup
-            const abortController = new AbortController()
-
-            fetch(
-                `https://api.themoviedb.org/3/${mediaType}/${content.id}/images?api_key=${apiKey}`,
-                { signal: abortController.signal }
-            )
-                .then((res) => res.json())
-                .then((data) => {
-                    const posters = data.posters || []
-                    const backdrops = data.backdrops || []
-
-                    const sortedPosters = [...posters].sort(
-                        (a, b) => (b.vote_average || 0) - (a.vote_average || 0)
-                    )
-                    const sortedBackdrops = [...backdrops].sort(
-                        (a, b) => (b.vote_average || 0) - (a.vote_average || 0)
-                    )
-
-                    const bestImage = sortedPosters[0] || sortedBackdrops[0]
-
-                    if (bestImage?.file_path) {
-                        setAlternateImage(`https://image.tmdb.org/t/p/w500${bestImage.file_path}`)
-                        setImageLoaded(false) // Reset to trigger new image load
-                    } else {
-                        setAlternateError(true)
-                        setImageLoaded(true) // Show placeholder
-                    }
-                })
-                .catch((error) => {
-                    if (error.name !== 'AbortError') {
-                        if (process.env.NODE_ENV === 'development') {
-                            console.error('Failed to fetch alternate images:', error)
-                        }
-                        setAlternateError(true)
-                        setImageLoaded(true) // Show placeholder
-                    }
-                })
-
-            return () => {
-                abortController.abort()
-            }
+        if (posterError && backdropError && !allImagesFailed && content) {
+            // Fail gracefully and show placeholder
+            setAllImagesFailed(true)
+            setImageLoaded(true)
         }
-    }, [posterError, backdropError, alternateImage, fetchingAlternate, content])
+    }, [posterError, backdropError, allImagesFailed, content])
 
     // Check if content is liked, hidden, or in any lists
     const liked = content ? isLiked(content.id) : false
@@ -187,12 +132,8 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
             setPosterError(true)
             setImageLoaded(false) // Reset to try loading backdrop
         } else if (!backdropError && backdropImage) {
-            // Second error: backdrop also failed, will trigger alternate fetch
+            // Second error: backdrop also failed, show placeholder
             setBackdropError(true)
-            setImageLoaded(false) // Keep loading while fetching alternate
-        } else if (!alternateError && alternateImage) {
-            // Third error: alternate image also failed, show placeholder
-            setAlternateError(true)
             setImageLoaded(true) // Show placeholder
         } else {
             // No images available at all

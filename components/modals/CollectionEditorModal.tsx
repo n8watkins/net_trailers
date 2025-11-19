@@ -164,12 +164,7 @@ export default function CollectionEditorModal({
     const canEditLimited = isSystemCollection && collection.canEdit // Editable system collections (Action, Comedy, etc.)
     const canOnlyToggle = isSystemCollection && !collection.canEdit // Non-editable system collections (Trending, Top Rated)
 
-    const handleClose = async () => {
-        // Save changes before closing
-        await handleSave()
-
-        onClose()
-        // Reset state
+    const resetModalState = () => {
         setName('')
         setEmoji('📺')
         setColor('#3b82f6')
@@ -184,6 +179,19 @@ export default function CollectionEditorModal({
         setRemovedIds(new Set())
         setSearchFilter('')
         setHighlightMediaType(false)
+    }
+
+    const handleClose = async (options?: { skipWaitForSave?: boolean }) => {
+        const shouldAwaitSave = !(options?.skipWaitForSave ?? false)
+
+        if (shouldAwaitSave) {
+            await handleSave()
+        } else {
+            void handleSave()
+        }
+
+        onClose()
+        resetModalState()
     }
 
     const handleDelete = async () => {
@@ -409,7 +417,7 @@ export default function CollectionEditorModal({
                 }}
                 onMouseUp={(e) => {
                     if (e.target === e.currentTarget && mouseDownTargetRef.current === e.target) {
-                        handleClose()
+                        void handleClose({ skipWaitForSave: true })
                     }
                     mouseDownTargetRef.current = null
                 }}
@@ -561,221 +569,221 @@ export default function CollectionEditorModal({
                                         </div>
                                     </div>
 
-                                    {/* Toggle Settings - Compact Width */}
-                                    <div
-                                        className={`p-3 bg-gray-800/50 rounded-lg border border-gray-700 space-y-3 ${
-                                            isSystemCollection ? 'max-w-full' : 'max-w-md'
-                                        }`}
-                                    >
-                                        {/* Infinite Content Toggle - Show for both user collections and system collections */}
-                                        <div className="relative flex items-center justify-between">
-                                            <label className="text-sm font-medium text-white flex items-center gap-1.5">
-                                                <span>♾️</span>
-                                                Infinite Content
+                                    {/* Toggle Settings Row - Display on Page and Infinite Content side by side */}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {/* Display on Page Toggle */}
+                                        <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+                                            <div className="flex items-center justify-between">
+                                                <label className="text-sm font-medium text-white flex items-center gap-1.5">
+                                                    <span>🏠</span>
+                                                    Display on Page
+                                                </label>
                                                 <button
                                                     type="button"
-                                                    onMouseEnter={() =>
-                                                        setShowInfiniteTooltip(true)
-                                                    }
-                                                    onMouseLeave={() =>
-                                                        setShowInfiniteTooltip(false)
-                                                    }
-                                                    onClick={() =>
-                                                        setShowInfiniteTooltip(!showInfiniteTooltip)
-                                                    }
-                                                    className="text-gray-400 hover:text-white relative"
-                                                >
-                                                    <QuestionMarkCircleIcon className="w-4 h-4" />
-                                                    {showInfiniteTooltip && (
-                                                        <div
-                                                            className={`absolute z-10 top-full left-1/2 -translate-x-1/2 mt-2 p-2 bg-gray-900 border border-gray-700 rounded-md shadow-xl whitespace-normal ${
-                                                                canEditFull
-                                                                    ? 'max-w-xs'
-                                                                    : 'w-64 max-w-none'
-                                                            }`}
-                                                        >
-                                                            <p className="text-xs text-gray-300">
-                                                                {canEditFull
-                                                                    ? 'After your curated titles, show more similar content based on genres'
-                                                                    : 'This is a system collection that is infinite by default'}
-                                                            </p>
-                                                        </div>
-                                                    )}
-                                                </button>
-                                            </label>
-                                            <button
-                                                type="button"
-                                                onClick={
-                                                    canEditFull
-                                                        ? handleToggleInfinite
-                                                        : () => {
-                                                              showError(
-                                                                  'Cannot disable infinite content',
-                                                                  'This is a system collection that is infinite by default'
-                                                              )
-                                                          }
-                                                }
-                                                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                                    enableInfiniteContent || !canEditFull
-                                                        ? 'bg-red-600'
-                                                        : 'bg-gray-600'
-                                                } ${!canEditFull ? 'opacity-50 cursor-pointer' : ''}`}
-                                            >
-                                                <span
-                                                    className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                                                        enableInfiniteContent || !canEditFull
-                                                            ? 'translate-x-5'
-                                                            : 'translate-x-0.5'
-                                                    }`}
-                                                />
-                                            </button>
-                                        </div>
-
-                                        {/* Display on Page Toggle */}
-                                        <div className="flex items-center justify-between">
-                                            <label className="text-sm font-medium text-white flex items-center gap-1.5">
-                                                <span>🏠</span>
-                                                Display on Page
-                                            </label>
-                                            <button
-                                                type="button"
-                                                onClick={handleDisplayOnPageToggle}
-                                                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                                    displayAsRow ? 'bg-green-600' : 'bg-gray-600'
-                                                } ${!hasMediaTypeEnabled ? 'opacity-50 cursor-pointer' : ''}`}
-                                            >
-                                                <span
-                                                    className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                                                    onClick={handleDisplayOnPageToggle}
+                                                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
                                                         displayAsRow
-                                                            ? 'translate-x-5'
-                                                            : 'translate-x-0.5'
-                                                    }`}
-                                                />
-                                            </button>
+                                                            ? 'bg-green-600'
+                                                            : 'bg-gray-600'
+                                                    } ${!hasMediaTypeEnabled ? 'opacity-50 cursor-pointer' : ''}`}
+                                                >
+                                                    <span
+                                                        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                                                            displayAsRow
+                                                                ? 'translate-x-5'
+                                                                : 'translate-x-0.5'
+                                                        }`}
+                                                    />
+                                                </button>
+                                            </div>
                                         </div>
 
-                                        {/* Media Type and Genres - Side by side */}
-                                        <div className="grid grid-cols-2 gap-3">
-                                            {/* Media Type Selection */}
-                                            <div
-                                                className={`bg-gray-800/50 rounded-lg border p-4 transition-all duration-500 ${
-                                                    highlightMediaType
-                                                        ? 'border-yellow-500 bg-yellow-500/20'
-                                                        : 'border-gray-700'
-                                                }`}
-                                            >
-                                                <div className="space-y-3">
-                                                    <p className="text-sm font-medium text-white">
-                                                        Media Type
-                                                    </p>
-                                                    <div className="space-y-2">
-                                                        {/* Movies Toggle */}
-                                                        <div className="flex items-center justify-between">
-                                                            <label className="text-sm font-medium text-white flex items-center gap-2">
-                                                                <FilmIcon className="w-4 h-4" />
-                                                                Movies
-                                                            </label>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    !canOnlyToggle &&
-                                                                    handleMediaTypeToggle('movie')
-                                                                }
-                                                                disabled={canOnlyToggle}
-                                                                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                                                                    isMovieEnabled
-                                                                        ? 'bg-red-600'
-                                                                        : 'bg-gray-600'
-                                                                } ${canOnlyToggle ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        {/* Infinite Content Toggle */}
+                                        <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+                                            <div className="relative flex items-center justify-between">
+                                                <label className="text-sm font-medium text-white flex items-center gap-1.5">
+                                                    <span>♾️</span>
+                                                    Infinite Content
+                                                    <button
+                                                        type="button"
+                                                        onMouseEnter={() =>
+                                                            setShowInfiniteTooltip(true)
+                                                        }
+                                                        onMouseLeave={() =>
+                                                            setShowInfiniteTooltip(false)
+                                                        }
+                                                        onClick={() =>
+                                                            setShowInfiniteTooltip(
+                                                                !showInfiniteTooltip
+                                                            )
+                                                        }
+                                                        className="text-gray-400 hover:text-white relative"
+                                                    >
+                                                        <QuestionMarkCircleIcon className="w-4 h-4" />
+                                                        {showInfiniteTooltip && (
+                                                            <div
+                                                                className={`absolute z-10 top-full left-1/2 -translate-x-1/2 mt-2 p-2 bg-gray-900 border border-gray-700 rounded-md shadow-xl whitespace-normal ${
+                                                                    canEditFull
+                                                                        ? 'max-w-xs'
+                                                                        : 'w-64 max-w-none'
+                                                                }`}
                                                             >
-                                                                <span
-                                                                    className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                                                                        isMovieEnabled
-                                                                            ? 'translate-x-5'
-                                                                            : 'translate-x-0.5'
-                                                                    }`}
-                                                                />
-                                                            </button>
-                                                        </div>
+                                                                <p className="text-xs text-gray-300">
+                                                                    {canEditFull
+                                                                        ? 'After your curated titles, show more similar content based on genres'
+                                                                        : 'This is a system collection that is infinite by default'}
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                    </button>
+                                                </label>
+                                                <button
+                                                    type="button"
+                                                    onClick={
+                                                        canEditFull
+                                                            ? handleToggleInfinite
+                                                            : () => {
+                                                                  showError(
+                                                                      'Cannot disable infinite content',
+                                                                      'This is a system collection that is infinite by default'
+                                                                  )
+                                                              }
+                                                    }
+                                                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                                                        enableInfiniteContent || !canEditFull
+                                                            ? 'bg-red-600'
+                                                            : 'bg-gray-600'
+                                                    } ${!canEditFull ? 'opacity-50 cursor-pointer' : ''}`}
+                                                >
+                                                    <span
+                                                        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                                                            enableInfiniteContent || !canEditFull
+                                                                ? 'translate-x-5'
+                                                                : 'translate-x-0.5'
+                                                        }`}
+                                                    />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                                        {/* TV Shows Toggle */}
-                                                        <div className="flex items-center justify-between">
-                                                            <label className="text-sm font-medium text-white flex items-center gap-2">
-                                                                <TvIcon className="w-4 h-4" />
-                                                                TV Shows
-                                                            </label>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    !canOnlyToggle &&
-                                                                    handleMediaTypeToggle('tv')
-                                                                }
-                                                                disabled={canOnlyToggle}
-                                                                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                                    {/* Media Type and Genres - Side by side */}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {/* Media Type Selection */}
+                                        <div
+                                            className={`bg-gray-800/50 rounded-lg border p-4 transition-all duration-500 ${
+                                                highlightMediaType
+                                                    ? 'border-yellow-500 bg-yellow-500/20'
+                                                    : 'border-gray-700'
+                                            }`}
+                                        >
+                                            <div className="space-y-3">
+                                                <p className="text-sm font-medium text-white">
+                                                    Media Type
+                                                </p>
+                                                <div className="space-y-2">
+                                                    {/* Movies Toggle */}
+                                                    <div className="flex items-center justify-between">
+                                                        <label className="text-sm font-medium text-white flex items-center gap-2">
+                                                            <FilmIcon className="w-4 h-4" />
+                                                            Movies
+                                                        </label>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                !canOnlyToggle &&
+                                                                handleMediaTypeToggle('movie')
+                                                            }
+                                                            disabled={canOnlyToggle}
+                                                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                                                                isMovieEnabled
+                                                                    ? 'bg-red-600'
+                                                                    : 'bg-gray-600'
+                                                            } ${canOnlyToggle ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                        >
+                                                            <span
+                                                                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                                                                    isMovieEnabled
+                                                                        ? 'translate-x-5'
+                                                                        : 'translate-x-0.5'
+                                                                }`}
+                                                            />
+                                                        </button>
+                                                    </div>
+
+                                                    {/* TV Shows Toggle */}
+                                                    <div className="flex items-center justify-between">
+                                                        <label className="text-sm font-medium text-white flex items-center gap-2">
+                                                            <TvIcon className="w-4 h-4" />
+                                                            TV Shows
+                                                        </label>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                !canOnlyToggle &&
+                                                                handleMediaTypeToggle('tv')
+                                                            }
+                                                            disabled={canOnlyToggle}
+                                                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                                                                isTVEnabled
+                                                                    ? 'bg-red-600'
+                                                                    : 'bg-gray-600'
+                                                            } ${canOnlyToggle ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                        >
+                                                            <span
+                                                                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
                                                                     isTVEnabled
-                                                                        ? 'bg-red-600'
-                                                                        : 'bg-gray-600'
-                                                                } ${canOnlyToggle ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                            >
-                                                                <span
-                                                                    className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                                                                        isTVEnabled
-                                                                            ? 'translate-x-5'
-                                                                            : 'translate-x-0.5'
-                                                                    }`}
-                                                                />
-                                                            </button>
-                                                        </div>
+                                                                        ? 'translate-x-5'
+                                                                        : 'translate-x-0.5'
+                                                                }`}
+                                                            />
+                                                        </button>
                                                     </div>
                                                 </div>
                                             </div>
+                                        </div>
 
-                                            {/* Genres */}
-                                            <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
-                                                <div className="space-y-3">
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-xs text-gray-400">
-                                                                {selectedGenres.length === 0 ? (
-                                                                    <>(Any)</>
-                                                                ) : (
-                                                                    <>({selectedGenres.length})</>
-                                                                )}
-                                                            </span>
-                                                            <p className="text-sm font-medium text-white">
-                                                                Genres
-                                                            </p>
-                                                        </div>
-                                                        {!canOnlyToggle && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={() =>
-                                                                    setShowGenreModal(true)
-                                                                }
-                                                                className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors whitespace-nowrap"
+                                        {/* Genres */}
+                                        <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
+                                            <div className="space-y-3">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs text-gray-400">
+                                                            {selectedGenres.length === 0 ? (
+                                                                <>(Any)</>
+                                                            ) : (
+                                                                <>({selectedGenres.length})</>
+                                                            )}
+                                                        </span>
+                                                        <p className="text-sm font-medium text-white">
+                                                            Genres
+                                                        </p>
+                                                    </div>
+                                                    {!canOnlyToggle && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowGenreModal(true)}
+                                                            className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors whitespace-nowrap"
+                                                        >
+                                                            Edit
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {selectedGenres.length === 0 ? (
+                                                        <span className="px-2 py-0.5 text-xs rounded bg-red-600 text-white">
+                                                            All Genres
+                                                        </span>
+                                                    ) : (
+                                                        selectedGenreNames.map((name, index) => (
+                                                            <span
+                                                                key={`${name}-${index}`}
+                                                                className="px-2 py-0.5 text-xs rounded bg-red-600 text-white"
                                                             >
-                                                                Edit
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                    <div className="flex flex-wrap gap-1.5">
-                                                        {selectedGenres.length === 0 ? (
-                                                            <span className="px-2 py-0.5 text-xs rounded bg-red-600 text-white">
-                                                                All Genres
+                                                                {name}
                                                             </span>
-                                                        ) : (
-                                                            selectedGenreNames.map(
-                                                                (name, index) => (
-                                                                    <span
-                                                                        key={`${name}-${index}`}
-                                                                        className="px-2 py-0.5 text-xs rounded bg-red-600 text-white"
-                                                                    >
-                                                                        {name}
-                                                                    </span>
-                                                                )
-                                                            )
-                                                        )}
-                                                    </div>
+                                                        ))
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
