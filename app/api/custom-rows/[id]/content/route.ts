@@ -280,7 +280,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                     'discover',
                     pageNumber,
                     API_KEY!,
-                    childSafeMode
+                    childSafeMode,
+                    genreLogic
                 ),
                 fetchWithPrioritizedGenres(
                     unifiedGenreIds,
@@ -288,7 +289,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                     'discover',
                     pageNumber,
                     API_KEY!,
-                    childSafeMode
+                    childSafeMode,
+                    genreLogic
                 ),
             ])
 
@@ -321,7 +323,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                 'discover',
                 pageNumber,
                 API_KEY!,
-                childSafeMode
+                childSafeMode,
+                genreLogic
             )
 
             // Enrich results with media_type

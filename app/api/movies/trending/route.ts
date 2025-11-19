@@ -28,13 +28,15 @@ export async function GET(request: NextRequest) {
         if (genresParam && genresParam.trim().length > 0) {
             const unifiedGenreIds = genresParam.split(',').map((g) => g.trim())
 
+            // For trending with genres, default to OR logic for broader results
             const data = await fetchWithPrioritizedGenres(
                 unifiedGenreIds,
                 'movie',
                 'trending',
                 pageNumber,
                 API_KEY,
-                childSafeMode
+                childSafeMode,
+                'OR' // Trending rows use OR logic by default
             )
 
             // Add media_type to results if not present

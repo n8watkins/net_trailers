@@ -82,7 +82,7 @@ export function WizardStep1Basic({
             {/* Genres Selection */}
             <div>
                 <label className="block text-sm font-medium text-gray-200 mb-3">
-                    Genres * (Select 1-5)
+                    Genres * (Select 1-3)
                 </label>
                 <GenrePills
                     selectedGenres={formData.genres}
