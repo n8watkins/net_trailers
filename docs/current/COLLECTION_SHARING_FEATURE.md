@@ -8,6 +8,8 @@
 
 The Collection Sharing System allows users to create shareable links for their collections (watchlists, custom lists). Links can be shared on social media, messaging apps, or anywhere on the web, with rich link previews powered by Open Graph meta tags.
 
+**Privacy Model**: Collections are **private by default** and can only be shared via **explicit share links** (link-only sharing). There is no public collection browsing or discovery feature. This ensures user privacy while still allowing selective sharing with specific people or groups.
+
 ## Feature Highlights
 
 - 🔗 **Unique Share Links** - Generated with nanoid (short, URL-safe IDs)
@@ -17,6 +19,8 @@ The Collection Sharing System allows users to create shareable links for their c
 - 📊 **Statistics Dashboard** - Track total shares, active links, and views
 - 🎨 **Rich Link Previews** - Open Graph images for social media
 - 💾 **Duplicate Collections** - Viewers can save shared collections to their account
+- 🔒 **Link-Only Sharing** - Collections are private by default, shareable only via explicit links
+- 🚫 **No Public Discovery** - Shared collections cannot be browsed or discovered publicly
 
 ## Architecture
 
@@ -281,6 +285,7 @@ const SHARE_CONSTRAINTS = {
 3. **No Expiration Notifications** - Users not notified when shares expire
 4. **View Count Not Rate-Limited Server-Side** - Client-side cooldown only
 5. **No Audit Log** - Doesn't track who accessed shared links
+6. **No Public Discovery** - Collections cannot be browsed publicly (by design for privacy)
 
 ### 🎯 Threat Model
 
@@ -298,7 +303,7 @@ const SHARE_CONSTRAINTS = {
 - ❌ View count manipulation (only client-side cooldown)
 - ❌ Content scrapers accessing shared data (public endpoint)
 
-**Conclusion**: Appropriate security for public sharing. Links are meant to be shared openly. For private sharing, users should use expiration and active/inactive toggle.
+**Conclusion**: Appropriate security for link-only sharing. Links are meant to be shared selectively. Collections are private by default and cannot be discovered publicly. For temporary sharing, users should use expiration and active/inactive toggle.
 
 ## User Experience
 
@@ -473,6 +478,36 @@ const SHARE_CONSTRAINTS = {
 - TMDB content: Standard app caching
 - View count: Cooldown prevents excessive updates
 
+## Breaking Changes (2025-11-19)
+
+### Removal of Public Collections Feature
+
+**BREAKING CHANGE**: The `isPublic` property has been removed from the collection data model.
+
+**Previous Model (Deprecated)**:
+
+- Collections supported three visibility levels: `private`, `link-only`, and `public`
+- Public collections could be discovered and browsed by other users
+- Collections with `isPublic: true` were displayed on public profiles
+
+**New Model (Current)**:
+
+- Collections support only two states: `private` (default) or `link-only` (via explicit share links)
+- The `isPublic` property no longer exists in the `UserList` interface
+- Collections cannot be discovered publicly - they are private by default
+- Share links are the only way to share collections with others
+- Public profiles display only rankings (not collections)
+
+**Migration**: Existing collections with `isPublic: true` are automatically converted to link-only sharing via migration utilities.
+
+**Why This Change**:
+
+- Simplifies privacy model and reduces user confusion
+- Better aligns with privacy-first design principles
+- Reduces potential for unintended data exposure
+- Share links provide more control (expiration, view tracking, revocable)
+- Rankings still support public visibility for community features
+
 ## Known Issues / Future Improvements
 
 ### Current Limitations
@@ -482,7 +517,7 @@ const SHARE_CONSTRAINTS = {
 3. **Client-side View Cooldown** - Could be bypassed, needs server-side rate limiting
 4. **No Password Protection** - Anyone with link can access
 5. **No Comment System** - allowComments setting exists but not implemented
-6. **No Public Discovery** - Shares are link-only, no browse page
+6. **No Public Discovery** - Shares are link-only, no browse page (by design for privacy)
 
 ### Potential Enhancements (Future)
 

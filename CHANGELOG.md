@@ -5,6 +5,45 @@ All notable changes to NetTrailer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-11-19 - Security & Privacy Improvements
+
+### Security
+
+- **CRITICAL FIX: Removed client-side TMDB API calls**
+    - Eliminated insecure client-side TMDB API fetching in `useImageWithFallback` hook
+    - Removed potential API key exposure vulnerability in `ContentImage.tsx`
+    - Images now gracefully fallback from poster → backdrop → placeholder without client-side API calls
+    - All TMDB API calls now strictly server-side only
+
+### Changed
+
+- **BREAKING: Collection privacy model simplified**
+    - Removed `isPublic` property from collections/lists
+    - Collections are now **private by default**
+    - Collections can only be shared via **explicit share links** (link-only sharing)
+    - Removed three-tier privacy model (private/link-only/public)
+    - New two-tier model: **private** or **link-only** (via share links)
+    - Public profiles no longer display user collections (only rankings remain public)
+    - **Migration**: Existing collections with `isPublic: true` are automatically converted to link-only sharing
+
+### Fixed
+
+- **TypeScript compilation errors resolved**
+    - Removed unused `share_activity` notification type
+    - Fixed notification preferences type definitions
+    - Fixed `useSearchParams` Suspense boundary in admin pages
+    - Fixed `useRef` initialization issues in dropdown components
+    - Project now builds successfully with **zero TypeScript errors**
+
+### Technical
+
+- Cleaned up deprecated properties from data models
+- Updated migration utilities to remove `isPublic` references
+- Improved type safety across notification system
+- Enhanced client-side security by eliminating API key exposure risks
+
+---
+
 ## [1.6.0] - 2025-01-14 - Email Notification System
 
 ### Added

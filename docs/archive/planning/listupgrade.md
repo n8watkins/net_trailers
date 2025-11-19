@@ -1,5 +1,18 @@
 # List Sharing and Privacy Enhancement Plan
 
+**⚠️ ARCHIVED - PARTIALLY SUPERSEDED (2025-11-19)**
+
+This document describes the original planned implementation for collection sharing and privacy features. The actual implementation differs from this plan in the following key ways:
+
+- **Public Collections Removed**: The `isPublic` property and public collection browsing were NOT implemented
+- **Privacy Model Simplified**: Collections use a two-tier privacy model (private/link-only) instead of three-tier (private/public/unlisted)
+- **Link-Only Sharing**: Collections can only be shared via explicit share links, not publicly discoverable
+- **Actual Implementation**: See `/docs/current/COLLECTION_SHARING_FEATURE.md` for the implemented feature
+
+This document is preserved for historical reference only.
+
+---
+
 ## Executive Summary
 
 This plan outlines the implementation of advanced list sharing, importing, and privacy features for the NetTrailers application. The plan is structured around separate but interconnected areas of concern: data models, sharing mechanics, privacy controls, discovery features, and user interface enhancements.

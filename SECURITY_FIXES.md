@@ -1,6 +1,41 @@
 # Security Fixes - Critical Authentication Vulnerabilities
 
-## Date: 2025-11-10
+## Latest Updates: 2025-11-19
+
+### Client-Side TMDB API Key Exposure (CRITICAL)
+
+**Date**: 2025-11-19
+
+**Severity**: CRITICAL
+
+**Summary**: Removed client-side TMDB API calls that risked exposing the API key to malicious actors.
+
+**Vulnerabilities Fixed**:
+
+1. **Client-Side API Calls in useImageWithFallback Hook**
+    - **Issue**: Hook made direct TMDB API calls from the client to fetch alternate images
+    - **Risk**: TMDB API key could be extracted from browser network requests
+    - **Impact**: API key exposure could lead to quota exhaustion, service disruption, or unauthorized API usage
+    - **Fix**: Removed all client-side TMDB API fetching logic
+    - **New Behavior**: Images fallback gracefully (poster → backdrop → placeholder) without API calls
+
+2. **Insecure Image Fetching in ContentImage.tsx**
+    - **Issue**: Component made client-side requests to TMDB image CDN with potential API key leaks
+    - **Risk**: Network inspection could reveal API authentication patterns
+    - **Fix**: Simplified image loading to use only pre-fetched image URLs from server-side API calls
+    - **Result**: All TMDB API calls now strictly server-side only
+
+**Security Improvements**:
+
+- ✅ Zero client-side TMDB API calls
+- ✅ API key never exposed to browser
+- ✅ Graceful fallback without compromising security
+- ✅ Reduced attack surface for API key extraction
+- ✅ Better compliance with API security best practices
+
+---
+
+## Previous Fixes: 2025-11-10
 
 ## Summary
 
@@ -265,10 +300,68 @@ Use Google Cloud Application Default Credentials:
 - Firebase Auth Tokens: https://firebase.google.com/docs/auth/admin/verify-id-tokens
 - Next.js API Routes: https://nextjs.org/docs/app/building-your-application/routing/route-handlers
 
-## Impact
+## Privacy Model Simplification (2025-11-19)
+
+### Removal of Public Collections Feature
+
+**Date**: 2025-11-19
+
+**Change Type**: Breaking Change (Privacy Enhancement)
+
+**Summary**: Removed the `isPublic` property from collections to simplify the privacy model and reduce potential for unintended data exposure.
+
+**Changes Made**:
+
+1. **Collection Privacy Model Simplified**
+    - **Before**: Three-tier privacy (private/link-only/public)
+    - **After**: Two-tier privacy (private/link-only)
+    - **Impact**: Collections can no longer be made publicly discoverable
+    - **Benefit**: Reduces risk of accidental public data exposure
+
+2. **Data Model Updates**
+    - Removed `isPublic` property from `UserList` interface
+    - Updated all collection-related components to remove public visibility options
+    - Public profiles no longer display user collections (only rankings)
+
+3. **Migration Handling**
+    - Existing collections with `isPublic: true` automatically converted to link-only sharing
+    - Migration utilities updated to remove `isPublic` references
+    - Backward compatibility maintained for existing share links
+
+**Security Benefits**:
+
+- ✅ Simplified privacy controls reduce user confusion
+- ✅ Lower risk of unintended data exposure
+- ✅ Collections private by default
+- ✅ Explicit opt-in required for sharing (via share links)
+- ✅ Better alignment with privacy-first design principles
+
+**Note**: Rankings still support public/private visibility as they are designed for community sharing. Collections remain private and shareable only via explicit links.
+
+---
+
+## Impact Summary
+
+### Authentication Vulnerabilities (2025-11-10)
 
 **Before:** Any malicious actor could access/modify any user's data by forging headers.
 
 **After:** Only authenticated users with valid Firebase tokens can access their own data.
 
 **Risk Level:** CRITICAL → MITIGATED
+
+### TMDB API Key Exposure (2025-11-19)
+
+**Before:** API key could be extracted from client-side network requests.
+
+**After:** All TMDB API calls are server-side only. API key never exposed to client.
+
+**Risk Level:** CRITICAL → MITIGATED
+
+### Collection Privacy Model (2025-11-19)
+
+**Before:** Collections could be made publicly discoverable, risking unintended exposure.
+
+**After:** Collections are private by default, shareable only via explicit links.
+
+**Risk Level:** MEDIUM → MITIGATED

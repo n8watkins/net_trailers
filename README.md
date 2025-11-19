@@ -27,6 +27,7 @@ A Netflix-inspired streaming discovery platform built with modern web technologi
     - Secure session management with localStorage persistence
     - Seamless user switching between authenticated and guest accounts
     - Public user profiles with customizable username, avatar, and bio
+    - Public profiles display user's public rankings (collections remain private)
 
 ### 🎬 Content Discovery
 
@@ -77,8 +78,10 @@ A Netflix-inspired streaming discovery platform built with modern web technologi
     - Generate unique shareable links with public view pages
     - Open Graph meta tags for rich social media previews
     - View analytics (view count, timestamp)
-    - Revocable share links (toggle public/private)
+    - Revocable share links (toggle active/inactive)
     - Manage all share links in one interface
+    - **Link-only sharing**: Collections are private by default, shareable only via explicit links
+    - No public collection browsing or discovery
 
 ### 🏆 Rankings & Community
 
@@ -88,6 +91,7 @@ A Netflix-inspired streaming discovery platform built with modern web technologi
     - Public or private visibility controls
     - Custom titles, descriptions, and cover images
     - Edit existing rankings anytime
+    - **Note**: Rankings support public/private visibility; collections use link-only sharing
 
 - **Community Page** (`/community`)
     - Browse public rankings from all users
@@ -102,7 +106,7 @@ A Netflix-inspired streaming discovery platform built with modern web technologi
     - Threaded comment system with nested replies
     - Comment likes and engagement
     - Delete comments (owner or ranking author)
-    - Public profile pages showing user's rankings
+    - Public profile pages showing user's public rankings (collections are private)
 
 ### 💬 Forum & Discussion System
 
