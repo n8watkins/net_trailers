@@ -6,8 +6,8 @@ import { apiError } from '../../../utils/debugLogger'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
-const RANDOM_PAGE_MAX = 10
-const MAX_ATTEMPTS = 4
+const RANDOM_PAGE_MAX = 50 // Increased from 10 for more variety
+const MAX_ATTEMPTS = 2 // Reduced from 4 for API efficiency
 
 type MediaType = 'movie' | 'tv'
 
@@ -112,7 +112,46 @@ export async function GET(request: NextRequest) {
         const searchParams = request.nextUrl.searchParams
         const childSafetyMode = searchParams.get('childSafetyMode') === 'true'
         const forcedMediaType = normalizeMediaType(searchParams.get('media_type'))
+        const count = parseInt(searchParams.get('count') || '1', 10)
+        const requestedCount = Math.min(Math.max(count, 1), 20) // Clamp between 1-20
 
+        // For bulk requests (count > 1), fetch from multiple pages
+        if (requestedCount > 1) {
+            const pool: RawContent[] = []
+            const pagesToFetch = Math.min(3, Math.ceil(requestedCount / 10)) // Fetch 1-3 pages
+
+            for (let i = 0; i < pagesToFetch && pool.length < requestedCount * 2; i++) {
+                const mediaType =
+                    forcedMediaType ||
+                    (Math.random() > 0.5 ? ('movie' as MediaType) : ('tv' as MediaType))
+                const page = getRandomPage()
+                const candidates = await fetchCandidates(mediaType, page, childSafetyMode)
+                pool.push(...candidates)
+            }
+
+            if (pool.length === 0) {
+                return NextResponse.json(
+                    { message: 'No content available at the moment. Please try again.' },
+                    { status: 404 }
+                )
+            }
+
+            // Shuffle and take requested count
+            const shuffled = pool.sort(() => Math.random() - 0.5)
+            const selected = shuffled.slice(0, requestedCount)
+
+            return NextResponse.json(
+                { items: selected, count: selected.length },
+                {
+                    status: 200,
+                    headers: {
+                        'Cache-Control': 'private, max-age=600', // Cache for 10 minutes
+                    },
+                }
+            )
+        }
+
+        // Single item request (original behavior)
         for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
             const mediaType =
                 forcedMediaType ||

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { devLog } from '../../utils/debugLogger'
 import {
     MagnifyingGlassIcon,
@@ -135,6 +135,11 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
     const debugSettings = useDebugSettings()
     const { isEnabled: childSafetyEnabled } = useChildSafety()
 
+    // Lazy-loaded cache for random content (only initialized after first use)
+    const randomContentCache = useRef<Content[]>([])
+    const lastClickTime = useRef<number>(0)
+    const isPrefetching = useRef<boolean>(false)
+
     // Determine if we should show sub-navigation based on current path
     const subNavPaths = [
         '/profile',
@@ -186,8 +191,51 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
             devLog('🎉 All toast tests complete!')
         }, 5000)
     }
+
+    // Prefetch random content pool in background (lazy initialization)
+    const prefetchRandomPool = async () => {
+        if (isPrefetching.current) return
+
+        isPrefetching.current = true
+        try {
+            const response = await fetch(
+                `/api/random-content?count=15&childSafetyMode=${childSafetyEnabled ? 'true' : 'false'}`,
+                { cache: 'no-store' }
+            )
+
+            if (!response.ok) {
+                devLog('Failed to prefetch random content pool')
+                return
+            }
+
+            const data = await response.json()
+            if (data?.items && Array.isArray(data.items)) {
+                // Normalize all items
+                const normalized = data.items.map((item: Content) => ({
+                    ...item,
+                    media_type: item.media_type === 'tv' ? 'tv' : 'movie',
+                })) as Content[]
+
+                randomContentCache.current = normalized
+                devLog(`✅ Prefetched ${normalized.length} random content items`)
+            }
+        } catch (error) {
+            devLog('Error prefetching random content:', error)
+        } finally {
+            isPrefetching.current = false
+        }
+    }
+
     const handleRandomContent = async (options?: { closeMenu?: boolean }) => {
         if (isRandomLoading) return
+
+        // Rate limiting: 1 second cooldown between clicks
+        const now = Date.now()
+        if (now - lastClickTime.current < 1000) {
+            devLog('⏱️ Surprise Me cooldown active (1s)')
+            return
+        }
+        lastClickTime.current = now
 
         if (options?.closeMenu) {
             setShowMobileMenu(false)
@@ -195,11 +243,33 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
 
         setIsRandomLoading(true)
         try {
+            // Try to serve from cache first (instant!)
+            if (randomContentCache.current.length > 0) {
+                const randomIndex = Math.floor(Math.random() * randomContentCache.current.length)
+                const randomContent = randomContentCache.current[randomIndex]
+
+                // Remove used item from cache
+                randomContentCache.current.splice(randomIndex, 1)
+
+                devLog(`🎲 Serving from cache (${randomContentCache.current.length} remaining)`)
+
+                // Auto-refetch when pool depletes to 3 items
+                if (randomContentCache.current.length <= 3 && !isPrefetching.current) {
+                    devLog('🔄 Cache low, triggering background refetch')
+                    prefetchRandomPool()
+                }
+
+                // Open modal with cached content
+                openModal(randomContent, true, false)
+                setIsRandomLoading(false)
+                return
+            }
+
+            // Cache empty - fetch single item from API
+            devLog('📡 Cache empty, fetching from API')
             const response = await fetch(
                 `/api/random-content?childSafetyMode=${childSafetyEnabled ? 'true' : 'false'}`,
-                {
-                    cache: 'no-store',
-                }
+                { cache: 'no-store' }
             )
 
             if (!response.ok) {
@@ -219,8 +289,13 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
             } as Content
 
             openModal(normalizedContent, true, false)
+
+            // Lazy initialization: Prefetch pool after first successful use
+            if (randomContentCache.current.length === 0 && !isPrefetching.current) {
+                devLog('🚀 First use detected, prefetching pool in background')
+                prefetchRandomPool()
+            }
         } catch (error) {
-            // Error already shown to user via toast
             showError('Unable to find something to watch', 'Please try again')
         } finally {
             setIsRandomLoading(false)
