@@ -7,6 +7,7 @@
 
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -15,7 +16,9 @@ import { getCategoryInfo } from '@/utils/forumCategories'
 import { ChatBubbleLeftIcon, EyeIcon, HeartIcon, ClockIcon } from '@heroicons/react/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid'
 import { formatDistanceToNow } from 'date-fns'
-import { Timestamp } from 'firebase/firestore'
+import { Timestamp, doc, getDoc } from 'firebase/firestore'
+import { useSessionStore } from '@/stores/sessionStore'
+import { db } from '@/firebase'
 
 // Helper to convert Firebase Timestamp to Date
 const toDate = (timestamp: Timestamp | Date | number): Date => {
@@ -35,8 +38,31 @@ interface ThreadCardProps {
 
 export function ThreadCard({ thread, onClick }: ThreadCardProps) {
     const router = useRouter()
+    const getUserId = useSessionStore((state) => state.getUserId)
+    const userId = getUserId()
     const category = getCategoryInfo(thread.category)
-    const isLiked = false // TODO: Check if user has liked this thread
+    const [isLiked, setIsLiked] = useState(false)
+
+    // Check if user has liked this thread
+    useEffect(() => {
+        const checkLikeStatus = async () => {
+            if (!userId) {
+                setIsLiked(false)
+                return
+            }
+
+            try {
+                const likeRef = doc(db, 'thread_likes', `${userId}_${thread.id}`)
+                const likeDoc = await getDoc(likeRef)
+                setIsLiked(likeDoc.exists())
+            } catch (error) {
+                console.error('Error checking thread like status:', error)
+                setIsLiked(false)
+            }
+        }
+
+        checkLikeStatus()
+    }, [userId, thread.id])
 
     const handleClick = () => {
         if (onClick) {

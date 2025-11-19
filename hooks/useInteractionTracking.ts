@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { usePathname } from 'next/navigation'
 import { useSessionStore } from '@/stores/sessionStore'
 import { useSessionData } from './useSessionData'
 import { logInteraction, createInteractionFromContent } from '@/utils/firestore/interactions'
@@ -192,19 +193,15 @@ export function useInteractionTracking() {
  * trackInteraction.viewModal(content, source)
  */
 export function useInteractionSource(): InteractionSource {
-    // TODO: Implement with usePathname() from next/navigation
-    // For now, return 'modal' as default
-    return 'modal'
-
-    // Future implementation:
-    /*
     const pathname = usePathname()
 
     if (pathname === '/') return 'home'
     if (pathname.startsWith('/search')) return 'search'
     if (pathname.startsWith('/rows')) return 'collection'
+    if (pathname.startsWith('/collections')) return 'collection'
     if (pathname.startsWith('/watchlist')) return 'watchlist'
+    if (pathname.startsWith('/rankings')) return 'modal'
+    if (pathname.startsWith('/community')) return 'modal'
 
     return 'modal'
-    */
 }

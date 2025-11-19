@@ -22,7 +22,7 @@ npm run migrate:genres # Migrate existing collections from TMDB genre IDs to uni
 
 ### State Management Architecture (Zustand)
 
-The app uses **Zustand** with **17 focused stores** (migrated from monolithic "god store"):
+The app uses **Zustand** with **18 focused stores** (migrated from monolithic "god store"):
 
 - **Direct store usage**: Components use Zustand hooks directly (e.g., `useAppStore()`, `useSessionStore()`)
 - **No provider wrapper**: Zustand stores work without a root provider component
@@ -85,7 +85,7 @@ The app handles both movies and TV shows through a unified type system:
 
 ### API Architecture
 
-- **30+ Internal API routes** (`/api/movies/*`, `/api/search`, `/api/gemini/*`, etc.) proxy TMDB API calls
+- **49 Internal API routes** (`/api/movies/*`, `/api/search`, `/api/gemini/*`, etc.) proxy TMDB API calls
 - **TMDB integration** via query parameter authentication (`?api_key=...`) - TMDB API v3 requirement
 - **Gemini AI integration** via `/api/gemini/analyze` and related endpoints for smart search
 - **Comprehensive error handling** via `utils/errorHandler.ts` with user-friendly messages
@@ -535,7 +535,7 @@ const showModal = useModalStore((state) => state.modal.isOpen)
 
 ## Component Architecture
 
-### Component Organization (30,225 lines across 100+ components)
+### Component Organization (35,682 lines across 100+ components)
 
 **Key component directories**:
 
@@ -582,7 +582,7 @@ const showModal = useModalStore((state) => state.modal.isOpen)
 
 ## Key Metrics
 
-- **Codebase size**: 30,225 lines (components), ~50,000+ total (estimated)
+- **Codebase size**: 35,682 lines (components), ~50,000+ total (estimated)
 - **Total commits**: 378+
 - **Features completed**: 12 major feature sets
 - **Documentation**: 55+ markdown files

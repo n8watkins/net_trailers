@@ -34,11 +34,12 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
     const router = useRouter()
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
-    const { likeRanking, unlikeRanking } = useRankingStore()
+    const { likeRanking, unlikeRanking, likes } = useRankingStore()
 
     // Check if current user liked this ranking
-    // TODO: This should come from a likes state or API call
-    const isLiked = false
+    const isLiked = userId
+        ? likes.some((like) => like.rankingId === ranking.id && like.userId === userId)
+        : false
 
     const handleCardClick = () => {
         router.push(`/rankings/${ranking.id}`)

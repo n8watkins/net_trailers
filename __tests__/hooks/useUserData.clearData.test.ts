@@ -15,6 +15,7 @@
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { useWatchHistoryStore } from '../../stores/watchHistoryStore'
 import { useNotificationStore } from '../../stores/notificationStore'
+import * as useSessionDataModule from '../../hooks/useSessionData'
 
 // Mock Firebase
 const mockSetDoc = jest.fn()
@@ -290,14 +291,14 @@ describe('useUserData - clearAccountData Isolation', () => {
 
         beforeEach(() => {
             // Mock to simulate guest mode
-            jest.spyOn(require('../../hooks/useSessionData'), 'useSessionData').mockReturnValue({
+            jest.spyOn(useSessionDataModule, 'useSessionData').mockReturnValue({
                 sessionType: 'guest',
                 activeSessionId: guestId,
                 isGuest: true,
                 isAuthenticated: false,
                 clearAllData: jest.fn(),
                 // ... other required fields
-            })
+            } as ReturnType<typeof useSessionDataModule.useSessionData>)
 
             // Seed guest localStorage
             const guestDataKey = `nettrailer_guest_data_v2_${guestId}`
@@ -452,11 +453,11 @@ describe('useUserData - clearAccountData Isolation', () => {
 
         it('should clear only the active guest data, not other guests', async () => {
             // Mock guest 1 session
-            jest.spyOn(require('../../hooks/useSessionData'), 'useSessionData').mockReturnValue({
+            jest.spyOn(useSessionDataModule, 'useSessionData').mockReturnValue({
                 sessionType: 'guest',
                 activeSessionId: guest1Id,
                 clearAllData: jest.fn(),
-            })
+            } as ReturnType<typeof useSessionDataModule.useSessionData>)
 
             const { result } = renderHook(() => useUserData())
 

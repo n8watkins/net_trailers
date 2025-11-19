@@ -278,7 +278,7 @@ A Netflix-inspired streaming discovery platform built with modern web technologi
         - forumStore
     - Next.js 16 with React 19 and App Router patterns
     - Firebase Firestore with optimistic updates and real-time sync
-    - **30+ API routes** organized by feature
+    - **49 API routes** organized by feature
     - Sentry error monitoring (client & server-side)
     - Google Analytics 4 integration
     - Vercel Analytics for performance insights
@@ -552,7 +552,7 @@ net_trailers/
 │       ├── cron/         # Cron job endpoints
 │       └── ...
 │
-├── components/           # 100+ React components (30,225 lines)
+├── components/           # 100+ React components (35,682 lines)
 │   ├── auth/             # AuthModal, AccountManagement
 │   ├── collections/      # CollectionRowLoader, CollectionEditorModal
 │   ├── common/           # Toast, LoadingSpinner, EmptyState, ErrorBoundary
@@ -943,7 +943,7 @@ showSuccess('Operation completed', 'Optional description')
 
 **Performance Metrics**:
 
-- Component files: 30,225 lines
+- Component files: 35,682 lines
 - Build time: ~45s (Next.js 16 with caching)
 - API response time: <200ms (cached)
 - First Contentful Paint: <1.5s
@@ -1028,7 +1028,7 @@ Configured in `next.config.mjs`:
 
 **Codebase Size**:
 
-- Total component lines: 30,225
+- Total component lines: 35,682
 - Total commits: 378+
 - Features completed: 12 major feature sets
 - Documentation pages: 55+ markdown files
