@@ -6,7 +6,7 @@ import { getUnifiedGenresByMediaType } from '../../constants/unifiedGenres'
 import { CUSTOM_ROW_CONSTRAINTS } from '../../types/customRows'
 
 interface GenrePillsProps {
-    selectedGenres: string[] // Now uses unified genre IDs like 'action', 'fantasy'
+    selectedGenres: string[] // Array order = priority: index 0 = priority 1, index 1 = priority 2, etc.
     onChange: (genres: string[]) => void
     mediaType: 'movie' | 'tv' | 'both'
     maxGenres?: number
@@ -16,9 +16,9 @@ interface GenrePillsProps {
 /**
  * GenrePills Component
  *
- * Displays unified genres as clickable pills that can be selected/deselected.
- * Automatically maps to correct TMDB genre IDs behind the scenes.
- * More professional and visual than a dropdown.
+ * Displays unified genres as clickable pills with priority numbering.
+ * Click order determines priority (1 = most important, 3 = least important).
+ * Array order is preserved - index 0 = priority 1, index 1 = priority 2, etc.
  */
 export function GenrePills({
     selectedGenres,
@@ -38,19 +38,47 @@ export function GenrePills({
             return
         }
 
-        // If selecting a specific genre while "All Genres" is selected, clear everything first
-        if (selectedGenres.includes(genreId)) {
-            // Remove genre
+        const isSelected = selectedGenres.includes(genreId)
+
+        if (isSelected) {
+            // Remove genre and maintain order (all higher priorities shift down)
             onChange(selectedGenres.filter((id) => id !== genreId))
         } else {
-            // Add genre if not at max
+            // Add genre to end (max 3 for prioritization)
             if (selectedGenres.length < maxGenres) {
                 onChange([...selectedGenres, genreId])
             }
         }
     }
 
-    const isGenreSelected = (genreId: string) => selectedGenres.includes(genreId)
+    const getGenrePriority = (genreId: string): number | null => {
+        const index = selectedGenres.indexOf(genreId)
+        return index >= 0 ? index + 1 : null // 1-based priority
+    }
+
+    const getPriorityBadgeStyle = (priority: number) => {
+        // Visual hierarchy: Priority 1 = largest/brightest, 3 = smallest/darkest
+        if (priority === 1) {
+            return {
+                size: 'w-6 h-6 text-sm',
+                color: 'bg-red-500',
+                textColor: 'text-white',
+            }
+        } else if (priority === 2) {
+            return {
+                size: 'w-5 h-5 text-xs',
+                color: 'bg-red-600',
+                textColor: 'text-white',
+            }
+        } else {
+            return {
+                size: 'w-5 h-5 text-xs',
+                color: 'bg-red-700',
+                textColor: 'text-white',
+            }
+        }
+    }
+
     const atMaxGenres = selectedGenres.length >= maxGenres
     const isAllGenresSelected = selectedGenres.length === 0
 
@@ -76,8 +104,10 @@ export function GenrePills({
 
                 {/* Regular Genre Pills */}
                 {availableGenres.map((genre) => {
-                    const isSelected = isGenreSelected(genre.id)
+                    const priority = getGenrePriority(genre.id)
+                    const isSelected = priority !== null
                     const isDisabled = !isSelected && atMaxGenres
+                    const badgeStyle = priority ? getPriorityBadgeStyle(priority) : null
 
                     return (
                         <button
@@ -96,8 +126,14 @@ export function GenrePills({
                                 }
                             `}
                         >
-                            <span className="flex items-center gap-1.5">
-                                {isSelected && <CheckIcon className="w-4 h-4" />}
+                            <span className="flex items-center gap-2">
+                                {isSelected && badgeStyle && (
+                                    <span
+                                        className={`${badgeStyle.size} ${badgeStyle.color} ${badgeStyle.textColor} rounded-full flex items-center justify-center font-bold`}
+                                    >
+                                        {priority}
+                                    </span>
+                                )}
                                 {genre.name}
                             </span>
                         </button>

@@ -146,7 +146,7 @@ export interface CollectionUpdate {
 export const CUSTOM_ROW_CONSTRAINTS = {
     MAX_ROWS_PER_AUTH_USER: 10, // Authenticated users can create up to 10 custom rows
     MAX_ROWS_PER_GUEST_USER: 1, // Guest users can create 1 custom row
-    MAX_GENRES_PER_ROW: 5,
+    MAX_GENRES_PER_ROW: 3, // Limit to 3 genres for better performance and UX with prioritization
     MIN_GENRES_PER_ROW: 1, // Only applies to custom rows; special system rows can have 0 genres
     MIN_GENRES_PER_SPECIAL_ROW: 0, // Special rows (Trending, Top Rated) have no genre requirements
     MIN_NAME_LENGTH: 3,

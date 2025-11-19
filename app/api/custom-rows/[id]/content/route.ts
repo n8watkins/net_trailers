@@ -8,6 +8,7 @@ import {
 } from '../../../../../utils/genreMapping'
 import { verifyIdToken, getAdminDb } from '../../../../../lib/firebase-admin'
 import { Content } from '../../../../../typings'
+import { fetchWithPrioritizedGenres } from '../../../../../utils/prioritizedGenreFetch'
 
 const API_KEY = process.env.TMDB_API_KEY
 const BASE_URL = 'https://api.themoviedb.org/3'
@@ -269,51 +270,27 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         let totalPages = 0
         let totalResults = 0
 
-        // Handle "both" media type by fetching from both endpoints
+        // Handle "both" media type by fetching from both endpoints with prioritization
         if (mediaType === 'both') {
-            // Translate unified genres to TMDB IDs for both media types
-            const { movieIds, tvIds } = translateToTMDBGenresForBoth(unifiedGenreIds)
-
-            // Format genres for TMDB API
-            // AND logic: with_genres=16,10402 (comma-separated)
-            // OR logic: with_genres=35|53 (pipe-separated)
-            const movieGenreParam =
-                genreLogic === 'AND'
-                    ? movieIds.join(',') // AND: comma-separated
-                    : movieIds.join('|') // OR: pipe-separated
-
-            const tvGenreParam =
-                genreLogic === 'AND'
-                    ? tvIds.join(',') // AND: comma-separated
-                    : tvIds.join('|') // OR: pipe-separated
-
-            // Build movie URL
-            let movieUrl = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=en-US&page=${page}&sort_by=popularity.desc&with_genres=${movieGenreParam}`
-            if (childSafeMode) {
-                movieUrl += '&certification_country=US&certification.lte=PG-13'
-            }
-
-            // Build TV URL
-            const tvUrl = `${BASE_URL}/discover/tv?api_key=${API_KEY}&language=en-US&page=${page}&sort_by=popularity.desc&with_genres=${tvGenreParam}`
-
-            // Fetch both in parallel
-            const [movieResponse, tvResponse] = await Promise.all([fetch(movieUrl), fetch(tvUrl)])
-
-            if (!movieResponse.ok || !tvResponse.ok) {
-                apiError('[Custom Rows API] TMDB fetch error:', {
-                    movieStatus: movieResponse.status,
-                    movieOk: movieResponse.ok,
-                    tvStatus: tvResponse.status,
-                    tvOk: tvResponse.ok,
-                    movieUrl: movieUrl.replace(/api_key=[^&]+/, 'api_key=[REDACTED]'),
-                    tvUrl: tvUrl.replace(/api_key=[^&]+/, 'api_key=[REDACTED]'),
-                })
-                throw new Error(
-                    `TMDB API error while fetching both media types: movie=${movieResponse.status}, tv=${tvResponse.status}`
-                )
-            }
-
-            const [movieData, tvData] = await Promise.all([movieResponse.json(), tvResponse.json()])
+            // Fetch movies and TV separately with prioritized genre cascading
+            const [movieData, tvData] = await Promise.all([
+                fetchWithPrioritizedGenres(
+                    unifiedGenreIds,
+                    'movie',
+                    'discover',
+                    pageNumber,
+                    API_KEY!,
+                    childSafeMode
+                ),
+                fetchWithPrioritizedGenres(
+                    unifiedGenreIds,
+                    'tv',
+                    'discover',
+                    pageNumber,
+                    API_KEY!,
+                    childSafeMode
+                ),
+            ])
 
             // Merge and enrich results
             const movieResults = movieData.results.map((item: any) => ({
@@ -337,32 +314,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             totalPages = Math.max(movieData.total_pages, tvData.total_pages)
             totalResults = movieData.total_results + tvData.total_results
         } else {
-            // Single media type (movie or tv)
-            // Translate unified genres to TMDB IDs
-            const tmdbGenreIds = translateToTMDBGenres(unifiedGenreIds, mediaType)
-
-            // Format genres for TMDB API
-            const genreParam =
-                genreLogic === 'AND'
-                    ? tmdbGenreIds.join(',') // AND: comma-separated
-                    : tmdbGenreIds.join('|') // OR: pipe-separated
-
-            const discoverEndpoint = mediaType === 'movie' ? 'discover/movie' : 'discover/tv'
-            let url = `${BASE_URL}/${discoverEndpoint}?api_key=${API_KEY}&language=en-US&page=${page}&sort_by=popularity.desc&with_genres=${genreParam}`
-
-            // Apply child safety filtering
-            if (childSafeMode && mediaType === 'movie') {
-                url += '&certification_country=US&certification.lte=PG-13'
-            }
-
-            // Fetch from TMDB
-            const response = await fetch(url)
-
-            if (!response.ok) {
-                throw new Error(`TMDB API error: ${response.status} ${response.statusText}`)
-            }
-
-            const data = await response.json()
+            // Single media type (movie or tv) - use prioritized genre cascading
+            const data = await fetchWithPrioritizedGenres(
+                unifiedGenreIds,
+                mediaType,
+                'discover',
+                pageNumber,
+                API_KEY!,
+                childSafeMode
+            )
 
             // Enrich results with media_type
             enrichedResults = data.results.map((item: any) => ({

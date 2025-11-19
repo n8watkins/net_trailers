@@ -938,14 +938,20 @@ export default function CollectionEditorModal({
                     <div className="p-6 max-h-[calc(90vh-200px)] overflow-y-auto">
                         {/* Genre Pills */}
                         <div>
-                            <div className="flex items-baseline justify-between mb-3">
-                                <p className="text-sm font-medium text-gray-300">
-                                    Genres{' '}
-                                    {selectedGenres.length === 0
-                                        ? '(Any)'
-                                        : `(${selectedGenres.length})`}
+                            <div className="mb-3">
+                                <div className="flex items-baseline justify-between mb-2">
+                                    <p className="text-sm font-medium text-gray-300">
+                                        Genres{' '}
+                                        {selectedGenres.length === 0
+                                            ? '(Any)'
+                                            : `(${selectedGenres.length})`}
+                                    </p>
+                                    <p className="text-xs text-gray-400">Select up to 3</p>
+                                </div>
+                                <p className="text-xs text-gray-400">
+                                    Click order determines priority (1 = most important, 3 = least
+                                    important)
                                 </p>
-                                <p className="text-xs text-gray-400">Select up to 5</p>
                             </div>
                             <GenrePills
                                 selectedGenres={selectedGenres}
