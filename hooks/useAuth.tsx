@@ -372,9 +372,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 throw new Error(data.error || 'Failed to send password reset email')
             }
 
-            setPassResetSuccess(true)
+            const emailSent = Boolean(data.emailSent)
+            setPassResetSuccess(emailSent)
             showSuccess(
-                data.message || 'Password reset email sent! Check your inbox for further steps.'
+                data.message ||
+                    (emailSent
+                        ? 'Password reset email sent! Check your inbox for further steps.'
+                        : 'If an account exists with this email, you will receive a password reset link.')
             )
         } catch (error) {
             const message =

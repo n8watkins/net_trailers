@@ -19,23 +19,17 @@ jest.mock('../../../../../lib/email/email-service', () => ({
 
 import { getAdminDb, getAdminAuth } from '../../../../../lib/firebase-admin'
 
-const mockUsersGet = jest.fn()
+const mockUserDocGet = jest.fn()
 const mockUserRefUpdate = jest.fn()
-const mockGetUser = jest.fn()
+const mockUsersCollectionDoc = jest.fn()
+const mockGetUserByEmail = jest.fn()
 
 function buildMockDb() {
     return {
         collection: jest.fn((name: string) => {
             if (name === 'users') {
                 return {
-                    where: jest.fn(() => ({
-                        limit: jest.fn(() => ({
-                            get: mockUsersGet,
-                        })),
-                    })),
-                    doc: jest.fn(() => ({
-                        update: mockUserRefUpdate,
-                    })),
+                    doc: mockUsersCollectionDoc,
                 }
             }
             throw new Error(`Unexpected collection: ${name}`)
@@ -43,17 +37,20 @@ function buildMockDb() {
     }
 }
 
-function buildSnapshot(providerId = 'password') {
+function buildUserDocSnapshot() {
     return {
-        empty: false,
-        docs: [
-            {
-                id: 'user-123',
-                data: () => ({
-                    profile: { email: 'user@example.com', username: 'TestUser' },
-                }),
-            },
-        ],
+        exists: true,
+        id: 'user-123',
+        data: () => ({
+            profile: { email: 'user@example.com', username: 'TestUser' },
+        }),
+    }
+}
+
+function buildUserRecord(providerIds: string[]) {
+    return {
+        uid: 'user-123',
+        providerData: providerIds.map((providerId) => ({ providerId })),
     }
 }
 
@@ -69,25 +66,29 @@ function createRequest(body: unknown) {
 describe('/api/auth/send-password-reset', () => {
     beforeEach(() => {
         jest.clearAllMocks()
-        mockUsersGet.mockReset()
+        mockUserDocGet.mockReset()
         mockUserRefUpdate.mockReset()
-        mockGetUser.mockReset()
+        mockUsersCollectionDoc.mockReset()
+        mockGetUserByEmail.mockReset()
+        mockUsersCollectionDoc.mockReturnValue({
+            get: mockUserDocGet,
+            update: mockUserRefUpdate,
+        })
+        mockUserDocGet.mockResolvedValue(buildUserDocSnapshot())
+        mockGetUserByEmail.mockResolvedValue(buildUserRecord(['password']))
         ;(getAdminDb as jest.Mock).mockReturnValue(buildMockDb())
         ;(getAdminAuth as jest.Mock).mockReturnValue({
-            getUser: mockGetUser,
+            getUserByEmail: mockGetUserByEmail,
         })
     })
 
     it('sends password reset for email/password users', async () => {
-        mockUsersGet.mockResolvedValue(buildSnapshot('password'))
-        mockGetUser.mockResolvedValue({
-            uid: 'user-123',
-            providerData: [{ providerId: 'password' }],
-        })
+        mockGetUserByEmail.mockResolvedValue(buildUserRecord(['password']))
 
         const response = await POST(createRequest({ email: 'user@example.com' }))
 
         expect(response.status).toBe(200)
+        expect(mockUsersCollectionDoc).toHaveBeenCalledWith('user-123')
         expect(mockUserRefUpdate).toHaveBeenCalledWith(
             expect.objectContaining({
                 passwordResetToken: expect.any(String),
@@ -96,12 +97,17 @@ describe('/api/auth/send-password-reset', () => {
         )
     })
 
+    it('allows password reset for hybrid auth users (Google + password)', async () => {
+        mockGetUserByEmail.mockResolvedValue(buildUserRecord(['google.com', 'password']))
+
+        const response = await POST(createRequest({ email: 'hybrid@example.com' }))
+
+        expect(response.status).toBe(200)
+        expect(mockUserRefUpdate).toHaveBeenCalled()
+    })
+
     it('blocks password reset for Google auth users', async () => {
-        mockUsersGet.mockResolvedValue(buildSnapshot('google.com'))
-        mockGetUser.mockResolvedValue({
-            uid: 'user-123',
-            providerData: [{ providerId: 'google.com' }],
-        })
+        mockGetUserByEmail.mockResolvedValue(buildUserRecord(['google.com']))
 
         const response = await POST(createRequest({ email: 'google@example.com' }))
 
@@ -113,25 +119,11 @@ describe('/api/auth/send-password-reset', () => {
         expect(mockUserRefUpdate).not.toHaveBeenCalled()
     })
 
-    it('allows password reset for hybrid auth users (Google + Password)', async () => {
-        mockUsersGet.mockResolvedValue(buildSnapshot('password'))
-        mockGetUser.mockResolvedValue({
-            uid: 'user-123',
-            providerData: [{ providerId: 'google.com' }, { providerId: 'password' }],
-        })
-
-        const response = await POST(createRequest({ email: 'hybrid@example.com' }))
-
-        expect(response.status).toBe(200)
-        expect(mockUserRefUpdate).toHaveBeenCalledWith(
-            expect.objectContaining({
-                passwordResetToken: expect.any(String),
-            })
-        )
-    })
-
     it('returns success message for non-existent email (security)', async () => {
-        mockUsersGet.mockResolvedValue({ empty: true, docs: [] })
+        const notFoundError = Object.assign(new Error('User not found'), {
+            code: 'auth/user-not-found',
+        })
+        mockGetUserByEmail.mockRejectedValue(notFoundError)
 
         const response = await POST(createRequest({ email: 'nonexistent@example.com' }))
 
@@ -157,14 +149,24 @@ describe('/api/auth/send-password-reset', () => {
         expect(data.error).toContain('Email is required')
     })
 
-    it('handles auth provider check errors gracefully', async () => {
-        mockUsersGet.mockResolvedValue(buildSnapshot('password'))
-        mockGetUser.mockRejectedValue(new Error('Firebase Admin error'))
+    it('normalizes email casing before lookup', async () => {
+        await POST(createRequest({ email: 'User@Example.com' }))
+
+        expect(mockGetUserByEmail).toHaveBeenCalledWith('user@example.com')
+    })
+
+    it('gracefully handles missing Firestore user doc', async () => {
+        mockUserDocGet.mockResolvedValue({
+            exists: false,
+            id: 'user-123',
+            data: () => null,
+        })
 
         const response = await POST(createRequest({ email: 'user@example.com' }))
 
-        // Should still process the request even if provider check fails
         expect(response.status).toBe(200)
-        expect(mockUserRefUpdate).toHaveBeenCalled()
+        const data = await response.json()
+        expect(data.success).toBe(true)
+        expect(mockUserRefUpdate).not.toHaveBeenCalled()
     })
 })

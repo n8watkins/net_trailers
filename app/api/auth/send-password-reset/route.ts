@@ -11,6 +11,7 @@ import { EmailService } from '@/lib/email/email-service'
 import { apiError, apiLog, apiWarn } from '@/utils/debugLogger'
 import crypto from 'crypto'
 import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin'
+import type { UserRecord } from 'firebase-admin/auth'
 
 // Rate limiting: Max 3 password reset emails per email address per hour
 const rateLimitCache = new Map<string, { count: number; resetAt: number }>()
@@ -37,21 +38,22 @@ function enforceRateLimit(email: string) {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json()
-        const { email } = body
+        const rawEmail = typeof body?.email === 'string' ? body.email.trim() : ''
+        const normalizedEmail = rawEmail.toLowerCase()
 
-        if (!email) {
+        if (!rawEmail) {
             return NextResponse.json({ error: 'Email is required' }, { status: 400 })
         }
 
         // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        if (!emailRegex.test(email)) {
+        if (!emailRegex.test(rawEmail)) {
             return NextResponse.json({ error: 'Invalid email format' }, { status: 400 })
         }
 
         // Enforce rate limiting
         try {
-            enforceRateLimit(email.toLowerCase())
+            enforceRateLimit(normalizedEmail)
         } catch (rateLimitError) {
             return NextResponse.json(
                 { error: 'Too many password reset requests. Please try again later.' },
@@ -59,17 +61,31 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Check if user exists in Firestore
         const db = getAdminDb()
-        const usersSnapshot = await db
-            .collection('users')
-            .where('profile.email', '==', email)
-            .limit(1)
-            .get()
+        const auth = getAdminAuth()
 
-        if (usersSnapshot.empty) {
-            // For security, don't reveal whether email exists
-            apiLog(`Password reset requested for non-existent email: ${email}`)
+        let userRecord: UserRecord
+        try {
+            userRecord = await auth.getUserByEmail(normalizedEmail)
+        } catch (authError: any) {
+            if (authError?.code === 'auth/user-not-found') {
+                apiLog(`Password reset requested for non-existent email: ${normalizedEmail}`)
+                return NextResponse.json({
+                    success: true,
+                    message:
+                        'If an account exists with this email, you will receive a password reset link.',
+                })
+            }
+
+            apiError('Error fetching user by email:', authError)
+            return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+        }
+
+        const userRef = db.collection('users').doc(userRecord.uid)
+        const userDocSnapshot = await userRef.get()
+
+        if (!userDocSnapshot.exists) {
+            apiWarn(`Password reset requested but no user doc found for UID: ${userRecord.uid}`)
             return NextResponse.json({
                 success: true,
                 message:
@@ -77,31 +93,22 @@ export async function POST(request: NextRequest) {
             })
         }
 
-        const userDoc = usersSnapshot.docs[0]
-        const userData = userDoc.data()
+        const userData = userDocSnapshot.data()
         const username = userData?.profile?.username || 'User'
 
-        // Check if user has password authentication (not just OAuth)
-        const auth = getAdminAuth()
-        try {
-            const userRecord = await auth.getUser(userDoc.id)
-            const hasPasswordProvider = userRecord.providerData.some(
-                (provider) => provider.providerId === 'password'
-            )
+        const isPasswordUser = userRecord.providerData.some(
+            (provider) => provider.providerId === 'password'
+        )
 
-            if (!hasPasswordProvider) {
-                // User only has OAuth providers (Google, etc.) - no password to reset
-                apiLog(`Password reset denied for OAuth-only account: ${email}`)
-                // Return success message anyway (security: don't reveal auth method)
-                return NextResponse.json({
-                    success: true,
-                    message:
-                        'If an account exists with this email, you will receive a password reset link.',
-                })
-            }
-        } catch (authError) {
-            apiError('Error checking user auth providers:', authError)
-            // Continue anyway - don't block legitimate requests due to API errors
+        if (!isPasswordUser) {
+            // User signed up with Google - they don't have a password to reset
+            apiLog(`Password reset denied for OAuth account: ${normalizedEmail}`)
+            // Return success message anyway (security: don't reveal auth method)
+            return NextResponse.json({
+                success: true,
+                message:
+                    'If an account exists with this email, you will receive a password reset link.',
+            })
         }
 
         // Generate password reset token (expires in 1 hour)
@@ -109,7 +116,7 @@ export async function POST(request: NextRequest) {
         const expiresAt = Date.now() + 60 * 60 * 1000 // 1 hour
 
         // Store reset token in Firestore
-        await db.collection('users').doc(userDoc.id).update({
+        await userRef.update({
             passwordResetToken: resetToken,
             passwordResetTokenExpiry: expiresAt,
         })
@@ -120,7 +127,7 @@ export async function POST(request: NextRequest) {
 
         // Send email via EmailService
         const emailResult = await EmailService.sendPasswordReset({
-            to: email,
+            to: rawEmail,
             userName: username,
             resetUrl,
             expiresIn: 1, // 1 hour

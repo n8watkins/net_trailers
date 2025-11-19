@@ -6,7 +6,6 @@ import useAuth, { AuthProvider } from '../../hooks/useAuth'
 const mockSignInWithEmailAndPassword = jest.fn()
 const mockCreateUserWithEmailAndPassword = jest.fn()
 const mockSignOut = jest.fn()
-const mockSendPasswordResetEmail = jest.fn()
 const mockSignInWithPopup = jest.fn()
 const mockOnAuthStateChanged = jest.fn()
 
@@ -14,7 +13,6 @@ jest.mock('firebase/auth', () => ({
     signInWithEmailAndPassword: (...args: any[]) => mockSignInWithEmailAndPassword(...args),
     createUserWithEmailAndPassword: (...args: any[]) => mockCreateUserWithEmailAndPassword(...args),
     signOut: (...args: any[]) => mockSignOut(...args),
-    sendPasswordResetEmail: (...args: any[]) => mockSendPasswordResetEmail(...args),
     signInWithPopup: (...args: any[]) => mockSignInWithPopup(...args),
     onAuthStateChanged: (...args: any[]) => mockOnAuthStateChanged(...args),
     GoogleAuthProvider: jest.fn().mockImplementation(() => ({
@@ -25,6 +23,9 @@ jest.mock('firebase/auth', () => ({
         addScope: jest.fn(),
     })),
 }))
+
+// Mock global fetch for password reset API calls
+global.fetch = jest.fn()
 
 // Test wrapper component (no longer needs RecoilRoot for Zustand)
 const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -202,7 +203,14 @@ describe('useAuth Hook', () => {
 
     describe('Password Reset', () => {
         it('should handle successful password reset', async () => {
-            mockSendPasswordResetEmail.mockResolvedValueOnce(undefined)
+            ;(global.fetch as jest.Mock).mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    success: true,
+                    message: 'Password reset email sent',
+                    emailSent: true,
+                }),
+            })
 
             const { result } = renderHook(() => useAuth(), {
                 wrapper: TestWrapper,
@@ -212,17 +220,43 @@ describe('useAuth Hook', () => {
                 await result.current.resetPass('test@example.com')
             })
 
-            expect(mockSendPasswordResetEmail).toHaveBeenCalledWith(
-                expect.anything(), // auth object
-                'test@example.com'
+            expect(global.fetch).toHaveBeenCalledWith(
+                '/api/auth/send-password-reset',
+                expect.objectContaining({
+                    method: 'POST',
+                    body: JSON.stringify({ email: 'test@example.com' }),
+                })
             )
             expect(result.current.passResetSuccess).toBe(true)
         })
 
+        it('should not show success state when API skips sending email', async () => {
+            ;(global.fetch as jest.Mock).mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    success: true,
+                    message: 'If an account exists, you will receive a password reset link.',
+                    emailSent: false,
+                }),
+            })
+
+            const { result } = renderHook(() => useAuth(), {
+                wrapper: TestWrapper,
+            })
+
+            await act(async () => {
+                await result.current.resetPass('oauth@example.com')
+            })
+
+            expect(global.fetch).toHaveBeenCalled()
+            expect(result.current.passResetSuccess).toBe(false)
+        })
+
         it('should handle password reset errors', async () => {
-            const resetError = new Error('User not found') as Error & { code: string }
-            resetError.code = 'auth/user-not-found'
-            mockSendPasswordResetEmail.mockRejectedValueOnce(resetError)
+            ;(global.fetch as jest.Mock).mockResolvedValueOnce({
+                ok: false,
+                json: async () => ({ error: 'User not found' }),
+            })
 
             const { result } = renderHook(() => useAuth(), {
                 wrapper: TestWrapper,
@@ -232,7 +266,7 @@ describe('useAuth Hook', () => {
                 await result.current.resetPass('nonexistent@example.com')
             })
 
-            expect(mockSendPasswordResetEmail).toHaveBeenCalled()
+            expect(global.fetch).toHaveBeenCalled()
             expect(result.current.passResetSuccess).toBe(false)
         })
     })
