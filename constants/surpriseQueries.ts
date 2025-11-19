@@ -2,11 +2,11 @@
  * Curated surprise queries for the "Surprise Me" dice button
  *
  * Three categories based on context:
- * 1. HERO_SEARCH_QUERIES - For main hero search input (vibes, themes, moods)
- * 2. COLLECTION_QUERIES - For collection builder (collection ideas)
- * 3. RANKING_QUERIES - For ranking creator (ranking titles with "Best", "Top", etc.)
+ * 1. HERO_SEARCH_QUERIES - For main hero search input (vibes, themes, moods) - 200 queries
+ * 2. COLLECTION_QUERIES - For collection builder (collection ideas) - 200 queries
+ * 3. RANKING_QUERIES - For ranking creator (rankable topics) - 200 queries
  *
- * Target: 200 queries per array
+ * Total: 600 curated queries for instant, diverse surprise suggestions
  */
 
 /**
@@ -145,6 +145,114 @@ export const HERO_SEARCH_QUERIES = [
     'war films that question war',
     'sci-fi that makes you think',
     'fantasy that takes itself seriously',
+
+    // More specific moods and atmospheres
+    'neon-lit nocturnal vibes',
+    'sun-drenched summer nostalgia',
+    'foggy mysterious mornings',
+    'small town secrets',
+    'big city loneliness',
+    'coastal town melancholy',
+    'desert isolation',
+    'snowy cabin coziness',
+    'urban decay aesthetics',
+    'suburban dystopia',
+
+    // More character journeys and transformations
+    'redemption arcs that earn it',
+    'revenge that consumes everything',
+    'corruption of innocence',
+    'fall from grace',
+    'rising from rock bottom',
+    'identity crisis journeys',
+    'double lives unraveling',
+    'secrets that destroy families',
+    'truth at any cost',
+    'power corrupts absolutely',
+
+    // Relationship dynamics
+    'toxic love that destroys',
+    'platonic soulmates',
+    'enemies to lovers',
+    'mentor betrayal',
+    'sibling rivalry turned deadly',
+    'forbidden love worth dying for',
+    'friendship that survives anything',
+    'love triangles done right',
+    'family secrets tearing them apart',
+    'unlikely partnerships that work',
+
+    // Profession and workplace dynamics
+    'journalists uncovering truth',
+    'teachers changing lives',
+    'doctors making impossible choices',
+    'lawyers bending ethics',
+    'artists struggling for recognition',
+    'chefs perfecting their craft',
+    'musicians finding their voice',
+    'writers battling demons',
+    'entrepreneurs risking everything',
+    'cops questioning the system',
+
+    // More location and setting vibes
+    'trapped in one location',
+    'road trips that change everything',
+    'small town with dark secrets',
+    'haunted houses with history',
+    'luxury that hides darkness',
+    'poverty with dignity',
+    'rural americana gothic',
+    'international espionage glamour',
+    'underground subcultures',
+    'remote research stations',
+
+    // Social commentary and current issues
+    'tech dystopia warnings',
+    'wealth inequality rage',
+    'environmental collapse anxiety',
+    'media manipulation paranoia',
+    'corporate greed consequences',
+    'political corruption exposés',
+    'immigration stories',
+    'generational trauma healing',
+    'systemic injustice fights',
+    'conspiracy theories proven right',
+
+    // Visual and aesthetic styles
+    'symmetrical compositions',
+    'handheld chaos energy',
+    'slow-motion beauty',
+    'split-screen storytelling',
+    'first-person perspective',
+    'unreliable narrator visuals',
+    'color-coded symbolism',
+    'practical stunts only',
+    'one-shot wonders',
+    'aspect ratio changes',
+
+    // More genre-mood combinations
+    'cozy mysteries with tea',
+    'violent ballets',
+    'philosophical action',
+    'romantic thrillers',
+    'comedic horror',
+    'tragic superheroes',
+    'hopeful post-apocalypse',
+    'lighthearted noir',
+    'serious animated drama',
+    'musical tragedy',
+
+    // Deeper era and cultural cuts
+    'prohibition era gangsters',
+    'cold war paranoia',
+    'post-9/11 anxiety',
+    'dot-com bubble excess',
+    'grunge era angst',
+    'disco era decadence',
+    'punk rock rebellion',
+    'golden age of hip-hop',
+    'rave culture euphoria',
+    'mall culture nostalgia',
 ] as const
 
 /**
@@ -271,6 +379,126 @@ export const COLLECTION_QUERIES = [
     'Single-take masterpieces',
     'Pioneering special effects',
     'Revolutionary sound design',
+
+    // More decade-specific collections
+    '1920s silent cinema',
+    '1930s pre-code Hollywood',
+    '1940s wartime cinema',
+    '1950s Technicolor spectacles',
+    '1960s counterculture films',
+    '1970s New Hollywood',
+    '1980s VHS cult classics',
+    '1990s indie boom',
+    '2000s digital revolution',
+    '2010s streaming originals',
+
+    // More country/region cinema
+    'Korean revenge thrillers',
+    'Spanish surrealism',
+    'German expressionism',
+    'Iranian social realism',
+    'Brazilian favela stories',
+    'Indian parallel cinema',
+    'Hong Kong action classics',
+    'Polish cinema masterworks',
+    'Mexican new wave',
+    'Australian New Wave',
+
+    // Subgenre deep dives
+    'Slow burn horror',
+    'Folk horror',
+    'Body horror',
+    'Cosmic horror',
+    'Slasher classics',
+    'Found footage evolution',
+    'Mockumentaries',
+    'Cyberpunk dystopias',
+    'Space opera epics',
+    'Time loop narratives',
+
+    // Technical and craft-focused
+    'Practical effects masterpieces',
+    'Miniature model work',
+    'Stop-motion animation',
+    'Rotoscope animation',
+    'Motion capture performances',
+    'Dolly zoom moments',
+    'Dutch angle cinematography',
+    'Natural light only',
+    'Handheld camera work',
+    'Steadicam innovations',
+
+    // Music and soundtrack focused
+    'Iconic movie soundtracks',
+    'Classical music showcases',
+    'Jazz-infused narratives',
+    'Rock and roll biographies',
+    'Hip-hop culture films',
+    'Country music stories',
+    'Electronic music visuals',
+    'Musical performance documentaries',
+    'Songs that define scenes',
+    'Needle drop masters',
+
+    // Narrative structure experiments
+    'Anthology films',
+    'Reverse chronology',
+    'Real-time narratives',
+    'Stream of consciousness',
+    'Rashomon effect stories',
+    'Circular narratives',
+    'Episodic structures',
+    'Vignette collections',
+    'Parallel storylines',
+    'Nested narratives',
+
+    // Award and recognition based
+    "Palme d'Or winners",
+    'Sundance breakthroughs',
+    'Venice Film Festival gems',
+    'Cannes controversy',
+    'Independent Spirit winners',
+    'BAFTA best pictures',
+    'Golden Globe winners',
+    'SAG ensemble casts',
+    'Directors Guild picks',
+    'Writers Guild originals',
+
+    // Character-type collections
+    'Antihero protagonists',
+    'Unreliable narrators',
+    'Child protagonists',
+    'Elderly leads',
+    'Ensemble masterclasses',
+    'Dual role performances',
+    'Breakout debut roles',
+    'Career-defining performances',
+    'Physical transformation roles',
+    'Method acting extremes',
+
+    // Tone and atmosphere collections
+    'Dreamlike surrealism',
+    'Kitchen sink realism',
+    'Magic realism',
+    'Absurdist comedy',
+    'Deadpan humor',
+    'Gallows humor',
+    'Whimsical fantasy',
+    'Gritty naturalism',
+    'Heightened reality',
+    'Theatrical staging',
+
+    // More cultural and social themes
+    'Working class struggles',
+    'Upper class decay',
+    'Suburban nightmares',
+    'Urban renewal stories',
+    'Rural exodus narratives',
+    'Gentrification tales',
+    'Economic collapse',
+    'Labor movement films',
+    'Education system critiques',
+    'Healthcare system dramas',
 ] as const
 
 /**
@@ -402,6 +630,132 @@ export const RANKING_QUERIES = [
     'Most emotional dramas',
     'Most action-packed',
     'Most mind-bending',
+
+    // More actor filmographies
+    'Brad Pitt filmography',
+    'Cate Blanchett performances',
+    'Ryan Gosling roles',
+    'Scarlett Johansson filmography',
+    'Matthew McConaughey renaissance',
+    'Jennifer Lawrence filmography',
+    'Michael Fassbender roles',
+    'Natalie Portman performances',
+    'Jake Gyllenhaal filmography',
+    'Saoirse Ronan performances',
+    'Oscar Isaac roles',
+    'Charlize Theron filmography',
+    'Mahershala Ali performances',
+    'Viola Davis filmography',
+    'Idris Elba roles',
+    'Tessa Thompson filmography',
+    'John Boyega performances',
+    'Florence Pugh filmography',
+    'Timothée Chalamet roles',
+    'Zendaya performances',
+
+    // More director filmographies
+    'Denis Villeneuve films ranked',
+    'Bong Joon-ho filmography',
+    'Guillermo del Toro films ranked',
+    'Jordan Peele filmography',
+    'Greta Gerwig films ranked',
+    'Ari Aster filmography',
+    'Robert Eggers films ranked',
+    'James Cameron filmography',
+    'Ridley Scott films ranked',
+    'Michael Mann filmography',
+    'Terrence Malick films ranked',
+    'Park Chan-wook filmography',
+    'Wong Kar-wai films ranked',
+    'Spike Lee joints ranked',
+    'David Lynch filmography',
+
+    // More franchise rankings
+    'Bourne franchise ranked',
+    'The Conjuring universe ranked',
+    'John Wick series ranked',
+    'Planet of the Apes ranked',
+    'Terminator franchise ranked',
+    'Mad Max films ranked',
+    'Predator series ranked',
+    'Alien franchise ranked',
+    'The Matrix trilogy ranked',
+    'Pirates of the Caribbean ranked',
+    'X-Men films ranked',
+    'Spider-Man movies ranked',
+    'Batman films ranked',
+    'Superman movies ranked',
+    'Toy Story franchise ranked',
+
+    // Genre-specific rankings
+    'Best disaster movies',
+    'Best vampire films',
+    'Best werewolf movies',
+    'Best haunted house films',
+    'Best alien invasion movies',
+    'Best prison escape films',
+    'Best courtroom dramas',
+    'Best political thrillers',
+    'Best con artist movies',
+    'Best amnesia thrillers',
+    'Best dystopian futures',
+    'Best post-apocalyptic films',
+    'Best survival movies',
+    'Best shark movies',
+    'Best dinosaur films',
+
+    // Decade-specific rankings
+    'Best films of the 1920s',
+    'Best films of the 1930s',
+    'Best films of the 1940s',
+    'Best films of the 1950s',
+    'Best films of the 1960s',
+    'Best films of the 2010s',
+    'Best films of the 2020s so far',
+    'Worst films of the 2000s',
+    'Worst films of the 2010s',
+    'Most overrated of each decade',
+
+    // TV show rankings
+    'Best prestige dramas',
+    'Best sitcoms of all time',
+    'Best limited series',
+    'Best miniseries',
+    'Best anthology series',
+    'Breaking Bad episodes ranked',
+    'The Sopranos episodes ranked',
+    'The Wire seasons ranked',
+    'Game of Thrones seasons ranked',
+    'Stranger Things seasons ranked',
+    'Black Mirror episodes ranked',
+    'True Detective seasons ranked',
+    'Fargo seasons ranked',
+    'Better Call Saul seasons ranked',
+    'The Crown seasons ranked',
+
+    // Specific performance types
+    'Best voice acting performances',
+    'Best child actor performances',
+    'Best villain performances',
+    'Best supporting actor turns',
+    'Best ensemble performances',
+    'Best comedic performances',
+    'Best dramatic performances',
+    'Best action star performances',
+    'Best accent work',
+    'Best physical transformations',
+
+    // More specific rankings
+    'Most satisfying endings',
+    'Most devastating endings',
+    'Best opening sequences',
+    'Best final shots',
+    'Best needle drops',
+    'Most iconic quotes',
+    'Best plot twists ranked',
+    'Most shocking deaths',
+    'Best fight choreography',
+    'Best car chase scenes',
 ] as const
 
 /**
