@@ -147,7 +147,7 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
             <div
                 className={`mb-2 opacity-50 ${size === 'compact' ? 'text-2xl' : size === 'small' ? 'text-3xl' : 'text-4xl md:text-5xl'}`}
             >
-                {isMovie(content) ? '🎬' : '📺'}
+                {content && isMovie(content) ? '🎬' : '📺'}
             </div>
             {content && (
                 <div className="text-center px-4">

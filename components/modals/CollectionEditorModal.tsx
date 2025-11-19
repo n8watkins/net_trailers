@@ -451,7 +451,7 @@ export default function CollectionEditorModal({
                             {/* Close button */}
                             <button
                                 type="button"
-                                onClick={handleClose}
+                                onClick={() => handleClose()}
                                 className="text-gray-400 hover:text-white transition-colors"
                             >
                                 <XMarkIcon className="w-6 h-6" />

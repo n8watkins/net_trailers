@@ -143,9 +143,8 @@ export async function buildPublicProfilePayload(
     const likedContent = Array.isArray(legacyData.likedMovies)
         ? (legacyData.likedMovies as (Movie | TVShow)[])
         : []
-    const collections = Array.isArray(legacyData.userCreatedWatchlists)
-        ? (legacyData.userCreatedWatchlists as UserList[]).filter((list) => list?.isPublic)
-        : []
+    // Collections are no longer shown on public profiles - only shared via links
+    const collections: UserList[] = []
     const watchLaterPreview = Array.isArray(legacyData.defaultWatchlist)
         ? (legacyData.defaultWatchlist as (Movie | TVShow)[]).slice(0, 12)
         : []

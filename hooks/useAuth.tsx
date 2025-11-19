@@ -16,7 +16,6 @@ import {
     signInWithEmailAndPassword,
     GoogleAuthProvider,
     signInWithPopup,
-    sendPasswordResetEmail,
 } from 'firebase/auth'
 
 import { auth } from '../firebase'
@@ -25,6 +24,7 @@ import { createErrorHandler } from '../utils/errorHandler'
 import { useToast } from './useToast'
 import { cacheAuthState, clearAuthCache, wasRecentlyAuthenticated } from '../utils/authCache'
 import { authLog, authError } from '../utils/debugLogger'
+import { authenticatedFetch } from '../lib/authenticatedFetch'
 
 interface AuthProviderProps {
     children: React.ReactNode
@@ -43,6 +43,7 @@ interface iAuth {
     passResetSuccess: boolean
     attemptPassReset: boolean
     setAttemptPassReset: (value: boolean) => void
+    sendVerificationEmail: () => Promise<void>
 }
 
 export const AuthContext = createContext<iAuth>({
@@ -64,6 +65,8 @@ export const AuthContext = createContext<iAuth>({
     attemptPassReset: false,
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     setAttemptPassReset: () => {},
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    sendVerificationEmail: async () => {},
 })
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
@@ -158,6 +161,39 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
     }, [])
 
+    const sendVerificationEmail = async () => {
+        const currentUser = auth.currentUser
+
+        if (!currentUser?.email) {
+            showError('No authenticated user found.')
+            return
+        }
+
+        try {
+            const response = await authenticatedFetch('/api/auth/send-email-verification', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: currentUser.email }),
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to send verification email')
+            }
+
+            showSuccess('Verification email sent! Check your inbox to confirm your address.')
+        } catch (error) {
+            console.error('Failed to send verification email:', error)
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to send verification email. Please try again.'
+            showError(message)
+            setError(message)
+        }
+    }
+
     const signUp = async (email: string, password: string) => {
         setLoading(true)
         setGlobalLoading(true)
@@ -166,6 +202,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 const user = userCredential.user
                 const displayName = user.displayName || user.email?.split('@')[0] || 'there'
                 showSuccess(`Welcome ${displayName}! Account created successfully.`)
+
+                // Trigger verification email for new accounts
+                await sendVerificationEmail()
 
                 // Record account creation in system stats
                 try {
@@ -317,17 +356,35 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                 setGlobalLoading(false)
             })
     }
+
     const resetPass = async (email: string) => {
-        await sendPasswordResetEmail(auth, email)
-            .then(() => {
-                setPassResetSuccess(true)
-                showSuccess('Password reset email sent! Check your inbox.')
+        setPassResetSuccess(false)
+        try {
+            const response = await fetch('/api/auth/send-password-reset', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email }),
             })
-            .catch((error) => {
-                errorHandler.handleAuthError(error)
-                setError(error.message)
-                setPassResetSuccess(false)
-            })
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to send password reset email')
+            }
+
+            setPassResetSuccess(true)
+            showSuccess(
+                data.message || 'Password reset email sent! Check your inbox for further steps.'
+            )
+        } catch (error) {
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to send password reset email. Please try again.'
+            showError(message)
+            setError(message)
+            setPassResetSuccess(false)
+        }
     }
 
     const memoedValue = useMemo(
@@ -344,6 +401,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             passResetSuccess,
             attemptPassReset,
             setAttemptPassReset,
+            sendVerificationEmail,
         }),
         [
             user,
@@ -357,6 +415,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             signInWithGoogle,
             logOut,
             resetPass,
+            sendVerificationEmail,
         ]
     )
 

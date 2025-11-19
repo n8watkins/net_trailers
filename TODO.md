@@ -29,11 +29,12 @@
 
 **🚧 Integration Work Needed:**
 
-- [ ] Create `/api/auth/send-password-reset` API route
-- [ ] Create `/api/auth/send-email-verification` API route
-- [ ] Create `/api/auth/verify-email/[token]` handler page
-- [ ] Create `/auth/reset-password` page with token validation
-- [ ] Update `useAuth` hook to use custom email flow instead of Firebase defaults
+    - [x] Create `/api/auth/send-password-reset` API route
+    - [x] Create `/api/auth/send-email-verification` API route
+    - [x] Create `/api/auth/verify-email/[token]` handler page
+    - [x] Create `/auth/reset-password` page with token validation
+    - [x] Update `useAuth` hook to use custom email flow instead of Firebase defaults
+
 - [x] Integrate collection update emails into `/api/cron/update-collections`
 - [ ] Integrate new release emails (watchlist monitoring)
 - [x] Integrate ranking comment emails into `utils/firestore/rankingComments.ts`

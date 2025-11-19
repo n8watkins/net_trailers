@@ -8,6 +8,7 @@ import { useToast } from '../../hooks/useToast'
 import useAuth from '../../hooks/useAuth'
 import { createNotification } from '../../utils/firestore/notifications'
 import { useDebugSettings } from '../debug/DebugControls'
+import { authenticatedFetch, AuthRequiredError } from '../../lib/authenticatedFetch'
 
 interface NotificationsSectionProps {
     notifications: NotificationPreferences
@@ -36,7 +37,7 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
 
         setIsSendingEmail(true)
         try {
-            const response = await fetch('/api/email/send-pilot', {
+            const response = await authenticatedFetch('/api/email/send-pilot', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -56,7 +57,11 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
             showSuccess('Test email sent successfully! Check your inbox.')
         } catch (error) {
             console.error('Error sending test email:', error)
-            showError(error instanceof Error ? error.message : 'Failed to send test email')
+            if (error instanceof AuthRequiredError) {
+                showError('Please sign in again before sending emails.')
+            } else {
+                showError(error instanceof Error ? error.message : 'Failed to send test email')
+            }
         } finally {
             setIsSendingEmail(false)
         }

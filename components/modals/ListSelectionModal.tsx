@@ -156,7 +156,6 @@ function ListSelectionModal() {
 
             createList({
                 name: validatedName,
-                isPublic: false,
                 emoji: selectedEmoji,
                 color: selectedColor,
                 collectionType: 'manual', // Required for CreateListRequest
@@ -200,7 +199,7 @@ function ListSelectionModal() {
             setEditingListName(list.name)
             setEditingListEmoji(list.emoji || '🎬')
             setEditingListColor(list.color || '#ef4444')
-            setEditingIsPublic(list.isPublic || false)
+            setEditingIsPublic(false) // Collections are private
             setEditingDisplayAsRow(list.displayAsRow ?? true)
         }
     }

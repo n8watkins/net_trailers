@@ -81,9 +81,8 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
     const likedContent = Array.isArray(userData.likedMovies)
         ? (userData.likedMovies as (Movie | TVShow)[])
         : []
-    const collections = Array.isArray(userData.userCreatedWatchlists)
-        ? (userData.userCreatedWatchlists as UserList[]).filter((list) => list?.isPublic)
-        : []
+    // Collections are private - not shown on public profiles
+    const collections: UserList[] = []
     const watchLaterPreview = Array.isArray(userData.defaultWatchlist)
         ? (userData.defaultWatchlist as (Movie | TVShow)[]).slice(
               0,

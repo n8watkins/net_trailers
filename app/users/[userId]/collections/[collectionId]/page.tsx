@@ -66,10 +66,8 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
                     ? (userData.userCreatedWatchlists as UserList[])
                     : []
 
-                // Find the specific collection
-                const foundCollection = allCollections.find(
-                    (list) => list?.id === collectionId && list?.isPublic
-                )
+                // Collections are private - not accessible via public profile
+                const foundCollection = null
 
                 if (!foundCollection) {
                     throw new Error('Collection not found or not public')

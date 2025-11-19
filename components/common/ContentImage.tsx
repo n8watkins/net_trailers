@@ -35,7 +35,6 @@ function ContentImage({
     const [backdropError, setBackdropError] = useState(false)
     const [alternateImage, setAlternateImage] = useState<string | null>(null)
     const [alternateError, setAlternateError] = useState(false)
-    const [fetchingAlternate, setFetchingAlternate] = useState(false)
 
     // Determine which image to use
     const imageToUse =
@@ -47,63 +46,14 @@ function ContentImage({
                 ? alternateImage
                 : null
 
-    // Fetch alternate images from TMDB when both poster and backdrop fail
+    // Removed client-side TMDB API call for security - images will fallback gracefully
     useEffect(() => {
-        if (posterError && backdropError && !alternateImage && !fetchingAlternate && content) {
-            setFetchingAlternate(true)
-            const mediaType = isMovie(content) ? 'movie' : 'tv'
-            const apiKey = process.env.NEXT_PUBLIC_TMDB_API_KEY
-
-            // Fail gracefully if no API key configured
-            if (!apiKey) {
-                if (process.env.NODE_ENV === 'development') {
-                    console.error('TMDB API key not configured, skipping alternate image fetch')
-                }
-                setAlternateError(true)
-                return
-            }
-
-            // Create abort controller for cleanup
-            const abortController = new AbortController()
-
-            fetch(
-                `https://api.themoviedb.org/3/${mediaType}/${content.id}/images?api_key=${apiKey}`,
-                { signal: abortController.signal }
-            )
-                .then((res) => res.json())
-                .then((data) => {
-                    const posters = data.posters || []
-                    const backdrops = data.backdrops || []
-
-                    const sortedPosters = [...posters].sort(
-                        (a, b) => (b.vote_average || 0) - (a.vote_average || 0)
-                    )
-                    const sortedBackdrops = [...backdrops].sort(
-                        (a, b) => (b.vote_average || 0) - (a.vote_average || 0)
-                    )
-
-                    const bestImage = sortedPosters[0] || sortedBackdrops[0]
-
-                    if (bestImage?.file_path) {
-                        setAlternateImage(`https://image.tmdb.org/t/p/w500${bestImage.file_path}`)
-                    } else {
-                        setAlternateError(true)
-                    }
-                })
-                .catch((error) => {
-                    if (error.name !== 'AbortError') {
-                        if (process.env.NODE_ENV === 'development') {
-                            console.error('Failed to fetch alternate images:', error)
-                        }
-                        setAlternateError(true)
-                    }
-                })
-
-            return () => {
-                abortController.abort()
-            }
+        if (posterError && backdropError && !alternateImage && content) {
+            // No longer fetching alternate images from client side
+            // This prevents potential API key exposure
+            setAlternateError(true)
         }
-    }, [posterError, backdropError, alternateImage, fetchingAlternate, content])
+    }, [posterError, backdropError, alternateImage, content])
 
     const handleImageClick = () => {
         if (content) {
@@ -138,17 +88,19 @@ function ContentImage({
     const ImagePlaceholder = () => (
         <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900 text-gray-300">
             <div className="text-4xl md:text-5xl lg:text-6xl mb-3 opacity-50">
-                {isMovie(content) ? '🎬' : '📺'}
+                {content && isMovie(content) ? '🎬' : '📺'}
             </div>
             {content && (
                 <div className="text-center px-4">
                     <p className="font-semibold text-sm md:text-base lg:text-lg line-clamp-2 mb-1">
-                        {getTitle(content)}
+                        {content ? getTitle(content) : ''}
                     </p>
-                    <p className="text-xs md:text-sm text-gray-400">{getYear(content)}</p>
+                    <p className="text-xs md:text-sm text-gray-400">
+                        {content ? getYear(content) : ''}
+                    </p>
                     <span
                         className={`inline-block mt-2 px-2 py-1 text-xs rounded-full ${
-                            isMovie(content) ? 'bg-blue-600/50' : 'bg-green-600/50'
+                            content && isMovie(content) ? 'bg-blue-600/50' : 'bg-green-600/50'
                         }`}
                     >
                         {getContentType(content)}
@@ -220,7 +172,7 @@ function ContentImage({
                                      text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl
                                      line-clamp-2"
                         >
-                            {getTitle(content)}
+                            {content ? getTitle(content) : ''}
                         </h3>
                     </div>
                 )}
@@ -272,7 +224,7 @@ function ContentImage({
                     {imageToUse ? (
                         <Image
                             src={imageToUse}
-                            alt={getTitle(content)}
+                            alt={content ? getTitle(content) : 'Content'}
                             width={200}
                             height={300}
                             loading="lazy"
@@ -281,7 +233,9 @@ function ContentImage({
                         />
                     ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gradient-to-br from-gray-700 to-gray-800">
-                            <div className="text-2xl mb-1">{isMovie(content) ? '🎬' : '📺'}</div>
+                            <div className="text-2xl mb-1">
+                                {content && isMovie(content) ? '🎬' : '📺'}
+                            </div>
                             <span className="text-xs text-gray-500">No Image</span>
                         </div>
                     )}
@@ -319,7 +273,7 @@ function ContentImage({
                                 className={`
                                 px-2 py-1 text-xs font-medium rounded-full
                                 ${
-                                    isMovie(content)
+                                    content && isMovie(content)
                                         ? 'bg-blue-600 text-white'
                                         : 'bg-green-600 text-white'
                                 }
@@ -352,7 +306,7 @@ function ContentImage({
                     {imageToUse ? (
                         <Image
                             src={imageToUse}
-                            alt={getTitle(content)}
+                            alt={content ? getTitle(content) : 'Content'}
                             fill
                             loading="lazy"
                             sizes="(max-width: 640px) 140px, (max-width: 768px) 160px, (max-width: 1024px) 180px, 240px"
@@ -368,9 +322,9 @@ function ContentImage({
                 {!hideTitles && content && (
                     <div className="mt-2">
                         <h3 className="text-sm font-medium text-white truncate">
-                            {getTitle(content)}
+                            {content ? getTitle(content) : ''}
                         </h3>
-                        <p className="text-xs text-gray-400">{getYear(content)}</p>
+                        <p className="text-xs text-gray-400">{content ? getYear(content) : ''}</p>
                     </div>
                 )}
             </div>

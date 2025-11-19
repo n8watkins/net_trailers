@@ -9,7 +9,7 @@ import EmailSection from '../../../components/settings/EmailSection'
 
 const EmailPage: React.FC = () => {
     const router = useRouter()
-    const { user } = useAuth()
+    const { user, sendVerificationEmail } = useAuth()
     const { isGuest } = useAuthStatus()
     const { showSuccess, showError } = useToast()
 
@@ -17,6 +17,7 @@ const EmailPage: React.FC = () => {
     const [newEmail, setNewEmail] = useState('')
     const [emailPassword, setEmailPassword] = useState('')
     const [isUpdatingEmail, setIsUpdatingEmail] = useState(false)
+    const [isSendingVerification, setIsSendingVerification] = useState(false)
 
     // Detect authentication provider
     const authProvider = React.useMemo(() => {
@@ -33,6 +34,20 @@ const EmailPage: React.FC = () => {
     }, [user])
 
     const isGoogleAuth = authProvider === 'google'
+
+    const handleSendVerificationEmail = async () => {
+        if (!user) {
+            showError('No user found to verify.')
+            return
+        }
+
+        setIsSendingVerification(true)
+        try {
+            await sendVerificationEmail()
+        } finally {
+            setIsSendingVerification(false)
+        }
+    }
 
     // Redirect guests to preferences
     React.useEffect(() => {
@@ -118,6 +133,9 @@ const EmailPage: React.FC = () => {
             setEmailPassword={setEmailPassword}
             isUpdatingEmail={isUpdatingEmail}
             onUpdateEmail={handleUpdateEmail}
+            isEmailVerified={Boolean(user?.emailVerified)}
+            isSendingVerification={isSendingVerification}
+            onSendVerification={handleSendVerificationEmail}
         />
     )
 }

@@ -13,7 +13,7 @@ function GenresDropdown() {
     const [isOpen, setIsOpen] = useState(false)
     const [selectedType, setSelectedType] = useState<'movie' | 'tv'>('movie')
     const dropdownRef = useRef<HTMLDivElement>(null)
-    const timeoutRef = useRef<NodeJS.Timeout>()
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null)
     const router = useRouter()
     const { isEnabled: childSafetyEnabled } = useChildSafety()
 

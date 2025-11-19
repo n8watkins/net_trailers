@@ -7,6 +7,15 @@ import { useAuthStore } from '../../../stores/authStore'
 import { useGuestStore } from '../../../stores/guestStore'
 import { useToast } from '../../../hooks/useToast'
 import { DisplayRow } from '../../../types/customRows'
+
+// Extend DisplayRow for UI display purposes
+interface ExtendedDisplayRow extends DisplayRow {
+    emoji?: string
+    collection?: any
+    shareSettings?: any
+    itemCount?: number
+    mediaType: 'movie' | 'tv' | 'both'
+}
 import { UserList } from '../../../types/userLists'
 import {
     EyeIcon,
@@ -124,12 +133,11 @@ export default function CollectionsPage() {
                 return {
                     id: row.id,
                     name: row.name,
-                    emoji: row.emoji,
+                    emoji: '📺', // System rows don't have emoji property
                     isSystem: true,
                     enabled: isEnabled, // Use preference enabled state, not base enabled
                     itemCount: 20, // Placeholder for system collections
                     mediaType: row.mediaType,
-                    isPublic: false, // System collections are not shareable
                     collection: row, // Store full collection for editing
                 }
             }),
@@ -141,7 +149,11 @@ export default function CollectionsPage() {
                 enabled: col.displayAsRow ?? true,
                 itemCount: col.items?.length || 0,
                 mediaType: col.mediaType || 'both',
-                isPublic: col.isPublic ?? false,
+                shareSettings: col.shareSettings || {
+                    visibility: 'private',
+                    showOwnerName: true,
+                    allowComments: false,
+                },
                 color: col.color || '#3b82f6', // Default blue
                 collection: col, // Store full collection for editing
             })),
@@ -267,9 +279,7 @@ export default function CollectionsPage() {
                 await CustomRowsFirestore.resetDefaultRows(userId, 'tv')
             } else {
                 // For guest users, use localStorage
-                SystemRowStorage.resetDefaultRows(userId, 'both')
-                SystemRowStorage.resetDefaultRows(userId, 'movie')
-                SystemRowStorage.resetDefaultRows(userId, 'tv')
+                await SystemRowStorage.resetDefaultRows(userId, 'both', true)
             }
 
             showSuccess('Reset to default collection settings')
@@ -549,7 +559,6 @@ interface CollectionGridProps {
         enabled: boolean
         itemCount: number
         mediaType: string
-        isPublic: boolean
         color?: string
         collection: any
     }>
@@ -582,7 +591,6 @@ interface CollectionCardProps {
         enabled: boolean
         itemCount: number
         mediaType: string
-        isPublic: boolean
         color?: string
     }
     onToggle: () => void

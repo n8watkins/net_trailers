@@ -97,7 +97,6 @@ export class UserListsService {
             name: sanitizedName,
             description: sanitizedDescription,
             items: [],
-            isPublic: request.isPublic || false,
             createdAt: Date.now(),
             updatedAt: Date.now(),
             color: sanitizedColor,
@@ -161,11 +160,6 @@ export class UserListsService {
         if (request.color !== undefined) {
             sanitizedUpdates.color =
                 request.color && /^#[0-9A-Fa-f]{6}$/.test(request.color) ? request.color : undefined
-        }
-
-        // Include isPublic if provided
-        if (request.isPublic !== undefined) {
-            sanitizedUpdates.isPublic = request.isPublic
         }
 
         // Collection-specific fields

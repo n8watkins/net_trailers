@@ -223,7 +223,8 @@ export default function ProfilePage() {
 
     const likedContent = userData.likedMovies || []
     const watchLaterPreview = (userData.defaultWatchlist || []).slice(0, 6)
-    const collections = (userData.userCreatedWatchlists || []).filter((list) => list?.isPublic)
+    // Collections are private - not shown on profile
+    const collections: any[] = []
 
     // Show loading screen while data is being fetched
     if (isLoading) {

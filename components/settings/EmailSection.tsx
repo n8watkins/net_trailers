@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 import type { User } from 'firebase/auth'
 
 interface EmailSectionProps {
@@ -12,6 +13,9 @@ interface EmailSectionProps {
     setEmailPassword: (password: string) => void
     isUpdatingEmail: boolean
     onUpdateEmail: () => Promise<void>
+    isEmailVerified: boolean
+    isSendingVerification: boolean
+    onSendVerification: () => Promise<void>
 }
 
 const EmailSection: React.FC<EmailSectionProps> = ({
@@ -23,14 +27,63 @@ const EmailSection: React.FC<EmailSectionProps> = ({
     setEmailPassword,
     isUpdatingEmail,
     onUpdateEmail,
+    isEmailVerified,
+    isSendingVerification,
+    onSendVerification,
 }) => {
     const hasRequiredFields = newEmail.trim() && emailPassword.trim()
+    const showVerificationCard = !isGoogleAuth || !isEmailVerified
 
     return (
         <div className="p-8">
             <div className="mb-6">
                 <h2 className="text-2xl font-bold text-white mb-2">Email Settings</h2>
                 <p className="text-[#b3b3b3]">Update your email address for your account.</p>
+            </div>
+
+            <div className="max-w-2xl space-y-4 mb-8">
+                <div className="bg-[#0a0a0a] border border-[#2c2c2c] rounded-lg p-6 flex items-start gap-4">
+                    <div
+                        className={`p-3 rounded-full ${
+                            isEmailVerified
+                                ? 'bg-green-600/10 border-green-600/20'
+                                : 'bg-yellow-600/10 border-yellow-600/20'
+                        } border`}
+                    >
+                        {isEmailVerified ? (
+                            <CheckCircleIcon className="w-6 h-6 text-green-400" />
+                        ) : (
+                            <ExclamationTriangleIcon className="w-6 h-6 text-yellow-400" />
+                        )}
+                    </div>
+                    <div className="flex-1">
+                        <h3 className="text-white font-semibold mb-1">
+                            {isEmailVerified ? 'Email Verified' : 'Email Verification Pending'}
+                        </h3>
+                        <p className="text-sm text-[#b3b3b3]">
+                            {isEmailVerified
+                                ? 'Your email is verified. You can update it anytime below.'
+                                : 'Verify your email to unlock notification emails, account recovery, and security alerts.'}
+                        </p>
+                    </div>
+                    {showVerificationCard && (
+                        <button
+                            onClick={onSendVerification}
+                            disabled={isSendingVerification || isGoogleAuth}
+                            className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                                isSendingVerification || isGoogleAuth
+                                    ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                                    : 'bg-red-600 text-white hover:bg-red-700'
+                            }`}
+                        >
+                            {isSendingVerification
+                                ? 'Sending...'
+                                : isEmailVerified
+                                  ? 'Resend Email'
+                                  : 'Send Verification Email'}
+                        </button>
+                    )}
+                </div>
             </div>
 
             {isGoogleAuth ? (

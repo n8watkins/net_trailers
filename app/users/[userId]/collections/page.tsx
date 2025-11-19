@@ -59,10 +59,8 @@ export default function UserCollectionsPage() {
                     ? (userData.userCreatedWatchlists as UserList[])
                     : []
 
-                // Filter only public collections
-                const publicCollections = allCollections.filter((list) => list?.isPublic)
-
-                setCollections(publicCollections)
+                // Collections are private - not shown on public profiles
+                setCollections([])
             } catch (err) {
                 console.error('Error loading collections:', err)
                 if (isMounted) {

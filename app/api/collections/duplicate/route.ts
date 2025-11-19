@@ -59,7 +59,6 @@ async function handleDuplicate(request: NextRequest, userId: string): Promise<Ne
             id: nanoid(),
             name,
             items,
-            isPublic: false,
             createdAt: Date.now(),
             updatedAt: Date.now(),
             collectionType: 'manual',
