@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Content, getTitle, getYear, getContentType, isMovie } from '../../typings'
 import Image from 'next/image'
 import { PlayIcon } from '@heroicons/react/24/solid'
@@ -27,7 +27,20 @@ function ContentImage({
     showRating = false,
 }: Props) {
     const posterImage = content?.poster_path
+    const backdropImage = content?.backdrop_path
     const { openModal } = useModalStore()
+
+    // Track image loading errors
+    const [posterError, setPosterError] = useState(false)
+    const [backdropError, setBackdropError] = useState(false)
+
+    // Determine which image to use
+    const imageToUse =
+        !posterError && posterImage
+            ? `https://image.tmdb.org/t/p/w500${posterImage}`
+            : !backdropError && backdropImage
+              ? `https://image.tmdb.org/t/p/w500${backdropImage}`
+              : null
 
     const handleImageClick = () => {
         if (content) {
@@ -44,6 +57,41 @@ function ContentImage({
         }
     }
 
+    // Handle image load errors
+    const handleImageError = () => {
+        if (!posterError && posterImage) {
+            // First error: poster failed, try backdrop
+            setPosterError(true)
+        } else if (!backdropError && backdropImage) {
+            // Second error: backdrop also failed
+            setBackdropError(true)
+        }
+    }
+
+    // Styled placeholder component
+    const ImagePlaceholder = () => (
+        <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900 text-gray-300">
+            <div className="text-4xl md:text-5xl lg:text-6xl mb-3 opacity-50">
+                {isMovie(content) ? '🎬' : '📺'}
+            </div>
+            {content && (
+                <div className="text-center px-4">
+                    <p className="font-semibold text-sm md:text-base lg:text-lg line-clamp-2 mb-1">
+                        {getTitle(content)}
+                    </p>
+                    <p className="text-xs md:text-sm text-gray-400">{getYear(content)}</p>
+                    <span
+                        className={`inline-block mt-2 px-2 py-1 text-xs rounded-full ${
+                            isMovie(content) ? 'bg-blue-600/50' : 'bg-green-600/50'
+                        }`}
+                    >
+                        {getContentType(content)}
+                    </span>
+                </div>
+            )}
+        </div>
+    )
+
     // Render thumbnail variant (original ContentCard component functionality)
     if (variant === 'thumbnail') {
         return (
@@ -58,37 +106,42 @@ function ContentImage({
                 onClick={handleImageClick}
             >
                 {/* Movie Poster with Red Glow */}
-                {posterImage && (
-                    <div
-                        className="relative w-full h-full
-                                  transition-all duration-300 ease-out
-                                  rounded-md overflow-hidden
-                                  group-hover:shadow-[0_0_15px_rgba(220,38,38,0.4),0_0_30px_rgba(220,38,38,0.2)]
-                                  group-hover:ring-1 group-hover:ring-red-500/50"
-                    >
-                        <Image
-                            src={`https://image.tmdb.org/t/p/w500${posterImage}`}
-                            alt={
-                                content
-                                    ? `${getTitle(content)} ${getContentType(content)}`
-                                    : 'Content poster'
-                            }
-                            fill
-                            loading="lazy"
-                            style={{ objectFit: 'cover' }}
-                            className="rounded-md transition-all duration-300"
-                            sizes="(max-width: 640px) 140px, (max-width: 768px) 160px, (max-width: 1024px) 180px, 240px"
-                            priority={false}
-                        />
+                <div
+                    className="relative w-full h-full
+                              transition-all duration-300 ease-out
+                              rounded-md overflow-hidden
+                              group-hover:shadow-[0_0_15px_rgba(220,38,38,0.4),0_0_30px_rgba(220,38,38,0.2)]
+                              group-hover:ring-1 group-hover:ring-red-500/50"
+                >
+                    {imageToUse ? (
+                        <>
+                            <Image
+                                src={imageToUse}
+                                alt={
+                                    content
+                                        ? `${getTitle(content)} ${getContentType(content)}`
+                                        : 'Content poster'
+                                }
+                                fill
+                                loading="lazy"
+                                style={{ objectFit: 'cover' }}
+                                className="rounded-md transition-all duration-300"
+                                sizes="(max-width: 640px) 140px, (max-width: 768px) 160px, (max-width: 1024px) 180px, 240px"
+                                priority={false}
+                                onError={handleImageError}
+                            />
 
-                        {/* Additional red glow overlay */}
-                        <div
-                            className="absolute inset-0 rounded-md
-                                      transition-all duration-300 ease-out
-                                      group-hover:shadow-[inset_0_0_10px_rgba(220,38,38,0.1)]"
-                        ></div>
-                    </div>
-                )}
+                            {/* Additional red glow overlay */}
+                            <div
+                                className="absolute inset-0 rounded-md
+                                          transition-all duration-300 ease-out
+                                          group-hover:shadow-[inset_0_0_10px_rgba(220,38,38,0.1)]"
+                            ></div>
+                        </>
+                    ) : (
+                        <ImagePlaceholder />
+                    )}
+                </div>
 
                 {/* Movie Title Overlay */}
                 {content && !hideTitles && (
@@ -150,24 +203,20 @@ function ContentImage({
             >
                 {/* Movie Poster */}
                 <div className="flex-shrink-0 w-16 h-24 sm:w-20 sm:h-30 md:w-24 md:h-36 relative rounded-lg overflow-hidden bg-gray-700">
-                    {posterImage ? (
+                    {imageToUse ? (
                         <Image
-                            src={`https://image.tmdb.org/t/p/w200${posterImage}`}
+                            src={imageToUse}
                             alt={getTitle(content)}
                             width={200}
                             height={300}
                             loading="lazy"
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                            onError={handleImageError}
                         />
                     ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400">
-                            <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                                <path
-                                    fillRule="evenodd"
-                                    d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
-                                    clipRule="evenodd"
-                                />
-                            </svg>
+                        <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 bg-gradient-to-br from-gray-700 to-gray-800">
+                            <div className="text-2xl mb-1">{isMovie(content) ? '🎬' : '📺'}</div>
+                            <span className="text-xs text-gray-500">No Image</span>
                         </div>
                     )}
                 </div>
@@ -234,22 +283,18 @@ function ContentImage({
                 onClick={handleImageClick}
             >
                 <div className="relative aspect-[2/3] overflow-hidden rounded-md bg-gray-800">
-                    {posterImage ? (
+                    {imageToUse ? (
                         <Image
-                            src={`https://image.tmdb.org/t/p/w500${posterImage}`}
+                            src={imageToUse}
                             alt={getTitle(content)}
                             fill
                             loading="lazy"
                             sizes="(max-width: 640px) 140px, (max-width: 768px) 160px, (max-width: 1024px) 180px, 240px"
                             className="object-cover transition-transform duration-200 group-hover:scale-110"
+                            onError={handleImageError}
                         />
                     ) : (
-                        <div className="flex items-center justify-center h-full">
-                            <div className="text-center">
-                                <div className="text-4xl mb-2">🎬</div>
-                                <p className="text-xs text-gray-300">No Poster</p>
-                            </div>
-                        </div>
+                        <ImagePlaceholder />
                     )}
                 </div>
 
