@@ -391,12 +391,25 @@ export default function CollectionEditorModal({
     const selectedGenreNames = selectedGenres.map((id) => GENRE_LOOKUP.get(id) || `Genre ${id}`)
 
     const modalContent = (
-        <div className="fixed inset-0 z-[99999] overflow-y-auto">
+        <div
+            className="fixed inset-0 z-[99999] overflow-y-auto"
+            onMouseDown={(e) => {
+                // Check if click started outside modal
+                if (e.target === e.currentTarget) {
+                    const startTarget = e.target
+                    const handleMouseUp = (upEvent: MouseEvent) => {
+                        // Check if click ended outside modal
+                        if (upEvent.target === startTarget) {
+                            handleClose()
+                        }
+                        document.removeEventListener('mouseup', handleMouseUp)
+                    }
+                    document.addEventListener('mouseup', handleMouseUp)
+                }
+            }}
+        >
             {/* Backdrop */}
-            <div
-                className="fixed inset-0 z-[99998] bg-black/80 backdrop-blur-sm"
-                onClick={handleClose}
-            />
+            <div className="fixed inset-0 z-[99998] bg-black/80 backdrop-blur-sm" />
 
             {/* Modal */}
             <div className="relative min-h-screen flex items-center justify-center p-4 z-[99999]">
