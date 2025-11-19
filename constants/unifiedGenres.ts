@@ -91,20 +91,20 @@ export const UNIFIED_GENRES: UnifiedGenre[] = [
         id: 'history',
         name: 'History',
         movieIds: [36], // History
-        tvIds: [], // No direct TV equivalent
+        tvIds: [99], // Documentary (closest TV equivalent for historical content)
         childSafe: true,
     },
     {
         id: 'horror',
         name: 'Horror',
         movieIds: [27], // Horror
-        tvIds: [], // No direct TV equivalent
+        tvIds: [10765, 9648], // Sci-Fi & Fantasy + Mystery (TV horror shows are typically tagged as these)
         childSafe: false,
     },
     {
         id: 'kids',
         name: 'Kids',
-        movieIds: [], // No direct movie equivalent
+        movieIds: [10751, 16], // Family + Animation (kid-friendly movies)
         tvIds: [10762], // Kids
         childSafe: true,
     },
@@ -112,7 +112,7 @@ export const UNIFIED_GENRES: UnifiedGenre[] = [
         id: 'music',
         name: 'Music',
         movieIds: [10402], // Music
-        tvIds: [], // No direct TV equivalent
+        tvIds: [10402], // Music (exists for TV)
         childSafe: true,
     },
     {
@@ -125,14 +125,14 @@ export const UNIFIED_GENRES: UnifiedGenre[] = [
     {
         id: 'news',
         name: 'News',
-        movieIds: [], // No direct movie equivalent
+        movieIds: [99], // Documentary (news-style movies are typically documentaries)
         tvIds: [10763], // News
         childSafe: false,
     },
     {
         id: 'reality',
         name: 'Reality',
-        movieIds: [], // No direct movie equivalent
+        movieIds: [99], // Documentary (reality-style movies are typically documentaries)
         tvIds: [10764], // Reality
         childSafe: false,
     },
@@ -153,22 +153,15 @@ export const UNIFIED_GENRES: UnifiedGenre[] = [
     {
         id: 'soap',
         name: 'Soap',
-        movieIds: [], // No direct movie equivalent
+        movieIds: [10749, 18], // Romance + Drama (soap opera style movies)
         tvIds: [10766], // Soap
-        childSafe: false,
-    },
-    {
-        id: 'talk',
-        name: 'Talk',
-        movieIds: [], // No direct movie equivalent
-        tvIds: [10767], // Talk
         childSafe: false,
     },
     {
         id: 'thriller',
         name: 'Thriller',
         movieIds: [53], // Thriller
-        tvIds: [], // No direct TV equivalent
+        tvIds: [9648, 80], // Mystery + Crime (TV thrillers are typically tagged as mystery/crime)
         childSafe: false,
     },
     {
@@ -181,7 +174,7 @@ export const UNIFIED_GENRES: UnifiedGenre[] = [
     {
         id: 'politics',
         name: 'Politics',
-        movieIds: [], // No direct movie equivalent
+        movieIds: [18, 36], // Drama + History (political movies are typically dramas or historical)
         tvIds: [10768], // War & Politics (combined with War on TV)
         childSafe: false,
     },
@@ -196,9 +189,9 @@ export const UNIFIED_GENRES: UnifiedGenre[] = [
 
 /**
  * Get unified genres filtered by media type
- * For 'both', returns all genres
- * For 'movie', returns only genres with movie IDs
- * For 'tv', returns only genres with TV IDs
+ * Returns ALL genres regardless of media type for consistency.
+ * If a genre doesn't have a mapping for the selected media type, it simply won't return results.
+ * This provides a consistent UX where genres don't disappear when switching media types.
  */
 export function getUnifiedGenresByMediaType(
     mediaType: 'movie' | 'tv' | 'both',
@@ -211,15 +204,9 @@ export function getUnifiedGenresByMediaType(
         genres = genres.filter((g) => g.childSafe)
     }
 
-    // Filter by media type
-    if (mediaType === 'movie') {
-        return genres.filter((g) => g.movieIds.length > 0)
-    } else if (mediaType === 'tv') {
-        return genres.filter((g) => g.tvIds.length > 0)
-    } else {
-        // For 'both', return all genres (they'll map appropriately per media type)
-        return genres
-    }
+    // Return all genres regardless of media type for consistent UX
+    // If a genre doesn't have IDs for the selected media type, the API will handle it gracefully
+    return genres
 }
 
 /**

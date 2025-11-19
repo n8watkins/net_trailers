@@ -357,8 +357,7 @@ export default function CollectionEditorModal({
         } else {
             setIsTVEnabled(!isTVEnabled)
         }
-        // Clear genres when changing media type
-        setSelectedGenres([])
+        // With unified genre system, no need to clear genres when changing media type
     }
 
     const handleDisplayOnPageToggle = () => {

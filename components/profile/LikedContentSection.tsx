@@ -10,30 +10,11 @@ import { HeartIcon } from '@heroicons/react/24/outline'
 import type { Movie, TVShow } from '../../typings'
 import { getTitle, getYear, getContentType, isMovie } from '../../typings'
 import { ProfileErrorBoundary } from './ProfileErrorBoundary'
-import { useState } from 'react'
+import { useImageWithFallback } from '../../hooks/useImageWithFallback'
 
 // Small image component with fallback support for profile sections
 function ProfileImageCard({ content }: { content: Movie | TVShow }) {
-    const [posterError, setPosterError] = useState(false)
-    const [backdropError, setBackdropError] = useState(false)
-
-    const posterImage = content.poster_path
-    const backdropImage = content.backdrop_path
-
-    const imageToUse =
-        !posterError && posterImage
-            ? `https://image.tmdb.org/t/p/w185${posterImage}`
-            : !backdropError && backdropImage
-              ? `https://image.tmdb.org/t/p/w185${backdropImage}`
-              : null
-
-    const handleImageError = () => {
-        if (!posterError && posterImage) {
-            setPosterError(true)
-        } else if (!backdropError && backdropImage) {
-            setBackdropError(true)
-        }
-    }
+    const { imageToUse, handleImageError } = useImageWithFallback(content)
 
     return (
         <div className="w-32 aspect-[2/3] relative overflow-hidden rounded-lg hover:scale-105 transition-transform duration-200">

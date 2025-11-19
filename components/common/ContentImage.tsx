@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Content, getTitle, getYear, getContentType, isMovie } from '../../typings'
 import Image from 'next/image'
 import { PlayIcon } from '@heroicons/react/24/solid'
@@ -33,6 +33,9 @@ function ContentImage({
     // Track image loading errors
     const [posterError, setPosterError] = useState(false)
     const [backdropError, setBackdropError] = useState(false)
+    const [alternateImage, setAlternateImage] = useState<string | null>(null)
+    const [alternateError, setAlternateError] = useState(false)
+    const [fetchingAlternate, setFetchingAlternate] = useState(false)
 
     // Determine which image to use
     const imageToUse =
@@ -40,7 +43,51 @@ function ContentImage({
             ? `https://image.tmdb.org/t/p/w500${posterImage}`
             : !backdropError && backdropImage
               ? `https://image.tmdb.org/t/p/w500${backdropImage}`
-              : null
+              : !alternateError && alternateImage
+                ? alternateImage
+                : null
+
+    // Fetch alternate images from TMDB when both poster and backdrop fail
+    useEffect(() => {
+        if (posterError && backdropError && !alternateImage && !fetchingAlternate && content) {
+            setFetchingAlternate(true)
+            const mediaType = isMovie(content) ? 'movie' : 'tv'
+            const apiKey =
+                process.env.NEXT_PUBLIC_TMDB_API_KEY || '96fa23e76f0d41cb36975d635d344e2a'
+
+            fetch(
+                `https://api.themoviedb.org/3/${mediaType}/${content.id}/images?api_key=${apiKey}`
+            )
+                .then((res) => res.json())
+                .then((data) => {
+                    // Try to get highest-rated poster first
+                    const posters = data.posters || []
+                    const backdrops = data.backdrops || []
+
+                    // Sort by vote_average descending
+                    const sortedPosters = [...posters].sort(
+                        (a, b) => (b.vote_average || 0) - (a.vote_average || 0)
+                    )
+                    const sortedBackdrops = [...backdrops].sort(
+                        (a, b) => (b.vote_average || 0) - (a.vote_average || 0)
+                    )
+
+                    // Try highest-rated poster first, then highest-rated backdrop
+                    const bestImage = sortedPosters[0] || sortedBackdrops[0]
+
+                    if (bestImage?.file_path) {
+                        setAlternateImage(`https://image.tmdb.org/t/p/w500${bestImage.file_path}`)
+                    } else {
+                        // No alternate images available, show placeholder
+                        setAlternateError(true)
+                    }
+                })
+                .catch(() => {
+                    // API call failed, show placeholder
+                    setAlternateError(true)
+                })
+        }
+    }, [posterError, backdropError, alternateImage, fetchingAlternate, content])
 
     const handleImageClick = () => {
         if (content) {
@@ -63,8 +110,11 @@ function ContentImage({
             // First error: poster failed, try backdrop
             setPosterError(true)
         } else if (!backdropError && backdropImage) {
-            // Second error: backdrop also failed
+            // Second error: backdrop also failed, will trigger alternate fetch
             setBackdropError(true)
+        } else if (!alternateError && alternateImage) {
+            // Third error: alternate image also failed, show placeholder
+            setAlternateError(true)
         }
     }
 

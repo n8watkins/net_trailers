@@ -379,6 +379,8 @@ export const useCustomRowsStore = create<CustomRowsStore>((set, get) => ({
             return {
                 ...systemRow,
                 name: pref?.customName || systemRow.name, // Use custom name if set
+                genres: pref?.customGenres || systemRow.genres, // Use custom genres if set
+                genreLogic: pref?.customGenreLogic || systemRow.genreLogic, // Use custom genre logic if set
                 isSystemRow: true,
                 enabled: pref?.enabled ?? true, // Default enabled
                 order: pref?.order ?? systemRow.order, // Use custom order if set, else default
