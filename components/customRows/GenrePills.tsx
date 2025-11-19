@@ -57,24 +57,27 @@ export function GenrePills({
     }
 
     const getPriorityBadgeStyle = (priority: number) => {
-        // Visual hierarchy: Priority 1 = largest/brightest, 3 = smallest/darkest
+        // Visual hierarchy: Priority 1 = gold, 2 = silver, 3 = bronze
         if (priority === 1) {
             return {
-                size: 'w-6 h-6 text-sm',
-                color: 'bg-red-500',
-                textColor: 'text-white',
+                size: 'w-5 h-5 text-xs',
+                color: 'bg-yellow-500',
+                textColor: 'text-gray-900',
+                ring: 'ring-2 ring-yellow-400',
             }
         } else if (priority === 2) {
             return {
                 size: 'w-5 h-5 text-xs',
-                color: 'bg-red-600',
-                textColor: 'text-white',
+                color: 'bg-gray-300',
+                textColor: 'text-gray-900',
+                ring: 'ring-2 ring-gray-200',
             }
         } else {
             return {
                 size: 'w-5 h-5 text-xs',
-                color: 'bg-red-700',
+                color: 'bg-orange-600',
                 textColor: 'text-white',
+                ring: 'ring-2 ring-orange-500',
             }
         }
     }
@@ -126,16 +129,15 @@ export function GenrePills({
                                 }
                             `}
                         >
-                            <span className="flex items-center gap-2">
-                                {isSelected && badgeStyle && (
-                                    <span
-                                        className={`${badgeStyle.size} ${badgeStyle.color} ${badgeStyle.textColor} rounded-full flex items-center justify-center font-bold`}
-                                    >
-                                        {priority}
-                                    </span>
-                                )}
-                                {genre.name}
-                            </span>
+                            {/* Priority badge in top-right corner */}
+                            {isSelected && badgeStyle && (
+                                <span
+                                    className={`absolute -top-1 -right-1 ${badgeStyle.size} ${badgeStyle.color} ${badgeStyle.textColor} ${badgeStyle.ring} rounded-full flex items-center justify-center font-bold shadow-lg`}
+                                >
+                                    {priority}
+                                </span>
+                            )}
+                            <span>{genre.name}</span>
                         </button>
                     )
                 })}
