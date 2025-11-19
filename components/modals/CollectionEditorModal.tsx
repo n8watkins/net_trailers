@@ -391,28 +391,28 @@ export default function CollectionEditorModal({
     const selectedGenreNames = selectedGenres.map((id) => GENRE_LOOKUP.get(id) || `Genre ${id}`)
 
     const modalContent = (
-        <div
-            className="fixed inset-0 z-[99999] overflow-y-auto"
-            onMouseDown={(e) => {
-                // Check if click started outside modal
-                if (e.target === e.currentTarget) {
-                    const startTarget = e.target
-                    const handleMouseUp = (upEvent: MouseEvent) => {
-                        // Check if click ended outside modal
-                        if (upEvent.target === startTarget) {
-                            handleClose()
-                        }
-                        document.removeEventListener('mouseup', handleMouseUp)
-                    }
-                    document.addEventListener('mouseup', handleMouseUp)
-                }
-            }}
-        >
+        <div className="fixed inset-0 z-[99999] overflow-y-auto">
             {/* Backdrop */}
             <div className="fixed inset-0 z-[99998] bg-black/80 backdrop-blur-sm" />
 
             {/* Modal */}
-            <div className="relative min-h-screen flex items-center justify-center p-4 z-[99999]">
+            <div
+                className="relative min-h-screen flex items-center justify-center p-4 z-[99999]"
+                onMouseDown={(e) => {
+                    // Check if click started outside modal (on the container)
+                    if (e.target === e.currentTarget) {
+                        const startTarget = e.target
+                        const handleMouseUp = (upEvent: MouseEvent) => {
+                            // Check if click ended outside modal
+                            if (upEvent.target === startTarget) {
+                                handleClose()
+                            }
+                            document.removeEventListener('mouseup', handleMouseUp)
+                        }
+                        document.addEventListener('mouseup', handleMouseUp)
+                    }
+                }}
+            >
                 <div
                     className={`relative z-[99999] bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-lg shadow-2xl w-full border border-gray-700 ${
                         isSystemCollection ? 'max-w-xl' : 'max-w-6xl'
@@ -908,28 +908,28 @@ export default function CollectionEditorModal({
 
     // Genre Modal
     const genreModal = showGenreModal && (
-        <div
-            className="fixed inset-0 z-[100000] overflow-y-auto"
-            onMouseDown={(e) => {
-                // Check if click started outside modal
-                if (e.target === e.currentTarget) {
-                    const startTarget = e.target
-                    const handleMouseUp = (upEvent: MouseEvent) => {
-                        // Check if click ended outside modal
-                        if (upEvent.target === startTarget) {
-                            setShowGenreModal(false)
-                        }
-                        document.removeEventListener('mouseup', handleMouseUp)
-                    }
-                    document.addEventListener('mouseup', handleMouseUp)
-                }
-            }}
-        >
+        <div className="fixed inset-0 z-[100000] overflow-y-auto">
             {/* Backdrop */}
             <div className="fixed inset-0 z-[99999] bg-black/80 backdrop-blur-sm" />
 
             {/* Modal */}
-            <div className="relative min-h-screen flex items-center justify-center p-4 z-[100000]">
+            <div
+                className="relative min-h-screen flex items-center justify-center p-4 z-[100000]"
+                onMouseDown={(e) => {
+                    // Check if click started outside modal (on the container)
+                    if (e.target === e.currentTarget) {
+                        const startTarget = e.target
+                        const handleMouseUp = (upEvent: MouseEvent) => {
+                            // Check if click ended outside modal
+                            if (upEvent.target === startTarget) {
+                                setShowGenreModal(false)
+                            }
+                            document.removeEventListener('mouseup', handleMouseUp)
+                        }
+                        document.addEventListener('mouseup', handleMouseUp)
+                    }
+                }}
+            >
                 <div
                     className="relative z-[100000] bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-lg shadow-2xl max-w-4xl w-full border border-gray-700"
                     onClick={(e) => e.stopPropagation()}
