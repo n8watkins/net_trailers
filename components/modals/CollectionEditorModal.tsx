@@ -84,6 +84,10 @@ export default function CollectionEditorModal({
     const [content, setContent] = useState<Content[]>([])
     const [removedIds, setRemovedIds] = useState<Set<number>>(new Set())
 
+    // Track mousedown location for click-outside detection
+    const mouseDownTargetRef = React.useRef<EventTarget | null>(null)
+    const genreModalMouseDownTargetRef = React.useRef<EventTarget | null>(null)
+
     // Mount the portal after client-side render
     useEffect(() => {
         setMounted(true)
@@ -398,11 +402,16 @@ export default function CollectionEditorModal({
             {/* Modal */}
             <div
                 className="relative min-h-screen flex items-center justify-center p-4 z-[99999]"
-                onClick={(e) => {
-                    // Close if clicking the container (outside the modal)
+                onMouseDown={(e) => {
                     if (e.target === e.currentTarget) {
+                        mouseDownTargetRef.current = e.target
+                    }
+                }}
+                onMouseUp={(e) => {
+                    if (e.target === e.currentTarget && mouseDownTargetRef.current === e.target) {
                         handleClose()
                     }
+                    mouseDownTargetRef.current = null
                 }}
             >
                 <div
@@ -907,11 +916,19 @@ export default function CollectionEditorModal({
             {/* Modal */}
             <div
                 className="relative min-h-screen flex items-center justify-center p-4 z-[100000]"
-                onClick={(e) => {
-                    // Close if clicking the container (outside the modal)
+                onMouseDown={(e) => {
                     if (e.target === e.currentTarget) {
+                        genreModalMouseDownTargetRef.current = e.target
+                    }
+                }}
+                onMouseUp={(e) => {
+                    if (
+                        e.target === e.currentTarget &&
+                        genreModalMouseDownTargetRef.current === e.target
+                    ) {
                         setShowGenreModal(false)
                     }
+                    genreModalMouseDownTargetRef.current = null
                 }}
             >
                 <div
