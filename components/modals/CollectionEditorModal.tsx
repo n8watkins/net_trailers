@@ -398,18 +398,10 @@ export default function CollectionEditorModal({
             {/* Modal */}
             <div
                 className="relative min-h-screen flex items-center justify-center p-4 z-[99999]"
-                onMouseDown={(e) => {
-                    // Check if click started outside modal (on the container)
+                onClick={(e) => {
+                    // Close if clicking the container (outside the modal)
                     if (e.target === e.currentTarget) {
-                        const startTarget = e.target
-                        const handleMouseUp = (upEvent: MouseEvent) => {
-                            // Check if click ended outside modal
-                            if (upEvent.target === startTarget) {
-                                handleClose()
-                            }
-                            document.removeEventListener('mouseup', handleMouseUp)
-                        }
-                        document.addEventListener('mouseup', handleMouseUp)
+                        handleClose()
                     }
                 }}
             >
@@ -915,18 +907,10 @@ export default function CollectionEditorModal({
             {/* Modal */}
             <div
                 className="relative min-h-screen flex items-center justify-center p-4 z-[100000]"
-                onMouseDown={(e) => {
-                    // Check if click started outside modal (on the container)
+                onClick={(e) => {
+                    // Close if clicking the container (outside the modal)
                     if (e.target === e.currentTarget) {
-                        const startTarget = e.target
-                        const handleMouseUp = (upEvent: MouseEvent) => {
-                            // Check if click ended outside modal
-                            if (upEvent.target === startTarget) {
-                                setShowGenreModal(false)
-                            }
-                            document.removeEventListener('mouseup', handleMouseUp)
-                        }
-                        document.addEventListener('mouseup', handleMouseUp)
+                        setShowGenreModal(false)
                     }
                 }}
             >
