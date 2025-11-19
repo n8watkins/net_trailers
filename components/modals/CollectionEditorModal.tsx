@@ -397,7 +397,7 @@ export default function CollectionEditorModal({
     const modalContent = (
         <div className="fixed inset-0 z-[99999] overflow-y-auto">
             {/* Backdrop */}
-            <div className="fixed inset-0 z-[99998] bg-black/80 backdrop-blur-sm" />
+            <div className="fixed inset-0 z-[99998] bg-black/80 backdrop-blur-sm pointer-events-none" />
 
             {/* Modal */}
             <div
@@ -911,7 +911,7 @@ export default function CollectionEditorModal({
     const genreModal = showGenreModal && (
         <div className="fixed inset-0 z-[100000] overflow-y-auto">
             {/* Backdrop */}
-            <div className="fixed inset-0 z-[99999] bg-black/80 backdrop-blur-sm" />
+            <div className="fixed inset-0 z-[99999] bg-black/80 backdrop-blur-sm pointer-events-none" />
 
             {/* Modal */}
             <div
