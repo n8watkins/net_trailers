@@ -255,15 +255,18 @@ export function SmartInput({
         setIsGeneratingSurprise(true)
 
         try {
-            // Get random query from local array (instant, no API call!)
+            // Get random query from local array (instant, but add delay for UX animation)
             const query = getRandomQuery(surpriseQueryType)
 
-            setLocalValue(query)
-            onChange(query)
-            inputRef.current?.focus()
+            // Delay to show satisfying dice animation (600ms)
+            setTimeout(() => {
+                setLocalValue(query)
+                onChange(query)
+                inputRef.current?.focus()
+                setIsGeneratingSurprise(false)
+            }, 600)
         } catch (_error) {
             showError('Failed to generate surprise', 'Please try again')
-        } finally {
             setIsGeneratingSurprise(false)
         }
     }
@@ -505,22 +508,27 @@ export function SmartInput({
                 @keyframes spin-pulse {
                     0% {
                         transform: rotate(0deg) scale(1);
+                        filter: brightness(1);
                     }
                     25% {
                         transform: rotate(180deg) scale(0.85);
+                        filter: brightness(1.3);
                     }
                     50% {
                         transform: rotate(360deg) scale(1.1);
+                        filter: brightness(1.5);
                     }
                     75% {
                         transform: rotate(540deg) scale(0.85);
+                        filter: brightness(1.3);
                     }
                     100% {
                         transform: rotate(720deg) scale(1);
+                        filter: brightness(1);
                     }
                 }
                 :global(.animate-spin-pulse) {
-                    animation: spin-pulse 1s ease-in-out;
+                    animation: spin-pulse 0.6s ease-in-out;
                 }
             `}</style>
 
