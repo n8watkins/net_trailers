@@ -13,6 +13,7 @@ The ranking generator feature can leverage existing components with minimal modi
 **Current Use**: Display movies/TV shows with interaction options
 
 **Existing Features**:
+
 - Lazy image loading with prefetch on hover
 - Context menu: like, hide, add to watchlist
 - Type-safe Content handling
@@ -42,6 +43,7 @@ interface RankingItemCardProps {
 ```
 
 **Advantages**:
+
 - Already handles both movies and TV shows
 - Built-in hover animations
 - Integrated toast notifications
@@ -56,6 +58,7 @@ interface RankingItemCardProps {
 **Current Use**: Create, edit, delete collections inline
 
 **Current Features**:
+
 - Create new list dialog
 - Inline editing with icon/color picker
 - Confirmation dialogs for deletion
@@ -97,6 +100,7 @@ const handleCreateRanking = async (name: string, emoji: string, color: string) =
 ```
 
 **File to Copy From**:
+
 - `/components/modals/IconPickerModal.tsx` - Icon selection
 - `/components/modals/ColorPickerModal.tsx` - Color selection
 - `/components/modals/ConfirmationModal.tsx` - Deletion confirmation
@@ -110,6 +114,7 @@ const handleCreateRanking = async (name: string, emoji: string, color: string) =
 **Current Use**: Multi-step collection creation
 
 **Current Structure**:
+
 1. **Step 1**: Basic info (name, emoji, color)
 2. **Step 2**: Advanced filters (optional)
 3. **Step 3**: Preview
@@ -139,7 +144,7 @@ interface WizardStep2Props {
 // STEP 3 - Show items to rank
 interface WizardStep3Props {
     items: Content[]
-    scores: Record<number, number>  // contentId -> score
+    scores: Record<number, number> // contentId -> score
     onScoresChange: (scores) => void
 }
 
@@ -154,6 +159,7 @@ interface WizardStep4Props {
 ```
 
 **Reusable Patterns**:
+
 - Step navigation logic (useReducer or useState)
 - Form validation approach
 - Content preview rendering
@@ -168,6 +174,7 @@ interface WizardStep4Props {
 **Current Use**: Reorder custom rows via drag-and-drop
 
 **Dependencies Already Installed**:
+
 ```json
 {
     "@dnd-kit/core": "^6.3.1",
@@ -177,6 +184,8 @@ interface WizardStep4Props {
 ```
 
 **Implementation Pattern** (Copy directly):
+
+{% raw %}
 
 ```typescript
 import { useSortable } from '@dnd-kit/sortable'
@@ -218,6 +227,8 @@ export function SortableRankingItem({ item, onEdit, onDelete }: SortableRankingI
 }
 ```
 
+{% endraw %}
+
 **Parent DndContext Setup**:
 
 ```typescript
@@ -233,10 +244,10 @@ export function RankingItemsList({ items, onReorder }: Props) {
     const handleDragEnd = (event) => {
         const { active, over } = event
         if (active.id === over.id) return
-        
+
         const oldIndex = items.findIndex(i => i.content.id === active.id)
         const newIndex = items.findIndex(i => i.content.id === over.id)
-        
+
         // Reorder and update
         const newItems = arrayMove(items, oldIndex, newIndex)
         onReorder(newItems)
@@ -269,7 +280,14 @@ export function RankingItemsList({ items, onReorder }: Props) {
 **Current API**:
 
 ```typescript
-const { showSuccess, showError, showWatchlistAdd, showWatchlistRemove, showContentHidden, showContentShown } = useToast()
+const {
+    showSuccess,
+    showError,
+    showWatchlistAdd,
+    showWatchlistRemove,
+    showContentHidden,
+    showContentShown,
+} = useToast()
 ```
 
 **Usage for Rankings**:
@@ -390,7 +408,7 @@ class RankingsService {
         const sanitizedName = this.sanitizeText(request.name)
         const sanitizedEmoji = request.emoji && this.isValidEmoji(request.emoji) ? request.emoji : undefined
         const sanitizedColor = /^#[0-9A-Fa-f]{6}$/.test(request.color) ? request.color : undefined
-        
+
         // ... rest of logic
     }
 }
@@ -402,12 +420,14 @@ class RankingsService {
 // Create /schemas/rankingSchema.ts
 import { z } from 'zod'
 
-export const rankingNameSchema = z.string()
+export const rankingNameSchema = z
+    .string()
     .min(3, { message: 'Name must be at least 3 characters' })
     .max(50, { message: 'Name must be at most 50 characters' })
     .trim()
 
-export const scoreSchema = z.number()
+export const scoreSchema = z
+    .number()
     .min(1, { message: 'Score must be at least 1' })
     .max(100, { message: 'Score must be at most 100' })
     .int()
@@ -415,7 +435,10 @@ export const scoreSchema = z.number()
 export const createRankingSchema = z.object({
     name: rankingNameSchema,
     emoji: z.string().optional(),
-    color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+    color: z
+        .string()
+        .regex(/^#[0-9A-Fa-f]{6}$/)
+        .optional(),
     description: z.string().max(200).optional(),
 })
 ```
@@ -436,13 +459,13 @@ const addToWatchlist = (content: Content) => {
     logInteraction(
         userId,
         createInteractionFromContent(content, 'add_to_watchlist', {
-            source: 'ranking'  // Track where interaction came from
+            source: 'ranking', // Track where interaction came from
         })
     )
 }
 
 // For rankings, add new interaction types
-type RankingInteractionType = 
+type RankingInteractionType =
     | 'ranking_created'
     | 'ranking_updated'
     | 'item_ranked'
@@ -454,8 +477,8 @@ type RankingInteractionType =
 // Track ranking creation
 const trackRankingCreated = async (ranking: Ranking) => {
     await logInteraction(userId, {
-        contentId: 0,  // Not content-specific
-        mediaType: 'movie',  // Dummy
+        contentId: 0, // Not content-specific
+        mediaType: 'movie', // Dummy
         interactionType: 'ranking_created' as any,
         genreIds: [],
         source: 'ranking',
@@ -501,7 +524,7 @@ export async function recordShareView(shareId: string): Promise<void>
 // Extend CreateShareRequest to accept rankingId
 interface CreateShareRequest {
     collectionId?: string
-    rankingId?: string  // Add this
+    rankingId?: string // Add this
     // ... rest
 }
 
@@ -514,9 +537,9 @@ const shareRanking = async (userId: string, rankingId: string) => {
             visibility: 'link-only',
             showOwnerName: true,
             allowComments: false,
-        }
+        },
     })
-    
+
     return response.shareUrl
 }
 ```
@@ -559,20 +582,20 @@ schemas/
 ## Implementation Priority
 
 1. **High Priority** (Core functionality):
-   - RankingItemCard (ContentCard variant)
-   - SortableRankingItem (@dnd-kit integration)
-   - RankingsService (CRUD logic)
-   - useRankings hook
+    - RankingItemCard (ContentCard variant)
+    - SortableRankingItem (@dnd-kit integration)
+    - RankingsService (CRUD logic)
+    - useRankings hook
 
 2. **Medium Priority** (User features):
-   - RankingBuilderModal
-   - RankingDetailModal
-   - Scoring algorithms
+    - RankingBuilderModal
+    - RankingDetailModal
+    - Scoring algorithms
 
 3. **Low Priority** (Nice-to-have):
-   - RankingAnalytics
-   - Advanced sharing options
-   - Social features
+    - RankingAnalytics
+    - Advanced sharing options
+    - Social features
 
 ---
 
@@ -588,8 +611,8 @@ UserListsService → RankingsService (reuse CRUD tests)
 ```
 
 Recommended test coverage:
+
 - Unit: RankingsService, scoring algorithms
 - Integration: Firestore persistence, store updates
 - Component: Modal flows, drag-and-drop
 - E2E: Create → edit → share → view flow
-

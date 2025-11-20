@@ -270,6 +270,8 @@ export async function POST(req: NextRequest) {
 
 #### Implementation
 
+{% raw %}
+
 ```tsx
 // app/admin/page.tsx
 'use client'
@@ -604,6 +606,8 @@ export default function AdminDashboard() {
     )
 }
 ```
+
+{% endraw %}
 
 #### Admin API Routes
 
