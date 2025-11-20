@@ -14,7 +14,7 @@ export interface SessionState {
 
 export interface SessionActions {
     initializeGuestSession: () => void
-    initializeAuthSession: (userId: string) => void
+    initializeAuthSession: (userId: string) => Promise<void>
     switchToGuest: () => void
     switchToAuth: (userId: string) => void
     setMigrationAvailable: (available: boolean | ((prev: boolean) => boolean)) => void
@@ -79,7 +79,7 @@ export const useSessionStore = create<SessionStore>((set) => ({
      * initializeAuthSession(user.uid)
      * ```
      */
-    initializeAuthSession: (userId: string) => {
+    initializeAuthSession: async (userId: string) => {
         set({
             sessionType: 'authenticated',
             activeSessionId: userId,
@@ -89,6 +89,20 @@ export const useSessionStore = create<SessionStore>((set) => ({
         })
         // Initialize session isolation service
         SessionStorageService.initializeSession(userId, 'auth')
+
+        // Update lastLoginAt in Firestore for trending notifications
+        try {
+            const { doc, updateDoc } = await import('firebase/firestore')
+            const { db } = await import('../firebase')
+            await updateDoc(doc(db, 'users', userId), {
+                lastLoginAt: Date.now(),
+            })
+            sessionLog('🎯 [SessionStore] Updated lastLoginAt for user:', userId)
+        } catch (error) {
+            // Silently fail - this is non-critical
+            sessionLog('⚠️  [SessionStore] Failed to update lastLoginAt:', error)
+        }
+
         sessionLog('🎯 [SessionStore] Auth session initialized:', userId)
     },
 

@@ -38,6 +38,7 @@ export interface UserProfile {
     // Timestamps
     createdAt: number
     updatedAt: number
+    lastLoginAt?: number // Track last login for trending notifications
 }
 
 /**

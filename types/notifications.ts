@@ -133,7 +133,7 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
     types: {
         collection_update: true,
         new_release: true,
-        trending_update: true,
+        trending_update: false, // Disabled by default (opt-in required)
         system: true,
     },
     emailDigest: 'never',

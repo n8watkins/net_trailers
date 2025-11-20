@@ -73,14 +73,34 @@ export async function GET(req: NextRequest) {
 
         // Create notifications for users
         let notificationCount = 0
+        let skippedUsers = 0
 
         if (newMovies.length > 0 || newShows.length > 0) {
+            // Get timestamp when trending data was last fetched
+            const trendingTimestamp = previousData.lastRun || 0
+
             // Get all users
             const usersSnapshot = await db.collection('users').get()
 
             for (const userDoc of usersSnapshot.docs) {
                 const userData = userDoc.data()
                 const watchlist = userData.watchlist || []
+
+                // Check if user has opted into trending notifications
+                const trendingEnabled = userData.notifications?.types?.trending_update ?? false
+                if (!trendingEnabled) {
+                    skippedUsers++
+                    continue
+                }
+
+                // Check if user has logged in since last trending update
+                // Only notify about items that became trending AFTER their last login
+                const lastLoginAt = userData.lastLoginAt || 0
+                if (lastLoginAt >= trendingTimestamp) {
+                    // User already saw the previous trending data, skip
+                    skippedUsers++
+                    continue
+                }
 
                 // Check if user has any new trending items in watchlist
                 const matchingMovies = newMovies.filter((movie: any) =>
@@ -116,6 +136,8 @@ export async function GET(req: NextRequest) {
                 }
             }
         }
+
+        console.log(`[Trending] Skipped ${skippedUsers} users (opted out or already seen)`)
 
         console.log(`[Trending] Created ${notificationCount} notifications`)
 

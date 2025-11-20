@@ -58,7 +58,7 @@ export const defaultAuthSession: AuthSession = {
             types: {
                 collection_update: true,
                 new_release: true,
-                trending_update: true,
+                trending_update: false, // Disabled by default (opt-in required)
                 system: true,
             },
             emailDigest: 'never',
@@ -94,7 +94,7 @@ export const defaultGuestSession: GuestSession = {
             types: {
                 collection_update: true,
                 new_release: true,
-                trending_update: true,
+                trending_update: false, // Disabled by default (opt-in required)
                 system: true,
             },
             emailDigest: 'never',

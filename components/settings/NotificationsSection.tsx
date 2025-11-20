@@ -275,10 +275,11 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
                             <div className="flex items-start justify-between">
                                 <div className="flex-1">
                                     <label className="block text-sm font-medium text-[#e5e5e5] mb-1">
-                                        Trending Updates
+                                        Trending Watchlist Items
                                     </label>
                                     <p className="text-sm text-[#b3b3b3]">
-                                        Get notified when new content enters the trending list
+                                        Get notified when items on your watchlist start trending
+                                        (checked daily)
                                     </p>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer ml-4">
