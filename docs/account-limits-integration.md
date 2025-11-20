@@ -105,6 +105,8 @@ You have two options for where to enforce the limit:
 
 **In `components/auth/SignupModal.tsx` (or your signup component):**
 
+{% raw %}
+
 ```typescript
 'use client'
 
@@ -272,6 +274,8 @@ export function SignupModal() {
     )
 }
 ```
+
+{% endraw %}
 
 ### Option B: Server-Side Check (More Secure, Recommended)
 
