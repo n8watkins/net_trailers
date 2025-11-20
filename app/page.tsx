@@ -4,6 +4,9 @@ import HomeClient from '../components/pages/HomeClient'
 import NetflixLoader from '../components/common/NetflixLoader'
 import NetflixError from '../components/common/NetflixError'
 
+// Force dynamic rendering since we use cookies for child safety mode
+export const dynamic = 'force-dynamic'
+
 async function HomeContent() {
     try {
         const data = await fetchHomeData()
