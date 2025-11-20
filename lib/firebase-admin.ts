@@ -41,14 +41,26 @@ function initializeFirebaseAdmin() {
         // Use explicit credentials if available (production)
         if (privateKey && clientEmail) {
             console.log('[Firebase Admin] Initializing with service account credentials')
-            adminApp = initializeApp({
-                credential: cert({
+            try {
+                adminApp = initializeApp({
+                    credential: cert({
+                        projectId,
+                        privateKey: privateKey.replace(/\\n/g, '\n'), // Handle escaped newlines
+                        clientEmail,
+                    }),
                     projectId,
-                    privateKey: privateKey.replace(/\\n/g, '\n'), // Handle escaped newlines
-                    clientEmail,
-                }),
-                projectId,
-            })
+                })
+            } catch (certError) {
+                console.error(
+                    '[Firebase Admin] Failed to initialize with service account credentials:',
+                    certError
+                )
+                throw new Error(
+                    `Firebase Admin credential initialization failed: ${
+                        certError instanceof Error ? certError.message : 'Unknown error'
+                    }. Check FIREBASE_ADMIN_PRIVATE_KEY format (should include -----BEGIN PRIVATE KEY----- header).`
+                )
+            }
         }
         // Fallback to Application Default Credentials (local dev with gcloud)
         else if (process.env.NODE_ENV === 'development') {
@@ -60,7 +72,11 @@ function initializeFirebaseAdmin() {
                     credential: applicationDefault(),
                     projectId,
                 })
-            } catch (_error) {
+            } catch (adcError) {
+                console.error(
+                    '[Firebase Admin] Failed to initialize with Application Default Credentials:',
+                    adcError
+                )
                 throw new Error(
                     'Firebase Admin initialization failed. For local development, run `gcloud auth application-default login` or set FIREBASE_ADMIN_PRIVATE_KEY and FIREBASE_ADMIN_CLIENT_EMAIL environment variables.'
                 )
@@ -68,9 +84,10 @@ function initializeFirebaseAdmin() {
         }
         // Production without credentials
         else {
-            throw new Error(
-                'Firebase Admin credentials not configured. Set FIREBASE_ADMIN_PRIVATE_KEY and FIREBASE_ADMIN_CLIENT_EMAIL environment variables in your deployment settings.'
-            )
+            const errorMsg =
+                'Firebase Admin credentials not configured. Set FIREBASE_ADMIN_PRIVATE_KEY and FIREBASE_ADMIN_CLIENT_EMAIL environment variables in your deployment settings (e.g., Vercel Environment Variables).'
+            console.error('[Firebase Admin]', errorMsg)
+            throw new Error(errorMsg)
         }
     }
 

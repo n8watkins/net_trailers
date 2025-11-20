@@ -205,7 +205,28 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        const db = getAdminDb()
+        // Try to initialize Firebase Admin DB
+        let db
+        try {
+            db = getAdminDb()
+        } catch (dbError) {
+            // Log the specific Firebase Admin initialization error
+            console.error('[Activity Tracking] Firebase Admin initialization failed:', dbError)
+            console.error(
+                '[Activity Tracking] Check FIREBASE_ADMIN_PRIVATE_KEY and FIREBASE_ADMIN_CLIENT_EMAIL environment variables'
+            )
+
+            // Return 503 Service Unavailable (not 500) - this is a configuration issue, not a code bug
+            return NextResponse.json(
+                {
+                    error: 'Activity tracking service unavailable',
+                    details:
+                        'Firebase Admin credentials not configured. Contact administrator to set FIREBASE_ADMIN_PRIVATE_KEY and FIREBASE_ADMIN_CLIENT_EMAIL in deployment settings.',
+                },
+                { status: 503 }
+            )
+        }
+
         const activityRef = db.collection('activity')
 
         // Write sanitized data
@@ -221,7 +242,15 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ success: true })
     } catch (error) {
-        console.error('Error recording activity:', error)
+        console.error('[Activity Tracking] Error recording activity:', error)
+
+        // Log additional context for debugging
+        if (error instanceof Error) {
+            console.error('[Activity Tracking] Error name:', error.name)
+            console.error('[Activity Tracking] Error message:', error.message)
+            console.error('[Activity Tracking] Error stack:', error.stack)
+        }
+
         return NextResponse.json(
             {
                 error: 'Failed to record activity',
