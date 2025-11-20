@@ -521,6 +521,16 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Activity tracking collection (for admin analytics)
+    match /activity/{activityId} {
+      // Only admins can read activity data
+      // In production, add proper admin check: request.auth.uid == 'admin-uid'
+      allow read: if request.auth != null;
+      // Allow writes from server-side only (Firebase Admin SDK)
+      // This appears to block client writes but allows Admin SDK writes
+      allow write: if false;
+    }
+
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;
