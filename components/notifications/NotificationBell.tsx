@@ -45,16 +45,13 @@ export default function NotificationBell() {
     if (!mounted) {
         return (
             <button
-                className="group relative flex items-center justify-center rounded-full p-2 transition-all hover:bg-white/10"
+                className="group relative flex items-center justify-center rounded-full p-2"
                 aria-label="Notifications"
                 aria-expanded={false}
                 aria-haspopup="true"
                 disabled
             >
-                <BellIcon
-                    className="h-8 w-8 text-gray-300 transition-transform group-hover:scale-110 group-hover:text-white"
-                    aria-hidden="true"
-                />
+                <BellIcon className="h-8 w-8 text-gray-300" aria-hidden="true" />
             </button>
         )
     }
@@ -72,7 +69,7 @@ export default function NotificationBell() {
     return (
         <button
             onClick={togglePanel}
-            className="group relative flex items-center justify-center rounded-full p-2 transition-all hover:bg-white/10"
+            className="group relative flex items-center justify-center rounded-full p-2"
             aria-label={`Notifications${hasUnread ? ` (${safeUnreadCount} unread)` : ''}`}
             aria-expanded={safeIsPanelOpen}
             aria-haspopup="true"
@@ -93,7 +90,7 @@ export default function NotificationBell() {
             {/* Unread Badge */}
             {hasUnread && (
                 <span
-                    className="absolute right-0 top-0 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white ring-2 ring-gray-900"
+                    className="absolute right-0 top-0 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white"
                     aria-hidden="true"
                 >
                     {safeUnreadCount > 99 ? '99+' : safeUnreadCount}
