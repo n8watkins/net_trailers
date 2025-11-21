@@ -25,6 +25,8 @@ export default function SmartSearchActions({
         generatedName,
         genreFallback,
         mediaType,
+        emoji,
+        color,
         setGeneratedName,
         addResults,
         addToConversation,
@@ -236,7 +238,14 @@ export default function SmartSearchActions({
                         </button>
                     </div>
                 ) : (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
+                        {/* Emoji badge with color */}
+                        <span
+                            className="text-4xl md:text-5xl lg:text-6xl flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-xl"
+                            style={{ backgroundColor: `${color}20`, border: `2px solid ${color}` }}
+                        >
+                            {emoji}
+                        </span>
                         <h1 className="text-3xl font-bold text-white md:text-4xl lg:text-5xl">
                             {editedName}
                         </h1>
