@@ -177,7 +177,13 @@ export default function SmartSearchActions({
         // Open the collection creator modal with smart search results
         // Map 'both' to 'all' for collection creator modal
         const collectionMediaType: 'movie' | 'tv' | 'all' = mediaType === 'both' ? 'all' : mediaType
-        openCollectionCreatorModal(editedName || generatedName, results, collectionMediaType)
+        openCollectionCreatorModal(
+            editedName || generatedName,
+            results,
+            collectionMediaType,
+            emoji,
+            color
+        )
     }
 
     // If showing only "Ask for More", render just that section
@@ -232,11 +238,7 @@ export default function SmartSearchActions({
                         <div className="relative">
                             <button
                                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                className="text-4xl md:text-5xl flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-xl hover:scale-105 transition-transform"
-                                style={{
-                                    backgroundColor: `${editedColor}30`,
-                                    border: `2px solid ${editedColor}`,
-                                }}
+                                className="text-4xl md:text-5xl flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-xl hover:scale-105 transition-transform hover:bg-white/10"
                             >
                                 {editedEmoji}
                             </button>
@@ -248,6 +250,25 @@ export default function SmartSearchActions({
                                     setShowEmojiPicker(false)
                                 }}
                                 onClose={() => setShowEmojiPicker(false)}
+                            />
+                        </div>
+
+                        {/* Color picker button - next to emoji */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowColorPicker(!showColorPicker)}
+                                className="w-8 h-8 rounded-lg hover:scale-110 transition-transform border-2 border-white/30"
+                                style={{ backgroundColor: editedColor }}
+                                title="Change color"
+                            />
+                            <ColorPickerModal
+                                isOpen={showColorPicker}
+                                selectedColor={editedColor}
+                                onSelectColor={(c) => {
+                                    setEditedColor(c)
+                                    setShowColorPicker(false)
+                                }}
+                                onClose={() => setShowColorPicker(false)}
                             />
                         </div>
 
@@ -274,25 +295,6 @@ export default function SmartSearchActions({
                             style={{ borderColor: editedColor, minWidth: '250px' }}
                         />
 
-                        {/* Color picker button */}
-                        <div className="relative">
-                            <button
-                                onClick={() => setShowColorPicker(!showColorPicker)}
-                                className="w-10 h-10 rounded-lg hover:scale-105 transition-transform border-2 border-white/30"
-                                style={{ backgroundColor: editedColor }}
-                                title="Change color"
-                            />
-                            <ColorPickerModal
-                                isOpen={showColorPicker}
-                                selectedColor={editedColor}
-                                onSelectColor={(c) => {
-                                    setEditedColor(c)
-                                    setShowColorPicker(false)
-                                }}
-                                onClose={() => setShowColorPicker(false)}
-                            />
-                        </div>
-
                         {/* Save button */}
                         <button
                             onClick={handleSaveEdit}
@@ -311,13 +313,8 @@ export default function SmartSearchActions({
                         }}
                         onClick={() => setIsEditing(true)}
                     >
-                        {/* Emoji badge with color */}
-                        <span
-                            className="text-4xl md:text-5xl lg:text-6xl flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-xl"
-                            style={{ backgroundColor: `${color}25`, border: `2px solid ${color}` }}
-                        >
-                            {emoji}
-                        </span>
+                        {/* Emoji - no background/border */}
+                        <span className="text-4xl md:text-5xl lg:text-6xl">{emoji}</span>
                         <h1 className="text-3xl font-bold text-white md:text-4xl lg:text-5xl">
                             {editedName}
                         </h1>

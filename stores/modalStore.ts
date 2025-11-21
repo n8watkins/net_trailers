@@ -47,6 +47,8 @@ export interface CollectionCreatorModalState {
     name: string
     content: Content[]
     mediaType: 'movie' | 'tv' | 'all'
+    emoji?: string
+    color?: string
 }
 
 // Collection mode selection modal state
@@ -116,7 +118,9 @@ export interface ModalStoreActions {
     openCollectionCreatorModal: (
         name: string,
         content: Content[],
-        mediaType: 'movie' | 'tv' | 'all'
+        mediaType: 'movie' | 'tv' | 'all',
+        emoji?: string,
+        color?: string
     ) => void
     closeCollectionCreatorModal: () => void
     setCollectionCreatorName: (name: string) => void
@@ -390,7 +394,9 @@ export const useModalStore = create<ModalStore>((set, get) => ({
     openCollectionCreatorModal: (
         name: string,
         content: Content[],
-        mediaType: 'movie' | 'tv' | 'all'
+        mediaType: 'movie' | 'tv' | 'all',
+        emoji?: string,
+        color?: string
     ) => {
         startTransition(() => {
             set({
@@ -399,11 +405,15 @@ export const useModalStore = create<ModalStore>((set, get) => ({
                     name,
                     content,
                     mediaType,
+                    emoji,
+                    color,
                 },
             })
             uiLog('📋 [ModalStore] Collection creator modal opened:', {
                 name,
                 contentCount: content.length,
+                emoji,
+                color,
             })
         })
     },

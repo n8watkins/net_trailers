@@ -72,7 +72,7 @@ export default function NotificationBell() {
     return (
         <button
             onClick={togglePanel}
-            className="group relative flex items-center justify-center rounded-full p-2 transition-all hover:bg-white/10 hover:shadow-[0_0_15px_rgba(239,68,68,0.6)] focus:shadow-[0_0_15px_rgba(239,68,68,0.6)]"
+            className="group relative flex items-center justify-center rounded-full p-2 transition-all hover:bg-white/10"
             aria-label={`Notifications${hasUnread ? ` (${safeUnreadCount} unread)` : ''}`}
             aria-expanded={safeIsPanelOpen}
             aria-haspopup="true"
@@ -80,12 +80,12 @@ export default function NotificationBell() {
             {/* Bell Icon */}
             {hasUnread ? (
                 <BellIconSolid
-                    className="h-8 w-8 text-red-500 transition-transform group-hover:scale-110"
+                    className="h-8 w-8 text-red-500 transition-all drop-shadow-[0_0_8px_rgba(239,68,68,0.6)] group-hover:scale-110 group-hover:drop-shadow-[0_0_12px_rgba(239,68,68,0.8)] group-focus:drop-shadow-[0_0_12px_rgba(239,68,68,0.8)]"
                     aria-hidden="true"
                 />
             ) : (
                 <BellIcon
-                    className="h-8 w-8 text-gray-300 transition-transform group-hover:scale-110 group-hover:text-white"
+                    className="h-8 w-8 text-gray-300 transition-all group-hover:scale-110 group-hover:text-white group-hover:drop-shadow-[0_0_12px_rgba(239,68,68,0.6)] group-focus:drop-shadow-[0_0_12px_rgba(239,68,68,0.6)]"
                     aria-hidden="true"
                 />
             )}
