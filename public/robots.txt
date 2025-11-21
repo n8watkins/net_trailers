@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://yoursite.com/sitemap.xml
+Sitemap: https://net-trailers.vercel.app/sitemap.xml
 
 # Common crawlers
 User-agent: Googlebot
@@ -14,9 +14,9 @@ Allow: /
 User-agent: Slurp
 Allow: /
 
-# Block specific paths if needed
-# Disallow: /api/
-# Disallow: /admin/
+# Block API and admin paths
+Disallow: /api/
+Disallow: /admin/
 
 # Crawl delay (optional)
 Crawl-delay: 1

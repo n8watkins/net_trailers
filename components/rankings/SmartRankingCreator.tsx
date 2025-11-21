@@ -251,24 +251,6 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
     const [manuallyAddedIds, setManuallyAddedIds] = useState<Set<number>>(new Set())
     const [removedContentIds, setRemovedContentIds] = useState<Set<number>>(new Set())
 
-    // Generate random query using Gemini
-    const handleSurpriseMe = async () => {
-        setIsLoading(true)
-        try {
-            const response = await fetch('/api/surprise-query')
-            const data = await response.json()
-            if (data.query) {
-                setQuery(data.query)
-                // Auto-submit
-                await handleSmartSearch(data.query)
-            }
-        } catch (error) {
-            showError('Failed to generate surprise query')
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
     // Smart search using Gemini
     const handleSmartSearch = async (searchQuery?: string) => {
         const q = searchQuery || query
@@ -748,10 +730,6 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
                                     size="large"
                                     variant="transparent"
                                     shimmer="wave"
-                                    showSurpriseMe={true}
-                                    onSurpriseMe={handleSurpriseMe}
-                                    surpriseIcon="dice"
-                                    surpriseQueryType="ranking"
                                     placeholder="e.g., All James Bond movies, Paul Thomas Anderson filmography, Best heist films..."
                                 />
                             </div>

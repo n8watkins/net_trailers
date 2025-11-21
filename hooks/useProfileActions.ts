@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react'
-import { seedUserData } from '../utils/seedData'
+import { seedUserData } from '../utils/seed'
 import { useSessionStore } from '../stores/sessionStore'
 import useUserData from './useUserData'
 

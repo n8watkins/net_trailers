@@ -12,6 +12,7 @@ import { SessionSyncManager } from '../components/utility/SessionSyncManager'
 import { useAppStore } from '../stores/appStore'
 import DebugControls from '../components/debug/DebugControls'
 import WebVitalsHUD from '../components/debug/WebVitalsHUD'
+import VercelAnalyticsWrapper from '../components/utility/VercelAnalyticsWrapper'
 
 /**
  * Providers component wraps the entire app with necessary context providers
@@ -38,6 +39,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
             {/* Debug components (only visible in development) */}
             <DebugControls />
             <WebVitalsHUD />
+            {/* Analytics */}
+            <VercelAnalyticsWrapper />
         </AuthProvider>
     )
 }
