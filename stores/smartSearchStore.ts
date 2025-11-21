@@ -94,6 +94,16 @@ export const useSmartSearchStore = create<SmartSearchStore>((set, get) => ({
             generatedName: name,
         }),
 
+    setEmoji: (emoji: string) =>
+        set({
+            emoji,
+        }),
+
+    setColor: (color: string) =>
+        set({
+            color,
+        }),
+
     toggleInfinite: () =>
         set((state) => ({
             enableInfinite: !state.enableInfinite,

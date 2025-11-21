@@ -8,6 +8,8 @@ import { useAppStore } from '../../stores/appStore'
 import { useToast } from '../../hooks/useToast'
 import { getTitle, getYear } from '../../typings'
 import { fetchWithOptionalAuth } from '@/lib/authenticatedFetch'
+import IconPickerModal from '../modals/IconPickerModal'
+import ColorPickerModal from '../modals/ColorPickerModal'
 
 interface SmartSearchActionsProps {
     showAskForMore?: boolean
@@ -28,6 +30,8 @@ export default function SmartSearchActions({
         emoji,
         color,
         setGeneratedName,
+        setEmoji,
+        setColor,
         addResults,
         addToConversation,
     } = useSmartSearchStore()
@@ -37,18 +41,26 @@ export default function SmartSearchActions({
     const { showSuccess, showError } = useToast()
 
     const [editedName, setEditedName] = useState(generatedName)
+    const [editedEmoji, setEditedEmoji] = useState(emoji)
+    const [editedColor, setEditedColor] = useState(color)
     const [isCreating, setIsCreating] = useState(false)
     const [isAskingMore, setIsAskingMore] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
     const [isHovered, setIsHovered] = useState(false)
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+    const [showColorPicker, setShowColorPicker] = useState(false)
 
-    // Sync edited name with generated name
+    // Sync edited values with store values
     useEffect(() => {
         setEditedName(generatedName)
-    }, [generatedName])
+        setEditedEmoji(emoji)
+        setEditedColor(color)
+    }, [generatedName, emoji, color])
 
     const handleSaveEdit = () => {
         setGeneratedName(editedName)
+        setEmoji(editedEmoji)
+        setColor(editedColor)
         setIsEditing(false)
     }
 
@@ -202,14 +214,44 @@ export default function SmartSearchActions({
 
     return (
         <div className="space-y-6">
-            {/* Title Section */}
+            {/* Title Section with Colored Container */}
             <div
-                className="group"
+                className="group relative inline-block"
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
             >
                 {isEditing ? (
-                    <div className="flex items-center gap-3">
+                    <div
+                        className="flex items-center gap-4 p-4 rounded-2xl"
+                        style={{
+                            backgroundColor: `${editedColor}15`,
+                            border: `2px solid ${editedColor}50`,
+                        }}
+                    >
+                        {/* Emoji picker button */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                className="text-4xl md:text-5xl flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-xl hover:scale-105 transition-transform"
+                                style={{
+                                    backgroundColor: `${editedColor}30`,
+                                    border: `2px solid ${editedColor}`,
+                                }}
+                            >
+                                {editedEmoji}
+                            </button>
+                            <IconPickerModal
+                                isOpen={showEmojiPicker}
+                                selectedIcon={editedEmoji}
+                                onSelectIcon={(icon) => {
+                                    setEditedEmoji(icon)
+                                    setShowEmojiPicker(false)
+                                }}
+                                onClose={() => setShowEmojiPicker(false)}
+                            />
+                        </div>
+
+                        {/* Name input */}
                         <input
                             type="text"
                             value={editedName}
@@ -218,31 +260,61 @@ export default function SmartSearchActions({
                                 if (e.key === 'Enter') handleSaveEdit()
                                 if (e.key === 'Escape') {
                                     setEditedName(generatedName)
+                                    setEditedEmoji(emoji)
+                                    setEditedColor(color)
                                     setIsEditing(false)
                                 }
                             }}
                             autoFocus
                             className="
                                 px-3 py-2 rounded-md w-auto max-w-md
-                                bg-white/10 text-white text-3xl font-bold
-                                border-2 border-red-500
-                                focus:outline-none
+                                bg-white/10 text-white text-2xl md:text-3xl font-bold
+                                border-2 focus:outline-none
                             "
-                            style={{ minWidth: '300px' }}
+                            style={{ borderColor: editedColor, minWidth: '250px' }}
                         />
+
+                        {/* Color picker button */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowColorPicker(!showColorPicker)}
+                                className="w-10 h-10 rounded-lg hover:scale-105 transition-transform border-2 border-white/30"
+                                style={{ backgroundColor: editedColor }}
+                                title="Change color"
+                            />
+                            <ColorPickerModal
+                                isOpen={showColorPicker}
+                                selectedColor={editedColor}
+                                onSelectColor={(c) => {
+                                    setEditedColor(c)
+                                    setShowColorPicker(false)
+                                }}
+                                onClose={() => setShowColorPicker(false)}
+                            />
+                        </div>
+
+                        {/* Save button */}
                         <button
                             onClick={handleSaveEdit}
-                            className="p-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors"
+                            className="p-2 rounded-md text-white hover:opacity-80 transition-colors"
+                            style={{ backgroundColor: editedColor }}
                         >
                             <CheckIcon className="h-5 w-5" />
                         </button>
                     </div>
                 ) : (
-                    <div className="flex items-center gap-3">
+                    <div
+                        className="flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all hover:scale-[1.01]"
+                        style={{
+                            backgroundColor: `${color}10`,
+                            border: `2px solid ${color}40`,
+                        }}
+                        onClick={() => setIsEditing(true)}
+                    >
                         {/* Emoji badge with color */}
                         <span
                             className="text-4xl md:text-5xl lg:text-6xl flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-xl"
-                            style={{ backgroundColor: `${color}20`, border: `2px solid ${color}` }}
+                            style={{ backgroundColor: `${color}25`, border: `2px solid ${color}` }}
                         >
                             {emoji}
                         </span>
@@ -250,7 +322,10 @@ export default function SmartSearchActions({
                             {editedName}
                         </h1>
                         <button
-                            onClick={() => setIsEditing(true)}
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                setIsEditing(true)
+                            }}
                             className={`
                                 p-2 rounded-md bg-white/10 text-white hover:bg-white/20 transition-all
                                 ${isHovered ? 'opacity-100' : 'opacity-0'}

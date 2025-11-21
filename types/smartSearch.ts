@@ -53,6 +53,8 @@ export interface SmartSearchActions {
 
     // Settings
     setGeneratedName: (name: string) => void
+    setEmoji: (emoji: string) => void
+    setColor: (color: string) => void
     toggleInfinite: () => void
 
     // Conversation
