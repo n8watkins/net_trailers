@@ -90,6 +90,8 @@ export async function POST(request: NextRequest) {
             mediaType: parsed.mediaType,
             movieCount: parsed.movies.length,
             genreFallback: parsed.genreFallback,
+            emoji: parsed.emoji,
+            color: parsed.color,
             userId,
         })
 
@@ -106,6 +108,8 @@ export async function POST(request: NextRequest) {
             generatedName: parsed.rowName,
             genreFallback: parsed.genreFallback,
             mediaType: parsed.mediaType,
+            emoji: parsed.emoji,
+            color: parsed.color,
             _meta: result.metadata, // Include router metadata
         })
     } catch (error: any) {

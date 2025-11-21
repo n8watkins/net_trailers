@@ -1,8 +1,17 @@
 import { Content } from '../../typings'
+import { getAllEmojis, AVAILABLE_COLORS } from '../../config/constants'
 
 /**
  * Parses and enriches Gemini AI responses for smart search
  */
+
+// Get valid emojis and colors for validation (cast to string[] for includes() compatibility)
+const VALID_EMOJIS: string[] = getAllEmojis()
+const VALID_COLORS: string[] = [...AVAILABLE_COLORS]
+
+// Default fallbacks
+const DEFAULT_EMOJI = '🎬'
+const DEFAULT_COLOR = '#ef4444'
 
 interface GeminiMovieResponse {
     title: string
@@ -14,6 +23,8 @@ interface GeminiResponse {
     rowName: string
     mediaType: 'movie' | 'tv' | 'both'
     genreFallback: number[]
+    emoji: string
+    color: string
 }
 
 /**
@@ -24,6 +35,28 @@ export function stripMarkdown(text: string): string {
         .replace(/```json\s*/g, '')
         .replace(/```\s*/g, '')
         .trim()
+}
+
+/**
+ * Validates emoji is from our allowed list
+ */
+function validateEmoji(emoji: string | undefined): string {
+    if (!emoji || !VALID_EMOJIS.includes(emoji)) {
+        console.warn(`[ResponseParser] Invalid emoji "${emoji}", using default`)
+        return DEFAULT_EMOJI
+    }
+    return emoji
+}
+
+/**
+ * Validates color is from our allowed list
+ */
+function validateColor(color: string | undefined): string {
+    if (!color || !VALID_COLORS.includes(color)) {
+        console.warn(`[ResponseParser] Invalid color "${color}", using default`)
+        return DEFAULT_COLOR
+    }
+    return color
 }
 
 /**
@@ -48,11 +81,17 @@ export function parseGeminiResponse(responseText: string): GeminiResponse {
             throw new Error('Invalid response: invalid mediaType')
         }
 
+        // Validate emoji and color (with fallbacks)
+        const emoji = validateEmoji(parsed.emoji)
+        const color = validateColor(parsed.color)
+
         return {
             movies: parsed.movies,
             rowName: parsed.rowName,
             mediaType: parsed.mediaType,
             genreFallback: parsed.genreFallback || [],
+            emoji,
+            color,
         }
     } catch (error) {
         console.error('Failed to parse Gemini response:', error)
