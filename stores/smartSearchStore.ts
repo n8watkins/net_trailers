@@ -20,6 +20,8 @@ const initialState: SmartSearchState = {
     generatedName: '',
     genreFallback: [],
     mediaType: 'both',
+    emoji: '🎬',
+    color: '#ef4444',
     enableInfinite: false,
     conversationHistory: [],
 }
@@ -58,6 +60,8 @@ export const useSmartSearchStore = create<SmartSearchStore>((set, get) => ({
             generatedName: metadata.generatedName,
             genreFallback: metadata.genreFallback,
             mediaType: metadata.mediaType,
+            emoji: metadata.emoji || '🎬',
+            color: metadata.color || '#ef4444',
             removedIds: new Set(), // Clear removed IDs on new search
         }),
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { SparklesIcon } from '@heroicons/react/24/outline'
 import Header from '../layout/Header'
@@ -15,6 +15,10 @@ export default function SmartSearchClient() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const queryParam = searchParams?.get('q')
+
+    // Track last searched query to prevent duplicate API calls (React StrictMode runs effects twice)
+    const lastSearchedQuery = useRef<string | null>(null)
+    const abortControllerRef = useRef<AbortController | null>(null)
 
     const {
         query,
@@ -32,6 +36,7 @@ export default function SmartSearchClient() {
     useEffect(() => {
         return () => {
             reset(true) // Clear query when navigating away
+            lastSearchedQuery.current = null
         }
     }, [reset])
 
@@ -43,12 +48,26 @@ export default function SmartSearchClient() {
             return
         }
 
+        // Prevent duplicate API calls for the same query (React StrictMode protection)
+        if (lastSearchedQuery.current === queryParam) {
+            return
+        }
+
         // Update query in store if different
         if (queryParam !== query) {
             setQuery(queryParam)
         }
 
+        // Cancel any in-flight request
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort()
+        }
+        abortControllerRef.current = new AbortController()
+
         const performSearch = async () => {
+            // Mark this query as being searched
+            lastSearchedQuery.current = queryParam
+
             setLoading(true)
             try {
                 const response = await fetchWithOptionalAuth('/api/ai-suggestions', {
@@ -61,6 +80,7 @@ export default function SmartSearchClient() {
                         mode: useSmartSearchStore.getState().mode,
                         conversationHistory: useSmartSearchStore.getState().conversationHistory,
                     }),
+                    signal: abortControllerRef.current?.signal,
                 })
 
                 if (!response.ok) {
@@ -95,6 +115,8 @@ export default function SmartSearchClient() {
                     generatedName: data.generatedName,
                     genreFallback: data.genreFallback,
                     mediaType: data.mediaType,
+                    emoji: data.emoji,
+                    color: data.color,
                 })
 
                 // Add to conversation history
@@ -104,6 +126,10 @@ export default function SmartSearchClient() {
                     content: `Generated ${data.results.length} suggestions`,
                 })
             } catch (error) {
+                // Ignore abort errors
+                if (error instanceof Error && error.name === 'AbortError') {
+                    return
+                }
                 console.error('Smart search error:', error)
             } finally {
                 setLoading(false)
@@ -111,6 +137,13 @@ export default function SmartSearchClient() {
         }
 
         performSearch()
+
+        // Cleanup: abort request if component unmounts or query changes
+        return () => {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort()
+            }
+        }
     }, [queryParam]) // Only trigger on query param change
 
     return (

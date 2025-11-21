@@ -27,6 +27,8 @@ export interface SmartSearchState {
     generatedName: string // For row/watchlist creation
     genreFallback: number[] // Genre IDs for infinite content
     mediaType: 'movie' | 'tv' | 'both'
+    emoji: string // Suggested emoji for collection
+    color: string // Suggested color (hex) for collection
 
     // Settings
     enableInfinite: boolean // Only applicable for row mode
@@ -65,6 +67,8 @@ export interface SmartSearchMetadata {
     generatedName: string
     genreFallback: number[]
     mediaType: 'movie' | 'tv' | 'both'
+    emoji?: string
+    color?: string
 }
 
 export interface ExistingMovie {
@@ -84,4 +88,6 @@ export interface SmartSearchAPIResponse {
     generatedName: string
     genreFallback: number[]
     mediaType: 'movie' | 'tv' | 'both'
+    emoji: string
+    color: string
 }
