@@ -998,16 +998,27 @@ The app is a standard Next.js application and can be deployed to:
 - **Docker**: Dockerfile can be created for containerization
 - **Self-hosted**: Build with `npm run build` and start with `npm start`
 
-### Security Headers
+### Security
 
-Configured in `next.config.mjs`:
+NetTrailer implements comprehensive security measures. See the full [Security Documentation](/security) for details.
+
+**Key Security Features:**
+
+- **Authentication**: Firebase Auth with server-side token verification
+- **Input Sanitization**: DOMPurify, control character removal, length validation
+- **Rate Limiting**: Per-user limits on AI requests, password reset, email verification
+- **Data Protection**: 540+ lines of Firestore security rules, user data isolation
+- **Child Safety**: PIN-protected content filtering with bcrypt encryption
+- **API Security**: Timing-safe secret comparison, request size limits
+
+**Security Headers** (configured in `next.config.mjs`):
 
 - X-Frame-Options: DENY
 - X-Content-Type-Options: nosniff
 - Referrer-Policy: strict-origin-when-cross-origin
 - X-XSS-Protection: 1; mode=block
-- Permissions-Policy (camera, microphone, geolocation)
-- Content-Security-Policy (strict directives)
+- Permissions-Policy (camera, microphone, geolocation, interest-cohort)
+- Content-Security-Policy (strict directives with base-uri, form-action)
 - Strict-Transport-Security (HSTS)
 
 ### Pre-deployment Checklist
@@ -1029,13 +1040,14 @@ Configured in `next.config.mjs`:
 **Codebase Size**:
 
 - Total component lines: 35,682
-- Total commits: 378+
+- Total commits: 390+
 - Features completed: 12 major feature sets
 - Documentation pages: 55+ markdown files
-- API routes: 30+
-- Zustand stores: 17 focused stores
+- API routes: 49+
+- Zustand stores: 18 focused stores
 - Components created: 100+ components
 - Lines of code: ~50,000+ (estimated)
+- Security documentation: 450+ lines
 
 **Development Time**:
 

@@ -250,6 +250,22 @@ function Footer({
                                         Terms of Service
                                     </Link>
                                 </p>
+                                <p className="text-gray-300 text-sm">
+                                    <Link
+                                        href="/security"
+                                        className="hover:text-white transition-colors duration-200"
+                                    >
+                                        Security
+                                    </Link>
+                                </p>
+                                <p className="text-gray-300 text-sm">
+                                    <Link
+                                        href="/changelog"
+                                        className="hover:text-white transition-colors duration-200"
+                                    >
+                                        Changelog
+                                    </Link>
+                                </p>
                                 {onOpenKeyboardShortcuts && (
                                     <p className="text-gray-300 text-sm">
                                         <button

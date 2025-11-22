@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useModalStore } from '../../stores/modalStore'
 import { useSessionStore } from '../../stores/sessionStore'
@@ -138,6 +138,15 @@ export default function CollectionCreatorModal() {
     const [currentPage, setCurrentPage] = useState(0)
     const [searchFilter, setSearchFilter] = useState('')
     const [displayAsRow, setDisplayAsRow] = useState(false)
+
+    // Initialize emoji/color from modal state when modal opens (AI-suggested values)
+    // Falls back to defaults when no AI suggestions are provided
+    useEffect(() => {
+        if (collectionCreatorModal.isOpen) {
+            setSelectedEmoji(collectionCreatorModal.emoji || '📺')
+            setSelectedColor(collectionCreatorModal.color || '#3b82f6')
+        }
+    }, [collectionCreatorModal.isOpen, collectionCreatorModal.emoji, collectionCreatorModal.color])
 
     // Filter content based on search
     const filteredContent = useMemo(() => {

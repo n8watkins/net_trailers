@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { XMarkIcon, HeartIcon, StarIcon, PlayIcon } from '@heroicons/react/24/outline'
 
 interface AboutModalProps {
@@ -74,6 +75,34 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                 <li className="flex items-start">
                                     <span className="text-red-500 mr-2">•</span>
                                     <span>
+                                        View the{' '}
+                                        <Link
+                                            href="/security"
+                                            className="text-red-400 hover:text-red-300 underline underline-offset-2"
+                                            onClick={onClose}
+                                        >
+                                            Security page
+                                        </Link>{' '}
+                                        to see all security measures implemented.
+                                    </span>
+                                </li>
+                                <li className="flex items-start">
+                                    <span className="text-red-500 mr-2">•</span>
+                                    <span>
+                                        Check the{' '}
+                                        <Link
+                                            href="/changelog"
+                                            className="text-red-400 hover:text-red-300 underline underline-offset-2"
+                                            onClick={onClose}
+                                        >
+                                            Changelog
+                                        </Link>{' '}
+                                        for version history and updates.
+                                    </span>
+                                </li>
+                                <li className="flex items-start">
+                                    <span className="text-red-500 mr-2">•</span>
+                                    <span>
                                         Share feedback or report issues on{' '}
                                         <a
                                             href="https://github.com/n8watkins/net_trailer/issues"
@@ -98,8 +127,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                                         >
                                             Portfolio page
                                         </a>{' '}
-                                        for more projects, or connect with me online if you&apos;d
-                                        like to reach out.
+                                        for more projects.
                                     </span>
                                 </li>
                             </ul>

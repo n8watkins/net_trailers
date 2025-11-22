@@ -55,19 +55,26 @@ export default function ChangelogPage() {
     }, [])
 
     const toggleVersion = (version: string) => {
+        const isCurrentlyExpanded = expandedVersions.has(version)
+
         setExpandedVersions((prev) => {
             const newSet = new Set(prev)
             if (newSet.has(version)) {
                 newSet.delete(version)
-                if (typeof window !== 'undefined' && window.location.hash === `#v${version}`) {
-                    updateUrlHash()
-                }
             } else {
                 newSet.add(version)
-                updateUrlHash(`v${version}`)
             }
             return newSet
         })
+
+        // Update URL hash outside of state setter to avoid render-time state updates
+        if (isCurrentlyExpanded) {
+            if (typeof window !== 'undefined' && window.location.hash === `#v${version}`) {
+                updateUrlHash()
+            }
+        } else {
+            updateUrlHash(`v${version}`)
+        }
     }
 
     // Handle URL hash on mount

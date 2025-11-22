@@ -5,6 +5,41 @@ All notable changes to NetTrailer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2025-01-21 - Security Documentation & Hardening
+
+### Added
+
+- **Security Documentation Page** (`/security`)
+    - Comprehensive overview of all security measures
+    - Visual status dashboard for security categories
+    - Technical implementation details
+    - Vulnerability reporting information
+    - Links to full SECURITY.md documentation
+
+- **SECURITY.md Documentation**
+    - Full security documentation at project root
+    - Covers authentication, authorization, input validation
+    - API security measures and rate limiting
+    - Data protection and Firestore security rules
+    - Child safety features and PIN protection
+    - Security headers and CSP configuration
+
+### Fixed
+
+- **Timing Attack Vulnerability** in cron job authentication
+    - Replaced direct string comparison with `crypto.timingSafeEqual()`
+    - Prevents timing-based secret guessing attacks
+    - Applied to `update-trending` cron route
+
+### Security
+
+- Documented all 15+ security categories in SECURITY.md
+- Added public security page for transparency
+- Enhanced cron job authentication security
+- See `/security` page or `SECURITY.md` for full details
+
+---
+
 ## [1.6.0] - 2025-01-14 - Email Notification System
 
 ### Added
@@ -634,6 +669,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version    | Release Date | Key Features                                  |
 | ---------- | ------------ | --------------------------------------------- |
+| **v1.7.0** | 2025-01-21   | Security Documentation & Hardening            |
 | **v1.6.0** | 2025-01-14   | Email Notification System                     |
 | **v1.5.0** | 2025-01-13   | Performance Optimizations & Image Compression |
 | **v1.4.0** | 2025-01-10   | Forum & Discussion System                     |
