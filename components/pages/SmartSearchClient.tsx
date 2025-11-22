@@ -65,9 +65,6 @@ export default function SmartSearchClient() {
         abortControllerRef.current = new AbortController()
 
         const performSearch = async () => {
-            // Mark this query as being searched
-            lastSearchedQuery.current = queryParam
-
             setLoading(true)
             try {
                 const response = await fetchWithOptionalAuth('/api/ai-suggestions', {
@@ -111,6 +108,9 @@ export default function SmartSearchClient() {
 
                 const data = await response.json()
 
+                // Mark this query as successfully searched (allows retry on failure)
+                lastSearchedQuery.current = queryParam
+
                 setResults(data.results, {
                     generatedName: data.generatedName,
                     genreFallback: data.genreFallback,
@@ -130,6 +130,8 @@ export default function SmartSearchClient() {
                 if (error instanceof Error && error.name === 'AbortError') {
                     return
                 }
+                // Clear lastSearchedQuery on error to allow retry
+                lastSearchedQuery.current = null
                 console.error('Smart search error:', error)
             } finally {
                 setLoading(false)
