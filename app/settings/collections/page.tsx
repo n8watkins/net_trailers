@@ -27,7 +27,6 @@ import {
 } from '@heroicons/react/24/outline'
 import CollectionEditorModal from '../../../components/modals/CollectionEditorModal'
 import { SystemRowStorage } from '../../../utils/systemRowStorage'
-import { fixCollectionDisplaySettings } from '../../../utils/migrations/fixCollectionDisplaySettings'
 import { CustomRowsFirestore } from '../../../utils/firestore/customRows'
 import { getSystemCollectionsByMediaType } from '../../../constants/systemCollections'
 
@@ -80,9 +79,6 @@ export default function CollectionsPage() {
     // Collection editor modal state
     const [editingCollection, setEditingCollection] = useState<any>(null)
     const [showEditorModal, setShowEditorModal] = useState(false)
-
-    // Migration state
-    const [isMigrating, setIsMigrating] = useState(false)
 
     // Load system row preferences from storage on mount
     // Only load if preferences don't already exist to avoid clobbering in-flight changes
@@ -303,32 +299,6 @@ export default function CollectionsPage() {
         setEditingCollection(null)
     }
 
-    const handleMigrateCollections = async () => {
-        setIsMigrating(true)
-        try {
-            const result = await fixCollectionDisplaySettings()
-
-            if (result.success) {
-                if (result.updated > 0) {
-                    showSuccess(
-                        `Fixed ${result.updated} collection${result.updated === 1 ? '' : 's'}`
-                    )
-                } else {
-                    showSuccess('All collections already have correct settings')
-                }
-            } else {
-                showError(
-                    `Migration completed with ${result.errors} error${result.errors === 1 ? '' : 's'}`
-                )
-            }
-        } catch (error) {
-            console.error('Migration failed:', error)
-            showError('Failed to migrate collections')
-        } finally {
-            setIsMigrating(false)
-        }
-    }
-
     return (
         <div className="p-6 md:p-8 min-h-screen">
             {/* Header */}
@@ -342,14 +312,6 @@ export default function CollectionsPage() {
 
                 {/* Action Buttons */}
                 <div className="flex gap-2">
-                    <button
-                        onClick={handleMigrateCollections}
-                        disabled={isMigrating}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed text-white text-sm rounded-lg border border-blue-500 transition-colors"
-                        title="Fix collections that aren't displaying properly"
-                    >
-                        {isMigrating ? 'Fixing...' : 'Fix Collections'}
-                    </button>
                     <button
                         onClick={handleResetToDefaults}
                         className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm rounded-lg border border-gray-600 transition-colors"

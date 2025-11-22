@@ -7,7 +7,6 @@ import { HomeData } from '../../lib/serverData'
 import { useModalStore } from '../../stores/modalStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { CollectionRowLoader } from '../collections/CollectionRowLoader'
-import { autoMigrateIfNeeded } from '../../utils/migrations/customRowsToCollections'
 import { ALL_SYSTEM_COLLECTIONS } from '../../constants/systemCollections'
 import RecommendedForYouRow from '../recommendations/RecommendedForYouRow'
 import { useAuthStore } from '../../stores/authStore'
@@ -144,16 +143,6 @@ export default function HomeClient({ data }: HomeClientProps) {
 
         loadDeletedRows()
     }, [userId, isInitialized, isGuest, setDeletedSystemRows])
-
-    // Auto-migrate custom rows to collections on first load
-    // Skip migration for guest users (they don't have Firebase data to migrate)
-    useEffect(() => {
-        if (!userId || !isInitialized || isGuest) return
-
-        autoMigrateIfNeeded(userId).catch((error) => {
-            // Silently fail - migration is non-critical
-        })
-    }, [userId, isInitialized, isGuest])
 
     // Combine system collections with user collections
     const allCollections = useMemo(() => {
