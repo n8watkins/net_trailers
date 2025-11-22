@@ -66,7 +66,7 @@ export function CustomRowForm({ initialData, onSubmit, onCancel, isLoading }: Cu
         setErrors({})
 
         try {
-            const response = await authenticatedFetch('/api/generate-row-name', {
+            const response = await authenticatedFetch('/api/generate-collection-name', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -1,18 +1,18 @@
 /**
- * Unit Tests for App Router API Route: /api/generate-row-name
+ * Unit Tests for App Router API Route: /api/generate-collection-name
  *
- * Tests the Gemini AI creative row name generation endpoint
+ * Tests the Gemini AI creative collection name generation endpoint
  *
  * @jest-environment node
  */
 
 import { NextRequest } from 'next/server'
-import { POST } from '../../../../app/api/generate-row-name/route'
+import { POST } from '../../../../app/api/generate-collection-name/route'
 
 // Mock fetch globally
 global.fetch = jest.fn()
 
-describe('/api/generate-row-name - Creative Name Generation Tests', () => {
+describe('/api/generate-collection-name - Creative Name Generation Tests', () => {
     const originalEnv = process.env
 
     beforeEach(() => {
@@ -28,7 +28,7 @@ describe('/api/generate-row-name - Creative Name Generation Tests', () => {
      * Helper to create a POST request with JSON body
      */
     function createRequest(body: Record<string, unknown>): NextRequest {
-        const url = new URL('http://localhost:3000/api/generate-row-name')
+        const url = new URL('http://localhost:3000/api/generate-collection-name')
         return new NextRequest(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

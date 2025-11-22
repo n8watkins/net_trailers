@@ -266,7 +266,7 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
 
             const token = await currentUser.getIdToken()
 
-            const response = await fetch('/api/generate-row', {
+            const response = await fetch('/api/generate-ranking-content', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -424,7 +424,7 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
             const currentIds = new Set(selectedItems.map((item) => item.id))
             const excludeIds = new Set([...currentIds, ...removedContentIds])
 
-            const response = await fetch('/api/generate-row', {
+            const response = await fetch('/api/generate-ranking-content', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

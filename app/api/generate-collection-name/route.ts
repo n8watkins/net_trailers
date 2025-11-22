@@ -6,9 +6,9 @@ import { apiError } from '@/utils/debugLogger'
 import { routeGeminiRequest, extractGeminiText, FLASH_LITE_PRIORITY } from '@/lib/geminiRouter'
 
 /**
- * POST /api/generate-row-name
+ * POST /api/generate-collection-name
  *
- * Generates a creative, funny name for a custom row using Google Gemini AI.
+ * Generates a creative, funny name for a collection using Google Gemini AI.
  *
  * Request Body:
  * {

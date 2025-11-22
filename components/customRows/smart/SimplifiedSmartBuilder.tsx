@@ -122,7 +122,7 @@ export function SimplifiedSmartBuilder({
             // Include excluded IDs in the request to prevent duplicates
             const excludedIds = [...allSeenIds]
 
-            const response = await authenticatedFetch('/api/generate-row', {
+            const response = await authenticatedFetch('/api/generate-ranking-content', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
