@@ -60,9 +60,10 @@ export function sanitizeInput(
     }
 
     // Sanitize: remove control characters and normalize whitespace
-    // eslint-disable-next-line no-control-regex
+    // Control character regex is intentional for security sanitization
+    const controlCharRegex = /[\x00-\x1F\x7F-\x9F]/g // eslint-disable-line no-control-regex
     const sanitized = trimmed
-        .replace(/[\x00-\x1F\x7F-\x9F]/g, '') // Remove control characters
+        .replace(controlCharRegex, '') // Remove control characters
         .replace(/\s+/g, ' ') // Normalize whitespace
         .trim()
 
