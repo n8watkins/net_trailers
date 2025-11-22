@@ -10,7 +10,7 @@ import { WizardStep2Advanced } from './WizardStep2Advanced'
 import { WizardStep3NamePreview } from './WizardStep3NamePreview'
 import { WizardStep4Confirmation } from './WizardStep4Confirmation'
 
-interface CustomRowWizardProps {
+interface CollectionWizardProps {
     onClose: () => void
     onComplete: (data: CustomRowFormData) => Promise<void>
     isAuthenticated: boolean // Controls access to premium features
@@ -22,7 +22,7 @@ interface CustomRowWizardProps {
 type WizardStep = 1 | 2 | 3 | 4
 
 /**
- * CustomRowWizard Component
+ * CollectionWizard Component
  *
  * Multi-step wizard for creating custom rows with:
  * - Step 1: Basic setup (media type, genres, logic)
@@ -32,14 +32,14 @@ type WizardStep = 1 | 2 | 3 | 4
  *
  * Users can skip to Step 3 with "Quick Create" or use advanced features.
  */
-export function CustomRowWizard({
+export function CollectionWizard({
     onClose,
     onComplete,
     isAuthenticated,
     onSignIn,
     mode = 'traditional',
     onModeChange,
-}: CustomRowWizardProps) {
+}: CollectionWizardProps) {
     const [currentStep, setCurrentStep] = useState<WizardStep>(1)
     const [formData, setFormData] = useState<CustomRowFormData>({
         name: '',

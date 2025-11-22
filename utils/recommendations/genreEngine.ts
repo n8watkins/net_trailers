@@ -4,7 +4,7 @@
  * Generates personalized recommendations based on user's genre preferences
  */
 
-import { Content } from '../../types/userLists'
+import { Content } from '../../types/collections'
 import { GenrePreference, RecommendationProfile } from '../../types/recommendations'
 import { MOVIE_GENRES, TV_GENRES } from '../../constants/genres'
 import { discoverByPreferences, getTopRatedByGenre } from '../tmdb/recommendations'

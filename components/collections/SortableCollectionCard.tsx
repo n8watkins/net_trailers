@@ -3,10 +3,10 @@
 import React from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { CustomRowCard } from './CustomRowCard'
+import { CollectionCard } from './CollectionCard'
 import { DisplayRow } from '../../types/customRows'
 
-interface SortableCustomRowCardProps {
+interface SortableCollectionCardProps {
     row: DisplayRow
     onEdit: (row: DisplayRow) => void
     onDelete: (row: DisplayRow) => void
@@ -15,17 +15,17 @@ interface SortableCustomRowCardProps {
 }
 
 /**
- * Sortable wrapper for CustomRowCard
+ * Sortable wrapper for CollectionCard
  * Enables drag and drop reordering for custom rows
  * Uses setActivatorNodeRef to only enable dragging from the drag handle
  */
-export function SortableCustomRowCard({
+export function SortableCollectionCard({
     row,
     onEdit,
     onDelete,
     onMoveUp,
     onMoveDown,
-}: SortableCustomRowCardProps) {
+}: SortableCollectionCardProps) {
     const {
         attributes,
         listeners,
@@ -47,7 +47,7 @@ export function SortableCustomRowCard({
 
     return (
         <div ref={setNodeRef} style={style}>
-            <CustomRowCard
+            <CollectionCard
                 row={row}
                 onEdit={onEdit}
                 onDelete={onDelete}

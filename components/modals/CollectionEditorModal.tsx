@@ -11,14 +11,14 @@ import {
     TvIcon,
     TrashIcon,
 } from '@heroicons/react/24/outline'
-import { UserList } from '../../types/userLists'
+import { UserList } from '../../types/collections'
 import { Content, getTitle, getYear } from '../../typings'
 import useUserData from '../../hooks/useUserData'
 import { useToast } from '../../hooks/useToast'
 import IconPickerModal from './IconPickerModal'
 import ColorPickerModal from './ColorPickerModal'
 import InlineSearchBar from './InlineSearchBar'
-import { GenrePills } from '../customRows/GenrePills'
+import { GenrePills } from '../collections/GenrePills'
 import { getUnifiedGenresByMediaType } from '../../constants/unifiedGenres'
 import { useChildSafety } from '../../hooks/useChildSafety'
 import { useCustomRowsStore } from '../../stores/customRowsStore'

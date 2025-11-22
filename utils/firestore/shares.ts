@@ -18,7 +18,7 @@ import {
     SHARE_EXPIRATION_DURATIONS,
     DEFAULT_SHARE_SETTINGS,
 } from '../../types/sharing'
-import { UserList } from '../../types/userLists'
+import { UserList } from '../../types/collections'
 
 /**
  * Fetch the user's collections array from their document.

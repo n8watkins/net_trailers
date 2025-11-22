@@ -4,7 +4,7 @@ import { AuthProvider } from '../hooks/useAuth'
 import ToastManager from '../components/common/ToastManager'
 import Modal from '../components/modals/Modal'
 import ListSelectionModal from '../components/modals/ListSelectionModal'
-import CustomRowModal from '../components/modals/CustomRowModal'
+import CollectionModal from '../components/modals/CollectionModal'
 import { RowEditorModal } from '../components/modals/RowEditorModal'
 import CollectionCreatorModal from '../components/modals/CollectionCreatorModal'
 import CollectionBuilderModal from '../components/modals/CollectionBuilderModal'
@@ -32,7 +32,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             <ToastManager />
             <Modal />
             <ListSelectionModal />
-            <CustomRowModal />
+            <CollectionModal />
             <RowEditorModalWrapper />
             <CollectionCreatorModal />
             <CollectionBuilderModal />

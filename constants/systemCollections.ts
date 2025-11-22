@@ -9,7 +9,7 @@
  * All other system collections can be customized or deleted by users.
  */
 
-import { Collection } from '../types/userLists'
+import { Collection } from '../types/collections'
 
 /**
  * All system collections - unified with mediaType: 'both'

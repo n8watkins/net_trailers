@@ -6,9 +6,9 @@ import { useModalStore } from '../../stores/modalStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useToast } from '../../hooks/useToast'
 import useUserData from '../../hooks/useUserData'
-import { SimplifiedSmartBuilder } from '../customRows/smart/SimplifiedSmartBuilder'
-import { SmartRowBuilder } from '../customRows/smart/SmartRowBuilder'
-import { CustomRowWizard } from '../customRows/CustomRowWizard'
+import { SimplifiedSmartBuilder } from '../collections/smart/SimplifiedSmartBuilder'
+import { SmartCollectionBuilder } from '../collections/smart/SmartCollectionBuilder'
+import { CollectionWizard } from '../collections/CollectionWizard'
 import { CustomRowFormData } from '../../types/customRows'
 import {
     inferMediaTypeFromContent,
@@ -26,7 +26,7 @@ type CreationMode = 'traditional' | 'smart'
  * - Smart: AI-powered with natural language query
  *
  * This component provides the modal container and click handling.
- * Child components (SimplifiedSmartBuilder, CustomRowWizard) are content-only.
+ * Child components (SimplifiedSmartBuilder, CollectionWizard) are content-only.
  */
 function CollectionBuilderModal() {
     const router = useRouter()
@@ -158,7 +158,7 @@ function CollectionBuilderModal() {
                                 onModeChange={setMode}
                             />
                         ) : (
-                            <SmartRowBuilder
+                            <SmartCollectionBuilder
                                 onClose={closeCollectionBuilderModal}
                                 onComplete={handleComplete}
                                 isAuthenticated={isAuthenticated}
@@ -166,7 +166,7 @@ function CollectionBuilderModal() {
                             />
                         )
                     ) : (
-                        <CustomRowWizard
+                        <CollectionWizard
                             onClose={closeCollectionBuilderModal}
                             onComplete={handleComplete}
                             isAuthenticated={isAuthenticated}

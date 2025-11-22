@@ -1,5 +1,5 @@
 import { useGuestStore } from '../stores/guestStore'
-import { UserList } from '../types/userLists'
+import { UserList } from '../types/collections'
 
 export function useGuestData() {
     const guestStore = useGuestStore()

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Content } from '@/typings'
-import { UserList } from '@/types/userLists'
+import { UserList } from '@/types/collections'
 import {
     RankedItem,
     RANKING_CONSTRAINTS,

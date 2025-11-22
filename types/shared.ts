@@ -2,7 +2,7 @@
 // Used across stores, services, and components
 
 import { Content } from '../typings'
-import { UserList } from './userLists'
+import { UserList } from './collections'
 import { NotificationPreferences } from './notifications'
 
 export interface UserPreferences {

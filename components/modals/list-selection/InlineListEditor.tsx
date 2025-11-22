@@ -1,5 +1,5 @@
 import React from 'react'
-import { UserList } from '../../../types/userLists'
+import { UserList } from '../../../types/collections'
 import IconPickerButton from './shared/IconPickerButton'
 import ColorPickerButton from './shared/ColorPickerButton'
 import ListNameInput from './shared/ListNameInput'

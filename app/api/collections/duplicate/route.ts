@@ -13,7 +13,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { UserList } from '../../../../types/userLists'
+import { UserList } from '../../../../types/collections'
 import { Content } from '../../../../typings'
 import { nanoid } from 'nanoid'
 import { withAuth } from '../../../../lib/auth-middleware'

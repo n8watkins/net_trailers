@@ -1,7 +1,7 @@
 import { useSessionStore } from '../stores/sessionStore'
 import { useAuthStore } from '../stores/authStore'
 import { useGuestStore } from '../stores/guestStore'
-import { UserList } from '../types/userLists'
+import { UserList } from '../types/collections'
 
 /**
  * Lightweight hook for components that only need read-only list access

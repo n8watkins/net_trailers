@@ -7,7 +7,7 @@
 'use client'
 
 import { useEffect, useState, useRef, useMemo } from 'react'
-import { Content } from '../../types/userLists'
+import { Content } from '../../types/collections'
 import { Recommendation } from '../../types/recommendations'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 import ContentCard from '../common/ContentCard'

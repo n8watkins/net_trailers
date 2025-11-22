@@ -1,6 +1,6 @@
 import { doc, getDoc, updateDoc, deleteField } from 'firebase/firestore'
 import { db } from '../../firebase'
-import { UserList } from '../../types/userLists'
+import { UserList } from '../../types/collections'
 import { CustomRow, SystemRowPreferences } from '../../types/customRows'
 
 /**

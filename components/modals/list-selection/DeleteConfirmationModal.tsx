@@ -1,5 +1,5 @@
 import React from 'react'
-import { UserList } from '../../../types/userLists'
+import { UserList } from '../../../types/collections'
 
 interface DeleteConfirmationModalProps {
     deletingList: UserList | null

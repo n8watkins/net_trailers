@@ -1,5 +1,5 @@
 import React from 'react'
-import { UserList } from '../../../types/userLists'
+import { UserList } from '../../../types/collections'
 import InlineListEditor from './InlineListEditor'
 import ManagementModeListItem from './ManagementModeListItem'
 import ContentAdditionListItem from './ContentAdditionListItem'

@@ -1,7 +1,7 @@
 import { useSessionData } from './useSessionData'
 import { authError } from '../utils/debugLogger'
 import { Content } from '../typings'
-import { UserList, CreateListRequest, UpdateListRequest } from '../types/userLists'
+import { UserList, CreateListRequest, UpdateListRequest } from '../types/collections'
 import { useInteractionTracking } from './useInteractionTracking'
 
 /**

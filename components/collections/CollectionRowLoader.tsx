@@ -5,7 +5,7 @@ import Row from '../content/Row'
 import { Content } from '../../typings'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useChildSafety } from '../../hooks/useChildSafety'
-import { Collection } from '../../types/userLists'
+import { Collection } from '../../types/collections'
 import { deduplicateContent } from '../../utils/contentDeduplication'
 
 interface CollectionRowLoaderProps {

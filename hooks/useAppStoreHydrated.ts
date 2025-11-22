@@ -20,7 +20,7 @@ const defaultState: AppStore = {
     },
 
     // Custom row modal state
-    customRowModal: {
+    collectionModal: {
         isOpen: false,
         editingRowId: null,
         mode: 'create',
@@ -74,9 +74,9 @@ const defaultState: AppStore = {
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     setListModalMode: () => {},
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    openCustomRowModal: () => {},
+    openCollectionModal: () => {},
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    closeCustomRowModal: () => {},
+    closeCollectionModal: () => {},
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     showToast: () => {},
     // eslint-disable-next-line @typescript-eslint/no-empty-function

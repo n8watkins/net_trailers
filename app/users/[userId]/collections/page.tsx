@@ -14,7 +14,7 @@ import SubPageLayout from '../../../../components/layout/SubPageLayout'
 import ContentCard from '../../../../components/common/ContentCard'
 import NetflixLoader from '../../../../components/common/NetflixLoader'
 import { RectangleStackIcon, UserIcon } from '@heroicons/react/24/outline'
-import type { UserList } from '../../../../types/userLists'
+import type { UserList } from '../../../../types/collections'
 import Link from 'next/link'
 
 export default function UserCollectionsPage() {

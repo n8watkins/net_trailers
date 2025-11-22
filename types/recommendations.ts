@@ -4,7 +4,7 @@
  * Defines data structures for personalized content recommendations.
  */
 
-import { Content } from './userLists'
+import { Content } from './collections'
 
 /**
  * Recommendation source types

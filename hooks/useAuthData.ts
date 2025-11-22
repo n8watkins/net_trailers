@@ -1,6 +1,6 @@
 import React from 'react'
 import { useAuthStore } from '../stores/authStore'
-import { UserList } from '../types/userLists'
+import { UserList } from '../types/collections'
 import { authWarn } from '../utils/debugLogger'
 
 export function useAuthData(userId: string) {

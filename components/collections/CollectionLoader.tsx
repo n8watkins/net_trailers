@@ -7,19 +7,19 @@ import { useSessionStore } from '../../stores/sessionStore'
 import { useChildSafety } from '../../hooks/useChildSafety'
 import { CustomRow, DisplayRow } from '../../types/customRows'
 
-interface CustomRowLoaderProps {
+interface CollectionLoaderProps {
     row: CustomRow | DisplayRow
     pageType?: 'home' | 'movies' | 'tv' // Page type for row editing
 }
 
 /**
- * CustomRowLoader Component
+ * CollectionLoader Component
  *
  * Loads TMDB content for a custom row and displays it using the Row component.
  * Handles initial content fetch and provides API endpoint for infinite scroll.
  * Integrates with child safety mode and user session.
  */
-export function CustomRowLoader({ row, pageType }: CustomRowLoaderProps) {
+export function CollectionLoader({ row, pageType }: CollectionLoaderProps) {
     const [content, setContent] = useState<Content[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -195,7 +195,7 @@ export function CustomRowLoader({ row, pageType }: CustomRowLoaderProps) {
 
     // Don't render if error
     if (error) {
-        console.error(`CustomRowLoader error for row ${row.id}:`, error)
+        console.error(`CollectionLoader error for row ${row.id}:`, error)
         return null
     }
 

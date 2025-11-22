@@ -9,7 +9,7 @@ import { WizardStep4Confirmation } from '../WizardStep4Confirmation'
 import type { Suggestion } from '@/utils/smartRowSuggestions'
 import type { CustomRowFormData } from '@/types/customRows'
 
-interface SmartRowBuilderProps {
+interface SmartCollectionBuilderProps {
     onClose: () => void
     onComplete: (data: CustomRowFormData) => Promise<void>
     isAuthenticated: boolean
@@ -19,7 +19,7 @@ interface SmartRowBuilderProps {
 type WizardStep = 1 | 2 | 3 | 4
 
 /**
- * SmartRowBuilder - AI-powered custom row creation wizard
+ * SmartCollectionBuilder - AI-powered custom row creation wizard
  *
  * Flow:
  * 1. Smart input (entities + text + media type)
@@ -27,12 +27,12 @@ type WizardStep = 1 | 2 | 3 | 4
  * 3. Preview & name (reuses traditional wizard step)
  * 4. Success confirmation
  */
-export function SmartRowBuilder({
+export function SmartCollectionBuilder({
     onClose,
     onComplete,
     isAuthenticated,
     onSignIn,
-}: SmartRowBuilderProps) {
+}: SmartCollectionBuilderProps) {
     const [currentStep, setCurrentStep] = useState<WizardStep>(1)
     const [isLoading, setIsLoading] = useState(false)
 

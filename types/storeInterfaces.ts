@@ -2,7 +2,7 @@
 // Used to enable type-safe service methods that work with both auth and guest stores
 
 import { Content } from '../typings'
-import { UserList } from './userLists'
+import { UserList } from './collections'
 
 /**
  * Base interface for stores that manage user lists

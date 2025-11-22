@@ -11,7 +11,7 @@ import {
     ArrowPathIcon,
 } from '@heroicons/react/24/solid'
 import { getUnifiedGenresByMediaType, UnifiedGenre } from '../../constants/unifiedGenres'
-import { SortableCustomRowCard } from '../customRows/SortableCustomRowCard'
+import { SortableCollectionCard } from '../collections/SortableCollectionCard'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useCustomRowsStore } from '../../stores/customRowsStore'
 import { useToastStore } from '../../stores/toastStore'
@@ -211,7 +211,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         updateSystemRowOrder,
     } = useCustomRowsStore()
     const { showToast } = useToastStore()
-    const { openCustomRowModal, openAuthModal } = useModalStore()
+    const { openCollectionModal, openAuthModal } = useModalStore()
 
     const userId = getUserId()
     const sessionType = useSessionStore((state) => state.sessionType)
@@ -397,7 +397,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
                 openAuthModal('signin')
                 return
             }
-            openCustomRowModal('edit', row.id)
+            openCollectionModal('edit', row.id)
         }
     }
 
@@ -649,7 +649,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
                                 strategy={verticalListSortingStrategy}
                             >
                                 {filteredRows.map((row) => (
-                                    <SortableCustomRowCard
+                                    <SortableCollectionCard
                                         key={row.id}
                                         row={row}
                                         onEdit={handleEdit}

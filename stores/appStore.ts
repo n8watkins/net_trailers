@@ -33,7 +33,7 @@ export type {
     ModalContent,
     ModalState,
     ListModalState,
-    CustomRowModalState,
+    CollectionModalState,
     AuthModalState,
     RowEditorModalState,
     CollectionCreatorModalState,
@@ -60,7 +60,7 @@ export interface AppState {
     // Modal state
     modal: ModalStore['modal']
     listModal: ModalStore['listModal']
-    customRowModal: ModalStore['customRowModal']
+    collectionModal: ModalStore['collectionModal']
     authModal: ModalStore['authModal']
     rowEditorModal: ModalStore['rowEditorModal']
     collectionCreatorModal: ModalStore['collectionCreatorModal']
@@ -88,8 +88,8 @@ export interface AppActions {
     openListModal: ModalStore['openListModal']
     closeListModal: ModalStore['closeListModal']
     setListModalMode: ModalStore['setListModalMode']
-    openCustomRowModal: ModalStore['openCustomRowModal']
-    closeCustomRowModal: ModalStore['closeCustomRowModal']
+    openCollectionModal: ModalStore['openCollectionModal']
+    closeCollectionModal: ModalStore['closeCollectionModal']
     openAuthModal: ModalStore['openAuthModal']
     closeAuthModal: ModalStore['closeAuthModal']
     setAuthModalMode: ModalStore['setAuthModalMode']
@@ -138,7 +138,7 @@ export const useAppStore = create<AppStore>((set, get) => {
         set({
             modal: modalState.modal,
             listModal: modalState.listModal,
-            customRowModal: modalState.customRowModal,
+            collectionModal: modalState.collectionModal,
             authModal: modalState.authModal,
             rowEditorModal: modalState.rowEditorModal,
             collectionCreatorModal: modalState.collectionCreatorModal,
@@ -174,7 +174,7 @@ export const useAppStore = create<AppStore>((set, get) => {
         // Initial state from all stores
         modal: modalState.modal,
         listModal: modalState.listModal,
-        customRowModal: modalState.customRowModal,
+        collectionModal: modalState.collectionModal,
         authModal: modalState.authModal,
         rowEditorModal: modalState.rowEditorModal,
         collectionCreatorModal: modalState.collectionCreatorModal,
@@ -193,8 +193,8 @@ export const useAppStore = create<AppStore>((set, get) => {
         openListModal: modalState.openListModal,
         closeListModal: modalState.closeListModal,
         setListModalMode: modalState.setListModalMode,
-        openCustomRowModal: modalState.openCustomRowModal,
-        closeCustomRowModal: modalState.closeCustomRowModal,
+        openCollectionModal: modalState.openCollectionModal,
+        closeCollectionModal: modalState.closeCollectionModal,
         openAuthModal: modalState.openAuthModal,
         closeAuthModal: modalState.closeAuthModal,
         setAuthModalMode: modalState.setAuthModalMode,

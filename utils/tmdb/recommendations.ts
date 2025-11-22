@@ -5,7 +5,7 @@
  */
 
 import { TMDBApiClient } from '../tmdbApi'
-import { Content } from '../../types/userLists'
+import { Content } from '../../types/collections'
 
 const tmdb = TMDBApiClient.getInstance()
 

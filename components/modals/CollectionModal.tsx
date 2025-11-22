@@ -5,9 +5,9 @@ import { useModalStore } from '../../stores/modalStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useCustomRowsStore } from '../../stores/customRowsStore'
 import { CustomRowsFirestore } from '../../utils/firestore/customRows'
-import { CustomRowWizard } from '../customRows/CustomRowWizard'
-import { SmartRowBuilder } from '../customRows/smart/SmartRowBuilder'
-import { SimplifiedSmartBuilder } from '../customRows/smart/SimplifiedSmartBuilder'
+import { CollectionWizard } from '../collections/CollectionWizard'
+import { SmartCollectionBuilder } from '../collections/smart/SmartCollectionBuilder'
+import { SimplifiedSmartBuilder } from '../collections/smart/SimplifiedSmartBuilder'
 import { CustomRowFormData } from '../../types/customRows'
 import { useToast } from '../../hooks/useToast'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
@@ -15,15 +15,15 @@ import { useAuthStatus } from '../../hooks/useAuthStatus'
 type CreationMode = 'traditional' | 'smart'
 
 /**
- * CustomRowModal Component
+ * CollectionModal Component
  *
  * Modal wrapper for custom row creation.
  * Supports two modes:
  * - Traditional: Step-by-step wizard with manual filter selection
  * - Smart: AI-powered with entity tagging and TMDB suggestions
  */
-function CustomRowModal() {
-    const { customRowModal, closeCustomRowModal, openAuthModal } = useModalStore()
+function CollectionModal() {
+    const { collectionModal, closeCollectionModal, openAuthModal } = useModalStore()
     const getUserId = useSessionStore((state: any) => state.getUserId)
     const sessionType = useSessionStore((state: any) => state.sessionType)
     const { addRow } = useCustomRowsStore()
@@ -36,7 +36,7 @@ function CustomRowModal() {
     const USE_SIMPLIFIED_BUILDER = true
 
     const userId = getUserId()
-    const isOpen = customRowModal.isOpen
+    const isOpen = collectionModal.isOpen
     const isAuthenticated = sessionType === 'authenticated'
 
     if (!isOpen) return null
@@ -99,22 +99,22 @@ function CustomRowModal() {
             {mode === 'smart' ? (
                 USE_SIMPLIFIED_BUILDER ? (
                     <SimplifiedSmartBuilder
-                        onClose={closeCustomRowModal}
+                        onClose={closeCollectionModal}
                         onComplete={handleComplete}
                         isAuthenticated={isAuthenticated}
                         onSignIn={handleSignIn}
                     />
                 ) : (
-                    <SmartRowBuilder
-                        onClose={closeCustomRowModal}
+                    <SmartCollectionBuilder
+                        onClose={closeCollectionModal}
                         onComplete={handleComplete}
                         isAuthenticated={isAuthenticated}
                         onSignIn={handleSignIn}
                     />
                 )
             ) : (
-                <CustomRowWizard
-                    onClose={closeCustomRowModal}
+                <CollectionWizard
+                    onClose={closeCollectionModal}
                     onComplete={handleComplete}
                     isAuthenticated={isAuthenticated}
                     onSignIn={handleSignIn}
@@ -124,4 +124,4 @@ function CustomRowModal() {
     )
 }
 
-export default CustomRowModal
+export default CollectionModal

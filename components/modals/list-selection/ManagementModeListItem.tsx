@@ -1,6 +1,6 @@
 import React from 'react'
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid'
-import { UserList } from '../../../types/userLists'
+import { UserList } from '../../../types/collections'
 
 interface ManagementModeListItemProps {
     list: UserList

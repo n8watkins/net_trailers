@@ -16,7 +16,7 @@ interface ExtendedDisplayRow extends DisplayRow {
     itemCount?: number
     mediaType: 'movie' | 'tv' | 'both'
 }
-import { UserList } from '../../../types/userLists'
+import { UserList } from '../../../types/collections'
 import {
     EyeIcon,
     EyeSlashIcon,

@@ -2,7 +2,7 @@ import { getAdminDb, getAdminAuth } from '@/lib/firebase-admin'
 import type { UserRecord } from 'firebase-admin/auth'
 import type { Ranking } from '@/types/rankings'
 import type { Movie, TVShow } from '@/typings'
-import type { UserList } from '@/types/userLists'
+import type { UserList } from '@/types/collections'
 import type { ThreadSummary, PollSummary, PollOptionSummary } from '@/types/forum'
 import type { Timestamp, Firestore } from 'firebase-admin/firestore'
 

@@ -6,7 +6,7 @@
 
 import { TMDBApiClient } from '../tmdbApi'
 import { CustomRow, AdvancedFilters } from '../../types/customRows'
-import { Content } from '../../types/userLists'
+import { Content } from '../../types/collections'
 
 const tmdb = TMDBApiClient.getInstance()
 

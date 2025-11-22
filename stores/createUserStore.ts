@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { Content, getTitle } from '../typings'
-import { UserList, UpdateListRequest, CreateListRequest } from '../types/userLists'
+import { UserList, UpdateListRequest, CreateListRequest } from '../types/collections'
 import { UserListsService } from '../services/userListsService'
 import { StorageAdapter, StorageLogger } from '../services/storageAdapter'
 import { firebaseTracker } from '../utils/firebaseCallTracker'

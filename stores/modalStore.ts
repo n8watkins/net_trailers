@@ -22,8 +22,8 @@ export interface ListModalState {
     mode?: 'manage' | 'create' | 'add'
 }
 
-// Custom row modal state
-export interface CustomRowModalState {
+// Collection modal state
+export interface CollectionModalState {
     isOpen: boolean
     editingRowId: string | null
     mode: 'create' | 'edit'
@@ -69,8 +69,8 @@ export interface ModalStoreState {
     // List management modal
     listModal: ListModalState
 
-    // Custom row creation/editing modal
-    customRowModal: CustomRowModalState
+    // Collection creation/editing modal
+    collectionModal: CollectionModalState
 
     // Authentication modal
     authModal: AuthModalState
@@ -101,9 +101,9 @@ export interface ModalStoreActions {
     closeListModal: () => void
     setListModalMode: (mode: 'manage' | 'create' | 'add') => void
 
-    // Custom row modal actions
-    openCustomRowModal: (mode: 'create' | 'edit', editingRowId?: string) => void
-    closeCustomRowModal: () => void
+    // Collection modal actions
+    openCollectionModal: (mode: 'create' | 'edit', editingRowId?: string) => void
+    closeCollectionModal: () => void
 
     // Auth modal actions
     openAuthModal: (mode?: 'signin' | 'signup') => void
@@ -151,7 +151,7 @@ export const useModalStore = create<ModalStore>((set, get) => ({
         mode: undefined,
     },
 
-    customRowModal: {
+    collectionModal: {
         isOpen: false,
         editingRowId: null,
         mode: 'create',
@@ -301,33 +301,33 @@ export const useModalStore = create<ModalStore>((set, get) => ({
         }))
     },
 
-    // Custom Row Modal Actions
-    openCustomRowModal: (mode: 'create' | 'edit' = 'create', editingRowId?: string) => {
+    // Collection Modal Actions
+    openCollectionModal: (mode: 'create' | 'edit' = 'create', editingRowId?: string) => {
         startTransition(() => {
             set({
-                customRowModal: {
+                collectionModal: {
                     isOpen: true,
                     mode,
                     editingRowId: editingRowId || null,
                 },
             })
-            uiLog('📊 [ModalStore] Custom row modal opened:', {
+            uiLog('📊 [ModalStore] Collection modal opened:', {
                 mode,
                 editingRowId: editingRowId || 'none',
             })
         })
     },
 
-    closeCustomRowModal: () => {
+    closeCollectionModal: () => {
         startTransition(() => {
             set({
-                customRowModal: {
+                collectionModal: {
                     isOpen: false,
                     mode: 'create',
                     editingRowId: null,
                 },
             })
-            uiLog('❌ [ModalStore] Custom row modal closed')
+            uiLog('❌ [ModalStore] Collection modal closed')
         })
     },
 

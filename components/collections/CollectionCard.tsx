@@ -31,7 +31,7 @@ function formatRelativeTime(timestamp: number): string {
     return 'Just now'
 }
 
-interface CustomRowCardProps {
+interface CollectionCardProps {
     row: DisplayRow
     onEdit: (row: DisplayRow) => void
     onDelete: (row: DisplayRow) => void
@@ -41,20 +41,20 @@ interface CustomRowCardProps {
 }
 
 /**
- * CustomRowCard Component
+ * CollectionCard Component
  *
  * Displays a single row (system or custom) with management controls.
  * System rows: Can only be enabled/disabled
  * Custom rows: Full CRUD operations (edit, delete, enable/disable)
  */
-export function CustomRowCard({
+export function CollectionCard({
     row,
     onEdit,
     onDelete,
     onMoveUp,
     onMoveDown,
     dragHandleProps,
-}: CustomRowCardProps) {
+}: CollectionCardProps) {
     const [showDeleteModal, setShowDeleteModal] = useState(false)
 
     // Get unified genres and map to names

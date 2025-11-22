@@ -5,7 +5,7 @@ import {
     UpdateListRequest,
     AddToListRequest,
     RemoveFromListRequest,
-} from '../types/userLists'
+} from '../types/collections'
 import { StateWithLists } from '../types/storeInterfaces'
 
 // NEW SCHEMA - No more UserListsState or defaultListIds

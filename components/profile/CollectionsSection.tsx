@@ -7,7 +7,7 @@
 
 import Link from 'next/link'
 import { RectangleStackIcon } from '@heroicons/react/24/outline'
-import type { UserList } from '../../types/userLists'
+import type { UserList } from '../../types/collections'
 
 interface CollectionsSectionProps {
     collections: UserList[]

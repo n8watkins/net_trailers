@@ -37,10 +37,13 @@ export function WizardStep4Confirmation({
                     <CheckCircleIcon className="relative w-24 h-24 text-green-500 animate-bounce" />
                 </div>
 
-                <h3 className="text-3xl font-bold text-white mb-3">{itemType} Created Successfully!</h3>
+                <h3 className="text-3xl font-bold text-white mb-3">
+                    {itemType} Created Successfully!
+                </h3>
 
                 <p className="text-lg text-gray-300 mb-2">
-                    Your {itemTypeLower} <span className="text-red-400 font-semibold">"{rowName}"</span>
+                    Your {itemTypeLower}{' '}
+                    <span className="text-red-400 font-semibold">"{rowName}"</span>
                 </p>
                 <p className="text-gray-400">is now live and ready to enjoy</p>
             </div>
@@ -54,15 +57,23 @@ export function WizardStep4Confirmation({
                         <ul className="text-gray-300 text-sm space-y-1.5">
                             {type === 'collection' ? (
                                 <>
-                                    <li>• Your collection is ready to view in your Collections page</li>
+                                    <li>
+                                        • Your collection is ready to view in your Collections page
+                                    </li>
                                     <li>• Add more content to it anytime</li>
                                     <li>• Share your collection with friends</li>
                                 </>
                             ) : (
                                 <>
                                     <li>• Your row will appear on your homepage</li>
-                                    <li>• Content updates automatically as new titles are added to TMDB</li>
-                                    <li>• You can edit or disable this row anytime from your settings</li>
+                                    <li>
+                                        • Content updates automatically as new titles are added to
+                                        TMDB
+                                    </li>
+                                    <li>
+                                        • You can edit or disable this row anytime from your
+                                        settings
+                                    </li>
                                 </>
                             )}
                         </ul>
@@ -90,7 +101,8 @@ export function WizardStep4Confirmation({
 
             {/* Subtle hint */}
             <p className="text-center text-gray-500 text-sm">
-                Pro tip: Create multiple {type === 'collection' ? 'collections' : 'rows'} to organize your content library
+                Pro tip: Create multiple {type === 'collection' ? 'collections' : 'rows'} to
+                organize your content library
             </p>
         </div>
     )
