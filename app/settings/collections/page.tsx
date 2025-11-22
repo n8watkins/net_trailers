@@ -2,11 +2,11 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 import { useSessionStore } from '../../../stores/sessionStore'
-import { useCustomRowsStore } from '../../../stores/customRowsStore'
+import { useCollectionPrefsStore } from '../../../stores/collectionPrefsStore'
 import { useAuthStore } from '../../../stores/authStore'
 import { useGuestStore } from '../../../stores/guestStore'
 import { useToast } from '../../../hooks/useToast'
-import { DisplayRow } from '../../../types/customRows'
+import { DisplayRow } from '../../../types/collections'
 
 // Extend DisplayRow for UI display purposes
 interface ExtendedDisplayRow extends DisplayRow {
@@ -51,10 +51,12 @@ export default function CollectionsPage() {
     const { showSuccess, showError } = useToast()
 
     // Get all display rows (system + custom)
-    const getAllDisplayRows = useCustomRowsStore((state) => state.getAllDisplayRows)
-    const toggleSystemRow = useCustomRowsStore((state) => state.toggleSystemRow)
-    const setSystemRowPreferences = useCustomRowsStore((state) => state.setSystemRowPreferences)
-    const setDeletedSystemRows = useCustomRowsStore((state) => state.setDeletedSystemRows)
+    const getAllDisplayRows = useCollectionPrefsStore((state) => state.getAllDisplayRows)
+    const toggleSystemRow = useCollectionPrefsStore((state) => state.toggleSystemRow)
+    const setSystemRowPreferences = useCollectionPrefsStore(
+        (state) => state.setSystemRowPreferences
+    )
+    const setDeletedSystemRows = useCollectionPrefsStore((state) => state.setDeletedSystemRows)
 
     // Get user collections
     const authCollections = useAuthStore((state) => state.userCreatedWatchlists)
@@ -90,7 +92,9 @@ export default function CollectionsPage() {
         const loadPreferences = async () => {
             try {
                 // Check if preferences already exist for this user
-                const existingPrefs = useCustomRowsStore.getState().systemRowPreferences.get(userId)
+                const existingPrefs = useCollectionPrefsStore
+                    .getState()
+                    .systemRowPreferences.get(userId)
                 if (existingPrefs && Object.keys(existingPrefs).length > 0) {
                     // Preferences already loaded, skip to avoid race condition
                     return
@@ -115,11 +119,11 @@ export default function CollectionsPage() {
     const allDisplayRows = userId ? getAllDisplayRows(userId) : []
 
     // Separate system and user collections
-    const systemCollections = allDisplayRows.filter((row) => row.isSystemRow)
+    const systemCollections = allDisplayRows.filter((row) => row.isSystemCollection)
     const userCollectionsFromRows = userCollections || []
 
     // Get system row preferences to check enabled state
-    const systemRowPreferencesMap = useCustomRowsStore((state) => state.systemRowPreferences)
+    const systemRowPreferencesMap = useCollectionPrefsStore((state) => state.systemRowPreferences)
     const systemRowPreferences = userId ? systemRowPreferencesMap.get(userId) || {} : {}
 
     // Combine and normalize all collections (unfiltered base list)
@@ -209,7 +213,7 @@ export default function CollectionsPage() {
         // Persist to storage
         try {
             const updatedPrefs =
-                useCustomRowsStore.getState().systemRowPreferences.get(userId) || {}
+                useCollectionPrefsStore.getState().systemRowPreferences.get(userId) || {}
             await SystemRowStorage.setSystemRowPreferences(
                 userId,
                 updatedPrefs,
@@ -269,7 +273,7 @@ export default function CollectionsPage() {
             setDeletedSystemRows(userId, [])
 
             // Update in-memory preferences
-            useCustomRowsStore.getState().setSystemRowPreferences(userId, resetPrefs)
+            useCollectionPrefsStore.getState().setSystemRowPreferences(userId, resetPrefs)
 
             // Persist both preferences and cleared deletions to storage
             if (isAuth) {

@@ -5,7 +5,7 @@ import Row from '../content/Row'
 import { Content } from '../../typings'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useChildSafety } from '../../hooks/useChildSafety'
-import { CustomRow, DisplayRow } from '../../types/customRows'
+import { CustomRow, DisplayRow } from '../../types/collections'
 
 interface CollectionLoaderProps {
     row: CustomRow | DisplayRow
@@ -49,7 +49,7 @@ export function CollectionLoader({ row, pageType }: CollectionLoaderProps) {
                     customRow.advancedFilters?.contentIds &&
                     customRow.advancedFilters.contentIds.length > 0
 
-                if (row.isSpecialRow || (row.genres.length === 0 && !hasCuratedContent)) {
+                if (row.isSpecialCollection || (row.genres.length === 0 && !hasCuratedContent)) {
                     // For 'both' mediaType, we need to fetch from both APIs and combine
                     if (row.mediaType === 'both') {
                         const apiType = row.id.includes('trending') ? 'trending' : 'top-rated'
@@ -221,7 +221,7 @@ export function CollectionLoader({ row, pageType }: CollectionLoaderProps) {
     // Note: For 'both' mediaType, infinite scroll will use movies API
     // (combined results are only for initial load)
     // Note: Curated rows with contentIds but no genres should NOT be treated as special rows
-    if (row.isSpecialRow || (row.genres.length === 0 && !hasCuratedContent)) {
+    if (row.isSpecialCollection || (row.genres.length === 0 && !hasCuratedContent)) {
         const mediaType = row.mediaType === 'tv' ? 'tv' : 'movies' // Default to movies for 'both'
 
         // Build query params for special rows

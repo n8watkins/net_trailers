@@ -12,7 +12,7 @@ import { ALL_SYSTEM_COLLECTIONS } from '../../constants/systemCollections'
 import RecommendedForYouRow from '../recommendations/RecommendedForYouRow'
 import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
-import { useCustomRowsStore } from '../../stores/customRowsStore'
+import { useCollectionPrefsStore } from '../../stores/collectionPrefsStore'
 import { SystemRowStorage } from '../../utils/systemRowStorage'
 import { useCacheStore } from '../../stores/cacheStore'
 import { processTrendingUpdates } from '../../utils/trendingNotifications'
@@ -40,10 +40,10 @@ export default function HomeClient({ data }: HomeClientProps) {
     const authCollections = useAuthStore((state) => state.userCreatedWatchlists)
     const guestCollections = useGuestStore((state) => state.userCreatedWatchlists)
 
-    // Get system row preferences from customRowsStore
-    const deletedSystemRowsMap = useCustomRowsStore((state) => state.deletedSystemRows)
-    const systemRowPreferencesMap = useCustomRowsStore((state) => state.systemRowPreferences)
-    const setDeletedSystemRows = useCustomRowsStore((state) => state.setDeletedSystemRows)
+    // Get system collection preferences from collectionPrefsStore
+    const deletedSystemRowsMap = useCollectionPrefsStore((state) => state.deletedSystemRows)
+    const systemRowPreferencesMap = useCollectionPrefsStore((state) => state.systemRowPreferences)
+    const setDeletedSystemRows = useCollectionPrefsStore((state) => state.setDeletedSystemRows)
 
     // Memoize the deleted system rows array to avoid infinite loop
     const deletedSystemRows = useMemo(() => {

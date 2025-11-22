@@ -123,12 +123,12 @@ export async function fixSystemRowPreferences(): Promise<{
         return { success: true, message: 'Guest users already have default settings' }
     }
 
-    const { useCustomRowsStore } = await import('../../stores/customRowsStore')
+    const { useCollectionPrefsStore } = await import('../../stores/collectionPrefsStore')
     const { SystemRowStorage } = await import('../systemRowStorage')
 
     // Get current preferences
     const systemRowPreferences =
-        useCustomRowsStore.getState().systemRowPreferences.get(userId) || {}
+        useCollectionPrefsStore.getState().systemRowPreferences.get(userId) || {}
 
     // Check if any preferences exist
     if (Object.keys(systemRowPreferences).length === 0) {

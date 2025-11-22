@@ -3,7 +3,7 @@
 import React from 'react'
 import { FilmIcon, TvIcon } from '@heroicons/react/24/outline'
 import { GenrePills } from './GenrePills'
-import { CustomRowFormData } from '../../types/customRows'
+import { CustomRowFormData } from '../../types/collections'
 
 interface WizardStep1BasicProps {
     formData: CustomRowFormData

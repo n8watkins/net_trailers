@@ -3,7 +3,7 @@
 import React from 'react'
 import { CheckIcon } from '@heroicons/react/24/solid'
 import { getUnifiedGenresByMediaType } from '../../constants/unifiedGenres'
-import { CUSTOM_ROW_CONSTRAINTS } from '../../types/customRows'
+import { CUSTOM_ROW_CONSTRAINTS } from '../../types/collections'
 
 interface GenrePillsProps {
     selectedGenres: string[] // Array order = priority: index 0 = priority 1, index 1 = priority 2, etc.

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { SparklesIcon } from '@heroicons/react/24/solid'
-import type { CustomRowFormData } from '@/types/customRows'
+import type { CustomRowFormData } from '@/types/collections'
 
 interface SmartStep3PreviewProps {
     selectedSuggestions: any[]

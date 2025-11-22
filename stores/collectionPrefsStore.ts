@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { CustomRow, DisplayRow, SystemRowPreferences } from '../types/customRows'
+import { CustomRow, DisplayRow, SystemRowPreferences } from '../types/collections'
 import { ALL_SYSTEM_ROWS } from '../constants/systemRows'
 
 /**
@@ -85,16 +85,16 @@ export type CustomRowsStore = CustomRowsState & CustomRowsActions
  * ```tsx
  * // Get all rows for current user
  * const getUserId = useSessionStore(state => state.getUserId)
- * const getRows = useCustomRowsStore(state => state.getRows)
+ * const getRows = useCollectionPrefsStore(state => state.getRows)
  * const userId = getUserId()
  * const rows = userId ? getRows(userId) : []
  *
  * // Add a new row
- * const addRow = useCustomRowsStore(state => state.addRow)
+ * const addRow = useCollectionPrefsStore(state => state.addRow)
  * addRow(userId, newRow)
  *
  * // Update a row
- * const updateRow = useCustomRowsStore(state => state.updateRow)
+ * const updateRow = useCollectionPrefsStore(state => state.updateRow)
  * updateRow(userId, rowId, { enabled: false })
  * ```
  */
@@ -103,7 +103,7 @@ const CLEANUP_INTERVAL_MS = 30 * 60 * 1000
 // Consider user inactive after 1 hour
 const INACTIVE_USER_THRESHOLD_MS = 60 * 60 * 1000
 
-export const useCustomRowsStore = create<CustomRowsStore>((set, get) => ({
+export const useCollectionPrefsStore = create<CustomRowsStore>((set, get) => ({
     // Initial state
     customRowsByUser: new Map<string, CustomRow[]>(),
     systemRowPreferences: new Map<string, SystemRowPreferences>(),
@@ -381,7 +381,7 @@ export const useCustomRowsStore = create<CustomRowsStore>((set, get) => ({
                 name: pref?.customName || systemRow.name, // Use custom name if set
                 genres: pref?.customGenres || systemRow.genres, // Use custom genres if set
                 genreLogic: pref?.customGenreLogic || systemRow.genreLogic, // Use custom genre logic if set
-                isSystemRow: true,
+                isSystemCollection: true,
                 enabled: pref?.enabled ?? true, // Default enabled
                 order: pref?.order ?? systemRow.order, // Use custom order if set, else default
             }
@@ -390,7 +390,7 @@ export const useCustomRowsStore = create<CustomRowsStore>((set, get) => ({
         // Convert custom rows to DisplayRow format
         const customDisplayRows: DisplayRow[] = customRows.map((customRow) => ({
             ...customRow,
-            isSystemRow: false,
+            isSystemCollection: false,
         }))
 
         // Combine and sort by order
@@ -429,6 +429,6 @@ export const useCustomRowsStore = create<CustomRowsStore>((set, get) => ({
 // Run every 30 minutes in browser environment
 if (typeof window !== 'undefined') {
     setInterval(() => {
-        useCustomRowsStore.getState().cleanupInactiveUsers()
+        useCollectionPrefsStore.getState().cleanupInactiveUsers()
     }, CLEANUP_INTERVAL_MS)
 }

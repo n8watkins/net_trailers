@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { GenrePills } from './GenrePills'
 import { AdvancedFiltersSection } from './AdvancedFiltersSection'
-import { CustomRowFormData, CUSTOM_ROW_CONSTRAINTS, CustomRow } from '../../types/customRows'
+import { CustomRowFormData, CUSTOM_ROW_CONSTRAINTS, CustomRow } from '../../types/collections'
 import { FilmIcon, TvIcon, SparklesIcon } from '@heroicons/react/24/outline'
 import { useToast } from '@/hooks/useToast'
 import { authenticatedFetch, AuthRequiredError } from '@/lib/authenticatedFetch'

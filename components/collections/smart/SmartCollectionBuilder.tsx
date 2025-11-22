@@ -7,7 +7,7 @@ import { SmartStep2Suggestions } from './SmartStep2Suggestions'
 import { SmartStep3Preview } from './SmartStep3Preview'
 import { WizardStep4Confirmation } from '../WizardStep4Confirmation'
 import type { Suggestion } from '@/utils/smartRowSuggestions'
-import type { CustomRowFormData } from '@/types/customRows'
+import type { CustomRowFormData } from '@/types/collections'
 
 interface SmartCollectionBuilderProps {
     onClose: () => void

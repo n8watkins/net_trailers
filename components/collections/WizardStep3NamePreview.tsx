@@ -3,7 +3,7 @@ import { uiLog } from '../../utils/debugLogger'
 
 import React, { useState, useEffect } from 'react'
 import { SparklesIcon, PencilIcon, ArrowPathIcon, XMarkIcon } from '@heroicons/react/24/outline'
-import { CustomRowFormData, CUSTOM_ROW_CONSTRAINTS } from '../../types/customRows'
+import { CustomRowFormData, CUSTOM_ROW_CONSTRAINTS } from '../../types/collections'
 import { getUnifiedGenresByMediaType } from '../../constants/unifiedGenres'
 import { Content, getTitle } from '../../typings'
 import Image from 'next/image'

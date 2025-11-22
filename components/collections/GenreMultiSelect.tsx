@@ -3,7 +3,7 @@
 import React from 'react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { getUnifiedGenresByMediaType } from '../../constants/unifiedGenres'
-import { CUSTOM_ROW_CONSTRAINTS } from '../../types/customRows'
+import { CUSTOM_ROW_CONSTRAINTS } from '../../types/collections'
 
 interface GenreMultiSelectProps {
     selectedGenres: string[] // Now uses unified genre IDs like 'action', 'fantasy'

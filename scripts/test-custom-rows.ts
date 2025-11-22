@@ -12,7 +12,7 @@
 import './load-env'
 
 import { CustomRowsFirestore } from '../utils/firestore/customRows'
-import { CustomRowFormData } from '../types/customRows'
+import { CustomRowFormData } from '../types/collections'
 
 const TEST_USER_ID = 'test-user-123'
 

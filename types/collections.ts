@@ -217,3 +217,173 @@ export type CollectionValidationError =
     | 'INVALID_GENRE_LOGIC'
     | 'INVALID_MEDIA_TYPE'
     | 'INVALID_COLLECTION_TYPE'
+
+/**
+ * Base configuration shared by both system and user collections
+ */
+export interface BaseCollectionConfig {
+    id: string // UUID v4 or system-{type}-{name}
+    name: string // User-facing title (3-50 chars)
+    genres: string[] // Unified genre IDs like 'action', 'fantasy' (1-5 genres for custom, 0 for special system)
+    genreLogic: 'AND' | 'OR' // How to combine genres
+    mediaType: 'movie' | 'tv' | 'both' // Content type(s) to show
+    order: number // Display order (0-based, lower = higher)
+    isSpecialCollection?: boolean // true for Trending/Top Rated that don't use genre filtering
+    canDelete?: boolean // false for core system collections (Trending/Top Rated), undefined for user collections
+    canEdit?: boolean // false for core system collections (Trending/Top Rated), undefined/true for others
+}
+
+/**
+ * System/default collections that all users see
+ * Core collections (Trending/Top Rated with canDelete: false) cannot be deleted or edited
+ */
+export type SystemCollectionConfig = BaseCollectionConfig
+
+/**
+ * User-created collections with full CRUD operations
+ */
+export interface UserCollection extends BaseCollectionConfig {
+    userId: string // Firebase Auth UID or Guest ID
+    enabled: boolean // Toggle visibility without deletion
+    createdAt: number // Unix timestamp
+    updatedAt: number // Unix timestamp
+    advancedFilters?: AdvancedFilters // Advanced filtering options
+
+    // Auto-update settings
+    autoUpdateEnabled?: boolean // Owner setting: allow auto-updates from TMDB
+    updateFrequency?: 'daily' | 'weekly' | 'never' // How often to check for new content
+    lastCheckedAt?: number // Last time we checked TMDB for new content
+    lastUpdateCount?: number // Number of items added in last update
+}
+
+/**
+ * Combined type for rendering collections in UI
+ * Includes both system and user collections with their enabled state
+ */
+export interface DisplayCollection extends BaseCollectionConfig {
+    isSystemCollection: boolean // true for system collections, false for user collections
+    enabled: boolean // Current enabled state for this user
+    userId?: string // Only present for user collections
+    createdAt?: number // Only present for user collections
+    updatedAt?: number // Only present for user collections
+    canDelete?: boolean // false for core system collections, true/undefined for deletable collections
+    // Auto-update fields - Only present for user collections
+    autoUpdateEnabled?: boolean
+    updateFrequency?: 'daily' | 'weekly' | 'never'
+    lastCheckedAt?: number
+    lastUpdateCount?: number
+}
+
+/**
+ * User preferences for system collection visibility and order
+ * Stored per user in Firestore
+ */
+export interface SystemCollectionPreference {
+    enabled: boolean // Whether the collection is enabled
+    order: number // Custom order position (overrides default)
+    customName?: string // Custom name override (only for editable system collections)
+    customGenres?: string[] // Custom unified genre IDs (only for editable system collections)
+    customGenreLogic?: 'AND' | 'OR' // Custom genre logic override
+}
+
+export interface SystemCollectionPreferences {
+    [systemCollectionId: string]: SystemCollectionPreference // systemCollectionId -> preference
+}
+
+/**
+ * Form data for creating/updating collections
+ * Excludes auto-generated fields (id, timestamps)
+ */
+export interface CollectionFormData {
+    name: string
+    genres: string[] // Unified genre IDs like 'action', 'fantasy'
+    genreLogic: 'AND' | 'OR'
+    mediaType: 'movie' | 'tv' | 'both'
+    enabled: boolean
+    advancedFilters?: AdvancedFilters
+    autoUpdateEnabled?: boolean
+    updateFrequency?: 'daily' | 'weekly' | 'never'
+    previewContent?: any[] // Preview content from TMDB (for collections)
+    displayAsRow?: boolean // Whether to display the collection as a row on home
+    enableInfiniteContent?: boolean // Whether to allow infinite TMDB content
+}
+
+/**
+ * Collection Update Tracking
+ * Tracks when collections are checked for new content and what was added
+ */
+export interface CollectionUpdateRecord {
+    id: string // Update ID
+    collectionId: string // Collection ID
+    userId: string // Collection owner
+    newContentIds: number[] // TMDB IDs of new matches found
+    checkedAt: number // When the check was performed
+    notificationSent: boolean // Whether notification was created
+    addedCount: number // Number of items actually added
+}
+
+/**
+ * API response types for collection operations
+ */
+export interface CreateCollectionResponse {
+    success: boolean
+    collectionId: string
+}
+
+export interface GetCollectionsResponse {
+    collections: UserCollection[]
+}
+
+export interface CollectionContentResponse {
+    results: any[] // TMDB content array
+    page: number
+    total_pages: number
+    total_results: number
+    child_safety_enabled?: boolean
+    hidden_count?: number
+}
+
+// ============================================================
+// LEGACY TYPE ALIASES (for backward compatibility during migration)
+// These map old "Row" terminology to new "Collection" terminology
+// ============================================================
+/** @deprecated Use BaseCollectionConfig instead */
+export type BaseRowConfig = BaseCollectionConfig
+/** @deprecated Use SystemCollectionConfig instead */
+export type SystemRowConfig = SystemCollectionConfig
+/** @deprecated Use UserCollection instead */
+export type CustomRow = UserCollection
+/** @deprecated Use DisplayCollection instead */
+export type DisplayRow = DisplayCollection
+/** @deprecated Use SystemCollectionPreference instead */
+export type SystemRowPreference = SystemCollectionPreference
+/** @deprecated Use SystemCollectionPreferences instead */
+export type SystemRowPreferences = SystemCollectionPreferences
+/** @deprecated Use CollectionFormData instead */
+export type CustomRowFormData = CollectionFormData
+/** @deprecated Use CollectionUpdateRecord instead */
+export type CollectionUpdate = CollectionUpdateRecord
+/** @deprecated Use CollectionValidationError instead */
+export type CustomRowValidationError = CollectionValidationError
+/** @deprecated Use CreateCollectionResponse instead */
+export type CreateCustomRowResponse = CreateCollectionResponse
+/** @deprecated Use GetCollectionsResponse instead */
+export type GetCustomRowsResponse = GetCollectionsResponse
+/** @deprecated Use CollectionContentResponse instead */
+export type CustomRowContentResponse = CollectionContentResponse
+
+/** @deprecated Use COLLECTION_CONSTRAINTS instead */
+export const CUSTOM_ROW_CONSTRAINTS = {
+    MAX_ROWS_PER_AUTH_USER: COLLECTION_CONSTRAINTS.MAX_COLLECTIONS_PER_AUTH_USER,
+    MAX_ROWS_PER_GUEST_USER: COLLECTION_CONSTRAINTS.MAX_COLLECTIONS_PER_GUEST_USER,
+    MAX_GENRES_PER_ROW: COLLECTION_CONSTRAINTS.MAX_GENRES_PER_COLLECTION,
+    MIN_GENRES_PER_ROW: COLLECTION_CONSTRAINTS.MIN_GENRES_PER_COLLECTION,
+    MIN_GENRES_PER_SPECIAL_ROW: 0,
+    MIN_NAME_LENGTH: COLLECTION_CONSTRAINTS.MIN_NAME_LENGTH,
+    MAX_NAME_LENGTH: COLLECTION_CONSTRAINTS.MAX_NAME_LENGTH,
+} as const
+
+/** @deprecated Use getMaxCollectionsForUser instead */
+export function getMaxRowsForUser(isGuest: boolean): number {
+    return getMaxCollectionsForUser(isGuest)
+}

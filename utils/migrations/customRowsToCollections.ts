@@ -1,7 +1,7 @@
 import { doc, getDoc, updateDoc, deleteField } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { UserList } from '../../types/collections'
-import { CustomRow, SystemRowPreferences } from '../../types/customRows'
+import { CustomRow, SystemRowPreferences } from '../../types/collections'
 
 /**
  * Migration Utility: Custom Rows to Collections
@@ -93,8 +93,8 @@ function customRowToCollection(customRow: CustomRow): UserList {
     if (customRow.advancedFilters !== undefined) {
         collection.advancedFilters = customRow.advancedFilters
     }
-    if (customRow.isSpecialRow !== undefined) {
-        collection.isSpecialCollection = customRow.isSpecialRow
+    if (customRow.isSpecialCollection !== undefined) {
+        collection.isSpecialCollection = customRow.isSpecialCollection
     }
     if (customRow.autoUpdateEnabled !== undefined) {
         collection.autoUpdateEnabled = customRow.autoUpdateEnabled

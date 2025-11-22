@@ -13,10 +13,10 @@ import {
 import { getUnifiedGenresByMediaType, UnifiedGenre } from '../../constants/unifiedGenres'
 import { SortableCollectionCard } from '../collections/SortableCollectionCard'
 import { useSessionStore } from '../../stores/sessionStore'
-import { useCustomRowsStore } from '../../stores/customRowsStore'
+import { useCollectionPrefsStore } from '../../stores/collectionPrefsStore'
 import { useToastStore } from '../../stores/toastStore'
 import { useModalStore } from '../../stores/modalStore'
-import { CustomRow, DisplayRow } from '../../types/customRows'
+import { CustomRow, DisplayRow } from '../../types/collections'
 import { CustomRowsFirestore } from '../../utils/firestore/customRows'
 import { SystemRowStorage } from '../../utils/systemRowStorage'
 import {
@@ -209,7 +209,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         deleteSystemRow: deleteSystemRowStore,
         toggleSystemRow: toggleSystemRowStore,
         updateSystemRowOrder,
-    } = useCustomRowsStore()
+    } = useCollectionPrefsStore()
     const { showToast } = useToastStore()
     const { openCollectionModal, openAuthModal } = useModalStore()
 
@@ -224,7 +224,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
     const displayRows = userId ? getDisplayRowsByMediaType(userId, mediaType) : []
 
     // For guests: only show system rows. For authenticated: show all rows
-    const filteredRows = isGuest ? displayRows.filter((row) => row.isSystemRow) : displayRows
+    const filteredRows = isGuest ? displayRows.filter((row) => row.isSystemCollection) : displayRows
 
     // Drag and drop sensors
     const sensors = useSensors(
@@ -314,7 +314,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
 
         // Update order in store optimistically
         newOrder.forEach((row, index) => {
-            if (row.isSystemRow) {
+            if (row.isSystemCollection) {
                 updateSystemRowOrder(userId, row.id, index)
             } else {
                 updateRow(userId, row.id, { order: index } as Partial<CustomRow>)
@@ -325,7 +325,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         try {
             // Update custom rows (authenticated users only)
             if (!isGuest) {
-                const customRowUpdates = newOrder.filter((r) => !r.isSystemRow)
+                const customRowUpdates = newOrder.filter((r) => !r.isSystemCollection)
                 if (customRowUpdates.length > 0) {
                     await CustomRowsFirestore.reorderCustomRows(
                         userId,
@@ -335,7 +335,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
             }
 
             // Update system rows
-            const systemRowUpdates = newOrder.filter((r) => r.isSystemRow)
+            const systemRowUpdates = newOrder.filter((r) => r.isSystemCollection)
             for (let i = 0; i < systemRowUpdates.length; i++) {
                 const r = systemRowUpdates[i]
                 await SystemRowStorage.updateSystemRowOrder(userId, r.id, i, isGuest)
@@ -363,7 +363,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         if (!userId) return
 
         try {
-            if (row.isSystemRow) {
+            if (row.isSystemCollection) {
                 await SystemRowStorage.deleteSystemRow(userId, row.id, isGuest)
                 deleteSystemRowStore(userId, row.id)
                 showToast('success', `"${row.name}" deleted successfully`)
@@ -383,7 +383,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
 
     // Edit collection
     const handleEdit = (row: DisplayRow) => {
-        if (row.isSystemRow) {
+        if (row.isSystemCollection) {
             // Open edit modal for system collections
             setEditingSystemRow({
                 id: row.id,
@@ -491,7 +491,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         const newOrder = arrayMove(rows, currentIndex, newIndex)
 
         newOrder.forEach((r, index) => {
-            if (r.isSystemRow) {
+            if (r.isSystemCollection) {
                 updateSystemRowOrder(userId, r.id, index)
             } else {
                 updateRow(userId, r.id, { order: index } as Partial<CustomRow>)
@@ -501,7 +501,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         try {
             // Update custom rows (authenticated users only)
             if (!isGuest) {
-                const customRowUpdates = newOrder.filter((r) => !r.isSystemRow)
+                const customRowUpdates = newOrder.filter((r) => !r.isSystemCollection)
                 if (customRowUpdates.length > 0) {
                     await CustomRowsFirestore.reorderCustomRows(
                         userId,
@@ -511,7 +511,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
             }
 
             // Update system rows
-            const systemRowUpdates = newOrder.filter((r) => r.isSystemRow)
+            const systemRowUpdates = newOrder.filter((r) => r.isSystemCollection)
             for (let i = 0; i < systemRowUpdates.length; i++) {
                 const r = systemRowUpdates[i]
                 await SystemRowStorage.updateSystemRowOrder(userId, r.id, i, isGuest)
@@ -535,7 +535,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         const newOrder = arrayMove(rows, currentIndex, newIndex)
 
         newOrder.forEach((r, index) => {
-            if (r.isSystemRow) {
+            if (r.isSystemCollection) {
                 updateSystemRowOrder(userId, r.id, index)
             } else {
                 updateRow(userId, r.id, { order: index } as Partial<CustomRow>)
@@ -545,7 +545,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         try {
             // Update custom rows (authenticated users only)
             if (!isGuest) {
-                const customRowUpdates = newOrder.filter((r) => !r.isSystemRow)
+                const customRowUpdates = newOrder.filter((r) => !r.isSystemCollection)
                 if (customRowUpdates.length > 0) {
                     await CustomRowsFirestore.reorderCustomRows(
                         userId,
@@ -555,7 +555,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
             }
 
             // Update system rows
-            const systemRowUpdates = newOrder.filter((r) => r.isSystemRow)
+            const systemRowUpdates = newOrder.filter((r) => r.isSystemCollection)
             for (let i = 0; i < systemRowUpdates.length; i++) {
                 const r = systemRowUpdates[i]
                 await SystemRowStorage.updateSystemRowOrder(userId, r.id, i, isGuest)

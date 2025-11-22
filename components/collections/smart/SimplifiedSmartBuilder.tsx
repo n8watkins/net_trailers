@@ -6,7 +6,7 @@ import { XMarkIcon, SparklesIcon, QuestionMarkCircleIcon } from '@heroicons/reac
 import { WizardStep4Confirmation } from '../WizardStep4Confirmation'
 import NetflixLoader from '../../common/NetflixLoader'
 import { SmartInput } from '../../common/SmartInput'
-import type { CustomRowFormData } from '@/types/customRows'
+import type { CustomRowFormData } from '@/types/collections'
 import { Content } from '@/typings'
 import { useToast } from '@/hooks/useToast'
 import { authenticatedFetch, AuthRequiredError } from '@/lib/authenticatedFetch'

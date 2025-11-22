@@ -1,5 +1,5 @@
 import type { Firestore } from 'firebase-admin/firestore'
-import { CustomRow } from '../../../types/customRows'
+import { CustomRow } from '../../../types/collections'
 
 /**
  * Admin helpers for reading/updating custom rows inside scheduled jobs or API routes.

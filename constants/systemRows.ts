@@ -12,7 +12,7 @@
  * Users can customize mediaType via the collection editor.
  */
 
-import { SystemRowConfig } from '../types/customRows'
+import { SystemRowConfig } from '../types/collections'
 
 /**
  * All system rows - unified with mediaType: 'both'
@@ -27,7 +27,7 @@ export const ALL_SYSTEM_ROWS: SystemRowConfig[] = [
         genreLogic: 'OR',
         mediaType: 'both',
         order: 0,
-        isSpecialRow: true,
+        isSpecialCollection: true,
         canDelete: false, // Core row - cannot be deleted
         canEdit: true, // Can customize mediaType
     },
@@ -38,7 +38,7 @@ export const ALL_SYSTEM_ROWS: SystemRowConfig[] = [
         genreLogic: 'OR',
         mediaType: 'both',
         order: 1,
-        isSpecialRow: true,
+        isSpecialCollection: true,
         canDelete: false, // Core row - cannot be deleted
         canEdit: true, // Can customize mediaType
     },

@@ -9,7 +9,7 @@ import useUserData from '../../hooks/useUserData'
 import { SimplifiedSmartBuilder } from '../collections/smart/SimplifiedSmartBuilder'
 import { SmartCollectionBuilder } from '../collections/smart/SmartCollectionBuilder'
 import { CollectionWizard } from '../collections/CollectionWizard'
-import { CustomRowFormData } from '../../types/customRows'
+import { CustomRowFormData } from '../../types/collections'
 import {
     inferMediaTypeFromContent,
     inferTopGenresFromContent,

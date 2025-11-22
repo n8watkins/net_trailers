@@ -6,7 +6,7 @@ import {
     CUSTOM_ROW_CONSTRAINTS,
     SystemRowPreferences,
     getMaxRowsForUser,
-} from '../../types/customRows'
+} from '../../types/collections'
 import { v4 as uuidv4 } from 'uuid'
 import { getSystemRowsByMediaType } from '../../constants/systemRows'
 

@@ -3,7 +3,7 @@ import { uiLog } from '../../utils/debugLogger'
 
 import React, { useState } from 'react'
 import { XMarkIcon, CheckIcon, WrenchScrewdriverIcon } from '@heroicons/react/24/outline'
-import { CustomRowFormData } from '../../types/customRows'
+import { CustomRowFormData } from '../../types/collections'
 import { Content } from '../../typings'
 import { WizardStep1Basic } from './WizardStep1Basic'
 import { WizardStep2Advanced } from './WizardStep2Advanced'

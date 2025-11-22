@@ -11,7 +11,7 @@ import {
     BellIcon,
     ClockIcon,
 } from '@heroicons/react/24/outline'
-import { DisplayRow } from '../../types/customRows'
+import { DisplayRow } from '../../types/collections'
 import { getUnifiedGenresByMediaType } from '../../constants/unifiedGenres'
 
 /**
@@ -99,7 +99,7 @@ export function CollectionCard({
                             <h3 className="text-base font-semibold text-white truncate">
                                 {row.name}
                             </h3>
-                            {!row.isSystemRow && row.autoUpdateEnabled && (
+                            {!row.isSystemCollection && row.autoUpdateEnabled && (
                                 <span
                                     className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-blue-600/20 text-blue-400 rounded text-xs font-medium shrink-0"
                                     title={`Auto-updating ${row.updateFrequency || 'weekly'}`}
@@ -159,7 +159,7 @@ export function CollectionCard({
                     >
                         <h3 className="text-xl font-bold text-white mb-2">Delete Collection?</h3>
                         <p className="text-gray-300 mb-6">
-                            {row.isSystemRow
+                            {row.isSystemCollection
                                 ? `Are you sure you want to remove "${row.name}"? You can restore it later with "Reset Defaults".`
                                 : `Are you sure you want to permanently delete "${row.name}"? This action cannot be undone.`}
                         </p>

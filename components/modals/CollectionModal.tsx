@@ -3,12 +3,12 @@
 import React, { useState } from 'react'
 import { useModalStore } from '../../stores/modalStore'
 import { useSessionStore } from '../../stores/sessionStore'
-import { useCustomRowsStore } from '../../stores/customRowsStore'
+import { useCollectionPrefsStore } from '../../stores/collectionPrefsStore'
 import { CustomRowsFirestore } from '../../utils/firestore/customRows'
 import { CollectionWizard } from '../collections/CollectionWizard'
 import { SmartCollectionBuilder } from '../collections/smart/SmartCollectionBuilder'
 import { SimplifiedSmartBuilder } from '../collections/smart/SimplifiedSmartBuilder'
-import { CustomRowFormData } from '../../types/customRows'
+import { CustomRowFormData } from '../../types/collections'
 import { useToast } from '../../hooks/useToast'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 
@@ -26,7 +26,7 @@ function CollectionModal() {
     const { collectionModal, closeCollectionModal, openAuthModal } = useModalStore()
     const getUserId = useSessionStore((state: any) => state.getUserId)
     const sessionType = useSessionStore((state: any) => state.sessionType)
-    const { addRow } = useCustomRowsStore()
+    const { addRow } = useCollectionPrefsStore()
     const { showSuccess, showError } = useToast()
     const { isGuest } = useAuthStatus()
 

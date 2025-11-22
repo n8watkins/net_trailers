@@ -8,7 +8,7 @@ import {
     XMarkIcon,
 } from '@heroicons/react/24/outline'
 import Image from 'next/image'
-import { AdvancedFilters } from '../../types/customRows'
+import { AdvancedFilters } from '../../types/collections'
 
 interface Person {
     id: number

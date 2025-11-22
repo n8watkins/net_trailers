@@ -3,7 +3,7 @@
 import React from 'react'
 import { SparklesIcon } from '@heroicons/react/24/outline'
 import { AdvancedFiltersSection } from './AdvancedFiltersSection'
-import { AdvancedFilters } from '../../types/customRows'
+import { AdvancedFilters } from '../../types/collections'
 
 interface WizardStep2AdvancedProps {
     filters: AdvancedFilters

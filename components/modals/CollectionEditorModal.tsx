@@ -21,7 +21,7 @@ import InlineSearchBar from './InlineSearchBar'
 import { GenrePills } from '../collections/GenrePills'
 import { getUnifiedGenresByMediaType } from '../../constants/unifiedGenres'
 import { useChildSafety } from '../../hooks/useChildSafety'
-import { useCustomRowsStore } from '../../stores/customRowsStore'
+import { useCollectionPrefsStore } from '../../stores/collectionPrefsStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { SystemRowStorage } from '../../utils/systemRowStorage'
 
@@ -41,8 +41,8 @@ export default function CollectionEditorModal({
     const sessionType = useSessionStore((state) => state.sessionType)
     const userId = getUserId()
     const isAuth = sessionType === 'authenticated'
-    const toggleSystemRow = useCustomRowsStore((state) => state.toggleSystemRow)
-    const deleteSystemRow = useCustomRowsStore((state) => state.deleteSystemRow)
+    const toggleSystemRow = useCollectionPrefsStore((state) => state.toggleSystemRow)
+    const deleteSystemRow = useCollectionPrefsStore((state) => state.deleteSystemRow)
 
     const GENRE_LOOKUP = useMemo(() => {
         const map = new Map<string, string>()
@@ -284,7 +284,7 @@ export default function CollectionEditorModal({
 
                 // Get current preferences
                 const currentPrefs =
-                    useCustomRowsStore.getState().systemRowPreferences.get(userId) || {}
+                    useCollectionPrefsStore.getState().systemRowPreferences.get(userId) || {}
 
                 // Build the updated preference for this row (only include defined values)
                 const updatedPref: any = {
@@ -316,7 +316,7 @@ export default function CollectionEditorModal({
                     ...currentPrefs,
                     [collection.id]: updatedPref,
                 }
-                useCustomRowsStore.getState().setSystemRowPreferences(userId, newPrefs)
+                useCollectionPrefsStore.getState().setSystemRowPreferences(userId, newPrefs)
 
                 // Persist to storage
                 await SystemRowStorage.setSystemRowPreferences(userId, newPrefs, !isAuth)

@@ -1,4 +1,4 @@
-import { SystemRowPreferences } from '../types/customRows'
+import { SystemRowPreferences } from '../types/collections'
 import { CustomRowsFirestore } from './firestore/customRows'
 import { getSystemRowsByMediaType } from '../constants/systemRows'
 
