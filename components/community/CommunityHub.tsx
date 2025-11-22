@@ -12,7 +12,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import SubPageLayout from '@/components/layout/SubPageLayout'
-import { RankingRow } from '@/components/rankings/RankingRow'
 import { useRankingStore } from '@/stores/rankingStore'
 import { useAuthStatus } from '@/hooks/useAuthStatus'
 import NetflixLoader from '@/components/common/NetflixLoader'
@@ -273,8 +272,8 @@ function RankingsTab({
     filterByTag,
     setFilterByTag,
     filteredByMediaType,
-    rankingsByTag,
-    tagRows,
+    rankingsByTag: _rankingsByTag,
+    tagRows: _tagRows,
     handleRankingClick,
     searchQuery,
     setSearchQuery,

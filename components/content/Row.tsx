@@ -3,7 +3,6 @@ import { Content, getTitle } from '../../typings'
 import { ChevronLeftIcon, ChevronRightIcon, PencilIcon } from '@heroicons/react/24/solid'
 import ContentCard from '../common/ContentCard'
 import { filterDislikedContent } from '../../utils/contentFilter'
-import { useModalStore } from '../../stores/modalStore'
 import { uiLog, uiWarn } from '../../utils/debugLogger'
 import { Collection } from '../../types/collections'
 import CollectionEditorModal from '../modals/CollectionEditorModal'
@@ -23,8 +22,7 @@ interface Props {
     pageType?: 'home' | 'movies' | 'tv' // Page type for row editing
     collection?: Collection | null // Optional collection data for editing
 }
-function Row({ title, content, apiEndpoint, pageType, collection }: Props) {
-    const openRowEditorModal = useModalStore((state) => state.openRowEditorModal)
+function Row({ title, content, apiEndpoint, pageType: _pageType, collection }: Props) {
     const rowRef = useRef<HTMLDivElement>(null)
     const sentinelRef = useRef<HTMLDivElement>(null)
     const isLoadingRef = useRef(false)

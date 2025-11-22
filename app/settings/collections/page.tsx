@@ -6,16 +6,6 @@ import { useCollectionPrefsStore } from '../../../stores/collectionPrefsStore'
 import { useAuthStore } from '../../../stores/authStore'
 import { useGuestStore } from '../../../stores/guestStore'
 import { useToast } from '../../../hooks/useToast'
-import { DisplayRow } from '../../../types/collections'
-
-// Extend DisplayRow for UI display purposes
-interface ExtendedDisplayRow extends DisplayRow {
-    emoji?: string
-    collection?: any
-    shareSettings?: any
-    itemCount?: number
-    mediaType: 'movie' | 'tv' | 'both'
-}
 import { UserList } from '../../../types/collections'
 import {
     EyeIcon,

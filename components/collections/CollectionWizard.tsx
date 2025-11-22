@@ -49,9 +49,7 @@ export function CollectionWizard({
         enabled: true,
         advancedFilters: {},
     })
-    const [previewResults, setPreviewResults] = useState<Content[]>([])
     const [isLoading, setIsLoading] = useState(false)
-    const [createdRowId, setCreatedRowId] = useState<string | null>(null)
 
     // Navigation
     const goToStep = (step: WizardStep) => {

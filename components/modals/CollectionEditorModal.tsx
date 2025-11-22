@@ -41,7 +41,6 @@ export default function CollectionEditorModal({
     const sessionType = useSessionStore((state) => state.sessionType)
     const userId = getUserId()
     const isAuth = sessionType === 'authenticated'
-    const toggleSystemRow = useCollectionPrefsStore((state) => state.toggleSystemRow)
     const deleteSystemRow = useCollectionPrefsStore((state) => state.deleteSystemRow)
 
     const GENRE_LOOKUP = useMemo(() => {

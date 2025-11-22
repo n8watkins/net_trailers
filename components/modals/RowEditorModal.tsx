@@ -197,7 +197,6 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
     // Stores
     const getUserId = useSessionStore((state: any) => state.getUserId)
     const {
-        getRows,
         setRows,
         removeRow,
         updateRow,
@@ -207,7 +206,6 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         setSystemRowPreferences,
         setDeletedSystemRows,
         deleteSystemRow: deleteSystemRowStore,
-        toggleSystemRow: toggleSystemRowStore,
         updateSystemRowOrder,
     } = useCollectionPrefsStore()
     const { showToast } = useToastStore()

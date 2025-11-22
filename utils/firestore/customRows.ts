@@ -3,7 +3,6 @@ import { db } from '../../firebase'
 import {
     CustomRow,
     CustomRowFormData,
-    CUSTOM_ROW_CONSTRAINTS,
     SystemRowPreferences,
     getMaxRowsForUser,
 } from '../../types/collections'
