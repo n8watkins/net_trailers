@@ -72,11 +72,6 @@ const nextConfig = {
                 destination: '/',
                 permanent: true, // 301 redirect
             },
-            {
-                source: '/watch-history',
-                destination: '/history',
-                permanent: true, // 301 redirect - route renamed
-            },
         ]
     },
     // Security headers
