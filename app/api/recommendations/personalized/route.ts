@@ -22,6 +22,7 @@ import { Recommendation, RECOMMENDATION_CONSTRAINTS } from '@/types/recommendati
 import { Content, getTitle } from '@/typings'
 import { withAuth } from '@/lib/auth-middleware'
 import { apiError } from '@/utils/debugLogger'
+import { VotedContent } from '@/types/shared'
 
 async function handlePersonalizedRecommendations(
     request: NextRequest,
@@ -43,9 +44,16 @@ async function handlePersonalizedRecommendations(
         // Get user preferences from preference customizer
         const genrePreferences = (body.genrePreferences || []) as UserGenrePreference[]
         const contentPreferences = (body.contentPreferences || []) as UserContentPreference[]
+        const votedContent = (body.votedContent || []) as VotedContent[]
 
-        // Check if user has enough data (preferences also count)
-        const hasPreferenceData = genrePreferences.length > 0 || contentPreferences.length > 0
+        // Extract content IDs that user marked as "not_for_me" to exclude
+        const notForMeContentIds = votedContent
+            .filter((v) => v.vote === 'not_for_me')
+            .map((v) => v.contentId)
+
+        // Check if user has enough data (preferences and votes also count)
+        const hasPreferenceData =
+            genrePreferences.length > 0 || contentPreferences.length > 0 || votedContent.length > 0
         if (!hasEnoughDataForRecommendations(userData) && !hasPreferenceData) {
             return NextResponse.json({
                 success: true,
@@ -59,8 +67,9 @@ async function handlePersonalizedRecommendations(
         // Build recommendation profile (includes user preferences)
         const profile = buildRecommendationProfile(userData, genrePreferences, contentPreferences)
 
-        // Get content IDs to exclude (already seen)
-        const excludeIds = getSeenContentIds(userData)
+        // Get content IDs to exclude (already seen + "not for me" votes)
+        const seenIds = getSeenContentIds(userData)
+        const excludeIds = [...new Set([...seenIds, ...notForMeContentIds])]
 
         // Generate recommendations from multiple sources
         const [genreBased, tmdbSimilar] = await Promise.all([

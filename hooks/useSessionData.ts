@@ -54,6 +54,7 @@ export const useSessionData = () => {
     const guestGenrePreferences = useGuestStore((state) => state.genrePreferences)
     const guestContentPreferences = useGuestStore((state) => state.contentPreferences)
     const guestShownPreferenceContent = useGuestStore((state) => state.shownPreferenceContent)
+    const guestVotedContent = useGuestStore((state) => state.votedContent)
 
     // Select actions from guest store
     const guestAddToWatchlist = useGuestStore((state) => state.addToWatchlist)
@@ -85,6 +86,7 @@ export const useSessionData = () => {
     const authGenrePreferences = useAuthStore((state) => state.genrePreferences)
     const authContentPreferences = useAuthStore((state) => state.contentPreferences)
     const authShownPreferenceContent = useAuthStore((state) => state.shownPreferenceContent)
+    const authVotedContent = useAuthStore((state) => state.votedContent)
 
     // Select actions from auth store
     const authAddToWatchlist = useAuthStore((state) => state.addToWatchlist)
@@ -129,6 +131,7 @@ export const useSessionData = () => {
     const contentPreferences = (isAuth ? authContentPreferences : guestContentPreferences) ?? []
     const shownPreferenceContent =
         (isAuth ? authShownPreferenceContent : guestShownPreferenceContent) ?? []
+    const votedContent = (isAuth ? authVotedContent : guestVotedContent) ?? []
 
     const addToWatchlist = isAuth ? authAddToWatchlist : guestAddToWatchlist
     const removeFromWatchlist = isAuth ? authRemoveFromWatchlist : guestRemoveFromWatchlist
@@ -167,6 +170,7 @@ export const useSessionData = () => {
         genrePreferences,
         contentPreferences,
         shownPreferenceContent,
+        votedContent,
 
         // Actions (unified interface - NEW SCHEMA)
         addToWatchlist,

@@ -11,6 +11,7 @@ import {
     createDefaultCollectionsForUser,
     needsDefaultCollections,
 } from '../constants/systemCollections'
+import { SystemRecommendation, createDefaultSystemRecommendations } from '../types/recommendations'
 
 /**
  * User store state (works for both auth and guest users)
@@ -22,6 +23,7 @@ export interface UserState {
     hiddenMovies: Content[]
     defaultWatchlist: Content[]
     userCreatedWatchlists: UserList[]
+    systemRecommendations: SystemRecommendation[] // System recommendation settings (Trending, Top Rated, etc.)
     lastActive: number
     syncStatus?: 'synced' | 'syncing' | 'offline' // Only used for async adapters (Firebase)
     autoMute?: boolean
@@ -47,6 +49,12 @@ export interface UserState {
         mediaType: 'movie' | 'tv'
         shownAt: number
     }[]
+    votedContent?: {
+        contentId: number
+        mediaType: 'movie' | 'tv'
+        vote: 'love' | 'neutral' | 'not_for_me'
+        votedAt: number
+    }[]
 }
 
 /**
@@ -65,6 +73,11 @@ export interface UserActions {
     updateList: (listId: string, updates: Omit<UpdateListRequest, 'id'>) => Promise<void> | void
     deleteList: (listId: string) => Promise<void> | void
     updatePreferences: (prefs: Partial<UserState>) => Promise<void> | void
+    updateSystemRecommendation: (
+        id: string,
+        updates: Partial<Omit<SystemRecommendation, 'id'>>
+    ) => Promise<void> | void
+    reorderSystemRecommendations: (orderedIds: string[]) => Promise<void> | void
     syncWithStorage?: (userId: string) => Promise<void> // Only for Firebase adapter
     syncWithFirebase?: (userId: string) => Promise<void> // Alias for syncWithStorage (auth store)
     clearLocalCache: () => void
@@ -108,6 +121,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
         hiddenMovies: [],
         defaultWatchlist: [],
         userCreatedWatchlists: [],
+        systemRecommendations: createDefaultSystemRecommendations(),
         lastActive: 0,
         autoMute: true,
         defaultVolume: 50,
@@ -119,6 +133,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
         genrePreferences: [], // Genre preferences for recommendations
         contentPreferences: [], // Content preferences for recommendations
         shownPreferenceContent: [], // Track shown content to avoid repeats
+        votedContent: [], // Track user votes on content (title quiz)
         ...(adapter.isAsync && { syncStatus: 'synced' as const }),
     })
 
@@ -160,6 +175,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                 genrePreferences: state.genrePreferences ?? [],
                 contentPreferences: state.contentPreferences ?? [],
                 shownPreferenceContent: state.shownPreferenceContent ?? [],
+                votedContent: state.votedContent ?? [],
             })
             logger.log(`✅ [${trackingContext}] Saved to ${adapter.name}`)
         } catch (error) {
@@ -590,6 +606,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                                 genrePreferences: firebaseData.genrePreferences ?? [],
                                 contentPreferences: firebaseData.contentPreferences ?? [],
                                 shownPreferenceContent: firebaseData.shownPreferenceContent ?? [],
+                                votedContent: firebaseData.votedContent ?? [],
                                 syncStatus: 'synced',
                             })
 
@@ -652,6 +669,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                     genrePreferences: loadedData.genrePreferences ?? [],
                     contentPreferences: loadedData.contentPreferences ?? [],
                     shownPreferenceContent: loadedData.shownPreferenceContent ?? [],
+                    votedContent: loadedData.votedContent ?? [],
                 })
                 logger.log(`🔄 [${trackingContext}] Synced from localStorage:`, {
                     guestId,

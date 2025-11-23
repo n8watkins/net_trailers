@@ -4,10 +4,10 @@
  * POST /api/recommendations/preference-content
  * Returns top-rated content for users to rate in the preference customizer.
  * Mixes movies and TV shows for variety.
+ * Optionally includes cast/crew details for rich display.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { Content } from '@/typings'
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
@@ -15,6 +15,94 @@ const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
 interface RequestBody {
     excludeIds?: number[]
     limit?: number
+    includeCredits?: boolean // Fetch cast/crew details
+    priorityContent?: { id: number; mediaType: 'movie' | 'tv' }[] // Watchlist items to prioritize
+}
+
+interface CastMember {
+    id: number
+    name: string
+    character: string
+    profile_path: string | null
+    order: number
+}
+
+interface CrewMember {
+    id: number
+    name: string
+    job: string
+    department: string
+    profile_path: string | null
+}
+
+interface ContentWithCredits {
+    id: number
+    media_type: 'movie' | 'tv'
+    poster_path?: string
+    backdrop_path?: string
+    overview?: string
+    vote_average?: number
+    vote_count?: number
+    popularity?: number
+    genre_ids?: number[]
+    // Movie fields
+    title?: string
+    release_date?: string
+    // TV fields
+    name?: string
+    first_air_date?: string
+    // Extra credits fields
+    cast?: CastMember[]
+    director?: string
+    creator?: string
+}
+
+// Fetch details with credits for a single content item
+async function fetchContentWithCredits(
+    id: number,
+    mediaType: 'movie' | 'tv'
+): Promise<ContentWithCredits | null> {
+    try {
+        const response = await fetch(
+            `${TMDB_BASE_URL}/${mediaType}/${id}?api_key=${TMDB_API_KEY}&append_to_response=credits`
+        )
+        if (!response.ok) return null
+
+        const data = await response.json()
+
+        // Extract top 5 cast members
+        const cast: CastMember[] = (data.credits?.cast || []).slice(0, 5).map((c: CastMember) => ({
+            id: c.id,
+            name: c.name,
+            character: c.character,
+            profile_path: c.profile_path,
+            order: c.order,
+        }))
+
+        // Extract director (movies) or creator (TV)
+        let director: string | undefined
+        let creator: string | undefined
+
+        if (mediaType === 'movie') {
+            const directorData = (data.credits?.crew || []).find(
+                (c: CrewMember) => c.job === 'Director'
+            )
+            director = directorData?.name
+        } else {
+            // For TV, use created_by field
+            creator = data.created_by?.[0]?.name
+        }
+
+        return {
+            ...data,
+            media_type: mediaType,
+            cast,
+            director,
+            creator,
+        }
+    } catch {
+        return null
+    }
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -22,47 +110,108 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         const body: RequestBody = await request.json()
         const excludeIds = new Set(body.excludeIds || [])
         const limit = Math.min(body.limit || 20, 50)
+        const includeCredits = body.includeCredits || false
+        const priorityContent = body.priorityContent || []
 
-        // Fetch top-rated movies and TV shows in parallel
-        const [moviesResponse, tvResponse] = await Promise.all([
-            fetch(
-                `${TMDB_BASE_URL}/movie/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=${Math.floor(Math.random() * 5) + 1}`
-            ),
-            fetch(
-                `${TMDB_BASE_URL}/tv/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=${Math.floor(Math.random() * 5) + 1}`
-            ),
-        ])
+        // Process priority content first (watchlist items)
+        let priorityResults: ContentWithCredits[] = []
+        if (priorityContent.length > 0 && includeCredits) {
+            const priorityPromises = priorityContent
+                .filter((p) => !excludeIds.has(p.id))
+                .slice(0, Math.min(priorityContent.length, limit))
+                .map((p) => fetchContentWithCredits(p.id, p.mediaType))
 
-        if (!moviesResponse.ok || !tvResponse.ok) {
-            throw new Error('Failed to fetch content from TMDB')
+            const results = await Promise.all(priorityPromises)
+            priorityResults = results.filter((r): r is ContentWithCredits => r !== null)
         }
 
-        const [moviesData, tvData] = await Promise.all([moviesResponse.json(), tvResponse.json()])
+        // Calculate how many more we need from TMDB top-rated
+        const remainingLimit = limit - priorityResults.length
+        let topRatedContent: ContentWithCredits[] = []
 
-        // Process and tag content with media_type
-        const movies: Content[] = (moviesData.results || []).map((m: Content) => ({
-            ...m,
-            media_type: 'movie',
-        }))
+        if (remainingLimit > 0) {
+            // Fetch top-rated movies and TV shows in parallel
+            const [moviesResponse, tvResponse] = await Promise.all([
+                fetch(
+                    `${TMDB_BASE_URL}/movie/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=${Math.floor(Math.random() * 5) + 1}`
+                ),
+                fetch(
+                    `${TMDB_BASE_URL}/tv/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=${Math.floor(Math.random() * 5) + 1}`
+                ),
+            ])
 
-        const tvShows: Content[] = (tvData.results || []).map((t: Content) => ({
-            ...t,
-            media_type: 'tv',
-        }))
+            if (!moviesResponse.ok || !tvResponse.ok) {
+                throw new Error('Failed to fetch content from TMDB')
+            }
 
-        // Combine and filter out excluded IDs
-        const allContent = [...movies, ...tvShows].filter((content) => !excludeIds.has(content.id))
+            const [moviesData, tvData] = await Promise.all([
+                moviesResponse.json(),
+                tvResponse.json(),
+            ])
 
-        // Shuffle for variety
-        const shuffled = allContent.sort(() => Math.random() - 0.5)
+            // Process and tag content with media_type
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const movies: ContentWithCredits[] = (moviesData.results || []).map((m: any) => ({
+                id: m.id,
+                media_type: 'movie' as const,
+                poster_path: m.poster_path,
+                backdrop_path: m.backdrop_path,
+                overview: m.overview,
+                vote_average: m.vote_average,
+                vote_count: m.vote_count,
+                popularity: m.popularity,
+                genre_ids: m.genre_ids,
+                title: m.title,
+                release_date: m.release_date,
+            }))
 
-        // Take requested limit
-        const content = shuffled.slice(0, limit)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const tvShows: ContentWithCredits[] = (tvData.results || []).map((t: any) => ({
+                id: t.id,
+                media_type: 'tv' as const,
+                poster_path: t.poster_path,
+                backdrop_path: t.backdrop_path,
+                overview: t.overview,
+                vote_average: t.vote_average,
+                vote_count: t.vote_count,
+                popularity: t.popularity,
+                genre_ids: t.genre_ids,
+                name: t.name,
+                first_air_date: t.first_air_date,
+            }))
+
+            // Combine and filter out excluded IDs and priority IDs
+            const priorityIds = new Set(priorityResults.map((p) => p.id))
+            const allContent = [...movies, ...tvShows].filter(
+                (content) => !excludeIds.has(content.id) && !priorityIds.has(content.id)
+            )
+
+            // Shuffle for variety
+            const shuffled = allContent.sort(() => Math.random() - 0.5)
+
+            // Take remaining needed
+            const selectedContent = shuffled.slice(0, remainingLimit)
+
+            // Fetch credits for each if requested
+            if (includeCredits) {
+                const creditsPromises = selectedContent.map((c) =>
+                    fetchContentWithCredits(c.id, c.media_type)
+                )
+                const results = await Promise.all(creditsPromises)
+                topRatedContent = results.filter((r): r is ContentWithCredits => r !== null)
+            } else {
+                topRatedContent = selectedContent
+            }
+        }
+
+        // Combine: priority first, then top-rated
+        const content = [...priorityResults, ...topRatedContent]
 
         return NextResponse.json({
             success: true,
             content,
-            totalAvailable: shuffled.length,
+            totalAvailable: content.length,
+            priorityCount: priorityResults.length,
         })
     } catch (error) {
         console.error('Error fetching preference content:', error)

@@ -27,6 +27,15 @@ export interface ShownPreferenceContent {
     shownAt: number
 }
 
+// Track user's vote on content (for title quiz)
+// This is our own data type, NOT from TMDB
+export interface VotedContent {
+    contentId: number
+    mediaType: 'movie' | 'tv'
+    vote: 'love' | 'neutral' | 'not_for_me'
+    votedAt: number
+}
+
 export interface UserPreferences {
     defaultWatchlist: Content[]
     likedMovies: Content[]
@@ -43,6 +52,7 @@ export interface UserPreferences {
     genrePreferences?: GenrePreference[] // Genre preferences for recommendations
     contentPreferences?: ContentPreference[] // Content preferences for recommendations
     shownPreferenceContent?: ShownPreferenceContent[] // Track shown content to avoid repeats
+    votedContent?: VotedContent[] // Track user votes on content (title quiz)
 }
 
 export interface UserSession {
