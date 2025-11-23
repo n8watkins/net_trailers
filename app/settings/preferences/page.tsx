@@ -7,6 +7,7 @@ import { useToast } from '../../../hooks/useToast'
 import { useAppStore } from '../../../stores/appStore'
 import { useAuthStore } from '../../../stores/authStore'
 import { useGuestStore } from '../../../stores/guestStore'
+import { useSessionStore } from '../../../stores/sessionStore'
 import { toggleChildSafetyAction } from '../../../lib/actions/childSafety'
 import PreferencesSection from '../../../components/settings/PreferencesSection'
 import ChildSafetyPINModal from '../../../components/settings/ChildSafetyPINModal'
@@ -28,8 +29,13 @@ const PreferencesPage: React.FC = () => {
     const [showChildSafetyModal, setShowChildSafetyModal] = useState(false)
     const [showDeleteHistoryModal, setShowDeleteHistoryModal] = useState(false)
 
-    // Watch history store for clearing history
-    const clearWatchHistory = useWatchHistoryStore((state) => state.clearHistory)
+    // Watch history store for clearing history with persistence
+    const clearWatchHistoryWithPersistence = useWatchHistoryStore(
+        (state) => state.clearHistoryWithPersistence
+    )
+
+    // Get session ID for watch history deletion
+    const activeSessionId = useSessionStore((state) => state.activeSessionId)
 
     // PIN Protection states
     const [pinModalMode, setPinModalMode] = useState<'create' | 'verify' | 'change'>('verify')
@@ -253,16 +259,34 @@ const PreferencesPage: React.FC = () => {
         [savePreference]
     )
 
-    const handleConfirmDeleteHistory = React.useCallback(() => {
-        // Clear all watch history
-        clearWatchHistory()
-        // Disable tracking
-        setTrackWatchHistory(false)
-        // Close modal
-        setShowDeleteHistoryModal(false)
-        // Save and show toast
-        savePreference('trackWatchHistory', false, 'Watch history deleted and tracking disabled')
-    }, [clearWatchHistory, savePreference])
+    const handleConfirmDeleteHistory = React.useCallback(async () => {
+        if (!activeSessionId) {
+            showError('No active session found')
+            setShowDeleteHistoryModal(false)
+            return
+        }
+
+        try {
+            // Clear all watch history with persistence (Firestore or localStorage)
+            const sessionType = isGuest ? 'guest' : 'authenticated'
+            await clearWatchHistoryWithPersistence(sessionType, activeSessionId)
+
+            // Disable tracking
+            setTrackWatchHistory(false)
+            // Close modal
+            setShowDeleteHistoryModal(false)
+            // Save and show toast
+            savePreference(
+                'trackWatchHistory',
+                false,
+                'Watch history deleted and tracking disabled'
+            )
+        } catch (error) {
+            console.error('Failed to delete watch history:', error)
+            showError('Failed to delete watch history')
+            setShowDeleteHistoryModal(false)
+        }
+    }, [activeSessionId, isGuest, clearWatchHistoryWithPersistence, savePreference, showError])
 
     const handleShowChildSafetyModal = React.useCallback(() => {
         setShowChildSafetyModal(true)

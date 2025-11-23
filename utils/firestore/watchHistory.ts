@@ -85,6 +85,29 @@ export async function saveWatchHistory(
 }
 
 /**
+ * Delete all watch history from Firestore
+ */
+export async function deleteWatchHistory(userId: string): Promise<void> {
+    watchHistoryLog('[Firestore Watch History] 🗑️ Deleting watch history for user:', userId)
+    try {
+        const docRef = doc(db, 'users', userId, 'data', 'watchHistory')
+
+        // Set history to empty array rather than deleting the document
+        // This preserves the document structure and updatedAt timestamp
+        const data: WatchHistoryDocument = {
+            history: [],
+            updatedAt: Date.now(),
+        }
+
+        await setDoc(docRef, data)
+        watchHistoryLog('[Firestore Watch History] ✅ Successfully deleted watch history')
+    } catch (error) {
+        watchHistoryError('[Firestore Watch History] ❌ Failed to delete:', error)
+        throw error
+    }
+}
+
+/**
  * Add a single watch entry to Firestore using transaction
  * Prevents race conditions and ensures atomic updates
  */

@@ -9,7 +9,11 @@
 import { create } from 'zustand'
 import { WatchHistoryStore, WatchHistoryEntry } from '../types/watchHistory'
 import { Content } from '../typings'
-import { getWatchHistory, saveWatchHistory } from '../utils/firestore/watchHistory'
+import {
+    getWatchHistory,
+    saveWatchHistory,
+    deleteWatchHistory,
+} from '../utils/firestore/watchHistory'
 import { auth } from '../firebase'
 import { watchHistoryLog, watchHistoryError } from '../utils/debugLogger'
 
@@ -145,6 +149,34 @@ export const useWatchHistoryStore = create<WatchHistoryStore>()((set, get) => ({
 
     clearHistory: () => {
         set({ history: [], currentSessionId: null, lastSyncedAt: null, syncError: null })
+    },
+
+    clearHistoryWithPersistence: async (
+        sessionType: 'guest' | 'authenticated',
+        sessionId: string
+    ) => {
+        watchHistoryLog(
+            '[Watch History Store] 🗑️ Clearing history with persistence for',
+            sessionType,
+            sessionId
+        )
+
+        try {
+            // Clear local state first
+            set({ history: [], lastSyncedAt: null, syncError: null })
+
+            // Persist deletion based on session type
+            if (sessionType === 'authenticated') {
+                await deleteWatchHistory(sessionId)
+                watchHistoryLog('[Watch History Store] ✅ Deleted from Firestore')
+            } else {
+                clearGuestHistory(sessionId)
+                watchHistoryLog('[Watch History Store] ✅ Deleted from localStorage')
+            }
+        } catch (error) {
+            watchHistoryError('[Watch History Store] ❌ Failed to clear history:', error)
+            throw error
+        }
     },
 
     removeEntry: (id) => {

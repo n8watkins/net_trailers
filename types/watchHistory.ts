@@ -45,8 +45,14 @@ export interface WatchHistoryActions {
     // Get watch history filtered by date range
     getHistoryByDateRange: (startDate: number, endDate: number) => WatchHistoryEntry[]
 
-    // Clear all watch history
+    // Clear all watch history (local state only)
     clearHistory: () => void
+
+    // Clear all watch history with persistence (Firestore or localStorage)
+    clearHistoryWithPersistence: (
+        sessionType: 'guest' | 'authenticated',
+        sessionId: string
+    ) => Promise<void>
 
     // Remove specific entry
     removeEntry: (id: string) => void
