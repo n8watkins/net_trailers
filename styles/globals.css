@@ -280,12 +280,19 @@
     width: 20px; /* Wider hit area for easier hover/click */
     z-index: 9999;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    pointer-events: none; /* Don't block clicks when hidden */
+    transition:
+        opacity 0.3s ease,
+        pointer-events 0s 0.3s; /* Delay pointer-events change until fade completes */
     cursor: pointer;
 }
 
 .custom-scrollbar.visible {
     opacity: 1;
+    pointer-events: auto; /* Enable interaction when visible */
+    transition:
+        opacity 0.3s ease,
+        pointer-events 0s; /* Immediate pointer-events when showing */
 }
 
 /* While dragging, prevent text selection and ensure cursor stays as grabbing */

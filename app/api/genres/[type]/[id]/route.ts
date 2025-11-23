@@ -64,6 +64,43 @@ export async function GET(
             return NextResponse.json({ error: 'API configuration error' }, { status: 500 })
         }
 
+        // Child-safe genre allowlists (must match single-type paths)
+        const childSafeMovieGenres = [
+            28, 12, 16, 35, 99, 10751, 14, 36, 10402, 9648, 10749, 878, 10752, 37,
+        ]
+        const childSafeTvGenres = [10759, 16, 35, 99, 10751, 10762, 9648, 10765]
+
+        // Check genre allowlists BEFORE making API calls
+        if (childSafeMode) {
+            const isMovieGenreSafe = genreIds.every((id) => childSafeMovieGenres.includes(id))
+
+            // Parse TV genre IDs for safety check
+            const tvGenreIds = tvGenres
+                ? tvGenres
+                      .split(',')
+                      .map((g) => parseInt(g.trim()))
+                      .filter((g) => !isNaN(g))
+                : genreIds
+            const isTvGenreSafe = tvGenreIds.every((id) => childSafeTvGenres.includes(id))
+
+            // Block if EITHER movie or TV genre is not child-safe
+            if (!isMovieGenreSafe || !isTvGenreSafe) {
+                return NextResponse.json(
+                    {
+                        page: 1,
+                        results: [],
+                        total_pages: 0,
+                        total_results: 0,
+                        child_safety_enabled: true,
+                        genre_blocked: true,
+                        message:
+                            'This genre is not available in child safety mode. Please disable child safety mode to access all genres.',
+                    },
+                    { status: 200 }
+                )
+            }
+        }
+
         try {
             // Build base query params (shared between movie and TV)
             const baseParams: Record<string, string> = {

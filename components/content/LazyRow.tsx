@@ -94,12 +94,19 @@ function StreamingRow({ title, content, hideTitles: _hideTitles = false, batchSi
         setIsProcessing(false)
     }, [content, currentIndex, batchSize, isProcessing])
 
+    // Reset state when content prop changes identity
+    useEffect(() => {
+        setStreamingContent([])
+        setCurrentIndex(0)
+        setIsProcessing(false)
+    }, [content])
+
     // Start processing when content is available
     useEffect(() => {
-        if (content && content.length > 0 && currentIndex === 0) {
+        if (content && content.length > 0 && currentIndex === 0 && streamingContent.length === 0) {
             processNextBatch()
         }
-    }, [content, processNextBatch, currentIndex])
+    }, [content, processNextBatch, currentIndex, streamingContent.length])
 
     // Auto-load next batch when scrolled or when current batch is processed
     useEffect(() => {

@@ -27,6 +27,7 @@ export default function NotificationPanel() {
     } = useNotificationStore()
 
     const panelRef = useRef<HTMLDivElement>(null)
+    const mobilePanelRef = useRef<HTMLDivElement>(null)
 
     // Animation state: track if panel should be visible in DOM
     const [isVisible, setIsVisible] = useState(false)
@@ -53,17 +54,24 @@ export default function NotificationPanel() {
         }
     }, [isPanelOpen])
 
-    // Close panel when clicking outside
+    // Close panel when clicking outside (desktop only - mobile uses backdrop click)
     useEffect(() => {
         if (!isPanelOpen) return
 
         const handleClickOutside = (event: MouseEvent) => {
-            if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
-                // Also check if click was on the bell button
-                const bellButton = document.querySelector('[aria-label^="Notifications"]')
-                if (bellButton && !bellButton.contains(event.target as Node)) {
-                    closePanel()
-                }
+            const target = event.target as Node
+
+            // Check if click is inside desktop panel
+            const isInsideDesktopPanel = panelRef.current?.contains(target)
+            // Check if click is inside mobile panel
+            const isInsideMobilePanel = mobilePanelRef.current?.contains(target)
+            // Check if click was on the bell button
+            const bellButton = document.querySelector('[aria-label^="Notifications"]')
+            const isOnBellButton = bellButton?.contains(target)
+
+            // Only close if click is outside ALL valid areas
+            if (!isInsideDesktopPanel && !isInsideMobilePanel && !isOnBellButton) {
+                closePanel()
             }
         }
 
@@ -189,12 +197,12 @@ export default function NotificationPanel() {
                 }}
             >
                 <div
+                    ref={mobilePanelRef}
                     className={`w-full max-w-sm rounded-xl bg-[#0f0f0f]/95 backdrop-blur-sm border border-red-500/40 shadow-2xl shadow-red-500/20 transition-all duration-200 ease-out ${
                         isAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
                     }`}
                     role="dialog"
                     aria-label="Notifications"
-                    onClick={(e) => e.stopPropagation()}
                 >
                     {panelContent}
                 </div>
