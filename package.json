@@ -23,6 +23,7 @@
         "seed:rankings": "npx tsx scripts/seedRankings.ts",
         "seed:demo-profiles": "npx tsx scripts/seedDemoProfiles.ts",
         "migrate:genres": "npx tsx scripts/migrate-genres-to-unified.ts",
+        "refresh:seed": "npx tsx scripts/refresh-seed-data.ts",
         "migrate:genres:dry-run": "npx tsx scripts/migrate-genres-to-unified.ts --dry-run",
         "analyze": "ANALYZE=true npm run build",
         "prepare": "husky"

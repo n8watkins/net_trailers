@@ -17,6 +17,7 @@ const COLLECTION_TEMPLATES = [
         genres: ['scifi', 'adventure'],
         movieIndices: [8, 16, 18],
         tvIndices: [3],
+        displayAsRow: true, // Show on home page
     },
     {
         name: 'Mind-Bending Thrillers',
@@ -25,6 +26,7 @@ const COLLECTION_TEMPLATES = [
         genres: ['thriller', 'drama'],
         movieIndices: [0, 1, 20, 19],
         tvIndices: [],
+        displayAsRow: true, // Show on home page
     },
     {
         name: 'Animated Masterpieces',
@@ -33,6 +35,7 @@ const COLLECTION_TEMPLATES = [
         genres: ['animation', 'fantasy'],
         movieIndices: [7, 9],
         tvIndices: [2, 3, 15],
+        displayAsRow: true, // Show on home page
     },
     {
         name: 'Crime & Drama Classics',
@@ -41,6 +44,7 @@ const COLLECTION_TEMPLATES = [
         genres: ['crime', 'drama'],
         movieIndices: [5, 4, 13],
         tvIndices: [0],
+        displayAsRow: false, // Hidden from home page
     },
     {
         name: 'Epic Fantasy Sagas',
@@ -49,6 +53,7 @@ const COLLECTION_TEMPLATES = [
         genres: ['fantasy', 'adventure'],
         movieIndices: [10, 17],
         tvIndices: [1, 17],
+        displayAsRow: false, // Hidden from home page
     },
     {
         name: 'Marvel Universe',
@@ -57,6 +62,7 @@ const COLLECTION_TEMPLATES = [
         genres: ['action', 'scifi'],
         movieIndices: [14, 15],
         tvIndices: [5, 4],
+        displayAsRow: false, // Hidden from home page
     },
     {
         name: 'Comfort Classics',
@@ -65,6 +71,7 @@ const COLLECTION_TEMPLATES = [
         genres: ['drama', 'comedy'],
         movieIndices: [2, 12],
         tvIndices: [9, 14],
+        displayAsRow: false, // Hidden from home page
     },
     {
         name: 'Dark & Mysterious',
@@ -73,6 +80,7 @@ const COLLECTION_TEMPLATES = [
         genres: ['mystery', 'horror'],
         movieIndices: [],
         tvIndices: [8, 11, 16, 14],
+        displayAsRow: false, // Hidden from home page
     },
 ]
 
@@ -112,7 +120,7 @@ export async function seedCollections(options: SeedCollectionsOptions): Promise<
             collectionType: 'manual',
             genres: template.genres,
             mediaType: 'both',
-            displayAsRow: true,
+            displayAsRow: template.displayAsRow,
             canGenerateMore: true, // Enable infinite scroll for seeded collections
         })
 

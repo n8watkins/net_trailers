@@ -413,8 +413,8 @@ export const sampleMovies: Movie[] = [
         original_title: "One Flew Over the Cuckoo's Nest",
         overview:
             'A criminal pleads insanity and is admitted to a mental institution, where he rebels against the oppressive nurse.',
-        poster_path: '/2Sns5oMb47z8kSoAcwL6ywMa2Jb.jpg',
-        backdrop_path: '/6u8kGMtxVL2MwJPJR0Yz1sUPDsF.jpg',
+        poster_path: '/kjWsMh72V6d8KRLV4EOoSJLT1H7.jpg',
+        backdrop_path: '/6Oa3zTiluBz2W8D2ou1MY16dUiF.jpg',
         release_date: '1975-11-19',
         vote_average: 8.4,
         vote_count: 15000,
@@ -586,8 +586,8 @@ export const sampleTVShows: TVShow[] = [
         original_name: 'The Walking Dead',
         overview:
             'Sheriff Deputy Rick Grimes wakes up from a coma to learn the world is in ruins and must lead a group of survivors to stay alive.',
-        poster_path: '/vxuoMW6YBt6UsxvMfRNwRl9LtWS.jpg',
-        backdrop_path: '/wvdWb5kTQipdMDqCclC6Y3zr4j3.jpg',
+        poster_path: '/ng3cMtxYKt1OSQYqFlnKWnVsqNO.jpg',
+        backdrop_path: '/rAOjnEFTuNysY7bot8zonhImGMh.jpg',
         first_air_date: '2010-10-31',
         vote_average: 8.1,
         vote_count: 14000,
@@ -722,8 +722,8 @@ export const sampleTVShows: TVShow[] = [
         original_name: 'Severance',
         overview:
             'Mark Scout leads a team at Lumon Industries, whose employees have undergone a severance procedure, which surgically divides their memories between their work and personal lives.',
-        poster_path: '/ux27XEb42I01CysCt5VnfpEYz1s.jpg',
-        backdrop_path: '/cHMJVsZDOcEVXfuaLeOlJbGqWDV.jpg',
+        poster_path: '/pPHpeI2X1qEd1CS1SeyrdhZ4qnT.jpg',
+        backdrop_path: '/ixgFmf1X59PUZam2qbAfskx2gQr.jpg',
         first_air_date: '2022-02-18',
         vote_average: 8.8,
         vote_count: 1100,
