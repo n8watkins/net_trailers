@@ -579,7 +579,7 @@ export default function useUserData() {
             defaultVolume: 50,
             childSafetyMode: false,
             improveRecommendations: true,
-            showRecommendations: false,
+            showRecommendations: true,
             trackWatchHistory: true,
 
             // Placeholder functions (will throw errors if called during initialization)

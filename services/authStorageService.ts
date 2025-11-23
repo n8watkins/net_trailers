@@ -46,6 +46,9 @@ export class AuthStorageService {
                 autoMute: true,
                 defaultVolume: 50,
                 childSafetyMode: false,
+                improveRecommendations: true,
+                showRecommendations: true,
+                trackWatchHistory: true,
             }
         }
 
@@ -65,6 +68,9 @@ export class AuthStorageService {
                 autoMute: true,
                 defaultVolume: 50,
                 childSafetyMode: false,
+                improveRecommendations: true,
+                showRecommendations: true,
+                trackWatchHistory: true,
             }
         }
 
@@ -139,6 +145,9 @@ export class AuthStorageService {
                         autoMute: data.autoMute ?? true,
                         defaultVolume: data.defaultVolume ?? 50,
                         childSafetyMode: data.childSafetyMode ?? false,
+                        improveRecommendations: data.improveRecommendations ?? true,
+                        showRecommendations: data.showRecommendations ?? true,
+                        trackWatchHistory: data.trackWatchHistory ?? true,
                     }
 
                     // Cache the loaded data
@@ -160,6 +169,9 @@ export class AuthStorageService {
                         autoMute: true,
                         defaultVolume: 50,
                         childSafetyMode: false,
+                        improveRecommendations: true,
+                        showRecommendations: true,
+                        trackWatchHistory: true,
                     }
 
                     // Try to save, but don't fail if offline
@@ -224,6 +236,9 @@ export class AuthStorageService {
                     autoMute: true,
                     defaultVolume: 50,
                     childSafetyMode: false,
+                    improveRecommendations: true,
+                    showRecommendations: true,
+                    trackWatchHistory: true,
                 }
             }
         })()
@@ -279,6 +294,9 @@ export class AuthStorageService {
                 autoMute: preferences.autoMute ?? true,
                 defaultVolume: preferences.defaultVolume ?? 50,
                 childSafetyMode: preferences.childSafetyMode ?? false,
+                improveRecommendations: preferences.improveRecommendations ?? true,
+                showRecommendations: preferences.showRecommendations ?? true,
+                trackWatchHistory: preferences.trackWatchHistory ?? true,
             }
             userDataCache.set(userId, { data: cachedData, timestamp: Date.now() })
             authLog('💾 [AuthStorageService] Updated cache with saved data for user:', userId)
@@ -472,6 +490,9 @@ export class AuthStorageService {
             autoMute: true,
             defaultVolume: 50,
             childSafetyMode: false,
+            improveRecommendations: true,
+            showRecommendations: false,
+            trackWatchHistory: true,
         }
 
         await this.saveUserData(userId, defaultPrefs)

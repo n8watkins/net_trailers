@@ -7,6 +7,10 @@ import { firebaseTracker } from '../utils/firebaseCallTracker'
 import { syncManager } from '../utils/firebaseSyncManager'
 import { DEFAULT_NOTIFICATION_PREFERENCES } from '../types/notifications'
 import type { NotificationPreferences } from '../types/notifications'
+import {
+    createDefaultCollectionsForUser,
+    needsDefaultCollections,
+} from '../constants/systemCollections'
 
 /**
  * User store state (works for both auth and guest users)
@@ -93,7 +97,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
         defaultVolume: 50,
         childSafetyMode: false,
         improveRecommendations: true,
-        showRecommendations: false, // Disabled by default
+        showRecommendations: true, // Enabled by default - row only shows when enough data exists
         trackWatchHistory: true, // Enabled by default
         notifications: cloneDefaultNotifications(),
         ...(adapter.isAsync && { syncStatus: 'synced' as const }),
@@ -131,7 +135,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                 defaultVolume: state.defaultVolume ?? 50,
                 childSafetyMode: state.childSafetyMode ?? false,
                 improveRecommendations: state.improveRecommendations ?? true,
-                showRecommendations: state.showRecommendations ?? false,
+                showRecommendations: state.showRecommendations ?? true,
                 trackWatchHistory: state.trackWatchHistory ?? true,
                 notifications: state.notifications ?? cloneDefaultNotifications(),
             })
@@ -389,7 +393,13 @@ export function createUserStore(options: CreateUserStoreOptions) {
 
         updateList: async (
             listId: string,
-            updates: { name?: string; emoji?: string; color?: string }
+            updates: {
+                name?: string
+                emoji?: string
+                color?: string
+                order?: number
+                displayAsRow?: boolean
+            }
         ) => {
             const state = get()
             if (adapter.isAsync) set({ syncStatus: 'syncing' })
@@ -522,7 +532,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                             }
 
                             // Ensure all collections have required new fields for backward compatibility
-                            const normalizedCollections = (
+                            let normalizedCollections = (
                                 firebaseData.userCreatedWatchlists || []
                             ).map((list, index) => ({
                                 ...list,
@@ -531,6 +541,14 @@ export function createUserStore(options: CreateUserStoreOptions) {
                                 order: list.order ?? index,
                                 enabled: list.enabled ?? true,
                             }))
+
+                            // Seed default collections for new users
+                            if (needsDefaultCollections(normalizedCollections)) {
+                                logger.log(
+                                    `🌱 [${trackingContext}] Seeding default collections for new user: ${userId}`
+                                )
+                                normalizedCollections = createDefaultCollectionsForUser()
+                            }
 
                             set({
                                 userId,
@@ -543,7 +561,8 @@ export function createUserStore(options: CreateUserStoreOptions) {
                                 defaultVolume: firebaseData.defaultVolume ?? 50,
                                 childSafetyMode: firebaseData.childSafetyMode ?? false,
                                 improveRecommendations: firebaseData.improveRecommendations ?? true,
-                                showRecommendations: firebaseData.showRecommendations ?? false,
+                                showRecommendations: firebaseData.showRecommendations ?? true,
+                                trackWatchHistory: firebaseData.trackWatchHistory ?? true,
                                 notifications:
                                     firebaseData.notifications ?? cloneDefaultNotifications(),
                                 syncStatus: 'synced',
@@ -573,7 +592,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                 const loadedData = await adapter.load(guestId)
 
                 // Ensure all collections have required new fields for backward compatibility
-                const normalizedCollections = (loadedData.userCreatedWatchlists || []).map(
+                let normalizedCollections = (loadedData.userCreatedWatchlists || []).map(
                     (list, index) => ({
                         ...list,
                         collectionType: list.collectionType || ('manual' as const),
@@ -582,6 +601,14 @@ export function createUserStore(options: CreateUserStoreOptions) {
                         enabled: list.enabled ?? true,
                     })
                 )
+
+                // Seed default collections for new guest users
+                if (needsDefaultCollections(normalizedCollections)) {
+                    logger.log(
+                        `🌱 [${trackingContext}] Seeding default collections for new guest: ${guestId}`
+                    )
+                    normalizedCollections = createDefaultCollectionsForUser()
+                }
 
                 set({
                     [idField]: guestId,
@@ -594,7 +621,8 @@ export function createUserStore(options: CreateUserStoreOptions) {
                     defaultVolume: loadedData.defaultVolume ?? 50,
                     childSafetyMode: false, // Always false for guests
                     improveRecommendations: loadedData.improveRecommendations ?? true,
-                    showRecommendations: loadedData.showRecommendations ?? false,
+                    showRecommendations: loadedData.showRecommendations ?? true,
+                    trackWatchHistory: loadedData.trackWatchHistory ?? true,
                     notifications: loadedData.notifications ?? cloneDefaultNotifications(),
                 })
                 logger.log(`🔄 [${trackingContext}] Synced from localStorage:`, {

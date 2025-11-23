@@ -1,16 +1,16 @@
 /**
  * Recommended For You Row
  *
- * Displays personalized recommendations based on user's preferences
+ * Displays personalized recommendations based on user's preferences.
+ * Uses the standard Row component to match the styling of other collections.
  */
 
 'use client'
 
-import { useEffect, useState, useRef, useMemo } from 'react'
-import { Content } from '../../types/collections'
+import { useEffect, useState, useMemo } from 'react'
+import { Content } from '../../typings'
 import { Recommendation } from '../../types/recommendations'
-import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
-import ContentCard from '../common/ContentCard'
+import Row from '../content/Row'
 import { useSessionData } from '../../hooks/useSessionData'
 import { useSessionStore } from '../../stores/sessionStore'
 import { auth } from '../../firebase'
@@ -19,16 +19,14 @@ export default function RecommendedForYouRow() {
     const [recommendations, setRecommendations] = useState<Recommendation[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    const [isMoved, setIsMoved] = useState(false)
 
-    const rowRef = useRef<HTMLDivElement>(null)
     const getUserId = useSessionStore((state) => state.getUserId)
     const sessionType = useSessionStore((state) => state.sessionType)
     const userId = getUserId()
     const sessionData = useSessionData()
 
     // Check if recommendations are enabled in user preferences
-    const showRecommendations = sessionData.showRecommendations ?? false
+    const showRecommendations = sessionData.showRecommendations ?? true
 
     const likedIdsSignature = useMemo(
         () => sessionData.likedMovies.map((item) => item.id).join(','),
@@ -124,20 +122,10 @@ export default function RecommendedForYouRow() {
         watchlistIdsSignature,
         hiddenIdsSignature,
         showRecommendations,
+        sessionData.likedMovies,
+        sessionData.defaultWatchlist,
+        sessionData.hiddenMovies,
     ])
-
-    // Scroll handlers
-    const handleClick = (direction: 'left' | 'right') => {
-        setIsMoved(true)
-
-        if (rowRef.current) {
-            const { scrollLeft, clientWidth } = rowRef.current
-            const scrollTo =
-                direction === 'left' ? scrollLeft - clientWidth : scrollLeft + clientWidth
-
-            rowRef.current.scrollTo({ left: scrollTo, behavior: 'smooth' })
-        }
-    }
 
     // Don't render if feature is disabled
     if (!showRecommendations) {
@@ -149,18 +137,9 @@ export default function RecommendedForYouRow() {
         return null
     }
 
-    // Don't render if loading initially
-    if (isLoading && recommendations.length === 0) {
-        return (
-            <div className="space-y-0.5 md:space-y-2 px-4 md:px-12">
-                <h2 className="w-56 cursor-pointer text-sm font-semibold text-[#e5e5e5] transition duration-200 hover:text-white md:text-2xl">
-                    Recommended For You
-                </h2>
-                <div className="flex items-center justify-center py-12">
-                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-red-500 border-t-transparent"></div>
-                </div>
-            </div>
-        )
+    // Don't render while loading
+    if (isLoading) {
+        return null
     }
 
     // Don't render if error or no recommendations
@@ -171,36 +150,6 @@ export default function RecommendedForYouRow() {
     // Convert recommendations to Content array
     const content: Content[] = recommendations.map((rec) => rec.content)
 
-    return (
-        <div className="space-y-0.5 md:space-y-2 px-4 md:px-12">
-            <h2 className="w-56 cursor-pointer text-sm font-semibold text-[#e5e5e5] transition duration-200 hover:text-white md:text-2xl">
-                Recommended For You
-            </h2>
-            <div className="group relative md:-ml-2">
-                {/* Left chevron */}
-                <ChevronLeftIcon
-                    className={`absolute top-0 bottom-0 left-2 z-40 m-auto h-9 w-9 cursor-pointer opacity-0 transition hover:scale-125 group-hover:opacity-100 ${
-                        !isMoved && 'hidden'
-                    }`}
-                    onClick={() => handleClick('left')}
-                />
-
-                {/* Scrollable content */}
-                <div
-                    ref={rowRef}
-                    className="flex items-center space-x-0.5 overflow-x-scroll scrollbar-hide md:space-x-2.5 md:p-2"
-                >
-                    {content.map((item) => (
-                        <ContentCard key={item.id} content={item} />
-                    ))}
-                </div>
-
-                {/* Right chevron */}
-                <ChevronRightIcon
-                    className="absolute top-0 bottom-0 right-2 z-40 m-auto h-9 w-9 cursor-pointer opacity-0 transition hover:scale-125 group-hover:opacity-100"
-                    onClick={() => handleClick('right')}
-                />
-            </div>
-        </div>
-    )
+    // Use the standard Row component to match other collections
+    return <Row title="✨ Recommended For You" content={content} />
 }

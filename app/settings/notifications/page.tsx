@@ -66,7 +66,7 @@ const NotificationsPage: React.FC = () => {
                 autoMute: userData.autoMute ?? true,
                 defaultVolume: userData.defaultVolume ?? 50,
                 improveRecommendations: userData.improveRecommendations ?? true,
-                showRecommendations: userData.showRecommendations ?? false,
+                showRecommendations: userData.showRecommendations ?? true,
                 notifications,
             }
 

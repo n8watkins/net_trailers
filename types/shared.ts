@@ -51,7 +51,7 @@ export const defaultAuthSession: AuthSession = {
         defaultVolume: 50,
         childSafetyMode: false,
         improveRecommendations: true,
-        showRecommendations: false, // Disabled by default
+        showRecommendations: true, // Enabled by default - row only shows when enough data exists
         trackWatchHistory: true, // Enabled by default
         notifications: {
             inApp: true,
@@ -88,7 +88,7 @@ export const defaultGuestSession: GuestSession = {
         defaultVolume: 50,
         childSafetyMode: false,
         improveRecommendations: true,
-        showRecommendations: false, // Disabled by default
+        showRecommendations: true, // Enabled by default - row only shows when enough data exists
         trackWatchHistory: true, // Enabled by default
         notifications: {
             inApp: true,

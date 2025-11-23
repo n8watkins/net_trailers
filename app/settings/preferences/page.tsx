@@ -58,7 +58,7 @@ const PreferencesPage: React.FC = () => {
             autoMute: userData.autoMute ?? true,
             defaultVolume: userData.defaultVolume ?? 50,
             improveRecommendations: userData.improveRecommendations ?? true,
-            showRecommendations: userData.showRecommendations ?? false,
+            showRecommendations: userData.showRecommendations ?? true,
             trackWatchHistory: userData.trackWatchHistory ?? true,
         }
     }, [
@@ -80,7 +80,7 @@ const PreferencesPage: React.FC = () => {
         () => userData.improveRecommendations ?? true
     )
     const [showRecommendations, setShowRecommendations] = useState<boolean>(
-        () => userData.showRecommendations ?? false
+        () => userData.showRecommendations ?? true
     )
     const [trackWatchHistory, setTrackWatchHistory] = useState<boolean>(
         () => userData.trackWatchHistory ?? true
