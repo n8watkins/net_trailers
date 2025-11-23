@@ -7,24 +7,64 @@
 import { Content } from '../../types/collections'
 import { GenrePreference, RecommendationProfile } from '../../types/recommendations'
 import { MOVIE_GENRES, TV_GENRES } from '../../constants/genres'
+import { UNIFIED_GENRES } from '../../constants/unifiedGenres'
 import { discoverByPreferences, getTopRatedByGenre } from '../tmdb/recommendations'
+
+// Quiz preference type (matches the type in PreferenceQuizModal)
+export interface QuizGenrePreference {
+    genreId: string // Unified genre ID (e.g., 'action', 'comedy')
+    preference: 'like' | 'dislike' | 'neutral'
+    updatedAt: number
+}
+
+// Quiz preference weights
+const QUIZ_WEIGHTS = {
+    like: 5, // Strong boost for liked genres
+    neutral: 0, // No effect
+    dislike: -5, // Strong penalty for disliked genres
+}
 
 /**
  * Calculate genre preference scores from user data
  *
  * @param userData - User's content collections
+ * @param quizPreferences - Optional quiz-based genre preferences
  * @returns Genre preferences sorted by score
  */
-export function calculateGenrePreferences(userData: {
-    likedMovies: Content[]
-    defaultWatchlist: Content[]
-    collectionItems?: Content[]
-    hiddenMovies: Content[]
-}): GenrePreference[] {
+export function calculateGenrePreferences(
+    userData: {
+        likedMovies: Content[]
+        defaultWatchlist: Content[]
+        collectionItems?: Content[]
+        hiddenMovies: Content[]
+    },
+    quizPreferences?: QuizGenrePreference[]
+): GenrePreference[] {
     const scores: Record<number, number> = {}
     const counts: Record<number, number> = {}
 
     const { likedMovies, defaultWatchlist, collectionItems = [], hiddenMovies } = userData
+
+    // Apply quiz preferences first (convert unified IDs to TMDB IDs)
+    if (quizPreferences && quizPreferences.length > 0) {
+        quizPreferences.forEach((pref) => {
+            const weight = QUIZ_WEIGHTS[pref.preference]
+            if (weight === 0) return // Skip neutral
+
+            // Find the unified genre and get its TMDB IDs
+            const unifiedGenre = UNIFIED_GENRES.find((g) => g.id === pref.genreId)
+            if (unifiedGenre) {
+                // Apply to all movie IDs
+                unifiedGenre.movieIds.forEach((tmdbId) => {
+                    scores[tmdbId] = (scores[tmdbId] || 0) + weight
+                })
+                // Apply to all TV IDs
+                unifiedGenre.tvIds.forEach((tmdbId) => {
+                    scores[tmdbId] = (scores[tmdbId] || 0) + weight
+                })
+            }
+        })
+    }
 
     // Process liked content (highest weight: +3)
     likedMovies.forEach((content) => {
@@ -93,16 +133,20 @@ function getGenreName(genreId: number): string {
  * Build user recommendation profile
  *
  * @param userData - User's content collections
+ * @param quizPreferences - Optional quiz-based genre preferences
  * @returns Recommendation profile
  */
-export function buildRecommendationProfile(userData: {
-    userId: string
-    likedMovies: Content[]
-    defaultWatchlist: Content[]
-    collectionItems?: Content[]
-    hiddenMovies: Content[]
-}): RecommendationProfile {
-    const topGenres = calculateGenrePreferences(userData)
+export function buildRecommendationProfile(
+    userData: {
+        userId: string
+        likedMovies: Content[]
+        defaultWatchlist: Content[]
+        collectionItems?: Content[]
+        hiddenMovies: Content[]
+    },
+    quizPreferences?: QuizGenrePreference[]
+): RecommendationProfile {
+    const topGenres = calculateGenrePreferences(userData, quizPreferences)
 
     // Calculate preferred rating (average of liked movies)
     const likedRatings = userData.likedMovies

@@ -5,6 +5,13 @@ import { Content } from '../typings'
 import { UserList } from './collections'
 import { NotificationPreferences } from './notifications'
 
+// Genre preference for quiz-based recommendations
+export interface GenrePreference {
+    genreId: string
+    preference: 'like' | 'dislike' | 'neutral'
+    updatedAt: number
+}
+
 export interface UserPreferences {
     defaultWatchlist: Content[]
     likedMovies: Content[]
@@ -18,6 +25,7 @@ export interface UserPreferences {
     showRecommendations?: boolean
     trackWatchHistory?: boolean
     notifications?: NotificationPreferences
+    genrePreferences?: GenrePreference[] // Quiz-based genre preferences
 }
 
 export interface UserSession {

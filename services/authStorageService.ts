@@ -148,6 +148,7 @@ export class AuthStorageService {
                         improveRecommendations: data.improveRecommendations ?? true,
                         showRecommendations: data.showRecommendations ?? true,
                         trackWatchHistory: data.trackWatchHistory ?? true,
+                        genrePreferences: data.genrePreferences || [],
                     }
 
                     // Cache the loaded data
@@ -297,6 +298,7 @@ export class AuthStorageService {
                 improveRecommendations: preferences.improveRecommendations ?? true,
                 showRecommendations: preferences.showRecommendations ?? true,
                 trackWatchHistory: preferences.trackWatchHistory ?? true,
+                genrePreferences: preferences.genrePreferences || [],
             }
             userDataCache.set(userId, { data: cachedData, timestamp: Date.now() })
             authLog('💾 [AuthStorageService] Updated cache with saved data for user:', userId)

@@ -31,6 +31,11 @@ export interface UserState {
     showRecommendations?: boolean
     trackWatchHistory?: boolean
     notifications?: NotificationPreferences
+    genrePreferences?: {
+        genreId: string
+        preference: 'like' | 'dislike' | 'neutral'
+        updatedAt: number
+    }[]
 }
 
 /**
@@ -100,6 +105,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
         showRecommendations: true, // Enabled by default - row only shows when enough data exists
         trackWatchHistory: true, // Enabled by default
         notifications: cloneDefaultNotifications(),
+        genrePreferences: [], // Quiz-based genre preferences
         ...(adapter.isAsync && { syncStatus: 'synced' as const }),
     })
 
@@ -138,6 +144,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                 showRecommendations: state.showRecommendations ?? true,
                 trackWatchHistory: state.trackWatchHistory ?? true,
                 notifications: state.notifications ?? cloneDefaultNotifications(),
+                genrePreferences: state.genrePreferences ?? [],
             })
             logger.log(`✅ [${trackingContext}] Saved to ${adapter.name}`)
         } catch (error) {
@@ -565,6 +572,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                                 trackWatchHistory: firebaseData.trackWatchHistory ?? true,
                                 notifications:
                                     firebaseData.notifications ?? cloneDefaultNotifications(),
+                                genrePreferences: firebaseData.genrePreferences ?? [],
                                 syncStatus: 'synced',
                             })
 
@@ -624,6 +632,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                     showRecommendations: loadedData.showRecommendations ?? true,
                     trackWatchHistory: loadedData.trackWatchHistory ?? true,
                     notifications: loadedData.notifications ?? cloneDefaultNotifications(),
+                    genrePreferences: loadedData.genrePreferences ?? [],
                 })
                 logger.log(`🔄 [${trackingContext}] Synced from localStorage:`, {
                     guestId,

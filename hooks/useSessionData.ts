@@ -51,6 +51,7 @@ export const useSessionData = () => {
     const guestImproveRecommendations = useGuestStore((state) => state.improveRecommendations)
     const guestShowRecommendations = useGuestStore((state) => state.showRecommendations)
     const guestTrackWatchHistory = useGuestStore((state) => state.trackWatchHistory)
+    const guestGenrePreferences = useGuestStore((state) => state.genrePreferences)
 
     // Select actions from guest store
     const guestAddToWatchlist = useGuestStore((state) => state.addToWatchlist)
@@ -65,6 +66,7 @@ export const useSessionData = () => {
     const guestAddToList = useGuestStore((state) => state.addToList)
     const guestRemoveFromList = useGuestStore((state) => state.removeFromList)
     const guestClearAllData = useGuestStore((state) => state.clearAllData)
+    const guestUpdatePreferences = useGuestStore((state) => state.updatePreferences)
 
     // Select data from auth store with granular selectors
     const authWatchlist = useAuthStore((state) => state.defaultWatchlist)
@@ -78,6 +80,7 @@ export const useSessionData = () => {
     const authImproveRecommendations = useAuthStore((state) => state.improveRecommendations)
     const authShowRecommendations = useAuthStore((state) => state.showRecommendations)
     const authTrackWatchHistory = useAuthStore((state) => state.trackWatchHistory)
+    const authGenrePreferences = useAuthStore((state) => state.genrePreferences)
 
     // Select actions from auth store
     const authAddToWatchlist = useAuthStore((state) => state.addToWatchlist)
@@ -92,6 +95,7 @@ export const useSessionData = () => {
     const authAddToList = useAuthStore((state) => state.addToList)
     const authRemoveFromList = useAuthStore((state) => state.removeFromList)
     const authClearLocalCache = useAuthStore((state) => state.clearLocalCache)
+    const authUpdatePreferences = useAuthStore((state) => state.updatePreferences)
 
     // Session initialization is now handled by SessionSyncManager component
     // Auth state changes are now handled by SessionSyncManager component
@@ -117,6 +121,7 @@ export const useSessionData = () => {
     const showRecommendations =
         (isAuth ? authShowRecommendations : guestShowRecommendations) ?? false
     const trackWatchHistory = (isAuth ? authTrackWatchHistory : guestTrackWatchHistory) ?? true
+    const genrePreferences = (isAuth ? authGenrePreferences : guestGenrePreferences) ?? []
 
     const addToWatchlist = isAuth ? authAddToWatchlist : guestAddToWatchlist
     const removeFromWatchlist = isAuth ? authRemoveFromWatchlist : guestRemoveFromWatchlist
@@ -129,6 +134,7 @@ export const useSessionData = () => {
     const deleteList = isAuth ? authDeleteList : guestDeleteList
     const addToList = isAuth ? authAddToList : guestAddToList
     const removeFromList = isAuth ? authRemoveFromList : guestRemoveFromList
+    const updatePreferences = isAuth ? authUpdatePreferences : guestUpdatePreferences
 
     return {
         // Session info
@@ -151,6 +157,7 @@ export const useSessionData = () => {
         improveRecommendations,
         showRecommendations,
         trackWatchHistory,
+        genrePreferences,
 
         // Actions (unified interface - NEW SCHEMA)
         addToWatchlist,
@@ -168,6 +175,7 @@ export const useSessionData = () => {
         // Store-specific actions
         clearAllData: guestClearAllData,
         clearLocalCache: authClearLocalCache,
+        updatePreferences,
 
         // Utilities (NEW SCHEMA)
         isInWatchlist: (contentId: number) =>

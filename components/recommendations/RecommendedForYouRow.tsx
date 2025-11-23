@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { Content } from '../../typings'
 import { Recommendation } from '../../types/recommendations'
 import Row from '../content/Row'
@@ -15,12 +15,14 @@ import { useSessionData } from '../../hooks/useSessionData'
 import { useSessionStore } from '../../stores/sessionStore'
 import { auth } from '../../firebase'
 import RecommendationInsightsModal from './RecommendationInsightsModal'
+import PreferenceQuizModal, { GenrePreference } from './PreferenceQuizModal'
 
 export default function RecommendedForYouRow() {
     const [recommendations, setRecommendations] = useState<Recommendation[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [showInsightsModal, setShowInsightsModal] = useState(false)
+    const [showQuizModal, setShowQuizModal] = useState(false)
 
     const getUserId = useSessionStore((state) => state.getUserId)
     const sessionType = useSessionStore((state) => state.sessionType)
@@ -29,6 +31,19 @@ export default function RecommendedForYouRow() {
 
     // Check if recommendations are enabled in user preferences
     const showRecommendations = sessionData.showRecommendations ?? true
+
+    // Get existing genre preferences from session
+    const genrePreferences = sessionData.genrePreferences || []
+
+    // Track genre preferences signature for re-fetching recommendations
+    const genrePrefsSignature = useMemo(
+        () =>
+            genrePreferences
+                .map((p) => `${p.genreId}:${p.preference}`)
+                .sort()
+                .join(','),
+        [genrePreferences]
+    )
 
     // Extract all items from user collections (for recommendation engine)
     const collectionItems = useMemo(() => {
@@ -105,6 +120,7 @@ export default function RecommendedForYouRow() {
                         watchlist: sessionData.defaultWatchlist.slice(0, 10),
                         collectionItems: collectionItems.slice(0, 20), // Items from all user collections
                         hiddenMovies: sessionData.hiddenMovies.slice(0, 10),
+                        genrePreferences: genrePreferences, // Quiz-based genre preferences
                         limit: 20,
                     }),
                 })
@@ -147,12 +163,29 @@ export default function RecommendedForYouRow() {
         watchlistIdsSignature,
         hiddenIdsSignature,
         collectionIdsSignature,
+        genrePrefsSignature,
         showRecommendations,
         sessionData.likedMovies,
         sessionData.defaultWatchlist,
         sessionData.hiddenMovies,
         collectionItems,
+        genrePreferences,
     ])
+
+    // Handle quiz save
+    const handleQuizSave = useCallback(
+        async (preferences: GenrePreference[]) => {
+            // Update session data with new genre preferences
+            await sessionData.updatePreferences({ genrePreferences: preferences })
+        },
+        [sessionData]
+    )
+
+    // Open quiz from insights modal
+    const handleOpenQuiz = useCallback(() => {
+        setShowInsightsModal(false)
+        setShowQuizModal(true)
+    }, [])
 
     // Don't render if feature is disabled
     if (!showRecommendations) {
@@ -187,6 +220,13 @@ export default function RecommendedForYouRow() {
             <RecommendationInsightsModal
                 isOpen={showInsightsModal}
                 onClose={() => setShowInsightsModal(false)}
+                onOpenQuiz={handleOpenQuiz}
+            />
+            <PreferenceQuizModal
+                isOpen={showQuizModal}
+                onClose={() => setShowQuizModal(false)}
+                onSave={handleQuizSave}
+                existingPreferences={genrePreferences}
             />
         </>
     )

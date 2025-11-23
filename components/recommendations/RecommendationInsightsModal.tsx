@@ -15,11 +15,13 @@ import { SparklesIcon, Cog6ToothIcon, AcademicCapIcon } from '@heroicons/react/2
 interface RecommendationInsightsModalProps {
     isOpen: boolean
     onClose: () => void
+    onOpenQuiz?: () => void
 }
 
 export default function RecommendationInsightsModal({
     isOpen,
     onClose,
+    onOpenQuiz,
 }: RecommendationInsightsModalProps) {
     const router = useRouter()
 
@@ -72,13 +74,18 @@ export default function RecommendationInsightsModal({
                                     Customize Recommendations
                                 </h3>
                                 <p className="text-gray-400 text-xs mb-3">
-                                    Take a quick quiz to tell us what you like
+                                    Take a quick quiz to tell us what genres you like
                                 </p>
                                 <button
-                                    disabled
-                                    className="px-4 py-2 bg-purple-600/50 text-purple-200 rounded-lg text-sm font-medium cursor-not-allowed opacity-60"
+                                    onClick={onOpenQuiz}
+                                    disabled={!onOpenQuiz}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
+                                        onOpenQuiz
+                                            ? 'bg-purple-600 hover:bg-purple-500 text-white'
+                                            : 'bg-purple-600/50 text-purple-200 cursor-not-allowed opacity-60'
+                                    }`}
                                 >
-                                    Coming Soon
+                                    Take Quiz
                                 </button>
                             </div>
                         </div>

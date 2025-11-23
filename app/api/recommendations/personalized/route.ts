@@ -14,6 +14,7 @@ import {
     getSeenContentIds,
     hasEnoughDataForRecommendations,
     mergeRecommendations,
+    QuizGenrePreference,
 } from '@/utils/recommendations/genreEngine'
 import { getBatchSimilarContent } from '@/utils/tmdb/recommendations'
 import { Recommendation, RECOMMENDATION_CONSTRAINTS } from '@/types/recommendations'
@@ -38,8 +39,12 @@ async function handlePersonalizedRecommendations(
             hiddenMovies: (body.hiddenMovies || []) as Content[],
         }
 
-        // Check if user has enough data
-        if (!hasEnoughDataForRecommendations(userData)) {
+        // Get quiz-based genre preferences if provided
+        const quizPreferences = (body.genrePreferences || []) as QuizGenrePreference[]
+
+        // Check if user has enough data (quiz preferences also count)
+        const hasQuizData = quizPreferences.length > 0
+        if (!hasEnoughDataForRecommendations(userData) && !hasQuizData) {
             return NextResponse.json({
                 success: true,
                 recommendations: [],
@@ -49,8 +54,8 @@ async function handlePersonalizedRecommendations(
             })
         }
 
-        // Build recommendation profile
-        const profile = buildRecommendationProfile(userData)
+        // Build recommendation profile (includes quiz preferences)
+        const profile = buildRecommendationProfile(userData, quizPreferences)
 
         // Get content IDs to exclude (already seen)
         const excludeIds = getSeenContentIds(userData)
