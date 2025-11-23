@@ -647,12 +647,27 @@ export function createUserStore(options: CreateUserStoreOptions) {
                                 enabled: list.enabled ?? true,
                             }))
 
+                            // Track if we need to save seeded defaults back to storage
+                            let needsSeedSave = false
+
                             // Seed default collections for new users
                             if (needsDefaultCollections(normalizedCollections)) {
                                 logger.log(
                                     `🌱 [${trackingContext}] Seeding default collections for new user: ${userId}`
                                 )
                                 normalizedCollections = createDefaultCollectionsForUser()
+                                needsSeedSave = true
+                            }
+
+                            // Seed default system recommendations for new users
+                            const systemRecommendations =
+                                firebaseData.systemRecommendations ??
+                                createDefaultSystemRecommendations()
+                            if (!firebaseData.systemRecommendations) {
+                                logger.log(
+                                    `🌱 [${trackingContext}] Seeding default system recommendations for new user: ${userId}`
+                                )
+                                needsSeedSave = true
                             }
 
                             set({
@@ -661,9 +676,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                                 hiddenMovies: firebaseData.hiddenMovies,
                                 defaultWatchlist: firebaseData.defaultWatchlist,
                                 userCreatedWatchlists: normalizedCollections,
-                                systemRecommendations:
-                                    firebaseData.systemRecommendations ??
-                                    createDefaultSystemRecommendations(),
+                                systemRecommendations,
                                 lastActive: firebaseData.lastActive,
                                 autoMute: firebaseData.autoMute ?? true,
                                 defaultVolume: firebaseData.defaultVolume ?? 50,
@@ -679,6 +692,22 @@ export function createUserStore(options: CreateUserStoreOptions) {
                                 votedContent: firebaseData.votedContent ?? [],
                                 syncStatus: 'synced',
                             })
+
+                            // Persist seeded defaults to Firestore so they survive refresh
+                            if (needsSeedSave) {
+                                logger.log(
+                                    `💾 [${trackingContext}] Saving seeded defaults to Firestore for user: ${userId}`
+                                )
+                                try {
+                                    await saveToStorage(get(), 'seedDefaults')
+                                } catch (saveError) {
+                                    logger.error(
+                                        `❌ [${trackingContext}] Failed to save seeded defaults:`,
+                                        saveError
+                                    )
+                                    // Don't fail the whole sync - defaults are still in memory
+                                }
+                            }
 
                             logger.log(
                                 `✅ [${trackingContext}] Successfully synced for user ${userId}`
@@ -703,6 +732,9 @@ export function createUserStore(options: CreateUserStoreOptions) {
             syncFromLocalStorage: async (guestId: string) => {
                 const loadedData = await adapter.load(guestId)
 
+                // Track if we need to save seeded defaults back to storage
+                let needsSeedSave = false
+
                 // Ensure all collections have required new fields for backward compatibility
                 let normalizedCollections = (loadedData.userCreatedWatchlists || []).map(
                     (list, index) => ({
@@ -720,6 +752,17 @@ export function createUserStore(options: CreateUserStoreOptions) {
                         `🌱 [${trackingContext}] Seeding default collections for new guest: ${guestId}`
                     )
                     normalizedCollections = createDefaultCollectionsForUser()
+                    needsSeedSave = true
+                }
+
+                // Seed default system recommendations for new guest users
+                const systemRecommendations =
+                    loadedData.systemRecommendations ?? createDefaultSystemRecommendations()
+                if (!loadedData.systemRecommendations) {
+                    logger.log(
+                        `🌱 [${trackingContext}] Seeding default system recommendations for new guest: ${guestId}`
+                    )
+                    needsSeedSave = true
                 }
 
                 set({
@@ -728,8 +771,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                     hiddenMovies: loadedData.hiddenMovies,
                     defaultWatchlist: loadedData.defaultWatchlist,
                     userCreatedWatchlists: normalizedCollections,
-                    systemRecommendations:
-                        loadedData.systemRecommendations ?? createDefaultSystemRecommendations(),
+                    systemRecommendations,
                     lastActive: loadedData.lastActive,
                     autoMute: loadedData.autoMute ?? true,
                     defaultVolume: loadedData.defaultVolume ?? 50,
@@ -743,6 +785,22 @@ export function createUserStore(options: CreateUserStoreOptions) {
                     shownPreferenceContent: loadedData.shownPreferenceContent ?? [],
                     votedContent: loadedData.votedContent ?? [],
                 })
+
+                // Persist seeded defaults to localStorage so they survive refresh
+                if (needsSeedSave) {
+                    logger.log(
+                        `💾 [${trackingContext}] Saving seeded defaults to localStorage for guest: ${guestId}`
+                    )
+                    try {
+                        await saveToStorage(get(), 'seedDefaults')
+                    } catch (saveError) {
+                        logger.error(
+                            `❌ [${trackingContext}] Failed to save seeded defaults:`,
+                            saveError
+                        )
+                    }
+                }
+
                 logger.log(`🔄 [${trackingContext}] Synced from localStorage:`, {
                     guestId,
                     watchlistCount: loadedData.defaultWatchlist.length,
