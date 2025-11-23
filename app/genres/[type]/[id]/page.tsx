@@ -37,6 +37,7 @@ function GenrePageContent() {
 
     const genreId = params?.id
     const mediaType = params?.type
+    const tvGenres = searchParams?.get('tvGenres') // For "both" type, TV genre IDs
     const genreName = name
     const pageTitle = title
     const { isEnabled: childSafetyEnabled } = useChildSafety()
@@ -90,6 +91,11 @@ function GenrePageContent() {
                 // Add child safety mode parameter
                 filterParams.append('childSafetyMode', childSafetyEnabled.toString())
 
+                // For "both" type, pass TV genre IDs
+                if (mediaType === 'both' && tvGenres) {
+                    filterParams.append('tvGenres', tvGenres)
+                }
+
                 const response = await fetch(
                     `/api/genres/${mediaType}/${genreId}?${filterParams.toString()}`
                 )
@@ -100,10 +106,10 @@ function GenrePageContent() {
 
                 const data = await response.json()
 
-                // Add media_type to each item
+                // For "both" type, API already provides media_type; for single type, add it
                 const enrichedResults = data.results.map((item: Content) => ({
                     ...item,
-                    media_type: mediaType,
+                    media_type: item.media_type || mediaType,
                 }))
 
                 setContent((prev) => {
@@ -138,7 +144,7 @@ function GenrePageContent() {
                 setLoadingMore(false)
             }
         },
-        [genreId, mediaType, maxPages, filters, childSafetyEnabled]
+        [genreId, mediaType, tvGenres, maxPages, filters, childSafetyEnabled]
     )
 
     useEffect(() => {
@@ -244,17 +250,21 @@ function GenrePageContent() {
         <div className="relative min-h-screen bg-gradient-to-b">
             <Header />
 
-            <main className="relative pl-4 pb-16 lg:space-y-24 lg:pl-16">
-                <div className="flex flex-col space-y-6 py-16 md:space-y-10 md:py-20 lg:py-24">
+            <main className="relative pl-2 sm:pl-4 md:pl-8 lg:pl-16 pb-8 sm:pb-12 md:pb-16">
+                <div className="flex flex-col space-y-4 sm:space-y-6 md:space-y-10 lg:space-y-24 py-8 sm:py-12 md:py-16 lg:py-20">
                     {/* Header Section */}
                     <div className="space-y-3">
                         <h1 className="text-3xl font-bold text-white md:text-4xl lg:text-5xl pt-3 sm:pt-4 md:pt-6">
                             {pageTitle ||
-                                `${genreName} ${mediaType === 'movie' ? 'Movies' : 'TV Shows'}`}
+                                `${genreName} ${mediaType === 'both' ? 'Movies & TV Shows' : mediaType === 'movie' ? 'Movies' : 'TV Shows'}`}
                         </h1>
                         <p className="text-gray-300 text-lg">
                             Discover the best {genreName?.toLowerCase()}{' '}
-                            {mediaType === 'movie' ? 'movies' : 'TV shows'}
+                            {mediaType === 'both'
+                                ? 'movies and TV shows'
+                                : mediaType === 'movie'
+                                  ? 'movies'
+                                  : 'TV shows'}
                         </p>
                     </div>
 

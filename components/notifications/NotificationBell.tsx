@@ -69,7 +69,7 @@ export default function NotificationBell() {
     return (
         <button
             onClick={togglePanel}
-            className="group relative flex items-center justify-center rounded-full p-2"
+            className="group relative flex items-center justify-center rounded-full p-2 min-w-[44px] min-h-[44px]"
             aria-label={`Notifications${hasUnread ? ` (${safeUnreadCount} unread)` : ''}`}
             aria-expanded={safeIsPanelOpen}
             aria-haspopup="true"

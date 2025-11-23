@@ -85,7 +85,7 @@ const NetflixLoader: React.FC<Props> = ({
         const messageInterval = setInterval(() => {
             messageIndex = (messageIndex + 1) % messages.length
             setLoadingMessage(messages[messageIndex])
-        }, 800) // Increased from 500ms to 800ms for more delay between text changes
+        }, 1100) // 1.1 seconds - readable but not too slow
 
         return () => {
             clearInterval(counterInterval)
@@ -113,7 +113,7 @@ const NetflixLoader: React.FC<Props> = ({
                     : 'fixed inset-0 z-[9999] bg-[#141414] flex items-center justify-center'
             }
         >
-            <div className="text-center max-w-md px-6">
+            <div className="text-center max-w-[90vw] sm:max-w-md px-4 sm:px-6">
                 {bouncingDots}
                 <p className="text-white text-xl mb-2 min-h-[3rem] flex items-center justify-center">
                     {loadingMessage}
