@@ -14,11 +14,13 @@ import Row from '../content/Row'
 import { useSessionData } from '../../hooks/useSessionData'
 import { useSessionStore } from '../../stores/sessionStore'
 import { auth } from '../../firebase'
+import RecommendationInsightsModal from './RecommendationInsightsModal'
 
 export default function RecommendedForYouRow() {
     const [recommendations, setRecommendations] = useState<Recommendation[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [showInsightsModal, setShowInsightsModal] = useState(false)
 
     const getUserId = useSessionStore((state) => state.getUserId)
     const sessionType = useSessionStore((state) => state.sessionType)
@@ -27,6 +29,24 @@ export default function RecommendedForYouRow() {
 
     // Check if recommendations are enabled in user preferences
     const showRecommendations = sessionData.showRecommendations ?? true
+
+    // Extract all items from user collections (for recommendation engine)
+    const collectionItems = useMemo(() => {
+        const items: Content[] = []
+        const seenIds = new Set<number>()
+
+        // Add items from all user-created collections
+        for (const collection of sessionData.userCreatedWatchlists || []) {
+            for (const item of collection.items || []) {
+                if (!seenIds.has(item.id)) {
+                    items.push(item)
+                    seenIds.add(item.id)
+                }
+            }
+        }
+
+        return items
+    }, [sessionData.userCreatedWatchlists])
 
     const likedIdsSignature = useMemo(
         () => sessionData.likedMovies.map((item) => item.id).join(','),
@@ -39,6 +59,10 @@ export default function RecommendedForYouRow() {
     const hiddenIdsSignature = useMemo(
         () => sessionData.hiddenMovies.map((item) => item.id).join(','),
         [sessionData.hiddenMovies]
+    )
+    const collectionIdsSignature = useMemo(
+        () => collectionItems.map((item) => item.id).join(','),
+        [collectionItems]
     )
 
     // Fetch personalized recommendations
@@ -79,6 +103,7 @@ export default function RecommendedForYouRow() {
                     body: JSON.stringify({
                         likedMovies: sessionData.likedMovies.slice(0, 10),
                         watchlist: sessionData.defaultWatchlist.slice(0, 10),
+                        collectionItems: collectionItems.slice(0, 20), // Items from all user collections
                         hiddenMovies: sessionData.hiddenMovies.slice(0, 10),
                         limit: 20,
                     }),
@@ -121,10 +146,12 @@ export default function RecommendedForYouRow() {
         likedIdsSignature,
         watchlistIdsSignature,
         hiddenIdsSignature,
+        collectionIdsSignature,
         showRecommendations,
         sessionData.likedMovies,
         sessionData.defaultWatchlist,
         sessionData.hiddenMovies,
+        collectionItems,
     ])
 
     // Don't render if feature is disabled
@@ -150,6 +177,17 @@ export default function RecommendedForYouRow() {
     // Convert recommendations to Content array
     const content: Content[] = recommendations.map((rec) => rec.content)
 
-    // Use the standard Row component to match other collections
-    return <Row title="✨ Recommended For You" content={content} />
+    return (
+        <>
+            <Row
+                title="✨ Recommended For You"
+                content={content}
+                onInfoClick={() => setShowInsightsModal(true)}
+            />
+            <RecommendationInsightsModal
+                isOpen={showInsightsModal}
+                onClose={() => setShowInsightsModal(false)}
+            />
+        </>
+    )
 }

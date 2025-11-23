@@ -34,6 +34,7 @@ async function handlePersonalizedRecommendations(
             userId,
             likedMovies: (body.likedMovies || []) as Content[],
             defaultWatchlist: (body.watchlist || []) as Content[],
+            collectionItems: (body.collectionItems || []) as Content[], // Items from all user collections
             hiddenMovies: (body.hiddenMovies || []) as Content[],
         }
 

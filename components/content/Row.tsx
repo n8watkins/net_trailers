@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import { Content, getTitle } from '../../typings'
 import { ChevronLeftIcon, ChevronRightIcon, PencilIcon } from '@heroicons/react/24/solid'
+import { InformationCircleIcon } from '@heroicons/react/24/outline'
 import ContentCard from '../common/ContentCard'
 import { filterDislikedContent } from '../../utils/contentFilter'
 import { uiLog, uiWarn } from '../../utils/debugLogger'
@@ -16,13 +17,14 @@ const debugLog = (emoji: string, message: string, data?: any): void => {
 }
 
 interface Props {
-    title: string
+    title: string | React.ReactNode
     content: Content[]
     apiEndpoint?: string // Optional endpoint for loading more content
     pageType?: 'home' | 'movies' | 'tv' // Page type for row editing
     collection?: Collection | null // Optional collection data for editing
+    onInfoClick?: () => void // Optional info button click handler
 }
-function Row({ title, content, apiEndpoint, pageType: _pageType, collection }: Props) {
+function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onInfoClick }: Props) {
     const rowRef = useRef<HTMLDivElement>(null)
     const sentinelRef = useRef<HTMLDivElement>(null)
     const isLoadingRef = useRef(false)
@@ -437,13 +439,22 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection }: P
                 <h2 className="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold transition duration-200 hover:text-gray-300">
                     {title}
                 </h2>
+                {onInfoClick && (
+                    <button
+                        onClick={onInfoClick}
+                        className="p-1.5 hover:bg-gray-800/50 rounded-lg flex items-center relative z-[250] transition-all duration-200"
+                        title="View insights"
+                    >
+                        <InformationCircleIcon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 hover:text-gray-200 hover:scale-110 transition-all duration-200" />
+                    </button>
+                )}
                 {canEditCollection && (
                     <button
                         onClick={handleEditCollection}
-                        className="opacity-0 group-hover/title:opacity-100 transition-opacity duration-200 p-1.5 hover:bg-gray-800/50 rounded-lg group/pencil flex items-center relative z-[250]"
+                        className="p-1.5 hover:bg-gray-800/50 rounded-lg group/pencil flex items-center relative z-[250] transition-all duration-200"
                         title="Edit collection"
                     >
-                        <PencilIcon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-300 hover:scale-110 transition-all duration-200" />
+                        <PencilIcon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 hover:text-gray-200 hover:scale-110 transition-all duration-200" />
                     </button>
                 )}
             </div>

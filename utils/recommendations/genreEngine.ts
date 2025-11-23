@@ -18,12 +18,13 @@ import { discoverByPreferences, getTopRatedByGenre } from '../tmdb/recommendatio
 export function calculateGenrePreferences(userData: {
     likedMovies: Content[]
     defaultWatchlist: Content[]
+    collectionItems?: Content[]
     hiddenMovies: Content[]
 }): GenrePreference[] {
     const scores: Record<number, number> = {}
     const counts: Record<number, number> = {}
 
-    const { likedMovies, defaultWatchlist, hiddenMovies } = userData
+    const { likedMovies, defaultWatchlist, collectionItems = [], hiddenMovies } = userData
 
     // Process liked content (highest weight: +3)
     likedMovies.forEach((content) => {
@@ -35,6 +36,14 @@ export function calculateGenrePreferences(userData: {
 
     // Process watchlist (medium weight: +1)
     defaultWatchlist.forEach((content) => {
+        content.genre_ids?.forEach((genreId) => {
+            scores[genreId] = (scores[genreId] || 0) + 1
+            counts[genreId] = (counts[genreId] || 0) + 1
+        })
+    })
+
+    // Process collection items (medium weight: +1, same as watchlist)
+    collectionItems.forEach((content) => {
         content.genre_ids?.forEach((genreId) => {
             scores[genreId] = (scores[genreId] || 0) + 1
             counts[genreId] = (counts[genreId] || 0) + 1
@@ -90,6 +99,7 @@ export function buildRecommendationProfile(userData: {
     userId: string
     likedMovies: Content[]
     defaultWatchlist: Content[]
+    collectionItems?: Content[]
     hiddenMovies: Content[]
 }): RecommendationProfile {
     const topGenres = calculateGenrePreferences(userData)
@@ -104,8 +114,9 @@ export function buildRecommendationProfile(userData: {
             ? likedRatings.reduce((sum, r) => sum + r, 0) / likedRatings.length
             : undefined
 
-    // Calculate preferred year range
-    const allYears = [...userData.likedMovies, ...userData.defaultWatchlist]
+    // Calculate preferred year range (include collection items)
+    const collectionItems = userData.collectionItems || []
+    const allYears = [...userData.likedMovies, ...userData.defaultWatchlist, ...collectionItems]
         .map((c) => {
             if (c.media_type === 'movie') {
                 return c.release_date ? new Date(c.release_date).getFullYear() : undefined
@@ -207,15 +218,20 @@ export async function getGenreRecommendations(
 export function getSeenContentIds(userData: {
     likedMovies: Content[]
     defaultWatchlist: Content[]
+    collectionItems?: Content[]
     hiddenMovies: Content[]
 }): number[] {
     const seenIds = new Set<number>()
+    const collectionItems = userData.collectionItems || []
 
-    ;[...userData.likedMovies, ...userData.defaultWatchlist, ...userData.hiddenMovies].forEach(
-        (content) => {
-            seenIds.add(content.id)
-        }
-    )
+    ;[
+        ...userData.likedMovies,
+        ...userData.defaultWatchlist,
+        ...collectionItems,
+        ...userData.hiddenMovies,
+    ].forEach((content) => {
+        seenIds.add(content.id)
+    })
 
     return Array.from(seenIds)
 }
@@ -231,10 +247,13 @@ export function hasEnoughDataForRecommendations(
     userData: {
         likedMovies: Content[]
         defaultWatchlist: Content[]
+        collectionItems?: Content[]
     },
     minItems: number = 3
 ): boolean {
-    const totalItems = userData.likedMovies.length + userData.defaultWatchlist.length
+    const collectionItemsCount = userData.collectionItems?.length || 0
+    const totalItems =
+        userData.likedMovies.length + userData.defaultWatchlist.length + collectionItemsCount
     return totalItems >= minItems
 }
 
