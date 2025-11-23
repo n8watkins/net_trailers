@@ -12,6 +12,7 @@ import SubPageLayout from '../../components/layout/SubPageLayout'
 import { ClockIcon, CalendarIcon } from '@heroicons/react/24/outline'
 import { Cog6ToothIcon, ChevronDownIcon, TrashIcon } from '@heroicons/react/24/solid'
 import ContentCard from '../../components/common/ContentCard'
+import ContentGridSpacer from '../../components/common/ContentGridSpacer'
 import EmptyState from '../../components/common/EmptyState'
 import NetflixLoader from '../../components/common/NetflixLoader'
 import SearchBar from '../../components/common/SearchBar'
@@ -167,7 +168,7 @@ export default function WatchHistoryPage() {
                     <button
                         type="button"
                         onClick={() => {
-                            router.push('/settings/data')
+                            router.push('/settings/account')
                             setShowManageDropdown(false)
                         }}
                         className="w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-gray-800 transition-colors"
@@ -180,13 +181,16 @@ export default function WatchHistoryPage() {
         </div>
     )
 
+    // Don't show filters/search when tracking is disabled and no history exists
+    const showFiltersAndSearch = !(watchHistory.length === 0 && !trackWatchHistory)
+
     const headerActions = !isLoading ? (
         <div className="space-y-4">
             {/* Guest Mode Notification */}
             {isInitialized && isGuest && <GuestModeNotification align="left" />}
 
-            {/* Tracking Disabled Banner */}
-            {isInitialized && !trackWatchHistory && (
+            {/* Tracking Disabled Banner - only show when there IS history but tracking is off */}
+            {isInitialized && !trackWatchHistory && watchHistory.length > 0 && (
                 <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-amber-600/10 border border-amber-600/30">
                     <span className="text-amber-500 text-sm">
                         Watch history tracking is currently disabled. New content you view
@@ -201,38 +205,42 @@ export default function WatchHistoryPage() {
                 </div>
             )}
 
-            {/* Date Filter Pills */}
-            <div className="flex flex-wrap gap-2">
-                {[
-                    { value: 'all', label: 'All Time' },
-                    { value: 'today', label: 'Today' },
-                    { value: 'week', label: 'This Week' },
-                    { value: 'month', label: 'This Month' },
-                ].map((option) => (
-                    <button
-                        key={option.value}
-                        onClick={() =>
-                            setFilter(option.value as 'all' | 'today' | 'week' | 'month')
-                        }
-                        className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
-                            filter === option.value
-                                ? 'bg-purple-600 text-white shadow-lg scale-105'
-                                : 'bg-gray-800/80 text-gray-300 hover:bg-gray-700/80 hover:scale-105'
-                        }`}
-                    >
-                        {option.label}
-                    </button>
-                ))}
-            </div>
+            {/* Date Filter Pills - only show when there's content to filter */}
+            {showFiltersAndSearch && (
+                <div className="flex flex-wrap gap-2">
+                    {[
+                        { value: 'all', label: 'All Time' },
+                        { value: 'today', label: 'Today' },
+                        { value: 'week', label: 'This Week' },
+                        { value: 'month', label: 'This Month' },
+                    ].map((option) => (
+                        <button
+                            key={option.value}
+                            onClick={() =>
+                                setFilter(option.value as 'all' | 'today' | 'week' | 'month')
+                            }
+                            className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                                filter === option.value
+                                    ? 'bg-purple-600 text-white shadow-lg scale-105'
+                                    : 'bg-gray-800/80 text-gray-300 hover:bg-gray-700/80 hover:scale-105'
+                            }`}
+                        >
+                            {option.label}
+                        </button>
+                    ))}
+                </div>
+            )}
 
-            {/* Search Bar */}
-            <SearchBar
-                value={searchQuery}
-                onChange={setSearchQuery}
-                placeholder="Search history..."
-                focusColor="purple"
-                voiceInput
-            />
+            {/* Search Bar - only show when there's content to search */}
+            {showFiltersAndSearch && (
+                <SearchBar
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    placeholder="Search history..."
+                    focusColor="purple"
+                    voiceInput
+                />
+            )}
         </div>
     ) : undefined
 
@@ -248,6 +256,22 @@ export default function WatchHistoryPage() {
             {/* Content */}
             {isLoading ? (
                 <NetflixLoader message="Loading your watch history..." inline />
+            ) : watchHistory.length === 0 && !trackWatchHistory ? (
+                // Watch history tracking is disabled - show prominent centered message
+                <EmptyState
+                    emoji="🚫"
+                    title="Watch History Disabled"
+                    description="Watch history tracking is currently disabled. New content you view won't be added to your history."
+                    action={
+                        <Link
+                            href="/settings/preferences"
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-lg transition-colors"
+                        >
+                            <Cog6ToothIcon className="w-5 h-5" />
+                            Enable in Settings
+                        </Link>
+                    }
+                />
             ) : searchFilteredHistory.length === 0 ? (
                 <EmptyState
                     emoji="🎬"
@@ -287,14 +311,7 @@ export default function WatchHistoryPage() {
                                         </div>
                                     </div>
                                 ))}
-                                {/* Invisible spacers to maintain consistent gaps on partial rows */}
-                                {Array.from({ length: 8 }).map((_, i) => (
-                                    <div
-                                        key={`spacer-${i}`}
-                                        className="w-[120px] xs:w-[140px] sm:w-[160px] md:w-[180px] lg:w-[200px] xl:w-[220px] h-0"
-                                        aria-hidden="true"
-                                    />
-                                ))}
+                                <ContentGridSpacer />
                             </div>
                         </div>
                     ))}

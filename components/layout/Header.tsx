@@ -73,7 +73,7 @@ const subNavItems: NavItem[] = [
     },
     {
         label: 'Watch History',
-        href: '/watch-history',
+        href: '/history',
         icon: ClockIcon,
         iconSolid: ClockIconSolid,
     },
@@ -109,7 +109,7 @@ const subNavItems: NavItem[] = [
     },
     {
         label: 'Settings',
-        href: '/settings',
+        href: '/settings/preferences',
         icon: Cog6ToothIcon,
         iconSolid: Cog6ToothIconSolid,
     },
@@ -143,7 +143,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
     // Determine if we should show sub-navigation based on current path
     const subNavPaths = [
         '/profile',
-        '/watch-history',
+        '/history',
         '/rankings',
         '/collections',
         '/liked',
@@ -374,6 +374,19 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                             <li>
                                 <GenresDropdown />
                             </li>
+                            <li
+                                className={`headerLink cursor-pointer flex items-center space-x-1 select-none group relative overflow-visible ${
+                                    isRandomLoading ? 'cursor-wait' : ''
+                                }`}
+                                onClick={() => !isRandomLoading && handleRandomContent()}
+                                title="Jump to a random movie or TV show"
+                            >
+                                <span className="absolute -inset-3 opacity-0 group-hover:opacity-50 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-red-400 via-red-300/60 via-40% to-transparent rounded-md blur-lg transition-opacity duration-400" />
+                                <SparklesIcon
+                                    className={`h-5 w-5 relative z-10 ${isRandomLoading ? 'animate-pulse' : ''}`}
+                                />
+                                <span className="relative z-10">Surprise Me!</span>
+                            </li>
                             {process.env.NODE_ENV === 'development' &&
                                 debugSettings.showToastDebug && (
                                     <li>
@@ -419,20 +432,6 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                         >
                             <UsersIcon className="h-5 w-5 relative z-10" />
                             <span className="relative z-10">Community</span>
-                        </div>
-
-                        <div
-                            className={`headerLink cursor-pointer flex items-center space-x-1 select-none group relative overflow-visible ${
-                                isRandomLoading ? 'cursor-wait' : ''
-                            }`}
-                            onClick={() => !isRandomLoading && handleRandomContent()}
-                            title="Jump to a random movie or TV show"
-                        >
-                            <span className="absolute -inset-3 opacity-0 group-hover:opacity-50 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-red-400 via-red-300/60 via-40% to-transparent rounded-md blur-lg transition-opacity duration-400" />
-                            <SparklesIcon
-                                className={`h-5 w-5 relative z-10 ${isRandomLoading ? 'animate-pulse' : ''}`}
-                            />
-                            <span className="relative z-10">Surprise Me!</span>
                         </div>
 
                         {/* Child Safety Indicator - After Community */}
