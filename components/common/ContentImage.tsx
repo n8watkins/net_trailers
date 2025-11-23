@@ -73,6 +73,9 @@ function ContentImage({
                         setAlternateError(true)
                     }
                 })
+                .finally(() => {
+                    setFetchingAlternate(false)
+                })
 
             return () => {
                 abortController.abort()

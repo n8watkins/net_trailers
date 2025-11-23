@@ -84,6 +84,9 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                         setImageLoaded(true) // Show placeholder
                     }
                 })
+                .finally(() => {
+                    setFetchingAlternate(false)
+                })
 
             return () => {
                 abortController.abort()

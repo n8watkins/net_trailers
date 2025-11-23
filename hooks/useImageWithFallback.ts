@@ -58,6 +58,9 @@ export function useImageWithFallback(content: Content | undefined) {
                         setAlternateError(true)
                     }
                 })
+                .finally(() => {
+                    setFetchingAlternate(false)
+                })
 
             return () => {
                 abortController.abort()
