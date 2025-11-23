@@ -5,6 +5,7 @@ import { useRouter, useSearchParams, useParams } from 'next/navigation'
 import Header from '../../../../components/layout/Header'
 import Modal from '../../../../components/modals/Modal'
 import ContentCard from '../../../../components/common/ContentCard'
+import ContentGridSpacer from '../../../../components/common/ContentGridSpacer'
 import NetflixLoader from '../../../../components/common/NetflixLoader'
 import { Content } from '../../../../typings'
 import { useSessionData } from '../../../../hooks/useSessionData'
@@ -250,7 +251,7 @@ function GenrePageContent() {
         <div className="relative min-h-screen bg-gradient-to-b">
             <Header />
 
-            <main className="relative pl-2 sm:pl-4 md:pl-8 lg:pl-16 pb-8 sm:pb-12 md:pb-16">
+            <main className="relative px-2 sm:px-4 md:px-8 lg:px-16 pb-8 sm:pb-12 md:pb-16">
                 <div className="flex flex-col space-y-4 sm:space-y-6 md:space-y-10 lg:space-y-24 py-8 sm:py-12 md:py-16 lg:py-20">
                     {/* Header Section */}
                     <div className="space-y-3">
@@ -272,7 +273,7 @@ function GenrePageContent() {
                     {content.length > 0 ? (
                         <div className="space-y-8">
                             {/* Flex Layout */}
-                            <div className="flex flex-wrap gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10 md:gap-x-8 md:gap-y-12 overflow-visible">
+                            <div className="flex flex-wrap justify-between gap-x-6 sm:gap-x-8 md:gap-x-10 lg:gap-x-12 gap-y-3 sm:gap-y-4 md:gap-y-5 [&>*]:flex-none">
                                 {contentToRender.map((item) => (
                                     <div
                                         key={`${item.media_type || 'unknown'}-${item.id}`}
@@ -281,6 +282,7 @@ function GenrePageContent() {
                                         <ContentCard content={item} />
                                     </div>
                                 ))}
+                                <ContentGridSpacer />
                             </div>
 
                             {/* Loading indicator for pagination */}

@@ -32,6 +32,10 @@ interface SubPageLayoutProps {
     children: ReactNode
     /** Additional class names for the main content area */
     contentClassName?: string
+    /** Additional class names for the header section (to match content width) */
+    headerClassName?: string
+    /** Show a border below the header section */
+    headerBorder?: boolean
 }
 
 export default function SubPageLayout({
@@ -43,6 +47,8 @@ export default function SubPageLayout({
     headerActions,
     children,
     contentClassName = '',
+    headerClassName = '',
+    headerBorder = false,
 }: SubPageLayoutProps) {
     const { modal } = useModalStore()
     const showModal = modal.isOpen
@@ -58,7 +64,9 @@ export default function SubPageLayout({
                 <div className="max-w-[1800px] mx-auto flex flex-col space-y-6 py-8">
                     {/* Page Header */}
                     {(title || icon || description || headerActions || titleActions) && (
-                        <div className="space-y-4">
+                        <div
+                            className={`space-y-4 ${headerBorder ? 'pb-6 border-b border-gray-700' : ''} ${headerClassName}`}
+                        >
                             {/* Title Section with Actions */}
                             {(title || icon || titleActions) && (
                                 <div className="flex items-center justify-between">

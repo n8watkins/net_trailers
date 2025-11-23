@@ -12,6 +12,7 @@ import {
 import { isMovie, isTVShow } from '../../typings'
 import { getTitle } from '../../typings'
 import ContentCard from '../../components/common/ContentCard'
+import ContentGridSpacer from '../../components/common/ContentGridSpacer'
 import EmptyState from '../../components/common/EmptyState'
 import NetflixLoader from '../../components/common/NetflixLoader'
 import SearchBar from '../../components/common/SearchBar'
@@ -38,6 +39,10 @@ const Liked = () => {
         timestamp: Date.now(),
         content: item,
     }))
+
+    // Calculate counts by media type
+    const movieCount = likedContent.filter((item) => item.content && isMovie(item.content)).length
+    const tvCount = likedContent.filter((item) => item.content && isTVShow(item.content)).length
 
     // Apply search and media type filters
     const filteredContent = likedContent.filter(
@@ -129,9 +134,9 @@ const Liked = () => {
             {/* Media Type Filter Pills */}
             <div className="flex flex-wrap gap-2">
                 {[
-                    { value: 'all', label: 'All' },
-                    { value: 'movies', label: 'Movies' },
-                    { value: 'tv', label: 'TV Shows' },
+                    { value: 'all', label: 'All', count: likedContent.length },
+                    { value: 'movies', label: 'Movies', count: movieCount },
+                    { value: 'tv', label: 'TV Shows', count: tvCount },
                 ].map((option) => (
                     <button
                         key={option.value}
@@ -143,6 +148,7 @@ const Liked = () => {
                         }`}
                     >
                         {option.label}
+                        {option.count > 0 && ` (${option.count})`}
                     </button>
                 ))}
             </div>
@@ -185,7 +191,7 @@ const Liked = () => {
                     }
                 />
             ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-8">
+                <div className="flex flex-wrap justify-between gap-x-6 sm:gap-x-8 md:gap-x-10 lg:gap-x-12 gap-y-3 sm:gap-y-4 md:gap-y-5 [&>*]:flex-none">
                     {filteredContent.map(
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         (item: any) => (
@@ -194,6 +200,7 @@ const Liked = () => {
                             </div>
                         )
                     )}
+                    <ContentGridSpacer />
                 </div>
             )}
         </SubPageLayout>

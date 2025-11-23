@@ -12,6 +12,7 @@ import { doc, getDoc } from 'firebase/firestore'
 import { db } from '../../../../../firebase'
 import SubPageLayout from '../../../../../components/layout/SubPageLayout'
 import ContentCard from '../../../../../components/common/ContentCard'
+import ContentGridSpacer from '../../../../../components/common/ContentGridSpacer'
 import NetflixLoader from '../../../../../components/common/NetflixLoader'
 import { RectangleStackIcon, UserIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
 import type { UserList } from '../../../../../types/collections'
@@ -163,10 +164,11 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
 
             {/* Collection Items */}
             {collection.items && collection.items.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+                <div className="flex flex-wrap justify-between gap-x-6 sm:gap-x-8 md:gap-x-10 lg:gap-x-12 gap-y-3 sm:gap-y-4 md:gap-y-5 [&>*]:flex-none">
                     {collection.items.map((item) => (
                         <ContentCard key={item.id} content={item} />
                     ))}
+                    <ContentGridSpacer />
                 </div>
             ) : (
                 <div className="text-center py-16 bg-zinc-900 rounded-lg border border-zinc-800">

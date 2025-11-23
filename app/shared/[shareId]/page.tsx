@@ -13,6 +13,7 @@ import {
 import { SharedCollectionData } from '../../../types/sharing'
 import { Content } from '../../../typings'
 import ContentCard from '../../../components/common/ContentCard'
+import ContentGridSpacer from '../../../components/common/ContentGridSpacer'
 import { useToast } from '../../../hooks/useToast'
 import { useSessionStore } from '../../../stores/sessionStore'
 import { getAuthHeaders } from '../../../utils/auth'
@@ -304,10 +305,11 @@ export default function SharedCollectionViewPage() {
                         <p className="text-gray-400">This collection is empty</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                    <div className="flex flex-wrap justify-between gap-x-6 sm:gap-x-8 md:gap-x-10 lg:gap-x-12 gap-y-3 sm:gap-y-4 md:gap-y-5 [&>*]:flex-none">
                         {collectionItems.map((item) => (
                             <ContentCard key={item.id} content={item} />
                         ))}
+                        <ContentGridSpacer />
                     </div>
                 )}
             </div>

@@ -18,6 +18,7 @@ import { PencilIcon } from '@heroicons/react/24/outline'
 import { isMovie, isTVShow, Content } from '../../typings'
 import { getTitle } from '../../typings'
 import ContentCard from '../../components/common/ContentCard'
+import ContentGridSpacer from '../../components/common/ContentGridSpacer'
 import EmptyState from '../../components/common/EmptyState'
 import NetflixLoader from '../../components/common/NetflixLoader'
 import SearchBar from '../../components/common/SearchBar'
@@ -637,10 +638,12 @@ const Collections = () => {
                                         {selectedList?.name || 'Collection'}
                                     </h2>
                                 </div>
-                                {/* Item Count */}
-                                <span className="text-lg sm:text-xl text-gray-400 font-medium sm:pb-0.5">
-                                    {getListCount(selectedListId)} items
-                                </span>
+                                {/* Item Count - only show when there are items */}
+                                {getListCount(selectedListId) > 0 && (
+                                    <span className="text-lg sm:text-xl text-gray-400 font-medium sm:pb-0.5">
+                                        {getListCount(selectedListId)} items
+                                    </span>
+                                )}
                                 {/* Edit Button - Only show for editable collections (exclude Watch Later) */}
                                 {selectedList &&
                                     selectedList.id !== 'default-watchlist' &&
@@ -687,9 +690,7 @@ const Collections = () => {
                 ) : allDisplayContent.length === 0 ? (
                     <EmptyState
                         emoji="🍿"
-                        title={`No content in ${
-                            allLists.find((l) => l.id === selectedListId)?.name || 'this list'
-                        } yet`}
+                        title="No items in this collection"
                         description="Start adding movies and TV shows to your collections!"
                     />
                 ) : (
@@ -709,7 +710,7 @@ const Collections = () => {
                             // No need to separate by media type - ContentCard shows the type
                             return (
                                 <>
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-8">
+                                    <div className="flex flex-wrap justify-between gap-x-6 sm:gap-x-8 md:gap-x-10 lg:gap-x-12 gap-y-3 sm:gap-y-4 md:gap-y-5 [&>*]:flex-none">
                                         {watchlistContent.map(
                                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                             (item: any, index: number) => (
@@ -720,6 +721,7 @@ const Collections = () => {
                                                 </div>
                                             )
                                         )}
+                                        <ContentGridSpacer />
                                     </div>
 
                                     {/* Infinite scroll elements - matching genre page style */}
