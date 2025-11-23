@@ -185,6 +185,13 @@ export const UNIFIED_GENRES: UnifiedGenre[] = [
         tvIds: [37], // Western
         childSafe: true,
     },
+    {
+        id: 'talk',
+        name: 'Talk',
+        movieIds: [99], // Documentary (closest movie equivalent - interview/discussion format)
+        tvIds: [10767], // Talk
+        childSafe: true,
+    },
 ]
 
 /**

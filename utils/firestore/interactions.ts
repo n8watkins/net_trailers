@@ -529,9 +529,17 @@ export function createInteractionFromContent(
         })
     }
 
+    // Determine media type - use content.media_type if available, otherwise infer from content structure
+    // Movies have 'title', TV shows have 'name'
+    let mediaType: 'movie' | 'tv' = content.media_type as 'movie' | 'tv'
+    if (!mediaType) {
+        // Infer from content structure
+        mediaType = 'title' in content && content.title ? 'movie' : 'tv'
+    }
+
     return {
         contentId: content.id,
-        mediaType: content.media_type,
+        mediaType,
         interactionType,
         genreIds: content.genre_ids || [],
         ...filteredOptions,

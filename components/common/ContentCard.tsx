@@ -182,7 +182,7 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                 return 'w-[120px] h-[180px] sm:w-[140px] sm:h-[210px] md:w-[160px] md:h-[240px] lg:w-[180px] lg:h-[270px]'
             case 'normal':
             default:
-                return 'w-[160px] h-[240px] sm:w-[180px] sm:h-[270px] md:w-[200px] md:h-[300px] lg:w-[220px] lg:h-[330px] xl:w-[260px] xl:h-[390px]'
+                return 'w-[120px] h-[180px] xs:w-[140px] xs:h-[210px] sm:w-[160px] sm:h-[240px] md:w-[180px] md:h-[270px] lg:w-[200px] lg:h-[300px] xl:w-[220px] xl:h-[330px]'
         }
     }
 
@@ -195,7 +195,7 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                 return 'w-[120px] sm:w-[140px] md:w-[160px] lg:w-[180px]'
             case 'normal':
             default:
-                return 'w-[160px] sm:w-[180px] md:w-[200px] lg:w-[220px] xl:w-[260px]'
+                return 'w-[120px] xs:w-[140px] sm:w-[160px] md:w-[180px] lg:w-[200px] xl:w-[220px]'
         }
     }
 
@@ -480,16 +480,16 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
             {/* Star Rating - Top Left (Outside scaling container) */}
             {content && content.vote_average > 0 && imageLoaded && (
                 <div
-                    className={`absolute top-2 left-2 bg-black/80 backdrop-blur-sm rounded-full px-2 py-1 md:px-3 md:py-1.5 z-20
+                    className={`absolute top-1 left-1 sm:top-2 sm:left-2 bg-black/80 backdrop-blur-sm rounded-full px-1.5 py-0.5 sm:px-2 sm:py-1 md:px-3 md:py-1.5 z-20
                           opacity-100 transition-all duration-300 ease-out ${
                               isCardHovered
                                   ? '-translate-x-3 -translate-y-4'
                                   : 'translate-x-0 translate-y-0'
                           }`}
                 >
-                    <div className="flex items-center gap-1">
-                        <span className="text-yellow-400 text-sm">⭐</span>
-                        <span className="text-white text-xs font-medium">
+                    <div className="flex items-center gap-0.5 sm:gap-1">
+                        <span className="text-yellow-400 text-[10px] sm:text-sm">⭐</span>
+                        <span className="text-white text-[10px] sm:text-xs font-medium">
                             {content.vote_average.toFixed(1)}
                         </span>
                     </div>
@@ -499,7 +499,7 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
             {/* Media Type Pill - Top Right (Outside scaling container) */}
             {content && imageLoaded && (
                 <div
-                    className={`absolute top-3 right-3 z-20
+                    className={`absolute top-1 right-1 sm:top-3 sm:right-3 z-20
                           opacity-100 transition-all duration-300 ease-out ${
                               isCardHovered
                                   ? 'translate-x-3 -translate-y-4'
@@ -507,13 +507,22 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
                           }`}
                 >
                     <span
-                        className={`px-1.5 py-0.5 md:px-3 md:py-1 text-xs md:text-base rounded-full backdrop-blur-sm ${
+                        className={`px-1 py-0.5 sm:px-1.5 md:px-3 md:py-1 text-[10px] sm:text-xs md:text-base rounded-full backdrop-blur-sm ${
                             isMovie(content)
                                 ? 'bg-gradient-to-br from-white to-gray-100 text-black font-bold border border-black'
                                 : 'bg-gradient-to-br from-black to-gray-900 text-white font-medium border border-white'
                         }`}
                     >
-                        {size === 'compact' && !isMovie(content) ? 'TV' : getContentType(content)}
+                        {!isMovie(content) ? (
+                            <span>
+                                <span className="sm:hidden">TV</span>
+                                <span className="hidden sm:inline">
+                                    {size === 'compact' ? 'TV' : getContentType(content)}
+                                </span>
+                            </span>
+                        ) : (
+                            getContentType(content)
+                        )}
                     </span>
                 </div>
             )}

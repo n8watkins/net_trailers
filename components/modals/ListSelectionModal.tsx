@@ -284,16 +284,25 @@ function ListSelectionModal() {
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
             {/* Modal */}
-            <div className="relative bg-[#141414] rounded-lg shadow-2xl max-w-md w-full mx-4 max-h-[90vh] overflow-hidden">
+            <div className="relative bg-[#141414] rounded-lg shadow-2xl max-w-xl w-full mx-4 max-h-[90vh] overflow-hidden">
                 <ListModalHeader isManagementMode={isManagementMode} onClose={onClose} />
 
                 {/* Content */}
-                <div className="p-6 max-h-[calc(90vh-100px)] overflow-y-auto">
+                <div className="p-6 max-h-[calc(90vh-100px)] overflow-y-auto modal-scrollbar-blue">
                     {!isManagementMode && targetContent && (
                         <ContentInfoCard targetContent={targetContent} />
                     )}
 
                     {isManagementMode && hasNoCustomLists && <EmptyStateMessage />}
+
+                    {/* New Collection button at the top */}
+                    {!isManagementMode && (
+                        <CreateListSection
+                            isGuest={isGuest}
+                            onSignIn={handleSignIn}
+                            onNewCollection={handleNewCollection}
+                        />
+                    )}
 
                     <ListItemsContainer
                         allLists={allLists}
@@ -325,11 +334,15 @@ function ListSelectionModal() {
                         handleDeleteList={handleDeleteList}
                     />
 
-                    <CreateListSection
-                        isGuest={isGuest}
-                        onSignIn={handleSignIn}
-                        onNewCollection={handleNewCollection}
-                    />
+                    {/* Show CreateListSection at bottom only in management mode */}
+                    {isManagementMode && (
+                        <CreateListSection
+                            isGuest={isGuest}
+                            onSignIn={handleSignIn}
+                            onNewCollection={handleNewCollection}
+                            position="bottom"
+                        />
+                    )}
                 </div>
             </div>
 

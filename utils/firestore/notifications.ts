@@ -85,6 +85,9 @@ export async function createNotification(
         if (request.contentId !== undefined) {
             notification.contentId = request.contentId
         }
+        if (request.mediaType !== undefined) {
+            notification.mediaType = request.mediaType
+        }
         if (request.collectionId !== undefined) {
             notification.collectionId = request.collectionId
         }

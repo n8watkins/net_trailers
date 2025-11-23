@@ -92,12 +92,12 @@ const Hidden = () => {
             <button
                 type="button"
                 onClick={() => setShowManageDropdown(!showManageDropdown)}
-                className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 text-gray-400 hover:text-white transition-all duration-200 cursor-pointer"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-white transition-colors cursor-pointer"
             >
-                <Cog6ToothIcon className="w-5 h-5 pointer-events-none" />
-                <span className="font-medium pointer-events-none">Manage</span>
+                <Cog6ToothIcon className="w-5 h-5 flex-shrink-0" />
+                <span className="font-medium">Manage</span>
                 <ChevronDownIcon
-                    className={`w-4 h-4 transition-transform pointer-events-none ${
+                    className={`w-4 h-4 flex-shrink-0 transition-transform ${
                         showManageDropdown ? 'rotate-180' : ''
                     }`}
                 />
@@ -105,14 +105,14 @@ const Hidden = () => {
 
             {/* Dropdown Menu */}
             {showManageDropdown && (
-                <div className="absolute top-full mt-2 right-0 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-xl z-50 min-w-[200px] overflow-hidden animate-fade-down">
+                <div className="absolute top-full mt-2 right-0 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-xl z-50 min-w-[200px] overflow-hidden">
                     <button
                         type="button"
                         onClick={handleExportCSV}
-                        className="w-full flex items-center space-x-3 px-4 py-3 text-white hover:bg-gray-800 transition-colors text-left cursor-pointer"
+                        className="w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-gray-800 transition-colors"
                     >
-                        <ArrowDownTrayIcon className="w-5 h-5 text-gray-400 pointer-events-none" />
-                        <span className="pointer-events-none">Export to CSV</span>
+                        <ArrowDownTrayIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                        <span>Export to CSV</span>
                     </button>
                 </div>
             )}

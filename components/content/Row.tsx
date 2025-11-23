@@ -501,7 +501,7 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection }: P
 
                     {/* Loading indicator */}
                     {isLoading && apiEndpoint && (
-                        <div className="flex-shrink-0 flex items-center justify-center w-[160px] h-[240px] sm:w-[180px] sm:h-[270px] md:w-[200px] md:h-[300px] lg:w-[220px] lg:h-[330px] xl:w-[260px] xl:h-[390px]">
+                        <div className="flex-shrink-0 flex items-center justify-center w-[120px] h-[180px] xs:w-[140px] xs:h-[210px] sm:w-[160px] sm:h-[240px] md:w-[180px] md:h-[270px] lg:w-[200px] lg:h-[300px] xl:w-[220px] xl:h-[330px]">
                             <div className="text-center">
                                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-2"></div>
                                 <div className="text-xs text-gray-400">Loading more...</div>
@@ -511,7 +511,7 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection }: P
 
                     {/* End indicator */}
                     {!hasMore && apiEndpoint && !isLoading && (
-                        <div className="flex-shrink-0 flex items-center justify-center w-[160px] h-[240px] sm:w-[180px] sm:h-[270px] md:w-[200px] md:h-[300px] lg:w-[220px] lg:h-[330px] xl:w-[260px] xl:h-[390px] text-gray-500 text-sm">
+                        <div className="flex-shrink-0 flex items-center justify-center w-[120px] h-[180px] xs:w-[140px] xs:h-[210px] sm:w-[160px] sm:h-[240px] md:w-[180px] md:h-[270px] lg:w-[200px] lg:h-[300px] xl:w-[220px] xl:h-[330px] text-gray-500 text-sm">
                             <div className="text-center">
                                 <div className="mb-2">✓</div>
                                 <div>All loaded</div>

@@ -22,6 +22,7 @@ export interface SmartSearchState {
     mode: SmartSearchMode
     results: Content[]
     removedIds: Set<number> // Track removed content IDs
+    newlyAddedIds: Set<number> // Track newly added results for staggered animation
 
     // Metadata from Gemini
     generatedName: string // For row/watchlist creation
@@ -50,6 +51,7 @@ export interface SmartSearchActions {
     setResults: (results: Content[], metadata: SmartSearchMetadata) => void
     addResults: (results: Content[]) => void // For "Ask for More"
     removeContent: (tmdbId: number) => void
+    clearNewlyAddedIds: () => void // Clear animation tracking
 
     // Settings
     setGeneratedName: (name: string) => void

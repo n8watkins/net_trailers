@@ -89,8 +89,6 @@ export default function ListItem({
                 isDefaultList={isDefaultList}
                 isInList={isInList}
                 onToggle={onToggle}
-                onEdit={onEdit}
-                onDelete={onDelete}
                 hexToRgba={hexToRgba}
                 getListIcon={getListIcon}
             />

@@ -39,6 +39,9 @@ export interface Notification {
     /** Related TMDB content ID (if applicable) */
     contentId?: number
 
+    /** Media type for content (movie or tv) */
+    mediaType?: 'movie' | 'tv'
+
     /** Related collection ID (if applicable) */
     collectionId?: string
 
@@ -69,6 +72,7 @@ export interface CreateNotificationRequest {
     title: string
     message: string
     contentId?: number
+    mediaType?: 'movie' | 'tv'
     collectionId?: string
     shareId?: string
     actionUrl?: string

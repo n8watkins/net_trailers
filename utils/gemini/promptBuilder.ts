@@ -30,7 +30,7 @@ Return JSON in this exact format:
 {
   "movies": [{"title": "Movie Title", "year": 2020}],
   "rowName": "Creative Short Name (1-4 words)",
-  "mediaType": "movie" | "tv" | "both",
+  "mediaType": "movie" | "tv",
   "genreFallback": [genre_id1, genre_id2],
   "emoji": "🎬",
   "color": "#ef4444"
@@ -51,7 +51,7 @@ Return JSON in this exact format:
 {
   "movies": [{"title": "Movie Title", "year": 2020}],
   "rowName": "Creative Row Name (1-4 words, use slang/memes)",
-  "mediaType": "movie" | "tv" | "both",
+  "mediaType": "movie" | "tv",
   "genreFallback": [genre_id1, genre_id2],
   "emoji": "🎬",
   "color": "#ef4444"
@@ -72,7 +72,7 @@ Return JSON in this exact format:
 {
   "movies": [{"title": "Movie Title", "year": 2020}],
   "rowName": "Watchlist Name (descriptive, 2-4 words)",
-  "mediaType": "movie" | "tv" | "both",
+  "mediaType": "movie" | "tv",
   "genreFallback": [],
   "emoji": "📺",
   "color": "#3b82f6"
@@ -130,7 +130,7 @@ Return JSON in this exact format:
 {
   "movies": [{"title": "Movie Title", "year": 2020}],
   "rowName": "Keep same theme as before",
-  "mediaType": "movie" | "tv" | "both",
+  "mediaType": "movie" | "tv",
   "genreFallback": [genre_id1, genre_id2],
   "emoji": "🎬",
   "color": "#ef4444"
@@ -149,7 +149,7 @@ Return JSON in this exact format:
 {
   "movies": [{"title": "Movie Title", "year": 2020}],
   "rowName": "Keep same name",
-  "mediaType": "movie" | "tv" | "both",
+  "mediaType": "movie" | "tv",
   "genreFallback": [genre_id1, genre_id2],
   "emoji": "🎬",
   "color": "#ef4444"
@@ -168,7 +168,7 @@ Return JSON in this exact format:
 {
   "movies": [{"title": "Movie Title", "year": 2020}],
   "rowName": "Keep same name",
-  "mediaType": "movie" | "tv" | "both",
+  "mediaType": "movie" | "tv",
   "genreFallback": [],
   "emoji": "📺",
   "color": "#3b82f6"

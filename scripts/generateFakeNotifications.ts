@@ -3,9 +3,12 @@
  *
  * This script creates fake trending notifications for testing purposes.
  * Run with: npx tsx scripts/generateFakeNotifications.ts <userId>
+ *
+ * Options:
+ *   --clear    Clear existing notifications before creating new ones
  */
 
-import { createNotification } from '../utils/firestore/notifications'
+import { createNotification, deleteAllNotifications } from '../utils/firestore/notifications'
 
 // Sample trending content data
 const fakeTrendingItems = [
@@ -41,8 +44,19 @@ const fakeTrendingItems = [
     },
 ]
 
-async function generateFakeNotifications(userId: string) {
+async function generateFakeNotifications(userId: string, clearFirst: boolean = false) {
     console.log(`🎬 Generating fake trending notifications for user: ${userId}\n`)
+
+    // Clear existing notifications if requested
+    if (clearFirst) {
+        console.log('🗑️  Clearing existing notifications...')
+        try {
+            await deleteAllNotifications(userId)
+            console.log('✅ Cleared existing notifications\n')
+        } catch (error) {
+            console.error('❌ Failed to clear notifications:', error)
+        }
+    }
 
     let successCount = 0
     let errorCount = 0
@@ -58,7 +72,7 @@ async function generateFakeNotifications(userId: string) {
                 title: title, // Just the content title, no prefix
                 message: `${title} (${mediaType}) just entered the trending list!`,
                 contentId: content.id,
-                actionUrl: `/`,
+                mediaType: content.media_type, // Required for clicking to open content modal
                 imageUrl: posterPath ? `https://image.tmdb.org/t/p/w500${posterPath}` : undefined,
                 expiresIn: 7, // 7 days
             })
@@ -77,16 +91,20 @@ async function generateFakeNotifications(userId: string) {
     console.log(`\n🔔 Check your notification bell in the app!`)
 }
 
-// Get userId from command line args
-const userId = process.argv[2]
+// Get userId and options from command line args
+const args = process.argv.slice(2)
+const clearFlag = args.includes('--clear')
+const userId = args.find((arg) => !arg.startsWith('--'))
 
 if (!userId) {
     console.error('❌ Error: Please provide a userId')
-    console.error('Usage: npx tsx scripts/generateFakeNotifications.ts <userId>')
+    console.error('Usage: npx tsx scripts/generateFakeNotifications.ts <userId> [--clear]')
+    console.error('Options:')
+    console.error('  --clear    Clear existing notifications before creating new ones')
     process.exit(1)
 }
 
-generateFakeNotifications(userId)
+generateFakeNotifications(userId, clearFlag)
     .then(() => {
         console.log('\n✨ Done!')
         process.exit(0)

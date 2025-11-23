@@ -147,11 +147,12 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
     return (
         <>
             {/* AI-Powered Smart Search Overlay - Position varies by variant */}
+            {/* Mobile: pushed lower to avoid hero text, Desktop: centered */}
             <div
                 className={`absolute inset-0 flex justify-center pointer-events-none z-20 ${
                     variant === 'compact'
                         ? 'items-start pt-64 sm:pt-72 md:pt-80 lg:pt-96 xl:pt-[26rem]'
-                        : 'items-center'
+                        : 'items-end pb-32 sm:pb-36 md:items-center md:pb-0'
                 }`}
             >
                 <div className="w-full max-w-4xl px-4 sm:px-6 md:px-8 pointer-events-auto">
@@ -178,9 +179,8 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
                             sizes="100vw"
                             style={{
                                 objectFit: 'cover',
-                                objectPosition: 'center center',
                             }}
-                            className={`select-none transition-opacity duration-300 ${
+                            className={`select-none transition-opacity duration-300 object-[10%_center] sm:object-[15%_center] md:object-center ${
                                 isTransitioning ? 'opacity-0' : 'opacity-100'
                             }`}
                             onLoad={() => {
@@ -209,11 +209,12 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
             </div>
 
             {/* movie info background gradient */}
+            {/* Mobile: hero text pushed higher to make room for smart search below */}
             <div
                 className={`absolute inset-0 flex flex-col px-4 sm:px-6 md:px-10 lg:px-16 xl:px-20 ${
                     variant === 'compact'
                         ? 'justify-start pt-32 sm:pt-36 md:pt-40 lg:pt-44 xl:pt-48 bg-gradient-to-r from-[#0a0a0a]/90 to-transparent'
-                        : 'justify-center bg-gradient-to-r from-[#0a0a0a]/90 to-transparent'
+                        : 'justify-start pt-28 sm:pt-32 md:justify-center md:pt-0 bg-gradient-to-r from-[#0a0a0a]/90 to-transparent'
                 }`}
             >
                 <div

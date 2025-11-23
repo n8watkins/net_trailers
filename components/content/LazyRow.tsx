@@ -198,9 +198,9 @@ function StreamingRow({ title, content, hideTitles: _hideTitles = false, batchSi
                                 // Placeholder while checking for trailer
                                 <div
                                     className="relative cursor-pointer transition-all duration-300 ease-out
-                                               w-[160px] h-[240px] sm:w-[180px] sm:h-[270px]
-                                               md:w-[200px] md:h-[300px] lg:w-[220px] lg:h-[330px]
-                                               xl:w-[260px] xl:h-[390px]
+                                               w-[120px] h-[180px] xs:w-[140px] xs:h-[210px] sm:w-[160px] sm:h-[240px]
+                                               md:w-[180px] md:h-[270px] lg:w-[200px] lg:h-[300px]
+                                               xl:w-[220px] xl:h-[330px]
                                                bg-gray-800 rounded-md flex items-center justify-center"
                                 >
                                     <div className="text-center">
@@ -221,9 +221,9 @@ function StreamingRow({ title, content, hideTitles: _hideTitles = false, batchSi
                     {isProcessing && currentIndex < content.length && (
                         <div
                             className="flex-shrink-0 flex items-center justify-center
-                                       w-[160px] h-[240px] sm:w-[180px] sm:h-[270px]
-                                       md:w-[200px] md:h-[300px] lg:w-[220px] lg:h-[330px]
-                                       xl:w-[260px] xl:h-[390px]"
+                                       w-[120px] h-[180px] xs:w-[140px] xs:h-[210px] sm:w-[160px] sm:h-[240px]
+                                       md:w-[180px] md:h-[270px] lg:w-[200px] lg:h-[300px]
+                                       xl:w-[220px] xl:h-[330px]"
                         >
                             <div className="text-center">
                                 <div className="animate-pulse rounded-full h-8 w-8 bg-red-600 mx-auto mb-2"></div>
@@ -236,9 +236,9 @@ function StreamingRow({ title, content, hideTitles: _hideTitles = false, batchSi
                     {currentIndex >= content.length && !isProcessing && (
                         <div
                             className="flex-shrink-0 flex items-center justify-center
-                                       w-[160px] h-[240px] sm:w-[180px] sm:h-[270px]
-                                       md:w-[200px] md:h-[300px] lg:w-[220px] lg:h-[330px]
-                                       xl:w-[260px] xl:h-[390px]
+                                       w-[120px] h-[180px] xs:w-[140px] xs:h-[210px] sm:w-[160px] sm:h-[240px]
+                                       md:w-[180px] md:h-[270px] lg:w-[200px] lg:h-[300px]
+                                       xl:w-[220px] xl:h-[330px]
                                        text-gray-400 text-sm"
                         >
                             <div className="text-center">

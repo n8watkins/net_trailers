@@ -43,6 +43,13 @@ export function useKeyboardShortcuts({
 
     const handleKeyDown = useCallback(
         (event: KeyboardEvent) => {
+            // Disable keyboard shortcuts on mobile/tablet devices (except ESC for accessibility)
+            const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+            const isSmallScreen = window.innerWidth < 1024 // lg breakpoint
+            if ((isTouchDevice || isSmallScreen) && event.key !== 'Escape') {
+                return
+            }
+
             // Don't handle shortcuts if typing in input fields
             const target = event.target as HTMLElement
             const isTyping =

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { BellIcon, CheckIcon } from '@heroicons/react/24/outline'
 import { useNotificationStore } from '../../stores/notificationStore'
 import { useSessionStore } from '../../stores/sessionStore'
@@ -19,13 +19,23 @@ export default function NotificationsPageClient() {
     const userId = getUserId()
     const isGuest = sessionType === 'guest'
     const {
-        notifications,
+        notifications: rawNotifications,
         unreadCount,
         isLoading: isLoadingNotifications,
         subscribe,
         unsubscribeFromNotifications,
         markAllNotificationsAsRead,
     } = useNotificationStore()
+
+    // Deduplicate notifications by ID (in case of duplicates in Firestore)
+    const notifications = useMemo(() => {
+        const seen = new Set<string>()
+        return rawNotifications.filter((n) => {
+            if (seen.has(n.id)) return false
+            seen.add(n.id)
+            return true
+        })
+    }, [rawNotifications])
 
     // Show loading state while initializing or loading notifications
     const isLoading = !isInitialized || isLoadingNotifications

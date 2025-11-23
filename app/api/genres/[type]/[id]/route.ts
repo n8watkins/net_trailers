@@ -48,8 +48,120 @@ export async function GET(
         return NextResponse.json({ error: 'Invalid page number' }, { status: 400 })
     }
 
-    if (type !== 'movie' && type !== 'tv') {
-        return NextResponse.json({ error: 'Type must be either "movie" or "tv"' }, { status: 400 })
+    if (type !== 'movie' && type !== 'tv' && type !== 'both') {
+        return NextResponse.json(
+            { error: 'Type must be "movie", "tv", or "both"' },
+            { status: 400 }
+        )
+    }
+
+    // For "both" type, fetch movies and TV shows separately and combine
+    const tvGenres = searchParams.get('tvGenres')
+    if (type === 'both') {
+        const API_KEY = process.env.TMDB_API_KEY
+        if (!API_KEY) {
+            apiError('TMDB_API_KEY is not configured')
+            return NextResponse.json({ error: 'API configuration error' }, { status: 500 })
+        }
+
+        try {
+            // Build base query params (shared between movie and TV)
+            const baseParams: Record<string, string> = {
+                api_key: API_KEY,
+                page: pageNum.toString(),
+                sort_by: sort_by,
+            }
+            if (vote_average_gte) baseParams['vote_average.gte'] = vote_average_gte
+            if (vote_average_lte) baseParams['vote_average.lte'] = vote_average_lte
+            if (vote_count_gte) baseParams['vote_count.gte'] = vote_count_gte
+
+            // Movie query
+            const movieParams = new URLSearchParams({
+                ...baseParams,
+                with_genres: genreIds.join(','),
+            })
+            if (childSafeMode) {
+                movieParams.append('include_adult', 'false')
+                movieParams.append('certification_country', 'US')
+                movieParams.append('certification.lte', 'PG-13')
+                movieParams.append('vote_count.gte', '100')
+            }
+            if (primary_release_year)
+                movieParams.append('primary_release_year', primary_release_year)
+
+            // TV query - use tvGenres if provided, otherwise use same IDs
+            const tvGenreIds = tvGenres
+                ? tvGenres
+                      .split(',')
+                      .map((g) => g.trim())
+                      .filter((g) => g)
+                : genreIds.map(String)
+            const tvParams = new URLSearchParams({
+                ...baseParams,
+                with_genres: tvGenreIds.join(','),
+            })
+            if (year) tvParams.append('first_air_date_year', year)
+
+            // Fetch both in parallel
+            const [movieResponse, tvResponse] = await Promise.all([
+                fetch(`https://api.themoviedb.org/3/discover/movie?${movieParams.toString()}`),
+                fetch(`https://api.themoviedb.org/3/discover/tv?${tvParams.toString()}`),
+            ])
+
+            if (!movieResponse.ok || !tvResponse.ok) {
+                apiError(`TMDB API error: movie=${movieResponse.status}, tv=${tvResponse.status}`)
+                return NextResponse.json(
+                    { error: 'Failed to fetch content from TMDB' },
+                    { status: 500 }
+                )
+            }
+
+            const [movieData, tvData] = await Promise.all([movieResponse.json(), tvResponse.json()])
+
+            // Add media_type to each item
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const movieResults = movieData.results.map((item: any) => ({
+                ...item,
+                media_type: 'movie',
+            }))
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            let tvResults = tvData.results.map((item: any) => ({
+                ...item,
+                media_type: 'tv',
+            }))
+
+            // Apply child safety filtering for TV if enabled
+            if (childSafeMode) {
+                tvResults = await filterMatureTVShows(tvResults, API_KEY)
+            }
+
+            // Interleave results (alternating movie, tv, movie, tv...)
+            const combinedResults = []
+            const maxLen = Math.max(movieResults.length, tvResults.length)
+            for (let i = 0; i < maxLen; i++) {
+                if (i < movieResults.length) combinedResults.push(movieResults[i])
+                if (i < tvResults.length) combinedResults.push(tvResults[i])
+            }
+
+            return NextResponse.json(
+                {
+                    page: pageNum,
+                    results: combinedResults,
+                    total_pages: Math.max(movieData.total_pages || 1, tvData.total_pages || 1),
+                    total_results: (movieData.total_results || 0) + (tvData.total_results || 0),
+                    child_safety_enabled: childSafeMode,
+                },
+                {
+                    status: 200,
+                    headers: {
+                        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+                    },
+                }
+            )
+        } catch (error) {
+            apiError('Error fetching combined genre content:', error)
+            return NextResponse.json({ error: 'Failed to fetch genre content' }, { status: 500 })
+        }
     }
 
     const API_KEY = process.env.TMDB_API_KEY

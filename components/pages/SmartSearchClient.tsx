@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { SparklesIcon } from '@heroicons/react/24/outline'
+import { SparklesIcon, PencilIcon, CheckIcon } from '@heroicons/react/24/outline'
 import Header from '../layout/Header'
 import SmartSearchResults from '../smartSearch/SmartSearchResults'
 import SmartSearchActions from '../smartSearch/SmartSearchActions'
@@ -31,6 +31,58 @@ export default function SmartSearchClient() {
         reset,
     } = useSmartSearchStore()
     const { showError } = useToast()
+
+    // Editable query state
+    const [isEditingQuery, setIsEditingQuery] = useState(false)
+    const [editedQuery, setEditedQuery] = useState(queryParam || '')
+    const editInputRef = useRef<HTMLInputElement>(null)
+    const editContainerRef = useRef<HTMLDivElement>(null)
+
+    // Sync edited query when queryParam changes
+    useEffect(() => {
+        setEditedQuery(queryParam || '')
+    }, [queryParam])
+
+    // Focus input when editing starts
+    useEffect(() => {
+        if (isEditingQuery && editInputRef.current) {
+            editInputRef.current.focus()
+            editInputRef.current.select()
+        }
+    }, [isEditingQuery])
+
+    // Click outside to save edit
+    useEffect(() => {
+        if (!isEditingQuery) return
+
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                editContainerRef.current &&
+                !editContainerRef.current.contains(event.target as Node)
+            ) {
+                handleSaveQuery()
+            }
+        }
+
+        const timeoutId = setTimeout(() => {
+            document.addEventListener('mousedown', handleClickOutside)
+        }, 100)
+
+        return () => {
+            clearTimeout(timeoutId)
+            document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [isEditingQuery, editedQuery])
+
+    const handleSaveQuery = () => {
+        const trimmedQuery = editedQuery.trim()
+        if (trimmedQuery && trimmedQuery !== queryParam) {
+            // Navigate to new search
+            setLoading(true)
+            router.push(`/smartsearch?q=${encodeURIComponent(trimmedQuery)}`)
+        }
+        setIsEditingQuery(false)
+    }
 
     // Reset store on unmount to clear old search results and query
     useEffect(() => {
@@ -63,6 +115,9 @@ export default function SmartSearchClient() {
             abortControllerRef.current.abort()
         }
         abortControllerRef.current = new AbortController()
+
+        // Mark as pending BEFORE starting fetch to prevent React StrictMode duplicate calls
+        lastSearchedQuery.current = queryParam
 
         const performSearch = async () => {
             setLoading(true)
@@ -107,9 +162,6 @@ export default function SmartSearchClient() {
                 }
 
                 const data = await response.json()
-
-                // Mark this query as successfully searched (allows retry on failure)
-                lastSearchedQuery.current = queryParam
 
                 setResults(data.results, {
                     generatedName: data.generatedName,
@@ -156,14 +208,56 @@ export default function SmartSearchClient() {
                 <div className="max-w-[1600px] mx-auto">
                     {/* Header Section */}
                     <div className="mb-12">
-                        <div className="flex items-center gap-3 mb-3">
-                            <SparklesIcon className="h-7 w-7 text-red-500" />
+                        <div className="flex items-center gap-3 mb-4">
+                            <SparklesIcon className="h-8 w-8 text-red-500" />
                             <h1 className="text-2xl font-bold text-white">Smart Search</h1>
                         </div>
-                        <p className="text-gray-400 text-sm">
-                            Searching for:{' '}
-                            <span className="text-white font-semibold">{queryParam}</span>
-                        </p>
+
+                        {/* Editable Search Query */}
+                        <div className="group flex items-baseline gap-3" ref={editContainerRef}>
+                            <span className="text-gray-400 text-lg leading-none">
+                                Searching for:
+                            </span>
+                            {isEditingQuery ? (
+                                <>
+                                    <input
+                                        ref={editInputRef}
+                                        type="text"
+                                        value={editedQuery}
+                                        onChange={(e) => setEditedQuery(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') handleSaveQuery()
+                                            if (e.key === 'Escape') {
+                                                setEditedQuery(queryParam || '')
+                                                setIsEditingQuery(false)
+                                            }
+                                        }}
+                                        className="max-w-2xl bg-transparent text-white text-2xl md:text-3xl font-bold leading-none border-b-2 border-red-500 focus:outline-none py-0"
+                                    />
+                                    <button
+                                        onClick={handleSaveQuery}
+                                        className="p-1 rounded bg-red-600 text-white hover:bg-red-700 transition-colors self-center"
+                                    >
+                                        <CheckIcon className="h-4 w-4" />
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <h2
+                                        className="text-2xl md:text-3xl font-bold text-white leading-none hover:text-red-400 transition-colors cursor-pointer border-b-2 border-transparent"
+                                        onClick={() => setIsEditingQuery(true)}
+                                    >
+                                        {queryParam}
+                                    </h2>
+                                    <button
+                                        onClick={() => setIsEditingQuery(true)}
+                                        className="p-1 rounded bg-white/10 text-white opacity-0 group-hover:opacity-100 hover:bg-white/20 transition-all self-center"
+                                    >
+                                        <PencilIcon className="h-4 w-4" />
+                                    </button>
+                                </>
+                            )}
+                        </div>
                     </div>
 
                     {/* Actions Bar - Above Results (without Ask for More button) */}
@@ -173,9 +267,15 @@ export default function SmartSearchClient() {
                         </div>
                     )}
 
-                    {/* Loading State */}
-                    {isLoading && (
-                        <NetflixLoader message="Our AI is analyzing your request" inline={true} />
+                    {/* Loading State - Inline loader below header */}
+                    {/* Show loader when: loading OR (have queryParam but search hasn't completed yet) */}
+                    {(isLoading ||
+                        (queryParam && results.length === 0 && query !== queryParam)) && (
+                        <NetflixLoader
+                            message="Our AI is analyzing your request"
+                            inline={true}
+                            slowCounter={true}
+                        />
                     )}
 
                     {/* Results Grid */}

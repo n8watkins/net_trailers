@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import type { ComponentType } from 'react'
 import Link from 'next/link'
 import {
     ShieldCheckIcon,
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
 }
 
 interface SecurityFeature {
-    icon: React.ComponentType<{ className?: string }>
+    icon: ComponentType<{ className?: string }>
     title: string
     description: string
     details: string[]
@@ -342,7 +343,7 @@ export default function SecurityPage() {
                                     details, view our full security documentation.
                                 </p>
                                 <a
-                                    href="https://github.com/n8watkins/net_trailer/blob/main/SECURITY.md"
+                                    href="https://github.com/n8watkins/net_trailers/blob/main/SECURITY.md"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="inline-flex items-center gap-2 text-red-400 hover:text-red-300 text-sm font-medium"

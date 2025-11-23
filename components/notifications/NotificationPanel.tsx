@@ -177,9 +177,9 @@ export default function NotificationPanel() {
 
     return (
         <>
-            {/* Mobile: Centered modal with backdrop (like Header mobile menu) */}
+            {/* Mobile: Fixed position modal near header with backdrop */}
             <div
-                className={`sm:hidden fixed inset-0 z-[105] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity duration-200 ${
+                className={`sm:hidden fixed inset-0 z-[105] bg-black/80 backdrop-blur-sm flex items-start justify-center pt-20 px-4 transition-opacity duration-200 ${
                     isAnimating ? 'opacity-100' : 'opacity-0 pointer-events-none'
                 }`}
                 onClick={(e) => {

@@ -352,7 +352,15 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                         alt="NetTrailers Logo"
                         className="cursor-pointer object-contain select-none w-[100px] h-auto sm:w-[120px] md:w-[140px]"
                         priority
-                        onClick={() => router.push('/')}
+                        onClick={() => {
+                            if (pathname === '/') {
+                                // Already on home page - smooth scroll to top
+                                window.scrollTo({ top: 0, behavior: 'smooth' })
+                            } else {
+                                // Navigate to home page
+                                router.push('/')
+                            }
+                        }}
                     />
                     <div className="hidden lg:flex items-center space-x-8 flex-1">
                         <ul className="flex space-x-6 items-center">
@@ -537,9 +545,9 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                 {/* Mobile Navigation Modal */}
                 {showMobileMenu && (
                     <>
-                        {/* Modal Backdrop */}
+                        {/* Modal Backdrop - Fixed near header */}
                         <div
-                            className="lg:hidden fixed inset-0 z-[105] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+                            className="lg:hidden fixed inset-0 z-[105] bg-black/80 backdrop-blur-sm flex items-start justify-center pt-20 px-4"
                             onClick={() => setShowMobileMenu(false)}
                         >
                             {/* Modal Content */}

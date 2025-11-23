@@ -17,6 +17,7 @@ const initialState: SmartSearchState = {
     mode: 'suggestions',
     results: [],
     removedIds: new Set(),
+    newlyAddedIds: new Set(), // Track newly added results for animation
     generatedName: '',
     genreFallback: [],
     mediaType: 'both',
@@ -75,10 +76,19 @@ export const useSmartSearchStore = create<SmartSearchStore>((set, get) => ({
         // Deduplicate: only add results that don't already exist
         const uniqueResults = newResults.filter((r) => !existingIds.has(r.id))
 
+        // Track newly added IDs for staggered animation
+        const newIds = new Set(uniqueResults.map((r) => r.id))
+
         set({
             results: [...state.results, ...uniqueResults],
+            newlyAddedIds: newIds,
         })
     },
+
+    clearNewlyAddedIds: () =>
+        set({
+            newlyAddedIds: new Set(),
+        }),
 
     removeContent: (tmdbId: number) => {
         const state = get()
@@ -125,6 +135,7 @@ export const useSmartSearchStore = create<SmartSearchStore>((set, get) => ({
         set({
             ...initialState,
             removedIds: new Set(), // Create fresh Set instance (don't reuse shared reference)
+            newlyAddedIds: new Set(), // Create fresh Set instance
             conversationHistory: [], // Create fresh array instance
             // Preserve query unless explicitly requested to clear
             query: clearQuery ? '' : get().query,

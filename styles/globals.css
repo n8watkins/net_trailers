@@ -225,6 +225,50 @@
     .animate-shimmer {
         animation: shimmer 2s infinite;
     }
+
+    /* New item animation for collection creator */
+    @keyframes new-item-enter {
+        0% {
+            opacity: 0;
+            transform: scale(0.8);
+            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+        }
+        50% {
+            opacity: 1;
+            transform: scale(1.05);
+            box-shadow: 0 0 20px 8px rgba(59, 130, 246, 0.6);
+        }
+        100% {
+            opacity: 1;
+            transform: scale(1);
+            box-shadow: 0 0 12px 4px rgba(59, 130, 246, 0.4);
+        }
+    }
+
+    .animate-new-item {
+        animation: new-item-enter 0.6s ease-out forwards;
+        border-radius: 8px;
+    }
+
+    .animate-new-item::after {
+        content: '';
+        position: absolute;
+        inset: -2px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.5), rgba(147, 51, 234, 0.5));
+        z-index: -1;
+        animation: glow-pulse 1.5s ease-in-out;
+    }
+
+    @keyframes glow-pulse {
+        0%,
+        100% {
+            opacity: 0;
+        }
+        50% {
+            opacity: 1;
+        }
+    }
 }
 
 /* Custom overlay scrollbar styles */
@@ -233,28 +277,45 @@
     top: 0;
     right: 0;
     bottom: 0;
-    width: 8px;
-    pointer-events: none;
+    width: 20px; /* Wider hit area for easier hover/click */
     z-index: 9999;
     opacity: 0;
     transition: opacity 0.3s ease;
+    cursor: pointer;
 }
 
 .custom-scrollbar.visible {
     opacity: 1;
 }
 
+/* While dragging, prevent text selection and ensure cursor stays as grabbing */
+.custom-scrollbar.dragging {
+    cursor: grabbing;
+}
+
 .custom-scrollbar-thumb {
     position: absolute;
-    left: 0;
+    left: 12px; /* Position thumb on the right side of the track */
     right: 0;
+    width: 8px;
     border-radius: 9999px;
     background: rgb(220, 38, 38); /* red-600 */
-    transition: background 0.2s ease;
+    transition:
+        background 0.2s ease,
+        width 0.2s ease,
+        left 0.2s ease;
+    cursor: grab;
 }
 
 .custom-scrollbar-thumb:hover {
     background: rgb(239, 68, 68); /* red-500 */
+    width: 10px;
+    left: 10px;
+}
+
+.custom-scrollbar.dragging .custom-scrollbar-thumb {
+    background: rgb(239, 68, 68); /* red-500 */
+    cursor: grabbing;
 }
 
 /* Modal content scrollbar - overlay style with auto-hide on scroll */
@@ -283,6 +344,34 @@
 
 .modal-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgb(239, 68, 68); /* red-500 */
+}
+
+/* Light blue scrollbar for collection creator modal */
+.modal-scrollbar-blue {
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: rgb(96, 165, 250) transparent; /* blue-400 thumb, transparent track */
+}
+
+/* Webkit/Chrome scrollbar */
+.modal-scrollbar-blue::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-scrollbar-blue::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.modal-scrollbar-blue::-webkit-scrollbar-button {
+    display: none; /* Remove arrow buttons */
+}
+
+.modal-scrollbar-blue::-webkit-scrollbar-thumb {
+    background: rgb(96, 165, 250); /* blue-400 */
+    border-radius: 9999px;
+}
+
+.modal-scrollbar-blue::-webkit-scrollbar-thumb:hover {
+    background: rgb(147, 197, 253); /* blue-300 */
 }
 
 .backGround {

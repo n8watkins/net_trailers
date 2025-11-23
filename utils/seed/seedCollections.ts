@@ -113,6 +113,7 @@ export async function seedCollections(options: SeedCollectionsOptions): Promise<
             genres: template.genres,
             mediaType: 'both',
             displayAsRow: true,
+            canGenerateMore: true, // Enable infinite scroll for seeded collections
         })
 
         console.log(`    ✅ Created collection: ${template.name}`)

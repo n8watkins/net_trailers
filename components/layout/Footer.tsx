@@ -266,8 +266,9 @@ function Footer({
                                         Changelog
                                     </Link>
                                 </p>
+                                {/* Hide keyboard shortcuts link on mobile/tablet since shortcuts are disabled */}
                                 {onOpenKeyboardShortcuts && (
-                                    <p className="text-gray-300 text-sm">
+                                    <p className="hidden lg:block text-gray-300 text-sm">
                                         <button
                                             onClick={onOpenKeyboardShortcuts}
                                             className="group hover:text-white transition-all duration-200 flex items-center gap-2 p-1 rounded-lg hover:bg-gray-700/20"
