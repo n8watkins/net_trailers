@@ -271,6 +271,7 @@ export default function RecommendedForYouRow() {
                 onClose={() => setShowInsightsModal(false)}
                 onOpenGenreQuiz={handleOpenGenreQuiz}
                 onOpenTitleQuiz={handleOpenTitleQuiz}
+                genrePreferences={genrePreferences}
             />
             <GenrePreferenceModal
                 isOpen={showGenreModal}
