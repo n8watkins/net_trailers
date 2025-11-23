@@ -36,14 +36,9 @@ function ProfileDropdown() {
 
     const isAnyProfilePath = () => {
         return pathname
-            ? [
-                  '/profile',
-                  '/watch-history',
-                  '/collections',
-                  '/rankings',
-                  '/liked',
-                  '/hidden',
-              ].includes(pathname)
+            ? ['/profile', '/history', '/collections', '/rankings', '/liked', '/hidden'].includes(
+                  pathname
+              )
             : false
     }
 
@@ -101,10 +96,10 @@ function ProfileDropdown() {
             {isOpen && (
                 <div className="absolute top-full left-0 mt-2 w-[min(75vw,208px)] sm:w-52 bg-black border border-red-500/40 rounded-xl shadow-2xl shadow-red-500/20 z-[250]">
                     <div className="py-2">
-                        <Link href="/watch-history" onClick={handleLinkClick}>
+                        <Link href="/history" onClick={handleLinkClick}>
                             <div
                                 className={`w-full text-left px-4 py-3 hover:bg-white/10 transition-colors flex items-center space-x-3 ${
-                                    isCurrentPath('/watch-history')
+                                    isCurrentPath('/history')
                                         ? 'bg-white/10 text-white font-semibold'
                                         : 'text-gray-300'
                                 }`}

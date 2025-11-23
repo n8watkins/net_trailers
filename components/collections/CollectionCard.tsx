@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, memo } from 'react'
 import {
     PencilIcon,
     TrashIcon,
@@ -10,6 +10,8 @@ import {
     Bars3Icon,
     BellIcon,
     ClockIcon,
+    ClipboardDocumentIcon,
+    CheckIcon,
 } from '@heroicons/react/24/outline'
 import { DisplayRow } from '../../types/collections'
 import { getUnifiedGenresByMediaType } from '../../constants/unifiedGenres'
@@ -46,8 +48,9 @@ interface CollectionCardProps {
  * Displays a single row (system or custom) with management controls.
  * System rows: Can only be enabled/disabled
  * Custom rows: Full CRUD operations (edit, delete, enable/disable)
+ * Memoized to prevent unnecessary re-renders during drag operations
  */
-export function CollectionCard({
+export const CollectionCard = memo(function CollectionCard({
     row,
     onEdit,
     onDelete,
@@ -56,6 +59,8 @@ export function CollectionCard({
     dragHandleProps,
 }: CollectionCardProps) {
     const [showDeleteModal, setShowDeleteModal] = useState(false)
+    const [deleteConfirmation, setDeleteConfirmation] = useState('')
+    const [copied, setCopied] = useState(false)
 
     // Get unified genres and map to names
     const allGenres = getUnifiedGenresByMediaType(row.mediaType || 'both')
@@ -66,7 +71,22 @@ export function CollectionCard({
     const handleDelete = () => {
         onDelete(row)
         setShowDeleteModal(false)
+        setDeleteConfirmation('')
     }
+
+    const handleCopyTitle = async () => {
+        await navigator.clipboard.writeText(row.name)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+    }
+
+    const handleCloseDeleteModal = () => {
+        setShowDeleteModal(false)
+        setDeleteConfirmation('')
+        setCopied(false)
+    }
+
+    const isDeleteEnabled = deleteConfirmation === row.name
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'ArrowUp' && onMoveUp) {
@@ -80,8 +100,14 @@ export function CollectionCard({
 
     return (
         <>
-            <div className="bg-[#1a1a1a] border rounded-lg p-3 transition-all border-gray-700">
-                <div className="flex items-center justify-between gap-3">
+            <div
+                className="bg-[#1a1a1a] border rounded-lg p-3 transition-all min-h-[72px]"
+                style={{
+                    borderColor: row.color ? `${row.color}50` : '#374151',
+                    backgroundColor: row.color ? `${row.color}10` : '#1a1a1a',
+                }}
+            >
+                <div className="flex items-center justify-between gap-3 h-full">
                     {/* Drag Handle */}
                     <button
                         {...dragHandleProps}
@@ -91,12 +117,13 @@ export function CollectionCard({
                         aria-label={`Drag to reorder ${row.name} or use arrow keys to move up or down`}
                         tabIndex={0}
                     >
-                        <Bars3Icon className="w-4 h-4 text-gray-400" />
+                        <Bars3Icon className="w-5 h-5 text-gray-400" />
                     </button>
                     {/* Row Info */}
                     <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="text-base font-semibold text-white truncate">
+                        <div className="flex items-center gap-3 flex-wrap">
+                            {row.emoji && <span className="text-xl">{row.emoji}</span>}
+                            <h3 className="text-lg font-semibold text-white truncate">
                                 {row.name}
                             </h3>
                             {!row.isSystemCollection && row.autoUpdateEnabled && (
@@ -108,40 +135,40 @@ export function CollectionCard({
                                     Auto
                                 </span>
                             )}
+                            {/* Genres Display - Inline with title */}
+                            {genreNames.length > 0 && (
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                    {genreNames.map((genre) => (
+                                        <span
+                                            key={genre}
+                                            className="inline-block px-2 py-0.5 bg-red-900/30 text-red-300 rounded text-xs"
+                                        >
+                                            {genre}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
                         </div>
-                        {/* Genres Display - Inline with red scheme */}
-                        {genreNames.length > 0 && (
-                            <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                                {genreNames.map((genre) => (
-                                    <span
-                                        key={genre}
-                                        className="inline-block px-2 py-0.5 bg-red-900/30 text-red-300 rounded text-xs"
-                                    >
-                                        {genre}
-                                    </span>
-                                ))}
-                            </div>
-                        )}
                     </div>
 
                     {/* Actions */}
-                    <div className="flex gap-1.5">
+                    <div className="flex gap-2">
                         {/* Edit */}
                         <button
                             onClick={() => onEdit(row)}
-                            className="p-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors shrink-0"
+                            className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors shrink-0"
                             title="Edit collection"
                         >
-                            <PencilIcon className="w-4 h-4 text-gray-300" />
+                            <PencilIcon className="w-5 h-5 text-gray-300" />
                         </button>
 
                         {/* Delete - All collections are deletable */}
                         <button
                             onClick={() => setShowDeleteModal(true)}
-                            className="p-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors shrink-0"
+                            className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors shrink-0"
                             title="Delete collection"
                         >
-                            <TrashIcon className="w-4 h-4 text-gray-300" />
+                            <TrashIcon className="w-5 h-5 text-gray-300" />
                         </button>
                     </div>
                 </div>
@@ -151,27 +178,71 @@ export function CollectionCard({
             {showDeleteModal && (
                 <div
                     className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60000] flex items-center justify-center p-4"
-                    onClick={() => setShowDeleteModal(false)}
+                    onClick={handleCloseDeleteModal}
                 >
                     <div
                         className="bg-gray-800 border border-gray-600 rounded-xl p-6 max-w-md w-full shadow-2xl"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <h3 className="text-xl font-bold text-white mb-2">Delete Collection?</h3>
-                        <p className="text-gray-300 mb-6">
+                        <h3 className="text-xl font-bold text-white mb-4">Delete Collection?</h3>
+
+                        {/* Collection Title Display */}
+                        <div className="mb-4">
+                            <p className="text-sm text-gray-400 mb-2">Collection to delete:</p>
+                            <div className="flex items-center gap-2 bg-gray-900 border border-gray-700 rounded-lg p-3">
+                                {row.emoji && <span className="text-xl">{row.emoji}</span>}
+                                <span className="text-white font-semibold flex-1 truncate">
+                                    {row.name}
+                                </span>
+                                <button
+                                    onClick={handleCopyTitle}
+                                    className="p-1.5 hover:bg-gray-700 rounded transition-colors shrink-0"
+                                    title="Copy title"
+                                >
+                                    {copied ? (
+                                        <CheckIcon className="w-4 h-4 text-green-400" />
+                                    ) : (
+                                        <ClipboardDocumentIcon className="w-4 h-4 text-gray-400" />
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+
+                        <p className="text-gray-300 mb-4 text-sm">
                             {row.isSystemCollection
-                                ? `Are you sure you want to remove "${row.name}"? You can restore it later with "Reset Defaults".`
-                                : `Are you sure you want to permanently delete "${row.name}"? This action cannot be undone.`}
+                                ? 'This is a system collection. You can restore it later with "Reset Defaults".'
+                                : 'This action cannot be undone. This will permanently delete your collection.'}
                         </p>
+
+                        {/* Confirmation Input */}
+                        <div className="mb-6">
+                            <label className="block text-sm text-gray-400 mb-2">
+                                Type <span className="text-white font-semibold">{row.name}</span> to
+                                confirm:
+                            </label>
+                            <input
+                                type="text"
+                                value={deleteConfirmation}
+                                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                                placeholder="Enter collection name"
+                                className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                            />
+                        </div>
+
                         <div className="flex gap-3">
                             <button
                                 onClick={handleDelete}
-                                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+                                disabled={!isDeleteEnabled}
+                                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
+                                    isDeleteEnabled
+                                        ? 'bg-red-600 hover:bg-red-700 text-white'
+                                        : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                }`}
                             >
                                 Delete
                             </button>
                             <button
-                                onClick={() => setShowDeleteModal(false)}
+                                onClick={handleCloseDeleteModal}
                                 className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
                             >
                                 Cancel
@@ -182,4 +253,4 @@ export function CollectionCard({
             )}
         </>
     )
-}
+})

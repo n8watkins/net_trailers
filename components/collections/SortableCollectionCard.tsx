@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { memo, useMemo } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { CollectionCard } from './CollectionCard'
@@ -10,21 +10,28 @@ interface SortableCollectionCardProps {
     row: DisplayRow
     onEdit: (row: DisplayRow) => void
     onDelete: (row: DisplayRow) => void
+    onToggle?: (row: DisplayRow) => void
     onMoveUp?: (row: DisplayRow) => void
     onMoveDown?: (row: DisplayRow) => void
+    isFirst?: boolean
+    isLast?: boolean
 }
 
 /**
  * Sortable wrapper for CollectionCard
  * Enables drag and drop reordering for custom rows
  * Uses setActivatorNodeRef to only enable dragging from the drag handle
+ * Memoized to prevent unnecessary re-renders during drag operations
  */
-export function SortableCollectionCard({
+export const SortableCollectionCard = memo(function SortableCollectionCard({
     row,
     onEdit,
     onDelete,
+    onToggle,
     onMoveUp,
     onMoveDown,
+    isFirst,
+    isLast,
 }: SortableCollectionCardProps) {
     const {
         attributes,
@@ -39,11 +46,23 @@ export function SortableCollectionCard({
         disabled: false,
     })
 
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0.5 : 1,
-    }
+    const style = useMemo(
+        () => ({
+            transform: CSS.Transform.toString(transform),
+            transition,
+            opacity: isDragging ? 0.5 : 1,
+        }),
+        [transform, transition, isDragging]
+    )
+
+    const dragHandleProps = useMemo(
+        () => ({
+            ref: setActivatorNodeRef,
+            ...attributes,
+            ...listeners,
+        }),
+        [setActivatorNodeRef, attributes, listeners]
+    )
 
     return (
         <div ref={setNodeRef} style={style}>
@@ -53,8 +72,8 @@ export function SortableCollectionCard({
                 onDelete={onDelete}
                 onMoveUp={onMoveUp}
                 onMoveDown={onMoveDown}
-                dragHandleProps={{ ref: setActivatorNodeRef, ...attributes, ...listeners }}
+                dragHandleProps={dragHandleProps}
             />
         </div>
     )
-}
+})

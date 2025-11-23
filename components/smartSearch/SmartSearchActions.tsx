@@ -253,7 +253,13 @@ export default function SmartSearchActions({
     return (
         <div className="space-y-6">
             {/* Title Section with Create Collection Button */}
-            <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-4">
+            <div
+                className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-4 p-4 rounded-2xl transition-all"
+                style={{
+                    backgroundColor: `${isEditing ? editedColor : color}10`,
+                    border: `2px solid ${isEditing ? editedColor : color}40`,
+                }}
+            >
                 {/* Title Container */}
                 <div
                     className="group relative inline-block"
@@ -261,14 +267,7 @@ export default function SmartSearchActions({
                     onMouseLeave={() => setIsHovered(false)}
                 >
                     {isEditing ? (
-                        <div
-                            ref={editContainerRef}
-                            className="flex items-center gap-4 p-4 rounded-2xl"
-                            style={{
-                                backgroundColor: `${editedColor}15`,
-                                border: `2px solid ${editedColor}50`,
-                            }}
-                        >
+                        <div ref={editContainerRef} className="flex items-center gap-4">
                             {/* Emoji picker button */}
                             <div className="relative">
                                 <button
@@ -341,11 +340,7 @@ export default function SmartSearchActions({
                         </div>
                     ) : (
                         <div
-                            className="flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all"
-                            style={{
-                                backgroundColor: `${color}10`,
-                                border: `2px solid ${color}40`,
-                            }}
+                            className="flex items-center gap-4 cursor-pointer"
                             onClick={() => setIsEditing(true)}
                         >
                             {/* Emoji - no background/border */}

@@ -267,6 +267,10 @@ export interface DisplayCollection extends BaseCollectionConfig {
     createdAt?: number // Only present for user collections
     updatedAt?: number // Only present for user collections
     canDelete?: boolean // false for core system collections, true/undefined for deletable collections
+    // Visual customization - Only present for user collections
+    color?: string // Optional theme color for the collection
+    emoji?: string // Optional emoji icon for the collection
+    displayAsRow?: boolean // Display collection as a row on home/browse pages
     // Auto-update fields - Only present for user collections
     autoUpdateEnabled?: boolean
     updateFrequency?: 'daily' | 'weekly' | 'never'

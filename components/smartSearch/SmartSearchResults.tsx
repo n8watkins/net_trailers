@@ -37,10 +37,18 @@ export default function SmartSearchResults() {
         return () => clearTimeout(cleanupTimer)
     }, [newlyAddedArray, clearNewlyAddedIds])
 
+    // Spacer elements to maintain consistent gaps on partial rows
+    // These match ContentCard "normal" size widths at each breakpoint
+    const spacerClass =
+        'w-[120px] xs:w-[140px] sm:w-[160px] md:w-[180px] lg:w-[200px] xl:w-[220px] h-0'
+
+    // Maximum items per row at largest breakpoint (estimate ~6-8)
+    const maxItemsPerRow = 8
+
     return (
         <div>
             {/* Results grid */}
-            <div className="flex flex-wrap gap-3 sm:gap-4 md:gap-6 lg:gap-8">
+            <div className="flex flex-wrap justify-between gap-x-6 sm:gap-x-8 md:gap-x-10 lg:gap-x-12 gap-y-3 sm:gap-y-4 md:gap-y-5 [&>*]:flex-none">
                 {results.map((content) => {
                     const isNewlyAdded = newlyAddedIds.has(content.id)
                     const hasAnimated = animatedIds.has(content.id)
@@ -64,6 +72,10 @@ export default function SmartSearchResults() {
                         </div>
                     )
                 })}
+                {/* Invisible spacers to maintain consistent gaps on partial rows */}
+                {Array.from({ length: maxItemsPerRow }).map((_, i) => (
+                    <div key={`spacer-${i}`} className={spacerClass} aria-hidden="true" />
+                ))}
             </div>
         </div>
     )
