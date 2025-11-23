@@ -15,14 +15,18 @@ import { useSessionData } from '../../hooks/useSessionData'
 import { useSessionStore } from '../../stores/sessionStore'
 import { auth } from '../../firebase'
 import RecommendationInsightsModal from './RecommendationInsightsModal'
-import PreferenceQuizModal, { GenrePreference } from './PreferenceQuizModal'
+import PreferenceCustomizerModal, {
+    GenrePreference,
+    ContentPreference,
+    ShownPreferenceContent,
+} from './PreferenceCustomizerModal'
 
 export default function RecommendedForYouRow() {
     const [recommendations, setRecommendations] = useState<Recommendation[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [showInsightsModal, setShowInsightsModal] = useState(false)
-    const [showQuizModal, setShowQuizModal] = useState(false)
+    const [showCustomizerModal, setShowCustomizerModal] = useState(false)
 
     const getUserId = useSessionStore((state) => state.getUserId)
     const sessionType = useSessionStore((state) => state.sessionType)
@@ -32,17 +36,21 @@ export default function RecommendedForYouRow() {
     // Check if recommendations are enabled in user preferences
     const showRecommendations = sessionData.showRecommendations ?? true
 
-    // Get existing genre preferences from session
+    // Get existing preferences from session
     const genrePreferences = sessionData.genrePreferences || []
+    const contentPreferences = sessionData.contentPreferences || []
+    const shownPreferenceContent = sessionData.shownPreferenceContent || []
 
-    // Track genre preferences signature for re-fetching recommendations
-    const genrePrefsSignature = useMemo(
+    // Track preferences signature for re-fetching recommendations
+    const prefsSignature = useMemo(
         () =>
-            genrePreferences
-                .map((p) => `${p.genreId}:${p.preference}`)
+            [
+                ...genrePreferences.map((p) => `g:${p.genreId}:${p.preference}`),
+                ...contentPreferences.map((p) => `c:${p.contentId}:${p.preference}`),
+            ]
                 .sort()
                 .join(','),
-        [genrePreferences]
+        [genrePreferences, contentPreferences]
     )
 
     // Extract all items from user collections (for recommendation engine)
@@ -62,6 +70,21 @@ export default function RecommendedForYouRow() {
 
         return items
     }, [sessionData.userCreatedWatchlists])
+
+    // Get all content IDs user has already (for excluding from preference customizer)
+    const excludeContentIds = useMemo(() => {
+        const ids = new Set<number>()
+        sessionData.likedMovies.forEach((c) => ids.add(c.id))
+        sessionData.defaultWatchlist.forEach((c) => ids.add(c.id))
+        sessionData.hiddenMovies.forEach((c) => ids.add(c.id))
+        collectionItems.forEach((c) => ids.add(c.id))
+        return Array.from(ids)
+    }, [
+        sessionData.likedMovies,
+        sessionData.defaultWatchlist,
+        sessionData.hiddenMovies,
+        collectionItems,
+    ])
 
     const likedIdsSignature = useMemo(
         () => sessionData.likedMovies.map((item) => item.id).join(','),
@@ -120,7 +143,8 @@ export default function RecommendedForYouRow() {
                         watchlist: sessionData.defaultWatchlist.slice(0, 10),
                         collectionItems: collectionItems.slice(0, 20), // Items from all user collections
                         hiddenMovies: sessionData.hiddenMovies.slice(0, 10),
-                        genrePreferences: genrePreferences, // Quiz-based genre preferences
+                        genrePreferences: genrePreferences, // User genre preferences
+                        contentPreferences: contentPreferences, // User content preferences
                         limit: 20,
                     }),
                 })
@@ -163,28 +187,37 @@ export default function RecommendedForYouRow() {
         watchlistIdsSignature,
         hiddenIdsSignature,
         collectionIdsSignature,
-        genrePrefsSignature,
+        prefsSignature,
         showRecommendations,
         sessionData.likedMovies,
         sessionData.defaultWatchlist,
         sessionData.hiddenMovies,
         collectionItems,
         genrePreferences,
+        contentPreferences,
     ])
 
-    // Handle quiz save
-    const handleQuizSave = useCallback(
-        async (preferences: GenrePreference[]) => {
-            // Update session data with new genre preferences
-            await sessionData.updatePreferences({ genrePreferences: preferences })
+    // Handle preference customizer save
+    const handlePreferenceSave = useCallback(
+        async (data: {
+            genrePreferences: GenrePreference[]
+            contentPreferences: ContentPreference[]
+            shownPreferenceContent: ShownPreferenceContent[]
+        }) => {
+            // Update session data with new preferences
+            await sessionData.updatePreferences({
+                genrePreferences: data.genrePreferences,
+                contentPreferences: data.contentPreferences,
+                shownPreferenceContent: data.shownPreferenceContent,
+            })
         },
         [sessionData]
     )
 
-    // Open quiz from insights modal
-    const handleOpenQuiz = useCallback(() => {
+    // Open customizer from insights modal
+    const handleOpenCustomizer = useCallback(() => {
         setShowInsightsModal(false)
-        setShowQuizModal(true)
+        setShowCustomizerModal(true)
     }, [])
 
     // Don't render if feature is disabled
@@ -220,13 +253,16 @@ export default function RecommendedForYouRow() {
             <RecommendationInsightsModal
                 isOpen={showInsightsModal}
                 onClose={() => setShowInsightsModal(false)}
-                onOpenQuiz={handleOpenQuiz}
+                onOpenQuiz={handleOpenCustomizer}
             />
-            <PreferenceQuizModal
-                isOpen={showQuizModal}
-                onClose={() => setShowQuizModal(false)}
-                onSave={handleQuizSave}
-                existingPreferences={genrePreferences}
+            <PreferenceCustomizerModal
+                isOpen={showCustomizerModal}
+                onClose={() => setShowCustomizerModal(false)}
+                onSave={handlePreferenceSave}
+                existingGenrePreferences={genrePreferences}
+                existingContentPreferences={contentPreferences}
+                existingShownContent={shownPreferenceContent}
+                excludeContentIds={excludeContentIds}
             />
         </>
     )

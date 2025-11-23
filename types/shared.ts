@@ -5,11 +5,26 @@ import { Content } from '../typings'
 import { UserList } from './collections'
 import { NotificationPreferences } from './notifications'
 
-// Genre preference for quiz-based recommendations
+// Genre preference for personalized recommendations
 export interface GenrePreference {
     genreId: string
-    preference: 'like' | 'dislike' | 'neutral'
+    preference: 'love' | 'not_for_me'
     updatedAt: number
+}
+
+// Content preference for personalized recommendations
+export interface ContentPreference {
+    contentId: number
+    mediaType: 'movie' | 'tv'
+    preference: 'love' | 'not_for_me'
+    shownAt: number
+}
+
+// Track which content has been shown in preference customizer
+export interface ShownPreferenceContent {
+    contentId: number
+    mediaType: 'movie' | 'tv'
+    shownAt: number
 }
 
 export interface UserPreferences {
@@ -25,7 +40,9 @@ export interface UserPreferences {
     showRecommendations?: boolean
     trackWatchHistory?: boolean
     notifications?: NotificationPreferences
-    genrePreferences?: GenrePreference[] // Quiz-based genre preferences
+    genrePreferences?: GenrePreference[] // Genre preferences for recommendations
+    contentPreferences?: ContentPreference[] // Content preferences for recommendations
+    shownPreferenceContent?: ShownPreferenceContent[] // Track shown content to avoid repeats
 }
 
 export interface UserSession {

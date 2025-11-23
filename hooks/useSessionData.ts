@@ -52,6 +52,8 @@ export const useSessionData = () => {
     const guestShowRecommendations = useGuestStore((state) => state.showRecommendations)
     const guestTrackWatchHistory = useGuestStore((state) => state.trackWatchHistory)
     const guestGenrePreferences = useGuestStore((state) => state.genrePreferences)
+    const guestContentPreferences = useGuestStore((state) => state.contentPreferences)
+    const guestShownPreferenceContent = useGuestStore((state) => state.shownPreferenceContent)
 
     // Select actions from guest store
     const guestAddToWatchlist = useGuestStore((state) => state.addToWatchlist)
@@ -81,6 +83,8 @@ export const useSessionData = () => {
     const authShowRecommendations = useAuthStore((state) => state.showRecommendations)
     const authTrackWatchHistory = useAuthStore((state) => state.trackWatchHistory)
     const authGenrePreferences = useAuthStore((state) => state.genrePreferences)
+    const authContentPreferences = useAuthStore((state) => state.contentPreferences)
+    const authShownPreferenceContent = useAuthStore((state) => state.shownPreferenceContent)
 
     // Select actions from auth store
     const authAddToWatchlist = useAuthStore((state) => state.addToWatchlist)
@@ -122,6 +126,9 @@ export const useSessionData = () => {
         (isAuth ? authShowRecommendations : guestShowRecommendations) ?? false
     const trackWatchHistory = (isAuth ? authTrackWatchHistory : guestTrackWatchHistory) ?? true
     const genrePreferences = (isAuth ? authGenrePreferences : guestGenrePreferences) ?? []
+    const contentPreferences = (isAuth ? authContentPreferences : guestContentPreferences) ?? []
+    const shownPreferenceContent =
+        (isAuth ? authShownPreferenceContent : guestShownPreferenceContent) ?? []
 
     const addToWatchlist = isAuth ? authAddToWatchlist : guestAddToWatchlist
     const removeFromWatchlist = isAuth ? authRemoveFromWatchlist : guestRemoveFromWatchlist
@@ -158,6 +165,8 @@ export const useSessionData = () => {
         showRecommendations,
         trackWatchHistory,
         genrePreferences,
+        contentPreferences,
+        shownPreferenceContent,
 
         // Actions (unified interface - NEW SCHEMA)
         addToWatchlist,

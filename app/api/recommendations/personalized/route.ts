@@ -14,7 +14,8 @@ import {
     getSeenContentIds,
     hasEnoughDataForRecommendations,
     mergeRecommendations,
-    QuizGenrePreference,
+    UserGenrePreference,
+    UserContentPreference,
 } from '@/utils/recommendations/genreEngine'
 import { getBatchSimilarContent } from '@/utils/tmdb/recommendations'
 import { Recommendation, RECOMMENDATION_CONSTRAINTS } from '@/types/recommendations'
@@ -39,12 +40,13 @@ async function handlePersonalizedRecommendations(
             hiddenMovies: (body.hiddenMovies || []) as Content[],
         }
 
-        // Get quiz-based genre preferences if provided
-        const quizPreferences = (body.genrePreferences || []) as QuizGenrePreference[]
+        // Get user preferences from preference customizer
+        const genrePreferences = (body.genrePreferences || []) as UserGenrePreference[]
+        const contentPreferences = (body.contentPreferences || []) as UserContentPreference[]
 
-        // Check if user has enough data (quiz preferences also count)
-        const hasQuizData = quizPreferences.length > 0
-        if (!hasEnoughDataForRecommendations(userData) && !hasQuizData) {
+        // Check if user has enough data (preferences also count)
+        const hasPreferenceData = genrePreferences.length > 0 || contentPreferences.length > 0
+        if (!hasEnoughDataForRecommendations(userData) && !hasPreferenceData) {
             return NextResponse.json({
                 success: true,
                 recommendations: [],
@@ -54,8 +56,8 @@ async function handlePersonalizedRecommendations(
             })
         }
 
-        // Build recommendation profile (includes quiz preferences)
-        const profile = buildRecommendationProfile(userData, quizPreferences)
+        // Build recommendation profile (includes user preferences)
+        const profile = buildRecommendationProfile(userData, genrePreferences, contentPreferences)
 
         // Get content IDs to exclude (already seen)
         const excludeIds = getSeenContentIds(userData)

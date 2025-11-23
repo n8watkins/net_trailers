@@ -33,8 +33,19 @@ export interface UserState {
     notifications?: NotificationPreferences
     genrePreferences?: {
         genreId: string
-        preference: 'like' | 'dislike' | 'neutral'
+        preference: 'love' | 'not_for_me'
         updatedAt: number
+    }[]
+    contentPreferences?: {
+        contentId: number
+        mediaType: 'movie' | 'tv'
+        preference: 'love' | 'not_for_me'
+        shownAt: number
+    }[]
+    shownPreferenceContent?: {
+        contentId: number
+        mediaType: 'movie' | 'tv'
+        shownAt: number
     }[]
 }
 
@@ -105,7 +116,9 @@ export function createUserStore(options: CreateUserStoreOptions) {
         showRecommendations: true, // Enabled by default - row only shows when enough data exists
         trackWatchHistory: true, // Enabled by default
         notifications: cloneDefaultNotifications(),
-        genrePreferences: [], // Quiz-based genre preferences
+        genrePreferences: [], // Genre preferences for recommendations
+        contentPreferences: [], // Content preferences for recommendations
+        shownPreferenceContent: [], // Track shown content to avoid repeats
         ...(adapter.isAsync && { syncStatus: 'synced' as const }),
     })
 
@@ -145,6 +158,8 @@ export function createUserStore(options: CreateUserStoreOptions) {
                 trackWatchHistory: state.trackWatchHistory ?? true,
                 notifications: state.notifications ?? cloneDefaultNotifications(),
                 genrePreferences: state.genrePreferences ?? [],
+                contentPreferences: state.contentPreferences ?? [],
+                shownPreferenceContent: state.shownPreferenceContent ?? [],
             })
             logger.log(`✅ [${trackingContext}] Saved to ${adapter.name}`)
         } catch (error) {
@@ -573,6 +588,8 @@ export function createUserStore(options: CreateUserStoreOptions) {
                                 notifications:
                                     firebaseData.notifications ?? cloneDefaultNotifications(),
                                 genrePreferences: firebaseData.genrePreferences ?? [],
+                                contentPreferences: firebaseData.contentPreferences ?? [],
+                                shownPreferenceContent: firebaseData.shownPreferenceContent ?? [],
                                 syncStatus: 'synced',
                             })
 
@@ -633,6 +650,8 @@ export function createUserStore(options: CreateUserStoreOptions) {
                     trackWatchHistory: loadedData.trackWatchHistory ?? true,
                     notifications: loadedData.notifications ?? cloneDefaultNotifications(),
                     genrePreferences: loadedData.genrePreferences ?? [],
+                    contentPreferences: loadedData.contentPreferences ?? [],
+                    shownPreferenceContent: loadedData.shownPreferenceContent ?? [],
                 })
                 logger.log(`🔄 [${trackingContext}] Synced from localStorage:`, {
                     guestId,
