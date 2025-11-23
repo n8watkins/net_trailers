@@ -35,7 +35,7 @@ export default function ContentMetadata({
         >
             {/* Title */}
             <h3
-                className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white"
+                className="text-xl xs:text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white"
                 style={{
                     textShadow: '0 0 3px rgba(0, 0, 0, .8), 0 0 5px rgba(0, 0, 0, .9)',
                 }}

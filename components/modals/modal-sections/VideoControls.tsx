@@ -65,12 +65,16 @@ function VideoControls({
 
                 <ToolTipMod title={showVolumeSlider ? '' : muted ? 'Unmute' : 'Mute'}>
                     <button
-                        className={`group relative z-20 p-2 sm:p-3 rounded-full border-2 text-white transition-colors ${
+                        className={`group relative z-20 p-2 sm:p-3 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center rounded-full border-2 text-white transition-colors ${
                             showVolumeSlider
                                 ? 'border-white bg-[#1a1a1a]'
                                 : 'border-white/30 bg-[#141414] hover:bg-[#1a1a1a] hover:border-white'
                         }`}
-                        onClick={onToggleMute}
+                        onClick={(e) => {
+                            onToggleMute()
+                            // Toggle volume slider on click for touch devices
+                            onShowVolumeSlider(!showVolumeSlider)
+                        }}
                         onMouseEnter={() => onShowVolumeSlider(true)}
                         onMouseLeave={() => onShowVolumeSlider(false)}
                     >
@@ -86,7 +90,7 @@ function VideoControls({
             {/* YouTube Link Button */}
             <ToolTipMod title="Watch on YouTube">
                 <button
-                    className="group p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-colors"
+                    className="group p-2 sm:p-3 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-colors"
                     onClick={() =>
                         window.open(`https://www.youtube.com/watch?v=${trailer}`, '_blank')
                     }
@@ -98,7 +102,7 @@ function VideoControls({
             {/* Fullscreen Button */}
             <ToolTipMod title={fullScreen ? 'Exit Fullscreen' : 'Fullscreen'}>
                 <button
-                    className="group p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-colors"
+                    className="group p-2 sm:p-3 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-colors"
                     onClick={onToggleFullscreen}
                 >
                     {fullScreen ? (

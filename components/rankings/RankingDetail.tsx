@@ -194,14 +194,14 @@ export function RankingDetail({
                             <>
                                 <button
                                     onClick={onEdit}
-                                    className="p-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors"
+                                    className="p-2 sm:p-2.5 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors flex items-center justify-center"
                                     title="Edit ranking"
                                 >
                                     <PencilIcon className="w-5 h-5" />
                                 </button>
                                 <button
                                     onClick={handleDelete}
-                                    className="p-2 bg-zinc-800 hover:bg-red-900 text-white rounded-lg transition-colors"
+                                    className="p-2 sm:p-2.5 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 bg-zinc-800 hover:bg-red-900 text-white rounded-lg transition-colors flex items-center justify-center"
                                     title="Delete ranking"
                                 >
                                     <TrashIcon className="w-5 h-5" />
@@ -211,7 +211,7 @@ export function RankingDetail({
                         {!isOwner && userId && (
                             <button
                                 onClick={onClone}
-                                className="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
+                                className="p-2 sm:p-2.5 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors flex items-center justify-center"
                                 title="Clone this ranking to your account"
                             >
                                 <DocumentDuplicateIcon className="w-5 h-5" />
@@ -219,7 +219,7 @@ export function RankingDetail({
                         )}
                         <button
                             onClick={handleShare}
-                            className="p-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors"
+                            className="p-2 sm:p-2.5 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors flex items-center justify-center"
                             title="Share ranking"
                         >
                             <ShareIcon className="w-5 h-5" />

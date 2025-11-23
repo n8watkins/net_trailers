@@ -444,17 +444,21 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                     {/* Right side: Mobile menu, Avatar, Notifications */}
                     <div className="flex items-center space-x-4 text-sm font-light">
                         {/* Mobile Layout: Search + Hamburger + Avatar */}
-                        <div className="lg:hidden flex items-center space-x-3">
+                        <div className="lg:hidden flex items-center space-x-1">
                             {/* Mobile Search Icon */}
-                            <MagnifyingGlassIcon
-                                className="h-6 w-6 cursor-pointer text-white"
+                            <button
+                                className="min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer text-white"
                                 onClick={() => setShowSearch(!showSearch)}
-                            />
+                                aria-label="Search"
+                            >
+                                <MagnifyingGlassIcon className="h-6 w-6" />
+                            </button>
 
                             {/* Mobile Menu Toggle */}
                             <button
-                                className="h-6 w-6"
+                                className="min-w-[44px] min-h-[44px] flex items-center justify-center"
                                 onClick={() => setShowMobileMenu(!showMobileMenu)}
+                                aria-label={showMobileMenu ? 'Close menu' : 'Open menu'}
                             >
                                 {showMobileMenu ? (
                                     <XMarkIcon className="h-6 w-6 text-white" />

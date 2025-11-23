@@ -55,10 +55,10 @@ function SimpleContentCard({
                 onMouseLeave={(e) => e.stopPropagation()}
                 className="
                     absolute top-2 left-1/2 -translate-x-1/2 z-50
-                    w-10 h-10 rounded-full
+                    w-10 h-10 min-w-[44px] min-h-[44px] rounded-full
                     bg-white shadow-lg
                     border-2 border-black
-                    opacity-0 group-hover:opacity-100
+                    opacity-100 sm:opacity-0 sm:group-hover:opacity-100
                     transition-all duration-200
                     hover:scale-110
                     flex items-center justify-center

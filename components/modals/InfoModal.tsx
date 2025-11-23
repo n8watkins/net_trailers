@@ -37,14 +37,14 @@ const InfoModal: React.FC<InfoModalProps> = ({
                 {/* Close Button */}
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors duration-200 p-1 rounded-full hover:bg-white/10"
+                    className="absolute top-2 right-2 sm:top-4 sm:right-4 text-gray-400 hover:text-white transition-colors duration-200 p-2 sm:p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-white/10"
                 >
-                    <XMarkIcon className="h-5 w-5" />
+                    <XMarkIcon className="h-5 w-5 sm:h-6 sm:w-6" />
                 </button>
 
                 {/* Emoji Icon */}
                 <div className="flex justify-center mb-6">
-                    <span className="text-6xl">{emoji}</span>
+                    <span className="text-4xl sm:text-5xl md:text-6xl">{emoji}</span>
                 </div>
 
                 {/* Title */}
