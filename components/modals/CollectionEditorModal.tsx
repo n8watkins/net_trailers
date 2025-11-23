@@ -238,7 +238,7 @@ export default function CollectionEditorModal({
             return
         }
 
-        setIsSaving(true)
+        _setIsSaving(true)
 
         try {
             // Build update object based on edit capabilities
@@ -292,7 +292,7 @@ export default function CollectionEditorModal({
             const description = error instanceof Error ? error.message : undefined
             showError('Failed to save collection', description)
         } finally {
-            setIsSaving(false)
+            _setIsSaving(false)
         }
     }
 

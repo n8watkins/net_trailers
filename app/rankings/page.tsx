@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import SubPageLayout from '../../components/layout/SubPageLayout'
 import { RankingGrid } from '../../components/rankings/RankingGrid'
@@ -22,6 +22,7 @@ import { getUserLikedRankings } from '../../utils/firestore/rankings'
 import { formatDistanceToNow } from 'date-fns'
 import Link from 'next/link'
 import { TrophyIcon, PlusIcon, ChatBubbleLeftIcon, HeartIcon } from '@heroicons/react/24/outline'
+import { Cog6ToothIcon, ChevronDownIcon, TrashIcon } from '@heroicons/react/24/solid'
 import SearchBar from '../../components/common/SearchBar'
 
 export default function RankingsPage() {
@@ -42,6 +43,30 @@ export default function RankingsPage() {
     const [rankingsSearch, setRankingsSearch] = useState('')
     const [commentsSearch, setCommentsSearch] = useState('')
     const [likedSearch, setLikedSearch] = useState('')
+
+    // Manage dropdown state
+    const [showManageDropdown, setShowManageDropdown] = useState(false)
+    const manageDropdownRef = useRef<HTMLDivElement>(null)
+
+    // Handle click outside to close dropdown
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                manageDropdownRef.current &&
+                !manageDropdownRef.current.contains(event.target as Node)
+            ) {
+                setShowManageDropdown(false)
+            }
+        }
+
+        if (showManageDropdown) {
+            document.addEventListener('mousedown', handleClickOutside)
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [showManageDropdown])
 
     // Load all data on mount
     useEffect(() => {
@@ -121,11 +146,65 @@ export default function RankingsPage() {
         )
     }, [likedRankings, likedSearch])
 
+    const titleActions = (
+        <div className="flex items-center gap-3">
+            {/* Create Ranking Button */}
+            <button
+                onClick={handleCreateNew}
+                className={`flex items-center gap-2 px-4 py-2.5 font-medium rounded-lg transition-colors ${
+                    isGuest
+                        ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                        : 'bg-yellow-500 hover:bg-yellow-400 text-black'
+                }`}
+                disabled={isGuest}
+                title={isGuest ? 'Sign in to create rankings' : 'Create a new ranking'}
+            >
+                <PlusIcon className="w-5 h-5" />
+                <span>Create Ranking</span>
+            </button>
+
+            {/* Manage dropdown */}
+            <div className="relative" ref={manageDropdownRef}>
+                <button
+                    type="button"
+                    onClick={() => setShowManageDropdown(!showManageDropdown)}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-white transition-colors cursor-pointer"
+                >
+                    <Cog6ToothIcon className="w-5 h-5 flex-shrink-0" />
+                    <span className="font-medium">Manage</span>
+                    <ChevronDownIcon
+                        className={`w-4 h-4 flex-shrink-0 transition-transform ${
+                            showManageDropdown ? 'rotate-180' : ''
+                        }`}
+                    />
+                </button>
+
+                {/* Dropdown Menu */}
+                {showManageDropdown && (
+                    <div className="absolute top-full mt-2 right-0 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-xl z-50 min-w-[200px] overflow-hidden">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                router.push('/settings/account')
+                                setShowManageDropdown(false)
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-gray-800 transition-colors"
+                        >
+                            <TrashIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                            <span>Clear Data</span>
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+
     return (
         <SubPageLayout
             title="My Rankings"
             icon={<TrophyIcon className="w-8 h-8" />}
             iconColor="text-yellow-500"
+            titleActions={titleActions}
         >
             {/* Guest Mode Notification */}
             {isGuest && (
@@ -198,21 +277,6 @@ export default function RankingsPage() {
                             ) : null)}
                     </button>
                 </div>
-
-                {/* Create Ranking Button */}
-                <button
-                    onClick={handleCreateNew}
-                    className={`flex items-center gap-2 px-4 py-2 mb-1 font-medium rounded-lg transition-colors ${
-                        isGuest
-                            ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                            : 'bg-yellow-500 hover:bg-yellow-400 text-black'
-                    }`}
-                    disabled={isGuest}
-                    title={isGuest ? 'Sign in to create rankings' : 'Create a new ranking'}
-                >
-                    <PlusIcon className="w-5 h-5" />
-                    <span>Create Ranking {isGuest && '(Sign in required)'}</span>
-                </button>
             </div>
 
             {/* Rankings Tab */}

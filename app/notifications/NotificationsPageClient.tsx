@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import { BellIcon, CheckIcon } from '@heroicons/react/24/outline'
+import { Cog6ToothIcon, ChevronDownIcon, TrashIcon } from '@heroicons/react/24/solid'
 import { useNotificationStore } from '../../stores/notificationStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import NotificationItem from '../../components/notifications/NotificationItem'
@@ -18,6 +19,8 @@ export default function NotificationsPageClient() {
     const isInitialized = useSessionStore((state) => state.isInitialized)
     const userId = getUserId()
     const isGuest = sessionType === 'guest'
+    const [showManageDropdown, setShowManageDropdown] = useState(false)
+    const manageDropdownRef = useRef<HTMLDivElement>(null)
     const {
         notifications: rawNotifications,
         unreadCount,
@@ -53,39 +56,97 @@ export default function NotificationsPageClient() {
         }
     }, [userId, isGuest, subscribe, unsubscribeFromNotifications])
 
+    // Handle click outside to close dropdown
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                manageDropdownRef.current &&
+                !manageDropdownRef.current.contains(event.target as Node)
+            ) {
+                setShowManageDropdown(false)
+            }
+        }
+
+        if (showManageDropdown) {
+            document.addEventListener('mousedown', handleClickOutside)
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [showManageDropdown])
+
     const handleMarkAllAsRead = async () => {
         if (!userId || isGuest) return
         await markAllNotificationsAsRead(userId)
     }
 
-    const headerActions = !isLoading ? (
-        isGuest ? (
-            <GuestModeNotification align="left" />
-        ) : (
-            <div className="flex items-center justify-between">
-                <p className="text-sm text-gray-400">
-                    {unreadCount > 0 ? (
-                        <span>
-                            {unreadCount} unread · {notifications.length} total
-                        </span>
-                    ) : (
-                        <span>{notifications.length} notifications</span>
-                    )}
-                </p>
+    const titleActions = (
+        <div className="flex items-center gap-3">
+            {/* Mark all read button */}
+            {!isLoading && !isGuest && (
+                <button
+                    onClick={handleMarkAllAsRead}
+                    disabled={unreadCount === 0}
+                    className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 border ${
+                        unreadCount > 0
+                            ? 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50 hover:text-white border-gray-600 hover:border-gray-400 cursor-pointer'
+                            : 'bg-gray-800/30 text-gray-500 border-gray-700 cursor-not-allowed'
+                    }`}
+                >
+                    <CheckIcon className="h-4 w-4" />
+                    <span>Mark all read</span>
+                </button>
+            )}
 
-                {/* Actions */}
-                {unreadCount > 0 && (
-                    <button
-                        onClick={handleMarkAllAsRead}
-                        className="flex items-center gap-2 rounded-lg bg-gray-800/50 px-4 py-2.5 text-sm font-medium text-gray-300 transition-all duration-200 hover:bg-gray-700/50 hover:text-white border border-gray-600 hover:border-gray-400"
-                    >
-                        <CheckIcon className="h-4 w-4" />
-                        <span>Mark all read</span>
-                    </button>
+            {/* Manage dropdown */}
+            <div className="relative" ref={manageDropdownRef}>
+                <button
+                    type="button"
+                    onClick={() => setShowManageDropdown(!showManageDropdown)}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-white transition-colors cursor-pointer"
+                >
+                    <Cog6ToothIcon className="w-5 h-5 flex-shrink-0" />
+                    <span className="font-medium">Manage</span>
+                    <ChevronDownIcon
+                        className={`w-4 h-4 flex-shrink-0 transition-transform ${
+                            showManageDropdown ? 'rotate-180' : ''
+                        }`}
+                    />
+                </button>
+
+                {/* Dropdown Menu */}
+                {showManageDropdown && (
+                    <div className="absolute top-full mt-2 right-0 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-xl z-50 min-w-[200px] overflow-hidden">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                router.push('/settings/notifications')
+                                setShowManageDropdown(false)
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-gray-800 transition-colors"
+                        >
+                            <Cog6ToothIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                            <span>Settings</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                router.push('/settings/account')
+                                setShowManageDropdown(false)
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-gray-800 transition-colors"
+                        >
+                            <TrashIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                            <span>Clear Data</span>
+                        </button>
+                    </div>
                 )}
             </div>
-        )
-    ) : undefined
+        </div>
+    )
+
+    const headerActions = !isLoading && isGuest ? <GuestModeNotification align="left" /> : undefined
 
     return (
         <SubPageLayout
@@ -93,8 +154,11 @@ export default function NotificationsPageClient() {
             icon={<BellIcon />}
             iconColor="text-red-400"
             description="Stay updated with your personalized notifications"
+            titleActions={titleActions}
             headerActions={headerActions}
-            contentClassName="w-1/2 mx-auto"
+            headerBorder
+            headerClassName="w-full max-w-2xl mx-auto"
+            contentClassName="w-full max-w-2xl mx-auto"
         >
             {/* Content */}
             {isLoading ? (
