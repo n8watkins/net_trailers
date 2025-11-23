@@ -469,7 +469,7 @@ export default function CollectionEditorModal({
                                         options.
                                     </p>
                                     <div className="inline-flex flex-col items-center gap-4 p-6 bg-gray-800/50 rounded-lg border border-gray-700">
-                                        <div className="flex items-center justify-between gap-8">
+                                        <div className="flex items-center justify-between gap-3 sm:gap-4 md:gap-6 lg:gap-8">
                                             <label className="text-sm font-medium text-white flex items-center gap-2">
                                                 <span>🏠</span>
                                                 Display on Page

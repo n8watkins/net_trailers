@@ -450,10 +450,10 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection }: P
 
             {/* Content Row */}
             <div className="relative row-container h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] group">
-                {/* Left Arrow - Hidden on mobile, visible on larger screens */}
+                {/* Left Arrow - Hidden on small mobile, visible on larger screens */}
                 <div
-                    className={`hidden md:flex absolute top-0 left-[-1rem] z-50 rounded-lg w-32 h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] items-center justify-center ${
-                        isMoved ? 'opacity-0 group-hover:opacity-100' : 'opacity-0'
+                    className={`hidden sm:flex absolute top-0 left-[-1rem] z-50 rounded-lg w-12 sm:w-20 md:w-32 h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] items-center justify-center ${
+                        isMoved ? 'opacity-70 sm:opacity-0 sm:group-hover:opacity-100' : 'opacity-0'
                     } transition-all duration-300 cursor-pointer pointer-events-auto border border-transparent hover:shadow-[0_0_20px_rgba(107,114,128,0.5)] hover:backdrop-blur-sm group/chevron`}
                     onClick={() => handleClick('left')}
                 >
@@ -520,9 +520,9 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection }: P
                     )}
                 </div>
 
-                {/* Right Arrow - Hidden on mobile, visible on larger screens */}
+                {/* Right Arrow - Hidden on small mobile, visible on larger screens */}
                 <div
-                    className="hidden md:flex absolute top-0 right-[-1rem] z-50 rounded-lg w-32 h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer pointer-events-auto border border-transparent hover:shadow-[0_0_20px_rgba(107,114,128,0.5)] hover:backdrop-blur-sm group/chevron"
+                    className="hidden sm:flex absolute top-0 right-[-1rem] z-50 rounded-lg w-12 sm:w-20 md:w-32 h-[17rem] sm:h-[19rem] md:h-[21rem] lg:h-[23rem] xl:h-[28.5rem] items-center justify-center opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300 cursor-pointer pointer-events-auto border border-transparent hover:shadow-[0_0_20px_rgba(107,114,128,0.5)] hover:backdrop-blur-sm group/chevron"
                     onClick={() => handleClick('right')}
                 >
                     <div

@@ -213,8 +213,8 @@ function Banner({ trending, variant = 'default', onHeroImageLoaded }: Props) {
             <div
                 className={`absolute inset-0 flex flex-col px-4 sm:px-6 md:px-10 lg:px-16 xl:px-20 ${
                     variant === 'compact'
-                        ? 'justify-start pt-32 sm:pt-36 md:pt-40 lg:pt-44 xl:pt-48 bg-gradient-to-r from-[#0a0a0a]/90 to-transparent'
-                        : 'justify-start pt-28 sm:pt-32 md:justify-center md:pt-0 bg-gradient-to-r from-[#0a0a0a]/90 to-transparent'
+                        ? 'justify-start pt-28 xs:pt-32 sm:pt-36 md:pt-40 lg:pt-44 xl:pt-48 bg-gradient-to-r from-[#0a0a0a]/90 to-transparent'
+                        : 'justify-start pt-24 xs:pt-28 sm:pt-32 md:justify-center md:pt-0 bg-gradient-to-r from-[#0a0a0a]/90 to-transparent'
                 }`}
             >
                 <div

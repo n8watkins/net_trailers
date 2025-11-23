@@ -349,10 +349,10 @@ export default function SmartSearchActions({
                             onClick={() => setIsEditing(true)}
                         >
                             {/* Emoji - no background/border */}
-                            <span className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl">
+                            <span className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl">
                                 {emoji}
                             </span>
-                            <h1 className="text-2xl sm:text-3xl font-bold text-white md:text-4xl lg:text-5xl">
+                            <h1 className="text-xl xs:text-2xl sm:text-3xl font-bold text-white md:text-4xl lg:text-5xl">
                                 {editedName}
                             </h1>
                             <button

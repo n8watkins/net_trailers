@@ -71,7 +71,7 @@ function SimpleLikeButton() {
     return (
         <ToolTipMod title={isLiked ? 'Unlike' : 'Like'}>
             <button
-                className="group relative p-2 sm:p-3 rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-colors duration-200"
+                className="group relative p-2 sm:p-3 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full border-2 border-white/30 bg-black/20 hover:bg-black/50 hover:border-white text-white transition-colors duration-200"
                 onClick={handleLikeToggle}
             >
                 {isLiked ? (

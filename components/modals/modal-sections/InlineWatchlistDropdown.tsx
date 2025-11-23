@@ -63,7 +63,7 @@ function InlineWatchlistDropdown({
     return (
         <div
             ref={dropdownRef}
-            className="bg-[#141414] border border-gray-600 rounded-lg shadow-2xl p-4 mb-4 w-64 max-w-sm relative"
+            className="bg-[#141414] border border-gray-600 rounded-lg shadow-2xl p-3 sm:p-4 mb-4 w-[90vw] sm:w-64 max-w-sm relative"
         >
             <div className="space-y-3">
                 {/* Create New List Button - At the top */}

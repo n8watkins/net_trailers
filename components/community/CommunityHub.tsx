@@ -391,7 +391,7 @@ function RankingsTab({
                 <div className="bg-yellow-950/30 border-2 border-yellow-600/40 rounded-2xl p-6">
                     <div className="flex items-center gap-4 mb-4">
                         {/* Tag Search Input - Left side */}
-                        <div className="w-64">
+                        <div className="w-full sm:w-64 max-w-64">
                             <div className="relative">
                                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                 <input

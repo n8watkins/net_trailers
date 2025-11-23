@@ -64,7 +64,7 @@ export function RankingRow({ title, emoji, rankings, showAuthor = true, onLike }
                 {showLeftArrow && (
                     <button
                         onClick={() => handleClick('left')}
-                        className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-black/70 hover:bg-black/90 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                        className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 min-w-[44px] min-h-[44px] bg-black/70 hover:bg-black/90 rounded-full flex items-center justify-center opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200"
                     >
                         <ChevronLeftIcon className="w-6 h-6 text-white" />
                     </button>
@@ -77,7 +77,7 @@ export function RankingRow({ title, emoji, rankings, showAuthor = true, onLike }
                     className="flex gap-4 overflow-x-scroll scrollbar-hide px-4 md:px-8 py-2"
                 >
                     {rankings.map((ranking) => (
-                        <div key={ranking.id} className="flex-shrink-0 w-80">
+                        <div key={ranking.id} className="flex-shrink-0 w-72 sm:w-76 md:w-80">
                             <RankingCard
                                 ranking={ranking}
                                 showAuthor={showAuthor}
@@ -91,7 +91,7 @@ export function RankingRow({ title, emoji, rankings, showAuthor = true, onLike }
                 {showRightArrow && rankings.length > 3 && (
                     <button
                         onClick={() => handleClick('right')}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-black/70 hover:bg-black/90 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 min-w-[44px] min-h-[44px] bg-black/70 hover:bg-black/90 rounded-full flex items-center justify-center opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200"
                     >
                         <ChevronRightIcon className="w-6 h-6 text-white" />
                     </button>

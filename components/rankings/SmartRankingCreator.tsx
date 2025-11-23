@@ -165,7 +165,7 @@ function SortableItem({
                 </div>
 
                 {/* Side Note (Smaller) */}
-                <div className="w-48 flex-shrink-0">
+                <div className="w-32 sm:w-40 md:w-48 flex-shrink-0">
                     <textarea
                         value={itemNote}
                         onChange={(e) => onNoteChange(e.target.value)}
