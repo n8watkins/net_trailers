@@ -12,6 +12,7 @@ import PreferencesSection from '../../../components/settings/PreferencesSection'
 import ChildSafetyPINModal from '../../../components/settings/ChildSafetyPINModal'
 import InfoModal from '../../../components/modals/InfoModal'
 import { useChildSafetyPINStore } from '../../../stores/childSafetyStore'
+import { useWatchHistoryStore } from '../../../stores/watchHistoryStore'
 
 const PreferencesPage: React.FC = () => {
     const { isGuest } = useAuthStatus()
@@ -25,6 +26,10 @@ const PreferencesPage: React.FC = () => {
 
     // Modal states
     const [showChildSafetyModal, setShowChildSafetyModal] = useState(false)
+    const [showDeleteHistoryModal, setShowDeleteHistoryModal] = useState(false)
+
+    // Watch history store for clearing history
+    const clearWatchHistory = useWatchHistoryStore((state) => state.clearHistory)
 
     // PIN Protection states
     const [pinModalMode, setPinModalMode] = useState<'create' | 'verify' | 'change'>('verify')
@@ -227,8 +232,24 @@ const PreferencesPage: React.FC = () => {
     }, [])
 
     const handleTrackWatchHistoryChange = React.useCallback((checked: boolean) => {
+        // If toggling OFF, show confirmation modal to delete history
+        if (!checked) {
+            setShowDeleteHistoryModal(true)
+            return // Don't change state until confirmed
+        }
+        // If toggling ON, allow immediately
         setTrackWatchHistory(checked)
     }, [])
+
+    const handleConfirmDeleteHistory = React.useCallback(() => {
+        // Clear all watch history
+        clearWatchHistory()
+        // Disable tracking
+        setTrackWatchHistory(false)
+        // Close modal
+        setShowDeleteHistoryModal(false)
+        showSuccess('Watch history deleted and tracking disabled')
+    }, [clearWatchHistory, showSuccess])
 
     const handleShowChildSafetyModal = React.useCallback(() => {
         setShowChildSafetyModal(true)
@@ -308,6 +329,18 @@ const PreferencesPage: React.FC = () => {
                 confirmButtonText="Create Account"
                 cancelButtonText="Maybe Later"
                 emoji="🔒"
+            />
+
+            {/* Delete Watch History Confirmation Modal */}
+            <InfoModal
+                isOpen={showDeleteHistoryModal}
+                onClose={() => setShowDeleteHistoryModal(false)}
+                onConfirm={handleConfirmDeleteHistory}
+                title="Delete Watch History?"
+                message="Disabling watch history tracking will permanently delete all your existing watch history. This action cannot be undone. Are you sure you want to continue?"
+                confirmButtonText="Delete & Disable"
+                cancelButtonText="Cancel"
+                emoji="🗑️"
             />
 
             {/* PIN Modals */}
