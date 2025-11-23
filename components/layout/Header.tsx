@@ -350,8 +350,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                         width={140}
                         height={70}
                         alt="NetTrailers Logo"
-                        className="cursor-pointer object-contain select-none"
-                        style={{ width: 'auto', height: 'auto' }}
+                        className="cursor-pointer object-contain select-none w-[100px] h-auto sm:w-[120px] md:w-[140px]"
                         priority
                         onClick={() => router.push('/')}
                     />
@@ -482,8 +481,11 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                 {/* Sub-Navigation - Conditionally rendered on user pages */}
                 {showSubNav && (
                     <div className="w-full border-t border-gray-800/30">
-                        <nav className="mx-auto max-w-7xl px-4 py-4" aria-label="User navigation">
-                            <div className="flex gap-8 overflow-x-auto scrollbar-hide">
+                        <nav
+                            className="mx-auto max-w-7xl px-2 sm:px-4 py-2 sm:py-4"
+                            aria-label="User navigation"
+                        >
+                            <div className="flex gap-2 sm:gap-8 justify-center sm:justify-start">
                                 {subNavItems.map((item) => {
                                     // Check if current path starts with the item's href (handles nested routes like /settings/preferences)
                                     const isActive = pathname.startsWith(item.href)
@@ -493,14 +495,18 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                         <Link
                                             key={item.href}
                                             href={item.href}
-                                            className={`group relative flex items-center gap-2 whitespace-nowrap border-b-2 px-1 py-3 text-sm font-medium transition-colors ${
+                                            title={item.label}
+                                            className={`group relative flex items-center justify-center gap-2 whitespace-nowrap border-b-2 px-2 sm:px-1 py-2 sm:py-3 text-sm font-medium transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 ${
                                                 isActive
                                                     ? 'border-red-600 text-red-600'
                                                     : 'border-transparent text-gray-400 hover:text-gray-200'
                                             }`}
                                         >
-                                            <Icon className="h-5 w-5" aria-hidden="true" />
-                                            <span>{item.label}</span>
+                                            <Icon
+                                                className="h-5 w-5 sm:h-5 sm:w-5"
+                                                aria-hidden="true"
+                                            />
+                                            <span className="hidden sm:inline">{item.label}</span>
                                         </Link>
                                     )
                                 })}

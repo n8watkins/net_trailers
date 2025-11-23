@@ -93,22 +93,10 @@ export default function NotificationPanel() {
 
     if (!isVisible) return null
 
-    return (
-        <div
-            ref={panelRef}
-            // DROPDOWN STYLING: Updated to match avatar/genre dropdowns - slightly brighter than pure black
-            // To revert: replace with "border border-red-900/30 bg-gray-900 shadow-2xl shadow-red-950/20"
-            className={`absolute right-0 top-full z-50 mt-2 w-[95vw] sm:w-[400px] md:w-[520px] max-w-[520px] rounded-lg bg-[#0f0f0f]/95 backdrop-blur-sm border border-red-500/40 shadow-2xl shadow-red-500/20 transition-all duration-200 ease-out origin-top ${
-                isAnimating
-                    ? 'opacity-100 translate-y-0 scale-100'
-                    : 'opacity-0 -translate-y-2 scale-95'
-            }`}
-            role="dialog"
-            aria-label="Notifications"
-        >
+    // Shared panel content (used by both mobile and desktop)
+    const panelContent = (
+        <>
             {/* Header */}
-            {/* HEADER STYLING: Updated to match dropdown background */}
-            {/* To revert: replace with "border-b border-red-900/30 bg-gray-900" */}
             <div className="flex items-center justify-between border-b border-gray-700 px-4 py-3">
                 <div className="flex items-center gap-2">
                     <h2 className="text-base font-semibold text-white">Notifications</h2>
@@ -146,7 +134,6 @@ export default function NotificationPanel() {
             </div>
 
             {/* Notifications List */}
-            {/* SCROLLBAR: Track matches dropdown background color, thumb is red */}
             <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-red-600 hover:scrollbar-thumb-red-500 scrollbar-thumb-rounded-full scrollbar-track-rounded-full">
                 {isLoading ? (
                     <div className="flex items-center justify-center py-12">
@@ -168,8 +155,6 @@ export default function NotificationPanel() {
             </div>
 
             {/* Footer */}
-            {/* FOOTER STYLING: Updated to match dropdown background */}
-            {/* To revert: replace with "border-t border-red-900/30 bg-gradient-to-r from-red-950/10 to-transparent" */}
             {notifications.length > 0 && (
                 <div className="border-t border-gray-700 px-4 py-3">
                     <div className="flex items-center justify-center gap-3 text-sm">
@@ -187,7 +172,48 @@ export default function NotificationPanel() {
                     </div>
                 </div>
             )}
-        </div>
+        </>
+    )
+
+    return (
+        <>
+            {/* Mobile: Centered modal with backdrop (like Header mobile menu) */}
+            <div
+                className={`sm:hidden fixed inset-0 z-[105] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity duration-200 ${
+                    isAnimating ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                }`}
+                onClick={(e) => {
+                    if (e.target === e.currentTarget) {
+                        closePanel()
+                    }
+                }}
+            >
+                <div
+                    className={`w-full max-w-sm rounded-xl bg-[#0f0f0f]/95 backdrop-blur-sm border border-red-500/40 shadow-2xl shadow-red-500/20 transition-all duration-200 ease-out ${
+                        isAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+                    }`}
+                    role="dialog"
+                    aria-label="Notifications"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {panelContent}
+                </div>
+            </div>
+
+            {/* Desktop: Traditional dropdown below bell icon */}
+            <div
+                ref={panelRef}
+                className={`hidden sm:block absolute right-0 top-full z-50 mt-2 w-[400px] md:w-[520px] max-w-[520px] rounded-lg bg-[#0f0f0f]/95 backdrop-blur-sm border border-red-500/40 shadow-2xl shadow-red-500/20 transition-all duration-200 ease-out origin-top ${
+                    isAnimating
+                        ? 'opacity-100 translate-y-0 scale-100'
+                        : 'opacity-0 -translate-y-2 scale-95'
+                }`}
+                role="dialog"
+                aria-label="Notifications"
+            >
+                {panelContent}
+            </div>
+        </>
     )
 }
 

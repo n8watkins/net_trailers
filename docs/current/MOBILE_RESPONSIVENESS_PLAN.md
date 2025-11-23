@@ -318,6 +318,21 @@ className =
 | 486 | `gap-8` nav items | `gap-4 sm:gap-6 md:gap-8` |
 | 541 | `max-w-sm` mobile menu | `max-w-[90vw] sm:max-w-sm` |
 
+#### Sub-Navigation (User Pages) - ✅ COMPLETED
+
+**Lines:** 481-510
+
+```tsx
+// Current: Icon + label for all viewports, gap-8
+// Fix: Icons-only on mobile, labels on sm+, centered on mobile
+<div className="flex gap-2 sm:gap-8 justify-center sm:justify-start">
+    <Link title={item.label} className="min-w-[44px] min-h-[44px] sm:min-w-0 ...">
+        <Icon className="h-5 w-5" />
+        <span className="hidden sm:inline">{item.label}</span>
+    </Link>
+</div>
+```
+
 **Estimated Changes:** ~15 lines
 
 ---
