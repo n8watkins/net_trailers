@@ -7,8 +7,9 @@
 
 'use client'
 
-import { useEffect, useRef } from 'react'
-import { CheckIcon } from '@heroicons/react/24/outline'
+import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
+import { CheckIcon, Cog6ToothIcon } from '@heroicons/react/24/outline'
 import { useNotificationStore } from '../../stores/notificationStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import NotificationItem from './NotificationItem'
@@ -26,6 +27,31 @@ export default function NotificationPanel() {
     } = useNotificationStore()
 
     const panelRef = useRef<HTMLDivElement>(null)
+
+    // Animation state: track if panel should be visible in DOM
+    const [isVisible, setIsVisible] = useState(false)
+    const [isAnimating, setIsAnimating] = useState(false)
+
+    // Handle open/close with animation
+    useEffect(() => {
+        if (isPanelOpen) {
+            // Opening: show in DOM first, then animate in
+            setIsVisible(true)
+            // Small delay to ensure DOM is ready before animation starts
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    setIsAnimating(true)
+                })
+            })
+        } else {
+            // Closing: animate out first, then remove from DOM
+            setIsAnimating(false)
+            const timer = setTimeout(() => {
+                setIsVisible(false)
+            }, 200) // Match animation duration
+            return () => clearTimeout(timer)
+        }
+    }, [isPanelOpen])
 
     // Close panel when clicking outside
     useEffect(() => {
@@ -65,14 +91,18 @@ export default function NotificationPanel() {
         await markAllNotificationsAsRead(userId)
     }
 
-    if (!isPanelOpen) return null
+    if (!isVisible) return null
 
     return (
         <div
             ref={panelRef}
             // DROPDOWN STYLING: Updated to match avatar/genre dropdowns - slightly brighter than pure black
             // To revert: replace with "border border-red-900/30 bg-gray-900 shadow-2xl shadow-red-950/20"
-            className="absolute right-0 top-full z-50 mt-2 w-[520px] rounded-lg bg-[#0f0f0f]/95 backdrop-blur-sm border border-red-500/40 shadow-2xl shadow-red-500/20"
+            className={`absolute right-0 top-full z-50 mt-2 w-[95vw] sm:w-[400px] md:w-[520px] max-w-[520px] rounded-lg bg-[#0f0f0f]/95 backdrop-blur-sm border border-red-500/40 shadow-2xl shadow-red-500/20 transition-all duration-200 ease-out origin-top ${
+                isAnimating
+                    ? 'opacity-100 translate-y-0 scale-100'
+                    : 'opacity-0 -translate-y-2 scale-95'
+            }`}
             role="dialog"
             aria-label="Notifications"
         >
@@ -90,19 +120,29 @@ export default function NotificationPanel() {
                 </div>
 
                 {/* Actions */}
-                <button
-                    onClick={handleMarkAllAsRead}
-                    disabled={unreadCount === 0}
-                    className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all ${
-                        unreadCount > 0
-                            ? 'bg-gray-800 text-gray-200 hover:bg-gray-700 hover:text-white border border-gray-600 hover:border-gray-500'
-                            : 'bg-gray-900/50 text-gray-600 cursor-not-allowed border border-gray-800'
-                    }`}
-                    aria-label="Mark all as read"
-                >
-                    <CheckIcon className="h-4 w-4" aria-hidden="true" />
-                    Mark all read
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={handleMarkAllAsRead}
+                        disabled={unreadCount === 0}
+                        className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all ${
+                            unreadCount > 0
+                                ? 'bg-gray-800 text-gray-200 hover:bg-gray-700 hover:text-white border border-gray-600 hover:border-gray-500'
+                                : 'bg-gray-900/50 text-gray-600 cursor-not-allowed border border-gray-800'
+                        }`}
+                        aria-label="Mark all as read"
+                    >
+                        <CheckIcon className="h-4 w-4" aria-hidden="true" />
+                        Mark all read
+                    </button>
+                    <Link
+                        href="/settings/notifications"
+                        onClick={closePanel}
+                        className="flex items-center justify-center rounded-lg p-2 text-gray-400 hover:text-white hover:bg-gray-700 transition-all border border-transparent hover:border-gray-600"
+                        aria-label="Notification settings"
+                    >
+                        <Cog6ToothIcon className="h-5 w-5" aria-hidden="true" />
+                    </Link>
+                </div>
             </div>
 
             {/* Notifications List */}

@@ -41,44 +41,46 @@ export default function NotificationItem({ notification }: NotificationItemProps
         return 'Just now'
     }
 
+    // Check if notification is clickable (has content or action URL)
+    const isClickable =
+        !!(notification.contentId && notification.mediaType) || !!notification.actionUrl
+
     // Handle notification click
     const handleClick = async () => {
         if (!userId || isLoading) return
 
-        // Mark as read if unread
+        // Mark as read if unread (don't await - let it happen in background)
         if (!notification.isRead) {
-            await markNotificationAsRead(userId, notification.id)
+            markNotificationAsRead(userId, notification.id).catch(console.error)
         }
 
-        // Check if actionUrl contains contentId and media_type
-        if (notification.actionUrl && notification.contentId) {
+        // If notification has contentId and mediaType, open the content modal
+        if (notification.contentId && notification.mediaType) {
+            setIsLoading(true)
+
+            // Create abort controller with 10 second timeout
+            const controller = new AbortController()
+            const timeoutId = setTimeout(() => controller.abort(), 10000)
+
             try {
-                const url = new URL(notification.actionUrl, window.location.origin)
-                const contentId = url.searchParams.get('contentId')
-                const mediaType = url.searchParams.get('media_type')
+                const url = `/api/movies/details/${notification.contentId}?media_type=${notification.mediaType}`
+                const response = await fetch(url, { signal: controller.signal })
 
-                if (contentId && mediaType && (mediaType === 'movie' || mediaType === 'tv')) {
-                    setIsLoading(true)
+                clearTimeout(timeoutId)
 
-                    // Fetch content details
-                    const response = await fetch(
-                        `/api/movies/details/${contentId}?media_type=${mediaType}`
-                    )
-
-                    if (response.ok) {
-                        const content: Content = await response.json()
-
-                        // Close notification panel and open modal
-                        closePanel()
-                        openModal(content, true, false) // autoPlay=true, autoPlayWithSound=false
-                        return
-                    }
+                if (response.ok) {
+                    const content: Content = await response.json()
+                    closePanel()
+                    openModal(content, true, false) // autoPlay=true, autoPlayWithSound=false
+                    setIsLoading(false)
+                    return
                 }
             } catch (error) {
-                // Silent fail - notification click falls back to navigation if content fetch fails
-            } finally {
-                setIsLoading(false)
+                clearTimeout(timeoutId)
+                // Silently handle errors - user will see loading state end
             }
+
+            setIsLoading(false)
         }
 
         // Fallback: Navigate to action URL if provided
@@ -131,8 +133,8 @@ export default function NotificationItem({ notification }: NotificationItemProps
 
     return (
         <div
-            className={`group relative flex gap-6 border-b border-gray-800/50 p-6 transition-all duration-200 ${
-                notification.actionUrl
+            className={`group relative flex gap-3 sm:gap-4 md:gap-6 border-b border-gray-800/50 p-3 sm:p-4 md:p-6 transition-all duration-200 ${
+                isClickable
                     ? isLoading
                         ? 'cursor-wait opacity-70'
                         : 'cursor-pointer hover:bg-red-950/40'
@@ -150,7 +152,7 @@ export default function NotificationItem({ notification }: NotificationItemProps
                     <img
                         src={notification.imageUrl}
                         alt=""
-                        className="h-40 w-28 rounded object-cover ring-1 ring-red-900/30"
+                        className="h-24 w-16 sm:h-32 sm:w-20 md:h-40 md:w-28 rounded object-cover ring-1 ring-red-900/30"
                     />
                 </div>
             )}

@@ -80,7 +80,7 @@ function ListItemsContainer({
     }
 
     return (
-        <div className="space-y-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
             {allLists.map((list) => {
                 const isEditing = editingListId === list.id
                 const isDefaultList = list.id === 'default-watchlist'
