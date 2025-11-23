@@ -80,16 +80,6 @@ const PreferencesPage: React.FC = () => {
         () => userData.trackWatchHistory ?? true
     )
 
-    // Track original preferences to detect changes
-    const [originalPreferences, setOriginalPreferences] = useState({
-        childSafetyMode: userData.childSafetyMode ?? false,
-        autoMute: userData.autoMute ?? true,
-        defaultVolume: userData.defaultVolume ?? 50,
-        improveRecommendations: userData.improveRecommendations ?? true,
-        showRecommendations: userData.showRecommendations ?? false,
-        trackWatchHistory: userData.trackWatchHistory ?? true,
-    })
-
     // Track the last preferences we loaded from the store to detect external changes
     const lastLoadedPrefsRef = React.useRef(currentPreferences)
 
@@ -119,14 +109,6 @@ const PreferencesPage: React.FC = () => {
             setImproveRecommendations(currentPreferences.improveRecommendations)
             setShowRecommendations(currentPreferences.showRecommendations)
             setTrackWatchHistory(currentPreferences.trackWatchHistory)
-            setOriginalPreferences({
-                childSafetyMode: currentPreferences.childSafetyMode,
-                autoMute: currentPreferences.autoMute,
-                defaultVolume: currentPreferences.defaultVolume,
-                improveRecommendations: currentPreferences.improveRecommendations,
-                showRecommendations: currentPreferences.showRecommendations,
-                trackWatchHistory: currentPreferences.trackWatchHistory,
-            })
             // Update our tracking ref
             lastLoadedPrefsRef.current = currentPreferences
         }
@@ -142,50 +124,31 @@ const PreferencesPage: React.FC = () => {
         }
     }, [userData.isInitializing, isGuest, userData.userSession?.userId, loadPINSettings])
 
-    // Check if preferences have changed
-    const preferencesChanged =
-        childSafetyMode !== originalPreferences.childSafetyMode ||
-        autoMute !== originalPreferences.autoMute ||
-        defaultVolume !== originalPreferences.defaultVolume ||
-        improveRecommendations !== originalPreferences.improveRecommendations ||
-        showRecommendations !== originalPreferences.showRecommendations ||
-        trackWatchHistory !== originalPreferences.trackWatchHistory
+    // Helper function to save a single preference with auto-save
+    const savePreference = React.useCallback(
+        async (key: string, value: boolean | number, message: string) => {
+            try {
+                const update = { [key]: value }
 
-    // Handle saving preferences
-    const handleSavePreferences = async () => {
-        try {
-            // Update preferences through the appropriate store
-            const updatedPreferences = {
-                childSafetyMode,
-                autoMute,
-                defaultVolume,
-                improveRecommendations,
-                showRecommendations,
-                trackWatchHistory,
+                if (isGuest) {
+                    guestStoreUpdatePrefs(update)
+                } else {
+                    await authStoreUpdatePrefs(update)
+
+                    // Sync child safety mode to cookie for server-side rendering
+                    if (key === 'childSafetyMode') {
+                        await toggleChildSafetyAction(value as boolean)
+                    }
+                }
+
+                showSuccess(message)
+            } catch (error) {
+                console.error(`❌ [Settings] Error saving ${key}:`, error)
+                showError(`Failed to save setting`)
             }
-
-            if (isGuest) {
-                // For guest, update the guest store
-                // Note: Guest store blocks childSafetyMode changes (always false)
-                guestStoreUpdatePrefs(updatedPreferences)
-            } else {
-                // For authenticated, update auth store
-                await authStoreUpdatePrefs(updatedPreferences)
-
-                // CRITICAL: Sync child safety mode to cookie for server-side rendering
-                // This ensures server-rendered pages respect the user's preference
-                await toggleChildSafetyAction(childSafetyMode)
-            }
-
-            // Update original preferences to reflect saved state
-            setOriginalPreferences(updatedPreferences)
-
-            showSuccess('Preferences saved successfully!')
-        } catch (error) {
-            console.error('❌ [Settings] Error saving preferences:', error)
-            showError('Failed to save preferences')
-        }
-    }
+        },
+        [isGuest, guestStoreUpdatePrefs, authStoreUpdatePrefs, showSuccess, showError]
+    )
 
     // Create stable callback references for memoized component
     const handleChildSafetyModeChange = React.useCallback(
@@ -205,41 +168,90 @@ const PreferencesPage: React.FC = () => {
                 return // Don't change state until PIN is verified
             }
 
-            // If toggling ON, allow without PIN
+            // Update state and auto-save
             setChildSafetyMode(checked)
+            savePreference(
+                'childSafetyMode',
+                checked,
+                checked ? 'Child Safety Mode enabled' : 'Child Safety Mode disabled'
+            )
         },
-        [isGuest, pinSettings.hasPIN, pinSettings.enabled]
+        [isGuest, pinSettings.hasPIN, pinSettings.enabled, savePreference]
     )
 
-    const handleAutoMuteChange = React.useCallback((checked: boolean) => {
-        setAutoMute(checked)
-    }, [])
+    const handleAutoMuteChange = React.useCallback(
+        (checked: boolean) => {
+            setAutoMute(checked)
+            savePreference(
+                'autoMute',
+                checked,
+                checked ? 'Auto-mute trailers enabled' : 'Auto-mute trailers disabled'
+            )
+        },
+        [savePreference]
+    )
 
-    const handleDefaultVolumeChange = React.useCallback((volume: number) => {
-        setDefaultVolume(volume)
-    }, [])
+    // Debounce ref for volume slider
+    const volumeTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
 
-    const handleImproveRecommendationsChange = React.useCallback((checked: boolean) => {
-        setImproveRecommendations(checked)
-        // If disabling recommendation tracking, also disable the recommendations row
-        if (!checked) {
-            setShowRecommendations(false)
-        }
-    }, [])
+    const handleDefaultVolumeChange = React.useCallback(
+        (volume: number) => {
+            setDefaultVolume(volume)
 
-    const handleShowRecommendationsChange = React.useCallback((checked: boolean) => {
-        setShowRecommendations(checked)
-    }, [])
+            // Debounce the save for volume slider to avoid too many saves
+            if (volumeTimeoutRef.current) {
+                clearTimeout(volumeTimeoutRef.current)
+            }
+            volumeTimeoutRef.current = setTimeout(() => {
+                savePreference('defaultVolume', volume, `Default volume set to ${volume}%`)
+            }, 500)
+        },
+        [savePreference]
+    )
 
-    const handleTrackWatchHistoryChange = React.useCallback((checked: boolean) => {
-        // If toggling OFF, show confirmation modal to delete history
-        if (!checked) {
-            setShowDeleteHistoryModal(true)
-            return // Don't change state until confirmed
-        }
-        // If toggling ON, allow immediately
-        setTrackWatchHistory(checked)
-    }, [])
+    const handleImproveRecommendationsChange = React.useCallback(
+        (checked: boolean) => {
+            setImproveRecommendations(checked)
+            // If disabling recommendation tracking, also disable the recommendations row
+            if (!checked) {
+                setShowRecommendations(false)
+            }
+            savePreference(
+                'improveRecommendations',
+                checked,
+                checked ? 'Interaction tracking enabled' : 'Interaction tracking disabled'
+            )
+        },
+        [savePreference]
+    )
+
+    const handleShowRecommendationsChange = React.useCallback(
+        (checked: boolean) => {
+            setShowRecommendations(checked)
+            savePreference(
+                'showRecommendations',
+                checked,
+                checked
+                    ? 'Personalized recommendations enabled'
+                    : 'Personalized recommendations disabled'
+            )
+        },
+        [savePreference]
+    )
+
+    const handleTrackWatchHistoryChange = React.useCallback(
+        (checked: boolean) => {
+            // If toggling OFF, show confirmation modal to delete history
+            if (!checked) {
+                setShowDeleteHistoryModal(true)
+                return // Don't change state until confirmed
+            }
+            // If toggling ON, update and save immediately
+            setTrackWatchHistory(checked)
+            savePreference('trackWatchHistory', checked, 'Watch history tracking enabled')
+        },
+        [savePreference]
+    )
 
     const handleConfirmDeleteHistory = React.useCallback(() => {
         // Clear all watch history
@@ -248,8 +260,9 @@ const PreferencesPage: React.FC = () => {
         setTrackWatchHistory(false)
         // Close modal
         setShowDeleteHistoryModal(false)
-        showSuccess('Watch history deleted and tracking disabled')
-    }, [clearWatchHistory, showSuccess])
+        // Save and show toast
+        savePreference('trackWatchHistory', false, 'Watch history deleted and tracking disabled')
+    }, [clearWatchHistory, savePreference])
 
     const handleShowChildSafetyModal = React.useCallback(() => {
         setShowChildSafetyModal(true)
@@ -282,10 +295,17 @@ const PreferencesPage: React.FC = () => {
         // If we had a pending Child Safety toggle, apply it now
         if (pendingChildSafetyToggle !== null) {
             setChildSafetyMode(pendingChildSafetyToggle)
+            savePreference(
+                'childSafetyMode',
+                pendingChildSafetyToggle,
+                pendingChildSafetyToggle
+                    ? 'Child Safety Mode enabled'
+                    : 'Child Safety Mode disabled'
+            )
             setPendingChildSafetyToggle(null)
         }
         setShowPINModal(false)
-    }, [pendingChildSafetyToggle])
+    }, [pendingChildSafetyToggle, savePreference])
 
     const handleClosePINModal = React.useCallback(() => {
         setShowPINModal(false)
@@ -303,7 +323,6 @@ const PreferencesPage: React.FC = () => {
                 improveRecommendations={improveRecommendations}
                 showRecommendations={showRecommendations}
                 trackWatchHistory={trackWatchHistory}
-                preferencesChanged={preferencesChanged}
                 hasPIN={pinSettings.hasPIN}
                 pinEnabled={pinSettings.enabled}
                 onChildSafetyModeChange={handleChildSafetyModeChange}
@@ -312,7 +331,6 @@ const PreferencesPage: React.FC = () => {
                 onImproveRecommendationsChange={handleImproveRecommendationsChange}
                 onShowRecommendationsChange={handleShowRecommendationsChange}
                 onTrackWatchHistoryChange={handleTrackWatchHistoryChange}
-                onSave={handleSavePreferences}
                 onShowChildSafetyModal={handleShowChildSafetyModal}
                 onSetupPIN={handleSetupPIN}
                 onChangePIN={handleChangePIN}
