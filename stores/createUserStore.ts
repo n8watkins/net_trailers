@@ -164,6 +164,8 @@ export function createUserStore(options: CreateUserStoreOptions) {
                 hiddenMovies: state.hiddenMovies,
                 defaultWatchlist: state.defaultWatchlist,
                 userCreatedWatchlists: state.userCreatedWatchlists,
+                systemRecommendations:
+                    state.systemRecommendations ?? createDefaultSystemRecommendations(),
                 lastActive: Date.now(),
                 autoMute: state.autoMute ?? true,
                 defaultVolume: state.defaultVolume ?? 50,
@@ -536,6 +538,71 @@ export function createUserStore(options: CreateUserStoreOptions) {
             }
         },
 
+        updateSystemRecommendation: async (
+            id: string,
+            updates: Partial<Omit<SystemRecommendation, 'id'>>
+        ) => {
+            const state = get()
+            if (adapter.isAsync) set({ syncStatus: 'syncing' })
+
+            const newRecommendations = state.systemRecommendations.map((rec) =>
+                rec.id === id ? { ...rec, ...updates } : rec
+            )
+
+            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
+            set({
+                systemRecommendations: newRecommendations,
+                lastActive: newLastActive,
+            })
+
+            try {
+                await saveToStorage(get(), 'updateSystemRecommendation')
+                if (adapter.isAsync) set({ syncStatus: 'synced' })
+            } catch (_error) {
+                if (adapter.isAsync) set({ syncStatus: 'offline' })
+            }
+
+            logger.log(`✏️ [${trackingContext}] Updated system recommendation:`, { id, updates })
+        },
+
+        reorderSystemRecommendations: async (orderedIds: string[]) => {
+            const state = get()
+            if (adapter.isAsync) set({ syncStatus: 'syncing' })
+
+            // Create a map of current recommendations
+            const recMap = new Map(state.systemRecommendations.map((rec) => [rec.id, rec]))
+
+            // Reorder based on orderedIds, assigning new order values
+            const newRecommendations = orderedIds
+                .map((id, index) => {
+                    const rec = recMap.get(id as SystemRecommendation['id'])
+                    return rec ? { ...rec, order: index } : null
+                })
+                .filter((rec): rec is SystemRecommendation => rec !== null)
+
+            // Add any recommendations not in orderedIds at the end
+            state.systemRecommendations.forEach((rec) => {
+                if (!orderedIds.includes(rec.id)) {
+                    newRecommendations.push({ ...rec, order: newRecommendations.length })
+                }
+            })
+
+            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
+            set({
+                systemRecommendations: newRecommendations,
+                lastActive: newLastActive,
+            })
+
+            try {
+                await saveToStorage(get(), 'reorderSystemRecommendations')
+                if (adapter.isAsync) set({ syncStatus: 'synced' })
+            } catch (_error) {
+                if (adapter.isAsync) set({ syncStatus: 'offline' })
+            }
+
+            logger.log(`🔄 [${trackingContext}] Reordered system recommendations:`, orderedIds)
+        },
+
         ...(enableFirebaseSync && {
             syncWithStorage: async (userId: string) => {
                 const state = get()
@@ -594,6 +661,9 @@ export function createUserStore(options: CreateUserStoreOptions) {
                                 hiddenMovies: firebaseData.hiddenMovies,
                                 defaultWatchlist: firebaseData.defaultWatchlist,
                                 userCreatedWatchlists: normalizedCollections,
+                                systemRecommendations:
+                                    firebaseData.systemRecommendations ??
+                                    createDefaultSystemRecommendations(),
                                 lastActive: firebaseData.lastActive,
                                 autoMute: firebaseData.autoMute ?? true,
                                 defaultVolume: firebaseData.defaultVolume ?? 50,
@@ -658,6 +728,8 @@ export function createUserStore(options: CreateUserStoreOptions) {
                     hiddenMovies: loadedData.hiddenMovies,
                     defaultWatchlist: loadedData.defaultWatchlist,
                     userCreatedWatchlists: normalizedCollections,
+                    systemRecommendations:
+                        loadedData.systemRecommendations ?? createDefaultSystemRecommendations(),
                     lastActive: loadedData.lastActive,
                     autoMute: loadedData.autoMute ?? true,
                     defaultVolume: loadedData.defaultVolume ?? 50,

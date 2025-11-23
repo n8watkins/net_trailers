@@ -8,6 +8,7 @@ import { useModalStore } from '../../stores/modalStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { CollectionRowLoader } from '../collections/CollectionRowLoader'
 import RecommendedForYouRow from '../recommendations/RecommendedForYouRow'
+import { TrendingRow, TopRatedRow } from '../recommendations/SystemRecommendationRow'
 import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
 import { useCacheStore } from '../../stores/cacheStore'
@@ -37,6 +38,17 @@ export default function HomeClient({ data }: HomeClientProps) {
     // After unification, all collections (including defaults) are in userCreatedWatchlists
     const authCollections = useAuthStore((state) => state.userCreatedWatchlists)
     const guestCollections = useGuestStore((state) => state.userCreatedWatchlists)
+
+    // Get system recommendations from appropriate store
+    const authSystemRecommendations = useAuthStore((state) => state.systemRecommendations)
+    const guestSystemRecommendations = useGuestStore((state) => state.systemRecommendations)
+    const systemRecommendations =
+        sessionType === 'authenticated' ? authSystemRecommendations : guestSystemRecommendations
+
+    // Sort system recommendations by order
+    const sortedSystemRecommendations = useMemo(() => {
+        return [...systemRecommendations].sort((a, b) => a.order - b.order)
+    }, [systemRecommendations])
 
     const { trending } = data
     const trendingSignature = useMemo(
@@ -157,10 +169,23 @@ export default function HomeClient({ data }: HomeClientProps) {
                             </button>
                         </div>
 
-                        {/* Personalized Recommendations Row */}
-                        <RecommendedForYouRow />
+                        {/* System Recommendation Rows (Trending, Top Rated, Recommended For You) */}
+                        {/* Rendered in user-defined order based on systemRecommendations settings */}
+                        {sortedSystemRecommendations.map((rec) => {
+                            if (!rec.enabled) return null
+                            switch (rec.id) {
+                                case 'trending':
+                                    return <TrendingRow key="trending" />
+                                case 'top-rated':
+                                    return <TopRatedRow key="top-rated" />
+                                case 'recommended-for-you':
+                                    return <RecommendedForYouRow key="recommended-for-you" />
+                                default:
+                                    return null
+                            }
+                        })}
 
-                        {/* Dynamic collections (system + user) sorted by order */}
+                        {/* User Collections (genre-based + manual) sorted by order */}
                         {enabledCollections.map((collection) => (
                             <CollectionRowLoader
                                 key={collection.id}

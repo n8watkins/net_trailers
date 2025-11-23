@@ -7,6 +7,84 @@
 import { Content } from './collections'
 
 /**
+ * System recommendation IDs - these are built-in recommendation rows
+ * that users can customize but cannot add manual content to
+ */
+export type SystemRecommendationId = 'trending' | 'top-rated' | 'recommended-for-you'
+
+/**
+ * System Recommendation Settings
+ *
+ * These are TMDB-powered rows that users can customize (name, media type, genres)
+ * but cannot add manual content to. They are separate from user collections.
+ */
+export interface SystemRecommendation {
+    /** Unique identifier */
+    id: SystemRecommendationId
+
+    /** Display name (user can customize) */
+    name: string
+
+    /** Whether this recommendation row is enabled */
+    enabled: boolean
+
+    /** Display order on homepage (lower = higher) */
+    order: number
+
+    /** Media type filter: movie, tv, or both */
+    mediaType: 'movie' | 'tv' | 'both'
+
+    /** Genre filters (unified genre IDs) */
+    genres: string[]
+
+    /** Optional color for UI customization */
+    color?: string
+
+    /** Optional emoji for display */
+    emoji?: string
+}
+
+/**
+ * Default system recommendations for new users
+ */
+export const DEFAULT_SYSTEM_RECOMMENDATIONS: SystemRecommendation[] = [
+    {
+        id: 'trending',
+        name: 'Trending',
+        enabled: true,
+        order: 0,
+        mediaType: 'both',
+        genres: [],
+        emoji: '🔥',
+    },
+    {
+        id: 'top-rated',
+        name: 'Top Rated',
+        enabled: true,
+        order: 1,
+        mediaType: 'both',
+        genres: [],
+        emoji: '⭐',
+    },
+    {
+        id: 'recommended-for-you',
+        name: 'Recommended For You',
+        enabled: true,
+        order: 2,
+        mediaType: 'both',
+        genres: [],
+        emoji: '✨',
+    },
+]
+
+/**
+ * Helper to create fresh default recommendations for a new user
+ */
+export function createDefaultSystemRecommendations(): SystemRecommendation[] {
+    return DEFAULT_SYSTEM_RECOMMENDATIONS.map((rec) => ({ ...rec }))
+}
+
+/**
  * Recommendation source types
  */
 export type RecommendationSource =

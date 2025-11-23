@@ -4,6 +4,7 @@
 import { Content } from '../typings'
 import { UserList } from './collections'
 import { NotificationPreferences } from './notifications'
+import { SystemRecommendation } from './recommendations'
 
 // Genre preference for personalized recommendations
 export interface GenrePreference {
@@ -41,6 +42,7 @@ export interface UserPreferences {
     likedMovies: Content[]
     hiddenMovies: Content[]
     userCreatedWatchlists: UserList[]
+    systemRecommendations?: SystemRecommendation[] // System recommendation settings (Trending, Top Rated, etc.)
     lastActive: number
     autoMute: boolean
     defaultVolume: number

@@ -1,63 +1,23 @@
 /**
- * System Collections
+ * Default Genre Collections
  *
- * Pre-configured collections that all users see by default.
- * Streamlined to show unified collections with mediaType: 'both' by default.
- * Users can customize mediaType, genres, and other properties via the collection editor.
+ * Pre-configured genre-based collections that new users see by default.
+ * These are real collections stored in userCreatedWatchlists that users can fully edit.
  *
- * Core collections (Trending/Top Rated) cannot be deleted but can be edited.
- * All other system collections can be customized or deleted by users.
+ * NOTE: Trending, Top Rated, and Recommended For You are now handled separately
+ * as System Recommendations (see types/recommendations.ts), not as collections.
+ * System Recommendations are TMDB-powered rows that users can customize but
+ * cannot add manual content to.
  */
 
 import { Collection } from '../types/collections'
 
 /**
- * All system collections - unified with mediaType: 'both'
- * Users can edit these to change mediaType to 'movie' or 'tv' only if desired
+ * Default genre collections - seeded for new users
+ * Users can edit, customize, or delete these
  */
 export const ALL_SYSTEM_COLLECTIONS: Collection[] = [
-    // Core collections - cannot be deleted but can be edited for mediaType
-    {
-        id: 'system-trending',
-        name: 'Trending',
-        description: 'Popular movies and TV shows trending right now',
-        createdAt: 0,
-        updatedAt: 0,
-        items: [],
-        collectionType: 'tmdb-genre',
-        displayAsRow: true,
-        order: 0,
-        enabled: true,
-        genres: [],
-        genreLogic: 'OR',
-        mediaType: 'both',
-        isSpecialCollection: true,
-        isSystemCollection: true,
-        canDelete: false,
-        canEdit: true, // Users can customize mediaType
-        color: '#6366f1', // Indigo
-    },
-    {
-        id: 'system-top-rated',
-        name: 'Top Rated',
-        description: 'Highest rated movies and TV shows',
-        createdAt: 0,
-        updatedAt: 0,
-        items: [],
-        collectionType: 'tmdb-genre',
-        displayAsRow: true,
-        order: 1,
-        enabled: true,
-        genres: [],
-        genreLogic: 'OR',
-        mediaType: 'both',
-        isSpecialCollection: true,
-        isSystemCollection: true,
-        canDelete: false,
-        canEdit: true, // Users can customize mediaType
-        color: '#6366f1', // Indigo
-    },
-    // Genre collections - can be customized or deleted
+    // Genre collections - can be customized or deleted by users
     {
         id: 'system-action',
         name: 'Action-Packed',
@@ -67,7 +27,7 @@ export const ALL_SYSTEM_COLLECTIONS: Collection[] = [
         items: [],
         collectionType: 'tmdb-genre',
         displayAsRow: true,
-        order: 2,
+        order: 0,
         enabled: true,
         genres: ['action'],
         genreLogic: 'OR',
@@ -86,7 +46,7 @@ export const ALL_SYSTEM_COLLECTIONS: Collection[] = [
         items: [],
         collectionType: 'tmdb-genre',
         displayAsRow: true,
-        order: 3,
+        order: 1,
         enabled: true,
         genres: ['scifi', 'fantasy'],
         genreLogic: 'OR',
@@ -105,7 +65,7 @@ export const ALL_SYSTEM_COLLECTIONS: Collection[] = [
         items: [],
         collectionType: 'tmdb-genre',
         displayAsRow: true,
-        order: 4,
+        order: 2,
         enabled: true,
         genres: ['comedy'],
         genreLogic: 'OR',
