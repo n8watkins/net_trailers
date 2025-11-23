@@ -5,7 +5,33 @@ All notable changes to NetTrailer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-11-19 - Security & Privacy Improvements
+## [Unreleased] - 2025-11-23 - Security, Privacy & Mobile Responsiveness
+
+### Mobile Responsiveness (Phase 5)
+
+- **Touch Target Compliance (WCAG 2.1 AA)**
+    - All interactive elements now meet minimum 44x44px touch target on mobile
+    - Fixed: InfoModal close button, Header mobile menu/search, RankingDetail action buttons
+    - Fixed: VideoControls (mute, youtube, fullscreen), EditActionButtons (save/cancel)
+    - Pattern: `min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0`
+
+- **Hover-Only Interaction Fixes**
+    - CollectionCreatorModal: Remove button now visible on mobile (was hover-only)
+    - Row.tsx: Scroll chevrons visible on tablet+ for touch devices
+    - RankingRow: Chevrons visible by default on mobile
+    - VideoControls: Volume slider toggles on click for touch devices
+
+- **Responsive Width Improvements**
+    - InlineWatchlistDropdown: Viewport-relative width prevents overflow
+    - Header search bar: Uses max-width instead of fixed width
+    - CommunityHub tag search: Responsive width scaling
+    - RankingRow/SmartRankingCreator: Card widths scale with breakpoints
+
+- **Typography Scaling**
+    - ContentMetadata: Title scales progressively (text-xl to xl:text-6xl)
+    - SmartSearchActions: Emoji/title sizes reduced for 320px screens
+    - InfoModal: Emoji scales from text-4xl to md:text-6xl
+    - Banner: Added xs breakpoint for smoother padding progression
 
 ### Security
 
