@@ -1,24 +1,14 @@
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useSessionStore } from '../../../stores/sessionStore'
-import { useCollectionPrefsStore } from '../../../stores/collectionPrefsStore'
 import { useAuthStore } from '../../../stores/authStore'
 import { useGuestStore } from '../../../stores/guestStore'
 import { useToast } from '../../../hooks/useToast'
 import { UserList } from '../../../types/collections'
-import {
-    EyeIcon,
-    EyeSlashIcon,
-    ChevronDownIcon,
-    PencilIcon,
-    GlobeAltIcon,
-    LockClosedIcon,
-} from '@heroicons/react/24/outline'
+import { ChevronDownIcon, PencilIcon } from '@heroicons/react/24/outline'
 import CollectionEditorModal from '../../../components/modals/CollectionEditorModal'
-import { SystemRowStorage } from '../../../utils/systemRowStorage'
-import { CustomRowsFirestore } from '../../../utils/firestore/customRows'
-import { getSystemCollectionsByMediaType } from '../../../constants/systemCollections'
+import { createDefaultCollectionsForUser } from '../../../constants/systemCollections'
 
 // Helper function to convert hex color to rgba with opacity
 const hexToRgba = (hex: string, opacity: number): string => {
@@ -33,21 +23,11 @@ const hexToRgba = (hex: string, opacity: number): string => {
 }
 
 export default function CollectionsPage() {
-    const getUserId = useSessionStore((state) => state.getUserId)
     const sessionType = useSessionStore((state) => state.sessionType)
-    const userId = getUserId()
 
     const { showSuccess, showError } = useToast()
 
-    // Get all display rows (system + custom)
-    const getAllDisplayRows = useCollectionPrefsStore((state) => state.getAllDisplayRows)
-    const toggleSystemRow = useCollectionPrefsStore((state) => state.toggleSystemRow)
-    const setSystemRowPreferences = useCollectionPrefsStore(
-        (state) => state.setSystemRowPreferences
-    )
-    const setDeletedSystemRows = useCollectionPrefsStore((state) => state.setDeletedSystemRows)
-
-    // Get user collections
+    // Get user collections - now unified (includes seeded defaults)
     const authCollections = useAuthStore((state) => state.userCreatedWatchlists)
     const guestCollections = useGuestStore((state) => state.userCreatedWatchlists)
     const authUpdateList = useAuthStore((state) => state.updateList)
@@ -67,88 +47,28 @@ export default function CollectionsPage() {
     const [tvOpen, setTvOpen] = useState(false)
 
     // Collection editor modal state
-    const [editingCollection, setEditingCollection] = useState<any>(null)
+    const [editingCollection, setEditingCollection] = useState<UserList | null>(null)
     const [showEditorModal, setShowEditorModal] = useState(false)
 
-    // Load system row preferences from storage on mount
-    // Only load if preferences don't already exist to avoid clobbering in-flight changes
-    useEffect(() => {
-        if (!userId) return
-
-        const loadPreferences = async () => {
-            try {
-                // Check if preferences already exist for this user
-                const existingPrefs = useCollectionPrefsStore
-                    .getState()
-                    .systemRowPreferences.get(userId)
-                if (existingPrefs && Object.keys(existingPrefs).length > 0) {
-                    // Preferences already loaded, skip to avoid race condition
-                    return
-                }
-
-                const preferences = await SystemRowStorage.getSystemRowPreferences(
-                    userId,
-                    sessionType === 'guest'
-                )
-                if (preferences && Object.keys(preferences).length > 0) {
-                    setSystemRowPreferences(userId, preferences)
-                }
-            } catch (error) {
-                console.error('Failed to load system row preferences:', error)
-            }
-        }
-
-        loadPreferences()
-    }, [userId, sessionType, setSystemRowPreferences])
-
-    // Get all collections
-    const allDisplayRows = userId ? getAllDisplayRows(userId) : []
-
-    // Separate system and user collections
-    const systemCollections = allDisplayRows.filter((row) => row.isSystemCollection)
-    const userCollectionsFromRows = userCollections || []
-
-    // Get system row preferences to check enabled state
-    const systemRowPreferencesMap = useCollectionPrefsStore((state) => state.systemRowPreferences)
-    const systemRowPreferences = userId ? systemRowPreferencesMap.get(userId) || {} : {}
-
-    // Combine and normalize all collections (unfiltered base list)
+    // Normalize all collections (unfiltered base list)
     const baseCollections = useMemo(() => {
-        return [
-            ...systemCollections.map((row) => {
-                // Check the system row preferences for enabled state (defaults to true if not set)
-                const pref = systemRowPreferences[row.id]
-                const isEnabled = pref?.enabled ?? true
-
-                return {
-                    id: row.id,
-                    name: row.name,
-                    emoji: '📺', // System rows don't have emoji property
-                    isSystem: true,
-                    enabled: isEnabled, // Use preference enabled state, not base enabled
-                    itemCount: 20, // Placeholder for system collections
-                    mediaType: row.mediaType,
-                    collection: row, // Store full collection for editing
-                }
-            }),
-            ...userCollectionsFromRows.map((col: UserList) => ({
-                id: col.id,
-                name: col.name,
-                emoji: col.emoji || '📺',
-                isSystem: false,
-                enabled: col.displayAsRow ?? true,
-                itemCount: col.items?.length || 0,
-                mediaType: col.mediaType || 'both',
-                shareSettings: col.shareSettings || {
-                    visibility: 'private',
-                    showOwnerName: true,
-                    allowComments: false,
-                },
-                color: col.color || '#3b82f6', // Default blue
-                collection: col, // Store full collection for editing
-            })),
-        ]
-    }, [systemCollections, userCollectionsFromRows, systemRowPreferences])
+        return userCollections.map((col: UserList) => ({
+            id: col.id,
+            name: col.name,
+            emoji: col.emoji || '📺',
+            isSystem: col.isSystemCollection || col.id.startsWith('system-'),
+            enabled: col.enabled ?? col.displayAsRow ?? true,
+            itemCount: col.items?.length || 0,
+            mediaType: col.mediaType || 'both',
+            shareSettings: col.shareSettings || {
+                visibility: 'private',
+                showOwnerName: true,
+                allowComments: false,
+            },
+            color: col.color || '#6366f1', // Default indigo
+            collection: col, // Store full collection for editing
+        }))
+    }, [userCollections])
 
     // Apply filters to get filtered collections for display
     const allCollections = useMemo(() => {
@@ -171,8 +91,6 @@ export default function CollectionsPage() {
     }, [baseCollections, searchQuery, statusFilter])
 
     // Group by media type (category assignment)
-    // Collections stay in their category regardless of enabled state
-    // The green/red dot on each card indicates if it's currently displaying
     const homeCollections = allCollections.filter((col) => col.mediaType === 'both')
     const movieCollections = allCollections.filter((col) => col.mediaType === 'movie')
     const tvCollections = allCollections.filter((col) => col.mediaType === 'tv')
@@ -189,87 +107,43 @@ export default function CollectionsPage() {
     const enabledCount = baseCollections.filter((col) => col.enabled).length
     const hiddenCount = baseCollections.filter((col) => !col.enabled).length
 
-    // Toggle handlers
-    const handleToggleSystem = async (collectionId: string) => {
-        if (!userId) return
-
-        // Update in-memory state first for immediate UI update
-        toggleSystemRow(userId, collectionId)
-
-        // Persist to storage
-        try {
-            const updatedPrefs =
-                useCollectionPrefsStore.getState().systemRowPreferences.get(userId) || {}
-            await SystemRowStorage.setSystemRowPreferences(
-                userId,
-                updatedPrefs,
-                isAuth ? false : true
-            )
-            showSuccess('Collection updated')
-        } catch (error) {
-            console.error('Failed to persist system row toggle:', error)
-            showError('Failed to update collection')
-        }
-    }
-
-    const handleToggleUser = async (collectionId: string) => {
-        const collection = userCollectionsFromRows.find((c: UserList) => c.id === collectionId)
+    // Unified toggle handler - works for all collections
+    const handleToggle = async (collectionId: string) => {
+        const collection = userCollections.find((c: UserList) => c.id === collectionId)
         if (!collection) return
 
         try {
             await updateList(collectionId, {
-                displayAsRow: !collection.displayAsRow,
+                enabled: !(collection.enabled ?? true),
             })
             showSuccess('Collection updated')
         } catch (error) {
-            console.error('Failed to toggle user collection:', error)
+            console.error('Failed to toggle collection:', error)
             showError('Failed to update collection')
         }
     }
 
-    const handleToggle = async (collectionId: string, isSystem: boolean) => {
-        if (isSystem) {
-            await handleToggleSystem(collectionId)
-        } else {
-            await handleToggleUser(collectionId)
-        }
-    }
-
+    // Reset to defaults - re-seed the default collections
     const handleResetToDefaults = async () => {
-        if (!userId) return
-
         try {
-            // Get all system rows across all media types
-            const allSystemRows = [
-                ...getSystemCollectionsByMediaType('both'),
-                ...getSystemCollectionsByMediaType('movie'),
-                ...getSystemCollectionsByMediaType('tv'),
-            ]
+            // Get default collections
+            const defaultCollections = createDefaultCollectionsForUser()
 
-            // Build reset preferences - enable all system rows with default order
-            const resetPrefs: any = {}
-            allSystemRows.forEach((row) => {
-                resetPrefs[row.id] = {
-                    enabled: true,
-                    order: row.order,
+            // For each default collection, reset it to default state if it exists
+            // or we could implement a full reset by deleting all and re-seeding
+            for (const defaultCol of defaultCollections) {
+                const existing = userCollections.find((c: UserList) => c.id === defaultCol.id)
+                if (existing) {
+                    // Reset to default properties
+                    await updateList(defaultCol.id, {
+                        name: defaultCol.name,
+                        enabled: defaultCol.enabled,
+                        order: defaultCol.order,
+                        genres: defaultCol.genres,
+                        genreLogic: defaultCol.genreLogic,
+                        mediaType: defaultCol.mediaType,
+                    })
                 }
-            })
-
-            // Clear deleted system rows (restore all deleted rows)
-            setDeletedSystemRows(userId, [])
-
-            // Update in-memory preferences
-            useCollectionPrefsStore.getState().setSystemRowPreferences(userId, resetPrefs)
-
-            // Persist both preferences and cleared deletions to storage
-            if (isAuth) {
-                // For authenticated users, use Firestore
-                await CustomRowsFirestore.resetDefaultRows(userId, 'both')
-                await CustomRowsFirestore.resetDefaultRows(userId, 'movie')
-                await CustomRowsFirestore.resetDefaultRows(userId, 'tv')
-            } else {
-                // For guest users, use localStorage
-                await SystemRowStorage.resetDefaultRows(userId, 'both', true)
             }
 
             showSuccess('Reset to default collection settings')
@@ -279,7 +153,7 @@ export default function CollectionsPage() {
         }
     }
 
-    const handleEditCollection = (collection: any) => {
+    const handleEditCollection = (collection: UserList) => {
         setEditingCollection(collection)
         setShowEditorModal(true)
     }
@@ -516,10 +390,10 @@ interface CollectionGridProps {
         itemCount: number
         mediaType: string
         color?: string
-        collection: any
+        collection: UserList
     }>
-    onToggle: (id: string, isSystem: boolean) => void
-    onEdit: (collection: any) => void
+    onToggle: (id: string) => void
+    onEdit: (collection: UserList) => void
 }
 
 function CollectionGrid({ collections, onToggle, onEdit }: CollectionGridProps) {
@@ -529,7 +403,7 @@ function CollectionGrid({ collections, onToggle, onEdit }: CollectionGridProps) 
                 <CollectionCard
                     key={collection.id}
                     collection={collection}
-                    onToggle={() => onToggle(collection.id, collection.isSystem)}
+                    onToggle={() => onToggle(collection.id)}
                     onEdit={() => onEdit(collection.collection)}
                 />
             ))}
@@ -578,23 +452,21 @@ function CollectionCard({ collection, onToggle, onEdit }: CollectionCardProps) {
                     <h3 className="text-white text-sm font-medium truncate">{collection.name}</h3>
                 </div>
 
-                {/* Edit Button - Only for user-created collections */}
-                {!collection.isSystem && (
-                    <button
-                        onClick={onEdit}
-                        className="flex-shrink-0 flex items-center justify-center p-1 hover:bg-gray-800 rounded transition-colors"
-                        title="Edit collection"
-                        aria-label="Edit collection"
-                    >
-                        <PencilIcon className="w-4 h-4 text-gray-400 hover:text-white" />
-                    </button>
-                )}
+                {/* Edit Button - Now available for all collections */}
+                <button
+                    onClick={onEdit}
+                    className="flex-shrink-0 flex items-center justify-center p-1 hover:bg-gray-800 rounded transition-colors"
+                    title="Edit collection"
+                    aria-label="Edit collection"
+                >
+                    <PencilIcon className="w-4 h-4 text-gray-400 hover:text-white" />
+                </button>
             </div>
 
             {/* Bottom Row: Item Count and Toggle */}
             <div className="flex items-center justify-between">
                 <p className="text-gray-500 text-xs">
-                    {collection.itemCount} {collection.itemCount === 1 ? 'item' : 'items'}
+                    {collection.isSystem ? 'Dynamic' : `${collection.itemCount} items`}
                 </p>
 
                 {/* Toggle Switch */}

@@ -78,25 +78,6 @@ export const ALL_SYSTEM_COLLECTIONS: Collection[] = [
         color: '#6366f1', // Indigo
     },
     {
-        id: 'system-comedy',
-        name: 'Comedy Favorites',
-        description: 'Hilarious comedy movies and shows',
-        createdAt: 0,
-        updatedAt: 0,
-        items: [],
-        collectionType: 'tmdb-genre',
-        displayAsRow: true,
-        order: 3,
-        enabled: true,
-        genres: ['comedy'],
-        genreLogic: 'OR',
-        mediaType: 'both',
-        isSystemCollection: true,
-        canDelete: true,
-        canEdit: true,
-        color: '#6366f1', // Indigo
-    },
-    {
         id: 'system-scifi',
         name: 'Sci-Fi & Fantasy',
         description: 'Futuristic science fiction and fantasy',
@@ -105,7 +86,7 @@ export const ALL_SYSTEM_COLLECTIONS: Collection[] = [
         items: [],
         collectionType: 'tmdb-genre',
         displayAsRow: true,
-        order: 4,
+        order: 3,
         enabled: true,
         genres: ['scifi', 'fantasy'],
         genreLogic: 'OR',
@@ -116,94 +97,18 @@ export const ALL_SYSTEM_COLLECTIONS: Collection[] = [
         color: '#6366f1', // Indigo
     },
     {
-        id: 'system-animation',
-        name: 'Animated Favorites',
-        description: 'Best animated movies and shows',
+        id: 'system-comedy',
+        name: 'Comedy',
+        description: 'Hilarious comedy movies and shows',
         createdAt: 0,
         updatedAt: 0,
         items: [],
         collectionType: 'tmdb-genre',
         displayAsRow: true,
-        order: 5,
+        order: 4,
         enabled: true,
-        genres: ['animation'],
+        genres: ['comedy'],
         genreLogic: 'OR',
-        mediaType: 'both',
-        isSystemCollection: true,
-        canDelete: true,
-        canEdit: true,
-        color: '#6366f1', // Indigo
-    },
-    {
-        id: 'system-horror',
-        name: 'Horror Thrills',
-        description: 'Spine-chilling horror content',
-        createdAt: 0,
-        updatedAt: 0,
-        items: [],
-        collectionType: 'tmdb-genre',
-        displayAsRow: true,
-        order: 6,
-        enabled: true,
-        genres: ['horror'],
-        genreLogic: 'OR',
-        mediaType: 'both',
-        isSystemCollection: true,
-        canDelete: true,
-        canEdit: true,
-        color: '#6366f1', // Indigo
-    },
-    {
-        id: 'system-family',
-        name: 'Family Fun',
-        description: 'Great content for the whole family',
-        createdAt: 0,
-        updatedAt: 0,
-        items: [],
-        collectionType: 'tmdb-genre',
-        displayAsRow: true,
-        order: 7,
-        enabled: true,
-        genres: ['family'],
-        genreLogic: 'OR',
-        mediaType: 'both',
-        isSystemCollection: true,
-        canDelete: true,
-        canEdit: true,
-        color: '#6366f1', // Indigo
-    },
-    {
-        id: 'system-documentary',
-        name: 'Documentaries',
-        description: 'Informative and engaging documentaries',
-        createdAt: 0,
-        updatedAt: 0,
-        items: [],
-        collectionType: 'tmdb-genre',
-        displayAsRow: true,
-        order: 8,
-        enabled: true,
-        genres: ['documentary'],
-        genreLogic: 'OR',
-        mediaType: 'both',
-        isSystemCollection: true,
-        canDelete: true,
-        canEdit: true,
-        color: '#6366f1', // Indigo
-    },
-    {
-        id: 'system-romance-drama',
-        name: 'Romantic Dramas',
-        description: 'Heartfelt stories with romance and drama',
-        createdAt: 0,
-        updatedAt: 0,
-        items: [],
-        collectionType: 'tmdb-genre',
-        displayAsRow: true,
-        order: 9,
-        enabled: true,
-        genres: ['romance', 'drama'],
-        genreLogic: 'AND',
         mediaType: 'both',
         isSystemCollection: true,
         canDelete: true,
@@ -213,10 +118,32 @@ export const ALL_SYSTEM_COLLECTIONS: Collection[] = [
 ]
 
 /**
+ * Create default collections for a new user
+ * Returns fresh copies of the default collections with proper timestamps
+ * These become real UserList collections that the user can fully edit
+ */
+export function createDefaultCollectionsForUser(): Collection[] {
+    const now = Date.now()
+    return ALL_SYSTEM_COLLECTIONS.map((template) => ({
+        ...template,
+        createdAt: now,
+        updatedAt: now,
+    }))
+}
+
+/**
+ * Check if a user needs default collections seeded
+ * Returns true if they have no collections yet
+ */
+export function needsDefaultCollections(existingCollections: Collection[]): boolean {
+    return !existingCollections || existingCollections.length === 0
+}
+
+/**
  * @deprecated Legacy function - all collections are now unified
  * Get system collections by media type (returns all collections)
  */
-export function getSystemCollectionsByMediaType(mediaType: 'movie' | 'tv' | 'both'): Collection[] {
+export function getSystemCollectionsByMediaType(_mediaType: 'movie' | 'tv' | 'both'): Collection[] {
     return ALL_SYSTEM_COLLECTIONS
 }
 
@@ -224,6 +151,6 @@ export function getSystemCollectionsByMediaType(mediaType: 'movie' | 'tv' | 'bot
  * @deprecated Legacy function - pages no longer exist
  * Get system collections for a specific page (returns all enabled collections)
  */
-export function getSystemCollectionsForPage(page: 'home' | 'movies' | 'tv'): Collection[] {
+export function getSystemCollectionsForPage(_page: 'home' | 'movies' | 'tv'): Collection[] {
     return ALL_SYSTEM_COLLECTIONS.filter((c) => c.enabled)
 }

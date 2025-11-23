@@ -7,7 +7,8 @@ import {
     getMaxRowsForUser,
 } from '../../types/collections'
 import { v4 as uuidv4 } from 'uuid'
-import { getSystemRowsByMediaType } from '../../constants/systemRows'
+// Note: System rows have been unified with user collections
+// System collections are now seeded in userCreatedWatchlists on first load
 
 /**
  * Firestore utility functions for Custom Rows
@@ -793,70 +794,23 @@ export class CustomRowsFirestore {
 
     /**
      * Reset default rows for a specific media type
-     * Restores any missing system rows by removing them from the deleted list
+     *
+     * @deprecated System rows have been unified with user collections.
+     * Default collections are now seeded in userCreatedWatchlists on first load.
+     * Use the store's reset functionality instead (e.g., in collections settings page).
      *
      * @param userId - Firebase Auth UID or Guest ID
      * @param mediaType - Media type to reset ('movie', 'tv', or 'both')
      */
     static async resetDefaultRows(
-        userId: string,
-        mediaType: 'movie' | 'tv' | 'both'
+        _userId: string,
+        _mediaType: 'movie' | 'tv' | 'both'
     ): Promise<void> {
-        // Validate userId
-        if (!userId || userId === 'undefined' || userId === 'null') {
-            throw new Error('Invalid userId provided to resetDefaultRows')
-        }
-
-        const now = Date.now()
-
-        // Get system rows for this media type
-        const systemRows = getSystemRowsByMediaType(mediaType)
-        const systemRowIds = systemRows.map((row) => row.id)
-
-        // Get user document
-        const userDocRef = doc(db, 'users', userId)
-        const userDoc = await getDoc(userDocRef)
-
-        let deletedSystemRows: string[] = []
-        let currentPreferences: SystemRowPreferences = {}
-
-        if (userDoc.exists()) {
-            const userData = userDoc.data()
-            deletedSystemRows = (userData.deletedSystemRows as string[]) || []
-            currentPreferences = userData.systemRowPreferences || {}
-        }
-
-        // Remove media type's system rows from deleted list
-        deletedSystemRows = deletedSystemRows.filter((rowId) => !systemRowIds.includes(rowId))
-
-        // Reset preferences for restored rows (enable them with default order)
-        systemRowIds.forEach((rowId) => {
-            const systemRow = systemRows.find((r) => r.id === rowId)
-            if (systemRow) {
-                currentPreferences[rowId] = {
-                    enabled: true,
-                    order: systemRow.order,
-                }
-            }
-        })
-
-        // Update or create user document
-        if (!userDoc.exists()) {
-            await setDoc(userDocRef, {
-                watchlist: [],
-                ratings: [],
-                userLists: {},
-                customRows: {},
-                systemRowPreferences: currentPreferences,
-                deletedSystemRows,
-                lastActive: now,
-            })
-        } else {
-            await updateDoc(userDocRef, {
-                systemRowPreferences: currentPreferences,
-                deletedSystemRows,
-                lastActive: now,
-            })
-        }
+        console.warn(
+            '[CustomRowsFirestore] resetDefaultRows is deprecated. ' +
+                'System collections are now unified with user collections. ' +
+                'Use the store reset functionality instead.'
+        )
+        // No-op - functionality moved to unified collection system
     }
 }

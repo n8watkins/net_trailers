@@ -10,6 +10,8 @@ import {
     FilmIcon,
     TvIcon,
     TrashIcon,
+    ClipboardDocumentIcon,
+    CheckIcon,
 } from '@heroicons/react/24/outline'
 import { UserList } from '../../types/collections'
 import { Content, getTitle, getYear } from '../../typings'
@@ -21,9 +23,7 @@ import InlineSearchBar from './InlineSearchBar'
 import { GenrePills } from '../collections/GenrePills'
 import { getUnifiedGenresByMediaType } from '../../constants/unifiedGenres'
 import { useChildSafety } from '../../hooks/useChildSafety'
-import { useCollectionPrefsStore } from '../../stores/collectionPrefsStore'
 import { useSessionStore } from '../../stores/sessionStore'
-import { SystemRowStorage } from '../../utils/systemRowStorage'
 
 interface CollectionEditorModalProps {
     collection: UserList | null
@@ -39,9 +39,8 @@ export default function CollectionEditorModal({
     const { isEnabled: isChildSafetyEnabled } = useChildSafety()
     const getUserId = useSessionStore((state) => state.getUserId)
     const sessionType = useSessionStore((state) => state.sessionType)
-    const userId = getUserId()
-    const isAuth = sessionType === 'authenticated'
-    const deleteSystemRow = useCollectionPrefsStore((state) => state.deleteSystemRow)
+    const _userId = getUserId()
+    const _isAuth = sessionType === 'authenticated'
 
     const GENRE_LOOKUP = useMemo(() => {
         const map = new Map<string, string>()
@@ -70,8 +69,11 @@ export default function CollectionEditorModal({
     const [showColorPicker, setShowColorPicker] = useState(false)
     const [showInfiniteTooltip, setShowInfiniteTooltip] = useState(false)
     const [showGenreModal, setShowGenreModal] = useState(false)
+    const [showDeleteModal, setShowDeleteModal] = useState(false)
+    const [deleteConfirmation, setDeleteConfirmation] = useState('')
+    const [copied, setCopied] = useState(false)
     const [searchFilter, setSearchFilter] = useState('')
-    const [isSaving, setIsSaving] = useState(false)
+    const [_isSaving, _setIsSaving] = useState(false)
     const [mounted, setMounted] = useState(false)
     const [highlightMediaType, setHighlightMediaType] = useState(false)
 
@@ -193,29 +195,29 @@ export default function CollectionEditorModal({
         resetModalState()
     }
 
-    const handleDelete = async () => {
+    const handleCopyTitle = async () => {
         if (!collection) return
+        await navigator.clipboard.writeText(collection.name)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+    }
 
-        const confirmMessage = isSystemCollection
-            ? `Are you sure you want to delete "${collection.name}"? This system collection can be restored later.`
-            : `Are you sure you want to delete "${collection.name}"? This action cannot be undone.`
+    const handleCloseDeleteModal = () => {
+        setShowDeleteModal(false)
+        setDeleteConfirmation('')
+        setCopied(false)
+    }
 
-        if (!window.confirm(confirmMessage)) return
+    const isDeleteEnabled = collection ? deleteConfirmation === collection.name : false
+
+    const handleDeleteConfirm = async () => {
+        if (!collection || !isDeleteEnabled) return
 
         try {
-            if (isSystemCollection) {
-                if (!userId) {
-                    showError('No user ID found')
-                    return
-                }
-                // Delete system collection
-                await deleteSystemRow(userId, collection.id)
-                showSuccess('Collection deleted!', `"${collection.name}" has been removed`)
-            } else {
-                // Delete user-created collection
-                await deleteList(collection.id)
-                showSuccess('Collection deleted!', `"${collection.name}" has been removed`)
-            }
+            // All collections are now unified - use deleteList for all
+            await deleteList(collection.id)
+            showSuccess('Collection deleted!', `"${collection.name}" has been removed`)
+            handleCloseDeleteModal()
             handleClose()
         } catch (error) {
             console.error('Delete collection error:', error)
@@ -273,61 +275,13 @@ export default function CollectionEditorModal({
                 }
             }
 
-            // Update collection metadata
-            if (isSystemCollection) {
-                // For system collections, update the system row preferences
-                if (!userId) {
-                    showError('No user ID found')
-                    return
-                }
+            // Update collection metadata - all collections now unified
+            await updateList(collection.id, updates)
 
-                // Get current preferences
-                const currentPrefs =
-                    useCollectionPrefsStore.getState().systemRowPreferences.get(userId) || {}
-
-                // Build the updated preference for this row (only include defined values)
-                const updatedPref: any = {
-                    enabled: displayAsRow,
-                    order: currentPrefs[collection.id]?.order ?? 0,
-                }
-
-                // Only add optional fields if they have values
-                if (canEditLimited && name.trim()) {
-                    updatedPref.customName = name.trim()
-                } else if (currentPrefs[collection.id]?.customName) {
-                    updatedPref.customName = currentPrefs[collection.id].customName
-                }
-
-                if (canEditLimited && selectedGenres.length > 0) {
-                    updatedPref.customGenres = selectedGenres
-                } else if (currentPrefs[collection.id]?.customGenres) {
-                    updatedPref.customGenres = currentPrefs[collection.id].customGenres
-                }
-
-                if (canEditLimited) {
-                    updatedPref.customGenreLogic = genreLogic
-                } else if (currentPrefs[collection.id]?.customGenreLogic) {
-                    updatedPref.customGenreLogic = currentPrefs[collection.id].customGenreLogic
-                }
-
-                // Update in-memory state
-                const newPrefs = {
-                    ...currentPrefs,
-                    [collection.id]: updatedPref,
-                }
-                useCollectionPrefsStore.getState().setSystemRowPreferences(userId, newPrefs)
-
-                // Persist to storage
-                await SystemRowStorage.setSystemRowPreferences(userId, newPrefs, !isAuth)
-            } else {
-                // For user-created collections, use the regular update method
-                await updateList(collection.id, updates)
-
-                // Handle removed items (only for user-created collections)
-                if (canEditFull) {
-                    for (const removedId of removedIds) {
-                        await removeFromList(collection.id, removedId)
-                    }
+            // Handle removed items (only for non-system collections)
+            if (canEditFull && !isSystemCollection) {
+                for (const removedId of removedIds) {
+                    await removeFromList(collection.id, removedId)
                 }
             }
 
@@ -438,7 +392,7 @@ export default function CollectionEditorModal({
                             {(canEditFull ||
                                 (isSystemCollection && collection.canDelete === true)) && (
                                 <button
-                                    onClick={handleDelete}
+                                    onClick={() => setShowDeleteModal(true)}
                                     className="px-3 py-2 bg-red-600/20 border border-red-600 text-red-400 rounded-lg font-medium transition-all duration-200 hover:bg-red-600/30 hover:text-red-300 flex items-center gap-2"
                                     title="Delete collection"
                                 >
@@ -1002,12 +956,91 @@ export default function CollectionEditorModal({
         </div>
     )
 
+    // Delete Confirmation Modal
+    const deleteModal = showDeleteModal && (
+        <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100001] flex items-center justify-center p-4"
+            onClick={handleCloseDeleteModal}
+        >
+            <div
+                className="bg-gray-800 border border-gray-600 rounded-xl p-6 max-w-md w-full shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <h3 className="text-xl font-bold text-white mb-4">Delete Collection?</h3>
+
+                {/* Collection Title Display */}
+                <div className="mb-4">
+                    <p className="text-sm text-gray-400 mb-2">Collection to delete:</p>
+                    <div className="flex items-center gap-2 bg-gray-900 border border-gray-700 rounded-lg p-3">
+                        {collection?.emoji && <span className="text-xl">{collection.emoji}</span>}
+                        <span className="text-white font-semibold flex-1 truncate">
+                            {collection?.name}
+                        </span>
+                        <button
+                            onClick={handleCopyTitle}
+                            className="p-1.5 hover:bg-gray-700 rounded transition-colors shrink-0"
+                            title="Copy title"
+                        >
+                            {copied ? (
+                                <CheckIcon className="w-4 h-4 text-green-400" />
+                            ) : (
+                                <ClipboardDocumentIcon className="w-4 h-4 text-gray-400" />
+                            )}
+                        </button>
+                    </div>
+                </div>
+
+                <p className="text-gray-300 mb-4 text-sm">
+                    {isSystemCollection
+                        ? 'This is a system collection. You can restore it later with "Reset Defaults".'
+                        : 'This action cannot be undone. This will permanently delete your collection.'}
+                </p>
+
+                {/* Confirmation Input */}
+                <div className="mb-6">
+                    <label className="block text-sm text-gray-400 mb-2">
+                        Type <span className="text-white font-semibold">{collection?.name}</span> to
+                        confirm:
+                    </label>
+                    <input
+                        type="text"
+                        value={deleteConfirmation}
+                        onChange={(e) => setDeleteConfirmation(e.target.value)}
+                        placeholder="Enter collection name"
+                        className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    />
+                </div>
+
+                <div className="flex gap-3">
+                    <button
+                        onClick={handleDeleteConfirm}
+                        disabled={!isDeleteEnabled}
+                        className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
+                            isDeleteEnabled
+                                ? 'bg-red-600 hover:bg-red-700 text-white'
+                                : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                        }`}
+                    >
+                        Delete
+                    </button>
+                    <button
+                        onClick={handleCloseDeleteModal}
+                        className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+
     // Render via portal to document.body to escape any parent stacking contexts
     if (!mounted || typeof window === 'undefined') return null
     return (
         <>
             {createPortal(modalContent, document.body)}
             {showGenreModal && createPortal(genreModal, document.body)}
+            {showDeleteModal && createPortal(deleteModal, document.body)}
         </>
     )
 }

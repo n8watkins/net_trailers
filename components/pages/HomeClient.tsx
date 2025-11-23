@@ -7,16 +7,13 @@ import { HomeData } from '../../lib/serverData'
 import { useModalStore } from '../../stores/modalStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { CollectionRowLoader } from '../collections/CollectionRowLoader'
-import { ALL_SYSTEM_COLLECTIONS } from '../../constants/systemCollections'
 import RecommendedForYouRow from '../recommendations/RecommendedForYouRow'
 import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
-import { useCollectionPrefsStore } from '../../stores/collectionPrefsStore'
-import { SystemRowStorage } from '../../utils/systemRowStorage'
 import { useCacheStore } from '../../stores/cacheStore'
 import { processTrendingUpdates } from '../../utils/trendingNotifications'
 import NetflixLoader from '../common/NetflixLoader'
-import { Cog6ToothIcon } from '@heroicons/react/24/solid'
+import { Cog6ToothIcon, PlusIcon } from '@heroicons/react/24/solid'
 
 interface HomeClientProps {
     data: HomeData
@@ -26,6 +23,7 @@ export default function HomeClient({ data }: HomeClientProps) {
     const { modal } = useModalStore()
     const showModal = modal.isOpen
     const openRowEditorModal = useModalStore((state) => state.openRowEditorModal)
+    const openCollectionBuilderModal = useModalStore((state) => state.openCollectionBuilderModal)
     const getUserId = useSessionStore((state) => state.getUserId)
     const sessionType = useSessionStore((state) => state.sessionType)
     const isInitialized = useSessionStore((state) => state.isInitialized)
@@ -36,23 +34,9 @@ export default function HomeClient({ data }: HomeClientProps) {
     const [heroImageLoaded, setHeroImageLoaded] = useState(false)
 
     // Get collections from appropriate store
+    // After unification, all collections (including defaults) are in userCreatedWatchlists
     const authCollections = useAuthStore((state) => state.userCreatedWatchlists)
     const guestCollections = useGuestStore((state) => state.userCreatedWatchlists)
-
-    // Get system collection preferences from collectionPrefsStore
-    const deletedSystemRowsMap = useCollectionPrefsStore((state) => state.deletedSystemRows)
-    const systemRowPreferencesMap = useCollectionPrefsStore((state) => state.systemRowPreferences)
-    const setDeletedSystemRows = useCollectionPrefsStore((state) => state.setDeletedSystemRows)
-
-    // Memoize the deleted system rows array to avoid infinite loop
-    const deletedSystemRows = useMemo(() => {
-        return userId ? deletedSystemRowsMap.get(userId) || [] : []
-    }, [userId, deletedSystemRowsMap])
-
-    // Memoize the system row preferences to avoid infinite loop
-    const systemRowPreferences = useMemo(() => {
-        return userId ? systemRowPreferencesMap.get(userId) || {} : {}
-    }, [userId, systemRowPreferencesMap])
 
     const { trending } = data
     const trendingSignature = useMemo(
@@ -112,7 +96,7 @@ export default function HomeClient({ data }: HomeClientProps) {
 
                 // Mark as processed
                 hasProcessedRef.current = true
-            } catch (error) {
+            } catch (_error) {
                 // Silently fail - trending updates are non-critical
             }
         }
@@ -128,49 +112,15 @@ export default function HomeClient({ data }: HomeClientProps) {
         notificationPreferences,
     ])
 
-    // Load deleted system rows from localStorage/Firebase on mount
-    useEffect(() => {
-        if (!userId || !isInitialized) return
-
-        const loadDeletedRows = async () => {
-            try {
-                const deletedRows = await SystemRowStorage.getDeletedSystemRows(userId, isGuest)
-                setDeletedSystemRows(userId, deletedRows)
-            } catch (error) {
-                // Silently fail - will use defaults
-            }
-        }
-
-        loadDeletedRows()
-    }, [userId, isInitialized, isGuest, setDeletedSystemRows])
-
-    // Combine system collections with user collections
+    // Get all collections - now unified (all collections including defaults are in userCreatedWatchlists)
     const allCollections = useMemo(() => {
-        // Get ALL system collections (movies, TV, and both)
-        const systemCollections = ALL_SYSTEM_COLLECTIONS
         const userCollections = sessionType === 'authenticated' ? authCollections : guestCollections
 
-        // Filter out deleted system collections and apply custom preferences
-        const activeSystemCollections = systemCollections
-            .filter((c) => !deletedSystemRows.includes(c.id))
-            .map((c) => {
-                const pref = systemRowPreferences[c.id]
-                return {
-                    ...c,
-                    name: pref?.customName || c.name, // Apply custom name if set
-                    enabled: pref?.enabled ?? c.enabled, // Apply custom enabled state if set
-                    order: pref?.order ?? c.order, // Apply custom order if set
-                    genres: pref?.customGenres || c.genres, // Apply custom genres if set
-                    genreLogic: pref?.customGenreLogic || c.genreLogic, // Apply custom genre logic if set
-                }
-            })
-
-        // User collections that should display as rows (all media types)
-        const userRows = userCollections.filter((c) => c.displayAsRow)
-
-        // Combine and sort by order
-        return [...activeSystemCollections, ...userRows].sort((a, b) => a.order - b.order)
-    }, [sessionType, authCollections, guestCollections, deletedSystemRows, systemRowPreferences])
+        // Filter to collections that should display as rows and sort by order
+        return userCollections
+            .filter((c) => c.displayAsRow !== false) // Show if displayAsRow is true or undefined
+            .sort((a, b) => a.order - b.order)
+    }, [sessionType, authCollections, guestCollections])
 
     // Filter to enabled collections only
     const enabledCollections = allCollections.filter((c) => c.enabled)
@@ -218,6 +168,75 @@ export default function HomeClient({ data }: HomeClientProps) {
                                 pageType="home"
                             />
                         ))}
+
+                        {/* Create Your Own Collection Button */}
+                        <div className="flex justify-center pt-12 pb-8 px-4">
+                            <button
+                                onClick={() => openCollectionBuilderModal()}
+                                className="create-collection-btn group relative flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-red-600/60 via-red-900/65 to-black/70 backdrop-blur-sm text-white rounded-lg transition-all duration-300 shadow-[0_0_30px_rgba(220,38,38,0.3)] hover:shadow-[0_0_50px_rgba(220,38,38,0.5)] hover:scale-105 font-bold text-xl tracking-wide border border-red-500/30 overflow-hidden"
+                            >
+                                <PlusIcon className="w-7 h-7 transition-transform duration-300 group-hover:rotate-90 relative z-20" />
+                                <span className="relative z-20">Create Your Own Collection</span>
+                            </button>
+                        </div>
+                        <style jsx>{`
+                            @keyframes shimmer-wave-1 {
+                                0% {
+                                    transform: translateX(-100%);
+                                }
+                                100% {
+                                    transform: translateX(200%);
+                                }
+                            }
+                            @keyframes shimmer-wave-2 {
+                                0% {
+                                    transform: translateX(-100%);
+                                }
+                                100% {
+                                    transform: translateX(200%);
+                                }
+                            }
+                            .create-collection-btn::before {
+                                content: '';
+                                position: absolute;
+                                inset: 0;
+                                width: 100%;
+                                height: 100%;
+                                background: linear-gradient(
+                                    110deg,
+                                    transparent 0%,
+                                    transparent 30%,
+                                    rgba(248, 113, 113, 0.3) 45%,
+                                    rgba(252, 165, 165, 0.5) 50%,
+                                    rgba(248, 113, 113, 0.3) 55%,
+                                    transparent 70%,
+                                    transparent 100%
+                                );
+                                animation: shimmer-wave-1 8s ease-in-out infinite;
+                                pointer-events: none;
+                                z-index: 10;
+                            }
+                            .create-collection-btn::after {
+                                content: '';
+                                position: absolute;
+                                inset: 0;
+                                width: 100%;
+                                height: 100%;
+                                background: linear-gradient(
+                                    135deg,
+                                    transparent 0%,
+                                    transparent 35%,
+                                    rgba(248, 113, 113, 0.25) 45%,
+                                    rgba(252, 165, 165, 0.4) 50%,
+                                    rgba(248, 113, 113, 0.25) 55%,
+                                    transparent 65%,
+                                    transparent 100%
+                                );
+                                animation: shimmer-wave-2 10s ease-in-out infinite 3s;
+                                pointer-events: none;
+                                z-index: 10;
+                            }
+                        `}</style>
                     </section>
                 </main>
             </div>

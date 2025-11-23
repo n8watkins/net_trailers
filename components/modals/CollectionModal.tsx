@@ -3,12 +3,12 @@
 import React, { useState } from 'react'
 import { useModalStore } from '../../stores/modalStore'
 import { useSessionStore } from '../../stores/sessionStore'
-import { useCollectionPrefsStore } from '../../stores/collectionPrefsStore'
-import { CustomRowsFirestore } from '../../utils/firestore/customRows'
+import { useAuthStore } from '../../stores/authStore'
+import { useGuestStore } from '../../stores/guestStore'
 import { CollectionWizard } from '../collections/CollectionWizard'
 import { SmartCollectionBuilder } from '../collections/smart/SmartCollectionBuilder'
 import { SimplifiedSmartBuilder } from '../collections/smart/SimplifiedSmartBuilder'
-import { CustomRowFormData } from '../../types/collections'
+import { CollectionFormData, CreateListRequest } from '../../types/collections'
 import { useToast } from '../../hooks/useToast'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 
@@ -24,11 +24,15 @@ type CreationMode = 'traditional' | 'smart'
  */
 function CollectionModal() {
     const { collectionModal, closeCollectionModal, openAuthModal } = useModalStore()
-    const getUserId = useSessionStore((state: any) => state.getUserId)
-    const sessionType = useSessionStore((state: any) => state.sessionType)
-    const { addRow } = useCollectionPrefsStore()
+    const getUserId = useSessionStore((state) => state.getUserId)
+    const sessionType = useSessionStore((state) => state.sessionType)
     const { showSuccess, showError } = useToast()
     const { isGuest } = useAuthStatus()
+
+    // Get createList from appropriate store based on session type
+    const authCreateList = useAuthStore((state) => state.createList)
+    const guestCreateList = useGuestStore((state) => state.createList)
+    const createList = isGuest ? guestCreateList : authCreateList
 
     const [mode, setMode] = useState<CreationMode>('smart')
 
@@ -41,21 +45,32 @@ function CollectionModal() {
 
     if (!isOpen) return null
 
-    const handleComplete = async (formData: CustomRowFormData) => {
+    const handleComplete = async (formData: CollectionFormData) => {
         if (!userId) {
             showError('Authentication required')
             return
         }
 
         try {
-            // Create new row (pass isGuest for max row validation)
-            const newRow = await CustomRowsFirestore.createCustomRow(userId, formData, isGuest)
-            addRow(userId, newRow)
-            showSuccess('Custom row created!')
+            // Convert CollectionFormData to CreateListRequest by adding collectionType
+            const createRequest: CreateListRequest = {
+                name: formData.name,
+                collectionType: 'tmdb-genre', // Collections from wizard are TMDB-based
+                genres: formData.genres,
+                genreLogic: formData.genreLogic,
+                mediaType: formData.mediaType,
+                displayAsRow: formData.displayAsRow ?? true,
+                advancedFilters: formData.advancedFilters,
+                autoUpdateEnabled: formData.autoUpdateEnabled,
+                updateFrequency: formData.updateFrequency,
+            }
+
+            await createList(createRequest)
+            showSuccess('Collection created!')
             // Note: Modal close happens in Step 4 when user clicks "View on Homepage"
         } catch (error) {
             // Error already shown to user via toast
-            showError((error as Error).message || 'Failed to create custom row')
+            showError((error as Error).message || 'Failed to create collection')
             throw error // Re-throw so wizard can handle the error state
         }
     }

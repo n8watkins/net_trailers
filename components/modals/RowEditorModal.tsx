@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
     XMarkIcon,
@@ -10,15 +10,15 @@ import {
     Squares2X2Icon,
     ArrowPathIcon,
 } from '@heroicons/react/24/solid'
-import { getUnifiedGenresByMediaType, UnifiedGenre } from '../../constants/unifiedGenres'
 import { SortableCollectionCard } from '../collections/SortableCollectionCard'
 import { useSessionStore } from '../../stores/sessionStore'
-import { useCollectionPrefsStore } from '../../stores/collectionPrefsStore'
 import { useToastStore } from '../../stores/toastStore'
 import { useModalStore } from '../../stores/modalStore'
-import { CustomRow, DisplayRow } from '../../types/collections'
-import { CustomRowsFirestore } from '../../utils/firestore/customRows'
-import { SystemRowStorage } from '../../utils/systemRowStorage'
+import { useAuthStore } from '../../stores/authStore'
+import { useGuestStore } from '../../stores/guestStore'
+import { UserList } from '../../types/collections'
+import CollectionEditorModal from './CollectionEditorModal'
+import { createDefaultCollectionsForUser } from '../../constants/systemCollections'
 import {
     DndContext,
     closestCenter,
@@ -35,148 +35,27 @@ import {
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 
-interface SystemCollectionEditModalProps {
-    collection: {
-        id: string
-        name: string
-        genres: string[]
-        genreLogic: 'AND' | 'OR'
-    }
-    onSave: (id: string, name: string, genres: string[], genreLogic: 'AND' | 'OR') => Promise<void>
-    onCancel: () => void
+// DisplayRow type for local display (subset of UserList for the UI)
+interface DisplayRow {
+    id: string
+    name: string
+    order: number
+    enabled: boolean
     mediaType: 'movie' | 'tv' | 'both'
-}
-
-/**
- * SystemCollectionEditModal Component
- *
- * Modal for editing system collection name and genres
- */
-function SystemCollectionEditModal({
-    collection,
-    onSave,
-    onCancel,
-    mediaType,
-}: SystemCollectionEditModalProps) {
-    const [name, setName] = useState(collection.name)
-    const [selectedGenres, setSelectedGenres] = useState<string[]>(collection.genres)
-    const [genreLogic, setGenreLogic] = useState<'AND' | 'OR'>(collection.genreLogic)
-
-    // Get appropriate unified genres based on media type
-    const availableGenres: UnifiedGenre[] = getUnifiedGenresByMediaType(mediaType)
-
-    const toggleGenre = (genreId: string) => {
-        setSelectedGenres((prev) =>
-            prev.includes(genreId) ? prev.filter((id) => id !== genreId) : [...prev, genreId]
-        )
-    }
-
-    const handleSave = () => {
-        if (!name.trim()) return
-        onSave(collection.id, name.trim(), selectedGenres, genreLogic)
-    }
-
-    return (
-        <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm z-10 flex items-center justify-center p-4"
-            onClick={onCancel}
-        >
-            <div
-                className="bg-gray-800 border border-gray-600 rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <h3 className="text-xl font-bold text-white mb-4">Edit Collection</h3>
-
-                {/* Name Input */}
-                <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Collection Name
-                    </label>
-                    <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-600"
-                        placeholder="Collection name"
-                        autoFocus
-                    />
-                </div>
-
-                {/* Genre Selection */}
-                <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Genres (optional)
-                    </label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-60 overflow-y-auto p-2 bg-gray-900 rounded-lg border border-gray-700">
-                        {availableGenres.map((genre) => (
-                            <label
-                                key={genre.id}
-                                className="flex items-center space-x-2 p-2 rounded hover:bg-gray-800 cursor-pointer transition-colors"
-                            >
-                                <input
-                                    type="checkbox"
-                                    checked={selectedGenres.includes(genre.id)}
-                                    onChange={() => toggleGenre(genre.id)}
-                                    className="w-4 h-4 text-red-600 bg-gray-700 border-gray-600 rounded focus:ring-red-500 focus:ring-2"
-                                />
-                                <span className="text-sm text-gray-300">{genre.name}</span>
-                            </label>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Genre Logic */}
-                {selectedGenres.length > 1 && (
-                    <div className="mb-6">
-                        <label className="block text-sm font-medium text-gray-300 mb-2">
-                            Genre Match Logic
-                        </label>
-                        <div className="flex gap-4">
-                            <label className="flex items-center space-x-2 cursor-pointer">
-                                <input
-                                    type="radio"
-                                    checked={genreLogic === 'OR'}
-                                    onChange={() => setGenreLogic('OR')}
-                                    className="w-4 h-4 text-red-600 bg-gray-700 border-gray-600 focus:ring-red-500 focus:ring-2"
-                                />
-                                <span className="text-sm text-gray-300">
-                                    OR (matches any selected genre)
-                                </span>
-                            </label>
-                            <label className="flex items-center space-x-2 cursor-pointer">
-                                <input
-                                    type="radio"
-                                    checked={genreLogic === 'AND'}
-                                    onChange={() => setGenreLogic('AND')}
-                                    className="w-4 h-4 text-red-600 bg-gray-700 border-gray-600 focus:ring-red-500 focus:ring-2"
-                                />
-                                <span className="text-sm text-gray-300">
-                                    AND (matches all selected genres)
-                                </span>
-                            </label>
-                        </div>
-                    </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex gap-3">
-                    <button
-                        onClick={handleSave}
-                        disabled={!name.trim()}
-                        className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
-                    >
-                        Save Changes
-                    </button>
-                    <button
-                        onClick={onCancel}
-                        className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
-                    >
-                        Cancel
-                    </button>
-                </div>
-            </div>
-        </div>
-    )
+    genres: string[]
+    genreLogic: 'AND' | 'OR'
+    isSystemCollection: boolean
+    canDelete?: boolean
+    canEdit?: boolean
+    color?: string
+    emoji?: string
+    displayAsRow?: boolean
+    createdAt?: number
+    updatedAt?: number
+    autoUpdateEnabled?: boolean
+    updateFrequency?: 'daily' | 'weekly' | 'never'
+    lastCheckedAt?: number
+    lastUpdateCount?: number
 }
 
 interface RowEditorModalProps {
@@ -187,52 +66,106 @@ interface RowEditorModalProps {
 
 export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProps) {
     const router = useRouter()
-    const [editingSystemRow, setEditingSystemRow] = useState<{
-        id: string
-        name: string
-        genres: string[]
-        genreLogic: 'AND' | 'OR'
-    } | null>(null)
+    // State for CollectionEditorModal
+    const [editorCollection, setEditorCollection] = useState<UserList | null>(null)
+    // Local state for instant drag-and-drop visual updates
+    const [localRows, setLocalRows] = useState<DisplayRow[]>([])
 
     // Stores
-    const getUserId = useSessionStore((state: any) => state.getUserId)
-    const {
-        setRows,
-        removeRow,
-        updateRow,
-        setLoading,
-        setError,
-        getDisplayRowsByMediaType,
-        setSystemRowPreferences,
-        setDeletedSystemRows,
-        deleteSystemRow: deleteSystemRowStore,
-        updateSystemRowOrder,
-    } = useCollectionPrefsStore()
+    const getUserId = useSessionStore((state) => state.getUserId)
     const { showToast } = useToastStore()
-    const { openCollectionModal, openAuthModal } = useModalStore()
+    const { openAuthModal } = useModalStore()
+
+    // Get user collections - now unified (includes seeded defaults)
+    const authCollections = useAuthStore((state) => state.userCreatedWatchlists)
+    const guestCollections = useGuestStore((state) => state.userCreatedWatchlists)
+    const authUpdateList = useAuthStore((state) => state.updateList)
+    const guestUpdateList = useGuestStore((state) => state.updateList)
+    const authDeleteList = useAuthStore((state) => state.deleteList)
+    const guestDeleteList = useGuestStore((state) => state.deleteList)
 
     const userId = getUserId()
     const sessionType = useSessionStore((state) => state.sessionType)
     const isGuest = sessionType === 'guest'
 
-    // Map page type to media type
-    const mediaType = pageType === 'home' ? 'both' : pageType === 'movies' ? 'movie' : 'tv'
+    // Map page type to media type (used for filtering)
+    const _mediaType = pageType === 'home' ? 'both' : pageType === 'movies' ? 'movie' : 'tv'
 
-    // Get rows for this page's media type
-    const displayRows = userId ? getDisplayRowsByMediaType(userId, mediaType) : []
+    // Get collections from appropriate store
+    const userCollections = isGuest ? guestCollections : authCollections
+    const updateList = isGuest ? guestUpdateList : authUpdateList
+    const deleteList = isGuest ? guestDeleteList : authDeleteList
 
-    // For guests: only show system rows. For authenticated: show all rows
-    const filteredRows = isGuest ? displayRows.filter((row) => row.isSystemCollection) : displayRows
+    // Convert UserList to DisplayRow
+    const userListToDisplayRow = useCallback(
+        (col: UserList): DisplayRow => ({
+            id: col.id,
+            name: col.name,
+            order: col.order,
+            enabled: col.enabled ?? true,
+            mediaType: col.mediaType || 'both',
+            genres: col.genres || [],
+            genreLogic: col.genreLogic || 'OR',
+            isSystemCollection: col.isSystemCollection || col.id.startsWith('system-'),
+            canDelete: col.canDelete,
+            canEdit: col.canEdit,
+            color: col.color,
+            emoji: col.emoji,
+            displayAsRow: col.displayAsRow,
+            createdAt: col.createdAt,
+            updatedAt: col.updatedAt,
+            autoUpdateEnabled: col.autoUpdateEnabled,
+            updateFrequency: col.updateFrequency,
+            lastCheckedAt: col.lastCheckedAt,
+            lastUpdateCount: col.lastUpdateCount,
+        }),
+        []
+    )
 
-    // Drag and drop sensors
+    // Filter collections for this page type
+    const displayRows = useMemo(() => {
+        let filtered: DisplayRow[]
+
+        if (pageType === 'home') {
+            // Home shows collections with mediaType: 'both' and displayAsRow: true
+            filtered = userCollections
+                .filter((c) => c.displayAsRow !== false && (c.mediaType === 'both' || !c.mediaType))
+                .map(userListToDisplayRow)
+        } else if (pageType === 'movies') {
+            // Movies page shows movie collections
+            filtered = userCollections
+                .filter((c) => c.displayAsRow !== false && c.mediaType === 'movie')
+                .map(userListToDisplayRow)
+        } else {
+            // TV page shows TV collections
+            filtered = userCollections
+                .filter((c) => c.displayAsRow !== false && c.mediaType === 'tv')
+                .map(userListToDisplayRow)
+        }
+
+        return filtered.sort((a, b) => a.order - b.order)
+    }, [userCollections, pageType, userListToDisplayRow])
+
+    // Drag and drop sensors with activation constraints for smoother dragging
     const sensors = useSensors(
-        useSensor(PointerSensor),
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8, // Require 8px movement before drag starts
+            },
+        }),
         useSensor(KeyboardSensor, {
             coordinateGetter: sortableKeyboardCoordinates,
         })
     )
 
-    // filteredRows already set above based on guest/auth status
+    // Sync localRows from displayRows when data changes
+    const displayRowsKey = useMemo(
+        () => displayRows.map((r) => `${r.id}:${r.order}`).join(','),
+        [displayRows]
+    )
+    useEffect(() => {
+        setLocalRows(displayRows)
+    }, [displayRowsKey, displayRows])
 
     // Handle body scroll lock
     useEffect(() => {
@@ -247,190 +180,76 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         }
     }, [isOpen])
 
-    // Load system row preferences when modal opens
-    useEffect(() => {
-        if (!userId || !isOpen) return
-
-        const loadData = async () => {
-            setLoading(true)
-            try {
-                if (isGuest) {
-                    // Guests: only load system preferences from localStorage
-                    const [systemPrefs, deletedRows] = await Promise.all([
-                        SystemRowStorage.getSystemRowPreferences(userId, true),
-                        SystemRowStorage.getDeletedSystemRows(userId, true),
-                    ])
-                    setSystemRowPreferences(userId, systemPrefs)
-                    setDeletedSystemRows(userId, deletedRows)
-                } else {
-                    // Authenticated: load both custom rows and system preferences from Firebase
-                    const [customRows, systemPrefs, deletedRows] = await Promise.all([
-                        CustomRowsFirestore.getUserCustomRows(userId),
-                        SystemRowStorage.getSystemRowPreferences(userId, false),
-                        SystemRowStorage.getDeletedSystemRows(userId, false),
-                    ])
-                    setRows(userId, customRows)
-                    setSystemRowPreferences(userId, systemPrefs)
-                    setDeletedSystemRows(userId, deletedRows)
-                }
-            } catch (error) {
-                // Error already shown to user via toast
-                showToast('error', 'Failed to load collections')
-                setError((error as Error).message)
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        loadData()
-    }, [
-        userId,
-        isOpen,
-        isGuest,
-        setRows,
-        setSystemRowPreferences,
-        setDeletedSystemRows,
-        setLoading,
-        setError,
-        showToast,
-    ])
-
     // Handle drag end for reordering collections
-    const handleDragEnd = async (event: DragEndEvent) => {
+    const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event
 
         if (!over || active.id === over.id || !userId) return
 
-        const rows = filteredRows
-        const oldIndex = rows.findIndex((r) => r.id === active.id)
-        const newIndex = rows.findIndex((r) => r.id === over.id)
+        const oldIndex = localRows.findIndex((r) => r.id === active.id)
+        const newIndex = localRows.findIndex((r) => r.id === over.id)
 
         if (oldIndex === -1 || newIndex === -1) return
 
-        // Create new order array
-        const newOrder = arrayMove(rows, oldIndex, newIndex)
+        // Create new order array with updated order values
+        const newOrder = arrayMove(localRows, oldIndex, newIndex).map((row, index) => ({
+            ...row,
+            order: index,
+        }))
 
-        // Update order in store optimistically
-        newOrder.forEach((row, index) => {
-            if (row.isSystemCollection) {
-                updateSystemRowOrder(userId, row.id, index)
-            } else {
-                updateRow(userId, row.id, { order: index } as Partial<CustomRow>)
-            }
-        })
+        // Update local state INSTANTLY for smooth UI
+        setLocalRows(newOrder)
 
-        // Persist to storage (localStorage for guests, Firebase for authenticated)
-        try {
-            // Update custom rows (authenticated users only)
-            if (!isGuest) {
-                const customRowUpdates = newOrder.filter((r) => !r.isSystemCollection)
-                if (customRowUpdates.length > 0) {
-                    await CustomRowsFirestore.reorderCustomRows(
-                        userId,
-                        customRowUpdates.map((r) => r.id)
+        // Persist to stores in background (fire-and-forget)
+        setTimeout(() => {
+            const persistInBackground = async () => {
+                try {
+                    const promises = newOrder.map((row, index) =>
+                        updateList(row.id, { order: index })
                     )
+                    await Promise.all(promises)
+                } catch (error) {
+                    console.error('Failed to save collection order:', error)
+                    showToast('error', 'Failed to save collection order')
                 }
             }
-
-            // Update system rows
-            const systemRowUpdates = newOrder.filter((r) => r.isSystemCollection)
-            for (let i = 0; i < systemRowUpdates.length; i++) {
-                const r = systemRowUpdates[i]
-                await SystemRowStorage.updateSystemRowOrder(userId, r.id, i, isGuest)
-            }
-        } catch (error) {
-            // Error already shown to user via toast
-            showToast('error', 'Failed to save collection order')
-            // Reload to get correct order
-            if (isGuest) {
-                const systemPrefs = await SystemRowStorage.getSystemRowPreferences(userId, true)
-                setSystemRowPreferences(userId, systemPrefs)
-            } else {
-                const [customRows, systemPrefs] = await Promise.all([
-                    CustomRowsFirestore.getUserCustomRows(userId),
-                    SystemRowStorage.getSystemRowPreferences(userId, false),
-                ])
-                setRows(userId, customRows)
-                setSystemRowPreferences(userId, systemPrefs)
-            }
-        }
+            persistInBackground()
+        }, 0)
     }
 
-    // Delete collection (system or custom)
-    const handleDelete = async (row: DisplayRow) => {
-        if (!userId) return
+    // Delete collection
+    const handleDelete = useCallback(
+        async (row: DisplayRow) => {
+            if (!userId) return
 
-        try {
-            if (row.isSystemCollection) {
-                await SystemRowStorage.deleteSystemRow(userId, row.id, isGuest)
-                deleteSystemRowStore(userId, row.id)
-                showToast('success', `"${row.name}" deleted successfully`)
-            } else {
-                // Custom row deletion (authenticated users only)
-                await CustomRowsFirestore.deleteCustomRow(userId, row.id)
-                removeRow(userId, row.id)
-                showToast('success', `"${row.name}" deleted successfully`)
-            }
-        } catch (error) {
-            // Error already shown to user via toast
-            showToast('error', (error as Error).message)
-        }
-    }
-
-    // No longer needed - removed toggle enabled functionality
-
-    // Edit collection
-    const handleEdit = (row: DisplayRow) => {
-        if (row.isSystemCollection) {
-            // Open edit modal for system collections
-            setEditingSystemRow({
-                id: row.id,
-                name: row.name,
-                genres: row.genres || [],
-                genreLogic: row.genreLogic || 'OR',
-            })
-        } else {
-            // Open modal for custom rows (authenticated users only)
-            if (isGuest) {
-                openAuthModal('signin')
+            // Check if this is a core system collection that cannot be deleted
+            if (row.isSystemCollection && row.canDelete === false) {
+                showToast('error', 'This collection cannot be deleted')
                 return
             }
-            openCollectionModal('edit', row.id)
-        }
-    }
 
-    // Update system row (name and genres)
-    const handleUpdateSystemRow = async (
-        systemRowId: string,
-        newName: string,
-        newGenres: string[],
-        newGenreLogic: 'AND' | 'OR'
-    ) => {
-        if (!userId) return
+            try {
+                await deleteList(row.id)
+                showToast('success', `"${row.name}" deleted successfully`)
+            } catch (error) {
+                console.error('Failed to delete collection:', error)
+                showToast('error', (error as Error).message)
+            }
+        },
+        [userId, deleteList, showToast]
+    )
 
-        try {
-            // Update both name and genres
-            await Promise.all([
-                SystemRowStorage.updateSystemRowName(userId, systemRowId, newName, isGuest),
-                SystemRowStorage.updateSystemRowGenres(
-                    userId,
-                    systemRowId,
-                    newGenres,
-                    newGenreLogic,
-                    isGuest
-                ),
-            ])
-
-            // Reload preferences to get updated data
-            const systemPrefs = await SystemRowStorage.getSystemRowPreferences(userId, isGuest)
-            setSystemRowPreferences(userId, systemPrefs)
-            showToast('success', 'Collection updated successfully')
-            setEditingSystemRow(null)
-        } catch (error) {
-            // Error already shown to user via toast
-            showToast('error', (error as Error).message)
-        }
-    }
+    // Edit collection - opens CollectionEditorModal
+    const handleEdit = useCallback(
+        (row: DisplayRow) => {
+            // Look up the full collection from the store
+            const fullCollection = userCollections.find((c) => c.id === row.id)
+            if (fullCollection) {
+                setEditorCollection(fullCollection)
+            }
+        },
+        [userCollections]
+    )
 
     // Create new collection
     const handleCreate = () => {
@@ -450,227 +269,222 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         if (!userId) return
 
         try {
-            await SystemRowStorage.resetDefaultRows(userId, mediaType, isGuest)
-            // Reload data
-            if (isGuest) {
-                const [systemPrefs, deletedRows] = await Promise.all([
-                    SystemRowStorage.getSystemRowPreferences(userId, true),
-                    SystemRowStorage.getDeletedSystemRows(userId, true),
-                ])
-                setSystemRowPreferences(userId, systemPrefs)
-                setDeletedSystemRows(userId, deletedRows)
-            } else {
-                const [customRows, systemPrefs, deletedRows] = await Promise.all([
-                    CustomRowsFirestore.getUserCustomRows(userId),
-                    SystemRowStorage.getSystemRowPreferences(userId, false),
-                    SystemRowStorage.getDeletedSystemRows(userId, false),
-                ])
-                setRows(userId, customRows)
-                setSystemRowPreferences(userId, systemPrefs)
-                setDeletedSystemRows(userId, deletedRows)
+            // Get default collections and reset them
+            const defaultCollections = createDefaultCollectionsForUser()
+
+            for (const defaultCol of defaultCollections) {
+                const existing = userCollections.find((c) => c.id === defaultCol.id)
+                if (existing) {
+                    // Reset to default properties
+                    await updateList(defaultCol.id, {
+                        name: defaultCol.name,
+                        enabled: defaultCol.enabled,
+                        order: defaultCol.order,
+                        genres: defaultCol.genres,
+                        genreLogic: defaultCol.genreLogic,
+                        mediaType: defaultCol.mediaType,
+                    })
+                }
             }
             showToast('success', 'Default collections restored successfully')
         } catch (error) {
-            // Error already shown to user via toast
             showToast('error', (error as Error).message)
         }
     }
 
     // Move collection up (keyboard accessibility)
-    const handleMoveUp = async (row: DisplayRow) => {
-        if (!userId) return
+    const handleMoveUp = useCallback(
+        (row: DisplayRow) => {
+            if (!userId) return
 
-        const rows = filteredRows
-        const currentIndex = rows.findIndex((r) => r.id === row.id)
+            const currentIndex = localRows.findIndex((r) => r.id === row.id)
+            if (currentIndex <= 0) return
 
-        if (currentIndex <= 0) return
+            const newOrder = arrayMove(localRows, currentIndex, currentIndex - 1).map(
+                (r, index) => ({
+                    ...r,
+                    order: index,
+                })
+            )
 
-        const newIndex = currentIndex - 1
-        const newOrder = arrayMove(rows, currentIndex, newIndex)
+            // Update local state instantly
+            setLocalRows(newOrder)
 
-        newOrder.forEach((r, index) => {
-            if (r.isSystemCollection) {
-                updateSystemRowOrder(userId, r.id, index)
-            } else {
-                updateRow(userId, r.id, { order: index } as Partial<CustomRow>)
-            }
-        })
-
-        try {
-            // Update custom rows (authenticated users only)
-            if (!isGuest) {
-                const customRowUpdates = newOrder.filter((r) => !r.isSystemCollection)
-                if (customRowUpdates.length > 0) {
-                    await CustomRowsFirestore.reorderCustomRows(
-                        userId,
-                        customRowUpdates.map((r) => r.id)
-                    )
-                }
-            }
-
-            // Update system rows
-            const systemRowUpdates = newOrder.filter((r) => r.isSystemCollection)
-            for (let i = 0; i < systemRowUpdates.length; i++) {
-                const r = systemRowUpdates[i]
-                await SystemRowStorage.updateSystemRowOrder(userId, r.id, i, isGuest)
-            }
-        } catch (error) {
-            // Error already shown to user via toast
-            showToast('error', 'Failed to save collection order')
-        }
-    }
+            // Persist in background
+            setTimeout(() => {
+                newOrder.forEach((r, index) => {
+                    updateList(r.id, { order: index })
+                })
+            }, 0)
+        },
+        [userId, localRows, updateList]
+    )
 
     // Move collection down (keyboard accessibility)
-    const handleMoveDown = async (row: DisplayRow) => {
-        if (!userId) return
+    const handleMoveDown = useCallback(
+        (row: DisplayRow) => {
+            if (!userId) return
 
-        const rows = filteredRows
-        const currentIndex = rows.findIndex((r) => r.id === row.id)
+            const currentIndex = localRows.findIndex((r) => r.id === row.id)
+            if (currentIndex === -1 || currentIndex >= localRows.length - 1) return
 
-        if (currentIndex === -1 || currentIndex >= rows.length - 1) return
+            const newOrder = arrayMove(localRows, currentIndex, currentIndex + 1).map(
+                (r, index) => ({
+                    ...r,
+                    order: index,
+                })
+            )
 
-        const newIndex = currentIndex + 1
-        const newOrder = arrayMove(rows, currentIndex, newIndex)
+            // Update local state instantly
+            setLocalRows(newOrder)
 
-        newOrder.forEach((r, index) => {
-            if (r.isSystemCollection) {
-                updateSystemRowOrder(userId, r.id, index)
-            } else {
-                updateRow(userId, r.id, { order: index } as Partial<CustomRow>)
+            // Persist in background
+            setTimeout(() => {
+                newOrder.forEach((r, index) => {
+                    updateList(r.id, { order: index })
+                })
+            }, 0)
+        },
+        [userId, localRows, updateList]
+    )
+
+    // Toggle collection visibility
+    const handleToggle = useCallback(
+        async (row: DisplayRow) => {
+            if (!userId) return
+
+            try {
+                await updateList(row.id, { enabled: !row.enabled })
+            } catch (error) {
+                console.error('Failed to toggle collection:', error)
+                showToast('error', 'Failed to update collection')
             }
-        })
+        },
+        [userId, updateList, showToast]
+    )
 
-        try {
-            // Update custom rows (authenticated users only)
-            if (!isGuest) {
-                const customRowUpdates = newOrder.filter((r) => !r.isSystemCollection)
-                if (customRowUpdates.length > 0) {
-                    await CustomRowsFirestore.reorderCustomRows(
-                        userId,
-                        customRowUpdates.map((r) => r.id)
-                    )
-                }
-            }
-
-            // Update system rows
-            const systemRowUpdates = newOrder.filter((r) => r.isSystemCollection)
-            for (let i = 0; i < systemRowUpdates.length; i++) {
-                const r = systemRowUpdates[i]
-                await SystemRowStorage.updateSystemRowOrder(userId, r.id, i, isGuest)
-            }
-        } catch (error) {
-            // Error already shown to user via toast
-            showToast('error', 'Failed to save collection order')
-        }
-    }
-
-    // Get page title and icon
-    const getPageInfo = () => {
-        switch (pageType) {
-            case 'home':
-                return { title: 'Home', icon: Squares2X2Icon }
-            case 'movies':
-                return { title: 'Movies', icon: FilmIcon }
-            case 'tv':
-                return { title: 'TV Shows', icon: TvIcon }
-        }
-    }
-
-    const { title: pageTitle, icon: PageIcon } = getPageInfo()
+    // Page title and icon
+    const _pageTitle = pageType === 'home' ? 'Home' : pageType === 'movies' ? 'Movies' : 'TV Shows'
+    const PageIcon =
+        pageType === 'home' ? Squares2X2Icon : pageType === 'movies' ? FilmIcon : TvIcon
 
     if (!isOpen) return null
 
     return (
-        <div
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[50000] flex items-center justify-center p-4"
-            onClick={onClose}
-        >
-            <div
-                className="bg-gray-900 border border-gray-700 rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-xl"
-                onClick={(e) => e.stopPropagation()}
-            >
-                {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-700">
-                    <div className="flex items-center gap-2">
-                        <PageIcon className="w-6 h-6 text-red-500" />
-                        <h2 className="text-2xl font-bold text-white">
-                            Edit {pageTitle} Collections
-                        </h2>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={handleCreate}
-                            className="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
-                            title={
-                                isGuest
-                                    ? 'Sign in to create custom collections'
-                                    : 'Create a new custom collection'
-                            }
-                        >
-                            <PlusIcon className="w-4 h-4" />
-                            <span>New Collection</span>
-                        </button>
-                        <button
-                            onClick={handleResetDefaultRows}
-                            className="flex items-center space-x-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors"
-                            title="Restore all default system collections"
-                        >
-                            <ArrowPathIcon className="w-4 h-4" />
-                            <span>Reset Defaults</span>
-                        </button>
+        <>
+            {/* Backdrop */}
+            <div className="fixed inset-0 z-50 bg-black/70" onClick={onClose} />
+
+            {/* Modal */}
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div
+                    className="bg-[#141414] rounded-lg w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-xl"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {/* Header */}
+                    <div className="flex items-center justify-between p-4 border-b border-gray-700">
+                        <div className="flex items-center gap-3">
+                            <PageIcon className="w-6 h-6 text-red-600" />
+                            <h2 className="text-xl font-bold text-white">
+                                Edit Displayed Collections
+                            </h2>
+                        </div>
                         <button
                             onClick={onClose}
-                            className="text-gray-400 hover:text-white transition-colors"
+                            className="p-2 hover:bg-gray-700 rounded-full transition-colors"
                         >
-                            <XMarkIcon className="w-6 h-6" />
+                            <XMarkIcon className="w-6 h-6 text-gray-400" />
                         </button>
                     </div>
-                </div>
 
-                {/* Rows List */}
-                <div className="flex-1 overflow-y-auto px-6 py-6 space-y-2">
-                    {filteredRows.length === 0 ? (
-                        <div className="text-center py-12">
-                            <p className="text-gray-400">
-                                No {pageTitle.toLowerCase()} collections yet. Create your first
-                                collection!
-                            </p>
-                        </div>
-                    ) : (
-                        <DndContext
-                            sensors={sensors}
-                            collisionDetection={closestCenter}
-                            onDragEnd={handleDragEnd}
-                        >
-                            <SortableContext
-                                items={filteredRows.map((r) => r.id)}
-                                strategy={verticalListSortingStrategy}
+                    {/* Content */}
+                    <div className="p-4 overflow-y-auto max-h-[60vh]">
+                        {/* Action buttons */}
+                        <div className="flex gap-2 mb-4">
+                            {!isGuest && (
+                                <button
+                                    onClick={handleCreate}
+                                    className="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm"
+                                >
+                                    <PlusIcon className="w-4 h-4" />
+                                    New Collection
+                                </button>
+                            )}
+                            <button
+                                onClick={handleResetDefaultRows}
+                                className="flex items-center gap-2 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm"
                             >
-                                {filteredRows.map((row) => (
-                                    <SortableCollectionCard
-                                        key={row.id}
-                                        row={row}
-                                        onEdit={handleEdit}
-                                        onDelete={handleDelete}
-                                        onMoveUp={handleMoveUp}
-                                        onMoveDown={handleMoveDown}
-                                    />
-                                ))}
-                            </SortableContext>
-                        </DndContext>
-                    )}
+                                <ArrowPathIcon className="w-4 h-4" />
+                                Reset Defaults
+                            </button>
+                        </div>
+
+                        {/* Collections list with drag and drop */}
+                        {localRows.length > 0 ? (
+                            <DndContext
+                                sensors={sensors}
+                                collisionDetection={closestCenter}
+                                onDragEnd={handleDragEnd}
+                            >
+                                <SortableContext
+                                    items={localRows.map((r) => r.id)}
+                                    strategy={verticalListSortingStrategy}
+                                >
+                                    <div className="space-y-2">
+                                        {localRows.map((row) => (
+                                            <SortableCollectionCard
+                                                key={row.id}
+                                                row={row}
+                                                onEdit={() => handleEdit(row)}
+                                                onDelete={() => handleDelete(row)}
+                                                onToggle={() => handleToggle(row)}
+                                                onMoveUp={() => handleMoveUp(row)}
+                                                onMoveDown={() => handleMoveDown(row)}
+                                                isFirst={
+                                                    localRows.findIndex((r) => r.id === row.id) ===
+                                                    0
+                                                }
+                                                isLast={
+                                                    localRows.findIndex((r) => r.id === row.id) ===
+                                                    localRows.length - 1
+                                                }
+                                            />
+                                        ))}
+                                    </div>
+                                </SortableContext>
+                            </DndContext>
+                        ) : (
+                            <div className="text-center py-8 text-gray-400">
+                                <p>No collections for this page yet.</p>
+                                {!isGuest && (
+                                    <p className="text-sm mt-2">
+                                        Create a new collection or reset to defaults.
+                                    </p>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Footer */}
+                    <div className="flex justify-end gap-3 p-4 border-t border-gray-700">
+                        <button
+                            onClick={onClose}
+                            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                        >
+                            Done
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            {/* System Collection Edit Modal - Overlays the editor */}
-            {editingSystemRow && (
-                <SystemCollectionEditModal
-                    collection={editingSystemRow}
-                    onSave={handleUpdateSystemRow}
-                    onCancel={() => setEditingSystemRow(null)}
-                    mediaType={mediaType}
+            {/* Collection Editor Modal */}
+            {editorCollection && (
+                <CollectionEditorModal
+                    collection={editorCollection}
+                    isOpen={!!editorCollection}
+                    onClose={() => setEditorCollection(null)}
                 />
             )}
-        </div>
+        </>
     )
 }
