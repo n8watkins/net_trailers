@@ -65,79 +65,72 @@ export default function RecommendationInsightsModal({
                     {/* Brief explanation */}
                     <p className="text-gray-300 text-sm leading-relaxed">
                         Recommendations are personalized based on your preferences and interactions.
-                        Take a quiz to help us understand what you enjoy.
                     </p>
 
-                    {/* Genre Quiz Option */}
-                    <div className="bg-gray-800/40 rounded-lg p-4 border border-gray-700/50">
-                        <div className="flex items-start gap-3">
-                            <SwatchIcon className="w-6 h-6 text-purple-400 flex-shrink-0 mt-0.5" />
-                            <div className="flex-1">
-                                <h3 className="text-white font-semibold text-sm mb-1">
-                                    Rate Genres
-                                </h3>
-                                <p className="text-gray-400 text-xs mb-3">
-                                    Tell us which genres you love or want to skip
-                                </p>
-                                <button
-                                    onClick={onOpenGenreQuiz}
-                                    disabled={!onOpenGenreQuiz}
-                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
-                                        onOpenGenreQuiz
-                                            ? 'bg-purple-600 hover:bg-purple-500 text-white'
-                                            : 'bg-purple-600/50 text-purple-200 cursor-not-allowed opacity-60'
-                                    }`}
-                                >
-                                    Rate Genres
-                                </button>
-                            </div>
+                    {/* Settings Option - at top */}
+                    <div className="flex items-center justify-between py-2 border-b border-gray-700/50">
+                        <div className="flex items-center gap-2">
+                            <Cog6ToothIcon className="w-5 h-5 text-gray-400" />
+                            <span className="text-gray-300 text-sm">Manage Settings</span>
                         </div>
+                        <button
+                            onClick={handleGoToSettings}
+                            className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-xs font-medium transition-colors duration-200"
+                        >
+                            Settings
+                        </button>
                     </div>
 
-                    {/* Title Quiz Option */}
+                    {/* Customize Section */}
                     <div className="bg-gray-800/40 rounded-lg p-4 border border-gray-700/50">
-                        <div className="flex items-start gap-3">
-                            <FilmIcon className="w-6 h-6 text-pink-400 flex-shrink-0 mt-0.5" />
-                            <div className="flex-1">
-                                <h3 className="text-white font-semibold text-sm mb-1">
-                                    Rate Titles
-                                </h3>
-                                <p className="text-gray-400 text-xs mb-3">
-                                    Rate movies and shows to fine-tune your recommendations
-                                </p>
-                                <button
-                                    onClick={onOpenTitleQuiz}
-                                    disabled={!onOpenTitleQuiz}
-                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
-                                        onOpenTitleQuiz
-                                            ? 'bg-pink-600 hover:bg-pink-500 text-white'
-                                            : 'bg-pink-600/50 text-pink-200 cursor-not-allowed opacity-60'
-                                    }`}
-                                >
-                                    Rate Titles
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                        <h3 className="text-white font-semibold text-sm mb-2">
+                            Customize Your Experience
+                        </h3>
+                        <p className="text-gray-400 text-xs mb-4">
+                            Help us understand what you enjoy by rating genres or specific titles.
+                        </p>
 
-                    {/* Settings Option */}
-                    <div className="bg-gray-800/40 rounded-lg p-4 border border-gray-700/50">
-                        <div className="flex items-start gap-3">
-                            <Cog6ToothIcon className="w-6 h-6 text-gray-400 flex-shrink-0 mt-0.5" />
-                            <div className="flex-1">
-                                <h3 className="text-white font-semibold text-sm mb-1">
-                                    Manage Settings
-                                </h3>
-                                <p className="text-gray-400 text-xs mb-3">
-                                    Disable recommendations in your preferences
-                                </p>
-                                <button
-                                    onClick={handleGoToSettings}
-                                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors duration-200"
+                        {/* Side by side quiz buttons */}
+                        <div className="grid grid-cols-2 gap-3">
+                            {/* Genre Quiz */}
+                            <button
+                                onClick={onOpenGenreQuiz}
+                                disabled={!onOpenGenreQuiz}
+                                className={`flex flex-col items-center gap-2 p-4 rounded-lg transition-all duration-200 ${
+                                    onOpenGenreQuiz
+                                        ? 'bg-purple-600/20 border border-purple-500/50 hover:bg-purple-600/30 hover:border-purple-500'
+                                        : 'bg-gray-700/30 border border-gray-600/30 cursor-not-allowed opacity-60'
+                                }`}
+                            >
+                                <SwatchIcon
+                                    className={`w-8 h-8 ${onOpenGenreQuiz ? 'text-purple-400' : 'text-gray-500'}`}
+                                />
+                                <span
+                                    className={`text-sm font-medium ${onOpenGenreQuiz ? 'text-purple-300' : 'text-gray-500'}`}
                                 >
-                                    Go to Settings
-                                </button>
-                            </div>
+                                    Rate Genres
+                                </span>
+                            </button>
+
+                            {/* Title Quiz */}
+                            <button
+                                onClick={onOpenTitleQuiz}
+                                disabled={!onOpenTitleQuiz}
+                                className={`flex flex-col items-center gap-2 p-4 rounded-lg transition-all duration-200 ${
+                                    onOpenTitleQuiz
+                                        ? 'bg-pink-600/20 border border-pink-500/50 hover:bg-pink-600/30 hover:border-pink-500'
+                                        : 'bg-gray-700/30 border border-gray-600/30 cursor-not-allowed opacity-60'
+                                }`}
+                            >
+                                <FilmIcon
+                                    className={`w-8 h-8 ${onOpenTitleQuiz ? 'text-pink-400' : 'text-gray-500'}`}
+                                />
+                                <span
+                                    className={`text-sm font-medium ${onOpenTitleQuiz ? 'text-pink-300' : 'text-gray-500'}`}
+                                >
+                                    Rate Titles
+                                </span>
+                            </button>
                         </div>
                     </div>
                 </div>
