@@ -1,18 +1,21 @@
-import { useState } from 'react'
-import { Content } from '../typings'
+import { useState, useEffect } from 'react'
+import { Content, isMovie } from '../typings'
 
 /**
  * Custom hook for image loading with fallback:
  * 1. poster_path (from original response)
  * 2. backdrop_path (from original response)
- * 3. Placeholder (null)
+ * 3. Alternate image (fetched from server-side API)
+ * 4. Placeholder (null)
  *
- * Note: We don't fetch alternate images client-side to avoid exposing the API key.
- * TMDB API key must remain server-side only for security.
+ * Alternate images are fetched via server-side API to keep TMDB API key secure.
  */
 export function useImageWithFallback(content: Content | undefined) {
     const [posterError, setPosterError] = useState(false)
     const [backdropError, setBackdropError] = useState(false)
+    const [alternateImage, setAlternateImage] = useState<string | null>(null)
+    const [alternateError, setAlternateError] = useState(false)
+    const [fetchingAlternate, setFetchingAlternate] = useState(false)
 
     const posterImage = content?.poster_path
     const backdropImage = content?.backdrop_path
@@ -23,7 +26,44 @@ export function useImageWithFallback(content: Content | undefined) {
             ? `https://image.tmdb.org/t/p/w185${posterImage}`
             : !backdropError && backdropImage
               ? `https://image.tmdb.org/t/p/w185${backdropImage}`
-              : null
+              : !alternateError && alternateImage
+                ? alternateImage
+                : null
+
+    // Fetch alternate images from server-side API when both poster and backdrop fail
+    useEffect(() => {
+        if (posterError && backdropError && !alternateImage && !fetchingAlternate && content) {
+            setFetchingAlternate(true)
+            const mediaType = isMovie(content) ? 'movie' : 'tv'
+
+            // Create abort controller for cleanup
+            const abortController = new AbortController()
+
+            fetch(`/api/images/${mediaType}/${content.id}`, {
+                signal: abortController.signal,
+            })
+                .then((res) => res.json())
+                .then((data) => {
+                    if (data.imageUrl) {
+                        // Use w185 to match the other images in this hook
+                        const imageUrl = data.imageUrl.replace('/w500/', '/w185/')
+                        setAlternateImage(imageUrl)
+                    } else {
+                        setAlternateError(true)
+                    }
+                })
+                .catch((error) => {
+                    if (error.name !== 'AbortError') {
+                        console.error('Failed to fetch alternate images:', error)
+                        setAlternateError(true)
+                    }
+                })
+
+            return () => {
+                abortController.abort()
+            }
+        }
+    }, [posterError, backdropError, alternateImage, fetchingAlternate, content])
 
     // Handle image load errors
     const handleImageError = () => {
@@ -31,6 +71,8 @@ export function useImageWithFallback(content: Content | undefined) {
             setPosterError(true)
         } else if (!backdropError && backdropImage) {
             setBackdropError(true)
+        } else if (!alternateError && alternateImage) {
+            setAlternateError(true)
         }
     }
 

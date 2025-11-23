@@ -36,7 +36,9 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
     const [imageLoaded, setImageLoaded] = useState(false)
     const [posterError, setPosterError] = useState(false)
     const [backdropError, setBackdropError] = useState(false)
-    const [allImagesFailed, setAllImagesFailed] = useState(false)
+    const [alternateImage, setAlternateImage] = useState<string | null>(null)
+    const [alternateError, setAlternateError] = useState(false)
+    const [fetchingAlternate, setFetchingAlternate] = useState(false)
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const [showHoverActions, setShowHoverActions] = useState(false) // Show hover menu above bookmark button
     const [isCardHovered, setIsCardHovered] = useState(false) // Track card hover state
@@ -50,18 +52,44 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
             ? `https://image.tmdb.org/t/p/w500${posterImage}`
             : !backdropError && backdropImage
               ? `https://image.tmdb.org/t/p/w500${backdropImage}`
-              : null
+              : !alternateError && alternateImage
+                ? alternateImage
+                : null
 
-    // Handle case when both poster and backdrop fail
-    // Note: We don't fetch alternate images client-side to avoid exposing the API key
-    // TMDB API key must remain server-side only for security
+    // Fetch alternate images from server-side API when both poster and backdrop fail
     useEffect(() => {
-        if (posterError && backdropError && !allImagesFailed && content) {
-            // Fail gracefully and show placeholder
-            setAllImagesFailed(true)
-            setImageLoaded(true)
+        if (posterError && backdropError && !alternateImage && !fetchingAlternate && content) {
+            setFetchingAlternate(true)
+            const mediaType = isMovie(content) ? 'movie' : 'tv'
+
+            // Create abort controller for cleanup
+            const abortController = new AbortController()
+
+            fetch(`/api/images/${mediaType}/${content.id}`, {
+                signal: abortController.signal,
+            })
+                .then((res) => res.json())
+                .then((data) => {
+                    if (data.imageUrl) {
+                        setAlternateImage(data.imageUrl)
+                    } else {
+                        setAlternateError(true)
+                        setImageLoaded(true) // Show placeholder
+                    }
+                })
+                .catch((error) => {
+                    if (error.name !== 'AbortError') {
+                        console.error('Failed to fetch alternate images:', error)
+                        setAlternateError(true)
+                        setImageLoaded(true) // Show placeholder
+                    }
+                })
+
+            return () => {
+                abortController.abort()
+            }
         }
-    }, [posterError, backdropError, allImagesFailed, content])
+    }, [posterError, backdropError, alternateImage, fetchingAlternate, content])
 
     // Check if content is liked, hidden, or in any lists
     const liked = content ? isLiked(content.id) : false
@@ -127,16 +155,25 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
 
     // Handle image load errors
     const handleImageError = () => {
+        const title = content ? getTitle(content) : 'Unknown'
         if (!posterError && posterImage) {
             // First error: poster failed, try backdrop
+            console.warn(`[Image 404] "${title}" - poster failed, trying backdrop`)
             setPosterError(true)
             setImageLoaded(false) // Reset to try loading backdrop
         } else if (!backdropError && backdropImage) {
-            // Second error: backdrop also failed, show placeholder
+            // Second error: backdrop also failed, will trigger alternate fetch
+            console.warn(`[Image 404] "${title}" - backdrop failed, fetching alternate`)
             setBackdropError(true)
+            setImageLoaded(false) // Reset to try loading alternate
+        } else if (!alternateError && alternateImage) {
+            // Third error: alternate image also failed, show placeholder
+            console.warn(`[Image 404] "${title}" - alternate failed, showing placeholder`)
+            setAlternateError(true)
             setImageLoaded(true) // Show placeholder
         } else {
             // No images available at all
+            console.warn(`[Image 404] "${title}" - no images available, showing placeholder`)
             setImageLoaded(true) // Show placeholder
         }
     }

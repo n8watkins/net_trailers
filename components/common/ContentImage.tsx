@@ -35,6 +35,7 @@ function ContentImage({
     const [backdropError, setBackdropError] = useState(false)
     const [alternateImage, setAlternateImage] = useState<string | null>(null)
     const [alternateError, setAlternateError] = useState(false)
+    const [fetchingAlternate, setFetchingAlternate] = useState(false)
 
     // Determine which image to use
     const imageToUse =
@@ -46,14 +47,38 @@ function ContentImage({
                 ? alternateImage
                 : null
 
-    // Removed client-side TMDB API call for security - images will fallback gracefully
+    // Fetch alternate images from server-side API when both poster and backdrop fail
     useEffect(() => {
-        if (posterError && backdropError && !alternateImage && content) {
-            // No longer fetching alternate images from client side
-            // This prevents potential API key exposure
-            setAlternateError(true)
+        if (posterError && backdropError && !alternateImage && !fetchingAlternate && content) {
+            setFetchingAlternate(true)
+            const mediaType = isMovie(content) ? 'movie' : 'tv'
+
+            // Create abort controller for cleanup
+            const abortController = new AbortController()
+
+            fetch(`/api/images/${mediaType}/${content.id}`, {
+                signal: abortController.signal,
+            })
+                .then((res) => res.json())
+                .then((data) => {
+                    if (data.imageUrl) {
+                        setAlternateImage(data.imageUrl)
+                    } else {
+                        setAlternateError(true)
+                    }
+                })
+                .catch((error) => {
+                    if (error.name !== 'AbortError') {
+                        console.error('Failed to fetch alternate images:', error)
+                        setAlternateError(true)
+                    }
+                })
+
+            return () => {
+                abortController.abort()
+            }
         }
-    }, [posterError, backdropError, alternateImage, content])
+    }, [posterError, backdropError, alternateImage, fetchingAlternate, content])
 
     const handleImageClick = () => {
         if (content) {
@@ -72,14 +97,18 @@ function ContentImage({
 
     // Handle image load errors
     const handleImageError = () => {
+        const title = content ? getTitle(content) : 'Unknown'
         if (!posterError && posterImage) {
             // First error: poster failed, try backdrop
+            console.warn(`[Image 404] "${title}" - poster failed, trying backdrop`)
             setPosterError(true)
         } else if (!backdropError && backdropImage) {
             // Second error: backdrop also failed, will trigger alternate fetch
+            console.warn(`[Image 404] "${title}" - backdrop failed, fetching alternate`)
             setBackdropError(true)
         } else if (!alternateError && alternateImage) {
             // Third error: alternate image also failed, show placeholder
+            console.warn(`[Image 404] "${title}" - alternate failed, showing placeholder`)
             setAlternateError(true)
         }
     }
