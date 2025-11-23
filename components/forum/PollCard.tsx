@@ -62,7 +62,7 @@ export function PollCard({ poll, userVote = [], onVote }: PollCardProps) {
     return (
         <div
             onClick={handleCardClick}
-            className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 hover:border-zinc-700 transition-colors cursor-pointer"
+            className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 sm:p-4 hover:border-zinc-700 transition-colors cursor-pointer"
         >
             {/* Header */}
             <div className="flex items-start gap-3 mb-4">
@@ -83,7 +83,9 @@ export function PollCard({ poll, userVote = [], onVote }: PollCardProps) {
 
                 {/* Title and meta */}
                 <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold text-white mb-1">{poll.question}</h3>
+                    <h3 className="text-base sm:text-lg font-semibold text-white mb-1">
+                        {poll.question}
+                    </h3>
                     <div className="flex items-center gap-2 text-sm text-gray-400">
                         <span>{poll.userName}</span>
                         <span>•</span>
