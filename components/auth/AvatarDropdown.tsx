@@ -112,7 +112,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
 
                 {/* Dropdown Menu - Not Logged In */}
                 {isOpen && (
-                    <div className="absolute right-0 mt-2 w-64 sm:w-72 bg-[#0f0f0f]/95 backdrop-blur-sm border border-red-500/40 rounded-xl shadow-2xl shadow-red-500/20 z-[110] py-1 animate-fade-in-down">
+                    <div className="absolute right-0 mt-2 w-[80vw] xs:w-64 sm:w-72 max-w-[288px] bg-[#0f0f0f]/95 backdrop-blur-sm border border-red-500/40 rounded-xl shadow-2xl shadow-red-500/20 z-[110] py-1 animate-fade-in-down">
                         {/* Guest Account Status */}
                         <div className="px-5 py-6 border-b border-gray-700/50">
                             <div className="flex items-center space-x-3">
@@ -288,7 +288,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({
 
             {/* Dropdown Menu */}
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-64 sm:w-72 bg-[#0f0f0f]/95 backdrop-blur-sm border border-red-500/40 rounded-xl shadow-2xl shadow-red-500/20 z-[110] py-1 animate-fade-in-down">
+                <div className="absolute right-0 mt-2 w-[80vw] xs:w-64 sm:w-72 max-w-[288px] bg-[#0f0f0f]/95 backdrop-blur-sm border border-red-500/40 rounded-xl shadow-2xl shadow-red-500/20 z-[110] py-1 animate-fade-in-down">
                     {/* User Info Header */}
                     <div className="px-5 py-6 border-b border-gray-700/50">
                         <div className="flex items-center space-x-3">

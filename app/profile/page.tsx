@@ -223,8 +223,7 @@ export default function ProfilePage() {
 
     const likedContent = userData.likedMovies || []
     const watchLaterPreview = (userData.defaultWatchlist || []).slice(0, 6)
-    // Collections are private - not shown on profile
-    const collections: any[] = []
+    const collections = userData.userCreatedWatchlists || []
 
     // Show loading screen while data is being fetched
     if (isLoading) {
@@ -245,8 +244,8 @@ export default function ProfilePage() {
             )}
 
             {/* Profile Header */}
-            <div className="bg-gradient-to-br from-zinc-900 to-zinc-800 border border-zinc-700 rounded-xl p-8 mb-8">
-                <div className="flex items-start gap-6">
+            <div className="bg-gradient-to-br from-zinc-900 to-zinc-800 border border-zinc-700 rounded-xl p-4 sm:p-6 md:p-8 mb-8">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
                     {/* Avatar */}
                     <div className="flex-shrink-0">
                         {user?.photoURL ? (
@@ -273,14 +272,16 @@ export default function ProfilePage() {
                     </div>
 
                     {/* Profile Info */}
-                    <div className="flex-1 min-w-0">
-                        <h1 className="text-3xl font-bold text-white mb-2">{userName}</h1>
+                    <div className="flex-1 min-w-0 text-center sm:text-left">
+                        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+                            {userName}
+                        </h1>
                         {user?.email && <p className="text-gray-400 mb-3">{user.email}</p>}
 
                         {/* Action Buttons */}
-                        <div className="flex items-center gap-3 flex-wrap">
+                        <div className="flex items-center justify-center sm:justify-start gap-3 flex-wrap">
                             <Link
-                                href="/settings"
+                                href="/settings/profile"
                                 className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 text-white rounded-lg transition-colors text-sm font-medium"
                             >
                                 Edit Profile

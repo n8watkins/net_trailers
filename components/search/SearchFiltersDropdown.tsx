@@ -67,7 +67,7 @@ export default function SearchFiltersDropdown({ isOpen, onClose }: SearchFilters
     if (!isOpen) return null
 
     return (
-        <div className="absolute top-full right-0 mt-2 w-96 bg-[#181818] border border-gray-600/50 rounded-lg shadow-2xl z-[110] overflow-hidden">
+        <div className="absolute top-full right-0 mt-2 w-[90vw] sm:w-80 md:w-96 max-w-[384px] bg-[#181818] border border-gray-600/50 rounded-lg shadow-2xl z-[110] overflow-hidden">
             <div ref={dropdownRef}>
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-600/50">

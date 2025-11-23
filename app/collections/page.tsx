@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import SubPageLayout from '../../components/layout/SubPageLayout'
 import useUserData from '../../hooks/useUserData'
@@ -15,7 +15,7 @@ import {
     ChevronDownIcon,
 } from '@heroicons/react/24/solid'
 import { PencilIcon } from '@heroicons/react/24/outline'
-import { isMovie, isTVShow } from '../../typings'
+import { isMovie, isTVShow, Content } from '../../typings'
 import { getTitle } from '../../typings'
 import ContentCard from '../../components/common/ContentCard'
 import EmptyState from '../../components/common/EmptyState'
@@ -29,6 +29,7 @@ import { useDebugSettings } from '../../components/debug/DebugControls'
 import { GuestModeNotification } from '../../components/auth/GuestModeNotification'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import CollectionEditorModal from '../../components/modals/CollectionEditorModal'
+import { useChildSafety } from '../../hooks/useChildSafety'
 
 const Collections = () => {
     const router = useRouter()
@@ -38,6 +39,19 @@ const Collections = () => {
     const { getAllLists } = userData
     const userSession = userData.sessionType === 'authenticated' ? userData.userSession : null
     const debugSettings = useDebugSettings()
+    const { isEnabled: childSafetyMode } = useChildSafety()
+
+    // Infinite scroll state for AI-generated collections
+    const [additionalContent, setAdditionalContent] = useState<Content[]>([])
+    const [isLoadingMore, setIsLoadingMore] = useState(false)
+    const [hasMore, setHasMore] = useState(true)
+    const [currentPage, setCurrentPage] = useState(1)
+    const [maxPages, setMaxPages] = useState(10) // Limit pages like genre search
+    const sentinelRef = useRef<HTMLDivElement>(null)
+    const isLoadingMoreRef = useRef(false)
+    const hasMoreRef = useRef(true)
+    const retryCountRef = useRef(0)
+    const consecutiveDuplicatesRef = useRef(0)
 
     // Debug logging and verification - Only when debug mode is enabled
     useEffect(() => {
@@ -205,6 +219,204 @@ const Collections = () => {
           )
         : baseFilteredContent
 
+    // Check if selected collection supports infinite scroll
+    const selectedList = useMemo(
+        () => allLists.find((list) => list.id === selectedListId),
+        [allLists, selectedListId]
+    )
+
+    // Any collection with genres and canGenerateMore supports infinite scroll
+    const supportsInfiniteScroll = useMemo(() => {
+        if (!selectedList) return false
+        const hasGenres = selectedList.genres && selectedList.genres.length > 0
+        const canGenerateMore = selectedList.canGenerateMore === true
+        return hasGenres && canGenerateMore
+    }, [selectedList])
+
+    // Build API endpoint for infinite scroll
+    const infiniteScrollEndpoint = useMemo(() => {
+        if (!supportsInfiniteScroll || !selectedList) return null
+
+        const params = new URLSearchParams()
+        params.append('genres', selectedList.genres!.join(','))
+        params.append('genreLogic', selectedList.genreLogic || 'OR')
+        if (selectedList.genreLogic === 'AND') {
+            params.append('fallbackGenreLogic', 'OR')
+        }
+        if (selectedList.mediaType) {
+            params.append('mediaType', selectedList.mediaType)
+        }
+        if (childSafetyMode) {
+            params.append('childSafetyMode', 'true')
+        }
+
+        return `/api/custom-rows/${selectedList.id}/content?${params.toString()}`
+    }, [supportsInfiniteScroll, selectedList, childSafetyMode])
+
+    // Keep refs in sync with state
+    useEffect(() => {
+        isLoadingMoreRef.current = isLoadingMore
+        hasMoreRef.current = hasMore
+    }, [isLoadingMore, hasMore])
+
+    // Reset infinite scroll state when collection changes
+    useEffect(() => {
+        setAdditionalContent([])
+        setCurrentPage(1)
+        setHasMore(true)
+        setMaxPages(10) // Reset max pages limit
+        retryCountRef.current = 0
+        consecutiveDuplicatesRef.current = 0
+    }, [selectedListId])
+
+    // Load more content for infinite scroll
+    const loadMoreContent = useCallback(async () => {
+        if (!infiniteScrollEndpoint) return
+        if (isLoadingMoreRef.current) return
+        if (!hasMoreRef.current) return
+
+        setIsLoadingMore(true)
+
+        try {
+            const url = `${infiniteScrollEndpoint}&page=${currentPage + 1}`
+            const response = await fetch(url)
+
+            if (!response.ok) {
+                const isPermanentError = response.status === 404 || response.status === 410
+                const isTransientError = response.status >= 500 || response.status === 429
+
+                if (isPermanentError) {
+                    setHasMore(false)
+                    return
+                }
+
+                if (isTransientError && retryCountRef.current < 3) {
+                    retryCountRef.current += 1
+                    const backoffDelay = Math.min(
+                        1000 * Math.pow(2, retryCountRef.current - 1),
+                        5000
+                    )
+                    setTimeout(() => loadMoreContent(), backoffDelay)
+                    return
+                }
+
+                setHasMore(false)
+                return
+            }
+
+            retryCountRef.current = 0
+
+            const data = await response.json()
+            const newContent = data.results || []
+
+            // Stop if: no content, reached TMDB's max, or reached our maxPages limit
+            const nextPage = currentPage + 1
+            if (
+                newContent.length === 0 ||
+                nextPage >= (data.total_pages || 1) ||
+                nextPage >= maxPages
+            ) {
+                setHasMore(false)
+            }
+
+            // Get all existing content IDs (original items + additional)
+            const existingIds = new Set([
+                ...(selectedList?.items || []).map((item) => `${item.media_type}-${item.id}`),
+                ...additionalContent.map((item) => `${item.media_type}-${item.id}`),
+            ])
+
+            // Filter out duplicates
+            const uniqueNewContent = newContent.filter(
+                (item: Content) => !existingIds.has(`${item.media_type}-${item.id}`)
+            )
+
+            // Handle duplicate-only pages
+            if (uniqueNewContent.length === 0) {
+                consecutiveDuplicatesRef.current += 1
+
+                if (
+                    consecutiveDuplicatesRef.current >= 3 ||
+                    currentPage + 1 >= (data.total_pages || 1)
+                ) {
+                    setHasMore(false)
+                    return
+                }
+
+                setCurrentPage((prev) => prev + 1)
+                return
+            }
+
+            consecutiveDuplicatesRef.current = 0
+            setAdditionalContent((prev) => [...prev, ...uniqueNewContent])
+            setCurrentPage((prev) => prev + 1)
+        } catch (error) {
+            if (retryCountRef.current < 3) {
+                retryCountRef.current += 1
+                const backoffDelay = Math.min(1000 * Math.pow(2, retryCountRef.current - 1), 5000)
+                setTimeout(() => loadMoreContent(), backoffDelay)
+                return
+            }
+            setHasMore(false)
+        } finally {
+            setIsLoadingMore(false)
+        }
+    }, [infiniteScrollEndpoint, currentPage, selectedList?.items, additionalContent, maxPages])
+
+    // Intersection Observer for infinite scroll - large rootMargin for early loading
+    useEffect(() => {
+        if (!supportsInfiniteScroll || !infiniteScrollEndpoint) return
+
+        const sentinel = sentinelRef.current
+        if (!sentinel) return
+
+        // Use 1.5x viewport height like genre page for seamless loading
+        const rootMargin = typeof window !== 'undefined' ? `${window.innerHeight * 1.5}px` : '500px'
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting && !isLoadingMoreRef.current && hasMoreRef.current) {
+                        loadMoreContent()
+                    }
+                })
+            },
+            {
+                rootMargin,
+                threshold: 0,
+            }
+        )
+
+        observer.observe(sentinel)
+
+        return () => {
+            observer.disconnect()
+        }
+    }, [supportsInfiniteScroll, infiniteScrollEndpoint, loadMoreContent])
+
+    // Combine original items with additional loaded content
+    const allDisplayContent = useMemo(() => {
+        if (!supportsInfiniteScroll || additionalContent.length === 0) {
+            return filteredContent
+        }
+
+        // If there's a search query, don't show additional content
+        if (searchQuery.trim()) {
+            return filteredContent
+        }
+
+        // Add additional content with the same format as filtered content
+        const additionalFormatted = additionalContent.map((item) => ({
+            contentId: item.id,
+            rating: selectedList?.name.toLowerCase() || '',
+            timestamp: Date.now(),
+            content: item,
+            listId: selectedList?.id || '',
+            listName: selectedList?.name || '',
+        }))
+
+        return [...filteredContent, ...additionalFormatted]
+    }, [filteredContent, additionalContent, supportsInfiniteScroll, searchQuery, selectedList])
+
     const handleExportCSV = () => {
         if (userSession?.preferences) {
             exportUserDataToCSV(userSession.preferences)
@@ -283,7 +495,7 @@ const Collections = () => {
     }
 
     const titleActions = (
-        <div className="relative flex items-center gap-3 z-[201]" ref={manageDropdownRef}>
+        <div className="relative flex items-center gap-3 z-40" ref={manageDropdownRef}>
             {/* New Collection Button */}
             <button
                 type="button"
@@ -327,6 +539,17 @@ const Collections = () => {
                     >
                         <ArrowDownTrayIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
                         <span>Export to CSV</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            router.push('/settings/collections')
+                            setShowManageDropdown(false)
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-gray-800 transition-colors"
+                    >
+                        <Cog6ToothIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                        <span>Collection Settings</span>
                     </button>
                 </div>
             )}
@@ -396,21 +619,26 @@ const Collections = () => {
                     const selectedList = allLists.find((l) => l.id === selectedListId)
                     return (
                         <div>
-                            <div className="flex items-end space-x-4 mb-6">
-                                {/* Collection Icon */}
-                                <div className="flex items-center justify-center">
-                                    {selectedList?.emoji ? (
-                                        <span className="text-5xl">{selectedList.emoji}</span>
-                                    ) : (
-                                        <EyeIcon className="w-12 h-12 text-white" />
-                                    )}
+                            <div className="flex flex-col sm:flex-row items-start sm:items-end gap-2 sm:gap-4 mb-6">
+                                {/* Collection Icon + Title Row */}
+                                <div className="flex items-center gap-3 sm:gap-4">
+                                    {/* Collection Icon */}
+                                    <div className="flex items-center justify-center">
+                                        {selectedList?.emoji ? (
+                                            <span className="text-4xl sm:text-5xl">
+                                                {selectedList.emoji}
+                                            </span>
+                                        ) : (
+                                            <EyeIcon className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
+                                        )}
+                                    </div>
+                                    {/* Collection Title */}
+                                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">
+                                        {selectedList?.name || 'Collection'}
+                                    </h2>
                                 </div>
-                                {/* Collection Title */}
-                                <h2 className="text-4xl font-bold text-white">
-                                    {selectedList?.name || 'Collection'}
-                                </h2>
                                 {/* Item Count */}
-                                <span className="text-xl text-gray-400 font-medium pb-0.5">
+                                <span className="text-lg sm:text-xl text-gray-400 font-medium sm:pb-0.5">
                                     {getListCount(selectedListId)} items
                                 </span>
                                 {/* Edit Button - Only show for editable collections (exclude Watch Later) */}
@@ -456,7 +684,7 @@ const Collections = () => {
                 {/* Content Sections */}
                 {isLoading ? (
                     <NetflixLoader message="Loading your collections..." inline />
-                ) : filteredContent.length === 0 ? (
+                ) : allDisplayContent.length === 0 ? (
                     <EmptyState
                         emoji="🍿"
                         title={`No content in ${
@@ -468,7 +696,7 @@ const Collections = () => {
                     <div className="space-y-12">
                         {(() => {
                             // Filter out "Liked" and "Not For Me" items - they have their own pages now
-                            const watchlistContent = filteredContent.filter(
+                            const watchlistContent = allDisplayContent.filter(
                                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 (item: any) => {
                                     return (
@@ -480,16 +708,49 @@ const Collections = () => {
 
                             // No need to separate by media type - ContentCard shows the type
                             return (
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-8">
-                                    {watchlistContent.map(
-                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                        (item: any) => (
-                                            <div key={`${item.contentId}-${item.listId}`}>
-                                                <ContentCard content={item.content} />
-                                            </div>
-                                        )
+                                <>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-8">
+                                        {watchlistContent.map(
+                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                            (item: any, index: number) => (
+                                                <div
+                                                    key={`${item.contentId}-${item.listId}-${index}`}
+                                                >
+                                                    <ContentCard content={item.content} />
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
+
+                                    {/* Infinite scroll elements - matching genre page style */}
+                                    {supportsInfiniteScroll && !searchQuery.trim() && (
+                                        <>
+                                            {/* Hidden sentinel element for Intersection Observer */}
+                                            {hasMore && (
+                                                <div
+                                                    ref={sentinelRef}
+                                                    className="h-32"
+                                                    aria-hidden="true"
+                                                />
+                                            )}
+
+                                            {/* Load More Results button when maxPages reached */}
+                                            {!hasMore && additionalContent.length > 0 && (
+                                                <div className="flex justify-center pt-8">
+                                                    <button
+                                                        onClick={() => {
+                                                            setMaxPages((prev) => prev + 10)
+                                                            setHasMore(true)
+                                                        }}
+                                                        className="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200 text-lg"
+                                                    >
+                                                        Load More Results
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </>
                                     )}
-                                </div>
+                                </>
                             )
                         })()}
                     </div>

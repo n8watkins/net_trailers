@@ -409,9 +409,18 @@ function Modal() {
 
     // Handle keyboard shortcuts for modal
     useEffect(() => {
+        // Disable keyboard shortcuts on mobile/tablet devices (except ESC for accessibility)
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+        const isSmallScreen = window.innerWidth < 1024 // lg breakpoint
+
         const handleKeyDown = (e: KeyboardEvent) => {
             // Disable keyboard shortcuts when list modal is open
             if (listModal.isOpen) {
+                return
+            }
+
+            // On mobile/tablet, only allow ESC key for accessibility (to close modal)
+            if ((isTouchDevice || isSmallScreen) && e.key !== 'Escape') {
                 return
             }
 
@@ -608,7 +617,7 @@ function Modal() {
                     className={`relative w-full z-10 bg-[#141414] flex flex-col ${
                         fullScreen
                             ? 'h-screen max-h-screen'
-                            : 'rounded-md max-w-sm sm:max-w-2xl md:max-w-3xl lg:max-w-5xl max-h-[92vh] overflow-y-auto'
+                            : 'rounded-md w-[95vw] max-w-sm sm:max-w-2xl md:max-w-3xl lg:max-w-5xl max-h-[92vh] overflow-y-auto modal-scrollbar'
                     }`}
                     onClick={(e) => e.stopPropagation()}
                 >
@@ -899,9 +908,9 @@ function Modal() {
                     )}
                 </div>
 
-                {/* Keyboard Shortcuts - Below Modal - Hidden in fullscreen */}
+                {/* Keyboard Shortcuts - Below Modal - Hidden in fullscreen and on mobile/tablet */}
                 {!showJsonDebug && !fullScreen && (
-                    <div className="mt-4 w-full flex justify-center px-4 pointer-events-none select-none">
+                    <div className="hidden lg:flex mt-4 w-full justify-center px-4 pointer-events-none select-none">
                         <KeyboardShortcuts
                             shortcuts={[
                                 { key: 'ESC', description: 'Close' },
