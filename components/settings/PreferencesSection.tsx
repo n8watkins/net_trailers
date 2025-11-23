@@ -11,6 +11,7 @@ interface PreferencesControlsProps {
     defaultVolume: number
     improveRecommendations: boolean
     showRecommendations: boolean
+    trackWatchHistory: boolean
     preferencesChanged: boolean
     isGuest: boolean
     hasPIN: boolean
@@ -20,6 +21,7 @@ interface PreferencesControlsProps {
     onDefaultVolumeChange: (volume: number) => void
     onImproveRecommendationsChange: (checked: boolean) => void
     onShowRecommendationsChange: (checked: boolean) => void
+    onTrackWatchHistoryChange: (checked: boolean) => void
     onSave: () => void
     onShowChildSafetyModal: () => void
     onSetupPIN: () => void
@@ -34,6 +36,7 @@ const PreferencesControls = React.memo<PreferencesControlsProps>(
         defaultVolume,
         improveRecommendations,
         showRecommendations,
+        trackWatchHistory,
         preferencesChanged,
         isGuest,
         hasPIN,
@@ -43,6 +46,7 @@ const PreferencesControls = React.memo<PreferencesControlsProps>(
         onDefaultVolumeChange,
         onImproveRecommendationsChange,
         onShowRecommendationsChange,
+        onTrackWatchHistoryChange,
         onSave,
         onShowChildSafetyModal,
         onSetupPIN,
@@ -288,6 +292,34 @@ const PreferencesControls = React.memo<PreferencesControlsProps>(
                                 <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                             </label>
                         </div>
+
+                        {/* Divider */}
+                        <div className="border-t border-[#313131]"></div>
+
+                        {/* Track Watch History Toggle */}
+                        <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-[#e5e5e5] mb-1">
+                                    Track Watch History
+                                </label>
+                                <p className="text-sm text-[#b3b3b3] mb-2">
+                                    Keep a record of content you view in your Watch History
+                                </p>
+                                <p className="text-xs text-[#999]">
+                                    When disabled, new content will not be added to your watch
+                                    history. Existing history will be preserved.
+                                </p>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer ml-4">
+                                <input
+                                    type="checkbox"
+                                    checked={trackWatchHistory}
+                                    onChange={(e) => onTrackWatchHistoryChange(e.target.checked)}
+                                    className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                            </label>
+                        </div>
                     </div>
                 </div>
 
@@ -320,6 +352,7 @@ interface PreferencesSectionProps {
     defaultVolume: number
     improveRecommendations: boolean
     showRecommendations: boolean
+    trackWatchHistory: boolean
     preferencesChanged: boolean
     hasPIN: boolean
     pinEnabled: boolean
@@ -328,6 +361,7 @@ interface PreferencesSectionProps {
     onDefaultVolumeChange: (volume: number) => void
     onImproveRecommendationsChange: (checked: boolean) => void
     onShowRecommendationsChange: (checked: boolean) => void
+    onTrackWatchHistoryChange: (checked: boolean) => void
     onSave: () => void
     onShowChildSafetyModal: () => void
     onSetupPIN: () => void
@@ -343,6 +377,7 @@ const PreferencesSection: React.FC<PreferencesSectionProps> = ({
     defaultVolume,
     improveRecommendations,
     showRecommendations,
+    trackWatchHistory,
     preferencesChanged,
     hasPIN,
     pinEnabled,
@@ -351,6 +386,7 @@ const PreferencesSection: React.FC<PreferencesSectionProps> = ({
     onDefaultVolumeChange,
     onImproveRecommendationsChange,
     onShowRecommendationsChange,
+    onTrackWatchHistoryChange,
     onSave,
     onShowChildSafetyModal,
     onSetupPIN,
@@ -392,6 +428,7 @@ const PreferencesSection: React.FC<PreferencesSectionProps> = ({
                     defaultVolume={defaultVolume}
                     improveRecommendations={improveRecommendations}
                     showRecommendations={showRecommendations}
+                    trackWatchHistory={trackWatchHistory}
                     preferencesChanged={preferencesChanged}
                     isGuest={isGuest}
                     hasPIN={hasPIN}
@@ -401,6 +438,7 @@ const PreferencesSection: React.FC<PreferencesSectionProps> = ({
                     onDefaultVolumeChange={onDefaultVolumeChange}
                     onImproveRecommendationsChange={onImproveRecommendationsChange}
                     onShowRecommendationsChange={onShowRecommendationsChange}
+                    onTrackWatchHistoryChange={onTrackWatchHistoryChange}
                     onSave={onSave}
                     onShowChildSafetyModal={onShowChildSafetyModal}
                     onSetupPIN={onSetupPIN}

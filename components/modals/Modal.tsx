@@ -123,6 +123,12 @@ function Modal() {
               (userSession?.preferences as any).defaultVolume
             : 50
 
+    const trackWatchHistoryEnabled =
+        'trackWatchHistory' in (userSession?.preferences || {})
+            ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (userSession?.preferences as any).trackWatchHistory
+            : true
+
     const { showContentHidden, showContentShown, showError } = useToast()
     const errorHandler = createErrorHandler(showError)
     const { isEnabled: childSafetyEnabled } = useChildSafety()
@@ -320,9 +326,11 @@ function Modal() {
         if (currentMovie) {
             trackInteraction.viewModal(currentMovie as Content, 'modal')
 
-            // Track in watch history when user opens content
-            const mediaType = currentMovie.media_type === 'tv' ? 'tv' : 'movie'
-            addWatchEntry(currentMovie.id, mediaType, currentMovie as Content)
+            // Track in watch history when user opens content (if enabled)
+            if (trackWatchHistoryEnabled) {
+                const mediaType = currentMovie.media_type === 'tv' ? 'tv' : 'movie'
+                addWatchEntry(currentMovie.id, mediaType, currentMovie as Content)
+            }
         }
 
         async function fetchMovie() {

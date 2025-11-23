@@ -16,6 +16,7 @@ export interface UserPreferences {
     childSafetyMode: boolean
     improveRecommendations?: boolean
     showRecommendations?: boolean
+    trackWatchHistory?: boolean
     notifications?: NotificationPreferences
 }
 
@@ -51,6 +52,7 @@ export const defaultAuthSession: AuthSession = {
         childSafetyMode: false,
         improveRecommendations: true,
         showRecommendations: false, // Disabled by default
+        trackWatchHistory: true, // Enabled by default
         notifications: {
             inApp: true,
             email: false,
@@ -87,6 +89,7 @@ export const defaultGuestSession: GuestSession = {
         childSafetyMode: false,
         improveRecommendations: true,
         showRecommendations: false, // Disabled by default
+        trackWatchHistory: true, // Enabled by default
         notifications: {
             inApp: true,
             email: false,

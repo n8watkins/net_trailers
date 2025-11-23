@@ -165,6 +165,7 @@ export default function useUserData() {
             childSafetyMode: sessionData.childSafetyMode,
             improveRecommendations: sessionData.improveRecommendations,
             showRecommendations: sessionData.showRecommendations,
+            trackWatchHistory: sessionData.trackWatchHistory,
 
             // Actions from Zustand store (NEW SCHEMA) - with tracking
             addLikedMovie: addLikedMovieTracked,
@@ -309,6 +310,7 @@ export default function useUserData() {
             childSafetyMode: sessionData.childSafetyMode,
             improveRecommendations: sessionData.improveRecommendations,
             showRecommendations: sessionData.showRecommendations,
+            trackWatchHistory: sessionData.trackWatchHistory,
 
             // Actions from Zustand store (NEW SCHEMA) - with tracking
             addLikedMovie: addLikedMovieTracked,
@@ -578,6 +580,7 @@ export default function useUserData() {
             childSafetyMode: false,
             improveRecommendations: true,
             showRecommendations: false,
+            trackWatchHistory: true,
 
             // Placeholder functions (will throw errors if called during initialization)
             addLikedMovie: () => {

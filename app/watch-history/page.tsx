@@ -6,9 +6,11 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import SubPageLayout from '../../components/layout/SubPageLayout'
 import { ClockIcon, CalendarIcon } from '@heroicons/react/24/outline'
+import { Cog6ToothIcon, ChevronDownIcon, TrashIcon } from '@heroicons/react/24/solid'
 import ContentCard from '../../components/common/ContentCard'
 import EmptyState from '../../components/common/EmptyState'
 import NetflixLoader from '../../components/common/NetflixLoader'
@@ -18,19 +20,45 @@ import { getTitle } from '../../typings'
 import { useSessionStore } from '../../stores/sessionStore'
 import { GuestModeNotification } from '../../components/auth/GuestModeNotification'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
+import useUserData from '../../hooks/useUserData'
+import Link from 'next/link'
 
 export default function WatchHistoryPage() {
+    const router = useRouter()
     const [searchQuery, setSearchQuery] = useState('')
     const [filter, setFilter] = useState<'all' | 'today' | 'week' | 'month'>('all')
+    const [showManageDropdown, setShowManageDropdown] = useState(false)
+    const manageDropdownRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
         document.title = 'Watch History - NetTrailers'
     }, [])
 
+    // Handle click outside to close dropdown
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                manageDropdownRef.current &&
+                !manageDropdownRef.current.contains(event.target as Node)
+            ) {
+                setShowManageDropdown(false)
+            }
+        }
+
+        if (showManageDropdown) {
+            document.addEventListener('mousedown', handleClickOutside)
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [showManageDropdown])
+
     // Get actual watch history from store
     const { history: watchHistory, isLoading: isLoadingHistory } = useWatchHistory()
     const isInitialized = useSessionStore((state) => state.isInitialized)
     const { isGuest } = useAuthStatus()
+    const { trackWatchHistory } = useUserData()
 
     // Show loading state while initializing or loading history
     const isLoading = !isInitialized || isLoadingHistory
@@ -106,10 +134,72 @@ export default function WatchHistoryPage() {
         {} as Record<string, typeof searchFilteredHistory>
     )
 
+    const titleActions = (
+        <div className="relative" ref={manageDropdownRef}>
+            <button
+                type="button"
+                onClick={() => setShowManageDropdown(!showManageDropdown)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-white transition-colors cursor-pointer"
+            >
+                <Cog6ToothIcon className="w-5 h-5 flex-shrink-0" />
+                <span className="font-medium">Manage</span>
+                <ChevronDownIcon
+                    className={`w-4 h-4 flex-shrink-0 transition-transform ${
+                        showManageDropdown ? 'rotate-180' : ''
+                    }`}
+                />
+            </button>
+
+            {/* Dropdown Menu */}
+            {showManageDropdown && (
+                <div className="absolute top-full mt-2 right-0 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-xl z-50 min-w-[200px] overflow-hidden">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            router.push('/settings')
+                            setShowManageDropdown(false)
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-gray-800 transition-colors"
+                    >
+                        <Cog6ToothIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                        <span>Settings</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            router.push('/settings/data')
+                            setShowManageDropdown(false)
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-gray-800 transition-colors"
+                    >
+                        <TrashIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                        <span>Clear Data</span>
+                    </button>
+                </div>
+            )}
+        </div>
+    )
+
     const headerActions = !isLoading ? (
         <div className="space-y-4">
             {/* Guest Mode Notification */}
             {isInitialized && isGuest && <GuestModeNotification align="left" />}
+
+            {/* Tracking Disabled Banner */}
+            {isInitialized && !trackWatchHistory && (
+                <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-amber-600/10 border border-amber-600/30">
+                    <span className="text-amber-500 text-sm">
+                        Watch history tracking is currently disabled. New content you view
+                        won&apos;t be added to your history.
+                    </span>
+                    <Link
+                        href="/settings/preferences"
+                        className="text-amber-500 hover:text-amber-400 text-sm font-medium underline underline-offset-2 whitespace-nowrap"
+                    >
+                        Enable in Settings
+                    </Link>
+                </div>
+            )}
 
             {/* Date Filter Pills */}
             <div className="flex flex-wrap gap-2">
@@ -152,6 +242,7 @@ export default function WatchHistoryPage() {
             icon={<ClockIcon />}
             iconColor="text-purple-400"
             description="Your complete viewing timeline with all watched content."
+            titleActions={titleActions}
             headerActions={headerActions}
         >
             {/* Content */}
@@ -184,7 +275,7 @@ export default function WatchHistoryPage() {
                             </div>
 
                             {/* Content Cards */}
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-8">
+                            <div className="flex flex-wrap justify-between gap-x-6 sm:gap-x-8 md:gap-x-10 lg:gap-x-12 gap-y-3 sm:gap-y-4 md:gap-y-5 [&>*]:flex-none">
                                 {items.map((item) => (
                                     <div key={`${item.contentId}-${item.watchedAt}`}>
                                         <ContentCard content={item.content} />
@@ -195,6 +286,14 @@ export default function WatchHistoryPage() {
                                             })}
                                         </div>
                                     </div>
+                                ))}
+                                {/* Invisible spacers to maintain consistent gaps on partial rows */}
+                                {Array.from({ length: 8 }).map((_, i) => (
+                                    <div
+                                        key={`spacer-${i}`}
+                                        className="w-[120px] xs:w-[140px] sm:w-[160px] md:w-[180px] lg:w-[200px] xl:w-[220px] h-0"
+                                        aria-hidden="true"
+                                    />
                                 ))}
                             </div>
                         </div>

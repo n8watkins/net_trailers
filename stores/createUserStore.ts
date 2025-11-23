@@ -25,6 +25,7 @@ export interface UserState {
     childSafetyMode?: boolean
     improveRecommendations?: boolean
     showRecommendations?: boolean
+    trackWatchHistory?: boolean
     notifications?: NotificationPreferences
 }
 
@@ -93,6 +94,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
         childSafetyMode: false,
         improveRecommendations: true,
         showRecommendations: false, // Disabled by default
+        trackWatchHistory: true, // Enabled by default
         notifications: cloneDefaultNotifications(),
         ...(adapter.isAsync && { syncStatus: 'synced' as const }),
     })
@@ -130,6 +132,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                 childSafetyMode: state.childSafetyMode ?? false,
                 improveRecommendations: state.improveRecommendations ?? true,
                 showRecommendations: state.showRecommendations ?? false,
+                trackWatchHistory: state.trackWatchHistory ?? true,
                 notifications: state.notifications ?? cloneDefaultNotifications(),
             })
             logger.log(`✅ [${trackingContext}] Saved to ${adapter.name}`)

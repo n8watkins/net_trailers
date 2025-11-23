@@ -50,6 +50,7 @@ export const useSessionData = () => {
     const guestChildSafetyMode = useGuestStore((state) => state.childSafetyMode)
     const guestImproveRecommendations = useGuestStore((state) => state.improveRecommendations)
     const guestShowRecommendations = useGuestStore((state) => state.showRecommendations)
+    const guestTrackWatchHistory = useGuestStore((state) => state.trackWatchHistory)
 
     // Select actions from guest store
     const guestAddToWatchlist = useGuestStore((state) => state.addToWatchlist)
@@ -76,6 +77,7 @@ export const useSessionData = () => {
     const authChildSafetyMode = useAuthStore((state) => state.childSafetyMode)
     const authImproveRecommendations = useAuthStore((state) => state.improveRecommendations)
     const authShowRecommendations = useAuthStore((state) => state.showRecommendations)
+    const authTrackWatchHistory = useAuthStore((state) => state.trackWatchHistory)
 
     // Select actions from auth store
     const authAddToWatchlist = useAuthStore((state) => state.addToWatchlist)
@@ -114,6 +116,7 @@ export const useSessionData = () => {
         (isAuth ? authImproveRecommendations : guestImproveRecommendations) ?? true
     const showRecommendations =
         (isAuth ? authShowRecommendations : guestShowRecommendations) ?? false
+    const trackWatchHistory = (isAuth ? authTrackWatchHistory : guestTrackWatchHistory) ?? true
 
     const addToWatchlist = isAuth ? authAddToWatchlist : guestAddToWatchlist
     const removeFromWatchlist = isAuth ? authRemoveFromWatchlist : guestRemoveFromWatchlist
@@ -147,6 +150,7 @@ export const useSessionData = () => {
         childSafetyMode,
         improveRecommendations,
         showRecommendations,
+        trackWatchHistory,
 
         // Actions (unified interface - NEW SCHEMA)
         addToWatchlist,

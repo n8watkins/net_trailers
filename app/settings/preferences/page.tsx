@@ -48,6 +48,7 @@ const PreferencesPage: React.FC = () => {
             defaultVolume: userData.defaultVolume ?? 50,
             improveRecommendations: userData.improveRecommendations ?? true,
             showRecommendations: userData.showRecommendations ?? false,
+            trackWatchHistory: userData.trackWatchHistory ?? true,
         }
     }, [
         userData.childSafetyMode,
@@ -55,6 +56,7 @@ const PreferencesPage: React.FC = () => {
         userData.defaultVolume,
         userData.improveRecommendations,
         userData.showRecommendations,
+        userData.trackWatchHistory,
     ])
 
     // 3) Initialize with store values directly (they default to false/true/50 during SSR anyway)
@@ -69,6 +71,9 @@ const PreferencesPage: React.FC = () => {
     const [showRecommendations, setShowRecommendations] = useState<boolean>(
         () => userData.showRecommendations ?? false
     )
+    const [trackWatchHistory, setTrackWatchHistory] = useState<boolean>(
+        () => userData.trackWatchHistory ?? true
+    )
 
     // Track original preferences to detect changes
     const [originalPreferences, setOriginalPreferences] = useState({
@@ -77,6 +82,7 @@ const PreferencesPage: React.FC = () => {
         defaultVolume: userData.defaultVolume ?? 50,
         improveRecommendations: userData.improveRecommendations ?? true,
         showRecommendations: userData.showRecommendations ?? false,
+        trackWatchHistory: userData.trackWatchHistory ?? true,
     })
 
     // Track the last preferences we loaded from the store to detect external changes
@@ -96,7 +102,8 @@ const PreferencesPage: React.FC = () => {
             currentPreferences.autoMute !== lastLoadedPrefsRef.current.autoMute ||
             currentPreferences.defaultVolume !== lastLoadedPrefsRef.current.defaultVolume ||
             currentPreferences.improveRecommendations !==
-                lastLoadedPrefsRef.current.improveRecommendations
+                lastLoadedPrefsRef.current.improveRecommendations ||
+            currentPreferences.trackWatchHistory !== lastLoadedPrefsRef.current.trackWatchHistory
 
         // Only update UI state if store preferences actually changed
         // This allows user to modify UI without being overridden
@@ -106,12 +113,14 @@ const PreferencesPage: React.FC = () => {
             setDefaultVolume(currentPreferences.defaultVolume)
             setImproveRecommendations(currentPreferences.improveRecommendations)
             setShowRecommendations(currentPreferences.showRecommendations)
+            setTrackWatchHistory(currentPreferences.trackWatchHistory)
             setOriginalPreferences({
                 childSafetyMode: currentPreferences.childSafetyMode,
                 autoMute: currentPreferences.autoMute,
                 defaultVolume: currentPreferences.defaultVolume,
                 improveRecommendations: currentPreferences.improveRecommendations,
                 showRecommendations: currentPreferences.showRecommendations,
+                trackWatchHistory: currentPreferences.trackWatchHistory,
             })
             // Update our tracking ref
             lastLoadedPrefsRef.current = currentPreferences
@@ -134,7 +143,8 @@ const PreferencesPage: React.FC = () => {
         autoMute !== originalPreferences.autoMute ||
         defaultVolume !== originalPreferences.defaultVolume ||
         improveRecommendations !== originalPreferences.improveRecommendations ||
-        showRecommendations !== originalPreferences.showRecommendations
+        showRecommendations !== originalPreferences.showRecommendations ||
+        trackWatchHistory !== originalPreferences.trackWatchHistory
 
     // Handle saving preferences
     const handleSavePreferences = async () => {
@@ -146,6 +156,7 @@ const PreferencesPage: React.FC = () => {
                 defaultVolume,
                 improveRecommendations,
                 showRecommendations,
+                trackWatchHistory,
             }
 
             if (isGuest) {
@@ -215,6 +226,10 @@ const PreferencesPage: React.FC = () => {
         setShowRecommendations(checked)
     }, [])
 
+    const handleTrackWatchHistoryChange = React.useCallback((checked: boolean) => {
+        setTrackWatchHistory(checked)
+    }, [])
+
     const handleShowChildSafetyModal = React.useCallback(() => {
         setShowChildSafetyModal(true)
     }, [])
@@ -266,6 +281,7 @@ const PreferencesPage: React.FC = () => {
                 defaultVolume={defaultVolume}
                 improveRecommendations={improveRecommendations}
                 showRecommendations={showRecommendations}
+                trackWatchHistory={trackWatchHistory}
                 preferencesChanged={preferencesChanged}
                 hasPIN={pinSettings.hasPIN}
                 pinEnabled={pinSettings.enabled}
@@ -274,6 +290,7 @@ const PreferencesPage: React.FC = () => {
                 onDefaultVolumeChange={handleDefaultVolumeChange}
                 onImproveRecommendationsChange={handleImproveRecommendationsChange}
                 onShowRecommendationsChange={handleShowRecommendationsChange}
+                onTrackWatchHistoryChange={handleTrackWatchHistoryChange}
                 onSave={handleSavePreferences}
                 onShowChildSafetyModal={handleShowChildSafetyModal}
                 onSetupPIN={handleSetupPIN}
