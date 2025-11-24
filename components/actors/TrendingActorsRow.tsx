@@ -51,7 +51,7 @@ export default function TrendingActorsRow({ onLoadComplete }: TrendingActorsRowP
         setError(null)
 
         try {
-            const response = await fetch('/api/people/trending?time_window=week')
+            const response = await fetch('/api/people/trending?time_window=week&department=Acting')
             if (!response.ok) {
                 throw new Error(`Failed to fetch trending actors: ${response.status}`)
             }

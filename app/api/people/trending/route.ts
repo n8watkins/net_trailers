@@ -35,17 +35,28 @@ export async function GET(request: NextRequest) {
 
         const data = await response.json()
 
-        // Filter to only actors (known_for_department === 'Acting')
+        // Filter to only people with profile images
+        // Also filter by known_for_department based on request
+        const department = searchParams.get('department') // 'Acting' or 'Directing'
 
-        const actors = data.results.filter(
-            (person: any) => person.known_for_department === 'Acting'
-        )
+        const filteredPeople = data.results.filter((person: any) => {
+            // Must have a profile image
+            if (!person.profile_path) return false
+
+            // If department specified, filter by it
+            if (department) {
+                return person.known_for_department === department
+            }
+
+            // Otherwise include all people with images
+            return true
+        })
 
         return NextResponse.json(
             {
                 ...data,
-                results: actors,
-                total_results: actors.length,
+                results: filteredPeople,
+                total_results: filteredPeople.length,
             },
             {
                 status: 200,

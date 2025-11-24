@@ -52,19 +52,15 @@ export default function TrendingDirectorsRow({ onLoadComplete }: TrendingDirecto
             setError(null)
 
             try {
-                const response = await fetch('/api/people/trending?time_window=week')
+                const response = await fetch(
+                    '/api/people/trending?time_window=week&department=Directing'
+                )
                 if (!response.ok) {
-                    throw new Error(`Failed to fetch trending people: ${response.status}`)
+                    throw new Error(`Failed to fetch trending directors: ${response.status}`)
                 }
 
                 const data = await response.json()
-
-                // Filter to only directors (known_for_department === 'Directing')
-                const directorsList = (data.results || []).filter(
-                    (person: TrendingPerson) => person.known_for_department === 'Directing'
-                )
-
-                setDirectors(directorsList)
+                setDirectors(data.results || [])
             } catch (err) {
                 console.error('Error fetching trending directors:', err)
                 setError('Failed to load trending directors')

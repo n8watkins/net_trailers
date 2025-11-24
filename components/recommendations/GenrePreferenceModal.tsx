@@ -3,7 +3,7 @@
  *
  * Allows users to rate genre preferences (love/not for me) to improve recommendations.
  * Features preview posters for each genre and swipe gestures for mobile.
- * Auto-saves progress when modal is closed.
+ * Saves each vote immediately. Starts fresh each time (no previous selections shown).
  */
 
 'use client'
@@ -34,6 +34,22 @@ interface GenrePreferenceModalProps {
     prefetchedPreviews?: Record<string, PreviewContent[]> | null
 }
 
+// Genre emojis
+const GENRE_EMOJIS: Record<string, string> = {
+    action: '💥',
+    comedy: '😂',
+    drama: '🎭',
+    horror: '👻',
+    romance: '💕',
+    scifi: '🚀',
+    thriller: '😱',
+    fantasy: '🧙',
+    animation: '✨',
+    documentary: '🎬',
+    mystery: '🔍',
+    crime: '🔫',
+}
+
 // Key genres for the preference quiz
 const PREFERENCE_GENRES: string[] = [
     'action',
@@ -59,13 +75,8 @@ export default function GenrePreferenceModal({
 }: GenrePreferenceModalProps) {
     const [mounted, setMounted] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
-    const [preferences, setPreferences] = useState<Record<string, PreferenceValue>>(() => {
-        const initial: Record<string, PreferenceValue> = {}
-        existingPreferences.forEach((pref) => {
-            initial[pref.genreId] = pref.preference
-        })
-        return initial
-    })
+    // Start with empty preferences for fresh quiz experience
+    const [preferences, setPreferences] = useState<Record<string, PreferenceValue>>({})
     const [currentIndex, setCurrentIndex] = useState(0)
     const [animatingVote, setAnimatingVote] = useState<PreferenceValue | null>(null)
     const [previewContent, setPreviewContent] = useState<Record<string, PreviewContent[]>>(
@@ -87,6 +98,17 @@ export default function GenrePreferenceModal({
         () => UNIFIED_GENRES.filter((g) => PREFERENCE_GENRES.includes(g.id)),
         []
     )
+
+    // Reset quiz state when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            setPreferences({})
+            setCurrentIndex(0)
+            setAnimatingVote(null)
+            setSwipeOffset({ x: 0, y: 0 })
+            setIsDragging(false)
+        }
+    }, [isOpen])
 
     // Mount portal after client-side render
     useEffect(() => {
@@ -140,27 +162,29 @@ export default function GenrePreferenceModal({
         fetchMissingPreviews()
     }, [isOpen, previewContent])
 
-    // Auto-save on close
-    const handleClose = useCallback(async () => {
-        if (Object.keys(preferences).length > 0 && !isSaving) {
-            setIsSaving(true)
+    // Save preferences immediately after each vote
+    const savePreference = useCallback(
+        async (genreId: string, vote: PreferenceValue) => {
             try {
-                const prefsToSave: GenrePreference[] = Object.entries(preferences).map(
-                    ([genreId, preference]) => ({
-                        genreId,
-                        preference,
-                        updatedAt: Date.now(),
-                    })
-                )
-                await onSave(prefsToSave)
+                // Merge with existing preferences
+                const existingMap = new Map(existingPreferences.map((p) => [p.genreId, p]))
+                existingMap.set(genreId, {
+                    genreId,
+                    preference: vote,
+                    updatedAt: Date.now(),
+                })
+                await onSave(Array.from(existingMap.values()))
             } catch (error) {
-                console.error('Failed to save genre preferences:', error)
-            } finally {
-                setIsSaving(false)
+                console.error('Failed to save genre preference:', error)
             }
-        }
+        },
+        [existingPreferences, onSave]
+    )
+
+    // Handle close without additional save (already saved on each vote)
+    const handleClose = useCallback(() => {
         onClose()
-    }, [preferences, isSaving, onSave, onClose])
+    }, [onClose])
 
     // Handle escape key
     useEffect(() => {
@@ -179,54 +203,40 @@ export default function GenrePreferenceModal({
 
     const currentGenre = quizGenres[currentIndex]
     const currentPreviews = currentGenre ? previewContent[currentGenre.id] || [] : []
+    const currentEmoji = currentGenre ? GENRE_EMOJIS[currentGenre.id] || '🎬' : '🎬'
 
     const handleVote = useCallback(
         (vote: PreferenceValue) => {
-            if (!currentGenre) return
+            if (!currentGenre || animatingVote) return
 
             // Trigger animation
             setAnimatingVote(vote)
 
-            // Update preferences
+            // Update local preferences for visual feedback
             setPreferences((prev) => ({
                 ...prev,
                 [currentGenre.id]: vote,
             }))
 
+            // Save immediately
+            savePreference(currentGenre.id, vote)
+
             // Reset swipe state
             setSwipeOffset({ x: 0, y: 0 })
             setIsDragging(false)
 
-            // Auto-advance after animation or auto-save if last item
-            setTimeout(async () => {
+            // Auto-advance after animation
+            setTimeout(() => {
                 setAnimatingVote(null)
                 if (currentIndex < quizGenres.length - 1) {
                     setCurrentIndex((prev) => prev + 1)
                 } else {
-                    // Last item - auto-save and close
-                    const newPrefs = {
-                        ...preferences,
-                        [currentGenre.id]: vote,
-                    }
-                    setIsSaving(true)
-                    try {
-                        const prefsToSave: GenrePreference[] = Object.entries(newPrefs).map(
-                            ([genreId, pref]) => ({
-                                genreId,
-                                preference: pref,
-                                updatedAt: Date.now(),
-                            })
-                        )
-                        await onSave(prefsToSave)
-                        onClose()
-                    } catch (error) {
-                        console.error('Failed to save genre preferences:', error)
-                        setIsSaving(false)
-                    }
+                    // Last item - close modal
+                    onClose()
                 }
             }, 400)
         },
-        [currentGenre, currentIndex, quizGenres.length, preferences, onSave, onClose]
+        [currentGenre, currentIndex, quizGenres.length, savePreference, onClose, animatingVote]
     )
 
     // Touch/swipe handlers
@@ -362,9 +372,9 @@ export default function GenrePreferenceModal({
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-hidden p-3 sm:p-4">
+                <div className="flex-1 overflow-hidden p-4 sm:p-6">
                     {/* Progress bar */}
-                    <div className="h-1 bg-gray-800 rounded-full mb-4">
+                    <div className="h-1 bg-gray-800 rounded-full mb-6">
                         <div
                             className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-300"
                             style={{ width: `${progress}%` }}
@@ -372,204 +382,179 @@ export default function GenrePreferenceModal({
                     </div>
 
                     {currentGenre && (
-                        <div
-                            ref={cardRef}
-                            className={`relative select-none ${
-                                isDragging ? '' : 'transition-all duration-300 ease-out'
-                            } ${
-                                animatingVote
-                                    ? animatingVote === 'love'
-                                        ? 'scale-90 opacity-0 translate-x-full'
-                                        : 'scale-90 opacity-0 -translate-x-full'
-                                    : ''
-                            }`}
-                            style={{
-                                transform:
-                                    !animatingVote && swipeOffset.x !== 0
-                                        ? `translateX(${Math.max(-100, Math.min(100, swipeOffset.x))}px) rotate(${swipeRotation * 0.5}deg)`
-                                        : undefined,
-                                opacity: !animatingVote ? swipeOpacity : undefined,
-                            }}
-                            onTouchStart={handleTouchStart}
-                            onTouchMove={handleTouchMove}
-                            onTouchEnd={handleTouchEnd}
-                            onMouseDown={handleMouseDown}
-                            onMouseMove={handleMouseMove}
-                            onMouseUp={handleMouseUp}
-                            onMouseLeave={handleMouseLeave}
-                        >
-                            {/* Swipe indicator overlays */}
-                            {swipeIndicator && (
-                                <div
-                                    className={`absolute inset-0 z-10 flex items-center justify-center pointer-events-none rounded-lg ${
-                                        swipeIndicator === 'love'
-                                            ? 'bg-green-500/20'
-                                            : 'bg-red-500/20'
-                                    }`}
-                                >
+                        <>
+                            {/* Swipeable card area */}
+                            <div
+                                ref={cardRef}
+                                className={`relative select-none ${
+                                    isDragging ? '' : 'transition-all duration-300 ease-out'
+                                } ${
+                                    animatingVote
+                                        ? animatingVote === 'love'
+                                            ? 'scale-90 opacity-0 translate-x-full'
+                                            : 'scale-90 opacity-0 -translate-x-full'
+                                        : ''
+                                }`}
+                                style={{
+                                    transform:
+                                        !animatingVote && swipeOffset.x !== 0
+                                            ? `translateX(${Math.max(-100, Math.min(100, swipeOffset.x))}px) rotate(${swipeRotation * 0.5}deg)`
+                                            : undefined,
+                                    opacity: !animatingVote ? swipeOpacity : undefined,
+                                }}
+                                onTouchStart={handleTouchStart}
+                                onTouchMove={handleTouchMove}
+                                onTouchEnd={handleTouchEnd}
+                                onMouseDown={handleMouseDown}
+                                onMouseMove={handleMouseMove}
+                                onMouseUp={handleMouseUp}
+                                onMouseLeave={handleMouseLeave}
+                            >
+                                {/* Swipe indicator overlays */}
+                                {swipeIndicator && (
                                     <div
-                                        className={`px-4 py-2 rounded-lg border-4 rotate-[-15deg] ${
+                                        className={`absolute inset-0 z-10 flex items-center justify-center pointer-events-none rounded-2xl ${
                                             swipeIndicator === 'love'
-                                                ? 'border-green-500 text-green-500'
-                                                : 'border-red-500 text-red-500'
+                                                ? 'bg-green-500/20'
+                                                : 'bg-red-500/20'
                                         }`}
                                     >
-                                        <span className="text-2xl font-bold uppercase tracking-wider">
-                                            {swipeIndicator === 'love' ? 'LOVE' : 'NOPE'}
-                                        </span>
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="flex flex-col items-center text-center">
-                                {/* Genre name */}
-                                <h3 className="text-2xl sm:text-3xl font-bold text-white mb-4">
-                                    {currentGenre.name}
-                                </h3>
-
-                                {/* Preview posters */}
-                                <div className="flex justify-center gap-2 mb-6">
-                                    {isLoadingPreviews && currentPreviews.length === 0 ? (
-                                        <div className="flex gap-2">
-                                            {[1, 2, 3].map((i) => (
-                                                <div
-                                                    key={i}
-                                                    className="w-20 sm:w-24 aspect-[2/3] rounded-lg bg-gray-800 animate-pulse"
-                                                />
-                                            ))}
+                                        <div
+                                            className={`px-4 py-2 rounded-lg border-4 rotate-[-15deg] ${
+                                                swipeIndicator === 'love'
+                                                    ? 'border-green-500 text-green-500'
+                                                    : 'border-red-500 text-red-500'
+                                            }`}
+                                        >
+                                            <span className="text-2xl font-bold uppercase tracking-wider">
+                                                {swipeIndicator === 'love' ? 'LOVE' : 'NOPE'}
+                                            </span>
                                         </div>
-                                    ) : currentPreviews.length > 0 ? (
-                                        currentPreviews.map((content, idx) => (
-                                            <div
-                                                key={content.id}
-                                                className={`relative w-20 sm:w-24 aspect-[2/3] rounded-lg overflow-hidden bg-gray-900 shadow-lg transition-transform ${
-                                                    idx === 1 ? 'scale-110 z-10' : 'opacity-80'
-                                                }`}
-                                            >
-                                                {content.poster_path ? (
-                                                    <Image
-                                                        src={`https://image.tmdb.org/t/p/w300${content.poster_path}`}
-                                                        alt={content.title || content.name || ''}
-                                                        fill
-                                                        className="object-cover"
+                                    </div>
+                                )}
+
+                                {/* Genre card */}
+                                <div className="flex flex-col items-center text-center bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 sm:p-8 border border-gray-700/30">
+                                    {/* Genre emoji */}
+                                    <span className="text-5xl sm:text-6xl mb-3">
+                                        {currentEmoji}
+                                    </span>
+
+                                    {/* Genre name */}
+                                    <h3 className="text-2xl sm:text-3xl font-bold text-white mb-6">
+                                        {currentGenre.name}
+                                    </h3>
+
+                                    {/* Preview posters */}
+                                    <div className="flex justify-center gap-3 mb-4">
+                                        {isLoadingPreviews && currentPreviews.length === 0 ? (
+                                            <div className="flex gap-3">
+                                                {[1, 2, 3].map((i) => (
+                                                    <div
+                                                        key={i}
+                                                        className="w-20 sm:w-24 aspect-[2/3] rounded-lg bg-gray-700 animate-pulse"
                                                     />
-                                                ) : (
-                                                    <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
-                                                        <SparklesIcon className="w-8 h-8 text-gray-600" />
-                                                    </div>
-                                                )}
+                                                ))}
                                             </div>
-                                        ))
-                                    ) : (
-                                        <div className="flex gap-2">
-                                            {[1, 2, 3].map((i) => (
+                                        ) : currentPreviews.length > 0 ? (
+                                            currentPreviews.map((content, idx) => (
                                                 <div
-                                                    key={i}
-                                                    className={`w-20 sm:w-24 aspect-[2/3] rounded-lg bg-gray-800 flex items-center justify-center ${
-                                                        i === 2 ? 'scale-110 z-10' : 'opacity-80'
+                                                    key={content.id}
+                                                    className={`relative w-20 sm:w-24 aspect-[2/3] rounded-lg overflow-hidden bg-gray-900 shadow-xl transition-transform ${
+                                                        idx === 1 ? 'scale-110 z-10' : 'opacity-75'
                                                     }`}
                                                 >
-                                                    <SparklesIcon className="w-8 h-8 text-gray-600" />
+                                                    {content.poster_path ? (
+                                                        <Image
+                                                            src={`https://image.tmdb.org/t/p/w300${content.poster_path}`}
+                                                            alt={
+                                                                content.title || content.name || ''
+                                                            }
+                                                            fill
+                                                            className="object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
+                                                            <span className="text-2xl">
+                                                                {currentEmoji}
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            ))}
-                                        </div>
-                                    )}
+                                            ))
+                                        ) : (
+                                            <div className="flex gap-3">
+                                                {[1, 2, 3].map((i) => (
+                                                    <div
+                                                        key={i}
+                                                        className={`w-20 sm:w-24 aspect-[2/3] rounded-lg bg-gray-800 flex items-center justify-center ${
+                                                            i === 2
+                                                                ? 'scale-110 z-10'
+                                                                : 'opacity-75'
+                                                        }`}
+                                                    >
+                                                        <span className="text-2xl opacity-50">
+                                                            {currentEmoji}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* Vote animation overlay */}
                                 {animatingVote && (
                                     <div
-                                        className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 rounded-lg ${
+                                        className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 rounded-2xl ${
                                             animatingVote === 'love'
                                                 ? 'bg-pink-500/30'
                                                 : 'bg-red-500/30'
                                         }`}
                                     >
                                         {animatingVote === 'love' ? (
-                                            <HeartIcon className="w-20 h-20 text-pink-500 animate-pulse" />
+                                            <HeartIcon className="w-24 h-24 text-pink-500 animate-pulse" />
                                         ) : (
-                                            <HandThumbDownIcon className="w-20 h-20 text-red-500 animate-pulse" />
+                                            <HandThumbDownIcon className="w-24 h-24 text-red-500 animate-pulse" />
                                         )}
                                     </div>
                                 )}
-
-                                {/* Vote buttons */}
-                                <div
-                                    className="flex justify-center gap-6 mt-4"
-                                    onMouseDown={(e) => e.stopPropagation()}
-                                    onTouchStart={(e) => e.stopPropagation()}
-                                >
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation()
-                                            handleVote('not_for_me')
-                                        }}
-                                        disabled={!!animatingVote}
-                                        className={`flex flex-col items-center gap-1 transition-all duration-200 active:scale-95 ${
-                                            preferences[currentGenre.id] === 'not_for_me'
-                                                ? 'scale-110'
-                                                : 'hover:scale-105'
-                                        }`}
-                                    >
-                                        <div
-                                            className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center border-2 transition-all ${
-                                                preferences[currentGenre.id] === 'not_for_me'
-                                                    ? 'bg-red-600 border-red-600'
-                                                    : 'bg-transparent border-gray-500 hover:border-red-500 hover:bg-red-500/10'
-                                            }`}
-                                        >
-                                            <HandThumbDownIcon
-                                                className={`w-6 h-6 sm:w-7 sm:h-7 ${
-                                                    preferences[currentGenre.id] === 'not_for_me'
-                                                        ? 'text-white'
-                                                        : 'text-gray-300'
-                                                }`}
-                                            />
-                                        </div>
-                                        <span className="text-[10px] text-gray-400 font-medium">
-                                            Not for me
-                                        </span>
-                                    </button>
-
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation()
-                                            handleVote('love')
-                                        }}
-                                        disabled={!!animatingVote}
-                                        className={`flex flex-col items-center gap-1 transition-all duration-200 active:scale-95 ${
-                                            preferences[currentGenre.id] === 'love'
-                                                ? 'scale-110'
-                                                : 'hover:scale-105'
-                                        }`}
-                                    >
-                                        <div
-                                            className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center border-2 transition-all ${
-                                                preferences[currentGenre.id] === 'love'
-                                                    ? 'bg-green-600 border-green-600'
-                                                    : 'bg-transparent border-gray-500 hover:border-green-500 hover:bg-green-500/10'
-                                            }`}
-                                        >
-                                            <HeartIcon
-                                                className={`w-6 h-6 sm:w-7 sm:h-7 ${
-                                                    preferences[currentGenre.id] === 'love'
-                                                        ? 'text-white'
-                                                        : 'text-gray-300'
-                                                }`}
-                                            />
-                                        </div>
-                                        <span className="text-[10px] text-gray-400 font-medium">
-                                            Love it
-                                        </span>
-                                    </button>
-                                </div>
-
-                                {/* Hint for mobile */}
-                                <p className="text-center text-[10px] text-gray-500 mt-4 sm:hidden">
-                                    Tap buttons or swipe to vote
-                                </p>
                             </div>
-                        </div>
+
+                            {/* Vote buttons - OUTSIDE the swipeable area */}
+                            <div className="flex justify-center gap-8 mt-6">
+                                <button
+                                    onClick={() => handleVote('not_for_me')}
+                                    disabled={!!animatingVote}
+                                    className="flex flex-col items-center gap-1.5 transition-all duration-200 active:scale-95 hover:scale-105"
+                                >
+                                    <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-full flex items-center justify-center border-2 bg-transparent border-gray-500 hover:border-red-500 hover:bg-red-500/10 transition-all">
+                                        <HandThumbDownIcon className="w-7 h-7 sm:w-8 sm:h-8 text-gray-300" />
+                                    </div>
+                                    <span className="text-xs text-gray-400 font-medium">
+                                        Not for me
+                                    </span>
+                                </button>
+
+                                <button
+                                    onClick={() => handleVote('love')}
+                                    disabled={!!animatingVote}
+                                    className="flex flex-col items-center gap-1.5 transition-all duration-200 active:scale-95 hover:scale-105"
+                                >
+                                    <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-full flex items-center justify-center border-2 bg-transparent border-gray-500 hover:border-green-500 hover:bg-green-500/10 transition-all">
+                                        <HeartIcon className="w-7 h-7 sm:w-8 sm:h-8 text-gray-300" />
+                                    </div>
+                                    <span className="text-xs text-gray-400 font-medium">
+                                        Love it
+                                    </span>
+                                </button>
+                            </div>
+
+                            {/* Hint for mobile */}
+                            <p className="text-center text-[10px] text-gray-500 mt-4 sm:hidden">
+                                Tap buttons or swipe card to vote
+                            </p>
+                        </>
                     )}
                 </div>
             </div>
