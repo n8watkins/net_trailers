@@ -301,7 +301,7 @@ const NotificationsSection: React.FC<NotificationsSectionProps> = ({
                             </div>
 
                             {/* Generate Test Notifications Button - Controlled by debug console */}
-                            {debugSettings.showTestNotifications &&
+                            {debugSettings.showNotifTester &&
                                 notifications.types.trending_update &&
                                 user?.uid && (
                                     <div className="pt-4 border-t border-[#313131]">

@@ -397,7 +397,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                 <span className="relative z-10">Surprise Me!</span>
                             </li>
                             {process.env.NODE_ENV === 'development' &&
-                                debugSettings.showToastDebug && (
+                                debugSettings.showToastTester && (
                                     <li>
                                         <button
                                             onClick={triggerTestToasts}

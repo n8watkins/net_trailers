@@ -19,10 +19,10 @@ interface DebugSettings {
     showSessionDebug: boolean
     showGuestDebug: boolean
     showCacheDebug: boolean
-    showToastDebug: boolean
+    showToastTester: boolean // Shows "Test Toasts" button in header
     showApiResults: boolean
     showWebVitals: boolean
-    showTestNotifications: boolean
+    showNotifTester: boolean // Shows "Generate Test Notifications" button in settings
     showUIDebug: boolean
     showTrackingDebug: boolean
     showNotificationDebug: boolean
@@ -46,6 +46,74 @@ interface CategoryState {
 
 type DebugCategory = 'firebase' | 'ui' | 'features'
 
+// Static color map for Tailwind - dynamic class names don't work with Tailwind's purge
+const COLOR_CLASSES: Record<string, { enabled: string; disabled: string }> = {
+    orange: {
+        enabled: 'bg-orange-600/20 text-orange-400 border border-orange-500/30',
+        disabled: 'bg-gray-800 text-gray-500 border border-gray-700',
+    },
+    blue: {
+        enabled: 'bg-blue-600/20 text-blue-400 border border-blue-500/30',
+        disabled: 'bg-gray-800 text-gray-500 border border-gray-700',
+    },
+    purple: {
+        enabled: 'bg-purple-600/20 text-purple-400 border border-purple-500/30',
+        disabled: 'bg-gray-800 text-gray-500 border border-gray-700',
+    },
+    teal: {
+        enabled: 'bg-teal-600/20 text-teal-400 border border-teal-500/30',
+        disabled: 'bg-gray-800 text-gray-500 border border-gray-700',
+    },
+    cyan: {
+        enabled: 'bg-cyan-600/20 text-cyan-400 border border-cyan-500/30',
+        disabled: 'bg-gray-800 text-gray-500 border border-gray-700',
+    },
+    sky: {
+        enabled: 'bg-sky-600/20 text-sky-400 border border-sky-500/30',
+        disabled: 'bg-gray-800 text-gray-500 border border-gray-700',
+    },
+    green: {
+        enabled: 'bg-green-600/20 text-green-400 border border-green-500/30',
+        disabled: 'bg-gray-800 text-gray-500 border border-gray-700',
+    },
+    emerald: {
+        enabled: 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30',
+        disabled: 'bg-gray-800 text-gray-500 border border-gray-700',
+    },
+    indigo: {
+        enabled: 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30',
+        disabled: 'bg-gray-800 text-gray-500 border border-gray-700',
+    },
+    amber: {
+        enabled: 'bg-amber-600/20 text-amber-400 border border-amber-500/30',
+        disabled: 'bg-gray-800 text-gray-500 border border-gray-700',
+    },
+    slate: {
+        enabled: 'bg-slate-600/20 text-slate-400 border border-slate-500/30',
+        disabled: 'bg-gray-800 text-gray-500 border border-gray-700',
+    },
+    rose: {
+        enabled: 'bg-rose-600/20 text-rose-400 border border-rose-500/30',
+        disabled: 'bg-gray-800 text-gray-500 border border-gray-700',
+    },
+    yellow: {
+        enabled: 'bg-yellow-600/20 text-yellow-400 border border-yellow-500/30',
+        disabled: 'bg-gray-800 text-gray-500 border border-gray-700',
+    },
+    pink: {
+        enabled: 'bg-pink-600/20 text-pink-400 border border-pink-500/30',
+        disabled: 'bg-gray-800 text-gray-500 border border-gray-700',
+    },
+    red: {
+        enabled: 'bg-red-600/20 text-red-400 border border-red-500/30',
+        disabled: 'bg-gray-800 text-gray-500 border border-gray-700',
+    },
+    violet: {
+        enabled: 'bg-violet-600/20 text-violet-400 border border-violet-500/30',
+        disabled: 'bg-gray-800 text-gray-500 border border-gray-700',
+    },
+}
+
 export default function DebugControls() {
     const [settings, setSettings] = useState<DebugSettings>({
         showFirebaseTracker: false,
@@ -53,10 +121,10 @@ export default function DebugControls() {
         showSessionDebug: false,
         showGuestDebug: false,
         showCacheDebug: false,
-        showToastDebug: false,
+        showToastTester: false,
         showApiResults: false,
         showWebVitals: false,
-        showTestNotifications: false,
+        showNotifTester: false,
         showUIDebug: false,
         showTrackingDebug: false,
         showNotificationDebug: false,
@@ -250,7 +318,7 @@ export default function DebugControls() {
                 ]
             case 'ui':
                 return [
-                    'showToastDebug',
+                    'showToastTester',
                     'showApiResults',
                     'showWebVitals',
                     'showUIDebug',
@@ -262,14 +330,28 @@ export default function DebugControls() {
                 return [
                     'showTrackingDebug',
                     'showNotificationDebug',
-                    'showTestNotifications',
+                    'showNotifTester',
                     'showChildSafetyDebug',
                 ]
         }
     }
 
-    const toggleSetting = (key: keyof DebugSettings) => {
-        setSettings((prev) => ({ ...prev, [key]: !prev[key] }))
+    const toggleSetting = async (key: keyof DebugSettings) => {
+        const newValue = !settings[key]
+        setSettings((prev) => ({ ...prev, [key]: newValue }))
+
+        // Special handling for Next.js server logs - write to flag file via API
+        if (key === 'showNextServerLogs') {
+            try {
+                await fetch('/api/debug/next-logs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled: newValue }),
+                })
+            } catch {
+                // Silently fail - the toggle still updates localStorage
+            }
+        }
     }
 
     const toggleCategory = (category: DebugCategory) => {
@@ -347,9 +429,8 @@ export default function DebugControls() {
         if (!showAllControls && !settings[key]) return null
 
         const isEnabled = settings[key]
-        const colorClasses = isEnabled
-            ? `bg-${color}-600/20 text-${color}-400 border border-${color}-500/30`
-            : 'bg-gray-800 text-gray-500 border border-gray-700'
+        const colorConfig = COLOR_CLASSES[color] || COLOR_CLASSES.gray
+        const colorClasses = isEnabled ? colorConfig.enabled : colorConfig.disabled
 
         return (
             <button
@@ -427,9 +508,9 @@ export default function DebugControls() {
                         <ChatBubbleBottomCenterTextIcon className="w-3.5 h-3.5 text-blue-500" />,
                         <>
                             {renderButton(
-                                'showToastDebug',
-                                'Toast',
-                                'Toggle Toast Debug',
+                                'showToastTester',
+                                'Toast Test',
+                                'Show "Test Toasts" button in header',
                                 'green',
                                 <ChatBubbleBottomCenterTextIcon className="w-3 h-3" />
                             )}
@@ -493,9 +574,9 @@ export default function DebugControls() {
                                 'pink'
                             )}
                             {renderButton(
-                                'showTestNotifications',
-                                'TestNotif',
-                                'Toggle Test Notification Button',
+                                'showNotifTester',
+                                'Notif Test',
+                                'Show "Generate Test Notifications" button in settings',
                                 'red'
                             )}
                             {renderButton(
@@ -581,10 +662,10 @@ export function useDebugSettings() {
         showSessionDebug: false,
         showGuestDebug: false,
         showCacheDebug: false,
-        showToastDebug: false,
+        showToastTester: false,
         showApiResults: false,
         showWebVitals: false,
-        showTestNotifications: false,
+        showNotifTester: false,
         showUIDebug: false,
         showTrackingDebug: false,
         showNotificationDebug: false,

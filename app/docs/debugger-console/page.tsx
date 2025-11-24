@@ -156,9 +156,9 @@ export default function DebugDocumentation() {
                     {expandedCategories.ui && (
                         <div className="grid gap-4">
                             <DebugOption
-                                slug="toast"
-                                name="Toast"
-                                description="Logs toast notification lifecycle events including creation, display, and dismissal of all toast types."
+                                slug="toast-tester"
+                                name="Toast Test"
+                                description="Shows 'Test Toasts' button in the header to trigger all toast notification types for testing."
                                 color="green"
                             />
                             <DebugOption
@@ -237,9 +237,9 @@ export default function DebugDocumentation() {
                                 color="pink"
                             />
                             <DebugOption
-                                slug="test-notifications"
-                                name="TestNotif"
-                                description="Adds a button to create test notifications for debugging the notification panel and toast system."
+                                slug="notif-tester"
+                                name="Notif Test"
+                                description="Shows 'Generate Test Notifications' button in settings to create fake trending notifications for testing."
                                 color="red"
                             />
                             <DebugOption

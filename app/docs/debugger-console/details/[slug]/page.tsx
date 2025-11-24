@@ -215,40 +215,46 @@ Top operations:
 [Watch History] Duplicate detected, updating timestamp
 [Watch History] Cleanup: Removed 3 entries older than 90 days`,
     },
-    toast: {
-        title: 'Toast Notification Debug',
+    'toast-tester': {
+        title: 'Toast Test Button',
         category: 'UI & Interaction',
         color: 'green',
         icon: '🍞',
         description:
-            'Logs toast notification lifecycle including creation, display, and auto-dismiss.',
+            'Shows a "Test Toasts" button in the header to trigger all toast notification types for visual testing.',
         whatItDoes: [
-            'Logs toast creation with type and message',
-            'Tracks toast display queue (MAX_TOASTS limit)',
-            'Shows auto-dismiss timer (5s default)',
-            'Monitors manual dismissal events',
-            'Logs toast animation states',
-            'Displays unified toast system usage',
+            'Adds a "Test Toasts" button to the header (development only)',
+            'Triggers all 6 toast types when clicked: success, error, watchlist-add, watchlist-remove, content-hidden, content-shown',
+            'Allows visual verification of toast styling and animations',
+            'Tests toast queue behavior with multiple toasts',
+            'Verifies auto-dismiss timing (5s default)',
+            'Confirms toast positioning and stacking',
         ],
         when: [
-            'Debugging toasts not appearing',
-            'Investigating toast queue behavior',
-            'Verifying auto-dismiss timing',
-            'Tracking toast animation issues',
-            'Testing different toast types (success, error, watchlist, etc.)',
+            'Testing toast notification UI after style changes',
+            'Verifying toast animations work correctly',
+            'Testing all toast types display properly',
+            'Checking toast queue and stacking behavior',
+            'Visual QA of notification system',
         ],
-        output: 'Console logs in components/layout/Header.tsx when toast debug is toggled.',
-        relatedOptions: ['ui-logs', 'notifications'],
+        output: 'Button appears in Header component. Clicking it triggers multiple toast notifications of different types.',
+        relatedOptions: ['ui-logs', 'notifications', 'notif-tester'],
         file: 'components/layout/Header.tsx',
-        usedIn: ['stores/toastStore.ts', 'components/ui/Toast.tsx'],
+        usedIn: ['stores/toastStore.ts', 'components/ui/Toast.tsx', 'hooks/useToast.ts'],
         keyboardShortcut: null,
-        note: undefined,
+        note: 'This is a UI test button, not a debug logger. Use it for visual testing of toast notifications.',
         isCurrentlyActive: true,
-        example: `[Toast] Created: type=success, title="Added to Watchlist"
-[Toast] Queue: 2 active, 3 pending
-[Toast] Auto-dismiss scheduled: 5000ms
-[Toast] Toast dismissed: id=toast_123
-[Toast] Queue cleared`,
+        example: `Click "Test Toasts" button →
+
+Multiple toasts appear:
+━━━━━━━━━━━━━━━━━━━━━
+✓ Success toast (green)
+✗ Error toast (red)
++ Added to watchlist (blue)
+- Removed from watchlist (orange)
+👁️ Content shown (green)
+🚫 Content hidden (red)
+━━━━━━━━━━━━━━━━━━━━━`,
     },
     'api-results': {
         title: 'API Results Viewer',
@@ -352,7 +358,7 @@ Top operations:
             'Testing user interaction flows',
         ],
         output: 'Console logs with [UI] prefix showing interaction events and state changes.',
-        relatedOptions: ['toast', 'banner', 'api-results'],
+        relatedOptions: ['toast-tester', 'banner', 'api-results'],
         file: 'utils/debugLogger.ts',
         usedIn: ['Various UI components (modals, carousels, infinite scroll)'],
         keyboardShortcut: null,
@@ -531,7 +537,7 @@ GET /docs/tracker 200 in 67ms
             'Troubleshooting auto-dismiss logic',
         ],
         output: 'Console logs showing notification lifecycle events and Firestore operations with [Notification] prefix.',
-        relatedOptions: ['test-notifications', 'tracker', 'toast'],
+        relatedOptions: ['notif-tester', 'tracker', 'toast-tester'],
         file: 'utils/debugLogger.ts',
         usedIn: ['stores/notificationStore.ts', 'components/notifications/*'],
         keyboardShortcut: null,
@@ -546,7 +552,7 @@ GET /docs/tracker 200 in 67ms
 [Notification] Click action: navigate to /collections/col_123456
 [Notification] Auto-dismiss cleanup: 3 notifications older than 30 days`,
     },
-    'test-notifications': {
+    'notif-tester': {
         title: 'Test Notification Button',
         category: 'Features & Tools',
         color: 'red',
@@ -568,7 +574,7 @@ GET /docs/tracker 200 in 67ms
             'Simulating real notification scenarios',
         ],
         output: 'Button appears in NotificationsSection.tsx. Creates test notifications visible in notification panel.',
-        relatedOptions: ['notifications', 'toast', 'tracker'],
+        relatedOptions: ['notifications', 'toast-tester', 'tracker'],
         file: 'components/settings/NotificationsSection.tsx',
         usedIn: ['stores/notificationStore.ts'],
         keyboardShortcut: null,
