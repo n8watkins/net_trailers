@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 
 export default function DebugDocumentation() {
     // Only render in development mode
@@ -51,6 +52,9 @@ export default function DebugDocumentation() {
                             <li>Click category headers to expand/collapse sections</li>
                             <li>Enabled toggles remain visible when not hovering</li>
                             <li>Settings persist across browser sessions</li>
+                            <li className="text-blue-400 font-medium">
+                                Click any debug option below for detailed documentation →
+                            </li>
                         </ul>
                     </div>
                 </section>
@@ -68,36 +72,42 @@ export default function DebugDocumentation() {
 
                     <div className="grid gap-4">
                         <DebugOption
+                            slug="tracker"
                             name="Tracker"
                             description="Shows a floating overlay tracking all Firebase operations (reads, writes, deletes) with detailed call stacks, timing, and data size."
                             usage="Currently Active"
                             color="orange"
                         />
                         <DebugOption
+                            slug="auth"
                             name="Auth"
                             description="Logs Firebase authentication flow events including sign-in, sign-out, token refresh, and user state changes."
                             usage="Currently Active"
                             color="blue"
                         />
                         <DebugOption
+                            slug="session"
                             name="Session"
                             description="Logs session management events including initialization, user switching, and session persistence to localStorage."
                             usage="Currently Active"
                             color="purple"
                         />
                         <DebugOption
+                            slug="guest"
                             name="Guest"
                             description="Logs guest mode operations including localStorage reads/writes and guest ID generation."
                             usage="Currently Active"
                             color="teal"
                         />
                         <DebugOption
+                            slug="cache"
                             name="Cache"
                             description="Logs content caching operations including cache hits, misses, invalidation, and cache size management."
                             usage="Currently Active"
                             color="cyan"
                         />
                         <DebugOption
+                            slug="watch-history"
                             name="Watch History"
                             description="Logs watch history tracking operations and Firestore synchronization events for user viewing data."
                             usage="Currently Active"
@@ -119,18 +129,21 @@ export default function DebugDocumentation() {
 
                     <div className="grid gap-4">
                         <DebugOption
+                            slug="toast"
                             name="Toast"
                             description="Logs toast notification lifecycle events including creation, display, and dismissal of all toast types."
                             usage="Currently Active"
                             color="green"
                         />
                         <DebugOption
+                            slug="api-results"
                             name="API Results"
                             description="Adds a button to view raw API response data for debugging TMDB API calls and data structure."
                             usage="Currently Active"
                             color="purple"
                         />
                         <DebugOption
+                            slug="vitals"
                             name="Vitals"
                             description="Displays a real-time Web Vitals HUD showing performance metrics (LCP, FID, CLS, TTFB, FCP, INP)."
                             usage="Currently Active"
@@ -138,18 +151,21 @@ export default function DebugDocumentation() {
                             keyboardShortcut="Alt+Shift+V"
                         />
                         <DebugOption
+                            slug="ui-logs"
                             name="UI Logs"
                             description="Logs UI interaction events including modal open/close, infinite scroll triggers, carousel navigation, and component mount/unmount."
                             usage="Currently Active"
                             color="indigo"
                         />
                         <DebugOption
+                            slug="api-server"
                             name="API/Server"
                             description="Logs API route execution, server-side operations, and internal API call timing and responses."
                             usage="Currently Active"
                             color="amber"
                         />
                         <DebugOption
+                            slug="next-server"
                             name="Next.js Server"
                             description="Controls Next.js development server request logging. Shows all incoming requests, route handlers, and static file serving."
                             usage="Enabled by Default"
@@ -157,6 +173,7 @@ export default function DebugDocumentation() {
                             note="Requires dev server restart to take effect"
                         />
                         <DebugOption
+                            slug="banner"
                             name="Banner"
                             description="Logs banner carousel behavior including image loading, slide transitions, and auto-play timing."
                             usage="Currently Active"
@@ -178,41 +195,68 @@ export default function DebugDocumentation() {
 
                     <div className="grid gap-4">
                         <DebugOption
+                            slug="tracking"
                             name="Tracking"
                             description="Logs user interaction tracking events (views, likes, watchlist operations) and the 90-day retention system."
                             usage="Currently Active"
                             color="yellow"
                         />
                         <DebugOption
+                            slug="notifications"
                             name="Notif"
                             description="Logs notification system operations including Firestore listeners, real-time updates, and notification creation/dismissal."
                             usage="Currently Active"
                             color="pink"
                         />
                         <DebugOption
+                            slug="test-notifications"
                             name="TestNotif"
                             description="Adds a button to create test notifications for debugging the notification panel and toast system."
                             usage="Currently Active"
                             color="red"
                         />
                         <DebugOption
+                            slug="child-safety"
                             name="Child Safety"
                             description="Logs child safety mode filtering operations including TMDB rating checks and content filtering decisions."
                             usage="Currently Active"
                             color="violet"
                         />
-                        <DebugOption
-                            name="Seed Btn"
-                            description="Adds a 'Seed Data' button to the profile page for populating test collections, rankings, and user data."
-                            usage="Development Tool"
+                    </div>
+                </section>
+
+                {/* Data Actions Section */}
+                <section className="mb-12 bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30">
+                            <span className="text-emerald-500 text-xl">💾</span>
+                        </div>
+                        <h2 className="text-2xl font-semibold text-emerald-400">Data Actions</h2>
+                    </div>
+                    <p className="text-gray-400 mb-6">
+                        Utility actions for managing test data and storage during development.
+                        Always visible when hovering over the debug console.
+                    </p>
+                    <div className="grid gap-4">
+                        <DataAction
+                            name="Seed Data"
+                            description="Populates test data including 15 liked items, 8 hidden, 12 watch later, 20 watch history entries, and 8 collections. Useful for quickly setting up a realistic user state for testing."
                             color="purple"
+                            icon="✨"
                         />
-                        <DebugOption
+                        <DataAction
                             name="Clear Storage"
-                            description="Clears all NetTrailer localStorage data and reloads the page. Useful for testing fresh user states."
-                            usage="Destructive Action"
-                            color="red"
+                            description="Clears all NetTrailer localStorage data (keys starting with 'nettrailer') and reloads the page. Useful for testing fresh user states and resetting local data."
+                            color="amber"
+                            icon="🗑️"
                             note="Requires confirmation before executing"
+                        />
+                        <DataAction
+                            name="Delete Data"
+                            description="Permanently deletes all user data including collections, ratings, and watch history from Firestore. This is a destructive action used for testing data deletion flows."
+                            color="red"
+                            icon="⚠️"
+                            note="Requires confirmation and is irreversible"
                         />
                     </div>
                 </section>
@@ -310,6 +354,7 @@ export default function DebugDocumentation() {
 
 // Reusable component for debug option documentation
 function DebugOption({
+    slug,
     name,
     description,
     usage,
@@ -317,6 +362,7 @@ function DebugOption({
     keyboardShortcut,
     note,
 }: {
+    slug: string
     name: string
     description: string
     usage: string
@@ -344,16 +390,23 @@ function DebugOption({
     }[color]
 
     return (
-        <div className="bg-gray-800/30 rounded-lg p-4 border border-gray-700 hover:border-gray-600 transition-colors">
+        <Link
+            href={`/docs/${slug}`}
+            className="bg-gray-800/30 rounded-lg p-4 border border-gray-700 hover:border-gray-600 hover:bg-gray-800/50 transition-all cursor-pointer group block"
+        >
             <div className="flex items-start justify-between gap-4 mb-2">
-                <h3 className="text-lg font-semibold text-gray-100">{name}</h3>
+                <h3 className="text-lg font-semibold text-gray-100 group-hover:text-white transition-colors">
+                    {name} →
+                </h3>
                 <span
                     className={`text-xs px-2 py-1 rounded border ${colorClasses} whitespace-nowrap`}
                 >
                     {usage}
                 </span>
             </div>
-            <p className="text-gray-400 text-sm mb-2">{description}</p>
+            <p className="text-gray-400 text-sm mb-2 group-hover:text-gray-300 transition-colors">
+                {description}
+            </p>
             {keyboardShortcut && (
                 <div className="flex items-center gap-2 mt-2">
                     <span className="text-xs text-gray-500">Shortcut:</span>
@@ -362,6 +415,51 @@ function DebugOption({
                     </kbd>
                 </div>
             )}
+            {note && (
+                <div className="mt-2 text-xs text-yellow-500/80 flex items-start gap-1">
+                    <span>⚠</span>
+                    <span>{note}</span>
+                </div>
+            )}
+        </Link>
+    )
+}
+
+// Component for data action documentation (non-clickable)
+function DataAction({
+    name,
+    description,
+    color,
+    icon,
+    note,
+}: {
+    name: string
+    description: string
+    color: string
+    icon: string
+    note?: string
+}) {
+    const colorClasses = {
+        purple: 'bg-purple-500/10 border-purple-500/30',
+        amber: 'bg-amber-500/10 border-amber-500/30',
+        red: 'bg-red-500/10 border-red-500/30',
+    }[color]
+
+    const iconColorClasses = {
+        purple: 'text-purple-400',
+        amber: 'text-amber-400',
+        red: 'text-red-400',
+    }[color]
+
+    return (
+        <div className={`rounded-lg p-4 border ${colorClasses}`}>
+            <div className="flex items-start gap-3 mb-2">
+                <span className={`text-2xl ${iconColorClasses}`}>{icon}</span>
+                <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-100">{name}</h3>
+                </div>
+            </div>
+            <p className="text-gray-400 text-sm">{description}</p>
             {note && (
                 <div className="mt-2 text-xs text-yellow-500/80 flex items-start gap-1">
                     <span>⚠</span>
