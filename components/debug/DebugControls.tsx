@@ -7,6 +7,7 @@ import {
     SparklesIcon,
     ChevronDownIcon,
     ChevronRightIcon,
+    TrashIcon,
 } from '@heroicons/react/24/outline'
 
 interface DebugSettings {
@@ -272,6 +273,16 @@ export default function DebugControls() {
         setExpandedCategories((prev) => ({ ...prev, [category]: !prev[category] }))
     }
 
+    // Clear NetTrailer localStorage and reload
+    const handleClearLocalStorage = () => {
+        if (confirm('Clear all NetTrailer localStorage data and reload?')) {
+            Object.keys(localStorage)
+                .filter((key) => key.startsWith('nettrailer'))
+                .forEach((key) => localStorage.removeItem(key))
+            location.reload()
+        }
+    }
+
     // Only show in development
     if (process.env.NODE_ENV !== 'development') return null
 
@@ -497,6 +508,16 @@ export default function DebugControls() {
                                 'Toggle Seed Data Button on Profile',
                                 'purple',
                                 <SparklesIcon className="w-3 h-3" />
+                            )}
+                            {showAllControls && (
+                                <button
+                                    onClick={handleClearLocalStorage}
+                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-red-600/20 text-red-400 border border-red-500/30 hover:bg-red-600/40"
+                                    title="Clear NetTrailer localStorage data and reload"
+                                >
+                                    <TrashIcon className="w-3 h-3" />
+                                    <span className="text-xs">Clear Storage</span>
+                                </button>
                             )}
                         </>
                     )}
