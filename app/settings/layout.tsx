@@ -13,6 +13,7 @@ import {
     Cog6ToothIcon,
     BellIcon,
     RectangleStackIcon,
+    SparklesIcon,
 } from '@heroicons/react/24/outline'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import SubPageLayout from '../../components/layout/SubPageLayout'
@@ -26,6 +27,7 @@ type SettingsSection =
     | 'password'
     | 'preferences'
     | 'notifications'
+    | 'recommendations'
     | 'collections'
     | 'share'
     | 'account'
@@ -121,6 +123,26 @@ const SettingsLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
                 'updates',
                 'newsletter',
                 'marketing',
+            ],
+        },
+        {
+            id: 'recommendations',
+            path: '/settings/recommendations',
+            title: 'Recommendations',
+            description: 'Manage Trending, Top Rated, and For You rows',
+            icon: SparklesIcon,
+            priority: 'low',
+            searchKeywords: [
+                'trending',
+                'top rated',
+                'recommended',
+                'for you',
+                'personalized',
+                'system rows',
+                'homepage rows',
+                'enable',
+                'disable',
+                'reorder',
             ],
         },
         {
