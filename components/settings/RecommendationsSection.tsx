@@ -4,6 +4,126 @@ import React from 'react'
 import Link from 'next/link'
 import { ChevronRightIcon } from '@heroicons/react/24/outline'
 import { UpgradeAccountBanner } from '../auth/UpgradeAccountBanner'
+import { useAuthStore } from '../../stores/authStore'
+import { useGuestStore } from '../../stores/guestStore'
+import { useSessionStore } from '../../stores/sessionStore'
+import { SystemRecommendation } from '../../types/recommendations'
+
+// System Recommendations Display Names and Descriptions
+const SYSTEM_REC_INFO: Record<string, { name: string; description: string; defaultEmoji: string }> =
+    {
+        'recommended-for-you': {
+            name: 'Recommended For You',
+            description: 'Personalized content based on your watch history and preferences',
+            defaultEmoji: '✨',
+        },
+        trending: {
+            name: 'Trending',
+            description: 'Popular movies and shows trending now',
+            defaultEmoji: '🔥',
+        },
+        'top-rated': {
+            name: 'Top Rated',
+            description: 'Highest-rated content from TMDB',
+            defaultEmoji: '⭐',
+        },
+        'trending-actors': {
+            name: 'Trending Actors',
+            description: 'Popular actors trending this week',
+            defaultEmoji: '🎭',
+        },
+        'trending-directors': {
+            name: 'Trending Directors',
+            description: 'Popular directors trending this week',
+            defaultEmoji: '🎬',
+        },
+    }
+
+// System Recommendations Manager Component
+interface SystemRecommendationsManagerProps {
+    sessionType: 'guest' | 'authenticated' | 'initializing' | null | undefined
+}
+
+const SystemRecommendationsManager = React.memo<SystemRecommendationsManagerProps>(
+    ({ sessionType }) => {
+        const authSystemRecommendations = useAuthStore((state) => state.systemRecommendations)
+        const guestSystemRecommendations = useGuestStore((state) => state.systemRecommendations)
+        const authUpdateSystemRec = useAuthStore((state) => state.updateSystemRecommendation)
+        const guestUpdateSystemRec = useGuestStore((state) => state.updateSystemRecommendation)
+
+        const systemRecommendations =
+            sessionType === 'authenticated' ? authSystemRecommendations : guestSystemRecommendations
+
+        const handleToggle = React.useCallback(
+            (recId: string, enabled: boolean) => {
+                if (sessionType === 'authenticated') {
+                    authUpdateSystemRec(recId, { enabled })
+                } else {
+                    guestUpdateSystemRec(recId, { enabled })
+                }
+            },
+            [sessionType, authUpdateSystemRec, guestUpdateSystemRec]
+        )
+
+        // Sort by order
+        const sortedRecs = React.useMemo(() => {
+            return [...systemRecommendations].sort((a, b) => a.order - b.order)
+        }, [systemRecommendations])
+
+        return (
+            <div>
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                    System Recommendation Rows
+                </h3>
+                <div className="space-y-4 bg-[#0a0a0a] rounded-lg border border-[#313131] p-6">
+                    {sortedRecs.map((rec, index) => {
+                        const info = SYSTEM_REC_INFO[rec.id] || {
+                            name: rec.name,
+                            description: 'System recommendation row',
+                            defaultEmoji: '🎬',
+                        }
+
+                        return (
+                            <div key={rec.id}>
+                                {index > 0 && (
+                                    <div className="border-t border-[#313131] mb-4"></div>
+                                )}
+                                <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                        <label className="block text-sm font-medium text-[#e5e5e5] mb-1">
+                                            {rec.emoji || info.defaultEmoji} {rec.name}
+                                        </label>
+                                        <p className="text-sm text-[#b3b3b3]">{info.description}</p>
+                                        {rec.id === 'recommended-for-you' && (
+                                            <p className="text-xs text-[#999] mt-1">
+                                                Requires "Improve Recommendations" to be enabled
+                                            </p>
+                                        )}
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer ml-4">
+                                        <input
+                                            type="checkbox"
+                                            checked={rec.enabled}
+                                            onChange={(e) => handleToggle(rec.id, e.target.checked)}
+                                            className="sr-only peer"
+                                        />
+                                        <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+                <p className="text-xs text-[#666] mt-3">
+                    💡 Tip: You can customize names, emojis, and row order using the "Manage Page"
+                    button on the home page.
+                </p>
+            </div>
+        )
+    }
+)
+
+SystemRecommendationsManager.displayName = 'SystemRecommendationsManager'
 
 // Memoized Recommendations Controls Component - Only re-renders when props actually change
 interface RecommendationsControlsProps {
@@ -198,6 +318,8 @@ const RecommendationsSection: React.FC<RecommendationsSectionProps> = ({
     onShowRecommendationsChange,
     onTrackWatchHistoryChange,
 }) => {
+    const sessionType = useSessionStore((state) => state.sessionType)
+
     return (
         <div className="p-8">
             {/* Upgrade Banner for Guests */}
@@ -206,8 +328,7 @@ const RecommendationsSection: React.FC<RecommendationsSectionProps> = ({
             <div className="mb-6">
                 <h2 className="text-2xl font-bold text-white mb-2">Recommendations</h2>
                 <p className="text-[#b3b3b3] mb-3">
-                    Control how NetTrailers learns from your activity to provide personalized
-                    recommendations
+                    Control recommendation rows and personalization settings
                 </p>
                 <div className="flex items-center gap-2 text-sm text-green-500">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -239,15 +360,21 @@ const RecommendationsSection: React.FC<RecommendationsSectionProps> = ({
                     </div>
                 </div>
             ) : (
-                <RecommendationsControls
-                    improveRecommendations={improveRecommendations}
-                    showRecommendations={showRecommendations}
-                    trackWatchHistory={trackWatchHistory}
-                    isGuest={isGuest}
-                    onImproveRecommendationsChange={onImproveRecommendationsChange}
-                    onShowRecommendationsChange={onShowRecommendationsChange}
-                    onTrackWatchHistoryChange={onTrackWatchHistoryChange}
-                />
+                <div className="space-y-8">
+                    {/* System Recommendation Rows */}
+                    <SystemRecommendationsManager sessionType={sessionType} />
+
+                    {/* Privacy & Personalization Settings */}
+                    <RecommendationsControls
+                        improveRecommendations={improveRecommendations}
+                        showRecommendations={showRecommendations}
+                        trackWatchHistory={trackWatchHistory}
+                        isGuest={isGuest}
+                        onImproveRecommendationsChange={onImproveRecommendationsChange}
+                        onShowRecommendationsChange={onShowRecommendationsChange}
+                        onTrackWatchHistoryChange={onTrackWatchHistoryChange}
+                    />
+                </div>
             )}
         </div>
     )

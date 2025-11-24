@@ -18,11 +18,20 @@ import { GenrePreference } from '../../types/shared'
 
 type PreferenceValue = 'love' | 'not_for_me'
 
+interface PreviewContent {
+    id: number
+    poster_path: string | null
+    title?: string
+    name?: string
+}
+
 interface GenrePreferenceModalProps {
     isOpen: boolean
     onClose: () => void
     onSave: (preferences: GenrePreference[]) => Promise<void>
     existingPreferences?: GenrePreference[]
+    /** Pre-fetched genre preview content for instant loading */
+    prefetchedPreviews?: Record<string, PreviewContent[]> | null
 }
 
 // Key genres for the preference quiz
@@ -41,82 +50,12 @@ const PREFERENCE_GENRES: string[] = [
     'crime',
 ]
 
-// Sample content for genre previews (TMDB IDs)
-const GENRE_PREVIEW_CONTENT: Record<string, { id: number; type: 'movie' | 'tv' }[]> = {
-    action: [
-        { id: 603, type: 'movie' }, // The Matrix
-        { id: 155, type: 'movie' }, // The Dark Knight
-        { id: 27205, type: 'movie' }, // Inception
-    ],
-    comedy: [
-        { id: 120467, type: 'movie' }, // The Grand Budapest Hotel
-        { id: 807, type: 'movie' }, // Se7en parody? Let's use Superbad
-        { id: 22538, type: 'movie' }, // Scott Pilgrim
-    ],
-    drama: [
-        { id: 238, type: 'movie' }, // The Godfather
-        { id: 424, type: 'movie' }, // Schindler's List
-        { id: 550, type: 'movie' }, // Fight Club
-    ],
-    horror: [
-        { id: 694, type: 'movie' }, // The Shining
-        { id: 493922, type: 'movie' }, // Hereditary
-        { id: 419430, type: 'movie' }, // Get Out
-    ],
-    romance: [
-        { id: 597, type: 'movie' }, // Titanic
-        { id: 332562, type: 'movie' }, // A Star Is Born
-        { id: 313369, type: 'movie' }, // La La Land
-    ],
-    scifi: [
-        { id: 157336, type: 'movie' }, // Interstellar
-        { id: 335984, type: 'movie' }, // Blade Runner 2049
-        { id: 264660, type: 'movie' }, // Ex Machina
-    ],
-    thriller: [
-        { id: 745, type: 'movie' }, // The Sixth Sense
-        { id: 274, type: 'movie' }, // The Silence of the Lambs
-        { id: 77, type: 'movie' }, // Memento
-    ],
-    fantasy: [
-        { id: 120, type: 'movie' }, // LOTR Fellowship
-        { id: 671, type: 'movie' }, // Harry Potter
-        { id: 411, type: 'movie' }, // Chronicles of Narnia
-    ],
-    animation: [
-        { id: 129, type: 'movie' }, // Spirited Away
-        { id: 862, type: 'movie' }, // Toy Story
-        { id: 508442, type: 'movie' }, // Soul
-    ],
-    documentary: [
-        { id: 831405, type: 'movie' }, // 13th (placeholder)
-        { id: 333339, type: 'movie' }, // Ready Player One (placeholder)
-        { id: 346364, type: 'movie' }, // It (placeholder)
-    ],
-    mystery: [
-        { id: 546554, type: 'movie' }, // Knives Out
-        { id: 567, type: 'movie' }, // Rear Window
-        { id: 641, type: 'movie' }, // Requiem for a Dream
-    ],
-    crime: [
-        { id: 680, type: 'movie' }, // Pulp Fiction
-        { id: 769, type: 'movie' }, // GoodFellas
-        { id: 497, type: 'movie' }, // The Green Mile
-    ],
-}
-
-interface PreviewContent {
-    id: number
-    poster_path: string | null
-    title?: string
-    name?: string
-}
-
 export default function GenrePreferenceModal({
     isOpen,
     onClose,
     onSave,
     existingPreferences = [],
+    prefetchedPreviews = null,
 }: GenrePreferenceModalProps) {
     const [mounted, setMounted] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
@@ -129,8 +68,10 @@ export default function GenrePreferenceModal({
     })
     const [currentIndex, setCurrentIndex] = useState(0)
     const [animatingVote, setAnimatingVote] = useState<PreferenceValue | null>(null)
-    const [previewContent, setPreviewContent] = useState<Record<string, PreviewContent[]>>({})
-    const [isLoadingPreviews, setIsLoadingPreviews] = useState(true)
+    const [previewContent, setPreviewContent] = useState<Record<string, PreviewContent[]>>(
+        prefetchedPreviews || {}
+    )
+    const [isLoadingPreviews, setIsLoadingPreviews] = useState(!prefetchedPreviews)
 
     // Swipe gesture state
     const cardRef = useRef<HTMLDivElement>(null)
@@ -153,40 +94,51 @@ export default function GenrePreferenceModal({
         return () => setMounted(false)
     }, [])
 
-    // Fetch preview content for genres
+    // Use prefetched content when it arrives
+    useEffect(() => {
+        if (prefetchedPreviews && Object.keys(prefetchedPreviews).length > 0) {
+            setPreviewContent(prefetchedPreviews)
+            setIsLoadingPreviews(false)
+        }
+    }, [prefetchedPreviews])
+
+    // Fetch remaining previews if not prefetched or incomplete
     useEffect(() => {
         if (!isOpen) return
 
-        const fetchPreviews = async () => {
-            setIsLoadingPreviews(true)
-            const previews: Record<string, PreviewContent[]> = {}
+        // Check which genres still need previews
+        const missingGenres = PREFERENCE_GENRES.filter(
+            (g) => !previewContent[g] || previewContent[g].length === 0
+        )
 
-            // Fetch a few movies for each genre in parallel
-            const genrePromises = PREFERENCE_GENRES.map(async (genreId) => {
-                const contentIds = GENRE_PREVIEW_CONTENT[genreId] || []
-                const contentPromises = contentIds.slice(0, 3).map(async (item) => {
-                    try {
-                        const response = await fetch(`/api/movies/${item.id}`)
-                        if (response.ok) {
-                            return await response.json()
-                        }
-                    } catch {
-                        // Ignore errors for individual fetches
-                    }
-                    return null
-                })
-
-                const results = await Promise.all(contentPromises)
-                previews[genreId] = results.filter(Boolean)
-            })
-
-            await Promise.all(genrePromises)
-            setPreviewContent(previews)
+        if (missingGenres.length === 0) {
             setIsLoadingPreviews(false)
+            return
         }
 
-        fetchPreviews()
-    }, [isOpen])
+        const fetchMissingPreviews = async () => {
+            try {
+                const response = await fetch(
+                    `/api/recommendations/genre-previews?genres=${missingGenres.join(',')}&limit=3`
+                )
+                if (!response.ok) return
+
+                const data = await response.json()
+                if (data.success && data.previews) {
+                    setPreviewContent((prev) => ({
+                        ...prev,
+                        ...data.previews,
+                    }))
+                }
+            } catch (error) {
+                console.error('Error fetching genre previews:', error)
+            } finally {
+                setIsLoadingPreviews(false)
+            }
+        }
+
+        fetchMissingPreviews()
+    }, [isOpen, previewContent])
 
     // Auto-save on close
     const handleClose = useCallback(async () => {
@@ -477,7 +429,7 @@ export default function GenrePreferenceModal({
 
                                 {/* Preview posters */}
                                 <div className="flex justify-center gap-2 mb-6">
-                                    {isLoadingPreviews ? (
+                                    {isLoadingPreviews && currentPreviews.length === 0 ? (
                                         <div className="flex gap-2">
                                             {[1, 2, 3].map((i) => (
                                                 <div
@@ -513,11 +465,11 @@ export default function GenrePreferenceModal({
                                             {[1, 2, 3].map((i) => (
                                                 <div
                                                     key={i}
-                                                    className={`w-20 sm:w-24 aspect-[2/3] rounded-lg bg-gradient-to-br from-purple-900/50 to-pink-900/50 border border-purple-500/30 flex items-center justify-center ${
+                                                    className={`w-20 sm:w-24 aspect-[2/3] rounded-lg bg-gray-800 flex items-center justify-center ${
                                                         i === 2 ? 'scale-110 z-10' : 'opacity-80'
                                                     }`}
                                                 >
-                                                    <SparklesIcon className="w-8 h-8 text-purple-400/50" />
+                                                    <SparklesIcon className="w-8 h-8 text-gray-600" />
                                                 </div>
                                             ))}
                                         </div>
@@ -627,3 +579,6 @@ export default function GenrePreferenceModal({
     // Render via portal to escape stacking contexts
     return createPortal(modalContent, document.body)
 }
+
+// Export PreviewContent type for prefetching
+export type { PreviewContent }

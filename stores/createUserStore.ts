@@ -11,7 +11,40 @@ import {
     createDefaultCollectionsForUser,
     needsDefaultCollections,
 } from '../constants/systemCollections'
-import { SystemRecommendation, createDefaultSystemRecommendations } from '../types/recommendations'
+import {
+    SystemRecommendation,
+    createDefaultSystemRecommendations,
+    DEFAULT_SYSTEM_RECOMMENDATIONS,
+} from '../types/recommendations'
+
+/**
+ * Merge existing system recommendations with any missing defaults.
+ * This ensures existing users get new recommendation types when added.
+ */
+function mergeSystemRecommendations(existing: SystemRecommendation[]): SystemRecommendation[] {
+    if (!existing || existing.length === 0) {
+        return createDefaultSystemRecommendations()
+    }
+
+    // Get set of existing IDs
+    const existingIds = new Set(existing.map((r) => r.id))
+
+    // Find missing recommendations from defaults
+    const missing = DEFAULT_SYSTEM_RECOMMENDATIONS.filter((def) => !existingIds.has(def.id))
+
+    if (missing.length === 0) {
+        return existing
+    }
+
+    // Add missing recommendations at the end with incremented order values
+    const maxOrder = Math.max(...existing.map((r) => r.order), -1)
+    const newRecommendations = missing.map((def, index) => ({
+        ...def,
+        order: maxOrder + 1 + index,
+    }))
+
+    return [...existing, ...newRecommendations]
+}
 
 /**
  * User store state (works for both auth and guest users)
@@ -705,11 +738,18 @@ export function createUserStore(options: CreateUserStoreOptions) {
                                 needsSeedSave = true
                             }
 
-                            // Seed default system recommendations for new users
-                            const systemRecommendations =
-                                firebaseData.systemRecommendations ??
-                                createDefaultSystemRecommendations()
-                            if (!firebaseData.systemRecommendations) {
+                            // Merge system recommendations - adds any missing defaults to existing users
+                            const systemRecommendations = mergeSystemRecommendations(
+                                firebaseData.systemRecommendations || []
+                            )
+                            // Check if we added new recommendations
+                            const existingCount = (firebaseData.systemRecommendations || []).length
+                            if (systemRecommendations.length > existingCount) {
+                                logger.log(
+                                    `🌱 [${trackingContext}] Added ${systemRecommendations.length - existingCount} new system recommendations for user: ${userId}`
+                                )
+                                needsSeedSave = true
+                            } else if (existingCount === 0) {
                                 logger.log(
                                     `🌱 [${trackingContext}] Seeding default system recommendations for new user: ${userId}`
                                 )
@@ -801,10 +841,18 @@ export function createUserStore(options: CreateUserStoreOptions) {
                     needsSeedSave = true
                 }
 
-                // Seed default system recommendations for new guest users
-                const systemRecommendations =
-                    loadedData.systemRecommendations ?? createDefaultSystemRecommendations()
-                if (!loadedData.systemRecommendations) {
+                // Merge system recommendations - adds any missing defaults to existing guests
+                const systemRecommendations = mergeSystemRecommendations(
+                    loadedData.systemRecommendations || []
+                )
+                // Check if we added new recommendations
+                const existingCount = (loadedData.systemRecommendations || []).length
+                if (systemRecommendations.length > existingCount) {
+                    logger.log(
+                        `🌱 [${trackingContext}] Added ${systemRecommendations.length - existingCount} new system recommendations for guest: ${guestId}`
+                    )
+                    needsSeedSave = true
+                } else if (existingCount === 0) {
                     logger.log(
                         `🌱 [${trackingContext}] Seeding default system recommendations for new guest: ${guestId}`
                     )

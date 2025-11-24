@@ -15,7 +15,7 @@ import { useSessionData } from '../../hooks/useSessionData'
 import { useSessionStore } from '../../stores/sessionStore'
 import { auth } from '../../firebase'
 import RecommendationInsightsModal from './RecommendationInsightsModal'
-import GenrePreferenceModal from './GenrePreferenceModal'
+import GenrePreferenceModal, { PreviewContent } from './GenrePreferenceModal'
 import TitlePreferenceModal, { ContentWithCredits } from './TitlePreferenceModal'
 import { GenrePreference, VotedContent } from '../../types/shared'
 
@@ -35,7 +35,14 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
     const [prefetchedTitleContent, setPrefetchedTitleContent] = useState<
         ContentWithCredits[] | null
     >(null)
-    const [isPrefetching, setIsPrefetching] = useState(false)
+    const [isPrefetchingTitles, setIsPrefetchingTitles] = useState(false)
+
+    // Prefetched content for genre quiz
+    const [prefetchedGenrePreviews, setPrefetchedGenrePreviews] = useState<Record<
+        string,
+        PreviewContent[]
+    > | null>(null)
+    const [isPrefetchingGenres, setIsPrefetchingGenres] = useState(false)
 
     const getUserId = useSessionStore((state) => state.getUserId)
     const sessionType = useSessionStore((state) => state.sessionType)
@@ -120,10 +127,10 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
 
     // Prefetch title quiz content when insights modal opens
     useEffect(() => {
-        if (!showInsightsModal || isPrefetching || prefetchedTitleContent) return
+        if (!showInsightsModal || isPrefetchingTitles || prefetchedTitleContent) return
 
         const prefetchContent = async () => {
-            setIsPrefetching(true)
+            setIsPrefetchingTitles(true)
             try {
                 const response = await fetch('/api/recommendations/preference-content', {
                     method: 'POST',
@@ -154,18 +161,59 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
             } catch (error) {
                 console.error('Error prefetching title quiz content:', error)
             } finally {
-                setIsPrefetching(false)
+                setIsPrefetchingTitles(false)
             }
         }
 
         prefetchContent()
     }, [
         showInsightsModal,
-        isPrefetching,
+        isPrefetchingTitles,
         prefetchedTitleContent,
         titleQuizExcludeIds,
         titleQuizPriorityContent,
     ])
+
+    // Prefetch genre quiz content when insights modal opens
+    useEffect(() => {
+        if (!showInsightsModal || isPrefetchingGenres || prefetchedGenrePreviews) return
+
+        const prefetchGenrePreviews = async () => {
+            setIsPrefetchingGenres(true)
+            try {
+                // Fetch first 4 genres immediately for fast initial load
+                const firstGenres = ['action', 'comedy', 'drama', 'horror']
+                const response = await fetch(
+                    `/api/recommendations/genre-previews?genres=${firstGenres.join(',')}&limit=3`
+                )
+
+                if (!response.ok) throw new Error('Failed to prefetch genre previews')
+
+                const data = await response.json()
+                if (data.success && data.previews) {
+                    setPrefetchedGenrePreviews(data.previews)
+
+                    // Preload poster images for instant display
+                    Object.values(data.previews as Record<string, PreviewContent[]>).forEach(
+                        (previews) => {
+                            previews.forEach((item) => {
+                                if (item.poster_path) {
+                                    const img = new window.Image()
+                                    img.src = `https://image.tmdb.org/t/p/w300${item.poster_path}`
+                                }
+                            })
+                        }
+                    )
+                }
+            } catch (error) {
+                console.error('Error prefetching genre previews:', error)
+            } finally {
+                setIsPrefetchingGenres(false)
+            }
+        }
+
+        prefetchGenrePreviews()
+    }, [showInsightsModal, isPrefetchingGenres, prefetchedGenrePreviews])
 
     // Clear prefetched content when votes change (so it refetches next time)
     useEffect(() => {
@@ -388,6 +436,7 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
                 onClose={() => setShowGenreModal(false)}
                 onSave={handleGenreSave}
                 existingPreferences={genrePreferences}
+                prefetchedPreviews={prefetchedGenrePreviews}
             />
             <TitlePreferenceModal
                 isOpen={showTitleModal}
