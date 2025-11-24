@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
     XMarkIcon,
@@ -17,7 +17,9 @@ import { useModalStore } from '../../stores/modalStore'
 import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
 import { UserList } from '../../types/collections'
+import { SystemRecommendation, SystemRecommendationId } from '../../types/recommendations'
 import CollectionEditorModal from './CollectionEditorModal'
+import SystemRecommendationEditorModal from './SystemRecommendationEditorModal'
 import { createDefaultCollectionsForUser } from '../../constants/systemCollections'
 import {
     DndContext,
@@ -45,6 +47,7 @@ interface DisplayRow {
     genres: string[]
     genreLogic: 'AND' | 'OR'
     isSystemCollection: boolean
+    isSystemRecommendation?: boolean // For Trending, Top Rated, Recommended For You
     canDelete?: boolean
     canEdit?: boolean
     color?: string
@@ -68,8 +71,13 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
     const router = useRouter()
     // State for CollectionEditorModal
     const [editorCollection, setEditorCollection] = useState<UserList | null>(null)
+    // State for SystemRecommendationEditorModal
+    const [editorSystemRec, setEditorSystemRec] = useState<SystemRecommendation | null>(null)
     // Local state for instant drag-and-drop visual updates
     const [localRows, setLocalRows] = useState<DisplayRow[]>([])
+    // Track mousedown location for click-outside detection
+    const mouseDownTargetRef = useRef<EventTarget | null>(null)
+    const modalContainerRef = useRef<HTMLDivElement>(null)
 
     // Stores
     const getUserId = useSessionStore((state) => state.getUserId)
@@ -84,6 +92,14 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
     const authDeleteList = useAuthStore((state) => state.deleteList)
     const guestDeleteList = useGuestStore((state) => state.deleteList)
 
+    // Get system recommendations
+    const authSystemRecommendations = useAuthStore((state) => state.systemRecommendations)
+    const guestSystemRecommendations = useGuestStore((state) => state.systemRecommendations)
+    const authUpdateSystemRecommendation = useAuthStore((state) => state.updateSystemRecommendation)
+    const guestUpdateSystemRecommendation = useGuestStore(
+        (state) => state.updateSystemRecommendation
+    )
+
     const userId = getUserId()
     const sessionType = useSessionStore((state) => state.sessionType)
     const isGuest = sessionType === 'guest'
@@ -95,6 +111,10 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
     const userCollections = isGuest ? guestCollections : authCollections
     const updateList = isGuest ? guestUpdateList : authUpdateList
     const deleteList = isGuest ? guestDeleteList : authDeleteList
+    const systemRecommendations = isGuest ? guestSystemRecommendations : authSystemRecommendations
+    const updateSystemRecommendation = isGuest
+        ? guestUpdateSystemRecommendation
+        : authUpdateSystemRecommendation
 
     // Convert UserList to DisplayRow
     const userListToDisplayRow = useCallback(
@@ -107,6 +127,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
             genres: col.genres || [],
             genreLogic: col.genreLogic || 'OR',
             isSystemCollection: col.isSystemCollection || col.id.startsWith('system-'),
+            isSystemRecommendation: false,
             canDelete: col.canDelete,
             canEdit: col.canEdit,
             color: col.color,
@@ -122,29 +143,73 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         []
     )
 
+    // Convert SystemRecommendation to DisplayRow
+    const systemRecToDisplayRow = useCallback(
+        (rec: SystemRecommendation): DisplayRow => ({
+            id: rec.id,
+            name: `${rec.emoji || ''} ${rec.name}`.trim(),
+            order: rec.order,
+            enabled: rec.enabled,
+            mediaType: rec.mediaType || 'both',
+            genres: rec.genres || [],
+            genreLogic: 'OR',
+            isSystemCollection: true,
+            isSystemRecommendation: true,
+            canDelete: false, // System recommendations cannot be deleted
+            // Allow editing for trending and top-rated, but not recommended-for-you
+            canEdit: rec.id === 'trending' || rec.id === 'top-rated',
+            emoji: rec.emoji,
+            displayAsRow: true,
+        }),
+        []
+    )
+
     // Filter collections for this page type
     const displayRows = useMemo(() => {
-        let filtered: DisplayRow[]
+        let filteredCollections: DisplayRow[]
+        let filteredSystemRecs: DisplayRow[] = []
 
+        // Only show system recommendations on home page
         if (pageType === 'home') {
             // Home shows collections with mediaType: 'both' and displayAsRow: true
-            filtered = userCollections
+            filteredCollections = userCollections
                 .filter((c) => c.displayAsRow !== false && (c.mediaType === 'both' || !c.mediaType))
                 .map(userListToDisplayRow)
+
+            // Add system recommendations (Trending, Top Rated, Recommended For You)
+            filteredSystemRecs = systemRecommendations.map(systemRecToDisplayRow)
         } else if (pageType === 'movies') {
             // Movies page shows movie collections
-            filtered = userCollections
+            filteredCollections = userCollections
                 .filter((c) => c.displayAsRow !== false && c.mediaType === 'movie')
                 .map(userListToDisplayRow)
         } else {
             // TV page shows TV collections
-            filtered = userCollections
+            filteredCollections = userCollections
                 .filter((c) => c.displayAsRow !== false && c.mediaType === 'tv')
                 .map(userListToDisplayRow)
         }
 
-        return filtered.sort((a, b) => a.order - b.order)
-    }, [userCollections, pageType, userListToDisplayRow])
+        // Combine system recommendations (first) with user collections
+        // System recommendations have their own order, user collections start after
+        const maxSysOrder =
+            filteredSystemRecs.length > 0
+                ? Math.max(...filteredSystemRecs.map((r) => r.order)) + 1
+                : 0
+
+        const adjustedCollections = filteredCollections.map((c) => ({
+            ...c,
+            order: c.order + maxSysOrder + 100, // Offset collections to come after system recs
+        }))
+
+        return [...filteredSystemRecs, ...adjustedCollections].sort((a, b) => a.order - b.order)
+    }, [
+        userCollections,
+        pageType,
+        userListToDisplayRow,
+        systemRecommendations,
+        systemRecToDisplayRow,
+    ])
 
     // Drag and drop sensors with activation constraints for smoother dragging
     const sensors = useSensors(
@@ -180,6 +245,21 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         }
     }, [isOpen])
 
+    // Handle escape key to close modal
+    useEffect(() => {
+        if (!isOpen) return
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                e.preventDefault()
+                onClose()
+            }
+        }
+
+        document.addEventListener('keydown', handleKeyDown)
+        return () => document.removeEventListener('keydown', handleKeyDown)
+    }, [isOpen, onClose])
+
     // Handle drag end for reordering collections
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event
@@ -204,9 +284,13 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         setTimeout(() => {
             const persistInBackground = async () => {
                 try {
-                    const promises = newOrder.map((row, index) =>
-                        updateList(row.id, { order: index })
-                    )
+                    const promises = newOrder.map((row, index) => {
+                        // Route to correct update function based on row type
+                        if (row.isSystemRecommendation) {
+                            return updateSystemRecommendation(row.id, { order: index })
+                        }
+                        return updateList(row.id, { order: index })
+                    })
                     await Promise.all(promises)
                 } catch (error) {
                     console.error('Failed to save collection order:', error)
@@ -239,16 +323,26 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         [userId, deleteList, showToast]
     )
 
-    // Edit collection - opens CollectionEditorModal
+    // Edit collection - opens CollectionEditorModal or SystemRecommendationEditorModal
     const handleEdit = useCallback(
         (row: DisplayRow) => {
+            // Check if this is a system recommendation
+            if (row.isSystemRecommendation) {
+                // Look up the full system recommendation from the store
+                const fullRec = systemRecommendations.find((r) => r.id === row.id)
+                if (fullRec) {
+                    setEditorSystemRec(fullRec)
+                }
+                return
+            }
+
             // Look up the full collection from the store
             const fullCollection = userCollections.find((c) => c.id === row.id)
             if (fullCollection) {
                 setEditorCollection(fullCollection)
             }
         },
-        [userCollections]
+        [userCollections, systemRecommendations]
     )
 
     // Create new collection
@@ -313,11 +407,16 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
             // Persist in background
             setTimeout(() => {
                 newOrder.forEach((r, index) => {
-                    updateList(r.id, { order: index })
+                    // Route to correct update function based on row type
+                    if (r.isSystemRecommendation) {
+                        updateSystemRecommendation(r.id, { order: index })
+                    } else {
+                        updateList(r.id, { order: index })
+                    }
                 })
             }, 0)
         },
-        [userId, localRows, updateList]
+        [userId, localRows, updateList, updateSystemRecommendation]
     )
 
     // Move collection down (keyboard accessibility)
@@ -341,11 +440,16 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
             // Persist in background
             setTimeout(() => {
                 newOrder.forEach((r, index) => {
-                    updateList(r.id, { order: index })
+                    // Route to correct update function based on row type
+                    if (r.isSystemRecommendation) {
+                        updateSystemRecommendation(r.id, { order: index })
+                    } else {
+                        updateList(r.id, { order: index })
+                    }
                 })
             }, 0)
         },
-        [userId, localRows, updateList]
+        [userId, localRows, updateList, updateSystemRecommendation]
     )
 
     // Toggle collection visibility
@@ -354,13 +458,19 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
             if (!userId) return
 
             try {
-                await updateList(row.id, { enabled: !row.enabled })
+                if (row.isSystemRecommendation) {
+                    // Toggle system recommendation
+                    await updateSystemRecommendation(row.id, { enabled: !row.enabled })
+                } else {
+                    // Toggle user collection
+                    await updateList(row.id, { enabled: !row.enabled })
+                }
             } catch (error) {
                 console.error('Failed to toggle collection:', error)
                 showToast('error', 'Failed to update collection')
             }
         },
-        [userId, updateList, showToast]
+        [userId, updateList, updateSystemRecommendation, showToast]
     )
 
     // Page title and icon
@@ -370,22 +480,46 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
 
     if (!isOpen) return null
 
+    // Handle click-outside: close only if mousedown AND mouseup are both outside modal
+    const handleMouseDown = (e: React.MouseEvent) => {
+        mouseDownTargetRef.current = e.target
+    }
+
+    const handleMouseUp = (e: React.MouseEvent) => {
+        // Only close if both mousedown and mouseup happened outside the modal
+        if (
+            mouseDownTargetRef.current === e.target &&
+            modalContainerRef.current &&
+            !modalContainerRef.current.contains(e.target as Node)
+        ) {
+            onClose()
+        }
+        mouseDownTargetRef.current = null
+    }
+
     return (
         <>
-            {/* Backdrop */}
-            <div className="fixed inset-0 z-50 bg-black/70" onClick={onClose} />
-
-            {/* Modal */}
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Modal wrapper with click-outside detection */}
+            <div
+                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="row-editor-modal-title"
+                onMouseDown={handleMouseDown}
+                onMouseUp={handleMouseUp}
+            >
                 <div
+                    ref={modalContainerRef}
                     className="bg-[#141414] rounded-lg w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-xl"
-                    onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
                     <div className="flex items-center justify-between p-4 border-b border-gray-700">
                         <div className="flex items-center gap-3">
                             <PageIcon className="w-6 h-6 text-red-600" />
-                            <h2 className="text-xl font-bold text-white">
+                            <h2
+                                id="row-editor-modal-title"
+                                className="text-xl font-bold text-white"
+                            >
                                 Edit Displayed Collections
                             </h2>
                         </div>
@@ -485,6 +619,13 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
                     onClose={() => setEditorCollection(null)}
                 />
             )}
+
+            {/* System Recommendation Editor Modal */}
+            <SystemRecommendationEditorModal
+                recommendation={editorSystemRec}
+                isOpen={!!editorSystemRec}
+                onClose={() => setEditorSystemRec(null)}
+            />
         </>
     )
 }
