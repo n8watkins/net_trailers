@@ -14,6 +14,7 @@ import { useSessionStore } from '../../stores/sessionStore'
 import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
 import { SystemRecommendation, SystemRecommendationId } from '../../types/recommendations'
+import { Collection } from '../../types/collections'
 
 interface SystemRecommendationRowProps {
     /** The type of system recommendation */
@@ -64,6 +65,32 @@ export default function SystemRecommendationRow({
     const mediaType = recommendation?.mediaType || 'both'
     const genres = recommendation?.genres || []
     const emoji = recommendation?.emoji || ''
+
+    // Convert SystemRecommendation to Collection for Row's edit functionality
+    const collectionForEdit = useMemo((): Collection | null => {
+        if (!recommendation) return null
+        return {
+            id: recommendation.id,
+            name: recommendation.name || defaultName,
+            items: [],
+            order: recommendation.order,
+            displayAsRow: recommendation.enabled,
+            enabled: recommendation.enabled,
+            mediaType: recommendation.mediaType || 'both',
+            genres: recommendation.genres || [],
+            genreLogic: 'OR',
+            emoji: recommendation.emoji,
+            color: recommendation.color,
+            isSystemCollection: true,
+            isSpecialCollection: true, // Trending/Top Rated are special (no genre filtering required)
+            canEdit: true,
+            canDelete: false,
+            canGenerateMore: true,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            collectionType: 'tmdb-genre',
+        }
+    }, [recommendation, defaultName])
 
     // Create a signature for dependencies to trigger re-fetch
     const settingsSignature = useMemo(
@@ -182,7 +209,7 @@ export default function SystemRecommendationRow({
     // Build the title with emoji
     const title = emoji ? `${emoji} ${displayName}` : displayName
 
-    return <Row title={title} content={content} />
+    return <Row title={title} content={content} collection={collectionForEdit} />
 }
 
 interface WrapperRowProps {
