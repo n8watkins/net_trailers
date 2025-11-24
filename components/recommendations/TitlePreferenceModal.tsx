@@ -10,6 +10,7 @@
 
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import {
@@ -33,6 +34,7 @@ interface CastMember {
 }
 
 interface DirectorInfo {
+    id?: number
     name: string
     profile_path: string | null
 }
@@ -88,6 +90,7 @@ export default function TitlePreferenceModal({
     likedContent = [],
     prefetchedContent = null,
 }: TitlePreferenceModalProps) {
+    const router = useRouter()
     const [mounted, setMounted] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
@@ -569,9 +572,27 @@ export default function TitlePreferenceModal({
                                 {(() => {
                                     const person = currentContent.director || currentContent.creator
                                     if (!person || !person.profile_path) return null
+
+                                    // Extract person ID from TMDB data if available
+                                    const personId = (person as any).id
+
                                     return (
-                                        <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-                                            <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gray-800 shrink-0">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                if (personId) {
+                                                    router.push(`/person/${personId}`)
+                                                }
+                                            }}
+                                            disabled={!personId}
+                                            className={`flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 ${
+                                                personId
+                                                    ? 'cursor-pointer hover:bg-white/5 rounded-lg p-2 -mx-2 transition-colors'
+                                                    : 'cursor-default'
+                                            }`}
+                                        >
+                                            {/* Hide image on mobile */}
+                                            <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gray-800 shrink-0 hidden sm:block">
                                                 <Image
                                                     src={`https://image.tmdb.org/t/p/w185${person.profile_path}`}
                                                     alt={person.name}
@@ -585,11 +606,11 @@ export default function TitlePreferenceModal({
                                                         ? 'Director'
                                                         : 'Creator'}
                                                 </p>
-                                                <p className="text-sm sm:text-base lg:text-lg text-white font-medium">
+                                                <p className="text-sm sm:text-base lg:text-xl xl:text-2xl text-white font-medium hover:text-red-400 transition-colors">
                                                     {person.name}
                                                 </p>
                                             </div>
-                                        </div>
+                                        </button>
                                     )
                                 })()}
 
@@ -606,13 +627,18 @@ export default function TitlePreferenceModal({
                                         <p className="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wide mb-2 sm:mb-3">
                                             Cast
                                         </p>
-                                        <div className="flex justify-center gap-3 sm:gap-4 lg:gap-5 overflow-x-auto pb-2 px-2">
-                                            {currentContent.cast.slice(0, 5).map((actor) => (
-                                                <div
+                                        <div className="flex justify-center gap-3 sm:gap-4 lg:gap-6 pb-2 px-2">
+                                            {currentContent.cast.slice(0, 3).map((actor) => (
+                                                <button
                                                     key={actor.id}
-                                                    className="flex flex-col items-center shrink-0 w-16 sm:w-20 lg:w-24"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        router.push(`/person/${actor.id}`)
+                                                    }}
+                                                    className="flex flex-col items-center shrink-0 sm:w-20 lg:w-28 cursor-pointer hover:opacity-80 transition-opacity group"
                                                 >
-                                                    <div className="relative w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full overflow-hidden bg-gray-800 mb-1.5">
+                                                    {/* Hide image on mobile */}
+                                                    <div className="relative w-14 h-14 sm:w-16 sm:h-16 lg:w-24 lg:h-24 rounded-full overflow-hidden bg-gray-800 mb-1.5 hidden sm:block">
                                                         {actor.profile_path ? (
                                                             <Image
                                                                 src={`https://image.tmdb.org/t/p/w185${actor.profile_path}`}
@@ -628,10 +654,10 @@ export default function TitlePreferenceModal({
                                                             </div>
                                                         )}
                                                     </div>
-                                                    <span className="text-[11px] sm:text-xs lg:text-sm text-gray-400 text-center leading-tight line-clamp-2">
+                                                    <span className="text-xs sm:text-sm lg:text-base xl:text-lg text-gray-400 group-hover:text-red-400 text-center leading-tight line-clamp-2 transition-colors">
                                                         {actor.name}
                                                     </span>
-                                                </div>
+                                                </button>
                                             ))}
                                         </div>
                                     </div>
