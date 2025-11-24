@@ -35,6 +35,11 @@ interface CrewMember {
     profile_path: string | null
 }
 
+interface DirectorInfo {
+    name: string
+    profile_path: string | null
+}
+
 interface ContentWithCredits {
     id: number
     media_type: 'movie' | 'tv'
@@ -53,8 +58,8 @@ interface ContentWithCredits {
     first_air_date?: string
     // Extra credits fields
     cast?: CastMember[]
-    director?: string
-    creator?: string
+    director?: DirectorInfo | null
+    creator?: DirectorInfo | null
 }
 
 // Fetch details with credits for a single content item
@@ -79,18 +84,29 @@ async function fetchContentWithCredits(
             order: c.order,
         }))
 
-        // Extract director (movies) or creator (TV)
-        let director: string | undefined
-        let creator: string | undefined
+        // Extract director (movies) or creator (TV) with profile image
+        let director: DirectorInfo | null = null
+        let creator: DirectorInfo | null = null
 
         if (mediaType === 'movie') {
             const directorData = (data.credits?.crew || []).find(
                 (c: CrewMember) => c.job === 'Director'
             )
-            director = directorData?.name
+            if (directorData) {
+                director = {
+                    name: directorData.name,
+                    profile_path: directorData.profile_path,
+                }
+            }
         } else {
             // For TV, use created_by field
-            creator = data.created_by?.[0]?.name
+            const creatorData = data.created_by?.[0]
+            if (creatorData) {
+                creator = {
+                    name: creatorData.name,
+                    profile_path: creatorData.profile_path || null,
+                }
+            }
         }
 
         return {

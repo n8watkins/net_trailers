@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
         const data = await response.json()
 
         // Filter to only actors (known_for_department === 'Acting')
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
         const actors = data.results.filter(
             (person: any) => person.known_for_department === 'Acting'
         )

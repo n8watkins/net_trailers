@@ -1,6 +1,8 @@
 'use client'
 
 import React from 'react'
+import Link from 'next/link'
+import { ChevronRightIcon } from '@heroicons/react/24/outline'
 import { UpgradeAccountBanner } from '../auth/UpgradeAccountBanner'
 
 // Memoized Recommendations Controls Component - Only re-renders when props actually change
@@ -124,6 +126,25 @@ const RecommendationsControls = React.memo<RecommendationsControlsProps>(
                             </label>
                         </div>
                     </div>
+                </div>
+
+                {/* Manage Votes Section */}
+                <div>
+                    <h3 className="text-lg font-semibold text-white mb-4">Your Ratings</h3>
+                    <Link
+                        href="/votes"
+                        className="flex items-center justify-between bg-[#0a0a0a] rounded-lg border border-[#313131] p-4 hover:bg-[#1a1a1a] transition-colors group"
+                    >
+                        <div>
+                            <p className="text-sm font-medium text-[#e5e5e5] mb-1">
+                                Manage Voted Titles
+                            </p>
+                            <p className="text-sm text-[#b3b3b3]">
+                                View and edit your ratings on movies and TV shows
+                            </p>
+                        </div>
+                        <ChevronRightIcon className="w-5 h-5 text-gray-500 group-hover:text-white transition-colors" />
+                    </Link>
                 </div>
 
                 {/* Info Box */}

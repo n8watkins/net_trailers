@@ -16,6 +16,7 @@ import {
     mergeRecommendations,
     UserGenrePreference,
     UserContentPreference,
+    UserVotedContent,
 } from '@/utils/recommendations/genreEngine'
 import { getBatchSimilarContent } from '@/utils/tmdb/recommendations'
 import { Recommendation, RECOMMENDATION_CONSTRAINTS } from '@/types/recommendations'
@@ -44,7 +45,35 @@ async function handlePersonalizedRecommendations(
         // Get user preferences from preference customizer
         const genrePreferences = (body.genrePreferences || []) as UserGenrePreference[]
         const contentPreferences = (body.contentPreferences || []) as UserContentPreference[]
-        const votedContent = (body.votedContent || []) as VotedContent[]
+        const rawVotedContent = (body.votedContent || []) as VotedContent[]
+
+        // Build a map of content IDs to genre IDs from all user collections
+        // This allows us to extract genre signals from title votes
+        const contentGenreMap = new Map<string, number[]>()
+        const allContent = [
+            ...userData.likedMovies,
+            ...userData.defaultWatchlist,
+            ...userData.collectionItems,
+            ...userData.hiddenMovies,
+        ]
+        allContent.forEach((content) => {
+            if (content.genre_ids && content.genre_ids.length > 0) {
+                const key = `${content.id}-${content.media_type}`
+                contentGenreMap.set(key, content.genre_ids)
+            }
+        })
+
+        // Enrich votedContent with genre IDs for the recommendation engine
+        const votedContent: UserVotedContent[] = rawVotedContent.map((vote) => {
+            const key = `${vote.contentId}-${vote.mediaType}`
+            return {
+                contentId: vote.contentId,
+                mediaType: vote.mediaType,
+                vote: vote.vote,
+                votedAt: vote.votedAt,
+                genreIds: contentGenreMap.get(key) || undefined,
+            }
+        })
 
         // Extract content IDs that user marked as "not_for_me" to exclude
         const notForMeContentIds = votedContent
@@ -64,8 +93,13 @@ async function handlePersonalizedRecommendations(
             })
         }
 
-        // Build recommendation profile (includes user preferences)
-        const profile = buildRecommendationProfile(userData, genrePreferences, contentPreferences)
+        // Build recommendation profile (includes user preferences and title votes with genre signals)
+        const profile = buildRecommendationProfile(
+            userData,
+            genrePreferences,
+            contentPreferences,
+            votedContent
+        )
 
         // Get content IDs to exclude (already seen + "not for me" votes)
         const seenIds = getSeenContentIds(userData)

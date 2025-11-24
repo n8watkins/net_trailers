@@ -25,10 +25,26 @@ export interface UserContentPreference {
     shownAt: number
 }
 
+// Voted content type (from title quiz)
+export interface UserVotedContent {
+    contentId: number
+    mediaType: 'movie' | 'tv'
+    vote: 'love' | 'neutral' | 'not_for_me'
+    votedAt: number
+    genreIds?: number[] // Genre IDs from the content (populated when processing)
+}
+
 // Preference weights
 const PREFERENCE_WEIGHTS = {
     love: 5, // Strong boost for loved genres/content
     not_for_me: -5, // Strong penalty for disliked genres/content
+}
+
+// Vote weights for title quiz
+const VOTE_WEIGHTS = {
+    love: 4, // Strong boost (slightly less than explicit genre preference)
+    neutral: 0, // No effect
+    not_for_me: -3, // Moderate penalty (less than explicit genre preference)
 }
 
 // Legacy type alias for backwards compatibility
@@ -40,6 +56,7 @@ export type QuizGenrePreference = UserGenrePreference
  * @param userData - User's content collections
  * @param genrePreferences - Optional user genre preferences (from preference customizer)
  * @param contentPreferences - Optional user content preferences (from preference customizer)
+ * @param votedContent - Optional voted content with genre IDs (from title quiz)
  * @returns Genre preferences sorted by score
  */
 export function calculateGenrePreferences(
@@ -50,7 +67,8 @@ export function calculateGenrePreferences(
         hiddenMovies: Content[]
     },
     genrePreferences?: UserGenrePreference[],
-    contentPreferences?: UserContentPreference[]
+    contentPreferences?: UserContentPreference[],
+    votedContent?: UserVotedContent[]
 ): GenrePreference[] {
     const scores: Record<number, number> = {}
     const counts: Record<number, number> = {}
@@ -112,6 +130,21 @@ export function calculateGenrePreferences(
         })
     })
 
+    // Process voted content from title quiz (apply genre signals based on votes)
+    if (votedContent && votedContent.length > 0) {
+        votedContent.forEach((vote) => {
+            const weight = VOTE_WEIGHTS[vote.vote]
+            if (weight !== 0 && vote.genreIds) {
+                vote.genreIds.forEach((genreId) => {
+                    scores[genreId] = (scores[genreId] || 0) + weight
+                    if (vote.vote === 'love') {
+                        counts[genreId] = (counts[genreId] || 0) + 1
+                    }
+                })
+            }
+        })
+    }
+
     // Convert to GenrePreference array
     const preferences: GenrePreference[] = Object.entries(scores)
         .filter(([_, score]) => score > 0) // Only positive scores
@@ -149,6 +182,7 @@ function getGenreName(genreId: number): string {
  * @param userData - User's content collections
  * @param genrePreferences - Optional user genre preferences
  * @param contentPreferences - Optional user content preferences
+ * @param votedContent - Optional voted content with genre IDs (from title quiz)
  * @returns Recommendation profile
  */
 export function buildRecommendationProfile(
@@ -160,9 +194,15 @@ export function buildRecommendationProfile(
         hiddenMovies: Content[]
     },
     genrePreferences?: UserGenrePreference[],
-    contentPreferences?: UserContentPreference[]
+    contentPreferences?: UserContentPreference[],
+    votedContent?: UserVotedContent[]
 ): RecommendationProfile {
-    const topGenres = calculateGenrePreferences(userData, genrePreferences, contentPreferences)
+    const topGenres = calculateGenrePreferences(
+        userData,
+        genrePreferences,
+        contentPreferences,
+        votedContent
+    )
 
     // Calculate preferred rating (average of liked movies)
     const likedRatings = userData.likedMovies

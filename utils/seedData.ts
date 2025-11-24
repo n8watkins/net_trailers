@@ -1799,7 +1799,9 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
 }
 
 /**
- * Clears all user data (for testing)
+ * Clears seeded user data (for testing)
+ * Preserves default system collections (Action-Packed, Sci-Fi & Fantasy, Comedy)
+ * so users can still delete them manually if desired
  */
 export async function clearUserData(): Promise<void> {
     const { useAuthStore } = await import('../stores/authStore')
@@ -1809,26 +1811,56 @@ export async function clearUserData(): Promise<void> {
     const sessionType = useSessionStore.getState().sessionType
     const isGuest = sessionType === 'guest'
 
-    console.log('🧹 Clearing all user data...')
+    console.log('🧹 Clearing seeded user data (preserving default collections)...')
+
+    // IDs of default collections that should be preserved
+    const defaultCollectionIds = new Set(['system-action', 'system-scifi', 'system-comedy'])
 
     if (isGuest) {
-        // Clear guest data
-        const guestId = localStorage.getItem('nettrailer_guest_id')
+        // For guest users, preserve default collections
+        const currentCollections = useGuestStore.getState().userCreatedWatchlists
+        const preservedCollections = currentCollections.filter((c) =>
+            defaultCollectionIds.has(c.id)
+        )
+
+        // Clear items from preserved collections but keep the collections themselves
+        const cleanedCollections = preservedCollections.map((c) => ({
+            ...c,
+            items: [], // Clear items added during seeding
+        }))
+
+        useGuestStore.setState({
+            likedMovies: [],
+            hiddenMovies: [],
+            defaultWatchlist: [],
+            userCreatedWatchlists: cleanedCollections,
+        })
+
+        // Sync to localStorage
+        const guestId = useGuestStore.getState().guestId
         if (guestId) {
-            localStorage.removeItem(`nettrailer_guest_data_${guestId}`)
-            // Reload guest data
             await useGuestStore.getState().syncFromLocalStorage?.(guestId)
         }
     } else {
-        // For authenticated users, we'll just clear the local state
-        // The Firebase data will remain unless explicitly deleted
+        // For authenticated users, preserve default collections
+        const currentCollections = useAuthStore.getState().userCreatedWatchlists
+        const preservedCollections = currentCollections.filter((c) =>
+            defaultCollectionIds.has(c.id)
+        )
+
+        // Clear items from preserved collections but keep the collections themselves
+        const cleanedCollections = preservedCollections.map((c) => ({
+            ...c,
+            items: [], // Clear items added during seeding
+        }))
+
         useAuthStore.setState({
             likedMovies: [],
             hiddenMovies: [],
             defaultWatchlist: [],
-            userCreatedWatchlists: [],
+            userCreatedWatchlists: cleanedCollections,
         })
     }
 
-    console.log('✨ Data cleared!')
+    console.log('✨ Seeded data cleared! Default collections preserved.')
 }

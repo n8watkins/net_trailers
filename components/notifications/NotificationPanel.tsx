@@ -211,7 +211,7 @@ export default function NotificationPanel() {
             {/* Desktop: Traditional dropdown below bell icon */}
             <div
                 ref={panelRef}
-                className={`hidden sm:block absolute right-0 top-full z-50 mt-2 w-[400px] md:w-[520px] max-w-[520px] rounded-lg bg-[#0f0f0f]/95 backdrop-blur-sm border border-red-500/40 shadow-2xl shadow-red-500/20 transition-all duration-200 ease-out origin-top ${
+                className={`hidden sm:block absolute right-0 top-full z-50 mt-6 w-[400px] md:w-[520px] max-w-[520px] rounded-lg bg-[#0f0f0f]/95 backdrop-blur-sm border border-red-500/40 shadow-2xl shadow-red-500/20 transition-all duration-200 ease-out origin-top ${
                     isAnimating
                         ? 'opacity-100 translate-y-0 scale-100'
                         : 'opacity-0 -translate-y-2 scale-95'

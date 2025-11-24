@@ -45,10 +45,19 @@ const COLLECTIONS_TO_REMOVE = ['system-trending', 'system-top-rated']
 // Default system recommendations for users who don't have them
 const DEFAULT_SYSTEM_RECOMMENDATIONS = [
     {
+        id: 'recommended-for-you',
+        name: 'Recommended For You',
+        enabled: true,
+        order: 0,
+        mediaType: 'both',
+        genres: [],
+        emoji: '✨',
+    },
+    {
         id: 'trending',
         name: 'Trending',
         enabled: true,
-        order: 0,
+        order: 1,
         mediaType: 'both',
         genres: [],
         emoji: '🔥',
@@ -57,19 +66,10 @@ const DEFAULT_SYSTEM_RECOMMENDATIONS = [
         id: 'top-rated',
         name: 'Top Rated',
         enabled: true,
-        order: 1,
-        mediaType: 'both',
-        genres: [],
-        emoji: '⭐',
-    },
-    {
-        id: 'recommended-for-you',
-        name: 'Recommended For You',
-        enabled: true,
         order: 2,
         mediaType: 'both',
         genres: [],
-        emoji: '✨',
+        emoji: '⭐',
     },
 ]
 

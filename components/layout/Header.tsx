@@ -20,6 +20,7 @@ import {
     UsersIcon,
     SparklesIcon,
     ArrowPathIcon,
+    HandThumbUpIcon,
 } from '@heroicons/react/24/outline'
 import {
     UserIcon as UserIconSolid,
@@ -30,6 +31,7 @@ import {
     RectangleStackIcon as RectangleStackIconSolid,
     EyeSlashIcon as EyeSlashIconSolid,
     TrophyIcon as TrophyIconSolid,
+    HandThumbUpIcon as HandThumbUpIconSolid,
 } from '@heroicons/react/24/solid'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
@@ -96,6 +98,12 @@ const subNavItems: NavItem[] = [
         iconSolid: HeartIconSolid,
     },
     {
+        label: 'Voted Titles',
+        href: '/votes',
+        icon: HandThumbUpIcon,
+        iconSolid: HandThumbUpIconSolid,
+    },
+    {
         label: 'Hidden Content',
         href: '/hidden',
         icon: EyeSlashIcon,
@@ -147,6 +155,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
         '/rankings',
         '/collections',
         '/liked',
+        '/votes',
         '/hidden',
         '/notifications',
         '/settings',

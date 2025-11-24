@@ -125,7 +125,7 @@ function GenresDropdown() {
             </button>
 
             {isOpen && (
-                <div className="absolute top-full left-0 mt-2 w-[85vw] sm:w-72 md:w-80 max-w-[320px] bg-[#0f0f0f]/95 backdrop-blur-sm border border-red-500/40 rounded-lg shadow-xl shadow-red-500/20 z-[110] max-h-96 overflow-hidden animate-dropdown-enter">
+                <div className="absolute top-full left-0 mt-6 w-[85vw] sm:w-72 md:w-80 max-w-[320px] bg-[#0f0f0f]/95 backdrop-blur-sm border border-red-500/40 rounded-lg shadow-xl shadow-red-500/20 z-[110] max-h-96 overflow-hidden animate-dropdown-enter">
                     {/* Type Selector - Toggle style with checkboxes */}
                     <div className="flex border-b border-gray-700">
                         <button

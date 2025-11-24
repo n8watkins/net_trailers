@@ -439,8 +439,54 @@ export function createUserStore(options: CreateUserStoreOptions) {
                 color?: string
                 order?: number
                 displayAsRow?: boolean
+                genres?: string[]
+                genreLogic?: 'AND' | 'OR'
+                mediaType?: 'movie' | 'tv' | 'both'
             }
         ) => {
+            // Check if this is a system recommendation ID - route to updateSystemRecommendation
+            const systemRecIds = ['trending', 'top-rated', 'recommended-for-you']
+            if (systemRecIds.includes(listId)) {
+                const state = get()
+                if (adapter.isAsync) set({ syncStatus: 'syncing' })
+
+                // Map UserList updates to SystemRecommendation updates
+                const sysRecUpdates: Partial<Omit<SystemRecommendation, 'id'>> = {}
+                if (updates.name !== undefined) sysRecUpdates.name = updates.name
+                if (updates.emoji !== undefined) sysRecUpdates.emoji = updates.emoji
+                if (updates.color !== undefined) sysRecUpdates.color = updates.color
+                if (updates.order !== undefined) sysRecUpdates.order = updates.order
+                if (updates.displayAsRow !== undefined) sysRecUpdates.enabled = updates.displayAsRow
+                if (updates.genres !== undefined) sysRecUpdates.genres = updates.genres
+                if (updates.mediaType !== undefined) sysRecUpdates.mediaType = updates.mediaType
+
+                const newRecommendations = state.systemRecommendations.map((rec) =>
+                    rec.id === listId ? { ...rec, ...sysRecUpdates } : rec
+                )
+
+                const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
+                set({
+                    systemRecommendations: newRecommendations,
+                    lastActive: newLastActive,
+                })
+
+                try {
+                    await saveToStorage(get(), 'updateList-systemRec')
+                    if (adapter.isAsync) set({ syncStatus: 'synced' })
+                } catch (_error) {
+                    if (adapter.isAsync) set({ syncStatus: 'offline' })
+                }
+
+                logger.log(
+                    `✏️ [${trackingContext}] Updated system recommendation via updateList:`,
+                    {
+                        listId,
+                        updates,
+                    }
+                )
+                return
+            }
+
             const state = get()
             if (adapter.isAsync) set({ syncStatus: 'syncing' })
 

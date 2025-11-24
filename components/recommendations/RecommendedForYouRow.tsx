@@ -16,7 +16,7 @@ import { useSessionStore } from '../../stores/sessionStore'
 import { auth } from '../../firebase'
 import RecommendationInsightsModal from './RecommendationInsightsModal'
 import GenrePreferenceModal from './GenrePreferenceModal'
-import TitlePreferenceModal from './TitlePreferenceModal'
+import TitlePreferenceModal, { ContentWithCredits } from './TitlePreferenceModal'
 import { GenrePreference, VotedContent } from '../../types/shared'
 
 interface RecommendedForYouRowProps {
@@ -30,6 +30,12 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
     const [showInsightsModal, setShowInsightsModal] = useState(false)
     const [showGenreModal, setShowGenreModal] = useState(false)
     const [showTitleModal, setShowTitleModal] = useState(false)
+
+    // Prefetched content for title quiz
+    const [prefetchedTitleContent, setPrefetchedTitleContent] = useState<
+        ContentWithCredits[] | null
+    >(null)
+    const [isPrefetching, setIsPrefetching] = useState(false)
 
     const getUserId = useSessionStore((state) => state.getUserId)
     const sessionType = useSessionStore((state) => state.sessionType)
@@ -91,6 +97,80 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
         () => collectionItems.map((item) => item.id).join(','),
         [collectionItems]
     )
+
+    // Build list of IDs to exclude for title quiz (already voted or liked)
+    const titleQuizExcludeIds = useMemo(() => {
+        const ids = new Set<number>()
+        votedContent.forEach((v) => ids.add(v.contentId))
+        sessionData.likedMovies.forEach((c) => ids.add(c.id))
+        return Array.from(ids)
+    }, [votedContent, sessionData.likedMovies])
+
+    // Build priority content from watchlist for title quiz
+    const titleQuizPriorityContent = useMemo(() => {
+        const votedIds = new Set(votedContent.map((v) => v.contentId))
+        const likedIds = new Set(sessionData.likedMovies.map((c) => c.id))
+        return sessionData.defaultWatchlist
+            .filter((c) => !votedIds.has(c.id) && !likedIds.has(c.id))
+            .map((c) => ({
+                id: c.id,
+                mediaType: (c.media_type || 'movie') as 'movie' | 'tv',
+            }))
+    }, [sessionData.defaultWatchlist, votedContent, sessionData.likedMovies])
+
+    // Prefetch title quiz content when insights modal opens
+    useEffect(() => {
+        if (!showInsightsModal || isPrefetching || prefetchedTitleContent) return
+
+        const prefetchContent = async () => {
+            setIsPrefetching(true)
+            try {
+                const response = await fetch('/api/recommendations/preference-content', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        excludeIds: titleQuizExcludeIds,
+                        limit: 15,
+                        includeCredits: true,
+                        priorityContent: titleQuizPriorityContent,
+                    }),
+                })
+
+                if (!response.ok) throw new Error('Failed to prefetch content')
+
+                const data = await response.json()
+                if (data.success && data.content) {
+                    const contentItems = data.content as ContentWithCredits[]
+                    setPrefetchedTitleContent(contentItems)
+
+                    // Preload poster images for instant display
+                    contentItems.forEach((item) => {
+                        if (item.poster_path) {
+                            const img = new window.Image()
+                            img.src = `https://image.tmdb.org/t/p/w500${item.poster_path}`
+                        }
+                    })
+                }
+            } catch (error) {
+                console.error('Error prefetching title quiz content:', error)
+            } finally {
+                setIsPrefetching(false)
+            }
+        }
+
+        prefetchContent()
+    }, [
+        showInsightsModal,
+        isPrefetching,
+        prefetchedTitleContent,
+        titleQuizExcludeIds,
+        titleQuizPriorityContent,
+    ])
+
+    // Clear prefetched content when votes change (so it refetches next time)
+    useEffect(() => {
+        setPrefetchedTitleContent(null)
+    }, [votedContent.length])
 
     // Build content title map for InsightsModal to display voted content titles
     const contentTitleMap = useMemo(() => {
@@ -316,6 +396,7 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
                 existingVotes={votedContent}
                 watchlistContent={sessionData.defaultWatchlist}
                 likedContent={sessionData.likedMovies}
+                prefetchedContent={prefetchedTitleContent}
             />
         </>
     )
