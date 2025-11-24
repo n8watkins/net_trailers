@@ -70,26 +70,95 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             })
         }
 
-        // Sort by popularity and release date
-        filteredCredits.sort((a, b) => {
-            // Prioritize cast over crew
-            if (a.is_cast && !b.is_cast) return -1
-            if (!a.is_cast && b.is_cast) return 1
+        // Filter out very obscure content (likely unimportant appearances)
+        filteredCredits = filteredCredits.filter((item) => {
+            const voteCount = item.vote_count || 0
+            // Keep if it has at least 10 votes, or if it's very recent (within 1 year)
+            if (voteCount >= 10) return true
 
-            // Then by popularity
-            const popDiff = (b.popularity || 0) - (a.popularity || 0)
-            if (popDiff !== 0) return popDiff
+            const releaseDate =
+                item.media_type === 'movie'
+                    ? item.release_date || '1900-01-01'
+                    : item.first_air_date || '1900-01-01'
+            const yearsSinceRelease =
+                (Date.now() - new Date(releaseDate).getTime()) / (365 * 24 * 60 * 60 * 1000)
+            return yearsSinceRelease < 1 // Keep recent content even if low votes
+        })
 
-            // Then by release date (newest first)
-            const dateA =
-                a.media_type === 'movie'
-                    ? a.release_date || '1900-01-01'
-                    : a.first_air_date || '1900-01-01'
-            const dateB =
-                b.media_type === 'movie'
-                    ? b.release_date || '1900-01-01'
-                    : b.first_air_date || '1900-01-01'
-            return dateB.localeCompare(dateA)
+        // Calculate priority scores for intelligent sorting
+        const creditsWithScores = filteredCredits.map((item) => {
+            let score = 0
+
+            // 1. Cast vs Crew (huge difference)
+            if (item.is_cast) {
+                score += 1000
+            } else {
+                score += 100
+            }
+
+            // 2. Media Type Priority (Movies > TV Series > Talk Shows/Reality)
+            if (item.media_type === 'movie') {
+                score += 500 // Movies are typically more notable
+            } else if (item.media_type === 'tv') {
+                // Check for talk shows, news, reality TV (low-priority genres)
+                const genres = item.genre_ids || []
+                const isTalkShow = genres.includes(10767) // Talk
+                const isNews = genres.includes(10763) // News
+                const isReality = genres.includes(10764) // Reality
+
+                if (isTalkShow || isNews || isReality) {
+                    score -= 800 // Heavy penalty for talk shows/news/reality
+                } else {
+                    score += 200 // Regular TV series
+                }
+
+                // Episode count matters for TV (main cast vs guest appearances)
+                const episodeCount = item.episode_count || 0
+                if (episodeCount > 20) {
+                    score += 150 // Main cast member
+                } else if (episodeCount > 5) {
+                    score += 50 // Recurring role
+                } else if (episodeCount === 1) {
+                    score -= 50 // Single episode appearance (likely guest spot)
+                }
+            }
+
+            // 3. Quality Indicators
+            const voteAverage = item.vote_average || 0
+            const voteCount = item.vote_count || 0
+
+            // Vote average bonus (max +100 for 10/10 rating)
+            score += voteAverage * 10
+
+            // Vote count bonus (logarithmic scale - popular content scores higher)
+            if (voteCount > 0) {
+                score += Math.log10(voteCount) * 20
+            }
+
+            // 4. Popularity (smaller weight than before)
+            const popularity = item.popularity || 0
+            score += Math.min(popularity * 2, 100) // Cap at 100
+
+            // 5. Recency bonus (favor recent work, but not too heavily)
+            const releaseDate =
+                item.media_type === 'movie'
+                    ? item.release_date || '1900-01-01'
+                    : item.first_air_date || '1900-01-01'
+            const yearsSinceRelease =
+                (Date.now() - new Date(releaseDate).getTime()) / (365 * 24 * 60 * 60 * 1000)
+
+            if (yearsSinceRelease < 2) {
+                score += 50 // Recent (within 2 years)
+            } else if (yearsSinceRelease < 5) {
+                score += 25 // Recent-ish (within 5 years)
+            }
+
+            return { ...item, priority_score: score }
+        })
+
+        // Sort by priority score (highest first)
+        creditsWithScores.sort((a, b) => {
+            return b.priority_score - a.priority_score
         })
 
         return NextResponse.json(
@@ -97,8 +166,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                 id: Number(personId),
                 cast: data.cast || [],
                 crew: data.crew || [],
-                combined: filteredCredits,
-                total_results: filteredCredits.length,
+                combined: creditsWithScores,
+                total_results: creditsWithScores.length,
             },
             {
                 status: 200,

@@ -2,16 +2,18 @@
  * Genre Preference Modal
  *
  * Allows users to rate genre preferences (love/not for me) to improve recommendations.
- * Mobile-friendly with large touch targets.
+ * Features preview posters for each genre and swipe gestures for mobile.
+ * Auto-saves progress when modal is closed.
  */
 
 'use client'
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import Image from 'next/image'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { HeartIcon, HandThumbDownIcon, SparklesIcon } from '@heroicons/react/24/solid'
-import { UNIFIED_GENRES, UnifiedGenre } from '../../constants/unifiedGenres'
+import { UNIFIED_GENRES } from '../../constants/unifiedGenres'
 import { GenrePreference } from '../../types/shared'
 
 type PreferenceValue = 'love' | 'not_for_me'
@@ -39,6 +41,77 @@ const PREFERENCE_GENRES: string[] = [
     'crime',
 ]
 
+// Sample content for genre previews (TMDB IDs)
+const GENRE_PREVIEW_CONTENT: Record<string, { id: number; type: 'movie' | 'tv' }[]> = {
+    action: [
+        { id: 603, type: 'movie' }, // The Matrix
+        { id: 155, type: 'movie' }, // The Dark Knight
+        { id: 27205, type: 'movie' }, // Inception
+    ],
+    comedy: [
+        { id: 120467, type: 'movie' }, // The Grand Budapest Hotel
+        { id: 807, type: 'movie' }, // Se7en parody? Let's use Superbad
+        { id: 22538, type: 'movie' }, // Scott Pilgrim
+    ],
+    drama: [
+        { id: 238, type: 'movie' }, // The Godfather
+        { id: 424, type: 'movie' }, // Schindler's List
+        { id: 550, type: 'movie' }, // Fight Club
+    ],
+    horror: [
+        { id: 694, type: 'movie' }, // The Shining
+        { id: 493922, type: 'movie' }, // Hereditary
+        { id: 419430, type: 'movie' }, // Get Out
+    ],
+    romance: [
+        { id: 597, type: 'movie' }, // Titanic
+        { id: 332562, type: 'movie' }, // A Star Is Born
+        { id: 313369, type: 'movie' }, // La La Land
+    ],
+    scifi: [
+        { id: 157336, type: 'movie' }, // Interstellar
+        { id: 335984, type: 'movie' }, // Blade Runner 2049
+        { id: 264660, type: 'movie' }, // Ex Machina
+    ],
+    thriller: [
+        { id: 745, type: 'movie' }, // The Sixth Sense
+        { id: 274, type: 'movie' }, // The Silence of the Lambs
+        { id: 77, type: 'movie' }, // Memento
+    ],
+    fantasy: [
+        { id: 120, type: 'movie' }, // LOTR Fellowship
+        { id: 671, type: 'movie' }, // Harry Potter
+        { id: 411, type: 'movie' }, // Chronicles of Narnia
+    ],
+    animation: [
+        { id: 129, type: 'movie' }, // Spirited Away
+        { id: 862, type: 'movie' }, // Toy Story
+        { id: 508442, type: 'movie' }, // Soul
+    ],
+    documentary: [
+        { id: 831405, type: 'movie' }, // 13th (placeholder)
+        { id: 333339, type: 'movie' }, // Ready Player One (placeholder)
+        { id: 346364, type: 'movie' }, // It (placeholder)
+    ],
+    mystery: [
+        { id: 546554, type: 'movie' }, // Knives Out
+        { id: 567, type: 'movie' }, // Rear Window
+        { id: 641, type: 'movie' }, // Requiem for a Dream
+    ],
+    crime: [
+        { id: 680, type: 'movie' }, // Pulp Fiction
+        { id: 769, type: 'movie' }, // GoodFellas
+        { id: 497, type: 'movie' }, // The Green Mile
+    ],
+}
+
+interface PreviewContent {
+    id: number
+    poster_path: string | null
+    title?: string
+    name?: string
+}
+
 export default function GenrePreferenceModal({
     isOpen,
     onClose,
@@ -55,77 +128,87 @@ export default function GenrePreferenceModal({
         return initial
     })
     const [currentIndex, setCurrentIndex] = useState(0)
+    const [animatingVote, setAnimatingVote] = useState<PreferenceValue | null>(null)
+    const [previewContent, setPreviewContent] = useState<Record<string, PreviewContent[]>>({})
+    const [isLoadingPreviews, setIsLoadingPreviews] = useState(true)
+
+    // Swipe gesture state
+    const cardRef = useRef<HTMLDivElement>(null)
+    const [swipeOffset, setSwipeOffset] = useState({ x: 0, y: 0 })
+    const [isDragging, setIsDragging] = useState(false)
+    const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null)
+
+    // Swipe thresholds
+    const SWIPE_THRESHOLD = 100
+    const SWIPE_VELOCITY_THRESHOLD = 0.5
 
     const quizGenres = useMemo(
         () => UNIFIED_GENRES.filter((g) => PREFERENCE_GENRES.includes(g.id)),
         []
     )
 
-    const handlePreference = useCallback(
-        (genreId: string, value: PreferenceValue) => {
-            setPreferences((prev) => ({
-                ...prev,
-                [genreId]: value,
-            }))
-
-            // Auto-advance to next genre
-            if (currentIndex < quizGenres.length - 1) {
-                setTimeout(() => setCurrentIndex((prev) => prev + 1), 200)
-            }
-        },
-        [currentIndex, quizGenres.length]
-    )
-
-    // Check if preferences have changed from the initial state
-    const hasChanges = useMemo(() => {
-        const currentKeys = Object.keys(preferences)
-        const existingMap = new Map(existingPreferences.map((p) => [p.genreId, p.preference]))
-
-        // Check if any new preferences were added or changed
-        for (const [genreId, value] of Object.entries(preferences)) {
-            if (existingMap.get(genreId) !== value) {
-                return true
-            }
-        }
-
-        // Check if we have different number of preferences
-        if (currentKeys.length !== existingPreferences.length) {
-            return true
-        }
-
-        return false
-    }, [preferences, existingPreferences])
-
-    const handleSave = async () => {
-        // If nothing changed, just close without saving
-        if (!hasChanges) {
-            onClose()
-            return
-        }
-
-        setIsSaving(true)
-        try {
-            const prefsToSave: GenrePreference[] = Object.entries(preferences).map(
-                ([genreId, preference]) => ({
-                    genreId,
-                    preference,
-                    updatedAt: Date.now(),
-                })
-            )
-            await onSave(prefsToSave)
-            onClose()
-        } catch (error) {
-            console.error('Failed to save genre preferences:', error)
-        } finally {
-            setIsSaving(false)
-        }
-    }
-
     // Mount portal after client-side render
     useEffect(() => {
         setMounted(true)
         return () => setMounted(false)
     }, [])
+
+    // Fetch preview content for genres
+    useEffect(() => {
+        if (!isOpen) return
+
+        const fetchPreviews = async () => {
+            setIsLoadingPreviews(true)
+            const previews: Record<string, PreviewContent[]> = {}
+
+            // Fetch a few movies for each genre in parallel
+            const genrePromises = PREFERENCE_GENRES.map(async (genreId) => {
+                const contentIds = GENRE_PREVIEW_CONTENT[genreId] || []
+                const contentPromises = contentIds.slice(0, 3).map(async (item) => {
+                    try {
+                        const response = await fetch(`/api/movies/${item.id}`)
+                        if (response.ok) {
+                            return await response.json()
+                        }
+                    } catch {
+                        // Ignore errors for individual fetches
+                    }
+                    return null
+                })
+
+                const results = await Promise.all(contentPromises)
+                previews[genreId] = results.filter(Boolean)
+            })
+
+            await Promise.all(genrePromises)
+            setPreviewContent(previews)
+            setIsLoadingPreviews(false)
+        }
+
+        fetchPreviews()
+    }, [isOpen])
+
+    // Auto-save on close
+    const handleClose = useCallback(async () => {
+        if (Object.keys(preferences).length > 0 && !isSaving) {
+            setIsSaving(true)
+            try {
+                const prefsToSave: GenrePreference[] = Object.entries(preferences).map(
+                    ([genreId, preference]) => ({
+                        genreId,
+                        preference,
+                        updatedAt: Date.now(),
+                    })
+                )
+                await onSave(prefsToSave)
+            } catch (error) {
+                console.error('Failed to save genre preferences:', error)
+            } finally {
+                setIsSaving(false)
+            }
+        }
+        onClose()
+    }, [preferences, isSaving, onSave, onClose])
 
     // Handle escape key
     useEffect(() => {
@@ -134,17 +217,164 @@ export default function GenrePreferenceModal({
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
                 e.preventDefault()
-                onClose()
+                handleClose()
             }
         }
 
         document.addEventListener('keydown', handleKeyDown)
         return () => document.removeEventListener('keydown', handleKeyDown)
-    }, [isOpen, onClose])
+    }, [isOpen, handleClose])
 
     const currentGenre = quizGenres[currentIndex]
+    const currentPreviews = currentGenre ? previewContent[currentGenre.id] || [] : []
+
+    const handleVote = useCallback(
+        (vote: PreferenceValue) => {
+            if (!currentGenre) return
+
+            // Trigger animation
+            setAnimatingVote(vote)
+
+            // Update preferences
+            setPreferences((prev) => ({
+                ...prev,
+                [currentGenre.id]: vote,
+            }))
+
+            // Reset swipe state
+            setSwipeOffset({ x: 0, y: 0 })
+            setIsDragging(false)
+
+            // Auto-advance after animation or auto-save if last item
+            setTimeout(async () => {
+                setAnimatingVote(null)
+                if (currentIndex < quizGenres.length - 1) {
+                    setCurrentIndex((prev) => prev + 1)
+                } else {
+                    // Last item - auto-save and close
+                    const newPrefs = {
+                        ...preferences,
+                        [currentGenre.id]: vote,
+                    }
+                    setIsSaving(true)
+                    try {
+                        const prefsToSave: GenrePreference[] = Object.entries(newPrefs).map(
+                            ([genreId, pref]) => ({
+                                genreId,
+                                preference: pref,
+                                updatedAt: Date.now(),
+                            })
+                        )
+                        await onSave(prefsToSave)
+                        onClose()
+                    } catch (error) {
+                        console.error('Failed to save genre preferences:', error)
+                        setIsSaving(false)
+                    }
+                }
+            }, 400)
+        },
+        [currentGenre, currentIndex, quizGenres.length, preferences, onSave, onClose]
+    )
+
+    // Touch/swipe handlers
+    const handleTouchStart = useCallback(
+        (e: React.TouchEvent) => {
+            if (animatingVote) return
+            const touch = e.touches[0]
+            touchStartRef.current = {
+                x: touch.clientX,
+                y: touch.clientY,
+                time: Date.now(),
+            }
+            setIsDragging(true)
+        },
+        [animatingVote]
+    )
+
+    const handleTouchMove = useCallback(
+        (e: React.TouchEvent) => {
+            if (!touchStartRef.current || animatingVote) return
+            const touch = e.touches[0]
+            const deltaX = touch.clientX - touchStartRef.current.x
+            const deltaY = touch.clientY - touchStartRef.current.y
+
+            if (Math.abs(deltaY) > Math.abs(deltaX) * 1.5 && Math.abs(deltaX) < 30) {
+                return
+            }
+
+            setSwipeOffset({ x: deltaX, y: deltaY * 0.3 })
+        },
+        [animatingVote]
+    )
+
+    const handleTouchEnd = useCallback(() => {
+        if (!touchStartRef.current) return
+
+        const deltaX = swipeOffset.x
+        const deltaTime = Date.now() - touchStartRef.current.time
+        const velocity = Math.abs(deltaX) / deltaTime
+
+        const swipedRight =
+            deltaX > SWIPE_THRESHOLD || (deltaX > 50 && velocity > SWIPE_VELOCITY_THRESHOLD)
+        const swipedLeft =
+            deltaX < -SWIPE_THRESHOLD || (deltaX < -50 && velocity > SWIPE_VELOCITY_THRESHOLD)
+
+        if (swipedRight) {
+            handleVote('love')
+        } else if (swipedLeft) {
+            handleVote('not_for_me')
+        } else {
+            setSwipeOffset({ x: 0, y: 0 })
+        }
+
+        touchStartRef.current = null
+        setIsDragging(false)
+    }, [swipeOffset.x, handleVote])
+
+    // Mouse drag handlers
+    const handleMouseDown = useCallback(
+        (e: React.MouseEvent) => {
+            if (animatingVote) return
+            touchStartRef.current = {
+                x: e.clientX,
+                y: e.clientY,
+                time: Date.now(),
+            }
+            setIsDragging(true)
+        },
+        [animatingVote]
+    )
+
+    const handleMouseMove = useCallback(
+        (e: React.MouseEvent) => {
+            if (!touchStartRef.current || !isDragging || animatingVote) return
+            const deltaX = e.clientX - touchStartRef.current.x
+            const deltaY = e.clientY - touchStartRef.current.y
+            setSwipeOffset({ x: deltaX, y: deltaY * 0.3 })
+        },
+        [isDragging, animatingVote]
+    )
+
+    const handleMouseUp = useCallback(() => {
+        if (!touchStartRef.current) return
+        handleTouchEnd()
+    }, [handleTouchEnd])
+
+    const handleMouseLeave = useCallback(() => {
+        if (isDragging) {
+            setSwipeOffset({ x: 0, y: 0 })
+            touchStartRef.current = null
+            setIsDragging(false)
+        }
+    }, [isDragging])
+
+    // Visual feedback calculations
+    const swipeRotation = swipeOffset.x * 0.05
+    const swipeOpacity = Math.max(0.5, 1 - Math.abs(swipeOffset.x) / 300)
+    const swipeIndicator = swipeOffset.x > 50 ? 'love' : swipeOffset.x < -50 ? 'not_for_me' : null
+
     const progress = ((currentIndex + 1) / quizGenres.length) * 100
-    const answeredCount = Object.keys(preferences).length
 
     if (!isOpen || !mounted) return null
 
@@ -152,14 +382,14 @@ export default function GenrePreferenceModal({
         <div className="fixed inset-0 z-modal flex items-center justify-center p-2 sm:p-4">
             {/* Background overlay */}
             <div
-                className="fixed inset-0 transition-opacity bg-black/80 backdrop-blur-sm"
-                onClick={onClose}
+                className="fixed inset-0 transition-opacity bg-black/90 backdrop-blur-sm"
+                onClick={handleClose}
             />
 
             {/* Modal panel */}
-            <div className="relative w-full max-w-md overflow-hidden transition-all transform bg-[#0a0a0a] border border-gray-700/50 rounded-xl shadow-2xl">
+            <div className="relative w-full max-w-md overflow-hidden transition-all transform bg-[#0a0a0a] border border-gray-700/50 rounded-xl shadow-2xl max-h-[95vh] flex flex-col">
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 sm:p-5 border-b border-gray-700/50">
+                <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-700/50 shrink-0">
                     <div className="flex items-center gap-2 sm:gap-3">
                         <SparklesIcon className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400" />
                         <div>
@@ -172,7 +402,7 @@ export default function GenrePreferenceModal({
                         </div>
                     </div>
                     <button
-                        onClick={onClose}
+                        onClick={handleClose}
                         className="text-gray-400 hover:text-white transition-colors duration-200 p-2 rounded-full hover:bg-white/10 -mr-2"
                     >
                         <XMarkIcon className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -180,117 +410,215 @@ export default function GenrePreferenceModal({
                 </div>
 
                 {/* Content */}
-                <div className="p-4 sm:p-6">
+                <div className="flex-1 overflow-hidden p-3 sm:p-4">
                     {/* Progress bar */}
-                    <div className="h-1 bg-gray-800 rounded-full mb-4 sm:mb-6">
+                    <div className="h-1 bg-gray-800 rounded-full mb-4">
                         <div
                             className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-300"
                             style={{ width: `${progress}%` }}
                         />
                     </div>
 
-                    {/* Prompt */}
-                    <p className="text-gray-400 text-sm text-center mb-4 sm:mb-6">
-                        What kind of content do you enjoy?
-                    </p>
+                    {currentGenre && (
+                        <div
+                            ref={cardRef}
+                            className={`relative select-none ${
+                                isDragging ? '' : 'transition-all duration-300 ease-out'
+                            } ${
+                                animatingVote
+                                    ? animatingVote === 'love'
+                                        ? 'scale-90 opacity-0 translate-x-full'
+                                        : 'scale-90 opacity-0 -translate-x-full'
+                                    : ''
+                            }`}
+                            style={{
+                                transform:
+                                    !animatingVote && swipeOffset.x !== 0
+                                        ? `translateX(${Math.max(-100, Math.min(100, swipeOffset.x))}px) rotate(${swipeRotation * 0.5}deg)`
+                                        : undefined,
+                                opacity: !animatingVote ? swipeOpacity : undefined,
+                            }}
+                            onTouchStart={handleTouchStart}
+                            onTouchMove={handleTouchMove}
+                            onTouchEnd={handleTouchEnd}
+                            onMouseDown={handleMouseDown}
+                            onMouseMove={handleMouseMove}
+                            onMouseUp={handleMouseUp}
+                            onMouseLeave={handleMouseLeave}
+                        >
+                            {/* Swipe indicator overlays */}
+                            {swipeIndicator && (
+                                <div
+                                    className={`absolute inset-0 z-10 flex items-center justify-center pointer-events-none rounded-lg ${
+                                        swipeIndicator === 'love'
+                                            ? 'bg-green-500/20'
+                                            : 'bg-red-500/20'
+                                    }`}
+                                >
+                                    <div
+                                        className={`px-4 py-2 rounded-lg border-4 rotate-[-15deg] ${
+                                            swipeIndicator === 'love'
+                                                ? 'border-green-500 text-green-500'
+                                                : 'border-red-500 text-red-500'
+                                        }`}
+                                    >
+                                        <span className="text-2xl font-bold uppercase tracking-wider">
+                                            {swipeIndicator === 'love' ? 'LOVE' : 'NOPE'}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
 
-                    {/* Current genre card */}
-                    <div className="text-center mb-6 sm:mb-8">
-                        <div className="inline-block bg-gradient-to-br from-purple-900/50 to-pink-900/50 rounded-2xl px-8 sm:px-12 py-6 sm:py-8 border border-purple-500/30">
-                            <h3 className="text-2xl sm:text-3xl font-bold text-white mb-1">
-                                {currentGenre?.name}
-                            </h3>
+                            <div className="flex flex-col items-center text-center">
+                                {/* Genre name */}
+                                <h3 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+                                    {currentGenre.name}
+                                </h3>
+
+                                {/* Preview posters */}
+                                <div className="flex justify-center gap-2 mb-6">
+                                    {isLoadingPreviews ? (
+                                        <div className="flex gap-2">
+                                            {[1, 2, 3].map((i) => (
+                                                <div
+                                                    key={i}
+                                                    className="w-20 sm:w-24 aspect-[2/3] rounded-lg bg-gray-800 animate-pulse"
+                                                />
+                                            ))}
+                                        </div>
+                                    ) : currentPreviews.length > 0 ? (
+                                        currentPreviews.map((content, idx) => (
+                                            <div
+                                                key={content.id}
+                                                className={`relative w-20 sm:w-24 aspect-[2/3] rounded-lg overflow-hidden bg-gray-900 shadow-lg transition-transform ${
+                                                    idx === 1 ? 'scale-110 z-10' : 'opacity-80'
+                                                }`}
+                                            >
+                                                {content.poster_path ? (
+                                                    <Image
+                                                        src={`https://image.tmdb.org/t/p/w300${content.poster_path}`}
+                                                        alt={content.title || content.name || ''}
+                                                        fill
+                                                        className="object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
+                                                        <SparklesIcon className="w-8 h-8 text-gray-600" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="flex gap-2">
+                                            {[1, 2, 3].map((i) => (
+                                                <div
+                                                    key={i}
+                                                    className={`w-20 sm:w-24 aspect-[2/3] rounded-lg bg-gradient-to-br from-purple-900/50 to-pink-900/50 border border-purple-500/30 flex items-center justify-center ${
+                                                        i === 2 ? 'scale-110 z-10' : 'opacity-80'
+                                                    }`}
+                                                >
+                                                    <SparklesIcon className="w-8 h-8 text-purple-400/50" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Vote animation overlay */}
+                                {animatingVote && (
+                                    <div
+                                        className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 rounded-lg ${
+                                            animatingVote === 'love'
+                                                ? 'bg-pink-500/30'
+                                                : 'bg-red-500/30'
+                                        }`}
+                                    >
+                                        {animatingVote === 'love' ? (
+                                            <HeartIcon className="w-20 h-20 text-pink-500 animate-pulse" />
+                                        ) : (
+                                            <HandThumbDownIcon className="w-20 h-20 text-red-500 animate-pulse" />
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Vote buttons */}
+                                <div
+                                    className="flex justify-center gap-6 mt-4"
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    onTouchStart={(e) => e.stopPropagation()}
+                                >
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleVote('not_for_me')
+                                        }}
+                                        disabled={!!animatingVote}
+                                        className={`flex flex-col items-center gap-1 transition-all duration-200 active:scale-95 ${
+                                            preferences[currentGenre.id] === 'not_for_me'
+                                                ? 'scale-110'
+                                                : 'hover:scale-105'
+                                        }`}
+                                    >
+                                        <div
+                                            className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center border-2 transition-all ${
+                                                preferences[currentGenre.id] === 'not_for_me'
+                                                    ? 'bg-red-600 border-red-600'
+                                                    : 'bg-transparent border-gray-500 hover:border-red-500 hover:bg-red-500/10'
+                                            }`}
+                                        >
+                                            <HandThumbDownIcon
+                                                className={`w-6 h-6 sm:w-7 sm:h-7 ${
+                                                    preferences[currentGenre.id] === 'not_for_me'
+                                                        ? 'text-white'
+                                                        : 'text-gray-300'
+                                                }`}
+                                            />
+                                        </div>
+                                        <span className="text-[10px] text-gray-400 font-medium">
+                                            Not for me
+                                        </span>
+                                    </button>
+
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleVote('love')
+                                        }}
+                                        disabled={!!animatingVote}
+                                        className={`flex flex-col items-center gap-1 transition-all duration-200 active:scale-95 ${
+                                            preferences[currentGenre.id] === 'love'
+                                                ? 'scale-110'
+                                                : 'hover:scale-105'
+                                        }`}
+                                    >
+                                        <div
+                                            className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center border-2 transition-all ${
+                                                preferences[currentGenre.id] === 'love'
+                                                    ? 'bg-green-600 border-green-600'
+                                                    : 'bg-transparent border-gray-500 hover:border-green-500 hover:bg-green-500/10'
+                                            }`}
+                                        >
+                                            <HeartIcon
+                                                className={`w-6 h-6 sm:w-7 sm:h-7 ${
+                                                    preferences[currentGenre.id] === 'love'
+                                                        ? 'text-white'
+                                                        : 'text-gray-300'
+                                                }`}
+                                            />
+                                        </div>
+                                        <span className="text-[10px] text-gray-400 font-medium">
+                                            Love it
+                                        </span>
+                                    </button>
+                                </div>
+
+                                {/* Hint for mobile */}
+                                <p className="text-center text-[10px] text-gray-500 mt-4 sm:hidden">
+                                    Tap buttons or swipe to vote
+                                </p>
+                            </div>
                         </div>
-                    </div>
-
-                    {/* Preference buttons */}
-                    <div className="flex justify-center gap-4 sm:gap-6 mb-6">
-                        <button
-                            onClick={() => handlePreference(currentGenre.id, 'not_for_me')}
-                            className={`flex flex-col items-center gap-2 p-4 sm:p-5 rounded-xl transition-all duration-200 min-w-[100px] sm:min-w-[120px] active:scale-95 ${
-                                preferences[currentGenre?.id] === 'not_for_me'
-                                    ? 'bg-red-500/20 border-2 border-red-500 scale-105'
-                                    : 'bg-gray-800/50 border-2 border-transparent hover:bg-gray-700/50'
-                            }`}
-                        >
-                            <HandThumbDownIcon
-                                className={`w-8 h-8 sm:w-10 sm:h-10 ${
-                                    preferences[currentGenre?.id] === 'not_for_me'
-                                        ? 'text-red-500'
-                                        : 'text-gray-400'
-                                }`}
-                            />
-                            <span
-                                className={`text-xs sm:text-sm font-medium ${
-                                    preferences[currentGenre?.id] === 'not_for_me'
-                                        ? 'text-red-400'
-                                        : 'text-gray-400'
-                                }`}
-                            >
-                                Not for me
-                            </span>
-                        </button>
-
-                        <button
-                            onClick={() => handlePreference(currentGenre.id, 'love')}
-                            className={`flex flex-col items-center gap-2 p-4 sm:p-5 rounded-xl transition-all duration-200 min-w-[100px] sm:min-w-[120px] active:scale-95 ${
-                                preferences[currentGenre?.id] === 'love'
-                                    ? 'bg-pink-500/20 border-2 border-pink-500 scale-105'
-                                    : 'bg-gray-800/50 border-2 border-transparent hover:bg-gray-700/50'
-                            }`}
-                        >
-                            <HeartIcon
-                                className={`w-8 h-8 sm:w-10 sm:h-10 ${
-                                    preferences[currentGenre?.id] === 'love'
-                                        ? 'text-pink-500'
-                                        : 'text-gray-400'
-                                }`}
-                            />
-                            <span
-                                className={`text-xs sm:text-sm font-medium ${
-                                    preferences[currentGenre?.id] === 'love'
-                                        ? 'text-pink-400'
-                                        : 'text-gray-400'
-                                }`}
-                            >
-                                Love it
-                            </span>
-                        </button>
-                    </div>
-
-                    {/* Genre navigation dots */}
-                    <div className="flex justify-center gap-1.5 flex-wrap max-w-xs mx-auto">
-                        {quizGenres.map((genre, index) => (
-                            <button
-                                key={genre.id}
-                                onClick={() => setCurrentIndex(index)}
-                                className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full transition-all duration-200 ${
-                                    index === currentIndex
-                                        ? 'bg-purple-500 w-4 sm:w-5'
-                                        : preferences[genre.id]
-                                          ? preferences[genre.id] === 'love'
-                                              ? 'bg-pink-500/60'
-                                              : 'bg-red-500/60'
-                                          : 'bg-gray-700'
-                                }`}
-                            />
-                        ))}
-                    </div>
-                </div>
-
-                {/* Footer */}
-                <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gray-800/30 border-t border-gray-700/50">
-                    <button
-                        onClick={handleSave}
-                        disabled={isSaving}
-                        className="w-full px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-all duration-200 text-sm sm:text-base"
-                    >
-                        {isSaving
-                            ? 'Saving...'
-                            : answeredCount > 0
-                              ? `Done (${answeredCount} rated)`
-                              : 'Done'}
-                    </button>
+                    )}
                 </div>
             </div>
         </div>
