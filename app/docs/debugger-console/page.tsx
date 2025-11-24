@@ -1,10 +1,24 @@
+'use client'
+
+import { useState } from 'react'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 
 export default function DebugDocumentation() {
     // Only render in development mode
     if (process.env.NODE_ENV !== 'development') {
         redirect('/')
+    }
+
+    const [expandedCategories, setExpandedCategories] = useState({
+        firebase: true,
+        ui: true,
+        features: true,
+    })
+
+    const toggleCategory = (category: 'firebase' | 'ui' | 'features') => {
+        setExpandedCategories((prev) => ({ ...prev, [category]: !prev[category] }))
     }
 
     return (
@@ -60,169 +74,182 @@ export default function DebugDocumentation() {
                 </section>
 
                 {/* Firebase & Data Category */}
-                <section className="mb-12">
-                    <div className="flex items-center gap-3 mb-6">
+                <section className="mb-6">
+                    <button
+                        onClick={() => toggleCategory('firebase')}
+                        className="flex items-center gap-3 mb-4 w-full text-left group"
+                    >
                         <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center border border-orange-500/30">
                             <span className="text-orange-500 text-xl">🔥</span>
                         </div>
-                        <h2 className="text-2xl font-semibold text-orange-400">
+                        <h2 className="text-2xl font-semibold text-orange-400 group-hover:text-orange-300 transition-colors flex-1">
                             Firebase &amp; Data
                         </h2>
-                    </div>
+                        {expandedCategories.firebase ? (
+                            <ChevronDownIcon className="w-6 h-6 text-gray-500" />
+                        ) : (
+                            <ChevronRightIcon className="w-6 h-6 text-gray-500" />
+                        )}
+                    </button>
 
-                    <div className="grid gap-4">
-                        <DebugOption
-                            slug="tracker"
-                            name="Tracker"
-                            description="Shows a floating overlay tracking all Firebase operations (reads, writes, deletes) with detailed call stacks, timing, and data size."
-                            usage="Currently Active"
-                            color="orange"
-                        />
-                        <DebugOption
-                            slug="auth"
-                            name="Auth"
-                            description="Logs Firebase authentication flow events including sign-in, sign-out, token refresh, and user state changes."
-                            usage="Currently Active"
-                            color="blue"
-                        />
-                        <DebugOption
-                            slug="session"
-                            name="Session"
-                            description="Logs session management events including initialization, user switching, and session persistence to localStorage."
-                            usage="Currently Active"
-                            color="purple"
-                        />
-                        <DebugOption
-                            slug="guest"
-                            name="Guest"
-                            description="Logs guest mode operations including localStorage reads/writes and guest ID generation."
-                            usage="Currently Active"
-                            color="teal"
-                        />
-                        <DebugOption
-                            slug="cache"
-                            name="Cache"
-                            description="Logs content caching operations including cache hits, misses, invalidation, and cache size management."
-                            usage="Currently Active"
-                            color="cyan"
-                        />
-                        <DebugOption
-                            slug="watch-history"
-                            name="Watch History"
-                            description="Logs watch history tracking operations and Firestore synchronization events for user viewing data."
-                            usage="Currently Active"
-                            color="sky"
-                        />
-                    </div>
+                    {expandedCategories.firebase && (
+                        <div className="grid gap-4">
+                            <DebugOption
+                                slug="tracker"
+                                name="Tracker"
+                                description="Shows a floating overlay tracking all Firebase operations (reads, writes, deletes) with detailed call stacks, timing, and data size."
+                                color="orange"
+                            />
+                            <DebugOption
+                                slug="auth"
+                                name="Auth"
+                                description="Logs Firebase authentication flow events including sign-in, sign-out, token refresh, and user state changes."
+                                color="blue"
+                            />
+                            <DebugOption
+                                slug="session"
+                                name="Session"
+                                description="Logs session management events including initialization, user switching, and session persistence to localStorage."
+                                color="purple"
+                            />
+                            <DebugOption
+                                slug="guest"
+                                name="Guest"
+                                description="Logs guest mode operations including localStorage reads/writes and guest ID generation."
+                                color="teal"
+                            />
+                            <DebugOption
+                                slug="cache"
+                                name="Cache"
+                                description="Logs content caching operations including cache hits, misses, invalidation, and cache size management."
+                                color="cyan"
+                            />
+                            <DebugOption
+                                slug="watch-history"
+                                name="Watch History"
+                                description="Logs watch history tracking operations and Firestore synchronization events for user viewing data."
+                                color="sky"
+                            />
+                        </div>
+                    )}
                 </section>
 
                 {/* UI & Interaction Category */}
-                <section className="mb-12">
-                    <div className="flex items-center gap-3 mb-6">
+                <section className="mb-6">
+                    <button
+                        onClick={() => toggleCategory('ui')}
+                        className="flex items-center gap-3 mb-4 w-full text-left group"
+                    >
                         <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
                             <span className="text-blue-500 text-xl">💬</span>
                         </div>
-                        <h2 className="text-2xl font-semibold text-blue-400">
+                        <h2 className="text-2xl font-semibold text-blue-400 group-hover:text-blue-300 transition-colors flex-1">
                             UI &amp; Interaction
                         </h2>
-                    </div>
+                        {expandedCategories.ui ? (
+                            <ChevronDownIcon className="w-6 h-6 text-gray-500" />
+                        ) : (
+                            <ChevronRightIcon className="w-6 h-6 text-gray-500" />
+                        )}
+                    </button>
 
-                    <div className="grid gap-4">
-                        <DebugOption
-                            slug="toast"
-                            name="Toast"
-                            description="Logs toast notification lifecycle events including creation, display, and dismissal of all toast types."
-                            usage="Currently Active"
-                            color="green"
-                        />
-                        <DebugOption
-                            slug="api-results"
-                            name="API Results"
-                            description="Adds a button to view raw API response data for debugging TMDB API calls and data structure."
-                            usage="Currently Active"
-                            color="purple"
-                        />
-                        <DebugOption
-                            slug="vitals"
-                            name="Vitals"
-                            description="Displays a real-time Web Vitals HUD showing performance metrics (LCP, FID, CLS, TTFB, FCP, INP)."
-                            usage="Currently Active"
-                            color="emerald"
-                            keyboardShortcut="Alt+Shift+V"
-                        />
-                        <DebugOption
-                            slug="ui-logs"
-                            name="UI Logs"
-                            description="Logs UI interaction events including modal open/close, infinite scroll triggers, carousel navigation, and component mount/unmount."
-                            usage="Currently Active"
-                            color="indigo"
-                        />
-                        <DebugOption
-                            slug="api-server"
-                            name="API/Server"
-                            description="Logs API route execution, server-side operations, and internal API call timing and responses."
-                            usage="Currently Active"
-                            color="amber"
-                        />
-                        <DebugOption
-                            slug="next-server"
-                            name="Next.js Server"
-                            description="Controls Next.js development server request logging. Shows all incoming requests, route handlers, and static file serving."
-                            usage="Enabled by Default"
-                            color="slate"
-                            note="Requires dev server restart to take effect"
-                        />
-                        <DebugOption
-                            slug="banner"
-                            name="Banner"
-                            description="Logs banner carousel behavior including image loading, slide transitions, and auto-play timing."
-                            usage="Currently Active"
-                            color="rose"
-                        />
-                    </div>
+                    {expandedCategories.ui && (
+                        <div className="grid gap-4">
+                            <DebugOption
+                                slug="toast"
+                                name="Toast"
+                                description="Logs toast notification lifecycle events including creation, display, and dismissal of all toast types."
+                                color="green"
+                            />
+                            <DebugOption
+                                slug="api-results"
+                                name="API Results"
+                                description="Adds a button to view raw API response data for debugging TMDB API calls and data structure."
+                                color="purple"
+                            />
+                            <DebugOption
+                                slug="vitals"
+                                name="Vitals"
+                                description="Displays a real-time Web Vitals HUD showing performance metrics (LCP, FID, CLS, TTFB, FCP, INP)."
+                                color="emerald"
+                                keyboardShortcut="Alt+Shift+V"
+                            />
+                            <DebugOption
+                                slug="ui-logs"
+                                name="UI Logs"
+                                description="Logs UI interaction events including modal open/close, infinite scroll triggers, carousel navigation, and component mount/unmount."
+                                color="indigo"
+                            />
+                            <DebugOption
+                                slug="api-server"
+                                name="API/Server"
+                                description="Logs API route execution, server-side operations, and internal API call timing and responses."
+                                color="amber"
+                            />
+                            <DebugOption
+                                slug="next-server"
+                                name="Next.js Server"
+                                description="Controls Next.js development server request logging. Shows all incoming requests, route handlers, and static file serving."
+                                color="slate"
+                                note="Requires dev server restart to take effect"
+                            />
+                            <DebugOption
+                                slug="banner"
+                                name="Banner"
+                                description="Logs banner carousel behavior including image loading, slide transitions, and auto-play timing."
+                                color="rose"
+                            />
+                        </div>
+                    )}
                 </section>
 
                 {/* Features & Tools Category */}
-                <section className="mb-12">
-                    <div className="flex items-center gap-3 mb-6">
+                <section className="mb-6">
+                    <button
+                        onClick={() => toggleCategory('features')}
+                        className="flex items-center gap-3 mb-4 w-full text-left group"
+                    >
                         <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center border border-purple-500/30">
                             <span className="text-purple-500 text-xl">✨</span>
                         </div>
-                        <h2 className="text-2xl font-semibold text-purple-400">
+                        <h2 className="text-2xl font-semibold text-purple-400 group-hover:text-purple-300 transition-colors flex-1">
                             Features &amp; Tools
                         </h2>
-                    </div>
+                        {expandedCategories.features ? (
+                            <ChevronDownIcon className="w-6 h-6 text-gray-500" />
+                        ) : (
+                            <ChevronRightIcon className="w-6 h-6 text-gray-500" />
+                        )}
+                    </button>
 
-                    <div className="grid gap-4">
-                        <DebugOption
-                            slug="tracking"
-                            name="Tracking"
-                            description="Logs user interaction tracking events (views, likes, watchlist operations) and the 90-day retention system."
-                            usage="Currently Active"
-                            color="yellow"
-                        />
-                        <DebugOption
-                            slug="notifications"
-                            name="Notif"
-                            description="Logs notification system operations including Firestore listeners, real-time updates, and notification creation/dismissal."
-                            usage="Currently Active"
-                            color="pink"
-                        />
-                        <DebugOption
-                            slug="test-notifications"
-                            name="TestNotif"
-                            description="Adds a button to create test notifications for debugging the notification panel and toast system."
-                            usage="Currently Active"
-                            color="red"
-                        />
-                        <DebugOption
-                            slug="child-safety"
-                            name="Child Safety"
-                            description="Logs child safety mode filtering operations including TMDB rating checks and content filtering decisions."
-                            usage="Currently Active"
-                            color="violet"
-                        />
-                    </div>
+                    {expandedCategories.features && (
+                        <div className="grid gap-4">
+                            <DebugOption
+                                slug="tracking"
+                                name="Tracking"
+                                description="Logs user interaction tracking events (views, likes, watchlist operations) and the 90-day retention system."
+                                color="yellow"
+                            />
+                            <DebugOption
+                                slug="notifications"
+                                name="Notif"
+                                description="Logs notification system operations including Firestore listeners, real-time updates, and notification creation/dismissal."
+                                color="pink"
+                            />
+                            <DebugOption
+                                slug="test-notifications"
+                                name="TestNotif"
+                                description="Adds a button to create test notifications for debugging the notification panel and toast system."
+                                color="red"
+                            />
+                            <DebugOption
+                                slug="child-safety"
+                                name="Child Safety"
+                                description="Logs child safety mode filtering operations including TMDB rating checks and content filtering decisions."
+                                color="violet"
+                            />
+                        </div>
+                    )}
                 </section>
 
                 {/* Data Actions Section */}
@@ -357,7 +384,6 @@ function DebugOption({
     slug,
     name,
     description,
-    usage,
     color,
     keyboardShortcut,
     note,
@@ -365,46 +391,38 @@ function DebugOption({
     slug: string
     name: string
     description: string
-    usage: string
     color: string
     keyboardShortcut?: string
     note?: string
 }) {
     const colorClasses = {
-        orange: 'bg-orange-500/10 border-orange-500/30 text-orange-400',
-        blue: 'bg-blue-500/10 border-blue-500/30 text-blue-400',
-        purple: 'bg-purple-500/10 border-purple-500/30 text-purple-400',
-        teal: 'bg-teal-500/10 border-teal-500/30 text-teal-400',
-        cyan: 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400',
-        sky: 'bg-sky-500/10 border-sky-500/30 text-sky-400',
-        green: 'bg-green-500/10 border-green-500/30 text-green-400',
-        emerald: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400',
-        indigo: 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400',
-        amber: 'bg-amber-500/10 border-amber-500/30 text-amber-400',
-        slate: 'bg-slate-500/10 border-slate-500/30 text-slate-400',
-        rose: 'bg-rose-500/10 border-rose-500/30 text-rose-400',
-        yellow: 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400',
-        pink: 'bg-pink-500/10 border-pink-500/30 text-pink-400',
-        red: 'bg-red-500/10 border-red-500/30 text-red-400',
-        violet: 'bg-violet-500/10 border-violet-500/30 text-violet-400',
+        orange: 'border-l-orange-500',
+        blue: 'border-l-blue-500',
+        purple: 'border-l-purple-500',
+        teal: 'border-l-teal-500',
+        cyan: 'border-l-cyan-500',
+        sky: 'border-l-sky-500',
+        green: 'border-l-green-500',
+        emerald: 'border-l-emerald-500',
+        indigo: 'border-l-indigo-500',
+        amber: 'border-l-amber-500',
+        slate: 'border-l-slate-500',
+        rose: 'border-l-rose-500',
+        yellow: 'border-l-yellow-500',
+        pink: 'border-l-pink-500',
+        red: 'border-l-red-500',
+        violet: 'border-l-violet-500',
     }[color]
 
     return (
         <Link
             href={`/docs/debugger-console/details/${slug}`}
-            className="bg-gray-800/30 rounded-lg p-4 border border-gray-700 hover:border-gray-600 hover:bg-gray-800/50 transition-all cursor-pointer group block"
+            className={`bg-gray-800/30 rounded-lg p-4 border border-gray-700 border-l-4 ${colorClasses} hover:border-gray-600 hover:bg-gray-800/50 transition-all cursor-pointer group block`}
         >
-            <div className="flex items-start justify-between gap-4 mb-2">
-                <h3 className="text-lg font-semibold text-gray-100 group-hover:text-white transition-colors">
-                    {name} →
-                </h3>
-                <span
-                    className={`text-xs px-2 py-1 rounded border ${colorClasses} whitespace-nowrap`}
-                >
-                    {usage}
-                </span>
-            </div>
-            <p className="text-gray-400 text-sm mb-2 group-hover:text-gray-300 transition-colors">
+            <h3 className="text-lg font-semibold text-gray-100 group-hover:text-white transition-colors mb-2">
+                {name} <span className="text-gray-500 group-hover:text-gray-400">→</span>
+            </h3>
+            <p className="text-gray-400 text-sm group-hover:text-gray-300 transition-colors">
                 {description}
             </p>
             {keyboardShortcut && (
