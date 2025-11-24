@@ -19,7 +19,7 @@ function DeleteConfirmationModal({
     if (!deletingList) return null
 
     return (
-        <div className="fixed inset-0 z-[56000] flex items-center justify-center">
+        <div className="fixed inset-0 z-modal-builder flex items-center justify-center">
             <div
                 className="absolute inset-0 bg-black/80 backdrop-blur-sm"
                 onClick={cancelDeleteList}

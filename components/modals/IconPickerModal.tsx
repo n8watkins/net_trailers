@@ -77,7 +77,7 @@ function IconPickerModal({ isOpen, selectedIcon, onSelectIcon, onClose }: IconPi
     return (
         <div
             ref={dropdownRef}
-            className="absolute top-full left-0 mt-2 bg-[#141414] rounded-lg shadow-2xl border border-gray-600 z-[1500] w-[280px]"
+            className="absolute top-full left-0 mt-2 bg-[#141414] rounded-lg shadow-2xl border border-gray-600 z-picker w-[280px]"
         >
             {/* Category Tabs */}
             <div className="flex rounded-t-lg">

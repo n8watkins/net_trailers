@@ -731,7 +731,7 @@ export default function CollectionCreatorModal() {
     if (!collectionCreatorModal.isOpen) return null
 
     return (
-        <div className="fixed inset-0 z-[55000] flex items-center justify-center">
+        <div className="fixed inset-0 z-modal-nested flex items-center justify-center">
             {/* Backdrop */}
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} />
 
@@ -1211,13 +1211,13 @@ export default function CollectionCreatorModal() {
 
             {/* Genre Modal */}
             {showGenreModal && (
-                <div className="fixed inset-0 z-[100000] overflow-y-auto">
+                <div className="fixed inset-0 z-modal-editor-inner overflow-y-auto">
                     {/* Backdrop */}
-                    <div className="fixed inset-0 z-[99999] bg-black/80 backdrop-blur-sm pointer-events-none" />
+                    <div className="fixed inset-0 z-modal-editor bg-black/80 backdrop-blur-sm pointer-events-none" />
 
                     {/* Modal */}
                     <div
-                        className="relative min-h-screen flex items-center justify-center p-4 z-[100000]"
+                        className="relative min-h-screen flex items-center justify-center p-4 z-modal-editor-inner"
                         onClick={(e) => {
                             if (e.target === e.currentTarget) {
                                 setShowGenreModal(false)
@@ -1225,7 +1225,7 @@ export default function CollectionCreatorModal() {
                         }}
                     >
                         <div
-                            className="relative z-[100000] bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-lg shadow-2xl max-w-4xl w-full border border-gray-700"
+                            className="relative z-modal-editor-inner bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-lg shadow-2xl max-w-4xl w-full border border-gray-700"
                             onClick={(e) => e.stopPropagation()}
                         >
                             {/* Header */}

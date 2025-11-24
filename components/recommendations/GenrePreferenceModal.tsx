@@ -7,7 +7,8 @@
 
 'use client'
 
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import { HeartIcon, HandThumbDownIcon, SparklesIcon } from '@heroicons/react/24/solid'
 import { UNIFIED_GENRES, UnifiedGenre } from '../../constants/unifiedGenres'
@@ -44,6 +45,7 @@ export default function GenrePreferenceModal({
     onSave,
     existingPreferences = [],
 }: GenrePreferenceModalProps) {
+    const [mounted, setMounted] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
     const [preferences, setPreferences] = useState<Record<string, PreferenceValue>>(() => {
         const initial: Record<string, PreferenceValue> = {}
@@ -74,7 +76,33 @@ export default function GenrePreferenceModal({
         [currentIndex, quizGenres.length]
     )
 
+    // Check if preferences have changed from the initial state
+    const hasChanges = useMemo(() => {
+        const currentKeys = Object.keys(preferences)
+        const existingMap = new Map(existingPreferences.map((p) => [p.genreId, p.preference]))
+
+        // Check if any new preferences were added or changed
+        for (const [genreId, value] of Object.entries(preferences)) {
+            if (existingMap.get(genreId) !== value) {
+                return true
+            }
+        }
+
+        // Check if we have different number of preferences
+        if (currentKeys.length !== existingPreferences.length) {
+            return true
+        }
+
+        return false
+    }, [preferences, existingPreferences])
+
     const handleSave = async () => {
+        // If nothing changed, just close without saving
+        if (!hasChanges) {
+            onClose()
+            return
+        }
+
         setIsSaving(true)
         try {
             const prefsToSave: GenrePreference[] = Object.entries(preferences).map(
@@ -93,14 +121,35 @@ export default function GenrePreferenceModal({
         }
     }
 
+    // Mount portal after client-side render
+    useEffect(() => {
+        setMounted(true)
+        return () => setMounted(false)
+    }, [])
+
+    // Handle escape key
+    useEffect(() => {
+        if (!isOpen) return
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                e.preventDefault()
+                onClose()
+            }
+        }
+
+        document.addEventListener('keydown', handleKeyDown)
+        return () => document.removeEventListener('keydown', handleKeyDown)
+    }, [isOpen, onClose])
+
     const currentGenre = quizGenres[currentIndex]
     const progress = ((currentIndex + 1) / quizGenres.length) * 100
     const answeredCount = Object.keys(preferences).length
 
-    if (!isOpen) return null
+    if (!isOpen || !mounted) return null
 
-    return (
-        <div className="fixed inset-0 z-[50000] flex items-center justify-center p-2 sm:p-4">
+    const modalContent = (
+        <div className="fixed inset-0 z-modal flex items-center justify-center p-2 sm:p-4">
             {/* Background overlay */}
             <div
                 className="fixed inset-0 transition-opacity bg-black/80 backdrop-blur-sm"
@@ -231,27 +280,22 @@ export default function GenrePreferenceModal({
 
                 {/* Footer */}
                 <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gray-800/30 border-t border-gray-700/50">
-                    <div className="flex gap-3">
-                        <button
-                            onClick={onClose}
-                            className="flex-1 px-4 py-3 bg-gray-700 text-white rounded-lg font-medium transition-all duration-200 hover:bg-gray-600 text-sm sm:text-base"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={handleSave}
-                            disabled={isSaving || answeredCount === 0}
-                            className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all duration-200 text-sm sm:text-base ${
-                                answeredCount > 0
-                                    ? 'bg-purple-600 hover:bg-purple-500 text-white'
-                                    : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                            }`}
-                        >
-                            {isSaving ? 'Saving...' : `Save (${answeredCount})`}
-                        </button>
-                    </div>
+                    <button
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        className="w-full px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-all duration-200 text-sm sm:text-base"
+                    >
+                        {isSaving
+                            ? 'Saving...'
+                            : answeredCount > 0
+                              ? `Done (${answeredCount} rated)`
+                              : 'Done'}
+                    </button>
                 </div>
             </div>
         </div>
     )
+
+    // Render via portal to escape stacking contexts
+    return createPortal(modalContent, document.body)
 }

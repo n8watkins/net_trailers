@@ -93,7 +93,7 @@ export function CreatePollModal({ isOpen, onClose, onCreate }: CreatePollModalPr
     const canSubmit = question.trim() && validOptions.length >= 2
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+        <div className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
             <div className="relative bg-zinc-900 rounded-xl border border-zinc-800 shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-zinc-800">

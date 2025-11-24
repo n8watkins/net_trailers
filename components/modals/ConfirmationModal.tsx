@@ -75,7 +75,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     if (!isOpen) return null
 
     return (
-        <div className="fixed inset-0 z-[50000] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-modal flex items-center justify-center p-4">
             {/* Background overlay - no onClick to prevent closing */}
             <div className="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-75" />
 

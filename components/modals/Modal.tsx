@@ -35,6 +35,7 @@ import ModalVideoPlayer from './modal-sections/ModalVideoPlayer'
 import JsonDebugModal from './modal-sections/JsonDebugModal'
 import MoreLikeThisSection from '../modal/MoreLikeThisSection'
 import { useChildSafety } from '../../hooks/useChildSafety'
+import { Z_INDEX } from '../../constants/zIndex'
 
 function Modal() {
     // Debug settings
@@ -609,7 +610,7 @@ function Modal() {
             disableAutoFocus
             disableEnforceFocus
             sx={{
-                zIndex: 50000,
+                zIndex: Z_INDEX.MODAL_STANDARD,
                 '& .MuiBackdrop-root': {
                     backgroundColor: 'rgba(0, 0, 0, 0.9)',
                 },

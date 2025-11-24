@@ -108,6 +108,39 @@ module.exports = {
                 '3xl': '10px 10px 60px -15px rgba(0, 0, 0,.9)',
                 extra: '0px 25px 50px -12px rgba(0, 0, 0, 0.25)',
             },
+            // Custom z-index scale for consistent layering
+            // See docs/Z_INDEX_HIERARCHY.md for full documentation
+            zIndex: {
+                // Dropdowns & overlays
+                dropdown: '110',
+                'mobile-backdrop': '105',
+                // Fixed navigation
+                header: '200',
+                // Above header elements
+                'dropdown-above': '250',
+                // Inline pickers
+                picker: '1500',
+                // Debug tools (dev only)
+                debug: '9999',
+                // Auth modal
+                auth: '9999',
+                // Settings modal
+                settings: '10000',
+                // Standard modals
+                modal: '50000',
+                // Nested/list selection modals
+                'modal-nested': '55000',
+                // Collection builder
+                'modal-builder': '56000',
+                // Delete confirmation
+                'modal-delete': '60000',
+                // Editor modal layers
+                'modal-editor-bg': '99998',
+                'modal-editor': '99999',
+                'modal-editor-inner': '100000',
+                // Top layer (toast, critical)
+                toast: '100001',
+            },
         },
     },
     plugins: [

@@ -236,7 +236,7 @@ export default function ShareModal({
     const shareUrl = shareLink ? `${window.location.origin}/shared/${shareLink.id}` : ''
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-modal flex items-center justify-center">
             {/* Backdrop */}
             <div className="absolute inset-0 bg-black/70" onClick={onClose} />
 
