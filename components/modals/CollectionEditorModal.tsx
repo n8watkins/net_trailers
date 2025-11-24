@@ -323,6 +323,19 @@ export default function CollectionEditorModal({
             showError('Add at least one genre', 'Select genres before enabling infinite content.')
             return
         }
+
+        // If disabling infinite content and collection has no manual items, also disable display
+        const actualContent = content.filter((item) => !removedIds.has(item.id))
+        if (enableInfiniteContent && actualContent.length === 0) {
+            setEnableInfiniteContent(false)
+            setDisplayAsRow(false)
+            showError(
+                'Display disabled',
+                'This collection has no content. Add items or re-enable infinite content to display it.'
+            )
+            return
+        }
+
         setEnableInfiniteContent((prev) => !prev)
     }
 
