@@ -10,9 +10,8 @@ import {
     FilmIcon,
     TvIcon,
     TrashIcon,
-    ClipboardDocumentIcon,
-    CheckIcon,
 } from '@heroicons/react/24/outline'
+import { DeleteConfirmationModal } from './DeleteConfirmationModal'
 import { UserList } from '../../types/collections'
 import { Content, getTitle, getYear } from '../../typings'
 import useUserData from '../../hooks/useUserData'
@@ -70,8 +69,6 @@ export default function CollectionEditorModal({
     const [showInfiniteTooltip, setShowInfiniteTooltip] = useState(false)
     const [showGenreModal, setShowGenreModal] = useState(false)
     const [showDeleteModal, setShowDeleteModal] = useState(false)
-    const [deleteConfirmation, setDeleteConfirmation] = useState('')
-    const [copied, setCopied] = useState(false)
     const [searchFilter, setSearchFilter] = useState('')
     const [_isSaving, _setIsSaving] = useState(false)
     const [mounted, setMounted] = useState(false)
@@ -157,12 +154,39 @@ export default function CollectionEditorModal({
         }
     }, [isMovieEnabled, isTVEnabled, displayAsRow])
 
+    // Handle escape key to close modal (respecting nested modals)
+    useEffect(() => {
+        if (!isOpen) return
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                e.preventDefault()
+                // Close nested modals first, then main modal
+                if (showDeleteModal) {
+                    setShowDeleteModal(false)
+                } else if (showGenreModal) {
+                    setShowGenreModal(false)
+                } else {
+                    onClose()
+                }
+            }
+        }
+
+        document.addEventListener('keydown', handleKeyDown)
+        return () => document.removeEventListener('keydown', handleKeyDown)
+    }, [isOpen, showDeleteModal, showGenreModal, onClose])
+
     if (!isOpen || !collection) return null
 
     // Determine editing capabilities based on collection properties
+    // Default genre collections (Action-Packed, Comedy, etc.) have canEdit=true AND canDelete=true
+    // These should be treated as fully editable, just like user-created collections
     const isSystemCollection = collection.isSystemCollection || collection.id.startsWith('system-')
-    const canEditFull = !isSystemCollection // User-created collections get full editing
-    const canEditLimited = isSystemCollection && collection.canEdit // Editable system collections (Action, Comedy, etc.)
+    const isFullyEditableSystemCollection =
+        isSystemCollection && collection.canEdit === true && collection.canDelete === true
+    const canEditFull = !isSystemCollection || isFullyEditableSystemCollection // User-created OR fully editable system collections
+    const canEditLimited =
+        isSystemCollection && collection.canEdit && !isFullyEditableSystemCollection // Partial edit (currently unused)
     const canOnlyToggle = isSystemCollection && !collection.canEdit // Non-editable system collections (Trending, Top Rated)
 
     const resetModalState = () => {
@@ -195,34 +219,21 @@ export default function CollectionEditorModal({
         resetModalState()
     }
 
-    const handleCopyTitle = async () => {
-        if (!collection) return
-        await navigator.clipboard.writeText(collection.name)
-        setCopied(true)
-        setTimeout(() => setCopied(false), 2000)
-    }
-
-    const handleCloseDeleteModal = () => {
-        setShowDeleteModal(false)
-        setDeleteConfirmation('')
-        setCopied(false)
-    }
-
-    const isDeleteEnabled = collection ? deleteConfirmation === collection.name : false
-
     const handleDeleteConfirm = async () => {
-        if (!collection || !isDeleteEnabled) return
+        if (!collection) return
 
         try {
             // All collections are now unified - use deleteList for all
             await deleteList(collection.id)
             showSuccess('Collection deleted!', `"${collection.name}" has been removed`)
-            handleCloseDeleteModal()
+            setShowDeleteModal(false)
             handleClose()
         } catch (error) {
             console.error('Delete collection error:', error)
             const description = error instanceof Error ? error.message : undefined
             showError('Failed to delete collection', description)
+            // Re-throw so DeleteConfirmationModal knows it failed and stays open
+            throw error
         }
     }
 
@@ -278,8 +289,8 @@ export default function CollectionEditorModal({
             // Update collection metadata - all collections now unified
             await updateList(collection.id, updates)
 
-            // Handle removed items (only for non-system collections)
-            if (canEditFull && !isSystemCollection) {
+            // Handle removed items (for all collections with full edit capability)
+            if (canEditFull) {
                 for (const removedId of removedIds) {
                     await removeFromList(collection.id, removedId)
                 }
@@ -356,13 +367,13 @@ export default function CollectionEditorModal({
     const selectedGenreNames = selectedGenres.map((id) => GENRE_LOOKUP.get(id) || `Genre ${id}`)
 
     const modalContent = (
-        <div className="fixed inset-0 z-[99999] overflow-y-auto">
+        <div className="fixed inset-0 z-modal-editor overflow-y-auto">
             {/* Backdrop */}
-            <div className="fixed inset-0 z-[99998] bg-black/80 backdrop-blur-sm pointer-events-none" />
+            <div className="fixed inset-0 z-modal-editor-bg bg-black/80 backdrop-blur-sm pointer-events-none" />
 
             {/* Modal */}
             <div
-                className="relative min-h-screen flex items-center justify-center p-4 z-[99999]"
+                className="relative min-h-screen flex items-center justify-center p-4 z-modal-editor"
                 onMouseDown={(e) => {
                     if (e.target === e.currentTarget) {
                         mouseDownTargetRef.current = e.target
@@ -376,7 +387,7 @@ export default function CollectionEditorModal({
                 }}
             >
                 <div
-                    className={`relative z-[99999] bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-lg shadow-2xl w-full border border-gray-700 ${
+                    className={`relative z-modal-editor bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-lg shadow-2xl w-full border border-gray-700 ${
                         isSystemCollection ? 'max-w-xl' : 'max-w-6xl'
                     }`}
                     onClick={(e) => e.stopPropagation()}
@@ -870,13 +881,13 @@ export default function CollectionEditorModal({
 
     // Genre Modal
     const genreModal = showGenreModal && (
-        <div className="fixed inset-0 z-[100000] overflow-y-auto">
+        <div className="fixed inset-0 z-modal-editor-inner overflow-y-auto">
             {/* Backdrop */}
-            <div className="fixed inset-0 z-[99999] bg-black/80 backdrop-blur-sm pointer-events-none" />
+            <div className="fixed inset-0 z-modal-editor bg-black/80 backdrop-blur-sm pointer-events-none" />
 
             {/* Modal */}
             <div
-                className="relative min-h-screen flex items-center justify-center p-4 z-[100000]"
+                className="relative min-h-screen flex items-center justify-center p-4 z-modal-editor-inner"
                 onMouseDown={(e) => {
                     if (e.target === e.currentTarget) {
                         genreModalMouseDownTargetRef.current = e.target
@@ -893,7 +904,7 @@ export default function CollectionEditorModal({
                 }}
             >
                 <div
-                    className="relative z-[100000] bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-lg shadow-2xl max-w-4xl w-full border border-gray-700"
+                    className="relative z-modal-editor-inner bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460] rounded-lg shadow-2xl max-w-4xl w-full border border-gray-700"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
@@ -956,91 +967,22 @@ export default function CollectionEditorModal({
         </div>
     )
 
-    // Delete Confirmation Modal
-    const deleteModal = showDeleteModal && (
-        <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100001] flex items-center justify-center p-4"
-            onClick={handleCloseDeleteModal}
-        >
-            <div
-                className="bg-gray-800 border border-gray-600 rounded-xl p-6 max-w-md w-full shadow-2xl"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <h3 className="text-xl font-bold text-white mb-4">Delete Collection?</h3>
-
-                {/* Collection Title Display */}
-                <div className="mb-4">
-                    <p className="text-sm text-gray-400 mb-2">Collection to delete:</p>
-                    <div className="flex items-center gap-2 bg-gray-900 border border-gray-700 rounded-lg p-3">
-                        {collection?.emoji && <span className="text-xl">{collection.emoji}</span>}
-                        <span className="text-white font-semibold flex-1 truncate">
-                            {collection?.name}
-                        </span>
-                        <button
-                            onClick={handleCopyTitle}
-                            className="p-1.5 hover:bg-gray-700 rounded transition-colors shrink-0"
-                            title="Copy title"
-                        >
-                            {copied ? (
-                                <CheckIcon className="w-4 h-4 text-green-400" />
-                            ) : (
-                                <ClipboardDocumentIcon className="w-4 h-4 text-gray-400" />
-                            )}
-                        </button>
-                    </div>
-                </div>
-
-                <p className="text-gray-300 mb-4 text-sm">
-                    {isSystemCollection
-                        ? 'This is a system collection. You can restore it later with "Reset Defaults".'
-                        : 'This action cannot be undone. This will permanently delete your collection.'}
-                </p>
-
-                {/* Confirmation Input */}
-                <div className="mb-6">
-                    <label className="block text-sm text-gray-400 mb-2">
-                        Type <span className="text-white font-semibold">{collection?.name}</span> to
-                        confirm:
-                    </label>
-                    <input
-                        type="text"
-                        value={deleteConfirmation}
-                        onChange={(e) => setDeleteConfirmation(e.target.value)}
-                        placeholder="Enter collection name"
-                        className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                    />
-                </div>
-
-                <div className="flex gap-3">
-                    <button
-                        onClick={handleDeleteConfirm}
-                        disabled={!isDeleteEnabled}
-                        className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-                            isDeleteEnabled
-                                ? 'bg-red-600 hover:bg-red-700 text-white'
-                                : 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                        }`}
-                    >
-                        Delete
-                    </button>
-                    <button
-                        onClick={handleCloseDeleteModal}
-                        className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
-                    >
-                        Cancel
-                    </button>
-                </div>
-            </div>
-        </div>
-    )
-
     // Render via portal to document.body to escape any parent stacking contexts
     if (!mounted || typeof window === 'undefined') return null
     return (
         <>
             {createPortal(modalContent, document.body)}
             {showGenreModal && createPortal(genreModal, document.body)}
-            {showDeleteModal && createPortal(deleteModal, document.body)}
+            {/* Delete Confirmation Modal - uses its own portal */}
+            <DeleteConfirmationModal
+                isOpen={showDeleteModal}
+                onClose={() => setShowDeleteModal(false)}
+                onConfirm={handleDeleteConfirm}
+                itemName={collection?.name || ''}
+                emoji={collection?.emoji}
+                isSystemItem={isSystemCollection}
+                zIndexLayer="MODAL_EDITOR_DELETE"
+            />
         </>
     )
 }
