@@ -15,6 +15,7 @@ export type SystemRecommendationId =
     | 'top-rated'
     | 'recommended-for-you'
     | 'trending-actors'
+    | 'trending-directors'
 
 /**
  * System Recommendation Settings
@@ -87,6 +88,15 @@ export const DEFAULT_SYSTEM_RECOMMENDATIONS: SystemRecommendation[] = [
         mediaType: 'both',
         genres: [],
         emoji: '🎭',
+    },
+    {
+        id: 'trending-directors',
+        name: 'Trending Directors',
+        enabled: true,
+        order: 4,
+        mediaType: 'both',
+        genres: [],
+        emoji: '🎬',
     },
 ]
 

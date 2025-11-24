@@ -1,20 +1,20 @@
 'use client'
 
-import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 import { TrendingPerson } from '../../typings'
-import ActorCard from './ActorCard'
+import DirectorCard from './DirectorCard'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
 import { SystemRecommendationId } from '../../types/recommendations'
 
-interface TrendingActorsRowProps {
+interface TrendingDirectorsRowProps {
     onLoadComplete?: () => void
 }
 
-export default function TrendingActorsRow({ onLoadComplete }: TrendingActorsRowProps) {
-    const [actors, setActors] = useState<TrendingPerson[]>([])
+export default function TrendingDirectorsRow({ onLoadComplete }: TrendingDirectorsRowProps) {
+    const [directors, setDirectors] = useState<TrendingPerson[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [isMoved, setIsMoved] = useState(false)
@@ -29,48 +29,53 @@ export default function TrendingActorsRow({ onLoadComplete }: TrendingActorsRowP
         sessionType === 'authenticated' ? authSystemRecommendations : guestSystemRecommendations
 
     // Find this recommendation's settings
-    const recommendationId: SystemRecommendationId = 'trending-actors'
+    const recommendationId: SystemRecommendationId = 'trending-directors'
     const recommendation = useMemo(() => {
         return systemRecommendations.find((r) => r.id === recommendationId)
     }, [systemRecommendations])
 
     // Get settings with defaults
     const isEnabled = recommendation?.enabled ?? true
-    const displayName = recommendation?.name || 'Trending Actors'
-    const emoji = recommendation?.emoji || '🎭'
+    const displayName = recommendation?.name || 'Trending Directors'
+    const emoji = recommendation?.emoji || '🎬'
 
-    // Fetch trending actors
-    const fetchActors = useCallback(async () => {
-        if (!isEnabled) {
-            setActors([])
-            setIsLoading(false)
-            return
-        }
-
-        setIsLoading(true)
-        setError(null)
-
-        try {
-            const response = await fetch('/api/people/trending?time_window=week')
-            if (!response.ok) {
-                throw new Error(`Failed to fetch trending actors: ${response.status}`)
+    // Fetch trending directors
+    useEffect(() => {
+        const fetchDirectors = async () => {
+            if (!isEnabled) {
+                setDirectors([])
+                setIsLoading(false)
+                return
             }
 
-            const data = await response.json()
-            setActors(data.results || [])
-        } catch (err) {
-            console.error('Error fetching trending actors:', err)
-            setError('Failed to load trending actors')
-            setActors([])
-        } finally {
-            setIsLoading(false)
-        }
-    }, [isEnabled])
+            setIsLoading(true)
+            setError(null)
 
-    // Fetch actors on mount
-    useEffect(() => {
-        fetchActors()
-    }, [fetchActors])
+            try {
+                const response = await fetch('/api/people/trending?time_window=week')
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch trending people: ${response.status}`)
+                }
+
+                const data = await response.json()
+
+                // Filter to only directors (known_for_department === 'Directing')
+                const directorsList = (data.results || []).filter(
+                    (person: TrendingPerson) => person.known_for_department === 'Directing'
+                )
+
+                setDirectors(directorsList)
+            } catch (err) {
+                console.error('Error fetching trending directors:', err)
+                setError('Failed to load trending directors')
+                setDirectors([])
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        fetchDirectors()
+    }, [isEnabled])
 
     // Notify parent when loading completes
     useEffect(() => {
@@ -105,8 +110,8 @@ export default function TrendingActorsRow({ onLoadComplete }: TrendingActorsRowP
         return null
     }
 
-    // Don't render if error or no actors
-    if (error || actors.length === 0) {
+    // Don't render if error or no directors
+    if (error || directors.length === 0) {
         return null
     }
 
@@ -122,7 +127,7 @@ export default function TrendingActorsRow({ onLoadComplete }: TrendingActorsRowP
                 </h2>
             </div>
 
-            {/* Actors Row */}
+            {/* Directors Row */}
             <div className="relative h-[200px] sm:h-[220px] md:h-[250px] lg:h-[280px] group">
                 {/* Left Arrow */}
                 <div
@@ -151,9 +156,9 @@ export default function TrendingActorsRow({ onLoadComplete }: TrendingActorsRowP
                         WebkitOverflowScrolling: 'touch',
                     }}
                 >
-                    {actors.map((actor) => (
-                        <div key={actor.id} className="flex-shrink-0">
-                            <ActorCard actor={actor} />
+                    {directors.map((director) => (
+                        <div key={director.id} className="flex-shrink-0">
+                            <DirectorCard director={director} />
                         </div>
                     ))}
                 </div>

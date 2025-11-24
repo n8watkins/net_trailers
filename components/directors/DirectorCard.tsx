@@ -5,33 +5,33 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { TrendingPerson } from '../../typings'
 
-interface ActorCardProps {
-    actor: TrendingPerson
+interface DirectorCardProps {
+    director: TrendingPerson
 }
 
-export default function ActorCard({ actor }: ActorCardProps) {
+export default function DirectorCard({ director }: DirectorCardProps) {
     const router = useRouter()
     const [imageLoaded, setImageLoaded] = useState(false)
     const [imageError, setImageError] = useState(false)
     const [isHovered, setIsHovered] = useState(false)
 
-    const profileImage = actor.profile_path
-        ? `https://image.tmdb.org/t/p/w185${actor.profile_path}`
+    const profileImage = director.profile_path
+        ? `https://image.tmdb.org/t/p/w185${director.profile_path}`
         : null
 
     const handleClick = () => {
-        router.push(`/person/${actor.id}`)
+        router.push(`/person/${director.id}`)
     }
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault()
-            router.push(`/person/${actor.id}`)
+            router.push(`/person/${director.id}`)
         }
     }
 
     // Get known for titles (up to 2)
-    const knownForTitles = actor.known_for
+    const knownForTitles = director.known_for
         ?.slice(0, 2)
         .map((item) => ('title' in item ? item.title : 'name' in item ? item.name : ''))
         .filter(Boolean)
@@ -66,7 +66,7 @@ export default function ActorCard({ actor }: ActorCardProps) {
                 {profileImage && !imageError ? (
                     <Image
                         src={profileImage}
-                        alt={actor.name}
+                        alt={director.name}
                         fill
                         style={{ objectFit: 'cover' }}
                         className={`transition-all duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
@@ -76,9 +76,7 @@ export default function ActorCard({ actor }: ActorCardProps) {
                     />
                 ) : (
                     <div className="absolute inset-0 bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center">
-                        <span className="text-3xl sm:text-4xl md:text-5xl">
-                            {actor.gender === 1 ? '👩' : '👨'}
-                        </span>
+                        <span className="text-3xl sm:text-4xl md:text-5xl">🎬</span>
                     </div>
                 )}
 
@@ -94,13 +92,13 @@ export default function ActorCard({ actor }: ActorCardProps) {
                 </div>
             </div>
 
-            {/* Actor Name */}
+            {/* Director Name */}
             <h3
                 className={`mt-3 text-center font-semibold text-sm sm:text-base transition-colors duration-300 line-clamp-2 ${
                     isHovered ? 'text-red-400' : 'text-white'
                 }`}
             >
-                {actor.name}
+                {director.name}
             </h3>
 
             {/* Known For */}
