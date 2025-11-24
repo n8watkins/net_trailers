@@ -33,25 +33,44 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
         const data = await response.json()
 
-        // Combine cast and crew, but prioritize cast
-        const allCredits = [...(data.cast || []), ...(data.crew || [])]
+        // Build a map of unique credits, merging cast and crew data for duplicates
+        // This preserves both character (acting) and job (crew) info when someone has multiple roles
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const creditsMap = new Map<string, any>()
 
-        // Remove duplicates (person might be both cast and crew)
-        const uniqueCredits = Array.from(
-            new Map(
-                allCredits.map((item) => [
-                    `${item.id}-${item.media_type}`,
-                    {
-                        ...item,
-                        // Add a priority score to help with sorting (cast > crew)
-                        is_cast: (data.cast || []).some(
-                            (c: { id: number; media_type: string }) =>
-                                c.id === item.id && c.media_type === item.media_type
-                        ),
-                    },
-                ])
-            ).values()
-        )
+        // Process cast first - these have character info
+        for (const item of data.cast || []) {
+            const key = `${item.id}-${item.media_type}`
+            creditsMap.set(key, {
+                ...item,
+                is_cast: true,
+            })
+        }
+
+        // Process crew - merge with existing cast entries if present
+        for (const item of data.crew || []) {
+            const key = `${item.id}-${item.media_type}`
+            const existing = creditsMap.get(key)
+
+            if (existing) {
+                // Merge crew data into existing cast entry, preserving character
+                creditsMap.set(key, {
+                    ...existing,
+                    job: item.job, // Add crew job to the entry
+                    department: item.department,
+                    is_crew: true,
+                })
+            } else {
+                // New entry from crew only
+                creditsMap.set(key, {
+                    ...item,
+                    is_cast: false,
+                    is_crew: true,
+                })
+            }
+        }
+
+        const uniqueCredits = Array.from(creditsMap.values())
 
         // Apply child safety filtering if enabled
         let filteredCredits = uniqueCredits

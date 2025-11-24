@@ -99,6 +99,9 @@ export default function GenrePreferenceModal({
         []
     )
 
+    // Ref to track pending votes (declared early so it's available for reset)
+    const pendingVotesRef = useRef<Record<string, PreferenceValue>>({})
+
     // Reset quiz state when modal opens
     useEffect(() => {
         if (isOpen) {
@@ -107,6 +110,7 @@ export default function GenrePreferenceModal({
             setAnimatingVote(null)
             setSwipeOffset({ x: 0, y: 0 })
             setIsDragging(false)
+            pendingVotesRef.current = {} // Reset pending votes for fresh session
         }
     }, [isOpen])
 
@@ -163,16 +167,25 @@ export default function GenrePreferenceModal({
     }, [isOpen, previewContent])
 
     // Save preferences immediately after each vote
+    // Uses pendingVotesRef to track all votes in the current session to avoid race conditions
     const savePreference = useCallback(
         async (genreId: string, vote: PreferenceValue) => {
             try {
-                // Merge with existing preferences
+                // Track this vote in the ref (survives across rapid calls)
+                pendingVotesRef.current[genreId] = vote
+
+                // Build payload from existing preferences + ALL pending votes
                 const existingMap = new Map(existingPreferences.map((p) => [p.genreId, p]))
-                existingMap.set(genreId, {
-                    genreId,
-                    preference: vote,
-                    updatedAt: Date.now(),
-                })
+
+                // Apply all pending votes to ensure none are lost
+                for (const [id, pref] of Object.entries(pendingVotesRef.current)) {
+                    existingMap.set(id, {
+                        genreId: id,
+                        preference: pref,
+                        updatedAt: Date.now(),
+                    })
+                }
+
                 await onSave(Array.from(existingMap.values()))
             } catch (error) {
                 console.error('Failed to save genre preference:', error)

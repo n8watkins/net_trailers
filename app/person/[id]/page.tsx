@@ -28,7 +28,7 @@ function PersonPageContent() {
     const [personImage, setPersonImage] = useState<string | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    const { isEnabled: childSafetyEnabled } = useChildSafety()
+    const { isEnabled: childSafetyEnabled, isLoading: isChildSafetyLoading } = useChildSafety()
 
     // Filter states
     const [mediaTypeFilter, setMediaTypeFilter] = useState<'all' | 'movie' | 'tv'>('all')
@@ -58,6 +58,9 @@ function PersonPageContent() {
     // Load person credits
     const loadPersonCredits = useCallback(async () => {
         if (!personId) return
+        // Wait for child safety preference to load before fetching
+        // This prevents briefly showing unfiltered content to protected users
+        if (isChildSafetyLoading) return
 
         setLoading(true)
         setError(null)
@@ -92,7 +95,7 @@ function PersonPageContent() {
         } finally {
             setLoading(false)
         }
-    }, [personId, childSafetyEnabled])
+    }, [personId, childSafetyEnabled, isChildSafetyLoading])
 
     useEffect(() => {
         if (personId) {

@@ -8,7 +8,10 @@ import {
     ChevronDownIcon,
     ChevronRightIcon,
     TrashIcon,
+    DocumentTextIcon,
+    CircleStackIcon,
 } from '@heroicons/react/24/outline'
+import { useProfileActions } from '../../hooks/useProfileActions'
 
 interface DebugSettings {
     showFirebaseTracker: boolean
@@ -23,7 +26,6 @@ interface DebugSettings {
     showUIDebug: boolean
     showTrackingDebug: boolean
     showNotificationDebug: boolean
-    showSeedButton: boolean
     showApiDebug: boolean
     showChildSafetyDebug: boolean
     showNextServerLogs: boolean
@@ -58,13 +60,15 @@ export default function DebugControls() {
         showUIDebug: false,
         showTrackingDebug: false,
         showNotificationDebug: false,
-        showSeedButton: false,
         showApiDebug: false,
         showChildSafetyDebug: false,
         showNextServerLogs: true, // Enabled by default
         showWatchHistoryDebug: false,
         showBannerDebug: false,
     })
+
+    // Profile actions for seed/delete
+    const { isSeeding, isDeleting, handleSeedData, handleQuickDelete } = useProfileActions()
 
     // Visibility state - load from localStorage, hidden by default
     const [isVisible, setIsVisible] = useState(false)
@@ -260,7 +264,6 @@ export default function DebugControls() {
                     'showNotificationDebug',
                     'showTestNotifications',
                     'showChildSafetyDebug',
-                    'showSeedButton',
                 ]
         }
     }
@@ -501,25 +504,68 @@ export default function DebugControls() {
                                 'Toggle Child Safety Mode Debug Logs (TMDB filtering)',
                                 'violet'
                             )}
-                            <div className="w-px h-6 bg-gray-700" />
-                            {renderButton(
-                                'showSeedButton',
-                                'Seed Btn',
-                                'Toggle Seed Data Button on Profile',
-                                'purple',
-                                <SparklesIcon className="w-3 h-3" />
-                            )}
-                            {showAllControls && (
+                        </>
+                    )}
+
+                    {/* Data Actions Row - Always visible when hovering */}
+                    {showAllControls && (
+                        <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2 px-2 py-1">
+                                <CircleStackIcon className="w-3.5 h-3.5 text-emerald-500" />
+                                <span className="text-xs font-medium text-gray-400">
+                                    Data Actions
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2 flex-wrap pl-6">
+                                {/* Seed Data Button */}
+                                <button
+                                    onClick={handleSeedData}
+                                    disabled={isSeeding || isDeleting}
+                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-purple-600/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Seed test data (15 liked, 8 hidden, 12 watch later, 20 watch history, 8 collections)"
+                                >
+                                    <SparklesIcon className="w-3 h-3" />
+                                    <span className="text-xs">
+                                        {isSeeding ? 'Seeding...' : 'Seed Data'}
+                                    </span>
+                                </button>
+
+                                {/* Clear Storage Button */}
                                 <button
                                     onClick={handleClearLocalStorage}
-                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-red-600/20 text-red-400 border border-red-500/30 hover:bg-red-600/40"
+                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-amber-600/20 text-amber-400 border border-amber-500/30 hover:bg-amber-600/40"
                                     title="Clear NetTrailer localStorage data and reload"
                                 >
                                     <TrashIcon className="w-3 h-3" />
                                     <span className="text-xs">Clear Storage</span>
                                 </button>
-                            )}
-                        </>
+
+                                {/* Delete All Data Button */}
+                                <button
+                                    onClick={handleQuickDelete}
+                                    disabled={isSeeding || isDeleting}
+                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-red-600/20 text-red-400 border border-red-500/30 hover:bg-red-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Delete all user data (collections, ratings, watch history)"
+                                >
+                                    <TrashIcon className="w-3 h-3" />
+                                    <span className="text-xs">
+                                        {isDeleting ? 'Deleting...' : 'Delete Data'}
+                                    </span>
+                                </button>
+
+                                <div className="w-px h-6 bg-gray-700" />
+
+                                {/* Docs Link */}
+                                <a
+                                    href="/docs"
+                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600/40"
+                                    title="View debug console documentation"
+                                >
+                                    <DocumentTextIcon className="w-3 h-3" />
+                                    <span className="text-xs">Docs</span>
+                                </a>
+                            </div>
+                        </div>
                     )}
                 </div>
             </div>
@@ -542,7 +588,6 @@ export function useDebugSettings() {
         showUIDebug: false,
         showTrackingDebug: false,
         showNotificationDebug: false,
-        showSeedButton: false,
         showApiDebug: false,
         showChildSafetyDebug: false,
         showNextServerLogs: true, // Enabled by default

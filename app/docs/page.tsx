@@ -1,0 +1,373 @@
+import { redirect } from 'next/navigation'
+
+export default function DebugDocumentation() {
+    // Only render in development mode
+    if (process.env.NODE_ENV !== 'development') {
+        redirect('/')
+    }
+
+    return (
+        <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-black text-gray-100">
+            <div className="max-w-5xl mx-auto px-4 py-12">
+                {/* Header */}
+                <div className="mb-12">
+                    <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">
+                        Debug Console Documentation
+                    </h1>
+                    <p className="text-gray-400 text-lg">
+                        Complete reference for NetTrailer&apos;s development debug console
+                    </p>
+                </div>
+
+                {/* Quick Start */}
+                <section className="mb-12 bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+                    <h2 className="text-2xl font-semibold mb-4 text-blue-400">Quick Start</h2>
+                    <div className="space-y-3 text-gray-300">
+                        <p>
+                            The debug console is a draggable control panel that provides real-time
+                            visibility into various system behaviors during development.
+                        </p>
+                        <div className="bg-gray-900/50 rounded p-4 border border-gray-700">
+                            <div className="flex items-center gap-2 mb-2">
+                                <kbd className="px-2 py-1 bg-gray-700 rounded text-sm border border-gray-600">
+                                    Alt
+                                </kbd>
+                                <span className="text-gray-500">+</span>
+                                <kbd className="px-2 py-1 bg-gray-700 rounded text-sm border border-gray-600">
+                                    Shift
+                                </kbd>
+                                <span className="text-gray-500">+</span>
+                                <kbd className="px-2 py-1 bg-gray-700 rounded text-sm border border-gray-600">
+                                    D
+                                </kbd>
+                                <span className="text-gray-400 ml-4">
+                                    Toggle debug console visibility
+                                </span>
+                            </div>
+                        </div>
+                        <ul className="list-disc list-inside space-y-1 text-sm text-gray-400 ml-4">
+                            <li>Drag the bug icon to reposition the console</li>
+                            <li>Hover over the console to expand all options</li>
+                            <li>Click category headers to expand/collapse sections</li>
+                            <li>Enabled toggles remain visible when not hovering</li>
+                            <li>Settings persist across browser sessions</li>
+                        </ul>
+                    </div>
+                </section>
+
+                {/* Firebase & Data Category */}
+                <section className="mb-12">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center border border-orange-500/30">
+                            <span className="text-orange-500 text-xl">🔥</span>
+                        </div>
+                        <h2 className="text-2xl font-semibold text-orange-400">
+                            Firebase &amp; Data
+                        </h2>
+                    </div>
+
+                    <div className="grid gap-4">
+                        <DebugOption
+                            name="Tracker"
+                            description="Shows a floating overlay tracking all Firebase operations (reads, writes, deletes) with detailed call stacks, timing, and data size."
+                            usage="Currently Active"
+                            color="orange"
+                        />
+                        <DebugOption
+                            name="Auth"
+                            description="Logs Firebase authentication flow events including sign-in, sign-out, token refresh, and user state changes."
+                            usage="Currently Active"
+                            color="blue"
+                        />
+                        <DebugOption
+                            name="Session"
+                            description="Logs session management events including initialization, user switching, and session persistence to localStorage."
+                            usage="Currently Active"
+                            color="purple"
+                        />
+                        <DebugOption
+                            name="Guest"
+                            description="Logs guest mode operations including localStorage reads/writes and guest ID generation."
+                            usage="Currently Active"
+                            color="teal"
+                        />
+                        <DebugOption
+                            name="Cache"
+                            description="Logs content caching operations including cache hits, misses, invalidation, and cache size management."
+                            usage="Currently Active"
+                            color="cyan"
+                        />
+                        <DebugOption
+                            name="Watch History"
+                            description="Logs watch history tracking operations and Firestore synchronization events for user viewing data."
+                            usage="Currently Active"
+                            color="sky"
+                        />
+                    </div>
+                </section>
+
+                {/* UI & Interaction Category */}
+                <section className="mb-12">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
+                            <span className="text-blue-500 text-xl">💬</span>
+                        </div>
+                        <h2 className="text-2xl font-semibold text-blue-400">
+                            UI &amp; Interaction
+                        </h2>
+                    </div>
+
+                    <div className="grid gap-4">
+                        <DebugOption
+                            name="Toast"
+                            description="Logs toast notification lifecycle events including creation, display, and dismissal of all toast types."
+                            usage="Currently Active"
+                            color="green"
+                        />
+                        <DebugOption
+                            name="API Results"
+                            description="Adds a button to view raw API response data for debugging TMDB API calls and data structure."
+                            usage="Currently Active"
+                            color="purple"
+                        />
+                        <DebugOption
+                            name="Vitals"
+                            description="Displays a real-time Web Vitals HUD showing performance metrics (LCP, FID, CLS, TTFB, FCP, INP)."
+                            usage="Currently Active"
+                            color="emerald"
+                            keyboardShortcut="Alt+Shift+V"
+                        />
+                        <DebugOption
+                            name="UI Logs"
+                            description="Logs UI interaction events including modal open/close, infinite scroll triggers, carousel navigation, and component mount/unmount."
+                            usage="Currently Active"
+                            color="indigo"
+                        />
+                        <DebugOption
+                            name="API/Server"
+                            description="Logs API route execution, server-side operations, and internal API call timing and responses."
+                            usage="Currently Active"
+                            color="amber"
+                        />
+                        <DebugOption
+                            name="Next.js Server"
+                            description="Controls Next.js development server request logging. Shows all incoming requests, route handlers, and static file serving."
+                            usage="Enabled by Default"
+                            color="slate"
+                            note="Requires dev server restart to take effect"
+                        />
+                        <DebugOption
+                            name="Banner"
+                            description="Logs banner carousel behavior including image loading, slide transitions, and auto-play timing."
+                            usage="Currently Active"
+                            color="rose"
+                        />
+                    </div>
+                </section>
+
+                {/* Features & Tools Category */}
+                <section className="mb-12">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center border border-purple-500/30">
+                            <span className="text-purple-500 text-xl">✨</span>
+                        </div>
+                        <h2 className="text-2xl font-semibold text-purple-400">
+                            Features &amp; Tools
+                        </h2>
+                    </div>
+
+                    <div className="grid gap-4">
+                        <DebugOption
+                            name="Tracking"
+                            description="Logs user interaction tracking events (views, likes, watchlist operations) and the 90-day retention system."
+                            usage="Currently Active"
+                            color="yellow"
+                        />
+                        <DebugOption
+                            name="Notif"
+                            description="Logs notification system operations including Firestore listeners, real-time updates, and notification creation/dismissal."
+                            usage="Currently Active"
+                            color="pink"
+                        />
+                        <DebugOption
+                            name="TestNotif"
+                            description="Adds a button to create test notifications for debugging the notification panel and toast system."
+                            usage="Currently Active"
+                            color="red"
+                        />
+                        <DebugOption
+                            name="Child Safety"
+                            description="Logs child safety mode filtering operations including TMDB rating checks and content filtering decisions."
+                            usage="Currently Active"
+                            color="violet"
+                        />
+                        <DebugOption
+                            name="Seed Btn"
+                            description="Adds a 'Seed Data' button to the profile page for populating test collections, rankings, and user data."
+                            usage="Development Tool"
+                            color="purple"
+                        />
+                        <DebugOption
+                            name="Clear Storage"
+                            description="Clears all NetTrailer localStorage data and reloads the page. Useful for testing fresh user states."
+                            usage="Destructive Action"
+                            color="red"
+                            note="Requires confirmation before executing"
+                        />
+                    </div>
+                </section>
+
+                {/* Technical Details */}
+                <section className="mb-12 bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+                    <h2 className="text-2xl font-semibold mb-4 text-gray-100">Technical Details</h2>
+                    <div className="space-y-4 text-gray-300 text-sm">
+                        <div>
+                            <h3 className="font-semibold text-gray-200 mb-2">Persistence</h3>
+                            <p className="text-gray-400">
+                                All debug settings, console position, visibility state, and category
+                                expand/collapse states are saved to localStorage and persist across
+                                browser sessions.
+                            </p>
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-gray-200 mb-2">
+                                Integration with Components
+                            </h3>
+                            <p className="text-gray-400">
+                                Use the{' '}
+                                <code className="bg-gray-900 px-1 py-0.5 rounded">
+                                    useDebugSettings()
+                                </code>{' '}
+                                hook to access debug settings in any component and conditionally
+                                render debug UI or logs.
+                            </p>
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-gray-200 mb-2">Event System</h3>
+                            <p className="text-gray-400">
+                                Debug settings changes are broadcast via custom{' '}
+                                <code className="bg-gray-900 px-1 py-0.5 rounded">
+                                    debugSettingsChanged
+                                </code>{' '}
+                                events, allowing multiple components to react to setting changes in
+                                real-time.
+                            </p>
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-gray-200 mb-2">Production Safety</h3>
+                            <p className="text-gray-400">
+                                The debug console and all debugging features are automatically
+                                disabled in production builds via NODE_ENV checks. This
+                                documentation page also redirects to home in production.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Best Practices */}
+                <section className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+                    <h2 className="text-2xl font-semibold mb-4 text-gray-100">Best Practices</h2>
+                    <ul className="space-y-3 text-gray-300">
+                        <li className="flex gap-3">
+                            <span className="text-green-500 flex-shrink-0">✓</span>
+                            <span>
+                                Enable only the debug options you need to reduce console noise
+                            </span>
+                        </li>
+                        <li className="flex gap-3">
+                            <span className="text-green-500 flex-shrink-0">✓</span>
+                            <span>
+                                Use the Firebase Tracker to identify performance bottlenecks and
+                                excessive database reads
+                            </span>
+                        </li>
+                        <li className="flex gap-3">
+                            <span className="text-green-500 flex-shrink-0">✓</span>
+                            <span>
+                                Enable Web Vitals during UI development to ensure optimal
+                                performance
+                            </span>
+                        </li>
+                        <li className="flex gap-3">
+                            <span className="text-green-500 flex-shrink-0">✓</span>
+                            <span>
+                                Use the Seed Button to quickly populate test data for development
+                            </span>
+                        </li>
+                        <li className="flex gap-3">
+                            <span className="text-yellow-500 flex-shrink-0">!</span>
+                            <span>
+                                Remember to restart the dev server after changing the Next.js Server
+                                Logs setting
+                            </span>
+                        </li>
+                    </ul>
+                </section>
+            </div>
+        </div>
+    )
+}
+
+// Reusable component for debug option documentation
+function DebugOption({
+    name,
+    description,
+    usage,
+    color,
+    keyboardShortcut,
+    note,
+}: {
+    name: string
+    description: string
+    usage: string
+    color: string
+    keyboardShortcut?: string
+    note?: string
+}) {
+    const colorClasses = {
+        orange: 'bg-orange-500/10 border-orange-500/30 text-orange-400',
+        blue: 'bg-blue-500/10 border-blue-500/30 text-blue-400',
+        purple: 'bg-purple-500/10 border-purple-500/30 text-purple-400',
+        teal: 'bg-teal-500/10 border-teal-500/30 text-teal-400',
+        cyan: 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400',
+        sky: 'bg-sky-500/10 border-sky-500/30 text-sky-400',
+        green: 'bg-green-500/10 border-green-500/30 text-green-400',
+        emerald: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400',
+        indigo: 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400',
+        amber: 'bg-amber-500/10 border-amber-500/30 text-amber-400',
+        slate: 'bg-slate-500/10 border-slate-500/30 text-slate-400',
+        rose: 'bg-rose-500/10 border-rose-500/30 text-rose-400',
+        yellow: 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400',
+        pink: 'bg-pink-500/10 border-pink-500/30 text-pink-400',
+        red: 'bg-red-500/10 border-red-500/30 text-red-400',
+        violet: 'bg-violet-500/10 border-violet-500/30 text-violet-400',
+    }[color]
+
+    return (
+        <div className="bg-gray-800/30 rounded-lg p-4 border border-gray-700 hover:border-gray-600 transition-colors">
+            <div className="flex items-start justify-between gap-4 mb-2">
+                <h3 className="text-lg font-semibold text-gray-100">{name}</h3>
+                <span
+                    className={`text-xs px-2 py-1 rounded border ${colorClasses} whitespace-nowrap`}
+                >
+                    {usage}
+                </span>
+            </div>
+            <p className="text-gray-400 text-sm mb-2">{description}</p>
+            {keyboardShortcut && (
+                <div className="flex items-center gap-2 mt-2">
+                    <span className="text-xs text-gray-500">Shortcut:</span>
+                    <kbd className="px-2 py-0.5 bg-gray-700 rounded text-xs border border-gray-600 text-gray-300">
+                        {keyboardShortcut}
+                    </kbd>
+                </div>
+            )}
+            {note && (
+                <div className="mt-2 text-xs text-yellow-500/80 flex items-start gap-1">
+                    <span>⚠</span>
+                    <span>{note}</span>
+                </div>
+            )}
+        </div>
+    )
+}

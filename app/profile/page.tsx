@@ -9,7 +9,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
 import SubPageLayout from '../../components/layout/SubPageLayout'
-import { UserIcon, EyeIcon, SparklesIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { UserIcon, EyeIcon } from '@heroicons/react/24/outline'
 import useAuth from '../../hooks/useAuth'
 import useUserData from '../../hooks/useUserData'
 import NetflixLoader from '../../components/common/NetflixLoader'
@@ -19,13 +19,11 @@ import { useRankingStore } from '../../stores/rankingStore'
 import { useForumStore } from '../../stores/forumStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useProfileStore } from '../../stores/profileStore'
-import { useDebugSettings } from '../../components/debug/DebugControls'
 import { LikedContentSection } from '../../components/profile/LikedContentSection'
 import { WatchLaterSection } from '../../components/profile/WatchLaterSection'
 import { RankingsSection } from '../../components/profile/RankingsSection'
 import { CollectionsSection } from '../../components/profile/CollectionsSection'
 import { ForumActivitySection } from '../../components/profile/ForumActivitySection'
-import { useProfileActions } from '../../hooks/useProfileActions'
 import type { PollSummary } from '../../types/forum'
 import {
     Timestamp,
@@ -54,8 +52,6 @@ export default function ProfilePage() {
     const { rankings, loadUserRankings } = useRankingStore()
     const { threads, polls, loadThreads, loadPolls } = useForumStore()
     const profileUsername = useProfileStore((state) => state.profile?.username)
-    const debugSettings = useDebugSettings()
-    const { isSeeding, isDeleting, handleSeedData, handleQuickDelete } = useProfileActions()
 
     // Show loading state while data is being fetched
     const isLoading = !isInitialized || authLoading
@@ -297,34 +293,6 @@ export default function ProfilePage() {
                                     View Public Profile
                                 </Link>
                             )}
-
-                            {/* Dev Tools - Controlled by debug console toggle */}
-                            {process.env.NODE_ENV === 'development' &&
-                                debugSettings.showSeedButton && (
-                                    <>
-                                        {/* Seed Data Button */}
-                                        <button
-                                            onClick={handleSeedData}
-                                            disabled={isSeeding || isDeleting}
-                                            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600/20 to-pink-600/20 hover:from-purple-600/30 hover:to-pink-600/30 text-purple-400 border border-purple-500/30 rounded-lg transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                                            title="Populate with test data (15 liked, 8 hidden, 12 watch later, 20 watch history, 8 collections, 8 notifications, 3 forum threads, 2 polls)"
-                                        >
-                                            <SparklesIcon className="w-4 h-4" />
-                                            {isSeeding ? 'Seeding...' : 'Seed Test Data'}
-                                        </button>
-
-                                        {/* Quick Delete Button */}
-                                        <button
-                                            onClick={handleQuickDelete}
-                                            disabled={isSeeding || isDeleting}
-                                            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-600/20 to-orange-600/20 hover:from-red-600/30 hover:to-orange-600/30 text-red-400 border border-red-500/30 rounded-lg transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                                            title="Clear all data for current session (collections, ratings, watch history, notifications)"
-                                        >
-                                            <TrashIcon className="w-4 h-4" />
-                                            {isDeleting ? 'Deleting...' : 'Quick Delete'}
-                                        </button>
-                                    </>
-                                )}
                         </div>
                     </div>
                 </div>
