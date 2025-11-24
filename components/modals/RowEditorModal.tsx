@@ -17,9 +17,8 @@ import { useModalStore } from '../../stores/modalStore'
 import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
 import { UserList } from '../../types/collections'
-import { SystemRecommendation, SystemRecommendationId } from '../../types/recommendations'
+import { SystemRecommendation } from '../../types/recommendations'
 import CollectionEditorModal from './CollectionEditorModal'
-import SystemRecommendationEditorModal from './SystemRecommendationEditorModal'
 import { createDefaultCollectionsForUser } from '../../constants/systemCollections'
 import {
     DndContext,
@@ -69,10 +68,8 @@ interface RowEditorModalProps {
 
 export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProps) {
     const router = useRouter()
-    // State for CollectionEditorModal
+    // State for CollectionEditorModal (used for both user collections and system recommendations)
     const [editorCollection, setEditorCollection] = useState<UserList | null>(null)
-    // State for SystemRecommendationEditorModal
-    const [editorSystemRec, setEditorSystemRec] = useState<SystemRecommendation | null>(null)
     // Local state for instant drag-and-drop visual updates
     const [localRows, setLocalRows] = useState<DisplayRow[]>([])
     // Track mousedown location for click-outside detection
@@ -323,7 +320,31 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
         [userId, deleteList, showToast]
     )
 
-    // Edit collection - opens CollectionEditorModal or SystemRecommendationEditorModal
+    // Convert SystemRecommendation to UserList for CollectionEditorModal
+    const systemRecToUserList = useCallback((rec: SystemRecommendation): UserList => {
+        return {
+            id: rec.id,
+            name: rec.name,
+            items: [], // System recommendations don't have manual items
+            order: rec.order,
+            displayAsRow: rec.enabled,
+            enabled: rec.enabled,
+            mediaType: rec.mediaType || 'both',
+            genres: rec.genres || [],
+            genreLogic: 'OR',
+            emoji: rec.emoji,
+            color: rec.color,
+            isSystemCollection: true,
+            canEdit: true, // Allow editing name, emoji, genres
+            canDelete: false, // Cannot delete system recommendations
+            canGenerateMore: true, // System recommendations are always infinite
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            collectionType: 'tmdb-genre', // System recommendations are TMDB-based
+        }
+    }, [])
+
+    // Edit collection - opens CollectionEditorModal for both user collections and system recommendations
     const handleEdit = useCallback(
         (row: DisplayRow) => {
             // Check if this is a system recommendation
@@ -331,7 +352,9 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
                 // Look up the full system recommendation from the store
                 const fullRec = systemRecommendations.find((r) => r.id === row.id)
                 if (fullRec) {
-                    setEditorSystemRec(fullRec)
+                    // Convert to UserList format for CollectionEditorModal
+                    const userListVersion = systemRecToUserList(fullRec)
+                    setEditorCollection(userListVersion)
                 }
                 return
             }
@@ -342,7 +365,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
                 setEditorCollection(fullCollection)
             }
         },
-        [userCollections, systemRecommendations]
+        [userCollections, systemRecommendations, systemRecToUserList]
     )
 
     // Create new collection
@@ -611,7 +634,7 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
                 </div>
             </div>
 
-            {/* Collection Editor Modal */}
+            {/* Collection Editor Modal - used for both user collections and system recommendations */}
             {editorCollection && (
                 <CollectionEditorModal
                     collection={editorCollection}
@@ -619,13 +642,6 @@ export function RowEditorModal({ isOpen, onClose, pageType }: RowEditorModalProp
                     onClose={() => setEditorCollection(null)}
                 />
             )}
-
-            {/* System Recommendation Editor Modal */}
-            <SystemRecommendationEditorModal
-                recommendation={editorSystemRec}
-                isOpen={!!editorSystemRec}
-                onClose={() => setEditorSystemRec(null)}
-            />
         </>
     )
 }
