@@ -387,17 +387,17 @@ export default function TitlePreferenceModal({
             />
 
             {/* Modal panel */}
-            <div className="relative w-full max-w-lg overflow-hidden transition-all transform bg-[#0a0a0a] border border-gray-700/50 rounded-xl shadow-2xl max-h-[95vh] flex flex-col">
+            <div className="relative w-full max-w-lg overflow-hidden transition-all transform bg-[#0a0a0a] border border-gray-700/50 rounded-lg sm:rounded-xl shadow-2xl max-h-[98vh] sm:max-h-[95vh] flex flex-col">
                 {/* Header */}
-                <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-700/50 shrink-0">
+                <div className="flex items-center justify-between p-3 sm:p-4 md:p-5 border-b border-gray-700/50 shrink-0">
                     <div className="flex items-center gap-2 sm:gap-3">
-                        <SparklesIcon className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400" />
+                        <SparklesIcon className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400 shrink-0" />
                         <div>
-                            <h2 className="text-base sm:text-lg font-bold text-white">
+                            <h2 className="text-base sm:text-lg md:text-xl font-bold text-white">
                                 Rate Titles
                             </h2>
                             {!isLoading && content.length > 0 && (
-                                <p className="text-xs text-gray-400">
+                                <p className="text-xs sm:text-sm text-gray-400">
                                     {currentIndex + 1} of {content.length}
                                 </p>
                             )}
@@ -405,14 +405,14 @@ export default function TitlePreferenceModal({
                     </div>
                     <button
                         onClick={handleClose}
-                        className="text-gray-400 hover:text-white transition-colors duration-200 p-2 rounded-full hover:bg-white/10 -mr-2"
+                        className="text-gray-400 hover:text-white transition-colors duration-200 p-2 rounded-full hover:bg-white/10 -mr-2 shrink-0"
                     >
                         <XMarkIcon className="h-5 w-5 sm:h-6 sm:w-6" />
                     </button>
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-hidden p-3 sm:p-4">
+                <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-5">
                     {/* Progress bar */}
                     {!isLoading && content.length > 0 && (
                         <div className="h-1 bg-gray-800 rounded-full mb-4">
@@ -493,7 +493,7 @@ export default function TitlePreferenceModal({
                             {/* Centered card layout */}
                             <div className="flex flex-col items-center text-center">
                                 {/* Large centered poster */}
-                                <div className="relative w-[180px] sm:w-[220px] aspect-[2/3] rounded-lg overflow-hidden bg-gray-900 shadow-2xl mb-4">
+                                <div className="relative w-[160px] sm:w-[200px] md:w-[220px] aspect-[2/3] rounded-lg overflow-hidden bg-gray-900 shadow-2xl mb-3 sm:mb-4">
                                     {currentContent.poster_path ? (
                                         <Image
                                             src={`https://image.tmdb.org/t/p/w500${currentContent.poster_path}`}
@@ -537,12 +537,12 @@ export default function TitlePreferenceModal({
                                 </div>
 
                                 {/* Title */}
-                                <h3 className="text-xl sm:text-2xl font-bold text-white leading-tight mb-1 px-2">
+                                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-white leading-tight mb-1 px-2">
                                     {getContentTitle(currentContent)}
                                 </h3>
 
                                 {/* Year, Rating & Media type inline */}
-                                <div className="flex items-center justify-center gap-2 text-sm text-gray-400 mb-3">
+                                <div className="flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-400 mb-3 flex-wrap">
                                     <span>{getContentYear(currentContent)}</span>
                                     {currentContent.vote_average &&
                                         currentContent.vote_average > 0 && (
@@ -565,20 +565,13 @@ export default function TitlePreferenceModal({
                                     </span>
                                 </div>
 
-                                {/* Description */}
-                                {currentContent.overview && (
-                                    <p className="text-gray-400 text-sm line-clamp-3 mb-4 px-2 max-w-md">
-                                        {currentContent.overview}
-                                    </p>
-                                )}
-
                                 {/* Director/Creator with profile image - only show if they have an image */}
                                 {(() => {
                                     const person = currentContent.director || currentContent.creator
                                     if (!person || !person.profile_path) return null
                                     return (
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-800">
+                                        <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                                            <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gray-800 shrink-0">
                                                 <Image
                                                     src={`https://image.tmdb.org/t/p/w185${person.profile_path}`}
                                                     alt={person.name}
@@ -587,12 +580,12 @@ export default function TitlePreferenceModal({
                                                 />
                                             </div>
                                             <div className="text-left">
-                                                <p className="text-[10px] text-gray-500 uppercase tracking-wide">
+                                                <p className="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wide">
                                                     {isContentMovie(currentContent)
                                                         ? 'Director'
                                                         : 'Creator'}
                                                 </p>
-                                                <p className="text-sm text-white font-medium">
+                                                <p className="text-sm sm:text-base lg:text-lg text-white font-medium">
                                                     {person.name}
                                                 </p>
                                             </div>
@@ -600,19 +593,26 @@ export default function TitlePreferenceModal({
                                     )
                                 })()}
 
+                                {/* Description */}
+                                {currentContent.overview && (
+                                    <p className="text-gray-400 text-sm sm:text-base line-clamp-3 mb-4 px-2 max-w-md">
+                                        {currentContent.overview}
+                                    </p>
+                                )}
+
                                 {/* Cast section with profile images */}
                                 {currentContent.cast && currentContent.cast.length > 0 && (
                                     <div className="w-full">
-                                        <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-2">
+                                        <p className="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wide mb-2 sm:mb-3">
                                             Cast
                                         </p>
-                                        <div className="flex justify-center gap-4 overflow-x-auto pb-2 px-2">
+                                        <div className="flex justify-center gap-3 sm:gap-4 lg:gap-5 overflow-x-auto pb-2 px-2">
                                             {currentContent.cast.slice(0, 5).map((actor) => (
                                                 <div
                                                     key={actor.id}
-                                                    className="flex flex-col items-center shrink-0 w-16"
+                                                    className="flex flex-col items-center shrink-0 w-16 sm:w-20 lg:w-24"
                                                 >
-                                                    <div className="relative w-14 h-14 rounded-full overflow-hidden bg-gray-800 mb-1.5">
+                                                    <div className="relative w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full overflow-hidden bg-gray-800 mb-1.5">
                                                         {actor.profile_path ? (
                                                             <Image
                                                                 src={`https://image.tmdb.org/t/p/w185${actor.profile_path}`}
@@ -622,13 +622,13 @@ export default function TitlePreferenceModal({
                                                             />
                                                         ) : (
                                                             <div className="absolute inset-0 flex items-center justify-center bg-gray-700">
-                                                                <span className="text-gray-400 text-sm font-medium">
+                                                                <span className="text-gray-400 text-sm sm:text-base font-medium">
                                                                     {actor.name.charAt(0)}
                                                                 </span>
                                                             </div>
                                                         )}
                                                     </div>
-                                                    <span className="text-[11px] text-gray-400 text-center leading-tight line-clamp-2">
+                                                    <span className="text-[11px] sm:text-xs lg:text-sm text-gray-400 text-center leading-tight line-clamp-2">
                                                         {actor.name}
                                                     </span>
                                                 </div>
@@ -640,7 +640,7 @@ export default function TitlePreferenceModal({
 
                             {/* Vote buttons - Netflix style */}
                             <div
-                                className="flex justify-center gap-4 mt-5"
+                                className="flex justify-center gap-3 sm:gap-4 md:gap-5 mt-4 sm:mt-5"
                                 onMouseDown={(e) => e.stopPropagation()}
                                 onTouchStart={(e) => e.stopPropagation()}
                             >
@@ -657,21 +657,21 @@ export default function TitlePreferenceModal({
                                     }`}
                                 >
                                     <div
-                                        className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center border-2 transition-all ${
+                                        className={`w-14 h-14 sm:w-16 sm:h-16 md:w-[70px] md:h-[70px] rounded-full flex items-center justify-center border-2 transition-all ${
                                             currentVote === 'not_for_me'
                                                 ? 'bg-red-600 border-red-600'
                                                 : 'bg-transparent border-gray-500 hover:border-red-500 hover:bg-red-500/10'
                                         }`}
                                     >
                                         <HandThumbDownIcon
-                                            className={`w-6 h-6 sm:w-7 sm:h-7 ${
+                                            className={`w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 ${
                                                 currentVote === 'not_for_me'
                                                     ? 'text-white'
                                                     : 'text-gray-300'
                                             }`}
                                         />
                                     </div>
-                                    <span className="text-[10px] text-gray-400 font-medium">
+                                    <span className="text-[10px] sm:text-xs text-gray-400 font-medium">
                                         Not for me
                                     </span>
                                 </button>
@@ -687,21 +687,21 @@ export default function TitlePreferenceModal({
                                     }`}
                                 >
                                     <div
-                                        className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center border-2 transition-all ${
+                                        className={`w-14 h-14 sm:w-16 sm:h-16 md:w-[70px] md:h-[70px] rounded-full flex items-center justify-center border-2 transition-all ${
                                             currentVote === 'neutral'
                                                 ? 'bg-gray-600 border-gray-600'
                                                 : 'bg-transparent border-gray-500 hover:border-gray-400 hover:bg-gray-500/10'
                                         }`}
                                     >
                                         <MinusIcon
-                                            className={`w-6 h-6 sm:w-7 sm:h-7 ${
+                                            className={`w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 ${
                                                 currentVote === 'neutral'
                                                     ? 'text-white'
                                                     : 'text-gray-300'
                                             }`}
                                         />
                                     </div>
-                                    <span className="text-[10px] text-gray-400 font-medium">
+                                    <span className="text-[10px] sm:text-xs text-gray-400 font-medium">
                                         Neutral
                                     </span>
                                 </button>
@@ -717,28 +717,28 @@ export default function TitlePreferenceModal({
                                     }`}
                                 >
                                     <div
-                                        className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center border-2 transition-all ${
+                                        className={`w-14 h-14 sm:w-16 sm:h-16 md:w-[70px] md:h-[70px] rounded-full flex items-center justify-center border-2 transition-all ${
                                             currentVote === 'love'
                                                 ? 'bg-green-600 border-green-600'
                                                 : 'bg-transparent border-gray-500 hover:border-green-500 hover:bg-green-500/10'
                                         }`}
                                     >
                                         <HeartIcon
-                                            className={`w-6 h-6 sm:w-7 sm:h-7 ${
+                                            className={`w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 ${
                                                 currentVote === 'love'
                                                     ? 'text-white'
                                                     : 'text-gray-300'
                                             }`}
                                         />
                                     </div>
-                                    <span className="text-[10px] text-gray-400 font-medium">
+                                    <span className="text-[10px] sm:text-xs text-gray-400 font-medium">
                                         Love it
                                     </span>
                                 </button>
                             </div>
 
                             {/* Hint for mobile */}
-                            <p className="text-center text-[10px] text-gray-500 mt-3 sm:hidden">
+                            <p className="text-center text-[10px] sm:text-xs text-gray-500 mt-3 sm:mt-4 sm:hidden">
                                 Tap buttons or swipe to vote
                             </p>
                         </div>
