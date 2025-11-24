@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import Header from '../layout/Header'
 import Banner from '../layout/Banner'
 import { HomeData } from '../../lib/serverData'
@@ -34,6 +34,27 @@ export default function HomeClient({ data }: HomeClientProps) {
     // Track hero image loading state
     const [heroImageLoaded, setHeroImageLoaded] = useState(false)
 
+    // Track system recommendation rows loading state
+    // We need to wait for all enabled rows to load before showing the page
+    const [rowsLoadingState, setRowsLoadingState] = useState<Record<string, boolean>>({
+        trending: false,
+        'top-rated': false,
+        'recommended-for-you': false,
+    })
+
+    // Create stable callback handlers for each row
+    const handleTrendingLoaded = useCallback(() => {
+        setRowsLoadingState((prev) => ({ ...prev, trending: true }))
+    }, [])
+
+    const handleTopRatedLoaded = useCallback(() => {
+        setRowsLoadingState((prev) => ({ ...prev, 'top-rated': true }))
+    }, [])
+
+    const handleRecommendedLoaded = useCallback(() => {
+        setRowsLoadingState((prev) => ({ ...prev, 'recommended-for-you': true }))
+    }, [])
+
     // Get collections from appropriate store
     // After unification, all collections (including defaults) are in userCreatedWatchlists
     const authCollections = useAuthStore((state) => state.userCreatedWatchlists)
@@ -49,6 +70,19 @@ export default function HomeClient({ data }: HomeClientProps) {
     const sortedSystemRecommendations = useMemo(() => {
         return [...systemRecommendations].sort((a, b) => a.order - b.order)
     }, [systemRecommendations])
+
+    // Check if all enabled system rows have finished loading
+    const allSystemRowsLoaded = useMemo(() => {
+        return sortedSystemRecommendations.every((rec) => {
+            // If disabled, consider it "loaded"
+            if (!rec.enabled) return true
+            // Otherwise check the loading state
+            return rowsLoadingState[rec.id] === true
+        })
+    }, [sortedSystemRecommendations, rowsLoadingState])
+
+    // Page is ready when hero image is loaded AND all system rows are loaded
+    const pageReady = heroImageLoaded && allSystemRowsLoaded
 
     const { trending } = data
     const trendingSignature = useMemo(
@@ -139,12 +173,12 @@ export default function HomeClient({ data }: HomeClientProps) {
 
     return (
         <>
-            {/* Show loader until hero image is loaded */}
-            {!heroImageLoaded && <NetflixLoader message="Loading NetTrailer..." />}
+            {/* Show loader until page is fully ready (hero + all system rows loaded) */}
+            {!pageReady && <NetflixLoader message="Loading NetTrailer..." />}
 
             <div
                 className={`relative min-h-screen overflow-x-clip ${showModal && `overflow-y-hidden`} ${
-                    !heroImageLoaded ? 'opacity-0' : 'opacity-100'
+                    !pageReady ? 'opacity-0' : 'opacity-100'
                 }`}
             >
                 <Header />
@@ -175,11 +209,26 @@ export default function HomeClient({ data }: HomeClientProps) {
                             if (!rec.enabled) return null
                             switch (rec.id) {
                                 case 'trending':
-                                    return <TrendingRow key="trending" />
+                                    return (
+                                        <TrendingRow
+                                            key="trending"
+                                            onLoadComplete={handleTrendingLoaded}
+                                        />
+                                    )
                                 case 'top-rated':
-                                    return <TopRatedRow key="top-rated" />
+                                    return (
+                                        <TopRatedRow
+                                            key="top-rated"
+                                            onLoadComplete={handleTopRatedLoaded}
+                                        />
+                                    )
                                 case 'recommended-for-you':
-                                    return <RecommendedForYouRow key="recommended-for-you" />
+                                    return (
+                                        <RecommendedForYouRow
+                                            key="recommended-for-you"
+                                            onLoadComplete={handleRecommendedLoaded}
+                                        />
+                                    )
                                 default:
                                     return null
                             }

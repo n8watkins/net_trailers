@@ -8,7 +8,7 @@
 'use client'
 
 import { useEffect, useState, useMemo, useCallback } from 'react'
-import { Content } from '../../typings'
+import { Content, getTitle as getContentTitle } from '../../typings'
 import { Recommendation } from '../../types/recommendations'
 import Row from '../content/Row'
 import { useSessionData } from '../../hooks/useSessionData'
@@ -19,7 +19,11 @@ import GenrePreferenceModal from './GenrePreferenceModal'
 import TitlePreferenceModal from './TitlePreferenceModal'
 import { GenrePreference, VotedContent } from '../../types/shared'
 
-export default function RecommendedForYouRow() {
+interface RecommendedForYouRowProps {
+    onLoadComplete?: () => void
+}
+
+export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForYouRowProps) {
     const [recommendations, setRecommendations] = useState<Recommendation[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -87,6 +91,23 @@ export default function RecommendedForYouRow() {
         () => collectionItems.map((item) => item.id).join(','),
         [collectionItems]
     )
+
+    // Build content title map for InsightsModal to display voted content titles
+    const contentTitleMap = useMemo(() => {
+        const map = new Map<string, string>()
+        const allContent = [
+            ...sessionData.likedMovies,
+            ...sessionData.defaultWatchlist,
+            ...collectionItems,
+        ]
+        allContent.forEach((item) => {
+            const key = `${item.id}-${item.media_type}`
+            if (!map.has(key)) {
+                map.set(key, getContentTitle(item))
+            }
+        })
+        return map
+    }, [sessionData.likedMovies, sessionData.defaultWatchlist, collectionItems])
 
     // Fetch personalized recommendations
     useEffect(() => {
@@ -236,6 +257,13 @@ export default function RecommendedForYouRow() {
         setShowTitleModal(true)
     }, [])
 
+    // Notify parent when loading completes
+    useEffect(() => {
+        if (!isLoading && onLoadComplete) {
+            onLoadComplete()
+        }
+    }, [isLoading, onLoadComplete])
+
     // Don't render if feature is disabled
     if (!showRecommendations) {
         return null
@@ -272,6 +300,8 @@ export default function RecommendedForYouRow() {
                 onOpenGenreQuiz={handleOpenGenreQuiz}
                 onOpenTitleQuiz={handleOpenTitleQuiz}
                 genrePreferences={genrePreferences}
+                votedContent={votedContent}
+                contentTitleMap={contentTitleMap}
             />
             <GenrePreferenceModal
                 isOpen={showGenreModal}

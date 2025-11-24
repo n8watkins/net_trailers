@@ -24,6 +24,8 @@ interface SystemRecommendationRowProps {
     movieEndpoint: string
     /** TV API endpoint (e.g., '/api/tv/trending') */
     tvEndpoint: string
+    /** Callback when loading completes (success or failure) */
+    onLoadComplete?: () => void
 }
 
 export default function SystemRecommendationRow({
@@ -31,6 +33,7 @@ export default function SystemRecommendationRow({
     defaultName,
     movieEndpoint,
     tvEndpoint,
+    onLoadComplete,
 }: SystemRecommendationRowProps) {
     const [content, setContent] = useState<Content[]>([])
     const [isLoading, setIsLoading] = useState(true)
@@ -154,6 +157,13 @@ export default function SystemRecommendationRow({
         fetchContent()
     }, [fetchContent, settingsSignature])
 
+    // Notify parent when loading completes
+    useEffect(() => {
+        if (!isLoading && onLoadComplete) {
+            onLoadComplete()
+        }
+    }, [isLoading, onLoadComplete])
+
     // Don't render if disabled
     if (!isEnabled) {
         return null
@@ -175,16 +185,21 @@ export default function SystemRecommendationRow({
     return <Row title={title} content={content} />
 }
 
+interface WrapperRowProps {
+    onLoadComplete?: () => void
+}
+
 /**
  * TrendingRow - Wrapper component for trending content
  */
-export function TrendingRow() {
+export function TrendingRow({ onLoadComplete }: WrapperRowProps) {
     return (
         <SystemRecommendationRow
             recommendationId="trending"
             defaultName="Trending"
             movieEndpoint="/api/movies/trending"
             tvEndpoint="/api/tv/trending"
+            onLoadComplete={onLoadComplete}
         />
     )
 }
@@ -192,13 +207,14 @@ export function TrendingRow() {
 /**
  * TopRatedRow - Wrapper component for top rated content
  */
-export function TopRatedRow() {
+export function TopRatedRow({ onLoadComplete }: WrapperRowProps) {
     return (
         <SystemRecommendationRow
             recommendationId="top-rated"
             defaultName="Top Rated"
             movieEndpoint="/api/movies/top-rated"
             tvEndpoint="/api/tv/top-rated"
+            onLoadComplete={onLoadComplete}
         />
     )
 }
