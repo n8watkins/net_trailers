@@ -1,283 +1,233 @@
 'use client'
 
-import React, { useMemo, useState, useCallback } from 'react'
-import {
-    SparklesIcon,
-    FireIcon,
-    StarIcon,
-    ArrowsUpDownIcon,
-    ChevronUpIcon,
-    ChevronDownIcon,
-} from '@heroicons/react/24/outline'
-import { useSessionStore } from '../../stores/sessionStore'
-import { useAuthStore } from '../../stores/authStore'
-import { useGuestStore } from '../../stores/guestStore'
-import { useToast } from '../../hooks/useToast'
-import { SystemRecommendation, SystemRecommendationId } from '../../types/recommendations'
+import React from 'react'
+import { UpgradeAccountBanner } from '../auth/UpgradeAccountBanner'
 
-/**
- * Get icon for a system recommendation
- */
-function getRecommendationIcon(id: SystemRecommendationId) {
-    switch (id) {
-        case 'trending':
-            return FireIcon
-        case 'top-rated':
-            return StarIcon
-        case 'recommended-for-you':
-            return SparklesIcon
-        default:
-            return SparklesIcon
-    }
+// Memoized Recommendations Controls Component - Only re-renders when props actually change
+interface RecommendationsControlsProps {
+    improveRecommendations: boolean
+    showRecommendations: boolean
+    trackWatchHistory: boolean
+    isGuest: boolean
+    onImproveRecommendationsChange: (checked: boolean) => void
+    onShowRecommendationsChange: (checked: boolean) => void
+    onTrackWatchHistoryChange: (checked: boolean) => void
 }
 
-/**
- * Get description for a system recommendation
- */
-function getRecommendationDescription(id: SystemRecommendationId): string {
-    switch (id) {
-        case 'trending':
-            return 'Popular content trending this week on TMDB'
-        case 'top-rated':
-            return 'Highest rated content on TMDB'
-        case 'recommended-for-you':
-            return 'Personalized suggestions based on your interactions'
-        default:
-            return 'System recommendation row'
-    }
-}
-
-/**
- * Recommendations Settings Section
- *
- * Allows users to enable/disable and reorder system recommendation rows
- * (Trending, Top Rated, Recommended For You)
- */
-const RecommendationsSection: React.FC = () => {
-    const { showSuccess } = useToast()
-    const sessionType = useSessionStore((state) => state.sessionType)
-
-    // Get system recommendations from appropriate store
-    const authSystemRecommendations = useAuthStore((state) => state.systemRecommendations)
-    const guestSystemRecommendations = useGuestStore((state) => state.systemRecommendations)
-    const systemRecommendations =
-        sessionType === 'authenticated' ? authSystemRecommendations : guestSystemRecommendations
-
-    // Get update functions
-    const authUpdateRecommendation = useAuthStore((state) => state.updateSystemRecommendation)
-    const guestUpdateRecommendation = useGuestStore((state) => state.updateSystemRecommendation)
-    const updateRecommendation =
-        sessionType === 'authenticated' ? authUpdateRecommendation : guestUpdateRecommendation
-
-    const authReorderRecommendations = useAuthStore((state) => state.reorderSystemRecommendations)
-    const guestReorderRecommendations = useGuestStore((state) => state.reorderSystemRecommendations)
-    const reorderRecommendations =
-        sessionType === 'authenticated' ? authReorderRecommendations : guestReorderRecommendations
-
-    // Sort recommendations by order
-    const sortedRecommendations = useMemo(() => {
-        return [...systemRecommendations].sort((a, b) => a.order - b.order)
-    }, [systemRecommendations])
-
-    // Track which item is being dragged (for visual feedback)
-    const [draggingId, setDraggingId] = useState<string | null>(null)
-
-    // Handle toggle enable/disable
-    const handleToggle = useCallback(
-        async (id: SystemRecommendationId, currentEnabled: boolean) => {
-            await updateRecommendation(id, { enabled: !currentEnabled })
-            const rec = systemRecommendations.find((r) => r.id === id)
-            const name = rec?.name || id
-            showSuccess(`${name} ${!currentEnabled ? 'enabled' : 'disabled'}`)
-        },
-        [updateRecommendation, systemRecommendations, showSuccess]
-    )
-
-    // Handle move up
-    const handleMoveUp = useCallback(
-        async (index: number) => {
-            if (index === 0) return
-            const newOrder = sortedRecommendations.map((r) => r.id)
-            ;[newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]]
-            await reorderRecommendations(newOrder)
-            showSuccess('Order updated')
-        },
-        [sortedRecommendations, reorderRecommendations, showSuccess]
-    )
-
-    // Handle move down
-    const handleMoveDown = useCallback(
-        async (index: number) => {
-            if (index === sortedRecommendations.length - 1) return
-            const newOrder = sortedRecommendations.map((r) => r.id)
-            ;[newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]]
-            await reorderRecommendations(newOrder)
-            showSuccess('Order updated')
-        },
-        [sortedRecommendations, reorderRecommendations, showSuccess]
-    )
-
-    // Drag and drop handlers
-    const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
-        setDraggingId(id)
-        e.dataTransfer.effectAllowed = 'move'
-        e.dataTransfer.setData('text/plain', id)
-    }, [])
-
-    const handleDragOver = useCallback((e: React.DragEvent) => {
-        e.preventDefault()
-        e.dataTransfer.dropEffect = 'move'
-    }, [])
-
-    const handleDrop = useCallback(
-        async (e: React.DragEvent, targetIndex: number) => {
-            e.preventDefault()
-            const draggedId = e.dataTransfer.getData('text/plain')
-            const draggedIndex = sortedRecommendations.findIndex((r) => r.id === draggedId)
-
-            if (draggedIndex === -1 || draggedIndex === targetIndex) {
-                setDraggingId(null)
-                return
-            }
-
-            const newOrder = sortedRecommendations.map((r) => r.id)
-            const [removed] = newOrder.splice(draggedIndex, 1)
-            newOrder.splice(targetIndex, 0, removed)
-
-            await reorderRecommendations(newOrder)
-            setDraggingId(null)
-            showSuccess('Order updated')
-        },
-        [sortedRecommendations, reorderRecommendations, showSuccess]
-    )
-
-    const handleDragEnd = useCallback(() => {
-        setDraggingId(null)
-    }, [])
-
-    return (
-        <div className="p-6">
-            <div className="mb-6">
-                <h2 className="text-xl font-semibold text-white mb-2">System Recommendations</h2>
-                <p className="text-[#b3b3b3] text-sm">
-                    Manage the recommendation rows that appear on your homepage. These rows show
-                    content from TMDB based on different criteria.
-                </p>
-            </div>
-
-            {/* Recommendations List */}
-            <div className="space-y-3">
-                {sortedRecommendations.map((rec, index) => {
-                    const Icon = getRecommendationIcon(rec.id)
-                    const description = getRecommendationDescription(rec.id)
-                    const isDragging = draggingId === rec.id
-
-                    return (
-                        <div
-                            key={rec.id}
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, rec.id)}
-                            onDragOver={handleDragOver}
-                            onDrop={(e) => handleDrop(e, index)}
-                            onDragEnd={handleDragEnd}
-                            className={`
-                                flex items-center gap-4 p-4 rounded-lg border transition-all
-                                ${isDragging ? 'opacity-50 border-red-500 bg-[#1a1a1a]' : 'border-[#313131] bg-[#0a0a0a] hover:bg-[#1a1a1a]'}
-                                ${rec.enabled ? '' : 'opacity-60'}
-                                cursor-grab active:cursor-grabbing
-                            `}
-                        >
-                            {/* Drag Handle */}
-                            <div className="flex-shrink-0 text-[#666] hover:text-[#999] cursor-grab">
-                                <ArrowsUpDownIcon className="w-5 h-5" />
+const RecommendationsControls = React.memo<RecommendationsControlsProps>(
+    ({
+        improveRecommendations,
+        showRecommendations,
+        trackWatchHistory,
+        isGuest,
+        onImproveRecommendationsChange,
+        onShowRecommendationsChange,
+        onTrackWatchHistoryChange,
+    }) => {
+        return (
+            <div className="space-y-8">
+                {/* Privacy & Recommendations Section */}
+                <div>
+                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                        Privacy & Recommendations
+                    </h3>
+                    <div className="space-y-6 bg-[#0a0a0a] rounded-lg border border-[#313131] p-6">
+                        {/* Show Personalized Recommendations Row Toggle */}
+                        <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-[#e5e5e5] mb-1">
+                                    Show Personalized Recommendations
+                                </label>
+                                <p className="text-sm text-[#b3b3b3] mb-2">
+                                    Display a "Recommended For You" row on the home page based on
+                                    your watch history and preferences
+                                </p>
+                                <p className="text-xs text-[#999]">
+                                    Requires interaction tracking to be enabled. Only available for
+                                    authenticated users.
+                                </p>
                             </div>
-
-                            {/* Icon */}
-                            <div
-                                className={`flex-shrink-0 p-2 rounded-lg ${rec.enabled ? 'bg-red-600/20 text-red-500' : 'bg-[#313131] text-[#666]'}`}
-                            >
-                                <Icon className="w-5 h-5" />
-                            </div>
-
-                            {/* Info */}
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                    <h3
-                                        className={`font-medium ${rec.enabled ? 'text-white' : 'text-[#999]'}`}
-                                    >
-                                        {rec.emoji && <span className="mr-1">{rec.emoji}</span>}
-                                        {rec.name}
-                                    </h3>
-                                    <span className="text-xs px-2 py-0.5 rounded bg-[#313131] text-[#999]">
-                                        #{index + 1}
-                                    </span>
-                                </div>
-                                <p className="text-sm text-[#666] mt-0.5">{description}</p>
-                            </div>
-
-                            {/* Reorder Buttons */}
-                            <div className="flex flex-col gap-1">
-                                <button
-                                    onClick={() => handleMoveUp(index)}
-                                    disabled={index === 0}
-                                    className={`p-1 rounded ${index === 0 ? 'text-[#444] cursor-not-allowed' : 'text-[#999] hover:text-white hover:bg-[#313131]'}`}
-                                    title="Move up"
-                                >
-                                    <ChevronUpIcon className="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={() => handleMoveDown(index)}
-                                    disabled={index === sortedRecommendations.length - 1}
-                                    className={`p-1 rounded ${index === sortedRecommendations.length - 1 ? 'text-[#444] cursor-not-allowed' : 'text-[#999] hover:text-white hover:bg-[#313131]'}`}
-                                    title="Move down"
-                                >
-                                    <ChevronDownIcon className="w-4 h-4" />
-                                </button>
-                            </div>
-
-                            {/* Toggle Switch */}
-                            <button
-                                onClick={() => handleToggle(rec.id, rec.enabled)}
-                                className={`
-                                    relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent
-                                    transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-[#0a0a0a]
-                                    ${rec.enabled ? 'bg-red-600' : 'bg-[#313131]'}
-                                `}
-                                role="switch"
-                                aria-checked={rec.enabled}
-                            >
-                                <span
-                                    className={`
-                                        pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0
-                                        transition duration-200 ease-in-out
-                                        ${rec.enabled ? 'translate-x-5' : 'translate-x-0'}
-                                    `}
+                            <label className="relative inline-flex items-center cursor-pointer ml-4">
+                                <input
+                                    type="checkbox"
+                                    checked={showRecommendations}
+                                    onChange={(e) => onShowRecommendationsChange(e.target.checked)}
+                                    disabled={!improveRecommendations || isGuest}
+                                    className="sr-only peer"
                                 />
-                            </button>
+                                <div
+                                    className={`w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600 ${
+                                        !improveRecommendations || isGuest
+                                            ? 'opacity-50 cursor-not-allowed'
+                                            : ''
+                                    }`}
+                                ></div>
+                            </label>
                         </div>
-                    )
-                })}
+
+                        {/* Divider */}
+                        <div className="border-t border-[#313131]"></div>
+
+                        {/* Improve Recommendations Toggle */}
+                        <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-[#e5e5e5] mb-1">
+                                    Improve Recommendations
+                                </label>
+                                <p className="text-sm text-[#b3b3b3] mb-2">
+                                    Allow NetTrailers to learn from your interactions to provide
+                                    personalized recommendations
+                                </p>
+                                <p className="text-xs text-[#999]">
+                                    When enabled, we track which content you view, add to
+                                    collections, like, and hide. This data helps us recommend movies
+                                    and shows you'll enjoy.
+                                </p>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer ml-4">
+                                <input
+                                    type="checkbox"
+                                    checked={improveRecommendations}
+                                    onChange={(e) =>
+                                        onImproveRecommendationsChange(e.target.checked)
+                                    }
+                                    className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+
+                        {/* Divider */}
+                        <div className="border-t border-[#313131]"></div>
+
+                        {/* Track Watch History Toggle */}
+                        <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-[#e5e5e5] mb-1">
+                                    Track Watch History
+                                </label>
+                                <p className="text-sm text-[#b3b3b3] mb-2">
+                                    Keep a record of content you view in your Watch History
+                                </p>
+                                <p className="text-xs text-[#999]">
+                                    Disabling will permanently delete your existing watch history.
+                                </p>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer ml-4">
+                                <input
+                                    type="checkbox"
+                                    checked={trackWatchHistory}
+                                    onChange={(e) => onTrackWatchHistoryChange(e.target.checked)}
+                                    className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Info Box */}
+                <div className="p-4 rounded-lg bg-[#1a1a1a] border border-[#313131]">
+                    <h4 className="text-sm font-medium text-white mb-2">About Recommendations</h4>
+                    <ul className="text-sm text-[#999] space-y-1">
+                        <li>
+                            <strong>Personalized Recommendations:</strong> Shows content tailored to
+                            your preferences based on what you watch, like, and add to collections
+                        </li>
+                        <li>
+                            <strong>Interaction Tracking:</strong> Powers recommendations by
+                            learning from your viewing habits (required for personalized
+                            suggestions)
+                        </li>
+                        <li>
+                            <strong>Watch History:</strong> Keeps a log of content you've viewed for
+                            easy access later
+                        </li>
+                    </ul>
+                    <p className="text-xs text-[#666] mt-3">
+                        Tip: To manage which recommendation rows appear on your homepage and their
+                        order, use the "Manage" button on the home page.
+                    </p>
+                </div>
+            </div>
+        )
+    }
+)
+
+RecommendationsControls.displayName = 'RecommendationsControls'
+
+interface RecommendationsSectionProps {
+    isGuest: boolean
+    isInitializing: boolean
+    improveRecommendations: boolean
+    showRecommendations: boolean
+    trackWatchHistory: boolean
+    onImproveRecommendationsChange: (checked: boolean) => void
+    onShowRecommendationsChange: (checked: boolean) => void
+    onTrackWatchHistoryChange: (checked: boolean) => void
+}
+
+const RecommendationsSection: React.FC<RecommendationsSectionProps> = ({
+    isGuest,
+    isInitializing,
+    improveRecommendations,
+    showRecommendations,
+    trackWatchHistory,
+    onImproveRecommendationsChange,
+    onShowRecommendationsChange,
+    onTrackWatchHistoryChange,
+}) => {
+    return (
+        <div className="p-8">
+            {/* Upgrade Banner for Guests */}
+            {isGuest && <UpgradeAccountBanner />}
+
+            <div className="mb-6">
+                <h2 className="text-2xl font-bold text-white mb-2">Recommendations</h2>
+                <p className="text-[#b3b3b3] mb-3">
+                    Control how NetTrailers learns from your activity to provide personalized
+                    recommendations
+                </p>
+                <div className="flex items-center gap-2 text-sm text-green-500">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                        />
+                    </svg>
+                    <span>All settings are saved automatically when changed</span>
+                </div>
             </div>
 
-            {/* Info Box */}
-            <div className="mt-6 p-4 rounded-lg bg-[#1a1a1a] border border-[#313131]">
-                <h4 className="text-sm font-medium text-white mb-2">About Recommendation Rows</h4>
-                <ul className="text-sm text-[#999] space-y-1">
-                    <li>
-                        <strong>Trending:</strong> Shows popular content from the past week
-                    </li>
-                    <li>
-                        <strong>Top Rated:</strong> Shows highest-rated content of all time
-                    </li>
-                    <li>
-                        <strong>Recommended For You:</strong> Personalized based on your watchlist
-                        and interactions
-                    </li>
-                </ul>
-                <p className="text-xs text-[#666] mt-3">
-                    Tip: Drag rows to reorder them, or use the arrow buttons for precise control.
-                </p>
-            </div>
+            {/* Only render controls after data is loaded */}
+            {isInitializing ? (
+                <div className="space-y-8 animate-pulse">
+                    <div>
+                        <div className="h-6 bg-[#313131] rounded w-48 mb-4"></div>
+                        <div className="bg-[#0a0a0a] rounded-lg border border-[#313131] p-6">
+                            <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                    <div className="h-4 bg-[#313131] rounded w-40 mb-2"></div>
+                                    <div className="h-3 bg-[#313131] rounded w-64"></div>
+                                </div>
+                                <div className="w-11 h-6 bg-[#313131] rounded-full ml-4"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <RecommendationsControls
+                    improveRecommendations={improveRecommendations}
+                    showRecommendations={showRecommendations}
+                    trackWatchHistory={trackWatchHistory}
+                    isGuest={isGuest}
+                    onImproveRecommendationsChange={onImproveRecommendationsChange}
+                    onShowRecommendationsChange={onShowRecommendationsChange}
+                    onTrackWatchHistoryChange={onTrackWatchHistoryChange}
+                />
+            )}
         </div>
     )
 }

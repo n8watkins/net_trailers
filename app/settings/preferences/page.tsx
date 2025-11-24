@@ -7,13 +7,11 @@ import { useToast } from '../../../hooks/useToast'
 import { useAppStore } from '../../../stores/appStore'
 import { useAuthStore } from '../../../stores/authStore'
 import { useGuestStore } from '../../../stores/guestStore'
-import { useSessionStore } from '../../../stores/sessionStore'
 import { toggleChildSafetyAction } from '../../../lib/actions/childSafety'
 import PreferencesSection from '../../../components/settings/PreferencesSection'
 import ChildSafetyPINModal from '../../../components/settings/ChildSafetyPINModal'
 import InfoModal from '../../../components/modals/InfoModal'
 import { useChildSafetyPINStore } from '../../../stores/childSafetyStore'
-import { useWatchHistoryStore } from '../../../stores/watchHistoryStore'
 
 const PreferencesPage: React.FC = () => {
     const { isGuest } = useAuthStatus()
@@ -27,15 +25,6 @@ const PreferencesPage: React.FC = () => {
 
     // Modal states
     const [showChildSafetyModal, setShowChildSafetyModal] = useState(false)
-    const [showDeleteHistoryModal, setShowDeleteHistoryModal] = useState(false)
-
-    // Watch history store for clearing history with persistence
-    const clearWatchHistoryWithPersistence = useWatchHistoryStore(
-        (state) => state.clearHistoryWithPersistence
-    )
-
-    // Get session ID for watch history deletion
-    const activeSessionId = useSessionStore((state) => state.activeSessionId)
 
     // PIN Protection states
     const [pinModalMode, setPinModalMode] = useState<'create' | 'verify' | 'change'>('verify')
@@ -57,34 +46,15 @@ const PreferencesPage: React.FC = () => {
             childSafetyMode: userData.childSafetyMode ?? false,
             autoMute: userData.autoMute ?? true,
             defaultVolume: userData.defaultVolume ?? 50,
-            improveRecommendations: userData.improveRecommendations ?? true,
-            showRecommendations: userData.showRecommendations ?? true,
-            trackWatchHistory: userData.trackWatchHistory ?? true,
         }
-    }, [
-        userData.childSafetyMode,
-        userData.autoMute,
-        userData.defaultVolume,
-        userData.improveRecommendations,
-        userData.showRecommendations,
-        userData.trackWatchHistory,
-    ])
+    }, [userData.childSafetyMode, userData.autoMute, userData.defaultVolume])
 
-    // 3) Initialize with store values directly (they default to false/true/50 during SSR anyway)
+    // Initialize with store values directly (they default to false/true/50 during SSR anyway)
     const [childSafetyMode, setChildSafetyMode] = useState<boolean>(
         () => userData.childSafetyMode ?? false
     )
     const [autoMute, setAutoMute] = useState<boolean>(() => userData.autoMute ?? true)
     const [defaultVolume, setDefaultVolume] = useState<number>(() => userData.defaultVolume ?? 50)
-    const [improveRecommendations, setImproveRecommendations] = useState<boolean>(
-        () => userData.improveRecommendations ?? true
-    )
-    const [showRecommendations, setShowRecommendations] = useState<boolean>(
-        () => userData.showRecommendations ?? true
-    )
-    const [trackWatchHistory, setTrackWatchHistory] = useState<boolean>(
-        () => userData.trackWatchHistory ?? true
-    )
 
     // Track the last preferences we loaded from the store to detect external changes
     const lastLoadedPrefsRef = React.useRef(currentPreferences)
@@ -101,10 +71,7 @@ const PreferencesPage: React.FC = () => {
         const prefsChanged =
             currentPreferences.childSafetyMode !== lastLoadedPrefsRef.current.childSafetyMode ||
             currentPreferences.autoMute !== lastLoadedPrefsRef.current.autoMute ||
-            currentPreferences.defaultVolume !== lastLoadedPrefsRef.current.defaultVolume ||
-            currentPreferences.improveRecommendations !==
-                lastLoadedPrefsRef.current.improveRecommendations ||
-            currentPreferences.trackWatchHistory !== lastLoadedPrefsRef.current.trackWatchHistory
+            currentPreferences.defaultVolume !== lastLoadedPrefsRef.current.defaultVolume
 
         // Only update UI state if store preferences actually changed
         // This allows user to modify UI without being overridden
@@ -112,9 +79,6 @@ const PreferencesPage: React.FC = () => {
             setChildSafetyMode(currentPreferences.childSafetyMode)
             setAutoMute(currentPreferences.autoMute)
             setDefaultVolume(currentPreferences.defaultVolume)
-            setImproveRecommendations(currentPreferences.improveRecommendations)
-            setShowRecommendations(currentPreferences.showRecommendations)
-            setTrackWatchHistory(currentPreferences.trackWatchHistory)
             // Update our tracking ref
             lastLoadedPrefsRef.current = currentPreferences
         }
@@ -215,79 +179,6 @@ const PreferencesPage: React.FC = () => {
         [savePreference]
     )
 
-    const handleImproveRecommendationsChange = React.useCallback(
-        (checked: boolean) => {
-            setImproveRecommendations(checked)
-            // If disabling recommendation tracking, also disable the recommendations row
-            if (!checked) {
-                setShowRecommendations(false)
-            }
-            savePreference(
-                'improveRecommendations',
-                checked,
-                checked ? 'Interaction tracking enabled' : 'Interaction tracking disabled'
-            )
-        },
-        [savePreference]
-    )
-
-    const handleShowRecommendationsChange = React.useCallback(
-        (checked: boolean) => {
-            setShowRecommendations(checked)
-            savePreference(
-                'showRecommendations',
-                checked,
-                checked
-                    ? 'Personalized recommendations enabled'
-                    : 'Personalized recommendations disabled'
-            )
-        },
-        [savePreference]
-    )
-
-    const handleTrackWatchHistoryChange = React.useCallback(
-        (checked: boolean) => {
-            // If toggling OFF, show confirmation modal to delete history
-            if (!checked) {
-                setShowDeleteHistoryModal(true)
-                return // Don't change state until confirmed
-            }
-            // If toggling ON, update and save immediately
-            setTrackWatchHistory(checked)
-            savePreference('trackWatchHistory', checked, 'Watch history tracking enabled')
-        },
-        [savePreference]
-    )
-
-    const handleConfirmDeleteHistory = React.useCallback(async () => {
-        if (!activeSessionId) {
-            showError('No active session found')
-            setShowDeleteHistoryModal(false)
-            return
-        }
-
-        try {
-            // Clear all watch history with persistence (Firestore or localStorage)
-            const sessionType = isGuest ? 'guest' : 'authenticated'
-            await clearWatchHistoryWithPersistence(sessionType, activeSessionId)
-
-            // Disable tracking
-            setTrackWatchHistory(false)
-            // Close modal
-            setShowDeleteHistoryModal(false)
-            // Save and show toast
-            savePreference(
-                'trackWatchHistory',
-                false,
-                'Watch history deleted and tracking disabled'
-            )
-        } catch (error) {
-            console.error('Failed to delete watch history:', error)
-            showError('Failed to delete watch history')
-            setShowDeleteHistoryModal(false)
-        }
-    }, [activeSessionId, isGuest, clearWatchHistoryWithPersistence, savePreference, showError])
-
     const handleShowChildSafetyModal = React.useCallback(() => {
         setShowChildSafetyModal(true)
     }, [])
@@ -344,17 +235,11 @@ const PreferencesPage: React.FC = () => {
                 childSafetyMode={childSafetyMode}
                 autoMute={autoMute}
                 defaultVolume={defaultVolume}
-                improveRecommendations={improveRecommendations}
-                showRecommendations={showRecommendations}
-                trackWatchHistory={trackWatchHistory}
                 hasPIN={pinSettings.hasPIN}
                 pinEnabled={pinSettings.enabled}
                 onChildSafetyModeChange={handleChildSafetyModeChange}
                 onAutoMuteChange={handleAutoMuteChange}
                 onDefaultVolumeChange={handleDefaultVolumeChange}
-                onImproveRecommendationsChange={handleImproveRecommendationsChange}
-                onShowRecommendationsChange={handleShowRecommendationsChange}
-                onTrackWatchHistoryChange={handleTrackWatchHistoryChange}
                 onShowChildSafetyModal={handleShowChildSafetyModal}
                 onSetupPIN={handleSetupPIN}
                 onChangePIN={handleChangePIN}
@@ -371,18 +256,6 @@ const PreferencesPage: React.FC = () => {
                 confirmButtonText="Create Account"
                 cancelButtonText="Maybe Later"
                 emoji="🔒"
-            />
-
-            {/* Delete Watch History Confirmation Modal */}
-            <InfoModal
-                isOpen={showDeleteHistoryModal}
-                onClose={() => setShowDeleteHistoryModal(false)}
-                onConfirm={handleConfirmDeleteHistory}
-                title="Delete Watch History?"
-                message="Disabling watch history tracking will permanently delete all your existing watch history. This action cannot be undone. Are you sure you want to continue?"
-                confirmButtonText="Delete & Disable"
-                cancelButtonText="Cancel"
-                emoji="🗑️"
             />
 
             {/* PIN Modals */}

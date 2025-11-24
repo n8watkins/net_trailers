@@ -9,18 +9,12 @@ interface PreferencesControlsProps {
     childSafetyMode: boolean
     autoMute: boolean
     defaultVolume: number
-    improveRecommendations: boolean
-    showRecommendations: boolean
-    trackWatchHistory: boolean
     isGuest: boolean
     hasPIN: boolean
     pinEnabled: boolean
     onChildSafetyModeChange: (checked: boolean) => void
     onAutoMuteChange: (checked: boolean) => void
     onDefaultVolumeChange: (volume: number) => void
-    onImproveRecommendationsChange: (checked: boolean) => void
-    onShowRecommendationsChange: (checked: boolean) => void
-    onTrackWatchHistoryChange: (checked: boolean) => void
     onShowChildSafetyModal: () => void
     onSetupPIN: () => void
     onChangePIN: () => void
@@ -32,18 +26,12 @@ const PreferencesControls = React.memo<PreferencesControlsProps>(
         childSafetyMode,
         autoMute,
         defaultVolume,
-        improveRecommendations,
-        showRecommendations,
-        trackWatchHistory,
         isGuest,
         hasPIN,
         pinEnabled,
         onChildSafetyModeChange,
         onAutoMuteChange,
         onDefaultVolumeChange,
-        onImproveRecommendationsChange,
-        onShowRecommendationsChange,
-        onTrackWatchHistoryChange,
         onShowChildSafetyModal,
         onSetupPIN,
         onChangePIN,
@@ -217,106 +205,6 @@ const PreferencesControls = React.memo<PreferencesControlsProps>(
                         </div>
                     </div>
                 </div>
-
-                {/* Privacy & Recommendations Section */}
-                <div>
-                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-                        Privacy & Recommendations
-                    </h3>
-                    <div className="space-y-6 bg-[#0a0a0a] rounded-lg border border-[#313131] p-6">
-                        {/* Show Personalized Recommendations Row Toggle */}
-                        <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                                <label className="block text-sm font-medium text-[#e5e5e5] mb-1">
-                                    Show Personalized Recommendations
-                                </label>
-                                <p className="text-sm text-[#b3b3b3] mb-2">
-                                    Display a "Recommended For You" row on the home page based on
-                                    your watch history and preferences
-                                </p>
-                                <p className="text-xs text-[#999]">
-                                    Requires interaction tracking to be enabled. Only available for
-                                    authenticated users.
-                                </p>
-                            </div>
-                            <label className="relative inline-flex items-center cursor-pointer ml-4">
-                                <input
-                                    type="checkbox"
-                                    checked={showRecommendations}
-                                    onChange={(e) => onShowRecommendationsChange(e.target.checked)}
-                                    disabled={!improveRecommendations || isGuest}
-                                    className="sr-only peer"
-                                />
-                                <div
-                                    className={`w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600 ${
-                                        !improveRecommendations || isGuest
-                                            ? 'opacity-50 cursor-not-allowed'
-                                            : ''
-                                    }`}
-                                ></div>
-                            </label>
-                        </div>
-
-                        {/* Divider */}
-                        <div className="border-t border-[#313131]"></div>
-
-                        {/* Improve Recommendations Toggle */}
-                        <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                                <label className="block text-sm font-medium text-[#e5e5e5] mb-1">
-                                    Improve Recommendations
-                                </label>
-                                <p className="text-sm text-[#b3b3b3] mb-2">
-                                    Allow NetTrailers to learn from your interactions to provide
-                                    personalized recommendations
-                                </p>
-                                <p className="text-xs text-[#999]">
-                                    When enabled, we track which content you view, add to
-                                    collections, like, and hide. This data helps us recommend movies
-                                    and shows you'll enjoy.
-                                </p>
-                            </div>
-                            <label className="relative inline-flex items-center cursor-pointer ml-4">
-                                <input
-                                    type="checkbox"
-                                    checked={improveRecommendations}
-                                    onChange={(e) =>
-                                        onImproveRecommendationsChange(e.target.checked)
-                                    }
-                                    className="sr-only peer"
-                                />
-                                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
-                        </div>
-
-                        {/* Divider */}
-                        <div className="border-t border-[#313131]"></div>
-
-                        {/* Track Watch History Toggle */}
-                        <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                                <label className="block text-sm font-medium text-[#e5e5e5] mb-1">
-                                    Track Watch History
-                                </label>
-                                <p className="text-sm text-[#b3b3b3] mb-2">
-                                    Keep a record of content you view in your Watch History
-                                </p>
-                                <p className="text-xs text-[#999]">
-                                    Disabling will permanently delete your existing watch history.
-                                </p>
-                            </div>
-                            <label className="relative inline-flex items-center cursor-pointer ml-4">
-                                <input
-                                    type="checkbox"
-                                    checked={trackWatchHistory}
-                                    onChange={(e) => onTrackWatchHistoryChange(e.target.checked)}
-                                    className="sr-only peer"
-                                />
-                                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                            </label>
-                        </div>
-                    </div>
-                </div>
             </div>
         )
     }
@@ -330,17 +218,11 @@ interface PreferencesSectionProps {
     childSafetyMode: boolean
     autoMute: boolean
     defaultVolume: number
-    improveRecommendations: boolean
-    showRecommendations: boolean
-    trackWatchHistory: boolean
     hasPIN: boolean
     pinEnabled: boolean
     onChildSafetyModeChange: (checked: boolean) => void
     onAutoMuteChange: (checked: boolean) => void
     onDefaultVolumeChange: (volume: number) => void
-    onImproveRecommendationsChange: (checked: boolean) => void
-    onShowRecommendationsChange: (checked: boolean) => void
-    onTrackWatchHistoryChange: (checked: boolean) => void
     onShowChildSafetyModal: () => void
     onSetupPIN: () => void
     onChangePIN: () => void
@@ -353,17 +235,11 @@ const PreferencesSection: React.FC<PreferencesSectionProps> = ({
     childSafetyMode,
     autoMute,
     defaultVolume,
-    improveRecommendations,
-    showRecommendations,
-    trackWatchHistory,
     hasPIN,
     pinEnabled,
     onChildSafetyModeChange,
     onAutoMuteChange,
     onDefaultVolumeChange,
-    onImproveRecommendationsChange,
-    onShowRecommendationsChange,
-    onTrackWatchHistoryChange,
     onShowChildSafetyModal,
     onSetupPIN,
     onChangePIN,
@@ -413,18 +289,12 @@ const PreferencesSection: React.FC<PreferencesSectionProps> = ({
                     childSafetyMode={childSafetyMode}
                     autoMute={autoMute}
                     defaultVolume={defaultVolume}
-                    improveRecommendations={improveRecommendations}
-                    showRecommendations={showRecommendations}
-                    trackWatchHistory={trackWatchHistory}
                     isGuest={isGuest}
                     hasPIN={hasPIN}
                     pinEnabled={pinEnabled}
                     onChildSafetyModeChange={onChildSafetyModeChange}
                     onAutoMuteChange={onAutoMuteChange}
                     onDefaultVolumeChange={onDefaultVolumeChange}
-                    onImproveRecommendationsChange={onImproveRecommendationsChange}
-                    onShowRecommendationsChange={onShowRecommendationsChange}
-                    onTrackWatchHistoryChange={onTrackWatchHistoryChange}
                     onShowChildSafetyModal={onShowChildSafetyModal}
                     onSetupPIN={onSetupPIN}
                     onChangePIN={onChangePIN}
