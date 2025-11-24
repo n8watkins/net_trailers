@@ -557,7 +557,7 @@ export default function DebugControls() {
 
                                 {/* Docs Link */}
                                 <a
-                                    href="/docs"
+                                    href="/docs/debugger-console"
                                     className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600/40"
                                     title="View debug console documentation"
                                 >

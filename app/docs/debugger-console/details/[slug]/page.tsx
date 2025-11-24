@@ -627,9 +627,10 @@ type DebugSlug = keyof typeof debugOptions
 export async function generateMetadata({
     params,
 }: {
-    params: { slug: string }
+    params: Promise<{ slug: string }>
 }): Promise<Metadata> {
-    const option = debugOptions[params.slug as DebugSlug]
+    const { slug } = await params
+    const option = debugOptions[slug as DebugSlug]
 
     if (!option) {
         return {
@@ -643,13 +644,15 @@ export async function generateMetadata({
     }
 }
 
-export default function DebugDetailPage({ params }: { params: { slug: string } }) {
+export default async function DebugDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params
+
     // Only render in development mode
     if (process.env.NODE_ENV !== 'development') {
         redirect('/')
     }
 
-    const option = debugOptions[params.slug as DebugSlug]
+    const option = debugOptions[slug as DebugSlug]
 
     if (!option) {
         notFound()
@@ -669,7 +672,7 @@ export default function DebugDetailPage({ params }: { params: { slug: string } }
             <div className="max-w-4xl mx-auto px-4 py-12">
                 {/* Back Button */}
                 <Link
-                    href="/docs"
+                    href="/docs/debugger-console"
                     className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-8 group"
                 >
                     <ArrowLeftIcon className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
@@ -780,7 +783,7 @@ export default function DebugDetailPage({ params }: { params: { slug: string } }
                                 return (
                                     <Link
                                         key={slug}
-                                        href={`/docs/${slug}`}
+                                        href={`/docs/debugger-console/details/${slug}`}
                                         className={`px-3 py-2 rounded bg-${related.color}-500/10 text-${related.color}-400 border border-${related.color}-500/30 hover:bg-${related.color}-500/20 transition-colors text-sm`}
                                     >
                                         {related.icon} {related.title}
