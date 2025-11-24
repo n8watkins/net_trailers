@@ -8,7 +8,8 @@
 
 'use client'
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react'
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import {
@@ -31,7 +32,12 @@ interface CastMember {
     profile_path: string | null
 }
 
-interface ContentWithCredits extends BaseContent {
+interface DirectorInfo {
+    name: string
+    profile_path: string | null
+}
+
+export interface ContentWithCredits extends BaseContent {
     media_type: 'movie' | 'tv'
     // Movie fields
     title?: string
@@ -41,8 +47,8 @@ interface ContentWithCredits extends BaseContent {
     first_air_date?: string
     // Extra credits fields
     cast?: CastMember[]
-    director?: string
-    creator?: string
+    director?: DirectorInfo | null
+    creator?: DirectorInfo | null
 }
 
 // Helper functions for ContentWithCredits
@@ -69,6 +75,8 @@ interface TitlePreferenceModalProps {
     existingVotes?: VotedContent[]
     watchlistContent?: Content[]
     likedContent?: Content[]
+    /** Pre-fetched content to use instead of fetching (for instant loading) */
+    prefetchedContent?: ContentWithCredits[] | null
 }
 
 export default function TitlePreferenceModal({
@@ -78,7 +86,9 @@ export default function TitlePreferenceModal({
     existingVotes = [],
     watchlistContent = [],
     likedContent = [],
+    prefetchedContent = null,
 }: TitlePreferenceModalProps) {
+    const [mounted, setMounted] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
     const [content, setContent] = useState<ContentWithCredits[]>([])
@@ -91,6 +101,16 @@ export default function TitlePreferenceModal({
         return initial
     })
     const [animatingVote, setAnimatingVote] = useState<VoteValue | null>(null)
+
+    // Swipe gesture state
+    const cardRef = useRef<HTMLDivElement>(null)
+    const [swipeOffset, setSwipeOffset] = useState({ x: 0, y: 0 })
+    const [isDragging, setIsDragging] = useState(false)
+    const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null)
+
+    // Swipe thresholds
+    const SWIPE_THRESHOLD = 100 // pixels needed to trigger action
+    const SWIPE_VELOCITY_THRESHOLD = 0.5 // pixels per ms for quick swipes
 
     // Build list of IDs to exclude (already voted or liked)
     const excludeIds = useMemo(() => {
@@ -112,9 +132,61 @@ export default function TitlePreferenceModal({
             }))
     }, [watchlistContent, existingVotes, likedContent])
 
-    // Fetch content on mount
+    // Mount portal after client-side render
+    useEffect(() => {
+        setMounted(true)
+        return () => setMounted(false)
+    }, [])
+
+    // Auto-save on close - saves whatever progress was made
+    const handleClose = useCallback(async () => {
+        if (Object.keys(votes).length > 0 && !isSaving) {
+            setIsSaving(true)
+            try {
+                const votesToSave: VotedContent[] = Object.entries(votes).map(([key, vote]) => {
+                    const [contentId, mediaType] = key.split('-')
+                    return {
+                        contentId: parseInt(contentId),
+                        mediaType: mediaType as 'movie' | 'tv',
+                        vote,
+                        votedAt: Date.now(),
+                    }
+                })
+                await onSave(votesToSave)
+            } catch (error) {
+                console.error('Failed to save title preferences:', error)
+            } finally {
+                setIsSaving(false)
+            }
+        }
+        onClose()
+    }, [votes, isSaving, onSave, onClose])
+
+    // Handle escape key - saves progress on close
     useEffect(() => {
         if (!isOpen) return
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                e.preventDefault()
+                handleClose()
+            }
+        }
+
+        document.addEventListener('keydown', handleKeyDown)
+        return () => document.removeEventListener('keydown', handleKeyDown)
+    }, [isOpen, handleClose])
+
+    // Fetch content on mount (or use prefetched content if available)
+    useEffect(() => {
+        if (!isOpen) return
+
+        // Use prefetched content if available (instant loading!)
+        if (prefetchedContent && prefetchedContent.length > 0) {
+            setContent(prefetchedContent)
+            setIsLoading(false)
+            return
+        }
 
         const fetchContent = async () => {
             setIsLoading(true)
@@ -124,7 +196,7 @@ export default function TitlePreferenceModal({
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         excludeIds,
-                        limit: 15,
+                        limit: 10,
                         includeCredits: true,
                         priorityContent,
                     }),
@@ -144,7 +216,7 @@ export default function TitlePreferenceModal({
         }
 
         fetchContent()
-    }, [isOpen, excludeIds, priorityContent])
+    }, [isOpen, excludeIds, priorityContent, prefetchedContent])
 
     const currentContent = content[currentIndex]
     const contentKey = currentContent
@@ -160,54 +232,158 @@ export default function TitlePreferenceModal({
             setAnimatingVote(vote)
 
             // Update votes
-            setVotes((prev) => ({
-                ...prev,
+            const newVotes = {
+                ...votes,
                 [contentKey]: vote,
-            }))
+            }
+            setVotes(newVotes)
 
-            // Auto-advance after animation
-            setTimeout(() => {
+            // Reset swipe state
+            setSwipeOffset({ x: 0, y: 0 })
+            setIsDragging(false)
+
+            // Auto-advance after animation or auto-save if last item
+            setTimeout(async () => {
                 setAnimatingVote(null)
                 if (currentIndex < content.length - 1) {
                     setCurrentIndex((prev) => prev + 1)
+                } else {
+                    // Last item - auto-save and close
+                    setIsSaving(true)
+                    try {
+                        const votesToSave: VotedContent[] = Object.entries(newVotes).map(
+                            ([key, v]) => {
+                                const [contentId, mediaType] = key.split('-')
+                                return {
+                                    contentId: parseInt(contentId),
+                                    mediaType: mediaType as 'movie' | 'tv',
+                                    vote: v,
+                                    votedAt: Date.now(),
+                                }
+                            }
+                        )
+                        await onSave(votesToSave)
+                        onClose()
+                    } catch (error) {
+                        console.error('Failed to save title preferences:', error)
+                        setIsSaving(false)
+                    }
                 }
             }, 400)
         },
-        [currentContent, contentKey, currentIndex, content.length]
+        [currentContent, contentKey, currentIndex, content.length, votes, onSave, onClose]
     )
 
-    const handleSave = async () => {
-        setIsSaving(true)
-        try {
-            const votesToSave: VotedContent[] = Object.entries(votes).map(([key, vote]) => {
-                const [contentId, mediaType] = key.split('-')
-                return {
-                    contentId: parseInt(contentId),
-                    mediaType: mediaType as 'movie' | 'tv',
-                    vote,
-                    votedAt: Date.now(),
-                }
-            })
-            await onSave(votesToSave)
-            onClose()
-        } catch (error) {
-            console.error('Failed to save title preferences:', error)
-        } finally {
-            setIsSaving(false)
+    // Touch/swipe handlers for mobile
+    const handleTouchStart = useCallback(
+        (e: React.TouchEvent) => {
+            if (animatingVote) return
+            const touch = e.touches[0]
+            touchStartRef.current = {
+                x: touch.clientX,
+                y: touch.clientY,
+                time: Date.now(),
+            }
+            setIsDragging(true)
+        },
+        [animatingVote]
+    )
+
+    const handleTouchMove = useCallback(
+        (e: React.TouchEvent) => {
+            if (!touchStartRef.current || animatingVote) return
+            const touch = e.touches[0]
+            const deltaX = touch.clientX - touchStartRef.current.x
+            const deltaY = touch.clientY - touchStartRef.current.y
+
+            // Only allow horizontal swipes (ignore if vertical movement is dominant)
+            if (Math.abs(deltaY) > Math.abs(deltaX) * 1.5 && Math.abs(deltaX) < 30) {
+                return
+            }
+
+            setSwipeOffset({ x: deltaX, y: deltaY * 0.3 }) // Dampen vertical movement
+        },
+        [animatingVote]
+    )
+
+    const handleTouchEnd = useCallback(() => {
+        if (!touchStartRef.current) return
+
+        const deltaX = swipeOffset.x
+        const deltaTime = Date.now() - touchStartRef.current.time
+        const velocity = Math.abs(deltaX) / deltaTime
+
+        // Check if swipe was fast enough or far enough
+        const swipedRight =
+            deltaX > SWIPE_THRESHOLD || (deltaX > 50 && velocity > SWIPE_VELOCITY_THRESHOLD)
+        const swipedLeft =
+            deltaX < -SWIPE_THRESHOLD || (deltaX < -50 && velocity > SWIPE_VELOCITY_THRESHOLD)
+
+        if (swipedRight) {
+            handleVote('love')
+        } else if (swipedLeft) {
+            handleVote('not_for_me')
+        } else {
+            // Snap back
+            setSwipeOffset({ x: 0, y: 0 })
         }
-    }
+
+        touchStartRef.current = null
+        setIsDragging(false)
+    }, [swipeOffset.x, handleVote, SWIPE_THRESHOLD, SWIPE_VELOCITY_THRESHOLD])
+
+    // Mouse drag handlers for desktop testing
+    const handleMouseDown = useCallback(
+        (e: React.MouseEvent) => {
+            if (animatingVote) return
+            touchStartRef.current = {
+                x: e.clientX,
+                y: e.clientY,
+                time: Date.now(),
+            }
+            setIsDragging(true)
+        },
+        [animatingVote]
+    )
+
+    const handleMouseMove = useCallback(
+        (e: React.MouseEvent) => {
+            if (!touchStartRef.current || !isDragging || animatingVote) return
+            const deltaX = e.clientX - touchStartRef.current.x
+            const deltaY = e.clientY - touchStartRef.current.y
+            setSwipeOffset({ x: deltaX, y: deltaY * 0.3 })
+        },
+        [isDragging, animatingVote]
+    )
+
+    const handleMouseUp = useCallback(() => {
+        if (!touchStartRef.current) return
+        handleTouchEnd()
+    }, [handleTouchEnd])
+
+    const handleMouseLeave = useCallback(() => {
+        if (isDragging) {
+            setSwipeOffset({ x: 0, y: 0 })
+            touchStartRef.current = null
+            setIsDragging(false)
+        }
+    }, [isDragging])
+
+    // Calculate swipe visual feedback
+    const swipeRotation = swipeOffset.x * 0.05 // Slight rotation based on swipe
+    const swipeOpacity = Math.max(0.5, 1 - Math.abs(swipeOffset.x) / 300)
+    const swipeIndicator = swipeOffset.x > 50 ? 'love' : swipeOffset.x < -50 ? 'not_for_me' : null
 
     const progress = content.length > 0 ? ((currentIndex + 1) / content.length) * 100 : 0
-    const votedCount = Object.keys(votes).length
 
-    if (!isOpen) return null
+    if (!isOpen || !mounted) return null
 
-    return (
-        <div className="fixed inset-0 z-[50000] flex items-center justify-center p-2 sm:p-4">
+    const modalContent = (
+        <div className="fixed inset-0 z-modal flex items-center justify-center p-2 sm:p-4">
             {/* Background overlay */}
             <div
                 className="fixed inset-0 transition-opacity bg-black/90 backdrop-blur-sm"
-                onClick={onClose}
+                onClick={handleClose}
             />
 
             {/* Modal panel */}
@@ -228,7 +404,7 @@ export default function TitlePreferenceModal({
                         </div>
                     </div>
                     <button
-                        onClick={onClose}
+                        onClick={handleClose}
                         className="text-gray-400 hover:text-white transition-colors duration-200 p-2 rounded-full hover:bg-white/10 -mr-2"
                     >
                         <XMarkIcon className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -236,7 +412,7 @@ export default function TitlePreferenceModal({
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-3 sm:p-4">
+                <div className="flex-1 overflow-hidden p-3 sm:p-4">
                     {/* Progress bar */}
                     {!isLoading && content.length > 0 && (
                         <div className="h-1 bg-gray-800 rounded-full mb-4">
@@ -249,7 +425,7 @@ export default function TitlePreferenceModal({
 
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center py-16">
-                            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-purple-500 mb-4" />
+                            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-red-600 mb-4" />
                             <p className="text-gray-400 text-sm">
                                 Finding titles for you to rate...
                             </p>
@@ -264,260 +440,314 @@ export default function TitlePreferenceModal({
                         </div>
                     ) : currentContent ? (
                         <div
-                            className={`transition-all duration-300 ${
+                            ref={cardRef}
+                            className={`relative select-none ${
+                                isDragging ? '' : 'transition-all duration-300 ease-out'
+                            } ${
                                 animatingVote
                                     ? animatingVote === 'love'
-                                        ? 'scale-95 opacity-70'
+                                        ? 'scale-90 opacity-0'
                                         : animatingVote === 'not_for_me'
-                                          ? 'scale-95 opacity-70 -rotate-2'
-                                          : 'scale-95 opacity-70'
+                                          ? 'scale-90 opacity-0'
+                                          : 'scale-95 opacity-0'
                                     : ''
                             }`}
+                            style={{
+                                transform:
+                                    !animatingVote && swipeOffset.x !== 0
+                                        ? `translateX(${Math.max(-100, Math.min(100, swipeOffset.x))}px) rotate(${swipeRotation * 0.5}deg)`
+                                        : undefined,
+                                opacity: !animatingVote ? swipeOpacity : undefined,
+                            }}
+                            onTouchStart={handleTouchStart}
+                            onTouchMove={handleTouchMove}
+                            onTouchEnd={handleTouchEnd}
+                            onMouseDown={handleMouseDown}
+                            onMouseMove={handleMouseMove}
+                            onMouseUp={handleMouseUp}
+                            onMouseLeave={handleMouseLeave}
                         >
-                            {/* Large poster */}
-                            <div className="relative w-full aspect-[2/3] rounded-xl overflow-hidden mb-4 bg-gray-900">
-                                {currentContent.poster_path ? (
-                                    <Image
-                                        src={`https://image.tmdb.org/t/p/w500${currentContent.poster_path}`}
-                                        alt={getContentTitle(currentContent)}
-                                        fill
-                                        className="object-cover"
-                                        priority
-                                    />
-                                ) : (
-                                    <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
-                                        {isContentMovie(currentContent) ? (
-                                            <FilmIcon className="w-16 h-16 text-gray-600" />
-                                        ) : (
-                                            <TvIcon className="w-16 h-16 text-gray-600" />
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* Vote overlay animation */}
-                                {animatingVote && (
-                                    <div
-                                        className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${
-                                            animatingVote === 'love'
-                                                ? 'bg-pink-500/30'
-                                                : animatingVote === 'not_for_me'
-                                                  ? 'bg-red-500/30'
-                                                  : 'bg-gray-500/30'
-                                        }`}
-                                    >
-                                        {animatingVote === 'love' && (
-                                            <HeartIcon className="w-24 h-24 text-pink-500 animate-pulse" />
-                                        )}
-                                        {animatingVote === 'not_for_me' && (
-                                            <HandThumbDownIcon className="w-24 h-24 text-red-500 animate-pulse" />
-                                        )}
-                                        {animatingVote === 'neutral' && (
-                                            <MinusIcon className="w-24 h-24 text-gray-400 animate-pulse" />
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* Media type badge */}
-                                <div className="absolute top-3 left-3">
-                                    <span
-                                        className={`px-2 py-1 rounded text-xs font-medium ${
-                                            isContentMovie(currentContent)
-                                                ? 'bg-blue-500/80 text-white'
-                                                : 'bg-purple-500/80 text-white'
-                                        }`}
-                                    >
-                                        {isContentMovie(currentContent) ? 'Movie' : 'TV Show'}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Title and year */}
-                            <div className="text-center mb-3">
-                                <h3 className="text-xl sm:text-2xl font-bold text-white">
-                                    {getContentTitle(currentContent)}
-                                </h3>
-                                <p className="text-gray-400 text-sm">
-                                    {getContentYear(currentContent)}
-                                    {currentContent.vote_average && (
-                                        <span className="ml-2">
-                                            ⭐ {currentContent.vote_average.toFixed(1)}
-                                        </span>
-                                    )}
-                                </p>
-                            </div>
-
-                            {/* Director/Creator */}
-                            {(currentContent.director || currentContent.creator) && (
-                                <p className="text-center text-gray-400 text-sm mb-3">
-                                    {currentContent.director
-                                        ? `Directed by ${currentContent.director}`
-                                        : `Created by ${currentContent.creator}`}
-                                </p>
-                            )}
-
-                            {/* Cast */}
-                            {currentContent.cast && currentContent.cast.length > 0 && (
-                                <div className="mb-4">
-                                    <p className="text-gray-500 text-xs mb-2 text-center">
-                                        Starring
-                                    </p>
-                                    <div className="flex flex-wrap justify-center gap-1">
-                                        {currentContent.cast.slice(0, 4).map((actor) => (
-                                            <span
-                                                key={actor.id}
-                                                className="px-2 py-1 bg-gray-800 rounded-full text-xs text-gray-300"
-                                            >
-                                                {actor.name}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Overview */}
-                            {currentContent.overview && (
-                                <p className="text-gray-400 text-sm text-center line-clamp-3 mb-4">
-                                    {currentContent.overview}
-                                </p>
-                            )}
-
-                            {/* Vote buttons */}
-                            <div className="flex justify-center gap-3 sm:gap-4">
-                                <button
-                                    onClick={() => handleVote('not_for_me')}
-                                    disabled={!!animatingVote}
-                                    className={`flex flex-col items-center gap-1.5 p-3 sm:p-4 rounded-xl transition-all duration-200 min-w-[80px] sm:min-w-[100px] active:scale-95 ${
-                                        currentVote === 'not_for_me'
-                                            ? 'bg-red-500/20 border-2 border-red-500 scale-105'
-                                            : 'bg-gray-800/50 border-2 border-transparent hover:bg-gray-700/50 hover:border-red-500/30'
+                            {/* Swipe indicator overlays */}
+                            {swipeIndicator && (
+                                <div
+                                    className={`absolute inset-0 z-10 flex items-center justify-center pointer-events-none rounded-lg ${
+                                        swipeIndicator === 'love'
+                                            ? 'bg-green-500/20'
+                                            : 'bg-red-500/20'
                                     }`}
                                 >
-                                    <HandThumbDownIcon
-                                        className={`w-7 h-7 sm:w-8 sm:h-8 ${
-                                            currentVote === 'not_for_me'
-                                                ? 'text-red-500'
-                                                : 'text-gray-400'
-                                        }`}
-                                    />
-                                    <span
-                                        className={`text-xs font-medium ${
-                                            currentVote === 'not_for_me'
-                                                ? 'text-red-400'
-                                                : 'text-gray-400'
+                                    <div
+                                        className={`px-4 py-2 rounded-lg border-4 rotate-[-15deg] ${
+                                            swipeIndicator === 'love'
+                                                ? 'border-green-500 text-green-500'
+                                                : 'border-red-500 text-red-500'
                                         }`}
                                     >
+                                        <span className="text-2xl font-bold uppercase tracking-wider">
+                                            {swipeIndicator === 'love' ? 'LOVE' : 'NOPE'}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Centered card layout */}
+                            <div className="flex flex-col items-center text-center">
+                                {/* Large centered poster */}
+                                <div className="relative w-[180px] sm:w-[220px] aspect-[2/3] rounded-lg overflow-hidden bg-gray-900 shadow-2xl mb-4">
+                                    {currentContent.poster_path ? (
+                                        <Image
+                                            src={`https://image.tmdb.org/t/p/w500${currentContent.poster_path}`}
+                                            alt={getContentTitle(currentContent)}
+                                            fill
+                                            className="object-cover"
+                                            priority
+                                        />
+                                    ) : (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
+                                            {isContentMovie(currentContent) ? (
+                                                <FilmIcon className="w-16 h-16 text-gray-600" />
+                                            ) : (
+                                                <TvIcon className="w-16 h-16 text-gray-600" />
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Vote overlay animation */}
+                                    {animatingVote && (
+                                        <div
+                                            className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${
+                                                animatingVote === 'love'
+                                                    ? 'bg-pink-500/50'
+                                                    : animatingVote === 'not_for_me'
+                                                      ? 'bg-red-500/50'
+                                                      : 'bg-gray-500/50'
+                                            }`}
+                                        >
+                                            {animatingVote === 'love' && (
+                                                <HeartIcon className="w-16 h-16 text-white animate-pulse" />
+                                            )}
+                                            {animatingVote === 'not_for_me' && (
+                                                <HandThumbDownIcon className="w-16 h-16 text-white animate-pulse" />
+                                            )}
+                                            {animatingVote === 'neutral' && (
+                                                <MinusIcon className="w-16 h-16 text-white animate-pulse" />
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Title */}
+                                <h3 className="text-xl sm:text-2xl font-bold text-white leading-tight mb-1 px-2">
+                                    {getContentTitle(currentContent)}
+                                </h3>
+
+                                {/* Year, Rating & Media type inline */}
+                                <div className="flex items-center justify-center gap-2 text-sm text-gray-400 mb-3">
+                                    <span>{getContentYear(currentContent)}</span>
+                                    {currentContent.vote_average &&
+                                        currentContent.vote_average > 0 && (
+                                            <>
+                                                <span className="text-gray-600">•</span>
+                                                <span className="text-yellow-500 font-medium">
+                                                    {currentContent.vote_average.toFixed(1)}/10
+                                                </span>
+                                            </>
+                                        )}
+                                    <span className="text-gray-600">•</span>
+                                    <span
+                                        className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${
+                                            isContentMovie(currentContent)
+                                                ? 'bg-black text-white border border-gray-700'
+                                                : 'bg-white text-black'
+                                        }`}
+                                    >
+                                        {isContentMovie(currentContent) ? 'Movie' : 'Series'}
+                                    </span>
+                                </div>
+
+                                {/* Description */}
+                                {currentContent.overview && (
+                                    <p className="text-gray-400 text-sm line-clamp-3 mb-4 px-2 max-w-md">
+                                        {currentContent.overview}
+                                    </p>
+                                )}
+
+                                {/* Director/Creator with profile image - only show if they have an image */}
+                                {(() => {
+                                    const person = currentContent.director || currentContent.creator
+                                    if (!person || !person.profile_path) return null
+                                    return (
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-800">
+                                                <Image
+                                                    src={`https://image.tmdb.org/t/p/w185${person.profile_path}`}
+                                                    alt={person.name}
+                                                    fill
+                                                    className="object-cover"
+                                                />
+                                            </div>
+                                            <div className="text-left">
+                                                <p className="text-[10px] text-gray-500 uppercase tracking-wide">
+                                                    {isContentMovie(currentContent)
+                                                        ? 'Director'
+                                                        : 'Creator'}
+                                                </p>
+                                                <p className="text-sm text-white font-medium">
+                                                    {person.name}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )
+                                })()}
+
+                                {/* Cast section with profile images */}
+                                {currentContent.cast && currentContent.cast.length > 0 && (
+                                    <div className="w-full">
+                                        <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-2">
+                                            Cast
+                                        </p>
+                                        <div className="flex justify-center gap-4 overflow-x-auto pb-2 px-2">
+                                            {currentContent.cast.slice(0, 5).map((actor) => (
+                                                <div
+                                                    key={actor.id}
+                                                    className="flex flex-col items-center shrink-0 w-16"
+                                                >
+                                                    <div className="relative w-14 h-14 rounded-full overflow-hidden bg-gray-800 mb-1.5">
+                                                        {actor.profile_path ? (
+                                                            <Image
+                                                                src={`https://image.tmdb.org/t/p/w185${actor.profile_path}`}
+                                                                alt={actor.name}
+                                                                fill
+                                                                className="object-cover"
+                                                            />
+                                                        ) : (
+                                                            <div className="absolute inset-0 flex items-center justify-center bg-gray-700">
+                                                                <span className="text-gray-400 text-sm font-medium">
+                                                                    {actor.name.charAt(0)}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-[11px] text-gray-400 text-center leading-tight line-clamp-2">
+                                                        {actor.name}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Vote buttons - Netflix style */}
+                            <div
+                                className="flex justify-center gap-4 mt-5"
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onTouchStart={(e) => e.stopPropagation()}
+                            >
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleVote('not_for_me')
+                                    }}
+                                    disabled={!!animatingVote}
+                                    className={`flex flex-col items-center gap-1 transition-all duration-200 active:scale-95 ${
+                                        currentVote === 'not_for_me'
+                                            ? 'scale-110'
+                                            : 'hover:scale-105'
+                                    }`}
+                                >
+                                    <div
+                                        className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center border-2 transition-all ${
+                                            currentVote === 'not_for_me'
+                                                ? 'bg-red-600 border-red-600'
+                                                : 'bg-transparent border-gray-500 hover:border-red-500 hover:bg-red-500/10'
+                                        }`}
+                                    >
+                                        <HandThumbDownIcon
+                                            className={`w-6 h-6 sm:w-7 sm:h-7 ${
+                                                currentVote === 'not_for_me'
+                                                    ? 'text-white'
+                                                    : 'text-gray-300'
+                                            }`}
+                                        />
+                                    </div>
+                                    <span className="text-[10px] text-gray-400 font-medium">
                                         Not for me
                                     </span>
                                 </button>
 
                                 <button
-                                    onClick={() => handleVote('neutral')}
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleVote('neutral')
+                                    }}
                                     disabled={!!animatingVote}
-                                    className={`flex flex-col items-center gap-1.5 p-3 sm:p-4 rounded-xl transition-all duration-200 min-w-[80px] sm:min-w-[100px] active:scale-95 ${
-                                        currentVote === 'neutral'
-                                            ? 'bg-gray-500/20 border-2 border-gray-500 scale-105'
-                                            : 'bg-gray-800/50 border-2 border-transparent hover:bg-gray-700/50 hover:border-gray-500/30'
+                                    className={`flex flex-col items-center gap-1 transition-all duration-200 active:scale-95 ${
+                                        currentVote === 'neutral' ? 'scale-110' : 'hover:scale-105'
                                     }`}
                                 >
-                                    <MinusIcon
-                                        className={`w-7 h-7 sm:w-8 sm:h-8 ${
+                                    <div
+                                        className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center border-2 transition-all ${
                                             currentVote === 'neutral'
-                                                ? 'text-gray-400'
-                                                : 'text-gray-500'
-                                        }`}
-                                    />
-                                    <span
-                                        className={`text-xs font-medium ${
-                                            currentVote === 'neutral'
-                                                ? 'text-gray-300'
-                                                : 'text-gray-500'
+                                                ? 'bg-gray-600 border-gray-600'
+                                                : 'bg-transparent border-gray-500 hover:border-gray-400 hover:bg-gray-500/10'
                                         }`}
                                     >
+                                        <MinusIcon
+                                            className={`w-6 h-6 sm:w-7 sm:h-7 ${
+                                                currentVote === 'neutral'
+                                                    ? 'text-white'
+                                                    : 'text-gray-300'
+                                            }`}
+                                        />
+                                    </div>
+                                    <span className="text-[10px] text-gray-400 font-medium">
                                         Neutral
                                     </span>
                                 </button>
 
                                 <button
-                                    onClick={() => handleVote('love')}
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleVote('love')
+                                    }}
                                     disabled={!!animatingVote}
-                                    className={`flex flex-col items-center gap-1.5 p-3 sm:p-4 rounded-xl transition-all duration-200 min-w-[80px] sm:min-w-[100px] active:scale-95 ${
-                                        currentVote === 'love'
-                                            ? 'bg-pink-500/20 border-2 border-pink-500 scale-105'
-                                            : 'bg-gray-800/50 border-2 border-transparent hover:bg-gray-700/50 hover:border-pink-500/30'
+                                    className={`flex flex-col items-center gap-1 transition-all duration-200 active:scale-95 ${
+                                        currentVote === 'love' ? 'scale-110' : 'hover:scale-105'
                                     }`}
                                 >
-                                    <HeartIcon
-                                        className={`w-7 h-7 sm:w-8 sm:h-8 ${
+                                    <div
+                                        className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center border-2 transition-all ${
                                             currentVote === 'love'
-                                                ? 'text-pink-500'
-                                                : 'text-gray-400'
-                                        }`}
-                                    />
-                                    <span
-                                        className={`text-xs font-medium ${
-                                            currentVote === 'love'
-                                                ? 'text-pink-400'
-                                                : 'text-gray-400'
+                                                ? 'bg-green-600 border-green-600'
+                                                : 'bg-transparent border-gray-500 hover:border-green-500 hover:bg-green-500/10'
                                         }`}
                                     >
+                                        <HeartIcon
+                                            className={`w-6 h-6 sm:w-7 sm:h-7 ${
+                                                currentVote === 'love'
+                                                    ? 'text-white'
+                                                    : 'text-gray-300'
+                                            }`}
+                                        />
+                                    </div>
+                                    <span className="text-[10px] text-gray-400 font-medium">
                                         Love it
                                     </span>
                                 </button>
                             </div>
+
+                            {/* Hint for mobile */}
+                            <p className="text-center text-[10px] text-gray-500 mt-3 sm:hidden">
+                                Tap buttons or swipe to vote
+                            </p>
                         </div>
                     ) : null}
-
-                    {/* Navigation dots */}
-                    {!isLoading && content.length > 0 && (
-                        <div className="flex justify-center gap-1.5 flex-wrap max-w-xs mx-auto mt-4">
-                            {content.map((c, index) => {
-                                const key = `${c.id}-${c.media_type || 'movie'}`
-                                const vote = votes[key]
-                                return (
-                                    <button
-                                        key={key}
-                                        onClick={() => setCurrentIndex(index)}
-                                        className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full transition-all duration-200 ${
-                                            index === currentIndex
-                                                ? 'bg-purple-500 w-4 sm:w-5'
-                                                : vote
-                                                  ? vote === 'love'
-                                                      ? 'bg-pink-500/60'
-                                                      : vote === 'not_for_me'
-                                                        ? 'bg-red-500/60'
-                                                        : 'bg-gray-500/60'
-                                                  : 'bg-gray-700'
-                                        }`}
-                                    />
-                                )
-                            })}
-                        </div>
-                    )}
-                </div>
-
-                {/* Footer */}
-                <div className="px-3 sm:px-4 py-3 bg-gray-800/30 border-t border-gray-700/50 shrink-0">
-                    <div className="flex gap-3">
-                        <button
-                            onClick={onClose}
-                            className="flex-1 px-4 py-3 bg-gray-700 text-white rounded-lg font-medium transition-all duration-200 hover:bg-gray-600 text-sm sm:text-base"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={handleSave}
-                            disabled={isSaving || votedCount === 0}
-                            className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all duration-200 text-sm sm:text-base ${
-                                votedCount > 0
-                                    ? 'bg-purple-600 hover:bg-purple-500 text-white'
-                                    : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                            }`}
-                        >
-                            {isSaving ? 'Saving...' : `Save (${votedCount})`}
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
     )
+
+    // Render via portal to escape stacking contexts
+    return createPortal(modalContent, document.body)
 }

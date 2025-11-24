@@ -9,6 +9,8 @@ import { useSessionStore } from '../../stores/sessionStore'
 import { CollectionRowLoader } from '../collections/CollectionRowLoader'
 import RecommendedForYouRow from '../recommendations/RecommendedForYouRow'
 import { TrendingRow, TopRatedRow } from '../recommendations/SystemRecommendationRow'
+import TrendingActorsRow from '../actors/TrendingActorsRow'
+import ActorContentModal from '../actors/ActorContentModal'
 import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
 import { useCacheStore } from '../../stores/cacheStore'
@@ -40,6 +42,7 @@ export default function HomeClient({ data }: HomeClientProps) {
         trending: false,
         'top-rated': false,
         'recommended-for-you': false,
+        'trending-actors': false,
     })
 
     // Create stable callback handlers for each row
@@ -53,6 +56,10 @@ export default function HomeClient({ data }: HomeClientProps) {
 
     const handleRecommendedLoaded = useCallback(() => {
         setRowsLoadingState((prev) => ({ ...prev, 'recommended-for-you': true }))
+    }, [])
+
+    const handleTrendingActorsLoaded = useCallback(() => {
+        setRowsLoadingState((prev) => ({ ...prev, 'trending-actors': true }))
     }, [])
 
     // Get collections from appropriate store
@@ -229,6 +236,13 @@ export default function HomeClient({ data }: HomeClientProps) {
                                             onLoadComplete={handleRecommendedLoaded}
                                         />
                                     )
+                                case 'trending-actors':
+                                    return (
+                                        <TrendingActorsRow
+                                            key="trending-actors"
+                                            onLoadComplete={handleTrendingActorsLoaded}
+                                        />
+                                    )
                                 default:
                                     return null
                             }
@@ -314,6 +328,9 @@ export default function HomeClient({ data }: HomeClientProps) {
                     </section>
                 </main>
             </div>
+
+            {/* Actor Content Modal */}
+            <ActorContentModal />
         </>
     )
 }

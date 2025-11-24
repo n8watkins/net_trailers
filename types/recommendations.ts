@@ -10,7 +10,11 @@ import { Content } from './collections'
  * System recommendation IDs - these are built-in recommendation rows
  * that users can customize but cannot add manual content to
  */
-export type SystemRecommendationId = 'trending' | 'top-rated' | 'recommended-for-you'
+export type SystemRecommendationId =
+    | 'trending'
+    | 'top-rated'
+    | 'recommended-for-you'
+    | 'trending-actors'
 
 /**
  * System Recommendation Settings
@@ -49,10 +53,19 @@ export interface SystemRecommendation {
  */
 export const DEFAULT_SYSTEM_RECOMMENDATIONS: SystemRecommendation[] = [
     {
+        id: 'recommended-for-you',
+        name: 'Recommended For You',
+        enabled: true,
+        order: 0,
+        mediaType: 'both',
+        genres: [],
+        emoji: '✨',
+    },
+    {
         id: 'trending',
         name: 'Trending',
         enabled: true,
-        order: 0,
+        order: 1,
         mediaType: 'both',
         genres: [],
         emoji: '🔥',
@@ -61,19 +74,19 @@ export const DEFAULT_SYSTEM_RECOMMENDATIONS: SystemRecommendation[] = [
         id: 'top-rated',
         name: 'Top Rated',
         enabled: true,
-        order: 1,
+        order: 2,
         mediaType: 'both',
         genres: [],
         emoji: '⭐',
     },
     {
-        id: 'recommended-for-you',
-        name: 'Recommended For You',
+        id: 'trending-actors',
+        name: 'Trending Actors',
         enabled: true,
-        order: 2,
+        order: 3,
         mediaType: 'both',
         genres: [],
-        emoji: '✨',
+        emoji: '🎭',
     },
 ]
 

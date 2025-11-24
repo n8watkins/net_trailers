@@ -9,6 +9,16 @@ export interface Person {
     profile_path: string | null
 }
 
+/**
+ * Trending person from TMDB with additional metadata
+ */
+export interface TrendingPerson extends Person {
+    known_for_department: string
+    popularity: number
+    gender: number
+    known_for: Content[]
+}
+
 export interface CastMember extends Person {
     character: string
     order: number

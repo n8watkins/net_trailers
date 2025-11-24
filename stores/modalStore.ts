@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { Content, getTitle } from '../typings'
+import { Content, getTitle, TrendingPerson } from '../typings'
 import { startTransition } from 'react'
 import { uiLog } from '../utils/debugLogger'
 
@@ -61,6 +61,12 @@ export interface CollectionBuilderModalState {
     isOpen: boolean
 }
 
+// Actor content modal state
+export interface ActorContentModalState {
+    isOpen: boolean
+    actor: TrendingPerson | null
+}
+
 // Modal store state interface
 export interface ModalStoreState {
     // Content modal (main video player modal)
@@ -86,6 +92,9 @@ export interface ModalStoreState {
 
     // Collection builder modal
     collectionBuilderModal: CollectionBuilderModalState
+
+    // Actor content modal
+    actorContentModal: ActorContentModalState
 }
 
 // Modal store actions interface
@@ -134,6 +143,10 @@ export interface ModalStoreActions {
     // Collection builder modal actions
     openCollectionBuilderModal: () => void
     closeCollectionBuilderModal: () => void
+
+    // Actor content modal actions
+    openActorContentModal: (actor: TrendingPerson) => void
+    closeActorContentModal: () => void
 }
 
 export type ModalStore = ModalStoreState & ModalStoreActions
@@ -180,6 +193,11 @@ export const useModalStore = create<ModalStore>((set, get) => ({
 
     collectionBuilderModal: {
         isOpen: false,
+    },
+
+    actorContentModal: {
+        isOpen: false,
+        actor: null,
     },
 
     // Content Modal Actions
@@ -504,6 +522,31 @@ export const useModalStore = create<ModalStore>((set, get) => ({
                 },
             })
             uiLog('❌ [ModalStore] Collection builder modal closed')
+        })
+    },
+
+    // Actor Content Modal Actions
+    openActorContentModal: (actor: TrendingPerson) => {
+        startTransition(() => {
+            set({
+                actorContentModal: {
+                    isOpen: true,
+                    actor,
+                },
+            })
+            uiLog('🎭 [ModalStore] Actor content modal opened:', actor.name)
+        })
+    },
+
+    closeActorContentModal: () => {
+        startTransition(() => {
+            set({
+                actorContentModal: {
+                    isOpen: false,
+                    actor: null,
+                },
+            })
+            uiLog('❌ [ModalStore] Actor content modal closed')
         })
     },
 }))
