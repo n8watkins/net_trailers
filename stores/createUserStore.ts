@@ -487,7 +487,6 @@ export function createUserStore(options: CreateUserStoreOptions) {
                 const sysRecUpdates: Partial<Omit<SystemRecommendation, 'id'>> = {}
                 if (updates.name !== undefined) sysRecUpdates.name = updates.name
                 if (updates.emoji !== undefined) sysRecUpdates.emoji = updates.emoji
-                if (updates.color !== undefined) sysRecUpdates.color = updates.color
                 if (updates.order !== undefined) sysRecUpdates.order = updates.order
                 if (updates.displayAsRow !== undefined) sysRecUpdates.enabled = updates.displayAsRow
                 if (updates.genres !== undefined) sysRecUpdates.genres = updates.genres

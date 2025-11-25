@@ -15,7 +15,11 @@ export type SystemRecommendationId =
     | 'top-rated'
     | 'recommended-for-you'
     | 'trending-actors'
+    | 'trending-movie-actors'
+    | 'trending-tv-actors'
     | 'trending-directors'
+    | 'trending-movie-directors'
+    | 'trending-tv-directors'
 
 /**
  * System Recommendation Settings
@@ -41,9 +45,6 @@ export interface SystemRecommendation {
 
     /** Genre filters (unified genre IDs) */
     genres: string[]
-
-    /** Optional color for UI customization */
-    color?: string
 
     /** Optional emoji for display */
     emoji?: string

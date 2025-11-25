@@ -130,14 +130,16 @@ export const CollectionCard = memo(function CollectionCard({
                             <PencilIcon className="w-5 h-5 text-gray-300" />
                         </button>
 
-                        {/* Delete - All collections are deletable */}
-                        <button
-                            onClick={() => setShowDeleteModal(true)}
-                            className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors shrink-0"
-                            title="Delete collection"
-                        >
-                            <TrashIcon className="w-5 h-5 text-gray-300" />
-                        </button>
+                        {/* Delete - Only show for non-system recommendations */}
+                        {!row.isSystemRecommendation && (
+                            <button
+                                onClick={() => setShowDeleteModal(true)}
+                                className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors shrink-0"
+                                title="Delete collection"
+                            >
+                                <TrashIcon className="w-5 h-5 text-gray-300" />
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>

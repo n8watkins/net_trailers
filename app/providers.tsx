@@ -5,13 +5,14 @@ import ToastManager from '../components/common/ToastManager'
 import Modal from '../components/modals/Modal'
 import ListSelectionModal from '../components/modals/ListSelectionModal'
 import CollectionModal from '../components/modals/CollectionModal'
-import { RowEditorModal } from '../components/modals/RowEditorModal'
+import { HomeRowEditorModal } from '../components/modals/HomeRowEditorModal'
 import CollectionCreatorModal from '../components/modals/CollectionCreatorModal'
 import CollectionBuilderModal from '../components/modals/CollectionBuilderModal'
 import { SessionSyncManager } from '../components/utility/SessionSyncManager'
 import { useAppStore } from '../stores/appStore'
 import DebugControls from '../components/debug/DebugControls'
 import WebVitalsHUD from '../components/debug/WebVitalsHUD'
+import FirebaseCallTracker from '../components/debug/FirebaseCallTracker'
 import VercelAnalyticsWrapper from '../components/utility/VercelAnalyticsWrapper'
 
 /**
@@ -33,12 +34,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
             <Modal />
             <ListSelectionModal />
             <CollectionModal />
-            <RowEditorModalWrapper />
+            <HomeRowEditorModalWrapper />
             <CollectionCreatorModal />
             <CollectionBuilderModal />
             {/* Debug components (only visible in development) */}
             <DebugControls />
             <WebVitalsHUD />
+            <FirebaseCallTracker />
             {/* Analytics */}
             <VercelAnalyticsWrapper />
         </AuthProvider>
@@ -46,16 +48,16 @@ export function Providers({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Wrapper component to connect RowEditorModal to Zustand store
+ * Wrapper component to connect HomeRowEditorModal to Zustand store
  */
-function RowEditorModalWrapper() {
-    const { rowEditorModal, closeRowEditorModal } = useAppStore()
+function HomeRowEditorModalWrapper() {
+    const { homeRowEditorModal, closeHomeRowEditorModal } = useAppStore()
 
     return (
-        <RowEditorModal
-            isOpen={rowEditorModal.isOpen}
-            onClose={closeRowEditorModal}
-            pageType={rowEditorModal.pageType}
+        <HomeRowEditorModal
+            isOpen={homeRowEditorModal.isOpen}
+            onClose={closeHomeRowEditorModal}
+            pageType={homeRowEditorModal.pageType}
         />
     )
 }

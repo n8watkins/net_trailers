@@ -32,8 +32,8 @@ const defaultState: AppStore = {
         mode: 'signin',
     },
 
-    // Row editor modal state
-    rowEditorModal: {
+    // Home row editor modal state
+    homeRowEditorModal: {
         isOpen: false,
         pageType: 'home',
     },
@@ -96,9 +96,9 @@ const defaultState: AppStore = {
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     setAuthModalMode: () => {},
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    openRowEditorModal: () => {},
+    openHomeRowEditorModal: () => {},
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    closeRowEditorModal: () => {},
+    closeHomeRowEditorModal: () => {},
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     openCollectionCreatorModal: () => {},
     // eslint-disable-next-line @typescript-eslint/no-empty-function

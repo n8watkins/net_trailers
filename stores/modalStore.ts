@@ -35,8 +35,8 @@ export interface AuthModalState {
     mode: 'signin' | 'signup'
 }
 
-// Row editor modal state
-export interface RowEditorModalState {
+// Home row editor modal state
+export interface HomeRowEditorModalState {
     isOpen: boolean
     pageType: 'home' | 'movies' | 'tv'
 }
@@ -81,8 +81,8 @@ export interface ModalStoreState {
     // Authentication modal
     authModal: AuthModalState
 
-    // Row editor modal (for home/movies/tv pages)
-    rowEditorModal: RowEditorModalState
+    // Home row editor modal (for home/movies/tv pages)
+    homeRowEditorModal: HomeRowEditorModalState
 
     // Collection creator modal
     collectionCreatorModal: CollectionCreatorModalState
@@ -119,9 +119,9 @@ export interface ModalStoreActions {
     closeAuthModal: () => void
     setAuthModalMode: (mode: 'signin' | 'signup') => void
 
-    // Row editor modal actions
-    openRowEditorModal: (pageType: 'home' | 'movies' | 'tv') => void
-    closeRowEditorModal: () => void
+    // Home row editor modal actions
+    openHomeRowEditorModal: (pageType: 'home' | 'movies' | 'tv') => void
+    closeHomeRowEditorModal: () => void
 
     // Collection creator modal actions
     openCollectionCreatorModal: (
@@ -175,7 +175,7 @@ export const useModalStore = create<ModalStore>((set, get) => ({
         mode: 'signin',
     },
 
-    rowEditorModal: {
+    homeRowEditorModal: {
         isOpen: false,
         pageType: 'home',
     },
@@ -383,28 +383,28 @@ export const useModalStore = create<ModalStore>((set, get) => ({
         }))
     },
 
-    // Row Editor Modal Actions
-    openRowEditorModal: (pageType: 'home' | 'movies' | 'tv') => {
+    // Home Row Editor Modal Actions
+    openHomeRowEditorModal: (pageType: 'home' | 'movies' | 'tv') => {
         startTransition(() => {
             set({
-                rowEditorModal: {
+                homeRowEditorModal: {
                     isOpen: true,
                     pageType,
                 },
             })
-            uiLog('📊 [ModalStore] Row editor modal opened:', pageType)
+            uiLog('📊 [ModalStore] Home row editor modal opened:', pageType)
         })
     },
 
-    closeRowEditorModal: () => {
+    closeHomeRowEditorModal: () => {
         startTransition(() => {
             set({
-                rowEditorModal: {
+                homeRowEditorModal: {
                     isOpen: false,
                     pageType: 'home',
                 },
             })
-            uiLog('❌ [ModalStore] Row editor modal closed')
+            uiLog('❌ [ModalStore] Home row editor modal closed')
         })
     },
 

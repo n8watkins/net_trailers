@@ -15,6 +15,10 @@ import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
 import { SystemRecommendation, SystemRecommendationId } from '../../types/recommendations'
 import { Collection } from '../../types/collections'
+import {
+    generateSystemRecommendationName,
+    getSystemRecommendationEmoji,
+} from '../../utils/systemRecommendationNames'
 
 interface SystemRecommendationRowProps {
     /** The type of system recommendation */
@@ -61,10 +65,16 @@ export default function SystemRecommendationRow({
 
     // Get settings with defaults
     const isEnabled = recommendation?.enabled ?? true
-    const displayName = recommendation?.name || defaultName
     const mediaType = recommendation?.mediaType || 'both'
     const genres = recommendation?.genres || []
-    const emoji = recommendation?.emoji || ''
+
+    // Auto-generate display name based on mediaType and genres
+    const displayName = generateSystemRecommendationName({
+        recommendationId,
+        mediaType,
+        genres,
+    })
+    const emoji = getSystemRecommendationEmoji(recommendationId)
 
     // Convert SystemRecommendation to Collection for Row's edit functionality
     const collectionForEdit = useMemo((): Collection | null => {
@@ -80,7 +90,6 @@ export default function SystemRecommendationRow({
             genres: recommendation.genres || [],
             genreLogic: 'OR',
             emoji: recommendation.emoji,
-            color: recommendation.color,
             isSystemCollection: true,
             isSpecialCollection: true, // Trending/Top Rated are special (no genre filtering required)
             canEdit: true,

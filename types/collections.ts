@@ -262,6 +262,7 @@ export interface UserCollection extends BaseCollectionConfig {
  */
 export interface DisplayCollection extends BaseCollectionConfig {
     isSystemCollection: boolean // true for system collections, false for user collections
+    isSystemRecommendation?: boolean // true for Trending, Top Rated, Recommended For You (not deletable)
     enabled: boolean // Current enabled state for this user
     userId?: string // Only present for user collections
     createdAt?: number // Only present for user collections

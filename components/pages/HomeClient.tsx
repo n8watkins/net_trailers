@@ -25,7 +25,7 @@ interface HomeClientProps {
 export default function HomeClient({ data }: HomeClientProps) {
     const { modal } = useModalStore()
     const showModal = modal.isOpen
-    const openRowEditorModal = useModalStore((state) => state.openRowEditorModal)
+    const openHomeRowEditorModal = useModalStore((state) => state.openHomeRowEditorModal)
     const openCollectionBuilderModal = useModalStore((state) => state.openCollectionBuilderModal)
     const getUserId = useSessionStore((state) => state.getUserId)
     const sessionType = useSessionStore((state) => state.sessionType)
@@ -206,7 +206,7 @@ export default function HomeClient({ data }: HomeClientProps) {
                         {/* Manage Page Button - Floating in top right */}
                         <div className="sticky top-20 z-20 flex justify-end px-4 sm:px-6 md:px-8 lg:px-16">
                             <button
-                                onClick={() => openRowEditorModal('home')}
+                                onClick={() => openHomeRowEditorModal('home')}
                                 className="flex items-center gap-2 px-4 py-2 bg-gray-800/90 hover:bg-gray-700/90 text-white rounded-lg transition-colors shadow-lg backdrop-blur-sm border border-gray-700"
                                 title="Manage page layout"
                             >
