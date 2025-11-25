@@ -61,6 +61,7 @@ export function DeleteConfirmationModal({
     const [isDeleting, setIsDeleting] = useState(false)
     const inputRef = useRef<HTMLInputElement>(null)
     const modalRef = useRef<HTMLDivElement>(null)
+    const mouseDownTargetRef = useRef<EventTarget | null>(null)
 
     const isDeleteEnabled = confirmation === itemName && !isDeleting
     const zIndex = Z_INDEX[zIndexLayer]
@@ -141,11 +142,18 @@ export function DeleteConfirmationModal({
         }
     }, [isDeleteEnabled, onConfirm, onClose])
 
-    const handleBackdropClick = useCallback(
+    // Handle mousedown to track where click started
+    const handleMouseDown = useCallback((e: React.MouseEvent) => {
+        mouseDownTargetRef.current = e.target
+    }, [])
+
+    // Only close if both mousedown and mouseup happened on the backdrop
+    const handleMouseUp = useCallback(
         (e: React.MouseEvent) => {
-            if (e.target === e.currentTarget) {
+            if (e.target === e.currentTarget && mouseDownTargetRef.current === e.target) {
                 onClose()
             }
+            mouseDownTargetRef.current = null
         },
         [onClose]
     )
@@ -167,7 +175,8 @@ export function DeleteConfirmationModal({
         <div
             className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
             style={{ zIndex }}
-            onClick={handleBackdropClick}
+            onMouseDown={handleMouseDown}
+            onMouseUp={handleMouseUp}
             role="dialog"
             aria-modal="true"
             aria-labelledby="delete-modal-title"
@@ -177,6 +186,8 @@ export function DeleteConfirmationModal({
                 ref={modalRef}
                 className="bg-gray-800 border border-gray-600 rounded-xl p-6 max-w-md w-full shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+                onMouseUp={(e) => e.stopPropagation()}
             >
                 {/* Title */}
                 <h3 id="delete-modal-title" className="text-xl font-bold text-white mb-4">
