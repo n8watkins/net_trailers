@@ -248,16 +248,16 @@ const RecommendationsControls = React.memo<RecommendationsControlsProps>(
                     </div>
                 </div>
 
-                {/* Manage Votes Section */}
+                {/* Manage Ratings Section */}
                 <div>
                     <h3 className="text-lg font-semibold text-white mb-4">Your Ratings</h3>
                     <Link
-                        href="/votes"
+                        href="/ratings"
                         className="flex items-center justify-between bg-[#0a0a0a] rounded-lg border border-[#313131] p-4 hover:bg-[#1a1a1a] transition-colors group"
                     >
                         <div>
                             <p className="text-sm font-medium text-[#e5e5e5] mb-1">
-                                Manage Voted Titles
+                                Manage My Ratings
                             </p>
                             <p className="text-sm text-[#b3b3b3]">
                                 View and edit your ratings on movies and TV shows

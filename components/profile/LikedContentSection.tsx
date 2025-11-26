@@ -58,7 +58,7 @@ export function LikedContentSection({
     userId,
     isPublic = false,
 }: LikedContentSectionProps) {
-    const viewAllUrl = isPublic ? `/users/${userId}/liked` : '/liked'
+    const viewAllUrl = isPublic ? `/users/${userId}/liked` : '/ratings?filter=liked'
 
     return (
         <ProfileErrorBoundary sectionName="Liked Content">

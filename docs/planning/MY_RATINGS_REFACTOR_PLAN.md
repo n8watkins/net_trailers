@@ -216,7 +216,7 @@ For existing users:
 
 ## Remaining Work (Optional)
 
-- Rename `/votes` route to `/ratings` (breaking URL change)
-- Remove `/liked` and `/hidden` pages (redirect to `/ratings?filter=liked` etc.)
-- Add migration script for existing users (convert likedMovies/hiddenMovies to myRatings)
-- Update profile page "Liked Content" section to use getLikedContent()
+- [x] Rename `/votes` route to `/ratings` (breaking URL change)
+- [x] Remove `/liked` and `/hidden` pages (redirect to `/ratings?filter=liked` etc.)
+- [x] Update profile page "Liked Content" section link to use new ratings route
+- [ ] Add migration script for existing users (convert likedMovies/hiddenMovies to myRatings)
