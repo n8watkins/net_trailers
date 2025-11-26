@@ -92,22 +92,10 @@ const subNavItems: NavItem[] = [
         iconSolid: RectangleStackIconSolid,
     },
     {
-        label: 'Liked Content',
-        href: '/liked',
-        icon: HeartIcon,
-        iconSolid: HeartIconSolid,
-    },
-    {
         label: 'My Ratings',
         href: '/ratings',
         icon: HandThumbUpIcon,
         iconSolid: HandThumbUpIconSolid,
-    },
-    {
-        label: 'Hidden Content',
-        href: '/hidden',
-        icon: EyeSlashIcon,
-        iconSolid: EyeSlashIconSolid,
     },
     {
         label: 'Notifications',
@@ -154,9 +142,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
         '/history',
         '/rankings',
         '/collections',
-        '/liked',
         '/ratings',
-        '/hidden',
         '/notifications',
         '/settings',
     ]
@@ -617,33 +603,17 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                         <li>
                                             <button
                                                 className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
-                                                    pathname === '/liked'
+                                                    pathname === '/ratings' || pathname.startsWith('/ratings')
                                                         ? 'text-white font-semibold bg-red-600/20'
                                                         : 'hover:bg-white/10'
                                                 }`}
                                                 onClick={() => {
-                                                    router.push('/liked')
+                                                    router.push('/ratings')
                                                     setShowMobileMenu(false)
                                                 }}
                                             >
-                                                <CheckCircleIcon className="h-5 w-5" />
-                                                <span>Liked Content</span>
-                                            </button>
-                                        </li>
-                                        <li>
-                                            <button
-                                                className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
-                                                    pathname === '/hidden'
-                                                        ? 'text-white font-semibold bg-red-600/20'
-                                                        : 'hover:bg-white/10'
-                                                }`}
-                                                onClick={() => {
-                                                    router.push('/hidden')
-                                                    setShowMobileMenu(false)
-                                                }}
-                                            >
-                                                <EyeSlashIcon className="h-5 w-5" />
-                                                <span>Hidden Content</span>
+                                                <HandThumbUpIcon className="h-5 w-5" />
+                                                <span>My Ratings</span>
                                             </button>
                                         </li>
                                         <li>

@@ -4,8 +4,7 @@ import { usePathname } from 'next/navigation'
 import {
     ChevronDownIcon,
     EyeIcon,
-    EyeSlashIcon,
-    CheckCircleIcon,
+    HandThumbUpIcon,
     RectangleStackIcon,
     TrophyIcon,
 } from '@heroicons/react/24/outline'
@@ -85,29 +84,16 @@ function MyListsDropdown() {
                             </div>
                         </Link>
 
-                        <Link href="/liked" onClick={handleLinkClick}>
+                        <Link href="/ratings" onClick={handleLinkClick}>
                             <div
                                 className={`w-full text-left px-4 py-3 hover:bg-white/10 transition-colors flex items-center space-x-3 ${
-                                    isCurrentPath('/liked')
+                                    isCurrentPath('/ratings')
                                         ? 'bg-white/10 text-white font-semibold'
                                         : 'text-gray-300'
                                 }`}
                             >
-                                <CheckCircleIcon className="h-4 w-4" />
-                                <span>Liked Content</span>
-                            </div>
-                        </Link>
-
-                        <Link href="/hidden" onClick={handleLinkClick}>
-                            <div
-                                className={`w-full text-left px-4 py-3 hover:bg-white/10 transition-colors flex items-center space-x-3 ${
-                                    isCurrentPath('/hidden')
-                                        ? 'bg-white/10 text-white font-semibold'
-                                        : 'text-gray-300'
-                                }`}
-                            >
-                                <EyeSlashIcon className="h-4 w-4" />
-                                <span>Hidden Content</span>
+                                <HandThumbUpIcon className="h-4 w-4" />
+                                <span>My Ratings</span>
                             </div>
                         </Link>
                     </div>
