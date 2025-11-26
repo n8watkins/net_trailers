@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { useSearchStore } from '../stores/searchStore'
-import type { Content } from '../typings'
+import type { Content, TrendingPerson } from '../typings'
 import { getTitle } from '../typings'
 import { useChildSafety } from './useChildSafety'
 import { useDebounce } from '../utils/debounce'
@@ -64,9 +64,16 @@ export function useSearch() {
     const filters = useSearchStore((state) => state.filters)
     const searchHistory = useSearchStore((state) => state.history)
 
+    // People search state
+    const searchMode = useSearchStore((state) => state.searchMode)
+    const peopleResults = useSearchStore((state) => state.peopleResults)
+    const filteredPeopleResults = useSearchStore((state) => state.filteredPeopleResults)
+    const peopleFilters = useSearchStore((state) => state.peopleFilters)
+
     // Get actions separately
     const setSearch = useSearchStore((state) => state.setSearch)
     const addToSearchHistory = useSearchStore((state) => state.addToSearchHistory)
+    const setPeopleResults = useSearchStore((state) => state.setPeopleResults)
 
     const { isEnabled: childSafetyEnabled } = useChildSafety()
     const { hiddenMovies } = useSessionData()
@@ -80,6 +87,8 @@ export function useSearch() {
             ...prev,
             results: [],
             filteredResults: [],
+            peopleResults: [],
+            filteredPeopleResults: [],
             hasSearched: false,
             error: null,
             isLoading: false,
@@ -208,6 +217,86 @@ export function useSearch() {
         [setSearch, addToSearchHistory, clearResults, childSafetyEnabled, hiddenMovies]
     )
 
+    // People search function
+    const performPeopleSearch = useCallback(
+        async (query: string) => {
+            const trimmedQuery = query.trim()
+
+            if (!trimmedQuery) {
+                clearResults()
+                return
+            }
+
+            // Cancel previous request
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort()
+            }
+
+            // Create new abort controller
+            const currentController = new AbortController()
+            abortControllerRef.current = currentController
+
+            setSearch((prev) => ({
+                ...prev,
+                isLoading: true,
+                error: null,
+                hasSearched: true,
+            }))
+
+            try {
+                const department =
+                    peopleFilters.department !== 'all' ? peopleFilters.department : ''
+                const url = `/api/search/people?query=${encodeURIComponent(trimmedQuery)}&department=${department}`
+
+                const response = await fetch(url, {
+                    signal: currentController.signal,
+                })
+
+                if (!response.ok) {
+                    throw new Error(`People search failed: ${response.statusText}`)
+                }
+
+                const data = await response.json()
+
+                // Apply department filter client-side (in case server returns all)
+                let filteredResults: TrendingPerson[] = data.results || []
+                if (peopleFilters.department !== 'all') {
+                    filteredResults = filteredResults.filter((person: TrendingPerson) => {
+                        const dept = person.known_for_department?.toLowerCase()
+                        return dept === peopleFilters.department
+                    })
+                }
+
+                setSearch((prev) => ({
+                    ...prev,
+                    peopleResults: filteredResults,
+                    filteredPeopleResults: filteredResults,
+                    totalResults: data.total_results || 0,
+                    isLoading: false,
+                    error: null,
+                }))
+
+                // Add to search history
+                addToSearchHistory(trimmedQuery)
+            } catch (error) {
+                if ((error as { name?: string }).name !== 'AbortError') {
+                    const errorMessage =
+                        (error as { message?: string }).message || 'People search failed'
+                    setSearch((prev) => ({
+                        ...prev,
+                        isLoading: false,
+                        error: errorMessage,
+                    }))
+                }
+            }
+        },
+        [setSearch, addToSearchHistory, clearResults, peopleFilters.department]
+    )
+
+    // Store performPeopleSearch in a ref to avoid dependency issues
+    const performPeopleSearchRef = useRef(performPeopleSearch)
+    performPeopleSearchRef.current = performPeopleSearch
+
     // Effect to trigger search when debounced query changes
     useEffect(() => {
         const trimmedQuery = debouncedQuery.trim()
@@ -220,19 +309,60 @@ export function useSearch() {
         lastQueryRef.current = trimmedQuery
 
         if (trimmedQuery.length >= 2) {
-            performSearchRef.current(trimmedQuery, 1)
+            // Use the appropriate search function based on mode
+            if (searchMode === 'people') {
+                performPeopleSearchRef.current(trimmedQuery)
+            } else {
+                performSearchRef.current(trimmedQuery, 1)
+            }
         } else if (trimmedQuery.length === 0 && hasSearched) {
             clearResults()
         }
-    }, [debouncedQuery, clearResults, hasSearched])
+    }, [debouncedQuery, clearResults, hasSearched, searchMode])
 
     // Effect to re-fetch search results when Child Safety Mode is toggled
     useEffect(() => {
-        // Only refetch if we have an active search
-        if (hasSearched && query.trim().length >= 2) {
+        // Only refetch if we have an active search in content mode
+        if (hasSearched && query.trim().length >= 2 && searchMode === 'content') {
             performSearchRef.current(query, 1)
         }
-    }, [childSafetyEnabled, hasSearched, query])
+    }, [childSafetyEnabled, hasSearched, query, searchMode])
+
+    // Effect to re-trigger search when search mode changes
+    // Track previous mode to only trigger on actual mode changes
+    const prevSearchModeRef = useRef(searchMode)
+    useEffect(() => {
+        // Only trigger if mode actually changed (not on query changes)
+        if (prevSearchModeRef.current === searchMode) {
+            return
+        }
+        prevSearchModeRef.current = searchMode
+
+        // Re-search with current query when mode changes
+        if (query.trim().length >= 2) {
+            lastQueryRef.current = '' // Reset to force re-search
+            if (searchMode === 'people') {
+                performPeopleSearchRef.current(query)
+            } else {
+                performSearchRef.current(query, 1)
+            }
+        }
+    }, [searchMode, query])
+
+    // Effect to re-trigger people search when department filter changes
+    // Track previous department to only trigger on actual filter changes
+    const prevDepartmentRef = useRef(peopleFilters.department)
+    useEffect(() => {
+        // Only trigger if department actually changed
+        if (prevDepartmentRef.current === peopleFilters.department) {
+            return
+        }
+        prevDepartmentRef.current = peopleFilters.department
+
+        if (searchMode === 'people' && hasSearched && query.trim().length >= 2) {
+            performPeopleSearchRef.current(query)
+        }
+    }, [peopleFilters.department, searchMode, hasSearched, query])
 
     // Store performSearch in a ref to avoid dependency issues
     const performSearchRef = useRef(performSearch)
@@ -340,6 +470,8 @@ export function useSearch() {
             query: '',
             results: [],
             filteredResults: [],
+            peopleResults: [],
+            filteredPeopleResults: [],
             hasSearched: false,
             error: null,
             isLoading: false,
@@ -398,9 +530,16 @@ export function useSearch() {
         isLoadingAll,
         isTruncated,
 
+        // People search state
+        searchMode,
+        peopleResults,
+        filteredPeopleResults,
+        peopleFilters,
+
         // Actions
         updateQuery,
         performSearch,
+        performPeopleSearch,
         loadMore,
         clearSearch,
         clearResults,
