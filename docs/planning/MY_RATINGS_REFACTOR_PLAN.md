@@ -207,9 +207,9 @@ For existing users:
 ## Status
 
 - [x] Phase 1: Neutral removal, terminology updates
-- [ ] Phase 2: Type definitions
-- [ ] Phase 3: Store updates
-- [ ] Phase 4: Content filtering
-- [ ] Phase 5: UI components
-- [ ] Phase 6: API routes
+- [x] Phase 2: Type definitions (RatedContent type, updated UserPreferences)
+- [x] Phase 3: Store updates (rateContent, removeRating, getLikedContent, getDislikedContent)
+- [x] Phase 4: Content filtering (filterByRatings, updated filterHiddenContent)
+- [x] Phase 5: UI components (My Ratings page with search, updated useLikedHidden hook)
+- [ ] Phase 6: API routes (recommendations still using legacy arrays)
 - [ ] Phase 7: Testing
