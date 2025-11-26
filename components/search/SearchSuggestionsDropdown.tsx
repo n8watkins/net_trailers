@@ -1,7 +1,9 @@
 import React from 'react'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
-import { Content } from '../../typings'
+import { Content, TrendingPerson } from '../../typings'
+import { SearchMode } from '../../stores/searchStore'
 import SearchResultItem from './SearchResultItem'
+import PersonSearchResultItem from './PersonSearchResultItem'
 
 interface SearchSuggestionsDropdownProps {
     isVisible: boolean
@@ -11,12 +13,15 @@ interface SearchSuggestionsDropdownProps {
     filteredCount: number
     hasActiveFilters: boolean
     quickResults: Content[]
+    quickPeopleResults?: TrendingPerson[]
+    searchMode: SearchMode
     hasMoreResults: boolean
     selectedResultIndex: number
     isSeeAllButtonSelected: boolean
     resultRefs: React.MutableRefObject<(HTMLDivElement | null)[]>
     seeAllButtonRef: React.RefObject<HTMLButtonElement | null>
     onQuickResultClick: (item: Content) => void
+    onQuickPersonClick?: (person: TrendingPerson) => void
     onSeeAllResults: () => void
     onMouseDown: (e: React.MouseEvent) => void
 }
@@ -29,16 +34,23 @@ export default function SearchSuggestionsDropdown({
     filteredCount,
     hasActiveFilters,
     quickResults,
+    quickPeopleResults = [],
+    searchMode,
     hasMoreResults,
     selectedResultIndex,
     isSeeAllButtonSelected,
     resultRefs,
     seeAllButtonRef,
     onQuickResultClick,
+    onQuickPersonClick,
     onSeeAllResults,
     onMouseDown,
 }: SearchSuggestionsDropdownProps) {
-    if (!isVisible || quickResults.length === 0) {
+    // Determine which results to show based on search mode
+    const currentResults = searchMode === 'people' ? quickPeopleResults : quickResults
+    const currentResultsCount = currentResults.length
+
+    if (!isVisible || currentResultsCount === 0) {
         return null
     }
 
@@ -50,9 +62,14 @@ export default function SearchSuggestionsDropdown({
         >
             {/* Results Count Header */}
             {totalResults > 0 && (
-                <div className="px-4 py-2 border-b border-gray-600/50 bg-yellow-500">
-                    <div className="text-xs text-black font-bold">
-                        {hasActiveFilters ? (
+                <div className="px-4 py-2 border-b border-gray-600/50 bg-blue-600">
+                    <div className="text-xs text-white font-bold">
+                        {searchMode === 'people' ? (
+                            <>
+                                Found {totalResults.toLocaleString()}{' '}
+                                {totalResults !== 1 ? 'people' : 'person'} for &ldquo;{query}&rdquo;
+                            </>
+                        ) : hasActiveFilters ? (
                             <>
                                 Showing {filteredCount.toLocaleString()} filtered result
                                 {filteredCount !== 1 ? 's' : ''} (of {totalResults.toLocaleString()}{' '}
@@ -71,18 +88,33 @@ export default function SearchSuggestionsDropdown({
             {/* Quick Results Section */}
             <div className="p-2">
                 <div className="space-y-2">
-                    {quickResults.map((item: Content, index) => (
-                        <SearchResultItem
-                            key={`${item.id}-${index}`}
-                            item={item}
-                            index={index}
-                            isSelected={selectedResultIndex === index}
-                            onClick={onQuickResultClick}
-                            onRef={(el) => {
-                                resultRefs.current[index] = el
-                            }}
-                        />
-                    ))}
+                    {searchMode === 'people'
+                        ? /* People Results */
+                          quickPeopleResults.map((person: TrendingPerson, index) => (
+                              <PersonSearchResultItem
+                                  key={`person-${person.id}-${index}`}
+                                  person={person}
+                                  index={index}
+                                  isSelected={selectedResultIndex === index}
+                                  onClick={onQuickPersonClick || (() => {})}
+                                  onRef={(el) => {
+                                      resultRefs.current[index] = el
+                                  }}
+                              />
+                          ))
+                        : /* Content Results */
+                          quickResults.map((item: Content, index) => (
+                              <SearchResultItem
+                                  key={`${item.id}-${index}`}
+                                  item={item}
+                                  index={index}
+                                  isSelected={selectedResultIndex === index}
+                                  onClick={onQuickResultClick}
+                                  onRef={(el) => {
+                                      resultRefs.current[index] = el
+                                  }}
+                              />
+                          ))}
                 </div>
             </div>
 
@@ -100,7 +132,12 @@ export default function SearchSuggestionsDropdown({
                     >
                         <div className="flex items-center gap-2">
                             <span className="text-white text-sm font-medium group-hover:text-red-400 transition-colors">
-                                {hasActiveFilters ? (
+                                {searchMode === 'people' ? (
+                                    <>
+                                        See all {totalResults.toLocaleString()}{' '}
+                                        {totalResults !== 1 ? 'people' : 'person'}
+                                    </>
+                                ) : hasActiveFilters ? (
                                     <>
                                         See all {filteredCount.toLocaleString()} filtered result
                                         {filteredCount !== 1 ? 's' : ''}
