@@ -525,3 +525,24 @@ input:-moz-autofill-preview {
     background-color: #0a0a0a !important;
     color: white !important;
 }
+
+/* Hide browser's native search clear button (X) */
+/* We have our own custom clear button */
+input[type='search']::-webkit-search-cancel-button,
+input[type='search']::-webkit-search-decoration,
+input[type='search']::-webkit-search-results-button,
+input[type='search']::-webkit-search-results-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+    display: none;
+}
+
+/* Firefox */
+input[type='search']::-moz-clear {
+    display: none;
+}
+
+/* IE/Edge */
+input[type='search']::-ms-clear {
+    display: none;
+}
