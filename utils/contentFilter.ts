@@ -1,5 +1,5 @@
 import { Content } from '../typings'
-import { UserPreferences } from '../types/shared'
+import { UserPreferences, RatedContent } from '../types/shared'
 
 /**
  * Content filtering utilities for hiding disliked/hidden content from recommendations
@@ -11,7 +11,7 @@ import { UserPreferences } from '../types/shared'
  * Uses a Set-based lookup for O(1) performance when checking if content is hidden.
  *
  * @param content - Array of content to filter
- * @param hiddenMovies - User's hidden movies array
+ * @param hiddenMovies - User's hidden movies array (legacy) or disliked content
  * @returns Filtered content array without hidden items
  *
  * @example
@@ -32,9 +32,30 @@ export function filterDislikedContent(content: Content[], hiddenMovies: Content[
 }
 
 /**
+ * Filter content using myRatings (new unified system)
+ *
+ * @param content - Array of content to filter
+ * @param myRatings - User's ratings array
+ * @returns Filtered content array without disliked items
+ */
+export function filterByRatings(content: Content[], myRatings: RatedContent[]): Content[] {
+    if (!myRatings || myRatings.length === 0) {
+        return content
+    }
+
+    // Create a Set of disliked content IDs for O(1) lookup
+    const dislikedIds = new Set(
+        myRatings.filter((r) => r.rating === 'dislike').map((r) => r.content.id)
+    )
+
+    // Filter out disliked content
+    return content.filter((item) => !dislikedIds.has(item.id))
+}
+
+/**
  * Enhanced filter function that works with UserPreferences
  *
- * Convenience wrapper around filterDislikedContent that accepts UserPreferences object.
+ * Convenience wrapper that checks both myRatings (new) and hiddenMovies (legacy).
  *
  * @param content - Array of content to filter
  * @param userPreferences - User's full preferences object
@@ -49,7 +70,17 @@ export function filterHiddenContent(
     content: Content[],
     userPreferences: UserPreferences | null
 ): Content[] {
-    if (!userPreferences?.hiddenMovies || userPreferences.hiddenMovies.length === 0) {
+    if (!userPreferences) {
+        return content
+    }
+
+    // Use myRatings if available (new system)
+    if (userPreferences.myRatings && userPreferences.myRatings.length > 0) {
+        return filterByRatings(content, userPreferences.myRatings)
+    }
+
+    // Fall back to legacy hiddenMovies
+    if (!userPreferences.hiddenMovies || userPreferences.hiddenMovies.length === 0) {
         return content
     }
 
@@ -68,15 +99,29 @@ export function isContentDisliked(contentId: number, hiddenMovies: Content[]): b
 
 /**
  * Check if specific content is hidden by the user
+ * Uses myRatings (new) with fallback to hiddenMovies (legacy)
+ *
  * @param contentId Content ID to check
- * @param userPreferences User's preferences containing hiddenMovies
- * @returns True if content is hidden, false otherwise
+ * @param userPreferences User's preferences
+ * @returns True if content is hidden/disliked, false otherwise
  */
 export function isContentHidden(
     contentId: number,
     userPreferences: UserPreferences | null
 ): boolean {
-    if (!userPreferences?.hiddenMovies) {
+    if (!userPreferences) {
+        return false
+    }
+
+    // Check myRatings first (new system)
+    if (userPreferences.myRatings && userPreferences.myRatings.length > 0) {
+        return userPreferences.myRatings.some(
+            (r) => r.content.id === contentId && r.rating === 'dislike'
+        )
+    }
+
+    // Fall back to legacy hiddenMovies
+    if (!userPreferences.hiddenMovies) {
         return false
     }
 
@@ -84,12 +129,26 @@ export function isContentHidden(
 }
 
 /**
- * Gets all hidden content from user preferences
- * @param userPreferences User's preferences containing hiddenMovies
- * @returns Array of hidden content items
+ * Gets all hidden/disliked content from user preferences
+ * Uses myRatings (new) with fallback to hiddenMovies (legacy)
+ *
+ * @param userPreferences User's preferences
+ * @returns Array of hidden/disliked content items
  */
 export function getHiddenContent(userPreferences: UserPreferences | null): Content[] {
-    if (!userPreferences?.hiddenMovies) {
+    if (!userPreferences) {
+        return []
+    }
+
+    // Use myRatings if available (new system)
+    if (userPreferences.myRatings && userPreferences.myRatings.length > 0) {
+        return userPreferences.myRatings
+            .filter((r) => r.rating === 'dislike')
+            .map((r) => r.content)
+    }
+
+    // Fall back to legacy hiddenMovies
+    if (!userPreferences.hiddenMovies) {
         return []
     }
 

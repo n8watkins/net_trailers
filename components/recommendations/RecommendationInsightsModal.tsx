@@ -83,10 +83,10 @@ export default function RecommendationInsightsModal({
     const notForMeGenres = genrePreferences.filter((p) => p.preference === 'not_for_me')
     const hasGenrePreferences = genrePreferences.length > 0
 
-    // Separate loved and not-for-me titles (neutral votes don't affect recommendations, so skip them)
-    const lovedTitles = votedContent.filter((v) => v.vote === 'love')
-    const notForMeTitles = votedContent.filter((v) => v.vote === 'not_for_me')
-    const hasTitleVotes = lovedTitles.length > 0 || notForMeTitles.length > 0
+    // Separate liked and disliked titles
+    const likedTitles = votedContent.filter((v) => v.vote === 'like')
+    const dislikedTitles = votedContent.filter((v) => v.vote === 'dislike')
+    const hasTitleVotes = likedTitles.length > 0 || dislikedTitles.length > 0
 
     // Get title from map
     const getTitle = (vote: VotedContent): string => {
@@ -211,14 +211,14 @@ export default function RecommendationInsightsModal({
                             </div>
 
                             {/* Loved titles */}
-                            {lovedTitles.length > 0 && (
+                            {likedTitles.length > 0 && (
                                 <div className="mb-3">
                                     <div className="flex items-center gap-1.5 mb-2">
                                         <HeartIcon className="w-3.5 h-3.5 text-pink-500" />
                                         <span className="text-gray-400 text-xs">Love</span>
                                     </div>
                                     <div className="flex flex-wrap gap-1.5">
-                                        {lovedTitles.slice(0, 6).map((vote) => (
+                                        {likedTitles.slice(0, 6).map((vote) => (
                                             <span
                                                 key={`${vote.contentId}-${vote.mediaType}`}
                                                 className="px-2 py-1 bg-pink-500/20 text-pink-300 rounded text-xs truncate max-w-[150px]"
@@ -227,9 +227,9 @@ export default function RecommendationInsightsModal({
                                                 {getTitle(vote)}
                                             </span>
                                         ))}
-                                        {lovedTitles.length > 6 && (
+                                        {likedTitles.length > 6 && (
                                             <span className="px-2 py-1 bg-pink-500/10 text-pink-400 rounded text-xs">
-                                                +{lovedTitles.length - 6} more
+                                                +{likedTitles.length - 6} more
                                             </span>
                                         )}
                                     </div>
@@ -237,14 +237,14 @@ export default function RecommendationInsightsModal({
                             )}
 
                             {/* Not for me titles */}
-                            {notForMeTitles.length > 0 && (
+                            {dislikedTitles.length > 0 && (
                                 <div>
                                     <div className="flex items-center gap-1.5 mb-2">
                                         <HandThumbDownIcon className="w-3.5 h-3.5 text-red-500" />
                                         <span className="text-gray-400 text-xs">Not for me</span>
                                     </div>
                                     <div className="flex flex-wrap gap-1.5">
-                                        {notForMeTitles.slice(0, 6).map((vote) => (
+                                        {dislikedTitles.slice(0, 6).map((vote) => (
                                             <span
                                                 key={`${vote.contentId}-${vote.mediaType}`}
                                                 className="px-2 py-1 bg-red-500/20 text-red-300 rounded text-xs truncate max-w-[150px]"
@@ -253,9 +253,9 @@ export default function RecommendationInsightsModal({
                                                 {getTitle(vote)}
                                             </span>
                                         ))}
-                                        {notForMeTitles.length > 6 && (
+                                        {dislikedTitles.length > 6 && (
                                             <span className="px-2 py-1 bg-red-500/10 text-red-400 rounded text-xs">
-                                                +{notForMeTitles.length - 6} more
+                                                +{dislikedTitles.length - 6} more
                                             </span>
                                         )}
                                     </div>

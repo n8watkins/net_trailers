@@ -1,15 +1,17 @@
 import React from 'react'
+import Link from 'next/link'
 import {
     getTitle,
     getYear,
     getRating,
     getRuntime,
     getContentType,
-    getDirector,
+    getDirectorInfo,
     getMainCast,
-    getGenreNames,
+    getGenres,
     getIMDbRating,
     Content,
+    isMovie,
 } from '../../typings'
 import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/solid'
 
@@ -18,6 +20,7 @@ interface ContentMetadataProps {
     onDebugClick?: (e: React.MouseEvent) => void
     showDebugButton?: boolean
     isLoadingEnhancedData?: boolean
+    onPersonClick?: () => void
 }
 
 export default function ContentMetadata({
@@ -25,6 +28,7 @@ export default function ContentMetadata({
     onDebugClick,
     showDebugButton = false,
     isLoadingEnhancedData = false,
+    onPersonClick,
 }: ContentMetadataProps) {
     if (!content) return null
 
@@ -111,26 +115,50 @@ export default function ContentMetadata({
             {/* Director & Cast - Show skeleton only while loading, hide if data loaded but empty */}
             <div className="space-y-2 text-sm">
                 {/* Director - show if exists, or show skeleton if still loading */}
-                {getDirector(content) ? (
-                    <div>
-                        <span className="text-gray-400">Director: </span>
-                        <span className="text-white">{getDirector(content)}</span>
-                    </div>
-                ) : isLoadingEnhancedData ? (
-                    <div className="animate-pulse">
-                        <span className="text-gray-400">Director: </span>
-                        <span className="inline-block h-5 w-48 bg-gray-700/50 rounded"></span>
-                    </div>
-                ) : null}
+                {(() => {
+                    const director = getDirectorInfo(content)
+                    if (director) {
+                        return (
+                            <div>
+                                <span className="text-gray-400">Director: </span>
+                                <Link
+                                    href={`/person/${director.id}`}
+                                    className="text-white hover:text-red-400 hover:underline transition-colors"
+                                    onClick={onPersonClick}
+                                >
+                                    {director.name}
+                                </Link>
+                            </div>
+                        )
+                    }
+                    if (isLoadingEnhancedData) {
+                        return (
+                            <div className="animate-pulse">
+                                <span className="text-gray-400">Director: </span>
+                                <span className="inline-block h-5 w-48 bg-gray-700/50 rounded"></span>
+                            </div>
+                        )
+                    }
+                    return null
+                })()}
 
                 {/* Cast - show if exists, or show skeleton if still loading */}
                 {getMainCast(content, 3).length > 0 ? (
                     <div>
                         <span className="text-gray-400">Cast: </span>
                         <span className="text-white">
-                            {getMainCast(content, 3)
-                                .map((actor) => actor.name)
-                                .join(', ')}
+                            {getMainCast(content, 3).map((actor, index, array) => (
+                                <span key={actor.id}>
+                                    <Link
+                                        href={`/person/${actor.id}`}
+                                        className="hover:text-red-400 hover:underline transition-colors"
+                                        onClick={onPersonClick}
+                                    >
+                                        {actor.name}
+                                    </Link>
+                                    {index < array.length - 1 && ', '}
+                                </span>
+                            ))}
                         </span>
                     </div>
                 ) : isLoadingEnhancedData ? (
@@ -141,10 +169,26 @@ export default function ContentMetadata({
                 ) : null}
 
                 {/* Genres - show if exists, or show skeleton if still loading */}
-                {getGenreNames(content).length > 0 ? (
+                {getGenres(content).length > 0 ? (
                     <div>
                         <span className="text-gray-400">Genres: </span>
-                        <span className="text-white">{getGenreNames(content).join(', ')}</span>
+                        <span className="text-white">
+                            {getGenres(content).map((genre, index, array) => {
+                                const mediaType = isMovie(content) ? 'movie' : 'tv'
+                                return (
+                                    <span key={genre.id}>
+                                        <Link
+                                            href={`/genres/${mediaType}/${genre.id}?name=${encodeURIComponent(genre.name)}`}
+                                            className="hover:text-red-400 hover:underline transition-colors"
+                                            onClick={onPersonClick}
+                                        >
+                                            {genre.name}
+                                        </Link>
+                                        {index < array.length - 1 && ', '}
+                                    </span>
+                                )
+                            })}
+                        </span>
                     </div>
                 ) : isLoadingEnhancedData ? (
                     <div className="animate-pulse">

@@ -3,6 +3,7 @@
 
 import { Content } from '../typings'
 import { UserList } from './collections'
+import { RatedContent } from './shared'
 
 /**
  * Base interface for stores that manage user lists
@@ -11,8 +12,11 @@ import { UserList } from './collections'
 export interface StateWithLists {
     userCreatedWatchlists: UserList[]
     defaultWatchlist: Content[]
+    /** @deprecated Use myRatings with rating='like' instead */
     likedMovies: Content[]
+    /** @deprecated Use myRatings with rating='dislike' instead */
     hiddenMovies: Content[]
+    myRatings: RatedContent[]
 }
 
 /**

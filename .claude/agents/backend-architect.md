@@ -47,7 +47,7 @@ You will design, implement, and optimize backend infrastructure with a focus on:
 - **Storage adapter pattern** - Implement save/load methods that work with both Firebase and localStorage
 - **Race condition prevention** - Validate user ID before all state updates, use proper cleanup in useEffects
 - **Async initialization** - Load auth data in background while showing UI defaults
-- **Type safety** - Ensure storage adapters match Zustand store types from `types/atoms.ts`
+- **Type safety** - Ensure storage adapters match Zustand store types from `types/shared.ts`
 - **Auto-save patterns** - Use debounced auto-save (500ms) with user ID validation from `useSessionData`
 
 ### Integration with Components

@@ -67,7 +67,7 @@ The app uses **Zustand** with **18 focused stores** (migrated from monolithic "g
 
 **Type Definitions**:
 
-- `types/atoms.ts` - Shared type definitions (UserPreferences, UserSession, SessionType, etc.)
+- `types/shared.ts` - Shared type definitions (UserPreferences, UserSession, SessionType, etc.)
 - `types/userLists.ts` - Collection types (CollectionType, UserList, AdvancedFilters, ShareSettings)
     - **Note**: `genres` field uses `string[]` (unified genre IDs) not `number[]` (TMDB IDs)
 - `types/customRows.ts` - Custom row types with `string[]` genre fields

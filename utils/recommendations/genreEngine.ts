@@ -29,22 +29,21 @@ export interface UserContentPreference {
 export interface UserVotedContent {
     contentId: number
     mediaType: 'movie' | 'tv'
-    vote: 'love' | 'neutral' | 'not_for_me'
+    vote: 'like' | 'dislike'
     votedAt: number
     genreIds?: number[] // Genre IDs from the content (populated when processing)
 }
 
-// Preference weights
+// Preference weights for genre/content preference customizer (uses 'love'/'not_for_me')
 const PREFERENCE_WEIGHTS = {
     love: 5, // Strong boost for loved genres/content
     not_for_me: -5, // Strong penalty for disliked genres/content
 }
 
-// Vote weights for title quiz
+// Vote weights for title quiz (uses 'like'/'dislike')
 const VOTE_WEIGHTS = {
-    love: 4, // Strong boost (slightly less than explicit genre preference)
-    neutral: 0, // No effect
-    not_for_me: -3, // Moderate penalty (less than explicit genre preference)
+    like: 4, // Strong boost (slightly less than explicit genre preference)
+    dislike: -3, // Moderate penalty (less than explicit genre preference)
 }
 
 // Legacy type alias for backwards compatibility
@@ -137,7 +136,7 @@ export function calculateGenrePreferences(
             if (weight !== 0 && vote.genreIds) {
                 vote.genreIds.forEach((genreId) => {
                     scores[genreId] = (scores[genreId] || 0) + weight
-                    if (vote.vote === 'love') {
+                    if (vote.vote === 'like') {
                         counts[genreId] = (counts[genreId] || 0) + 1
                     }
                 })

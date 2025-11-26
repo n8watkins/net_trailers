@@ -34,7 +34,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         const data = await response.json()
 
         // Build a map of unique credits, merging cast and crew data for duplicates
-        // This preserves both character (acting) and job (crew) info when someone has multiple roles
+        // This preserves both character (acting) and ALL jobs (crew) info when someone has multiple roles
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const creditsMap = new Map<string, any>()
 
@@ -44,20 +44,25 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             creditsMap.set(key, {
                 ...item,
                 is_cast: true,
+                jobs: [], // Initialize empty jobs array for crew roles
             })
         }
 
-        // Process crew - merge with existing cast entries if present
+        // Process crew - merge with existing cast entries if present, accumulating ALL jobs
         for (const item of data.crew || []) {
             const key = `${item.id}-${item.media_type}`
             const existing = creditsMap.get(key)
 
             if (existing) {
-                // Merge crew data into existing cast entry, preserving character
+                // Merge crew data into existing entry, ACCUMULATING all jobs
+                const existingJobs = existing.jobs || []
                 creditsMap.set(key, {
                     ...existing,
-                    job: item.job, // Add crew job to the entry
-                    department: item.department,
+                    // Keep the first job/department for backward compatibility
+                    job: existing.job || item.job,
+                    department: existing.department || item.department,
+                    // Store ALL jobs in an array for filtering
+                    jobs: [...existingJobs, { job: item.job, department: item.department }],
                     is_crew: true,
                 })
             } else {
@@ -66,6 +71,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                     ...item,
                     is_cast: false,
                     is_crew: true,
+                    jobs: [{ job: item.job, department: item.department }],
                 })
             }
         }

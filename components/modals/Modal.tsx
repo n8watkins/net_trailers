@@ -909,6 +909,7 @@ function Modal() {
                                         setShowJsonDebug(true)
                                     }
                                 }}
+                                onPersonClick={handleClose}
                             />
 
                             {/* More Like This Section */}

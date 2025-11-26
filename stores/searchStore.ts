@@ -1,7 +1,13 @@
 import { create } from 'zustand'
-import { Content } from '../typings'
+import { Content, TrendingPerson } from '../typings'
 
-// Search filters type
+// Search mode type
+export type SearchMode = 'content' | 'people'
+
+// Department filter for people search
+export type DepartmentFilter = 'all' | 'acting' | 'directing' | 'writing'
+
+// Search filters type for content
 export interface SearchFilters {
     genres: string[]
     contentType: 'all' | 'movie' | 'tv'
@@ -11,7 +17,15 @@ export interface SearchFilters {
     year?: string
 }
 
+// Search filters type for people
+export interface PeopleSearchFilters {
+    department: DepartmentFilter
+}
+
 export interface SearchState {
+    // Search mode
+    searchMode: SearchMode
+    // Content search state
     query: string
     results: Content[]
     filteredResults: Content[]
@@ -24,6 +38,11 @@ export interface SearchState {
     isLoadingAll: boolean
     isTruncated: boolean
     filters: SearchFilters
+    // People search state
+    peopleResults: TrendingPerson[]
+    filteredPeopleResults: TrendingPerson[]
+    peopleFilters: PeopleSearchFilters
+    // Shared state
     history: string[]
     recentSearches: string[]
 }
@@ -34,6 +53,9 @@ export interface SearchActions {
     setSearchResults: (results: Content[]) => void
     setSearchLoading: (loading: boolean) => void
     setSearchFilters: (filters: Partial<SearchFilters>) => void
+    setSearchMode: (mode: SearchMode) => void
+    setPeopleResults: (results: TrendingPerson[]) => void
+    setPeopleFilters: (filters: Partial<PeopleSearchFilters>) => void
     addToSearchHistory: (query: string) => void
     clearSearchHistory: () => void
 }
@@ -66,6 +88,7 @@ const saveSearchHistory = (history: string[]) => {
 
 export const useSearchStore = create<SearchStore>((set, get) => ({
     // Initial state
+    searchMode: 'content',
     query: '',
     results: [],
     filteredResults: [],
@@ -79,11 +102,17 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
     isTruncated: false,
     filters: {
         genres: [],
-        contentType: 'all',
+        contentType: 'movie',
         releaseYear: 'all',
         rating: 'all',
         sortBy: 'popularity.desc',
         year: 'all',
+    },
+    // People search state
+    peopleResults: [],
+    filteredPeopleResults: [],
+    peopleFilters: {
+        department: 'all',
     },
     history: loadSearchHistory(),
     recentSearches: [],
@@ -92,6 +121,7 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
     setSearch: (updater: (prev: SearchState) => SearchState) => {
         set((state) => {
             const currentState: SearchState = {
+                searchMode: state.searchMode,
                 query: state.query,
                 results: state.results,
                 filteredResults: state.filteredResults,
@@ -104,6 +134,9 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
                 isLoadingAll: state.isLoadingAll,
                 isTruncated: state.isTruncated,
                 filters: state.filters,
+                peopleResults: state.peopleResults,
+                filteredPeopleResults: state.filteredPeopleResults,
+                peopleFilters: state.peopleFilters,
                 history: state.history,
                 recentSearches: state.recentSearches,
             }
@@ -127,6 +160,43 @@ export const useSearchStore = create<SearchStore>((set, get) => ({
         set((state) => ({
             filters: {
                 ...state.filters,
+                ...filters,
+            },
+        }))
+    },
+
+    setSearchMode: (mode: SearchMode) => {
+        set((state) => {
+            // If mode is unchanged, don't reset state (prevents infinite loops from effects)
+            if (state.searchMode === mode) {
+                return state
+            }
+            return {
+                ...state,
+                searchMode: mode,
+                // Clear results when switching modes
+                results: [],
+                filteredResults: [],
+                peopleResults: [],
+                filteredPeopleResults: [],
+                hasSearched: false,
+                error: null,
+                currentPage: 1,
+                hasAllResults: false,
+                isLoadingAll: false,
+                isTruncated: false,
+            }
+        })
+    },
+
+    setPeopleResults: (results: TrendingPerson[]) => {
+        set({ peopleResults: results, filteredPeopleResults: results })
+    },
+
+    setPeopleFilters: (filters: Partial<PeopleSearchFilters>) => {
+        set((state) => ({
+            peopleFilters: {
+                ...state.peopleFilters,
                 ...filters,
             },
         }))

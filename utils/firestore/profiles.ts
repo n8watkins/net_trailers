@@ -30,6 +30,8 @@ import {
     UserProfile,
     UpdateProfileRequest,
     UsernameAvailability,
+    ProfileVisibility,
+    DEFAULT_PROFILE_VISIBILITY,
     validateAvatarFile,
     validateAvatarDimensions,
 } from '../../types/profile'
@@ -87,6 +89,7 @@ export async function createProfile(profile: UserProfile): Promise<void> {
 
 /**
  * Get profile by user ID
+ * Applies default visibility settings if not present (for backward compatibility)
  */
 export async function getProfile(userId: string): Promise<UserProfile | null> {
     try {
@@ -97,7 +100,14 @@ export async function getProfile(userId: string): Promise<UserProfile | null> {
             return null
         }
 
-        return profileDoc.data() as UserProfile
+        const profile = profileDoc.data() as UserProfile
+
+        // Apply default visibility if not present (backward compatibility)
+        if (!profile.visibility) {
+            profile.visibility = { ...DEFAULT_PROFILE_VISIBILITY }
+        }
+
+        return profile
     } catch (error) {
         console.error('Error getting profile:', error)
         throw error
@@ -397,5 +407,63 @@ export async function searchProfiles(
     } catch (error) {
         console.error('Error searching profiles:', error)
         throw error
+    }
+}
+
+/**
+ * Update profile visibility settings
+ * Merges partial updates with existing visibility settings
+ */
+export async function updateProfileVisibility(
+    userId: string,
+    visibilityUpdates: Partial<ProfileVisibility>
+): Promise<ProfileVisibility> {
+    try {
+        validateUserId(userId)
+
+        const profileRef = getProfileDocRef(userId)
+        const profileDoc = await getDoc(profileRef)
+
+        if (!profileDoc.exists()) {
+            throw new NotFoundError('Profile', userId)
+        }
+
+        const currentProfile = profileDoc.data() as UserProfile
+        const currentVisibility = currentProfile.visibility ?? { ...DEFAULT_PROFILE_VISIBILITY }
+
+        // Merge updates with current visibility
+        const newVisibility: ProfileVisibility = {
+            ...currentVisibility,
+            ...visibilityUpdates,
+        }
+
+        await updateDoc(profileRef, {
+            visibility: newVisibility,
+            updatedAt: Date.now(),
+        })
+
+        return newVisibility
+    } catch (error) {
+        console.error('Error updating profile visibility:', error)
+        throw error
+    }
+}
+
+/**
+ * Get profile visibility settings
+ * Returns default visibility if not set
+ */
+export async function getProfileVisibility(userId: string): Promise<ProfileVisibility> {
+    try {
+        const profile = await getProfile(userId)
+
+        if (!profile) {
+            return { ...DEFAULT_PROFILE_VISIBILITY }
+        }
+
+        return profile.visibility ?? { ...DEFAULT_PROFILE_VISIBILITY }
+    } catch (error) {
+        console.error('Error getting profile visibility:', error)
+        return { ...DEFAULT_PROFILE_VISIBILITY }
     }
 }

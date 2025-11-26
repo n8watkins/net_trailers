@@ -13,39 +13,60 @@ export interface SeedRankingsOptions {
 
 const RANKING_TEMPLATES = [
     {
-        title: 'Top 10 Mind-Bending Movies',
-        description: 'Films that make you question reality and challenge your perception',
-        movieIndices: [8, 16, 0, 18, 3, 20, 19, 24, 6, 11],
+        title: 'Christopher Nolan: A Masterclass',
+        description: 'Mind-bending films from the legendary director',
+        movieIndices: [8, 3, 18], // Inception, The Dark Knight, Interstellar
         tvIndices: [],
-        tags: ['Psychological', 'Thrillers', 'Sci-Fi'],
+        tags: ['christopher-nolan', 'sci-fi', 'mystery-thriller'],
     },
     {
-        title: 'Best Animated Masterpieces',
-        description: 'The most beautiful and emotionally powerful animated films ever made',
-        movieIndices: [9, 7],
-        tvIndices: [0, 1, 2],
-        tags: ['Animation', 'Anime', 'Family'],
+        title: 'Best of Studio Ghibli & Anime',
+        description: 'The most beautiful animated films from Japan',
+        movieIndices: [9, 7], // Spirited Away, Your Name
+        tvIndices: [2, 15], // Arcane, One Piece
+        tags: ['studio-ghibli', 'anime'],
     },
     {
-        title: 'Epic Sagas You Must Watch',
-        description: 'Long-form storytelling at its finest - prepare for an emotional journey',
-        movieIndices: [10, 17, 5, 4, 13, 6, 11, 18],
+        title: 'Middle-earth: The Complete Journey',
+        description: 'From the Shire to Mordor - the ultimate fantasy epic',
+        movieIndices: [17, 10], // LOTR: Fellowship, LOTR: Return of the King
+        tvIndices: [17], // Rings of Power
+        tags: ['lotr', 'fantasy'],
+    },
+    {
+        title: 'True Crime & Criminal Empires',
+        description: 'From mobsters to meth empires - the best crime stories',
+        movieIndices: [5, 13, 1], // The Godfather, GoodFellas, Pulp Fiction
+        tvIndices: [0, 6, 18], // Breaking Bad, Better Call Saul, Peaky Blinders
+        tags: ['true-crime', 'heist-crime', 'tarantino'],
+    },
+    {
+        title: 'Oscar-Winning Classics',
+        description: 'Academy Award winners that defined cinema',
+        movieIndices: [4, 6, 2, 10, 23], // Shawshank, Schindler's, Forrest Gump, LOTR:ROTK, Cuckoo's Nest
         tvIndices: [],
-        tags: ['Epic', 'Drama', 'Adventure'],
+        tags: ['oscar-winners', 'classic-hollywood'],
     },
     {
-        title: 'Best TV Shows of All Time',
-        description: 'Television shows that changed the game',
-        movieIndices: [],
-        tvIndices: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-        tags: ['TV', 'Drama', 'Must-Watch'],
+        title: 'Marvel Cinematic Universe Favorites',
+        description: 'Earth\'s mightiest heroes in action',
+        movieIndices: [14, 15], // The Avengers, Infinity War
+        tvIndices: [5], // WandaVision
+        tags: ['mcu', 'action'],
     },
     {
-        title: 'Classic Cinema Essentials',
-        description: 'Timeless classics every film lover should see',
-        movieIndices: [5, 4, 19, 25, 22, 20, 6, 12],
-        tvIndices: [],
-        tags: ['Classics', 'Film History', 'Masterpieces'],
+        title: 'Horror Nights',
+        description: 'Terrifying tales that will keep you up at night',
+        movieIndices: [20], // Psycho
+        tvIndices: [8, 11, 14, 7], // Walking Dead, Supernatural, Stranger Things, The Last of Us
+        tags: ['horror', 'mystery-thriller'],
+    },
+    {
+        title: 'Sci-Fi Mind Benders',
+        description: 'Science fiction that expands your mind',
+        movieIndices: [16, 8, 18], // The Matrix, Inception, Interstellar
+        tvIndices: [3, 14], // Rick and Morty, Stranger Things
+        tags: ['sci-fi', 'netflix-originals'],
     },
 ]
 

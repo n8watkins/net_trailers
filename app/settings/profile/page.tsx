@@ -1,11 +1,14 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import useAuth from '../../../hooks/useAuth'
 import { useAuthStatus } from '../../../hooks/useAuthStatus'
 import { useToast } from '../../../hooks/useToast'
+import { useProfileStore } from '../../../stores/profileStore'
+import { useSessionStore } from '../../../stores/sessionStore'
 import ProfileSection from '../../../components/settings/ProfileSection'
+import { ProfileVisibility, DEFAULT_PROFILE_VISIBILITY } from '../../../types/profile'
 
 const ProfilePage: React.FC = () => {
     const router = useRouter()
@@ -13,9 +16,130 @@ const ProfilePage: React.FC = () => {
     const { isGuest } = useAuthStatus()
     const { showSuccess, showError } = useToast()
 
+    // Profile store for visibility
+    const { profile, getVisibility, updateVisibility, isLoading: profileLoading } = useProfileStore()
+    const isInitialized = useSessionStore((state) => state.isInitialized)
+
+    // Get userId from user object
+    const userId = user?.uid ?? null
+
     // Profile form state
     const [displayName, setDisplayName] = useState(user?.displayName || '')
     const [isSavingProfile, setIsSavingProfile] = useState(false)
+
+    // Visibility state
+    const [visibility, setVisibility] = useState<ProfileVisibility>({ ...DEFAULT_PROFILE_VISIBILITY })
+    const [isLoadingVisibility, setIsLoadingVisibility] = useState(true)
+    const [isSavingVisibility, setIsSavingVisibility] = useState(false)
+
+    // Load visibility settings
+    useEffect(() => {
+        const loadVisibility = async () => {
+            if (!isInitialized || isGuest || !userId) {
+                setIsLoadingVisibility(false)
+                return
+            }
+
+            setIsLoadingVisibility(true)
+            try {
+                const currentVisibility = await getVisibility(userId)
+                setVisibility(currentVisibility)
+            } catch (error) {
+                console.error('Error loading visibility settings:', error)
+                setVisibility({ ...DEFAULT_PROFILE_VISIBILITY })
+            } finally {
+                setIsLoadingVisibility(false)
+            }
+        }
+
+        loadVisibility()
+    }, [isInitialized, isGuest, userId, getVisibility])
+
+    // Sync visibility from profile store
+    useEffect(() => {
+        if (profile?.visibility) {
+            setVisibility(profile.visibility)
+        }
+    }, [profile?.visibility])
+
+    // Handle visibility toggle
+    const handleVisibilityChange = useCallback(
+        async (id: keyof ProfileVisibility, checked: boolean) => {
+            if (isGuest || !userId) {
+                showError('Please create an account to change privacy settings')
+                return
+            }
+
+            const previousVisibility = { ...visibility }
+
+            // If toggling the master switch, update all sub-toggles too
+            let updates: Partial<ProfileVisibility>
+            let newLocalVisibility: ProfileVisibility
+
+            if (id === 'enablePublicProfile') {
+                // Master toggle: set all toggles to the same value
+                updates = {
+                    enablePublicProfile: checked,
+                    showLikedContent: checked,
+                    showWatchLater: checked,
+                    showRankings: checked,
+                    showCollections: checked,
+                    showThreads: checked,
+                    showPollsCreated: checked,
+                    showPollsVoted: checked,
+                }
+                newLocalVisibility = { ...visibility, ...updates }
+            } else {
+                // Individual toggle
+                updates = { [id]: checked }
+                newLocalVisibility = { ...visibility, [id]: checked }
+            }
+
+            setVisibility(newLocalVisibility)
+            setIsSavingVisibility(true)
+
+            try {
+                const result = await updateVisibility(userId, updates)
+
+                if (result) {
+                    if (id === 'enablePublicProfile') {
+                        showSuccess(
+                            checked
+                                ? 'Public profile enabled'
+                                : 'Public profile disabled'
+                        )
+                    } else {
+                        const labelMap: Record<keyof ProfileVisibility, string> = {
+                            enablePublicProfile: 'Public Profile',
+                            showLikedContent: 'Liked Content',
+                            showWatchLater: 'Watch Later',
+                            showRankings: 'Rankings',
+                            showCollections: 'Collections',
+                            showThreads: 'Forum Threads',
+                            showPollsCreated: 'Polls Created',
+                            showPollsVoted: 'Polls Voted',
+                        }
+
+                        showSuccess(
+                            checked
+                                ? `${labelMap[id]} will now appear on your profile`
+                                : `${labelMap[id]} hidden from your profile`
+                        )
+                    }
+                } else {
+                    setVisibility(previousVisibility)
+                    showError('Failed to update privacy settings')
+                }
+            } catch (error) {
+                console.error('Error updating visibility:', error)
+                setVisibility(previousVisibility)
+                showError('Failed to update privacy settings')
+            } finally {
+                setIsSavingVisibility(false)
+            }
+        },
+        [isGuest, userId, visibility, updateVisibility, showSuccess, showError]
+    )
 
     // Detect authentication provider
     const authProvider = React.useMemo(() => {
@@ -98,6 +222,12 @@ const ProfilePage: React.FC = () => {
             setDisplayName={setDisplayName}
             isSavingProfile={isSavingProfile}
             onSaveProfile={handleSaveProfile}
+            visibility={visibility}
+            isLoadingVisibility={isLoadingVisibility || !isInitialized}
+            isSavingVisibility={isSavingVisibility}
+            onVisibilityChange={handleVisibilityChange}
+            profileUsername={profile?.username}
+            profileUserId={userId ?? undefined}
         />
     )
 }

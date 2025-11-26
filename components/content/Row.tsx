@@ -7,9 +7,20 @@ import { filterDislikedContent } from '../../utils/contentFilter'
 import { uiLog, uiWarn } from '../../utils/debugLogger'
 import { Collection } from '../../types/collections'
 import CollectionEditorModal from '../modals/CollectionEditorModal'
+import SystemRecommendationEditorModal from '../modals/SystemRecommendationEditorModal'
+import { SystemRecommendation, SystemRecommendationId } from '../../types/recommendations'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
+
+// System recommendation IDs that should use SystemRecommendationEditorModal
+const SYSTEM_RECOMMENDATION_IDS: SystemRecommendationId[] = [
+    'trending',
+    'top-rated',
+    'recommended-for-you',
+    'trending-actors',
+    'trending-directors',
+]
 
 // Helper for infinite scroll logging with emoji prefix
 const debugLog = (emoji: string, message: string, data?: any): void => {
@@ -41,12 +52,34 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onI
     const guestHiddenMovies = useGuestStore((state) => state.hiddenMovies)
     const hiddenMovies = sessionType === 'authenticated' ? authHiddenMovies : guestHiddenMovies
 
+    // Get system recommendations from the store for looking up full SystemRecommendation object
+    const authSystemRecommendations = useAuthStore((state) => state.systemRecommendations)
+    const guestSystemRecommendations = useGuestStore((state) => state.systemRecommendations)
+    const systemRecommendations =
+        sessionType === 'authenticated' ? authSystemRecommendations : guestSystemRecommendations
+
     // Collection editor state
     const [showCollectionEditor, setShowCollectionEditor] = useState(false)
+    // System recommendation editor state
+    const [showSystemRecEditor, setShowSystemRecEditor] = useState(false)
+    const [editingSystemRec, setEditingSystemRec] = useState<SystemRecommendation | null>(null)
 
-    // Handler to open collection editor
+    // Check if this collection is a system recommendation
+    const isSystemRecommendation =
+        collection && SYSTEM_RECOMMENDATION_IDS.includes(collection.id as SystemRecommendationId)
+
+    // Handler to open the appropriate editor
     const handleEditCollection = () => {
-        if (collection) {
+        if (!collection) return
+
+        if (isSystemRecommendation) {
+            // Find the full SystemRecommendation object from the store
+            const sysRec = systemRecommendations.find((r) => r.id === collection.id)
+            if (sysRec) {
+                setEditingSystemRec(sysRec)
+                setShowSystemRecEditor(true)
+            }
+        } else {
             setShowCollectionEditor(true)
         }
     }
@@ -54,6 +87,12 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onI
     // Handler to close collection editor
     const handleCloseCollectionEditor = () => {
         setShowCollectionEditor(false)
+    }
+
+    // Handler to close system recommendation editor
+    const handleCloseSystemRecEditor = () => {
+        setShowSystemRecEditor(false)
+        setEditingSystemRec(null)
     }
 
     // Show pencil for all collections - the modal will handle what can be edited based on collection type
@@ -433,9 +472,9 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onI
         }
     }
     return (
-        <div className="pb-4 sm:pb-6 md:pb-8">
+        <div className="-mt-4 sm:-mt-6 md:-mt-8">
             {/* Section Title with Edit Button */}
-            <div className="flex items-center gap-3 px-4 sm:px-6 md:px-8 lg:px-16 pt-8 sm:pt-10 md:pt-12 group/title">
+            <div className="flex items-center gap-3 px-4 sm:px-6 md:px-8 lg:px-16 pt-0 group/title">
                 <h2 className="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold transition duration-200 hover:text-gray-300">
                     {title}
                 </h2>
@@ -547,14 +586,21 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onI
                 </div>
             </div>
 
-            {/* Collection Editor Modal */}
-            {collection && (
+            {/* Collection Editor Modal - for user collections */}
+            {collection && !isSystemRecommendation && (
                 <CollectionEditorModal
                     collection={collection}
                     isOpen={showCollectionEditor}
                     onClose={handleCloseCollectionEditor}
                 />
             )}
+
+            {/* System Recommendation Editor Modal - for Trending, Top Rated, etc. */}
+            <SystemRecommendationEditorModal
+                recommendation={editingSystemRec}
+                isOpen={showSystemRecEditor}
+                onClose={handleCloseSystemRecEditor}
+            />
         </div>
     )
 }

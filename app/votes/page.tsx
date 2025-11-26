@@ -11,14 +11,13 @@ import SubPageLayout from '../../components/layout/SubPageLayout'
 import {
     HeartIcon,
     HandThumbDownIcon,
-    MinusIcon,
     FilmIcon,
     TvIcon,
     TrashIcon,
 } from '@heroicons/react/24/solid'
 import { XMarkIcon, HandThumbUpIcon } from '@heroicons/react/24/outline'
 
-type VoteValue = 'love' | 'neutral' | 'not_for_me'
+type VoteValue = 'like' | 'dislike'
 type FilterValue = 'all' | VoteValue
 
 interface ContentDetails {
@@ -133,7 +132,7 @@ export default function VotesPage() {
 
                 setEditingVote(null)
                 showSuccess(
-                    `Vote updated to "${newVote === 'love' ? 'Love' : newVote === 'not_for_me' ? 'Not for me' : 'Neutral'}"`
+                    `Vote updated to "${newVote === 'like' ? 'Liked' : 'Disliked'}"`
                 )
             } catch (error) {
                 console.error('Failed to update vote:', error)
@@ -204,23 +203,20 @@ export default function VotesPage() {
     // Get vote icon
     const getVoteIcon = (vote: VoteValue, className: string = 'w-5 h-5') => {
         switch (vote) {
-            case 'love':
+            case 'like':
                 return <HeartIcon className={`${className} text-green-500`} />
-            case 'not_for_me':
+            case 'dislike':
                 return <HandThumbDownIcon className={`${className} text-red-500`} />
-            case 'neutral':
-                return <MinusIcon className={`${className} text-gray-400`} />
         }
     }
 
     // Get vote stats
     const voteStats = useMemo(() => {
-        if (!votedContent) return { total: 0, love: 0, neutral: 0, not_for_me: 0 }
+        if (!votedContent) return { total: 0, liked: 0, disliked: 0 }
         return {
             total: votedContent.length,
-            love: votedContent.filter((v) => v.vote === 'love').length,
-            neutral: votedContent.filter((v) => v.vote === 'neutral').length,
-            not_for_me: votedContent.filter((v) => v.vote === 'not_for_me').length,
+            liked: votedContent.filter((v) => v.vote === 'like').length,
+            disliked: votedContent.filter((v) => v.vote === 'dislike').length,
         }
     }, [votedContent])
 
@@ -238,29 +234,25 @@ export default function VotesPage() {
     const headerActions = (
         <div className="space-y-4">
             {/* Stats */}
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-3 gap-3">
                 <div className="bg-[#0a0a0a] rounded-lg border border-gray-700/50 p-3 text-center">
                     <p className="text-2xl font-bold text-white">{voteStats.total}</p>
                     <p className="text-xs text-gray-500">Total</p>
                 </div>
                 <div className="bg-[#0a0a0a] rounded-lg border border-gray-700/50 p-3 text-center">
-                    <p className="text-2xl font-bold text-green-500">{voteStats.love}</p>
-                    <p className="text-xs text-gray-500">Loved</p>
+                    <p className="text-2xl font-bold text-green-500">{voteStats.liked}</p>
+                    <p className="text-xs text-gray-500">Liked</p>
                 </div>
                 <div className="bg-[#0a0a0a] rounded-lg border border-gray-700/50 p-3 text-center">
-                    <p className="text-2xl font-bold text-gray-400">{voteStats.neutral}</p>
-                    <p className="text-xs text-gray-500">Neutral</p>
-                </div>
-                <div className="bg-[#0a0a0a] rounded-lg border border-gray-700/50 p-3 text-center">
-                    <p className="text-2xl font-bold text-red-500">{voteStats.not_for_me}</p>
-                    <p className="text-xs text-gray-500">Not for me</p>
+                    <p className="text-2xl font-bold text-red-500">{voteStats.disliked}</p>
+                    <p className="text-xs text-gray-500">Disliked</p>
                 </div>
             </div>
 
             {/* Filter */}
             <div className="flex items-center gap-2">
                 <div className="flex gap-2 flex-wrap">
-                    {(['all', 'love', 'neutral', 'not_for_me'] as FilterValue[]).map((f) => (
+                    {(['all', 'like', 'dislike'] as FilterValue[]).map((f) => (
                         <button
                             key={f}
                             onClick={() => setFilter(f)}
@@ -272,11 +264,9 @@ export default function VotesPage() {
                         >
                             {f === 'all'
                                 ? 'All'
-                                : f === 'love'
-                                  ? 'Loved'
-                                  : f === 'not_for_me'
-                                    ? 'Not for me'
-                                    : 'Neutral'}
+                                : f === 'like'
+                                  ? 'Liked'
+                                  : 'Disliked'}
                         </button>
                     ))}
                 </div>
@@ -300,11 +290,11 @@ export default function VotesPage() {
                 </div>
             ) : filteredVotes.length === 0 ? (
                 <div className="text-center py-16 bg-[#0a0a0a] rounded-lg border border-gray-700/50">
-                    <MinusIcon className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                    <HandThumbUpIcon className="w-12 h-12 text-gray-600 mx-auto mb-4" />
                     <p className="text-gray-400 mb-2">
                         {filter === 'all'
                             ? 'No votes yet'
-                            : `No titles voted as "${filter === 'love' ? 'Love' : filter === 'not_for_me' ? 'Not for me' : 'Neutral'}"`}
+                            : `No ${filter === 'like' ? 'liked' : 'disliked'} titles`}
                     </p>
                     <p className="text-gray-500 text-sm">
                         Rate titles to improve your recommendations
@@ -373,11 +363,11 @@ export default function VotesPage() {
                                                 handleVoteChange(
                                                     vote.contentId,
                                                     vote.mediaType,
-                                                    'love'
+                                                    'like'
                                                 )
                                             }
                                             className={`p-2 rounded-full transition-colors ${
-                                                vote.vote === 'love'
+                                                vote.vote === 'like'
                                                     ? 'bg-green-600'
                                                     : 'bg-gray-700 hover:bg-green-600/50'
                                             }`}
@@ -389,27 +379,11 @@ export default function VotesPage() {
                                                 handleVoteChange(
                                                     vote.contentId,
                                                     vote.mediaType,
-                                                    'neutral'
+                                                    'dislike'
                                                 )
                                             }
                                             className={`p-2 rounded-full transition-colors ${
-                                                vote.vote === 'neutral'
-                                                    ? 'bg-gray-600'
-                                                    : 'bg-gray-700 hover:bg-gray-600/50'
-                                            }`}
-                                        >
-                                            <MinusIcon className="w-5 h-5 text-white" />
-                                        </button>
-                                        <button
-                                            onClick={() =>
-                                                handleVoteChange(
-                                                    vote.contentId,
-                                                    vote.mediaType,
-                                                    'not_for_me'
-                                                )
-                                            }
-                                            className={`p-2 rounded-full transition-colors ${
-                                                vote.vote === 'not_for_me'
+                                                vote.vote === 'dislike'
                                                     ? 'bg-red-600'
                                                     : 'bg-gray-700 hover:bg-red-600/50'
                                             }`}
@@ -439,7 +413,7 @@ export default function VotesPage() {
                                     >
                                         {getVoteIcon(vote.vote)}
                                         <span className="text-sm text-gray-300 capitalize">
-                                            {vote.vote === 'not_for_me' ? 'Not for me' : vote.vote}
+                                            {vote.vote === 'dislike' ? 'Disliked' : 'Liked'}
                                         </span>
                                     </button>
                                 )}

@@ -181,6 +181,11 @@ export function getDirector(content: Content): string | null {
     return director?.name || null
 }
 
+export function getDirectorInfo(content: Content): CrewMember | null {
+    if (!content.credits?.crew) return null
+    return content.credits.crew.find((person) => person.job === 'Director') || null
+}
+
 export function getMainCast(content: Content, limit: number = 5): CastMember[] {
     if (!content.credits?.cast) return []
     return content.credits.cast.slice(0, limit)
@@ -191,6 +196,10 @@ export function getGenreNames(content: Content): string[] {
         return content.genres.map((genre) => genre.name)
     }
     return []
+}
+
+export function getGenres(content: Content): Genre[] {
+    return content.genres || []
 }
 
 export function getProductionCompanyNames(content: Content): string[] {

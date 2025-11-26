@@ -86,6 +86,7 @@ export function useSessionManager() {
                     autoMute: session.preferences.autoMute,
                     defaultVolume: session.preferences.defaultVolume,
                     childSafetyMode: session.preferences.childSafetyMode,
+                    myRatings: session.preferences.myRatings ?? [],
                 })
             } else if (!session.isGuest && session.userId) {
                 // Update auth store
@@ -100,6 +101,7 @@ export function useSessionManager() {
                     autoMute: session.preferences.autoMute,
                     defaultVolume: session.preferences.defaultVolume,
                     childSafetyMode: session.preferences.childSafetyMode,
+                    myRatings: session.preferences.myRatings ?? [],
                     syncStatus: 'synced', // Set as synced since we're loading data
                 })
             }

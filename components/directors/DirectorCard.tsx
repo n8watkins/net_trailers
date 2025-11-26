@@ -3,14 +3,18 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { TrendingPerson } from '../../typings'
+import { TrendingPerson, Content, getTitle } from '../../typings'
+import { useModalStore } from '../../stores/modalStore'
 
 interface DirectorCardProps {
     director: TrendingPerson
+    /** Optional genre filter to pass to person page */
+    genreFilter?: string
 }
 
-export default function DirectorCard({ director }: DirectorCardProps) {
+export default function DirectorCard({ director, genreFilter }: DirectorCardProps) {
     const router = useRouter()
+    const openModal = useModalStore((state) => state.openModal)
     const [imageLoaded, setImageLoaded] = useState(false)
     const [imageError, setImageError] = useState(false)
     const [isHovered, setIsHovered] = useState(false)
@@ -19,23 +23,30 @@ export default function DirectorCard({ director }: DirectorCardProps) {
         ? `https://image.tmdb.org/t/p/w185${director.profile_path}`
         : null
 
+    // Build URL with role and optional genre filter
+    const personUrl = genreFilter
+        ? `/person/${director.id}?role=directing&genre=${genreFilter}`
+        : `/person/${director.id}?role=directing`
+
     const handleClick = () => {
-        router.push(`/person/${director.id}`)
+        router.push(personUrl)
     }
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault()
-            router.push(`/person/${director.id}`)
+            router.push(personUrl)
         }
     }
 
-    // Get known for titles (up to 2)
-    const knownForTitles = director.known_for
-        ?.slice(0, 2)
-        .map((item) => ('title' in item ? item.title : 'name' in item ? item.name : ''))
-        .filter(Boolean)
-        .join(', ')
+    // Handle clicking on a known_for title
+    const handleTitleClick = (e: React.MouseEvent, content: Content) => {
+        e.stopPropagation() // Prevent navigating to director page
+        openModal(content, true, false)
+    }
+
+    // Get known for items (up to 2)
+    const knownForItems = director.known_for?.slice(0, 2).filter(Boolean) || []
 
     return (
         <div
@@ -49,9 +60,9 @@ export default function DirectorCard({ director }: DirectorCardProps) {
         >
             {/* Circular Image Container */}
             <div
-                className={`relative w-[80px] h-[80px] sm:w-[100px] sm:h-[100px] md:w-[120px] md:h-[120px] lg:w-[140px] lg:h-[140px] rounded-full overflow-hidden transition-all duration-300 ${
+                className={`relative w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] md:w-[140px] md:h-[140px] lg:w-[160px] lg:h-[160px] rounded-full overflow-hidden transition-all duration-300 ${
                     isHovered
-                        ? 'scale-110 shadow-[0_0_20px_rgba(220,38,38,0.5)] ring-2 ring-red-500'
+                        ? 'scale-105 shadow-[0_0_20px_rgba(220,38,38,0.5)] ring-2 ring-red-500'
                         : 'shadow-lg'
                 }`}
             >
@@ -70,7 +81,7 @@ export default function DirectorCard({ director }: DirectorCardProps) {
                         fill
                         style={{ objectFit: 'cover' }}
                         className={`transition-all duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-                        sizes="(max-width: 640px) 80px, (max-width: 768px) 100px, (max-width: 1024px) 120px, 140px"
+                        sizes="(max-width: 640px) 100px, (max-width: 768px) 120px, (max-width: 1024px) 140px, 160px"
                         onLoad={() => setImageLoaded(true)}
                         onError={() => setImageError(true)}
                     />
@@ -80,31 +91,33 @@ export default function DirectorCard({ director }: DirectorCardProps) {
                     </div>
                 )}
 
-                {/* Hover overlay */}
+                {/* Hover overlay - subtle darkening */}
                 <div
-                    className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-300 ${
+                    className={`absolute inset-0 bg-black/20 transition-opacity duration-300 ${
                         isHovered ? 'opacity-100' : 'opacity-0'
                     }`}
-                >
-                    <span className="text-white text-xs sm:text-sm font-medium px-2 py-1 bg-red-600 rounded-full">
-                        View Films
-                    </span>
-                </div>
+                />
             </div>
 
             {/* Director Name */}
-            <h3
-                className={`mt-3 text-center font-semibold text-sm sm:text-base transition-colors duration-300 line-clamp-2 ${
-                    isHovered ? 'text-red-400' : 'text-white'
-                }`}
-            >
+            <h3 className="mt-3 text-center font-semibold text-sm sm:text-base text-white line-clamp-2">
                 {director.name}
             </h3>
 
-            {/* Known For */}
-            {knownForTitles && (
-                <p className="mt-1 text-center text-xs text-gray-400 line-clamp-1 px-1">
-                    {knownForTitles}
+            {/* Known For - clickable titles */}
+            {knownForItems.length > 0 && (
+                <p className="mt-1 text-center text-sm text-gray-400 line-clamp-1 px-1">
+                    {knownForItems.map((item, index) => (
+                        <span key={item.id}>
+                            {index > 0 && ', '}
+                            <button
+                                onClick={(e) => handleTitleClick(e, item)}
+                                className="hover:text-white hover:underline transition-colors"
+                            >
+                                {getTitle(item)}
+                            </button>
+                        </span>
+                    ))}
                 </p>
             )}
         </div>

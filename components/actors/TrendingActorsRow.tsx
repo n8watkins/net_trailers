@@ -14,6 +14,7 @@ import {
     generateSystemRecommendationName,
     getSystemRecommendationEmoji,
 } from '../../utils/systemRecommendationNames'
+import { translateToTMDBGenres, translateToTMDBGenresForBoth } from '../../utils/genreMapping'
 
 interface TrendingActorsRowProps {
     onLoadComplete?: () => void
@@ -61,28 +62,47 @@ export default function TrendingActorsRow({
             ? authUpdateSystemRecommendation
             : guestUpdateSystemRecommendation
 
-    // Get settings with defaults - use recommendation's mediaType
+    // Get settings with defaults - use recommendation's mediaType and genres
     const isEnabled = recommendation?.enabled ?? true
     const effectiveMediaType = recommendation?.mediaType || 'both'
+    const selectedGenres = recommendation?.genres || []
 
-    // Auto-generate display name based on mediaType
+    // Auto-generate display name based on mediaType and genres
     const displayName = generateSystemRecommendationName({
         recommendationId,
         mediaType: effectiveMediaType,
-        genres: [],
+        genres: selectedGenres,
     })
     const emoji = getSystemRecommendationEmoji(recommendationId)
 
-    // Build API endpoint based on recommendation's mediaType
+    // Build API endpoint based on recommendation's mediaType and genres
     const API_ENDPOINT = useMemo(() => {
+        let url = '/api/people/trending?time_window=week&department=Acting'
+
+        // Add media type filter
         if (effectiveMediaType === 'movie') {
-            return '/api/people/trending?time_window=week&department=Acting&media_type=movie'
+            url += '&media_type=movie'
+        } else if (effectiveMediaType === 'tv') {
+            url += '&media_type=tv'
         }
-        if (effectiveMediaType === 'tv') {
-            return '/api/people/trending?time_window=week&department=Acting&media_type=tv'
+
+        // Add genre filter (translate unified IDs to TMDB IDs)
+        if (selectedGenres.length > 0) {
+            let tmdbGenreIds: number[] = []
+            if (effectiveMediaType === 'both') {
+                // For 'both', combine movie and TV genre IDs
+                const { movieIds, tvIds } = translateToTMDBGenresForBoth(selectedGenres)
+                tmdbGenreIds = [...new Set([...movieIds, ...tvIds])]
+            } else {
+                tmdbGenreIds = translateToTMDBGenres(selectedGenres, effectiveMediaType)
+            }
+            if (tmdbGenreIds.length > 0) {
+                url += `&genres=${tmdbGenreIds.join(',')}`
+            }
         }
-        return '/api/people/trending?time_window=week&department=Acting'
-    }, [effectiveMediaType])
+
+        return url
+    }, [effectiveMediaType, selectedGenres])
 
     // State for the editor modal
     const [showEditor, setShowEditor] = useState(false)
@@ -295,9 +315,9 @@ export default function TrendingActorsRow({
     const title = emoji ? `${emoji} ${displayName}` : displayName
 
     return (
-        <div className="pb-4 sm:pb-6 md:pb-8">
+        <div className="-mt-4 sm:-mt-6 md:-mt-8">
             {/* Section Title */}
-            <div className="flex items-center gap-3 px-4 sm:px-6 md:px-8 lg:px-16 pt-8 sm:pt-10 md:pt-12 group/header">
+            <div className="flex items-center gap-3 px-4 sm:px-6 md:px-8 lg:px-16 pt-0 group/header">
                 <h2 className="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold transition duration-200 hover:text-gray-300">
                     {title}
                 </h2>
@@ -342,7 +362,10 @@ export default function TrendingActorsRow({
                 >
                     {actors.map((actor) => (
                         <div key={actor.id} className="flex-shrink-0">
-                            <ActorCard actor={actor} />
+                            <ActorCard
+                                actor={actor}
+                                genreFilter={selectedGenres.length === 1 ? selectedGenres[0] : undefined}
+                            />
                         </div>
                     ))}
 

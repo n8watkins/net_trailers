@@ -14,9 +14,8 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import {
-    HeartIcon,
+    HandThumbUpIcon,
     HandThumbDownIcon,
-    MinusIcon,
     FilmIcon,
     TvIcon,
     SparklesIcon,
@@ -24,7 +23,7 @@ import {
 import { Content, BaseContent } from '../../typings'
 import { VotedContent } from '../../types/shared'
 
-type VoteValue = 'love' | 'neutral' | 'not_for_me'
+type VoteValue = 'like' | 'dislike'
 
 interface CastMember {
     id: number
@@ -323,9 +322,9 @@ export default function TitlePreferenceModal({
             deltaX < -SWIPE_THRESHOLD || (deltaX < -50 && velocity > SWIPE_VELOCITY_THRESHOLD)
 
         if (swipedRight) {
-            handleVote('love')
+            handleVote('like')
         } else if (swipedLeft) {
-            handleVote('not_for_me')
+            handleVote('dislike')
         } else {
             // Snap back
             setSwipeOffset({ x: 0, y: 0 })
@@ -375,7 +374,7 @@ export default function TitlePreferenceModal({
     // Calculate swipe visual feedback
     const swipeRotation = swipeOffset.x * 0.05 // Slight rotation based on swipe
     const swipeOpacity = Math.max(0.5, 1 - Math.abs(swipeOffset.x) / 300)
-    const swipeIndicator = swipeOffset.x > 50 ? 'love' : swipeOffset.x < -50 ? 'not_for_me' : null
+    const swipeIndicator = swipeOffset.x > 50 ? 'like' : swipeOffset.x < -50 ? 'dislike' : null
 
     const progress = content.length > 0 ? ((currentIndex + 1) / content.length) * 100 : 0
 
@@ -446,15 +445,7 @@ export default function TitlePreferenceModal({
                             ref={cardRef}
                             className={`relative select-none ${
                                 isDragging ? '' : 'transition-all duration-300 ease-out'
-                            } ${
-                                animatingVote
-                                    ? animatingVote === 'love'
-                                        ? 'scale-90 opacity-0'
-                                        : animatingVote === 'not_for_me'
-                                          ? 'scale-90 opacity-0'
-                                          : 'scale-95 opacity-0'
-                                    : ''
-                            }`}
+                            } ${animatingVote ? 'scale-90 opacity-0' : ''}`}
                             style={{
                                 transform:
                                     !animatingVote && swipeOffset.x !== 0
@@ -474,20 +465,20 @@ export default function TitlePreferenceModal({
                             {swipeIndicator && (
                                 <div
                                     className={`absolute inset-0 z-10 flex items-center justify-center pointer-events-none rounded-lg ${
-                                        swipeIndicator === 'love'
+                                        swipeIndicator === 'like'
                                             ? 'bg-green-500/20'
                                             : 'bg-red-500/20'
                                     }`}
                                 >
                                     <div
                                         className={`px-4 py-2 rounded-lg border-4 rotate-[-15deg] ${
-                                            swipeIndicator === 'love'
+                                            swipeIndicator === 'like'
                                                 ? 'border-green-500 text-green-500'
                                                 : 'border-red-500 text-red-500'
                                         }`}
                                     >
                                         <span className="text-2xl font-bold uppercase tracking-wider">
-                                            {swipeIndicator === 'love' ? 'LOVE' : 'NOPE'}
+                                            {swipeIndicator === 'like' ? 'LIKE' : 'NOPE'}
                                         </span>
                                     </div>
                                 </div>
@@ -519,21 +510,16 @@ export default function TitlePreferenceModal({
                                     {animatingVote && (
                                         <div
                                             className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${
-                                                animatingVote === 'love'
-                                                    ? 'bg-pink-500/50'
-                                                    : animatingVote === 'not_for_me'
-                                                      ? 'bg-red-500/50'
-                                                      : 'bg-gray-500/50'
+                                                animatingVote === 'like'
+                                                    ? 'bg-green-500/50'
+                                                    : 'bg-red-500/50'
                                             }`}
                                         >
-                                            {animatingVote === 'love' && (
-                                                <HeartIcon className="w-16 h-16 text-white animate-pulse" />
+                                            {animatingVote === 'like' && (
+                                                <HandThumbUpIcon className="w-16 h-16 text-white animate-pulse" />
                                             )}
-                                            {animatingVote === 'not_for_me' && (
+                                            {animatingVote === 'dislike' && (
                                                 <HandThumbDownIcon className="w-16 h-16 text-white animate-pulse" />
-                                            )}
-                                            {animatingVote === 'neutral' && (
-                                                <MinusIcon className="w-16 h-16 text-white animate-pulse" />
                                             )}
                                         </div>
                                     )}
@@ -664,7 +650,7 @@ export default function TitlePreferenceModal({
                                 )}
                             </div>
 
-                            {/* Vote buttons - Netflix style */}
+                            {/* Vote buttons */}
                             <div
                                 className="flex justify-center gap-3 sm:gap-4 md:gap-5 mt-4 sm:mt-5"
                                 onMouseDown={(e) => e.stopPropagation()}
@@ -673,92 +659,62 @@ export default function TitlePreferenceModal({
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation()
-                                        handleVote('not_for_me')
+                                        handleVote('dislike')
                                     }}
                                     disabled={!!animatingVote}
                                     className={`flex flex-col items-center gap-1 transition-all duration-200 active:scale-95 ${
-                                        currentVote === 'not_for_me'
+                                        currentVote === 'dislike'
                                             ? 'scale-110'
                                             : 'hover:scale-105'
                                     }`}
                                 >
                                     <div
                                         className={`w-14 h-14 sm:w-16 sm:h-16 md:w-[70px] md:h-[70px] rounded-full flex items-center justify-center border-2 transition-all ${
-                                            currentVote === 'not_for_me'
+                                            currentVote === 'dislike'
                                                 ? 'bg-red-600 border-red-600'
                                                 : 'bg-transparent border-gray-500 hover:border-red-500 hover:bg-red-500/10'
                                         }`}
                                     >
                                         <HandThumbDownIcon
                                             className={`w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 ${
-                                                currentVote === 'not_for_me'
+                                                currentVote === 'dislike'
                                                     ? 'text-white'
                                                     : 'text-gray-300'
                                             }`}
                                         />
                                     </div>
                                     <span className="text-[10px] sm:text-xs text-gray-400 font-medium">
-                                        Not for me
+                                        Dislike
                                     </span>
                                 </button>
 
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation()
-                                        handleVote('neutral')
+                                        handleVote('like')
                                     }}
                                     disabled={!!animatingVote}
                                     className={`flex flex-col items-center gap-1 transition-all duration-200 active:scale-95 ${
-                                        currentVote === 'neutral' ? 'scale-110' : 'hover:scale-105'
+                                        currentVote === 'like' ? 'scale-110' : 'hover:scale-105'
                                     }`}
                                 >
                                     <div
                                         className={`w-14 h-14 sm:w-16 sm:h-16 md:w-[70px] md:h-[70px] rounded-full flex items-center justify-center border-2 transition-all ${
-                                            currentVote === 'neutral'
-                                                ? 'bg-gray-600 border-gray-600'
-                                                : 'bg-transparent border-gray-500 hover:border-gray-400 hover:bg-gray-500/10'
-                                        }`}
-                                    >
-                                        <MinusIcon
-                                            className={`w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 ${
-                                                currentVote === 'neutral'
-                                                    ? 'text-white'
-                                                    : 'text-gray-300'
-                                            }`}
-                                        />
-                                    </div>
-                                    <span className="text-[10px] sm:text-xs text-gray-400 font-medium">
-                                        Neutral
-                                    </span>
-                                </button>
-
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        handleVote('love')
-                                    }}
-                                    disabled={!!animatingVote}
-                                    className={`flex flex-col items-center gap-1 transition-all duration-200 active:scale-95 ${
-                                        currentVote === 'love' ? 'scale-110' : 'hover:scale-105'
-                                    }`}
-                                >
-                                    <div
-                                        className={`w-14 h-14 sm:w-16 sm:h-16 md:w-[70px] md:h-[70px] rounded-full flex items-center justify-center border-2 transition-all ${
-                                            currentVote === 'love'
+                                            currentVote === 'like'
                                                 ? 'bg-green-600 border-green-600'
                                                 : 'bg-transparent border-gray-500 hover:border-green-500 hover:bg-green-500/10'
                                         }`}
                                     >
-                                        <HeartIcon
+                                        <HandThumbUpIcon
                                             className={`w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 ${
-                                                currentVote === 'love'
+                                                currentVote === 'like'
                                                     ? 'text-white'
                                                     : 'text-gray-300'
                                             }`}
                                         />
                                     </div>
                                     <span className="text-[10px] sm:text-xs text-gray-400 font-medium">
-                                        Love it
+                                        Like
                                     </span>
                                 </button>
                             </div>

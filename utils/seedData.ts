@@ -1588,84 +1588,94 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
             tags: string[]
         }> = [
             {
-                title: 'Top 10 Mind-Bending Movies',
-                description: 'Films that make you question reality and challenge your perception',
+                title: 'Christopher Nolan: A Masterclass',
+                description: 'Mind-bending films from the legendary director',
                 items: [
                     sampleMovies[8], // Inception
-                    sampleMovies[16], // The Matrix
-                    sampleMovies[0], // Fight Club
-                    sampleMovies[18], // Interstellar
                     sampleMovies[3], // The Dark Knight
-                    sampleMovies[20], // Psycho
-                    sampleMovies[19], // 12 Angry Men
-                    sampleMovies[24], // One Flew Over the Cuckoo's Nest
-                    sampleMovies[6], // Schindler's List
-                    sampleMovies[11], // The Green Mile
-                ],
-                tags: ['Psychological', 'Thrillers', 'Sci-Fi'],
-            },
-            {
-                title: 'Best Animated Masterpieces',
-                description: 'The most beautiful and emotionally powerful animated films ever made',
-                items: [
-                    ...[
-                        sampleMovies[9], // Spirited Away
-                        sampleMovies[7], // Your Name
-                        sampleMovies[11],
-                        sampleMovies[21],
-                        sampleMovies[10],
-                    ].slice(0, 2),
-                    ...sampleTVShows.slice(0, 3), // Add some TV shows for variety
-                ],
-                tags: ['Animation', 'Anime', 'Family'],
-            },
-            {
-                title: 'Epic Sagas You Must Watch',
-                description:
-                    'Long-form storytelling at its finest - prepare for an emotional journey',
-                items: [
-                    sampleMovies[10], // LOTR: Return of the King
-                    sampleMovies[17], // LOTR: Fellowship
-                    sampleMovies[5], // The Godfather
-                    sampleMovies[4], // The Shawshank Redemption
-                    sampleMovies[13], // GoodFellas
-                    sampleMovies[6], // Schindler's List
-                    sampleMovies[11], // The Green Mile
                     sampleMovies[18], // Interstellar
                 ],
-                tags: ['Epic', 'Drama', 'Adventure'],
+                tags: ['christopher-nolan', 'sci-fi', 'mystery-thriller'],
             },
             {
-                title: 'Best TV Shows of All Time',
-                description: 'Television shows that changed the game',
+                title: 'Best of Studio Ghibli & Anime',
+                description: 'The most beautiful animated films from Japan',
                 items: [
-                    sampleTVShows[0], // Breaking Bad
-                    sampleTVShows[1], // Game of Thrones
-                    sampleTVShows[2], // Stranger Things
-                    sampleTVShows[3], // The Sopranos
-                    sampleTVShows[4], // The Wire
-                    sampleTVShows[5], // True Detective
-                    sampleTVShows[6], // Sherlock
-                    sampleTVShows[7], // Westworld
-                    sampleTVShows[8], // Chernobyl
-                    sampleTVShows[9], // Band of Brothers
+                    sampleMovies[9], // Spirited Away
+                    sampleMovies[7], // Your Name
+                    sampleTVShows[2], // Arcane
+                    sampleTVShows[15], // One Piece
                 ],
-                tags: ['TV', 'Drama', 'Must-Watch'],
+                tags: ['studio-ghibli', 'anime'],
             },
             {
-                title: 'Classic Cinema Essentials',
-                description: 'Timeless classics every film lover should see',
+                title: 'Middle-earth: The Complete Journey',
+                description: 'From the Shire to Mordor - the ultimate fantasy epic',
+                items: [
+                    sampleMovies[17], // LOTR: Fellowship
+                    sampleMovies[10], // LOTR: Return of the King
+                    sampleTVShows[17], // Rings of Power
+                ],
+                tags: ['lotr', 'fantasy'],
+            },
+            {
+                title: 'True Crime & Criminal Empires',
+                description: 'From mobsters to meth empires - the best crime stories',
                 items: [
                     sampleMovies[5], // The Godfather
-                    sampleMovies[4], // The Shawshank Redemption
-                    sampleMovies[19], // 12 Angry Men
-                    sampleMovies[25], // The Good, the Bad and the Ugly
-                    sampleMovies[22], // Seven Samurai
-                    sampleMovies[20], // Psycho
-                    sampleMovies[6], // Schindler's List
-                    sampleMovies[12], // Cinema Paradiso
+                    sampleMovies[13], // GoodFellas
+                    sampleMovies[1], // Pulp Fiction
+                    sampleTVShows[0], // Breaking Bad
+                    sampleTVShows[6], // Better Call Saul
+                    sampleTVShows[18], // Peaky Blinders
                 ],
-                tags: ['Classics', 'Film History', 'Masterpieces'],
+                tags: ['true-crime', 'heist-crime', 'tarantino'],
+            },
+            {
+                title: 'Oscar-Winning Classics',
+                description: 'Academy Award winners that defined cinema',
+                items: [
+                    sampleMovies[4], // The Shawshank Redemption
+                    sampleMovies[6], // Schindler's List
+                    sampleMovies[2], // Forrest Gump
+                    sampleMovies[10], // LOTR: Return of the King
+                    sampleMovies[23], // One Flew Over the Cuckoo's Nest
+                ],
+                tags: ['oscar-winners', 'classic-hollywood'],
+            },
+            {
+                title: 'Marvel Cinematic Universe Favorites',
+                description: "Earth's mightiest heroes in action",
+                items: [
+                    sampleMovies[14], // The Avengers
+                    sampleMovies[15], // Avengers: Infinity War
+                    sampleTVShows[5], // WandaVision
+                ],
+                tags: ['mcu', 'action'],
+            },
+            {
+                title: 'Horror Nights',
+                description: 'Terrifying tales that will keep you up at night',
+                items: [
+                    sampleMovies[20], // Psycho
+                    sampleTVShows[8], // The Walking Dead
+                    sampleTVShows[11], // Supernatural
+                    sampleTVShows[14], // Stranger Things
+                    sampleTVShows[7], // The Last of Us
+                ],
+                tags: ['horror', 'mystery-thriller'],
+            },
+            {
+                title: 'Sci-Fi Mind Benders',
+                description: 'Science fiction that expands your mind',
+                items: [
+                    sampleMovies[16], // The Matrix
+                    sampleMovies[8], // Inception
+                    sampleMovies[18], // Interstellar
+                    sampleTVShows[3], // Rick and Morty
+                    sampleTVShows[14], // Stranger Things
+                ],
+                tags: ['sci-fi', 'netflix-originals'],
             },
         ]
 

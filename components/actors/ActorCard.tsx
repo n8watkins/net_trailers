@@ -7,9 +7,11 @@ import { TrendingPerson } from '../../typings'
 
 interface ActorCardProps {
     actor: TrendingPerson
+    /** Optional genre filter to pass to person page */
+    genreFilter?: string
 }
 
-export default function ActorCard({ actor }: ActorCardProps) {
+export default function ActorCard({ actor, genreFilter }: ActorCardProps) {
     const router = useRouter()
     const [imageLoaded, setImageLoaded] = useState(false)
     const [imageError, setImageError] = useState(false)
@@ -19,14 +21,19 @@ export default function ActorCard({ actor }: ActorCardProps) {
         ? `https://image.tmdb.org/t/p/w185${actor.profile_path}`
         : null
 
+    // Build URL with role and optional genre filter
+    const personUrl = genreFilter
+        ? `/person/${actor.id}?role=acting&genre=${genreFilter}`
+        : `/person/${actor.id}?role=acting`
+
     const handleClick = () => {
-        router.push(`/person/${actor.id}`)
+        router.push(personUrl)
     }
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault()
-            router.push(`/person/${actor.id}`)
+            router.push(personUrl)
         }
     }
 
@@ -49,9 +56,9 @@ export default function ActorCard({ actor }: ActorCardProps) {
         >
             {/* Circular Image Container */}
             <div
-                className={`relative w-[80px] h-[80px] sm:w-[100px] sm:h-[100px] md:w-[120px] md:h-[120px] lg:w-[140px] lg:h-[140px] rounded-full overflow-hidden transition-all duration-300 ${
+                className={`relative w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] md:w-[140px] md:h-[140px] lg:w-[160px] lg:h-[160px] rounded-full overflow-hidden transition-all duration-300 ${
                     isHovered
-                        ? 'scale-110 shadow-[0_0_20px_rgba(220,38,38,0.5)] ring-2 ring-red-500'
+                        ? 'scale-105 shadow-[0_0_20px_rgba(220,38,38,0.5)] ring-2 ring-red-500'
                         : 'shadow-lg'
                 }`}
             >
@@ -70,7 +77,7 @@ export default function ActorCard({ actor }: ActorCardProps) {
                         fill
                         style={{ objectFit: 'cover' }}
                         className={`transition-all duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-                        sizes="(max-width: 640px) 80px, (max-width: 768px) 100px, (max-width: 1024px) 120px, 140px"
+                        sizes="(max-width: 640px) 100px, (max-width: 768px) 120px, (max-width: 1024px) 140px, 160px"
                         onLoad={() => setImageLoaded(true)}
                         onError={() => setImageError(true)}
                     />
@@ -82,24 +89,16 @@ export default function ActorCard({ actor }: ActorCardProps) {
                     </div>
                 )}
 
-                {/* Hover overlay */}
+                {/* Hover overlay - subtle darkening */}
                 <div
-                    className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-300 ${
+                    className={`absolute inset-0 bg-black/20 transition-opacity duration-300 ${
                         isHovered ? 'opacity-100' : 'opacity-0'
                     }`}
-                >
-                    <span className="text-white text-xs sm:text-sm font-medium px-2 py-1 bg-red-600 rounded-full">
-                        View Films
-                    </span>
-                </div>
+                />
             </div>
 
             {/* Actor Name */}
-            <h3
-                className={`mt-3 text-center font-semibold text-sm sm:text-base transition-colors duration-300 line-clamp-2 ${
-                    isHovered ? 'text-red-400' : 'text-white'
-                }`}
-            >
+            <h3 className="mt-3 text-center font-semibold text-sm sm:text-base text-white line-clamp-2">
                 {actor.name}
             </h3>
 

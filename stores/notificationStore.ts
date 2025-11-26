@@ -4,7 +4,7 @@
  * Manages notification state with real-time Firestore sync
  */
 
-import { notificationWarn } from '../utils/debugLogger'
+import { notificationLog, notificationWarn } from '../utils/debugLogger'
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { Notification, CreateNotificationRequest, NotificationStats } from '../types/notifications'
@@ -87,6 +87,7 @@ export const useNotificationStore = create<NotificationState>()(
 
             // Load all notifications
             loadNotifications: async (userId: string | null) => {
+                notificationLog('[Notifications] Loading all notifications for user:', userId?.slice(0, 8))
                 if (!ensureAuthUser(userId, 'load notifications')) {
                     set({
                         notifications: [],
@@ -104,6 +105,7 @@ export const useNotificationStore = create<NotificationState>()(
                     const notifications = result.data
                     const unreadCount = notifications.filter((n) => !n.isRead).length
 
+                    notificationLog('[Notifications] Loaded:', notifications.length, 'total,', unreadCount, 'unread')
                     set({
                         notifications,
                         unreadCount,
@@ -175,12 +177,14 @@ export const useNotificationStore = create<NotificationState>()(
                 userId: string | null,
                 request: CreateNotificationRequest
             ) => {
+                notificationLog('[Notifications] Creating notification:', request.type, request.title)
                 if (!ensureAuthUser(userId, 'create notification')) {
                     return
                 }
 
                 try {
                     const notification = await createNotification(userId, request)
+                    notificationLog('[Notifications] Created notification:', notification.id)
 
                     // Add to local state
                     set((state) => ({
@@ -200,12 +204,14 @@ export const useNotificationStore = create<NotificationState>()(
 
             // Mark a notification as read
             markNotificationAsRead: async (userId: string | null, notificationId: string) => {
+                notificationLog('[Notifications] Marking as read:', notificationId)
                 if (!ensureAuthUser(userId, 'mark notification as read')) {
                     return
                 }
 
                 try {
                     await markAsRead(userId, notificationId)
+                    notificationLog('[Notifications] Marked as read successfully')
 
                     // Update local state
                     set((state) => ({
@@ -369,6 +375,7 @@ export const useNotificationStore = create<NotificationState>()(
 
             // Subscribe to real-time updates
             subscribe: (userId: string | null) => {
+                notificationLog('[Notifications] Subscribing to real-time updates for user:', userId?.slice(0, 8))
                 if (!ensureAuthUser(userId, 'subscribe to notifications')) {
                     return
                 }
@@ -376,12 +383,14 @@ export const useNotificationStore = create<NotificationState>()(
                 // Unsubscribe from previous subscription if exists
                 const currentUnsubscribe = get().unsubscribe
                 if (currentUnsubscribe) {
+                    notificationLog('[Notifications] Cleaning up previous subscription')
                     currentUnsubscribe()
                 }
 
                 // Create new subscription
                 const unsubscribe = subscribeToNotifications(userId, (notifications) => {
                     const unreadCount = notifications.filter((n) => !n.isRead).length
+                    notificationLog('[Notifications] Real-time update received:', notifications.length, 'notifications,', unreadCount, 'unread')
 
                     set({
                         notifications,
@@ -390,6 +399,7 @@ export const useNotificationStore = create<NotificationState>()(
                     })
                 })
 
+                notificationLog('[Notifications] Subscription established')
                 set({ unsubscribe })
             },
 
@@ -397,6 +407,7 @@ export const useNotificationStore = create<NotificationState>()(
             unsubscribeFromNotifications: () => {
                 const unsubscribe = get().unsubscribe
                 if (unsubscribe) {
+                    notificationLog('[Notifications] Unsubscribing from real-time updates')
                     unsubscribe()
                     set({ unsubscribe: null })
                 }

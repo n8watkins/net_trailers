@@ -75,9 +75,9 @@ async function handlePersonalizedRecommendations(
             }
         })
 
-        // Extract content IDs that user marked as "not_for_me" to exclude
-        const notForMeContentIds = votedContent
-            .filter((v) => v.vote === 'not_for_me')
+        // Extract content IDs that user marked as "dislike" to exclude
+        const dislikedContentIds = votedContent
+            .filter((v) => v.vote === 'dislike')
             .map((v) => v.contentId)
 
         // Check if user has enough data (preferences and votes also count)
@@ -103,7 +103,7 @@ async function handlePersonalizedRecommendations(
 
         // Get content IDs to exclude (already seen + "not for me" votes)
         const seenIds = getSeenContentIds(userData)
-        const excludeIds = [...new Set([...seenIds, ...notForMeContentIds])]
+        const excludeIds = [...new Set([...seenIds, ...dislikedContentIds])]
 
         // Generate recommendations from multiple sources
         const [genreBased, tmdbSimilar] = await Promise.all([

@@ -446,7 +446,7 @@ Create `/app/api/notifications/email/` routes:
 
 **4.5 Email Preferences** (6 hours)
 
-- Add to `types/atoms.ts`:
+- Add to `types/shared.ts`:
 
     ```typescript
     interface EmailPreferences {

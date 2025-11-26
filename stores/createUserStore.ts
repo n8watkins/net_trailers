@@ -16,6 +16,7 @@ import {
     createDefaultSystemRecommendations,
     DEFAULT_SYSTEM_RECOMMENDATIONS,
 } from '../types/recommendations'
+import type { RatedContent } from '../types/shared'
 
 /**
  * Merge existing system recommendations with any missing defaults.
@@ -52,7 +53,9 @@ function mergeSystemRecommendations(existing: SystemRecommendation[]): SystemRec
 export interface UserState {
     userId?: string // For auth users, this is Firebase UID
     guestId?: string // For guest users, this is the guest ID
+    /** @deprecated Use myRatings with rating='like' instead */
     likedMovies: Content[]
+    /** @deprecated Use myRatings with rating='dislike' instead */
     hiddenMovies: Content[]
     defaultWatchlist: Content[]
     userCreatedWatchlists: UserList[]
@@ -82,12 +85,14 @@ export interface UserState {
         mediaType: 'movie' | 'tv'
         shownAt: number
     }[]
+    /** @deprecated Use myRatings instead */
     votedContent?: {
         contentId: number
         mediaType: 'movie' | 'tv'
-        vote: 'love' | 'neutral' | 'not_for_me'
+        vote: 'like' | 'dislike'
         votedAt: number
     }[]
+    myRatings: RatedContent[] // Unified ratings (replaces likedMovies, hiddenMovies, votedContent)
 }
 
 /**
@@ -96,10 +101,20 @@ export interface UserState {
 export interface UserActions {
     addToWatchlist: (content: Content) => Promise<void> | void
     removeFromWatchlist: (contentId: number) => Promise<void> | void
+    /** @deprecated Use rateContent(content, 'like') instead */
     addLikedMovie: (content: Content) => Promise<void> | void
+    /** @deprecated Use removeRating(contentId) instead */
     removeLikedMovie: (contentId: number) => Promise<void> | void
+    /** @deprecated Use rateContent(content, 'dislike') instead */
     addHiddenMovie: (content: Content) => Promise<void> | void
+    /** @deprecated Use removeRating(contentId) instead */
     removeHiddenMovie: (contentId: number) => Promise<void> | void
+    // New unified rating actions
+    rateContent: (content: Content, rating: 'like' | 'dislike') => Promise<void> | void
+    removeRating: (contentId: number) => Promise<void> | void
+    getRating: (contentId: number) => RatedContent | undefined
+    getLikedContent: () => Content[]
+    getDislikedContent: () => Content[]
     createList: (request: CreateListRequest) => Promise<string> | string
     addToList: (listId: string, content: Content) => Promise<void> | void
     removeFromList: (listId: string, contentId: number) => Promise<void> | void
@@ -166,7 +181,8 @@ export function createUserStore(options: CreateUserStoreOptions) {
         genrePreferences: [], // Genre preferences for recommendations
         contentPreferences: [], // Content preferences for recommendations
         shownPreferenceContent: [], // Track shown content to avoid repeats
-        votedContent: [], // Track user votes on content (title quiz)
+        votedContent: [], // Track user votes on content (title quiz) - deprecated
+        myRatings: [], // Unified ratings (replaces likedMovies, hiddenMovies, votedContent)
         ...(adapter.isAsync && { syncStatus: 'synced' as const }),
     })
 
@@ -211,6 +227,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                 contentPreferences: state.contentPreferences ?? [],
                 shownPreferenceContent: state.shownPreferenceContent ?? [],
                 votedContent: state.votedContent ?? [],
+                myRatings: state.myRatings ?? [],
             })
             logger.log(`✅ [${trackingContext}] Saved to ${adapter.name}`)
         } catch (error) {
@@ -390,6 +407,120 @@ export function createUserStore(options: CreateUserStoreOptions) {
             }
 
             logger.log(`🗑️ [${trackingContext}] Removed from hidden:`, contentId)
+        },
+
+        // New unified rating actions
+        rateContent: async (content: Content, rating: 'like' | 'dislike') => {
+            const state = get()
+            if (adapter.isAsync) set({ syncStatus: 'syncing' })
+
+            // Remove existing rating if exists (for re-rating)
+            const existingIndex = state.myRatings.findIndex(
+                (r) => r.content.id === content.id
+            )
+
+            const newRating: RatedContent = {
+                content,
+                rating,
+                ratedAt: Date.now(),
+            }
+
+            let newMyRatings: RatedContent[]
+            if (existingIndex >= 0) {
+                // Update existing rating
+                newMyRatings = [...state.myRatings]
+                newMyRatings[existingIndex] = newRating
+            } else {
+                // Add new rating
+                newMyRatings = [...state.myRatings, newRating]
+            }
+
+            // Also update legacy arrays for backward compatibility
+            let newLikedMovies = state.likedMovies
+            let newHiddenMovies = state.hiddenMovies
+
+            if (rating === 'like') {
+                // Add to liked if not already there
+                if (!state.likedMovies.some((m) => m.id === content.id)) {
+                    newLikedMovies = [...state.likedMovies, content]
+                }
+                // Remove from hidden if there
+                newHiddenMovies = state.hiddenMovies.filter((m) => m.id !== content.id)
+            } else {
+                // Add to hidden if not already there
+                if (!state.hiddenMovies.some((m) => m.id === content.id)) {
+                    newHiddenMovies = [...state.hiddenMovies, content]
+                }
+                // Remove from liked if there
+                newLikedMovies = state.likedMovies.filter((m) => m.id !== content.id)
+            }
+
+            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
+            set({
+                myRatings: newMyRatings,
+                likedMovies: newLikedMovies,
+                hiddenMovies: newHiddenMovies,
+                lastActive: newLastActive,
+            })
+
+            try {
+                await saveToStorage(get(), 'rateContent')
+                if (adapter.isAsync) set({ syncStatus: 'synced' })
+            } catch (_error) {
+                if (adapter.isAsync) set({ syncStatus: 'offline' })
+            }
+
+            logger.log(`⭐ [${trackingContext}] Rated content:`, {
+                title: getTitle(content),
+                rating,
+            })
+        },
+
+        removeRating: async (contentId: number) => {
+            const state = get()
+            if (adapter.isAsync) set({ syncStatus: 'syncing' })
+
+            const newMyRatings = state.myRatings.filter((r) => r.content.id !== contentId)
+
+            // Also remove from legacy arrays
+            const newLikedMovies = state.likedMovies.filter((m) => m.id !== contentId)
+            const newHiddenMovies = state.hiddenMovies.filter((m) => m.id !== contentId)
+
+            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
+            set({
+                myRatings: newMyRatings,
+                likedMovies: newLikedMovies,
+                hiddenMovies: newHiddenMovies,
+                lastActive: newLastActive,
+            })
+
+            try {
+                await saveToStorage(get(), 'removeRating')
+                if (adapter.isAsync) set({ syncStatus: 'synced' })
+            } catch (_error) {
+                if (adapter.isAsync) set({ syncStatus: 'offline' })
+            }
+
+            logger.log(`🗑️ [${trackingContext}] Removed rating for:`, contentId)
+        },
+
+        getRating: (contentId: number) => {
+            const state = get()
+            return state.myRatings.find((r) => r.content.id === contentId)
+        },
+
+        getLikedContent: () => {
+            const state = get()
+            return state.myRatings
+                .filter((r) => r.rating === 'like')
+                .map((r) => r.content)
+        },
+
+        getDislikedContent: () => {
+            const state = get()
+            return state.myRatings
+                .filter((r) => r.rating === 'dislike')
+                .map((r) => r.content)
         },
 
         createList: async (request: CreateListRequest) => {
@@ -775,6 +906,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                                 contentPreferences: firebaseData.contentPreferences ?? [],
                                 shownPreferenceContent: firebaseData.shownPreferenceContent ?? [],
                                 votedContent: firebaseData.votedContent ?? [],
+                                myRatings: firebaseData.myRatings ?? [],
                                 syncStatus: 'synced',
                             })
 
@@ -877,6 +1009,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                     contentPreferences: loadedData.contentPreferences ?? [],
                     shownPreferenceContent: loadedData.shownPreferenceContent ?? [],
                     votedContent: loadedData.votedContent ?? [],
+                    myRatings: loadedData.myRatings ?? [],
                 })
 
                 // Persist seeded defaults to localStorage so they survive refresh

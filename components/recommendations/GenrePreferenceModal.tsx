@@ -12,7 +12,7 @@ import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import { XMarkIcon } from '@heroicons/react/24/outline'
-import { HeartIcon, HandThumbDownIcon, SparklesIcon } from '@heroicons/react/24/solid'
+import { HandThumbUpIcon, HandThumbDownIcon, SparklesIcon } from '@heroicons/react/24/solid'
 import { UNIFIED_GENRES } from '../../constants/unifiedGenres'
 import { GenrePreference } from '../../types/shared'
 
@@ -521,12 +521,12 @@ export default function GenrePreferenceModal({
                                     <div
                                         className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 rounded-2xl ${
                                             animatingVote === 'love'
-                                                ? 'bg-pink-500/30'
+                                                ? 'bg-green-500/30'
                                                 : 'bg-red-500/30'
                                         }`}
                                     >
                                         {animatingVote === 'love' ? (
-                                            <HeartIcon className="w-24 h-24 text-pink-500 animate-pulse" />
+                                            <HandThumbUpIcon className="w-24 h-24 text-green-500 animate-pulse" />
                                         ) : (
                                             <HandThumbDownIcon className="w-24 h-24 text-red-500 animate-pulse" />
                                         )}
@@ -555,7 +555,7 @@ export default function GenrePreferenceModal({
                                     className="flex flex-col items-center gap-1.5 transition-all duration-200 active:scale-95 hover:scale-105"
                                 >
                                     <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-full flex items-center justify-center border-2 bg-transparent border-gray-500 hover:border-green-500 hover:bg-green-500/10 transition-all">
-                                        <HeartIcon className="w-7 h-7 sm:w-8 sm:h-8 text-gray-300" />
+                                        <HandThumbUpIcon className="w-7 h-7 sm:w-8 sm:h-8 text-gray-300" />
                                     </div>
                                     <span className="text-xs text-gray-400 font-medium">
                                         Love it

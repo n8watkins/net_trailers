@@ -11,6 +11,8 @@ import {
     UserProfile,
     UpdateProfileRequest,
     UsernameAvailability,
+    ProfileVisibility,
+    DEFAULT_PROFILE_VISIBILITY,
     createDefaultProfile,
 } from '../types/profile'
 import { validateUsername, generateRandomUsername } from '../utils/usernameValidation'
@@ -22,6 +24,8 @@ import {
     checkUsernameAvailability as checkUsernameAvailabilityInFirestore,
     uploadAvatar as uploadAvatarToStorage,
     deleteAvatar as deleteAvatarFromStorage,
+    updateProfileVisibility as updateProfileVisibilityInFirestore,
+    getProfileVisibility as getProfileVisibilityFromFirestore,
 } from '../utils/firestore/profiles'
 import { updateRankingsUsername } from '../utils/firestore/rankings'
 import { updateRankingCommentsUsername } from '../utils/firestore/rankingComments'
@@ -49,6 +53,13 @@ interface ProfileState {
     // Actions - Username
     checkUsernameAvailability: (username: string) => Promise<UsernameAvailability>
     updateUsername: (userId: string | null, newUsername: string) => Promise<void>
+
+    // Actions - Visibility
+    getVisibility: (userId: string | null) => Promise<ProfileVisibility>
+    updateVisibility: (
+        userId: string | null,
+        updates: Partial<ProfileVisibility>
+    ) => Promise<ProfileVisibility | null>
 
     // Utility
     clearProfile: () => void
@@ -199,17 +210,21 @@ export const useProfileStore = create<ProfileState>()(
 
                     await updateProfileInFirestore(userId, request)
 
-                    // Update local state
-                    set((state) => ({
-                        profile: state.profile
-                            ? {
-                                  ...state.profile,
-                                  ...request,
-                                  updatedAt: Date.now(),
-                              }
-                            : null,
-                        isLoading: false,
-                    }))
+                    // Update local state (exclude visibility from spread to avoid type issues)
+                    const { visibility: _visibility, ...restRequest } = request
+                    set((state) => {
+                        if (!state.profile) {
+                            return { isLoading: false }
+                        }
+                        return {
+                            profile: {
+                                ...state.profile,
+                                ...restRequest,
+                                updatedAt: Date.now(),
+                            },
+                            isLoading: false,
+                        }
+                    })
                 } catch (error) {
                     console.error('Error updating profile:', error)
                     set({
@@ -375,6 +390,62 @@ export const useProfileStore = create<ProfileState>()(
                         error: error instanceof Error ? error.message : 'Failed to update username',
                         isLoading: false,
                     })
+                }
+            },
+
+            // Get visibility settings
+            getVisibility: async (userId: string | null): Promise<ProfileVisibility> => {
+                if (!userId || isGuestUserId(userId)) {
+                    return { ...DEFAULT_PROFILE_VISIBILITY }
+                }
+
+                try {
+                    return await getProfileVisibilityFromFirestore(userId)
+                } catch (error) {
+                    console.error('Error getting visibility settings:', error)
+                    return { ...DEFAULT_PROFILE_VISIBILITY }
+                }
+            },
+
+            // Update visibility settings
+            updateVisibility: async (
+                userId: string | null,
+                updates: Partial<ProfileVisibility>
+            ): Promise<ProfileVisibility | null> => {
+                if (!userId || isGuestUserId(userId)) {
+                    set({ error: 'Authentication required' })
+                    return null
+                }
+
+                set({ isLoading: true, error: null })
+
+                try {
+                    const newVisibility = await updateProfileVisibilityInFirestore(userId, updates)
+
+                    // Update local state with full ProfileVisibility object
+                    set((state) => {
+                        if (!state.profile) {
+                            return { isLoading: false }
+                        }
+                        return {
+                            profile: {
+                                ...state.profile,
+                                visibility: newVisibility,
+                                updatedAt: Date.now(),
+                            },
+                            isLoading: false,
+                        }
+                    })
+
+                    return newVisibility
+                } catch (error) {
+                    console.error('Error updating visibility:', error)
+                    set({
+                        error:
+                            error instanceof Error ? error.message : 'Failed to update visibility',
+                        isLoading: false,
+                    })
+                    return null
                 }
             },
 

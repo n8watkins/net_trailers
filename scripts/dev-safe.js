@@ -86,11 +86,33 @@ function startDevServer() {
 }
 
 function shouldShowNextLogs() {
-    // Check debug settings from localStorage (simulated by checking a flag file)
-    // Since we can't access browser localStorage from Node, we use an environment variable
+    // Check debug settings - priority order:
+    // 1. Environment variable (explicit override)
+    // 2. Flag file written by debug console toggle
+    // 3. Default: show logs
+
+    // Environment variable takes precedence
     if (process.env.SHOW_NEXT_LOGS === 'false') {
         return false
     }
+    if (process.env.SHOW_NEXT_LOGS === 'true') {
+        return true
+    }
+
+    // Check flag file written by debug console toggle
+    try {
+        const flagFile = path.join(process.cwd(), '.next-logs-enabled')
+        if (fs.existsSync(flagFile)) {
+            const content = fs.readFileSync(flagFile, 'utf8').trim()
+            if (content === 'false') {
+                console.log('📋 Next.js logs disabled via debug console toggle')
+                return false
+            }
+        }
+    } catch {
+        // Ignore errors reading flag file
+    }
+
     return true // Default: show logs
 }
 

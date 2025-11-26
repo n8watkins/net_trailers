@@ -1,6 +1,13 @@
 import React, { useCallback } from 'react'
-import { useSearchStore, SearchFilters as SearchFiltersType } from '../../stores/searchStore'
+import {
+    useSearchStore,
+    SearchFilters as SearchFiltersType,
+    PeopleSearchFilters,
+    SearchMode,
+    DepartmentFilter,
+} from '../../stores/searchStore'
 import { ChevronDownIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { FilmIcon, UserGroupIcon } from '@heroicons/react/24/solid'
 
 interface SearchFiltersProps {
     className?: string
@@ -13,8 +20,12 @@ export default function SearchFilters({
     isOpen: _isOpen,
     onClose: _onClose,
 }: SearchFiltersProps) {
+    const searchMode = useSearchStore((state) => state.searchMode)
+    const setSearchMode = useSearchStore((state) => state.setSearchMode)
     const filters = useSearchStore((state) => state.filters)
     const setSearchFilters = useSearchStore((state) => state.setSearchFilters)
+    const peopleFilters = useSearchStore((state) => state.peopleFilters)
+    const setPeopleFilters = useSearchStore((state) => state.setPeopleFilters)
 
     const updateFilter = useCallback(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -27,13 +38,29 @@ export default function SearchFilters({
         [filters, setSearchFilters]
     )
 
+    const updatePeopleFilter = useCallback(
+        (key: keyof PeopleSearchFilters, value: DepartmentFilter) => {
+            setPeopleFilters({
+                ...peopleFilters,
+                [key]: value,
+            })
+        },
+        [peopleFilters, setPeopleFilters]
+    )
+
     const clearAllFilters = () => {
-        setSearchFilters({
-            contentType: 'all',
-            rating: 'all',
-            year: 'all',
-            sortBy: 'popularity.desc',
-        })
+        if (searchMode === 'content') {
+            setSearchFilters({
+                contentType: 'all',
+                rating: 'all',
+                year: 'all',
+                sortBy: 'popularity.desc',
+            })
+        } else {
+            setPeopleFilters({
+                department: 'all',
+            })
+        }
     }
 
     const removeFilter = useCallback(
@@ -47,11 +74,22 @@ export default function SearchFilters({
         [updateFilter]
     )
 
-    const hasActiveFilters = Object.entries(filters).some(([key, value]) => {
+    const removePeopleFilter = useCallback(
+        (filterKey: keyof PeopleSearchFilters) => {
+            updatePeopleFilter(filterKey, 'all')
+        },
+        [updatePeopleFilter]
+    )
+
+    const hasActiveContentFilters = Object.entries(filters).some(([key, value]) => {
         if (key === 'sortBy') return value !== 'popularity.desc'
         if (key === 'genres') return Array.isArray(value) && value.length > 0
         return value !== 'all'
     })
+
+    const hasActivePeopleFilters = peopleFilters.department !== 'all'
+
+    const hasActiveFilters = searchMode === 'content' ? hasActiveContentFilters : hasActivePeopleFilters
 
     const FilterDropdown = React.memo(function FilterDropdown({
         label,
@@ -81,10 +119,10 @@ export default function SearchFilters({
                     <select
                         value={value}
                         onChange={handleChange}
-                        className={`appearance-none bg-gray-800 text-white rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none transition-all min-w-[120px] ${
+                        className={`appearance-none bg-gray-800 text-white rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none transition-all min-w-[120px] border ${
                             isActive
-                                ? 'border-[0.5px] border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)] hover:shadow-[0_0_12px_rgba(239,68,68,0.5)] focus:shadow-[0_0_12px_rgba(239,68,68,0.5)]'
-                                : 'border border-gray-600 hover:border-gray-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'
+                                ? 'border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)] hover:shadow-[0_0_12px_rgba(239,68,68,0.5)] focus:shadow-[0_0_12px_rgba(239,68,68,0.5)]'
+                                : 'border-gray-600 hover:border-gray-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'
                         }`}
                     >
                         {options.map((option) => (
@@ -126,42 +164,94 @@ export default function SearchFilters({
         { value: 'vote_average.desc', label: 'Most Voted' },
     ]
 
+    // People search filter options
+    const departmentOptions = [
+        { value: 'all', label: 'All Departments' },
+        { value: 'acting', label: 'Actors' },
+        { value: 'directing', label: 'Directors' },
+        { value: 'writing', label: 'Writers' },
+    ]
+
     return (
         <div className={`${className}`}>
-            <div className="flex flex-col space-y-4 lg:flex-row lg:space-y-0 lg:space-x-6 lg:items-end">
-                <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0">
-                    <FilterDropdown
-                        label="Content Type"
-                        value={filters.contentType}
-                        onChange={(value) => updateFilter('contentType', value)}
-                        options={contentTypeOptions}
-                        isActive={filters.contentType !== 'all'}
-                    />
-
-                    <FilterDropdown
-                        label="Rating"
-                        value={filters.rating}
-                        onChange={(value) => updateFilter('rating', value)}
-                        options={ratingOptions}
-                        isActive={filters.rating !== 'all'}
-                    />
-
-                    <FilterDropdown
-                        label="Year"
-                        value={filters.year || 'all'}
-                        onChange={(value) => updateFilter('year', value)}
-                        options={yearOptions}
-                        isActive={filters.year !== 'all'}
-                    />
-
-                    <FilterDropdown
-                        label="Sort By"
-                        value={filters.sortBy || 'popularity.desc'}
-                        onChange={(value) => updateFilter('sortBy', value)}
-                        options={sortOptions}
-                        isActive={filters.sortBy !== 'popularity.desc'}
-                    />
+            {/* Search Mode Toggle */}
+            <div className="flex items-center gap-2 mb-4">
+                <span className="text-sm text-gray-400 mr-2">Search for:</span>
+                <div className="flex rounded-lg overflow-hidden border border-gray-600">
+                    <button
+                        onClick={() => setSearchMode('content')}
+                        className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
+                            searchMode === 'content'
+                                ? 'bg-red-600 text-white'
+                                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                        }`}
+                    >
+                        <FilmIcon className="w-4 h-4" />
+                        Titles
+                    </button>
+                    <button
+                        onClick={() => setSearchMode('people')}
+                        className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
+                            searchMode === 'people'
+                                ? 'bg-red-600 text-white'
+                                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                        }`}
+                    >
+                        <UserGroupIcon className="w-4 h-4" />
+                        People
+                    </button>
                 </div>
+            </div>
+
+            {/* Filters - Conditional based on search mode */}
+            <div className="flex flex-col space-y-4 lg:flex-row lg:space-y-0 lg:space-x-6 lg:items-end">
+                {searchMode === 'content' ? (
+                    /* Content Search Filters */
+                    <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0">
+                        <FilterDropdown
+                            label="Content Type"
+                            value={filters.contentType}
+                            onChange={(value) => updateFilter('contentType', value)}
+                            options={contentTypeOptions}
+                            isActive={filters.contentType !== 'all'}
+                        />
+
+                        <FilterDropdown
+                            label="Rating"
+                            value={filters.rating}
+                            onChange={(value) => updateFilter('rating', value)}
+                            options={ratingOptions}
+                            isActive={filters.rating !== 'all'}
+                        />
+
+                        <FilterDropdown
+                            label="Year"
+                            value={filters.year || 'all'}
+                            onChange={(value) => updateFilter('year', value)}
+                            options={yearOptions}
+                            isActive={filters.year !== 'all'}
+                        />
+
+                        <FilterDropdown
+                            label="Sort By"
+                            value={filters.sortBy || 'popularity.desc'}
+                            onChange={(value) => updateFilter('sortBy', value)}
+                            options={sortOptions}
+                            isActive={filters.sortBy !== 'popularity.desc'}
+                        />
+                    </div>
+                ) : (
+                    /* People Search Filters */
+                    <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0">
+                        <FilterDropdown
+                            label="Department"
+                            value={peopleFilters.department}
+                            onChange={(value) => updatePeopleFilter('department', value as DepartmentFilter)}
+                            options={departmentOptions}
+                            isActive={peopleFilters.department !== 'all'}
+                        />
+                    </div>
+                )}
 
                 {hasActiveFilters && (
                     <button
@@ -175,57 +265,78 @@ export default function SearchFilters({
 
             {hasActiveFilters && (
                 <div className="mt-4 flex flex-wrap gap-2">
-                    {filters.contentType !== 'all' && (
-                        <button
-                            onClick={() => removeFilter('contentType')}
-                            className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors cursor-pointer group"
-                            title="Click to remove Content Type filter"
-                        >
-                            <span>
-                                {
-                                    contentTypeOptions.find(
-                                        (opt) => opt.value === filters.contentType
-                                    )?.label
-                                }
-                            </span>
-                            <XMarkIcon className="ml-1 w-3 h-3 group-hover:text-gray-200" />
-                        </button>
-                    )}
-                    {filters.rating !== 'all' && (
-                        <button
-                            onClick={() => removeFilter('rating')}
-                            className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-600 hover:bg-yellow-700 text-white transition-colors cursor-pointer group"
-                            title="Click to remove Rating filter"
-                        >
-                            <span>
-                                {ratingOptions.find((opt) => opt.value === filters.rating)?.label}
-                            </span>
-                            <XMarkIcon className="ml-1 w-3 h-3 group-hover:text-gray-200" />
-                        </button>
-                    )}
-                    {filters.year !== 'all' && (
-                        <button
-                            onClick={() => removeFilter('year')}
-                            className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-600 hover:bg-green-700 text-white transition-colors cursor-pointer group"
-                            title="Click to remove Year filter"
-                        >
-                            <span>
-                                {yearOptions.find((opt) => opt.value === filters.year)?.label}
-                            </span>
-                            <XMarkIcon className="ml-1 w-3 h-3 group-hover:text-gray-200" />
-                        </button>
-                    )}
-                    {filters.sortBy !== 'popularity.desc' && (
-                        <button
-                            onClick={() => removeFilter('sortBy')}
-                            className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-600 hover:bg-orange-700 text-white transition-colors cursor-pointer group"
-                            title="Click to remove Sort filter"
-                        >
-                            <span>
-                                {sortOptions.find((opt) => opt.value === filters.sortBy)?.label}
-                            </span>
-                            <XMarkIcon className="ml-1 w-3 h-3 group-hover:text-gray-200" />
-                        </button>
+                    {searchMode === 'content' ? (
+                        /* Content filter badges */
+                        <>
+                            {filters.contentType !== 'all' && (
+                                <button
+                                    onClick={() => removeFilter('contentType')}
+                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors cursor-pointer group"
+                                    title="Click to remove Content Type filter"
+                                >
+                                    <span>
+                                        {
+                                            contentTypeOptions.find(
+                                                (opt) => opt.value === filters.contentType
+                                            )?.label
+                                        }
+                                    </span>
+                                    <XMarkIcon className="ml-1 w-3 h-3 group-hover:text-gray-200" />
+                                </button>
+                            )}
+                            {filters.rating !== 'all' && (
+                                <button
+                                    onClick={() => removeFilter('rating')}
+                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-600 hover:bg-yellow-700 text-white transition-colors cursor-pointer group"
+                                    title="Click to remove Rating filter"
+                                >
+                                    <span>
+                                        {ratingOptions.find((opt) => opt.value === filters.rating)?.label}
+                                    </span>
+                                    <XMarkIcon className="ml-1 w-3 h-3 group-hover:text-gray-200" />
+                                </button>
+                            )}
+                            {filters.year !== 'all' && (
+                                <button
+                                    onClick={() => removeFilter('year')}
+                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-600 hover:bg-green-700 text-white transition-colors cursor-pointer group"
+                                    title="Click to remove Year filter"
+                                >
+                                    <span>
+                                        {yearOptions.find((opt) => opt.value === filters.year)?.label}
+                                    </span>
+                                    <XMarkIcon className="ml-1 w-3 h-3 group-hover:text-gray-200" />
+                                </button>
+                            )}
+                            {filters.sortBy !== 'popularity.desc' && (
+                                <button
+                                    onClick={() => removeFilter('sortBy')}
+                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-600 hover:bg-orange-700 text-white transition-colors cursor-pointer group"
+                                    title="Click to remove Sort filter"
+                                >
+                                    <span>
+                                        {sortOptions.find((opt) => opt.value === filters.sortBy)?.label}
+                                    </span>
+                                    <XMarkIcon className="ml-1 w-3 h-3 group-hover:text-gray-200" />
+                                </button>
+                            )}
+                        </>
+                    ) : (
+                        /* People filter badges */
+                        <>
+                            {peopleFilters.department !== 'all' && (
+                                <button
+                                    onClick={() => removePeopleFilter('department')}
+                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-600 hover:bg-purple-700 text-white transition-colors cursor-pointer group"
+                                    title="Click to remove Department filter"
+                                >
+                                    <span>
+                                        {departmentOptions.find((opt) => opt.value === peopleFilters.department)?.label}
+                                    </span>
+                                    <XMarkIcon className="ml-1 w-3 h-3 group-hover:text-gray-200" />
+                                </button>
+                            )}
+                        </>
                     )}
                 </div>
             )}

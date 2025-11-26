@@ -315,23 +315,16 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
         }
 
         fetchRecommendations()
-    }, [
-        userId,
-        sessionType,
-        likedIdsSignature,
-        watchlistIdsSignature,
-        hiddenIdsSignature,
-        collectionIdsSignature,
-        prefsSignature,
-        showRecommendations,
-        sessionData.likedMovies,
-        sessionData.defaultWatchlist,
-        sessionData.hiddenMovies,
-        collectionItems,
-        genrePreferences,
-        contentPreferences,
-        votedContent,
-    ])
+        // Note: We intentionally exclude likedIdsSignature, watchlistIdsSignature,
+        // hiddenIdsSignature, and collectionIdsSignature from dependencies.
+        // This prevents the row from refetching when users interact with content
+        // within the recommendations (like, add to watchlist, etc.), which would
+        // cause a jarring re-render. Recommendations only refresh on:
+        // - Page reload
+        // - Session changes
+        // - Explicit preference changes (genre quiz, title quiz)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [userId, sessionType, prefsSignature, showRecommendations])
 
     // Handle genre preference save
     const handleGenreSave = useCallback(
@@ -354,12 +347,12 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
                 existingVotesMap.set(`${v.contentId}-${v.mediaType}`, v)
             })
 
-            // Also add "love" votes to likedMovies
-            const lovedContent = votes.filter((v) => v.vote === 'love')
-            for (const loved of lovedContent) {
+            // Also add "like" votes to likedMovies
+            const likedContent = votes.filter((v) => v.vote === 'like')
+            for (const liked of likedContent) {
                 // Find the content object to add to liked
                 const contentItem = sessionData.defaultWatchlist.find(
-                    (c) => c.id === loved.contentId && c.media_type === loved.mediaType
+                    (c) => c.id === liked.contentId && c.media_type === liked.mediaType
                 )
                 if (contentItem && !sessionData.isLiked(contentItem.id)) {
                     await sessionData.addLikedMovie(contentItem)

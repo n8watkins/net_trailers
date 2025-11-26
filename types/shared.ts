@@ -33,13 +33,23 @@ export interface ShownPreferenceContent {
 export interface VotedContent {
     contentId: number
     mediaType: 'movie' | 'tv'
-    vote: 'love' | 'neutral' | 'not_for_me'
+    vote: 'like' | 'dislike'
     votedAt: number
+}
+
+// Unified rating for content (merges liked/hidden/voted)
+// Stores full content for display without additional API calls
+export interface RatedContent {
+    content: Content
+    rating: 'like' | 'dislike'
+    ratedAt: number
 }
 
 export interface UserPreferences {
     defaultWatchlist: Content[]
+    /** @deprecated Use myRatings with rating='like' instead */
     likedMovies: Content[]
+    /** @deprecated Use myRatings with rating='dislike' instead */
     hiddenMovies: Content[]
     userCreatedWatchlists: UserList[]
     systemRecommendations?: SystemRecommendation[] // System recommendation settings (Trending, Top Rated, etc.)
@@ -54,7 +64,9 @@ export interface UserPreferences {
     genrePreferences?: GenrePreference[] // Genre preferences for recommendations
     contentPreferences?: ContentPreference[] // Content preferences for recommendations
     shownPreferenceContent?: ShownPreferenceContent[] // Track shown content to avoid repeats
+    /** @deprecated Use myRatings instead */
     votedContent?: VotedContent[] // Track user votes on content (title quiz)
+    myRatings?: RatedContent[] // Unified ratings (replaces likedMovies, hiddenMovies, votedContent)
 }
 
 export interface UserSession {
@@ -102,6 +114,7 @@ export const defaultAuthSession: AuthSession = {
             },
             emailDigest: 'never',
         },
+        myRatings: [],
     },
     lastSyncedAt: Date.now(),
 }
@@ -139,6 +152,7 @@ export const defaultGuestSession: GuestSession = {
             },
             emailDigest: 'never',
         },
+        myRatings: [],
     },
     lastSyncedAt: Date.now(),
 }

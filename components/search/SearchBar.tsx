@@ -5,13 +5,15 @@ import {
     FunnelIcon,
     MicrophoneIcon,
 } from '@heroicons/react/24/outline'
+import { FilmIcon, UserGroupIcon } from '@heroicons/react/24/solid'
 import { useRouter, usePathname } from 'next/navigation'
 import { useModalStore } from '../../stores/modalStore'
+import { useSearchStore } from '../../stores/searchStore'
 import { useSearch } from '../../hooks/useSearch'
 import { useTypewriter } from '../../hooks/useTypewriter'
 import { useVoiceInput } from '../../hooks/useVoiceInput'
 import { useToast } from '../../hooks/useToast'
-import { Content } from '../../typings'
+import { Content, TrendingPerson } from '../../typings'
 import SearchFiltersDropdown from './SearchFiltersDropdown'
 import SearchSuggestionsDropdown from './SearchSuggestionsDropdown'
 
@@ -32,27 +34,50 @@ export default function SearchBar({
     inputId,
     voiceSourceId,
 }: SearchBarProps) {
-    // Popular titles for typewriter effect
+    // Get searchMode and setSearchMode from store for quick toggle and dynamic placeholders
+    const searchMode = useSearchStore((state) => state.searchMode)
+    const setSearchMode = useSearchStore((state) => state.setSearchMode)
+
+    // Popular titles for typewriter effect - updated with current popular content
     const popularTitles = [
-        'Stranger Things',
-        'The Witcher',
-        'Wednesday',
-        'Breaking Bad',
-        'Squid Game',
-        'The Crown',
-        'Ozark',
-        'House of Cards',
-        'Narcos',
-        'Black Mirror',
-        'Money Heist',
-        'Dark',
-        "The Queen's Gambit",
-        'Bridgerton',
-        'Cobra Kai',
+        'Oppenheimer',
+        'Dune: Part Two',
+        'The Bear',
+        'Shogun',
+        'House of the Dragon',
+        'The Last of Us',
+        'Succession',
+        'Barbie',
+        'Poor Things',
+        'Fallout',
+        'Baby Reindeer',
+        'Ripley',
+        'The Gentlemen',
+        '3 Body Problem',
+        'Saltburn',
+    ]
+
+    // Popular people for typewriter effect when in people mode
+    const popularPeople = [
+        'Timothée Chalamet',
+        'Zendaya',
+        'Florence Pugh',
+        'Pedro Pascal',
+        'Sydney Sweeney',
+        'Austin Butler',
+        'Margot Robbie',
+        'Christopher Nolan',
+        'Denis Villeneuve',
+        'Greta Gerwig',
+        'Martin Scorsese',
+        'Cillian Murphy',
+        'Emma Stone',
+        'Ryan Gosling',
+        'Ana de Armas',
     ]
 
     const typewriterText = useTypewriter({
-        words: popularTitles,
+        words: searchMode === 'people' ? popularPeople : popularTitles,
         typeSpeed: 80,
         deleteSpeed: 40,
         delayBetweenWords: 2000,
@@ -72,6 +97,7 @@ export default function SearchBar({
         filters,
         updateQuery,
         clearSearch,
+        filteredPeopleResults,
     } = useSearch()
 
     const openModal = useModalStore((state) => state.openModal)
@@ -262,6 +288,13 @@ export default function SearchBar({
         openModal(content, true, false) // autoPlay=true, autoPlayWithSound=false (More info mode - starts muted)
     }
 
+    const handleQuickPersonClick = (person: TrendingPerson) => {
+        updateQuery(person.name) // Update search bar text with the person's name
+        setShowSuggestions(false)
+        inputRef.current?.blur()
+        router.push(`/person/${person.id}`)
+    }
+
     const handleClearSearch = (e?: React.MouseEvent) => {
         e?.preventDefault()
         e?.stopPropagation()
@@ -373,9 +406,12 @@ export default function SearchBar({
     // Only show live search suggestions, no search history
     const allSuggestions = query.length > 0 ? suggestions : []
 
-    // Quick results to show (first 4 results)
+    // Quick results to show (first 4 results) - based on search mode
     const quickResults = hasSearched && results.length > 0 ? results.slice(0, 4) : []
-    const hasMoreResults = results.length > 4
+    const quickPeopleResults = hasSearched && filteredPeopleResults.length > 0 ? filteredPeopleResults.slice(0, 4) : []
+    const currentQuickResultsCount = searchMode === 'people' ? quickPeopleResults.length : quickResults.length
+    const currentTotalCount = searchMode === 'people' ? filteredPeopleResults.length : results.length
+    const hasMoreResults = currentTotalCount > 4
 
     // Check if any filters are active
     const hasActiveFilters = Object.entries(filters).some(([key, value]) => {
@@ -398,10 +434,10 @@ export default function SearchBar({
             <div
                 className={`relative transition-all duration-300 ease-in-out ${
                     // Mobile: starts at icon width (48px), expands to full width when active
-                    // Desktop: always at full width
+                    // Desktop: always at full width, larger on xl+ screens
                     isMobileExpanded
-                        ? 'md:max-w-4xl md:w-full max-w-full w-full opacity-100'
-                        : 'md:max-w-4xl md:w-full w-12 opacity-100'
+                        ? 'md:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl md:w-full max-w-full w-full opacity-100'
+                        : 'md:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl md:w-full w-12 opacity-100'
                 }`}
             >
                 {/* Mobile Search Icon (overlays on collapsed state) */}
@@ -469,7 +505,7 @@ export default function SearchBar({
                         }
                         aria-expanded={showSuggestions && quickResults.length > 0}
                         className={`
-                            block w-full pl-10 pr-12 py-2.5
+                            block w-full pl-10 pr-12 sm:pr-36 py-2.5
                             bg-[#0a0a0a] border-[0.5px] border-gray-600/30 rounded-lg
                             text-white placeholder-gray-400
                             focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-transparent
@@ -483,8 +519,42 @@ export default function SearchBar({
                         `}
                     />
 
-                    {/* Voice, Filter, and Clear Buttons */}
+                    {/* Quick Mode Toggle, Voice, Filter, and Clear Buttons */}
                     <div className="absolute inset-y-0 right-0 flex items-center">
+                        {/* Quick Search Mode Toggle - hidden on mobile */}
+                        <div className="hidden sm:flex items-center border-r border-gray-600/30 mr-1 pr-1">
+                            <div className="flex items-center bg-gray-800/60 rounded-full p-0.5">
+                                <button
+                                    onClick={() => setSearchMode('content')}
+                                    className={`p-1.5 transition-all duration-200 ${
+                                        searchMode === 'content'
+                                            ? 'text-red-500'
+                                            : 'text-gray-500 hover:text-gray-300'
+                                    }`}
+                                    type="button"
+                                    title="Search Titles"
+                                    aria-label="Search for movies and TV shows"
+                                    aria-pressed={searchMode === 'content'}
+                                >
+                                    <FilmIcon className="h-4 w-4" aria-hidden="true" />
+                                </button>
+                                <button
+                                    onClick={() => setSearchMode('people')}
+                                    className={`p-1.5 transition-all duration-200 ${
+                                        searchMode === 'people'
+                                            ? 'text-red-500'
+                                            : 'text-gray-500 hover:text-gray-300'
+                                    }`}
+                                    type="button"
+                                    title="Search People"
+                                    aria-label="Search for actors, directors, and writers"
+                                    aria-pressed={searchMode === 'people'}
+                                >
+                                    <UserGroupIcon className="h-4 w-4" aria-hidden="true" />
+                                </button>
+                            </div>
+                        </div>
+
                         {/* Voice Input Button - only render after mount to prevent hydration mismatch */}
                         {isMounted && isSupported && (
                             <button
@@ -584,20 +654,23 @@ export default function SearchBar({
             {/* Search Results Dropdown */}
             <SearchSuggestionsDropdown
                 isVisible={
-                    showSuggestions && quickResults.length > 0 && !isOnSearchPage && !showFilters
+                    showSuggestions && currentQuickResultsCount > 0 && !isOnSearchPage && !showFilters
                 }
                 suggestionsRef={suggestionsRef}
                 query={query}
                 totalResults={totalResults}
-                filteredCount={results.length}
+                filteredCount={currentTotalCount}
                 hasActiveFilters={hasActiveFilters}
                 quickResults={quickResults}
+                quickPeopleResults={quickPeopleResults}
+                searchMode={searchMode}
                 hasMoreResults={hasMoreResults}
                 selectedResultIndex={selectedResultIndex}
                 isSeeAllButtonSelected={isSeeAllButtonSelected}
                 resultRefs={resultRefs}
                 seeAllButtonRef={seeAllButtonRef}
                 onQuickResultClick={handleQuickResultClick}
+                onQuickPersonClick={handleQuickPersonClick}
                 onSeeAllResults={handleSeeAllResults}
                 onMouseDown={(e) => {
                     e.preventDefault() // Prevents input from losing focus

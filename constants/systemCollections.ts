@@ -35,6 +35,7 @@ export const ALL_SYSTEM_COLLECTIONS: Collection[] = [
         isSystemCollection: true,
         canDelete: true,
         canEdit: true,
+        canGenerateMore: true,
         color: '#6366f1', // Indigo
     },
     {
@@ -54,6 +55,7 @@ export const ALL_SYSTEM_COLLECTIONS: Collection[] = [
         isSystemCollection: true,
         canDelete: true,
         canEdit: true,
+        canGenerateMore: true,
         color: '#6366f1', // Indigo
     },
     {
@@ -73,6 +75,7 @@ export const ALL_SYSTEM_COLLECTIONS: Collection[] = [
         isSystemCollection: true,
         canDelete: true,
         canEdit: true,
+        canGenerateMore: true,
         color: '#6366f1', // Indigo
     },
 ]

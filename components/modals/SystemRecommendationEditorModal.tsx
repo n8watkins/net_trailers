@@ -56,19 +56,15 @@ export default function SystemRecommendationEditorModal({
     const [mediaType, setMediaType] = useState<'movie' | 'tv' | 'both'>('both')
     const [selectedGenres, setSelectedGenres] = useState<string[]>([])
 
-    // Check if this is an actors/directors row (no genre support)
-    const isPersonRow =
-        recommendation?.id.includes('actors') || recommendation?.id.includes('directors')
-
     // Auto-generated name based on current selections
     const generatedName = useMemo(() => {
         if (!recommendation) return ''
         return generateSystemRecommendationName({
             recommendationId: recommendation.id,
             mediaType,
-            genres: isPersonRow ? [] : selectedGenres,
+            genres: selectedGenres,
         })
-    }, [recommendation, mediaType, selectedGenres, isPersonRow])
+    }, [recommendation, mediaType, selectedGenres])
 
     // Get emoji for this recommendation type
     const emoji = recommendation ? getSystemRecommendationEmoji(recommendation.id) : ''
@@ -184,7 +180,7 @@ export default function SystemRecommendationEditorModal({
                 name: generatedName,
                 enabled: displayAsRow,
                 mediaType,
-                genres: isPersonRow ? [] : selectedGenres,
+                genres: selectedGenres,
             })
         } catch (error) {
             console.error('Save system recommendation error:', error)
@@ -329,10 +325,8 @@ export default function SystemRecommendationEditorModal({
                             </p>
                         </div>
 
-                        {/* Media Type and Genres - Side by side (or just media type for person rows) */}
-                        <div
-                            className={`grid gap-4 ${isPersonRow ? 'grid-cols-1' : 'grid-cols-2'}`}
-                        >
+                        {/* Media Type and Genres - Side by side */}
+                        <div className="grid gap-4 grid-cols-2">
                             {/* Media Type Selection */}
                             <div
                                 className={`bg-gray-800/50 rounded-lg border p-4 transition-all duration-500 ${
@@ -393,53 +387,51 @@ export default function SystemRecommendationEditorModal({
                                 </div>
                             </div>
 
-                            {/* Genres - only show for non-person rows */}
-                            {!isPersonRow && (
-                                <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
-                                    <div className="space-y-3">
-                                        <div className="flex items-center justify-between">
-                                            <p className="text-sm font-medium text-white">Genres</p>
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowGenreModal(true)}
-                                                className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors whitespace-nowrap"
-                                            >
-                                                Edit
-                                            </button>
-                                        </div>
-                                        <div className="flex flex-wrap gap-2">
-                                            {selectedGenres.length === 0 ? (
-                                                <span className="px-4 py-2 rounded-full text-sm font-medium bg-red-600 text-white">
-                                                    All Genres
-                                                </span>
-                                            ) : (
-                                                selectedGenres.map((genreId, index) => (
-                                                    <span
-                                                        key={`${genreId}-${index}`}
-                                                        className="group relative px-4 py-2 rounded-full text-sm font-medium bg-red-600 text-white"
-                                                    >
-                                                        {selectedGenreNames[index]}
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                setSelectedGenres(
-                                                                    selectedGenres.filter(
-                                                                        (_, i) => i !== index
-                                                                    )
+                            {/* Genres */}
+                            <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-sm font-medium text-white">Genres</p>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowGenreModal(true)}
+                                            className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors whitespace-nowrap"
+                                        >
+                                            Edit
+                                        </button>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {selectedGenres.length === 0 ? (
+                                            <span className="px-4 py-2 rounded-full text-sm font-medium bg-red-600 text-white">
+                                                All Genres
+                                            </span>
+                                        ) : (
+                                            selectedGenres.map((genreId, index) => (
+                                                <span
+                                                    key={`${genreId}-${index}`}
+                                                    className="group relative px-4 py-2 rounded-full text-sm font-medium bg-red-600 text-white"
+                                                >
+                                                    {selectedGenreNames[index]}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            setSelectedGenres(
+                                                                selectedGenres.filter(
+                                                                    (_, i) => i !== index
                                                                 )
-                                                            }
-                                                            className="absolute -top-1 -right-1 w-5 h-5 bg-white hover:bg-gray-200 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
-                                                            title="Remove genre"
-                                                        >
-                                                            <XMarkIcon className="w-3 h-3 text-slate-600" />
-                                                        </button>
-                                                    </span>
-                                                ))
-                                            )}
-                                        </div>
+                                                            )
+                                                        }
+                                                        className="absolute -top-1 -right-1 w-5 h-5 bg-white hover:bg-gray-200 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                                                        title="Remove genre"
+                                                    >
+                                                        <XMarkIcon className="w-3 h-3 text-slate-600" />
+                                                    </button>
+                                                </span>
+                                            ))
+                                        )}
                                     </div>
                                 </div>
-                            )}
+                            </div>
                         </div>
                     </div>
                 </div>

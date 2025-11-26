@@ -4,6 +4,8 @@ import type { Ranking } from '@/types/rankings'
 import type { Movie, TVShow } from '@/typings'
 import type { UserList } from '@/types/collections'
 import type { ThreadSummary, PollSummary, PollOptionSummary } from '@/types/forum'
+import type { ProfileVisibility } from '@/types/profile'
+import { DEFAULT_PROFILE_VISIBILITY } from '@/types/profile'
 import type { Timestamp, Firestore } from 'firebase-admin/firestore'
 
 export interface PublicProfilePayload {
@@ -79,19 +81,16 @@ export async function buildPublicProfilePayload(
     const profileRef = db.collection('profiles').doc(userId)
     const profileSnap = await profileRef.get()
 
-    if (profileSnap.exists) {
-        const profileData = profileSnap.data()
-        if (profileData?.isPublic === false) {
-            return null
-        }
-    }
-
     const userRef = db.collection('users').doc(userId)
     const userSnap = await userRef.get()
 
     if (!profileSnap.exists && !userSnap.exists) {
         return null
     }
+
+    // Get visibility settings (default to all visible for backward compatibility)
+    const profileDataRaw = profileSnap.exists ? profileSnap.data() || {} : {}
+    const visibility: ProfileVisibility = profileDataRaw.visibility ?? { ...DEFAULT_PROFILE_VISIBILITY }
 
     let authRecord: UserRecord | null = null
     try {
@@ -102,7 +101,7 @@ export async function buildPublicProfilePayload(
 
     const legacyData = userSnap.exists ? userSnap.data() || {} : {}
     const legacyProfile = legacyData.profile || {}
-    const profileData = profileSnap.exists ? profileSnap.data() || {} : null
+    const profileData = profileSnap.exists ? profileDataRaw : null
 
     const fallbackEmailLocal = authRecord?.email?.split('@')[0]
     const derivedUsername =
@@ -140,129 +139,157 @@ export async function buildPublicProfilePayload(
               : undefined,
     }
 
-    const likedContent = Array.isArray(legacyData.likedMovies)
+    // Check if public profile is enabled (master toggle)
+    // If enablePublicProfile is false (or undefined for backward compat), all sections are hidden
+    const isPublicEnabled = visibility.enablePublicProfile !== false
+
+    // Apply visibility settings to content sections
+    // Each section requires both the master toggle AND its individual toggle to be on
+    const likedContent = isPublicEnabled && visibility.showLikedContent && Array.isArray(legacyData.likedMovies)
         ? (legacyData.likedMovies as (Movie | TVShow)[])
         : []
-    // Collections are no longer shown on public profiles - only shared via links
-    const collections: UserList[] = []
-    const watchLaterPreview = Array.isArray(legacyData.defaultWatchlist)
+
+    // Collections visibility controlled by toggle (but currently always empty per existing logic)
+    const collections: UserList[] = isPublicEnabled && visibility.showCollections ? [] : []
+
+    const watchLaterPreview = isPublicEnabled && visibility.showWatchLater && Array.isArray(legacyData.defaultWatchlist)
         ? (legacyData.defaultWatchlist as (Movie | TVShow)[]).slice(0, 12)
         : []
 
-    const rankingsSnap = await db
-        .collection('rankings')
-        .where('userId', '==', userId)
-        .limit(50)
-        .get()
-    const allRankings = rankingsSnap.docs.map((doc) => doc.data() as Ranking)
-    const publicRankings = allRankings
-        .filter((ranking) => ranking.isPublic)
-        .sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0))
-        .slice(0, 20)
+    // Only fetch rankings if visibility allows
+    let publicRankings: Ranking[] = []
+    if (isPublicEnabled && visibility.showRankings) {
+        const rankingsSnap = await db
+            .collection('rankings')
+            .where('userId', '==', userId)
+            .limit(50)
+            .get()
+        const allRankings = rankingsSnap.docs.map((doc) => doc.data() as Ranking)
+        publicRankings = allRankings
+            .filter((ranking) => ranking.isPublic)
+            .sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0))
+            .slice(0, 20)
+    }
+
+    // Only fetch forum data if respective visibility toggles allow
+    const shouldFetchThreads = isPublicEnabled && visibility.showThreads
+    const shouldFetchPolls = isPublicEnabled && (visibility.showPollsCreated || visibility.showPollsVoted)
 
     const [threadsSnap, pollsSnap] = await Promise.all([
-        db.collection('threads').where('userId', '==', userId).limit(25).get(),
-        db.collection('polls').where('userId', '==', userId).limit(25).get(),
+        shouldFetchThreads
+            ? db.collection('threads').where('userId', '==', userId).limit(25).get()
+            : Promise.resolve({ docs: [] }),
+        shouldFetchPolls
+            ? db.collection('polls').where('userId', '==', userId).limit(25).get()
+            : Promise.resolve({ docs: [] }),
     ])
 
-    const threadSummaries: ThreadSummary[] = threadsSnap.docs
-        .map((doc) => {
-            const data = doc.data() || {}
-            return {
-                id: doc.id,
-                title: data.title ?? 'Untitled thread',
-                content: data.content ?? '',
-                category: data.category ?? 'general',
-                likes: data.likes ?? 0,
-                views: data.views ?? 0,
-                replyCount: data.replyCount ?? 0,
-                createdAt: toMillis(data.createdAt as Timestamp | number | undefined),
-                updatedAt: toMillis(data.updatedAt as Timestamp | number | undefined),
-            }
-        })
-        .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
-        .slice(0, 10)
+    const threadSummaries: ThreadSummary[] = isPublicEnabled && visibility.showThreads
+        ? threadsSnap.docs
+              .map((doc) => {
+                  const data = doc.data() || {}
+                  return {
+                      id: doc.id,
+                      title: data.title ?? 'Untitled thread',
+                      content: data.content ?? '',
+                      category: data.category ?? 'general',
+                      likes: data.likes ?? 0,
+                      views: data.views ?? 0,
+                      replyCount: data.replyCount ?? 0,
+                      createdAt: toMillis(data.createdAt as Timestamp | number | undefined),
+                      updatedAt: toMillis(data.updatedAt as Timestamp | number | undefined),
+                  }
+              })
+              .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
+              .slice(0, 10)
+        : []
 
-    const pollSummaries: PollSummary[] = pollsSnap.docs
-        .map((doc): PollSummary => {
-            const data = doc.data() || {}
-            return {
-                id: doc.id,
-                question: data.question ?? 'Untitled poll',
-                category: data.category ?? 'general',
-                totalVotes: data.totalVotes ?? 0,
-                isMultipleChoice: Boolean(data.isMultipleChoice),
-                allowAddOptions: Boolean(data.allowAddOptions),
-                options: Array.isArray(data.options)
-                    ? data.options.map((option: unknown): PollOptionSummary => {
-                          const opt = option as Record<string, unknown>
-                          return {
-                              id: (opt.id as string) ?? '',
-                              text: (opt.text as string) ?? '',
-                              votes: (opt.votes as number) ?? 0,
-                              percentage: (opt.percentage as number) ?? 0,
-                          }
-                      })
-                    : [],
-                createdAt: toMillis(data.createdAt as Timestamp | number | undefined),
-                expiresAt: toMillis(data.expiresAt as Timestamp | number | undefined),
-                votedAt: null,
-            }
-        })
-        .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
-        .slice(0, 10)
+    const pollSummaries: PollSummary[] = isPublicEnabled && visibility.showPollsCreated
+        ? pollsSnap.docs
+              .map((doc): PollSummary => {
+                  const data = doc.data() || {}
+                  return {
+                      id: doc.id,
+                      question: data.question ?? 'Untitled poll',
+                      category: data.category ?? 'general',
+                      totalVotes: data.totalVotes ?? 0,
+                      isMultipleChoice: Boolean(data.isMultipleChoice),
+                      allowAddOptions: Boolean(data.allowAddOptions),
+                      options: Array.isArray(data.options)
+                          ? data.options.map((option: unknown): PollOptionSummary => {
+                                const opt = option as Record<string, unknown>
+                                return {
+                                    id: (opt.id as string) ?? '',
+                                    text: (opt.text as string) ?? '',
+                                    votes: (opt.votes as number) ?? 0,
+                                    percentage: (opt.percentage as number) ?? 0,
+                                }
+                            })
+                          : [],
+                      createdAt: toMillis(data.createdAt as Timestamp | number | undefined),
+                      expiresAt: toMillis(data.expiresAt as Timestamp | number | undefined),
+                      votedAt: null,
+                  }
+              })
+              .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
+              .slice(0, 10)
+        : []
 
-    const votesSnap = await db
-        .collection('poll_votes')
-        .where('userId', '==', userId)
-        .limit(25)
-        .get()
+    // Fetch voted polls only if visibility allows
+    let votedPollSummaries: PollSummary[] = []
+    if (isPublicEnabled && visibility.showPollsVoted) {
+        const votesSnap = await db
+            .collection('poll_votes')
+            .where('userId', '==', userId)
+            .limit(25)
+            .get()
 
-    const votedPollSummaries = (
-        await Promise.all(
-            votesSnap.docs.map(async (voteDoc) => {
-                const voteData = voteDoc.data() || {}
-                const pollId = voteData.pollId as string | undefined
-                if (!pollId) {
-                    return null
-                }
+        votedPollSummaries = (
+            await Promise.all(
+                votesSnap.docs.map(async (voteDoc) => {
+                    const voteData = voteDoc.data() || {}
+                    const pollId = voteData.pollId as string | undefined
+                    if (!pollId) {
+                        return null
+                    }
 
-                const pollDoc = await db.collection('polls').doc(pollId).get()
-                if (!pollDoc.exists) {
-                    return null
-                }
+                    const pollDoc = await db.collection('polls').doc(pollId).get()
+                    if (!pollDoc.exists) {
+                        return null
+                    }
 
-                const pollData = pollDoc.data() || {}
-                if (pollData.userId === userId) {
-                    return null
-                }
+                    const pollData = pollDoc.data() || {}
+                    if (pollData.userId === userId) {
+                        return null
+                    }
 
-                const summary: PollSummary = {
-                    id: pollDoc.id,
-                    question: pollData.question ?? 'Untitled poll',
-                    category: pollData.category ?? 'general',
-                    totalVotes: pollData.totalVotes ?? 0,
-                    isMultipleChoice: Boolean(pollData.isMultipleChoice),
-                    allowAddOptions: Boolean(pollData.allowAddOptions),
-                    options: Array.isArray(pollData.options)
-                        ? pollData.options.map((option: unknown): PollOptionSummary => {
-                              const opt = option as Record<string, unknown>
-                              return {
-                                  id: (opt.id as string) ?? '',
-                                  text: (opt.text as string) ?? '',
-                                  votes: (opt.votes as number) ?? 0,
-                                  percentage: (opt.percentage as number) ?? 0,
-                              }
-                          })
-                        : [],
-                    createdAt: toMillis(pollData.createdAt as Timestamp | number | undefined),
-                    expiresAt: toMillis(pollData.expiresAt as Timestamp | number | undefined),
-                    votedAt: toMillis(voteData.votedAt as Timestamp | number | undefined),
-                }
-                return summary
-            })
-        )
-    ).filter((poll): poll is PollSummary => poll !== null)
+                    const summary: PollSummary = {
+                        id: pollDoc.id,
+                        question: pollData.question ?? 'Untitled poll',
+                        category: pollData.category ?? 'general',
+                        totalVotes: pollData.totalVotes ?? 0,
+                        isMultipleChoice: Boolean(pollData.isMultipleChoice),
+                        allowAddOptions: Boolean(pollData.allowAddOptions),
+                        options: Array.isArray(pollData.options)
+                            ? pollData.options.map((option: unknown): PollOptionSummary => {
+                                  const opt = option as Record<string, unknown>
+                                  return {
+                                      id: (opt.id as string) ?? '',
+                                      text: (opt.text as string) ?? '',
+                                      votes: (opt.votes as number) ?? 0,
+                                      percentage: (opt.percentage as number) ?? 0,
+                                  }
+                              })
+                            : [],
+                        createdAt: toMillis(pollData.createdAt as Timestamp | number | undefined),
+                        expiresAt: toMillis(pollData.expiresAt as Timestamp | number | undefined),
+                        votedAt: toMillis(voteData.votedAt as Timestamp | number | undefined),
+                    }
+                    return summary
+                })
+            )
+        ).filter((poll): poll is PollSummary => poll !== null)
+    }
 
     const uniqueVoted = votedPollSummaries.reduce<Record<string, PollSummary>>((acc, poll) => {
         const existing = acc[poll.id]

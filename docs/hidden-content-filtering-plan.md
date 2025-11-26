@@ -955,7 +955,7 @@ Implementation is considered successful when:
 ### Related Documentation
 
 - `CLAUDE.md` - Architecture overview
-- `types/atoms.ts` - UserPreferences type definition
+- `types/shared.ts` - UserPreferences type definition
 - `types/userLists.ts` - Collection types
 
 ---

@@ -15,9 +15,12 @@ export function useSearchDirect() {
 
     const resetSearch = () => {
         search.setSearch(() => ({
+            searchMode: 'content',
             query: '',
             results: [],
             filteredResults: [],
+            peopleResults: [],
+            filteredPeopleResults: [],
             isLoading: false,
             error: null,
             hasSearched: false,
@@ -33,6 +36,9 @@ export function useSearchDirect() {
                 rating: 'all',
                 sortBy: 'popularity.desc',
                 year: 'all',
+            },
+            peopleFilters: {
+                department: 'all',
             },
             history: search.history, // Preserve history
             recentSearches: search.recentSearches, // Preserve recent

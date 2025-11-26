@@ -169,22 +169,34 @@ export function notificationWarn(...args: any[]): void {
 /**
  * API & Server-side Logging (API routes, server errors, TMDB calls)
  * Useful for debugging API routes, server-side operations, and external API calls
+ *
+ * Server-side: Uses DEBUG_API env var (set DEBUG_API=true in .env.local)
+ * Client-side: Uses localStorage debug settings
  */
+function isApiDebugEnabled(): boolean {
+    // Server-side: check environment variable
+    if (typeof window === 'undefined') {
+        return process.env.DEBUG_API === 'true'
+    }
+    // Client-side: check localStorage settings
+    return isDebugEnabled('showApiDebug')
+}
+
 export function apiLog(...args: any[]): void {
-    if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showApiDebug')) {
-        console.log(...args)
+    if (process.env.NODE_ENV !== 'production' && isApiDebugEnabled()) {
+        console.log('[API]', ...args)
     }
 }
 
 export function apiWarn(...args: any[]): void {
-    if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showApiDebug')) {
-        console.warn(...args)
+    if (process.env.NODE_ENV !== 'production' && isApiDebugEnabled()) {
+        console.warn('[API]', ...args)
     }
 }
 
 export function apiError(...args: any[]): void {
-    if (process.env.NODE_ENV !== 'production' && isDebugEnabled('showApiDebug')) {
-        console.error(...args)
+    if (process.env.NODE_ENV !== 'production' && isApiDebugEnabled()) {
+        console.error('[API]', ...args)
     }
 }
 

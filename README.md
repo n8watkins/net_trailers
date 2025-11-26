@@ -624,7 +624,7 @@ net_trailers/
 │
 ├── types/                # TypeScript type definitions
 │   ├── userLists.ts      # User list and collection types
-│   ├── atoms.ts          # Shared state type definitions
+│   ├── shared.ts         # Shared state type definitions
 │   ├── rankings.ts       # Ranking and comment types
 │   ├── forum.ts          # Forum thread, poll, vote, reply types
 │   └── ...

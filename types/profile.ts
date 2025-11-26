@@ -4,6 +4,36 @@
 export type AvatarSource = 'google' | 'custom' | 'generated'
 
 /**
+ * Profile visibility settings
+ * Controls which sections are visible on the public profile
+ * Profile identity (username, avatar, bio, genres) is always visible
+ */
+export interface ProfileVisibility {
+    enablePublicProfile: boolean // Master toggle - when off, all sections hidden
+    showLikedContent: boolean // Show liked movies/shows
+    showWatchLater: boolean // Show watch later preview
+    showRankings: boolean // Show public rankings
+    showCollections: boolean // Show shared collections
+    showThreads: boolean // Show forum threads created
+    showPollsCreated: boolean // Show polls created
+    showPollsVoted: boolean // Show polls voted on
+}
+
+/**
+ * Default visibility settings (all sections visible)
+ */
+export const DEFAULT_PROFILE_VISIBILITY: ProfileVisibility = {
+    enablePublicProfile: true,
+    showLikedContent: true,
+    showWatchLater: true,
+    showRankings: true,
+    showCollections: true,
+    showThreads: true,
+    showPollsCreated: true,
+    showPollsVoted: true,
+}
+
+/**
  * User Profile
  * Public profile information displayed to other users
  */
@@ -33,7 +63,8 @@ export interface UserProfile {
     totalViews: number
 
     // Settings
-    isPublic: boolean // Profile visible to others (default: true)
+    isPublic: boolean // @deprecated - profile is always visible, use visibility for sections
+    visibility?: ProfileVisibility // Controls which sections are visible on public profile
 
     // Timestamps
     createdAt: number
@@ -48,7 +79,8 @@ export interface UpdateProfileRequest {
     username?: string
     description?: string
     favoriteGenres?: string[]
-    isPublic?: boolean
+    isPublic?: boolean // @deprecated - use visibility instead
+    visibility?: Partial<ProfileVisibility>
     avatarSource?: AvatarSource // Switch between Google/custom/generated
 }
 
@@ -234,7 +266,8 @@ export function createDefaultProfile(
         publicCollectionsCount: 0,
         totalLikes: 0,
         totalViews: 0,
-        isPublic: true,
+        isPublic: true, // @deprecated - kept for backward compatibility
+        visibility: { ...DEFAULT_PROFILE_VISIBILITY },
         createdAt: Date.now(),
         updatedAt: Date.now(),
     }

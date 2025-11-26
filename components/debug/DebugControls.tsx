@@ -112,6 +112,10 @@ const COLOR_CLASSES: Record<string, { enabled: string; disabled: string }> = {
         enabled: 'bg-violet-600/20 text-violet-400 border border-violet-500/30',
         disabled: 'bg-gray-800 text-gray-500 border border-gray-700',
     },
+    gray: {
+        enabled: 'bg-gray-600/20 text-gray-400 border border-gray-500/30',
+        disabled: 'bg-gray-800 text-gray-500 border border-gray-700',
+    },
 }
 
 export default function DebugControls() {
@@ -135,8 +139,8 @@ export default function DebugControls() {
         showBannerDebug: false,
     })
 
-    // Profile actions for seed/delete
-    const { isSeeding, isDeleting, handleSeedData, handleQuickDelete } = useProfileActions()
+    // Profile actions for seed
+    const { isSeeding, handleSeedData } = useProfileActions()
 
     // Visibility state - load from localStorage, hidden by default
     const [isVisible, setIsVisible] = useState(false)
@@ -601,7 +605,7 @@ export default function DebugControls() {
                                 {/* Seed Data Button */}
                                 <button
                                     onClick={handleSeedData}
-                                    disabled={isSeeding || isDeleting}
+                                    disabled={isSeeding}
                                     className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-purple-600/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
                                     title="Seed test data (15 liked, 8 hidden, 12 watch later, 20 watch history, 8 collections)"
                                 >
@@ -619,19 +623,6 @@ export default function DebugControls() {
                                 >
                                     <TrashIcon className="w-3 h-3" />
                                     <span className="text-xs">Clear Storage</span>
-                                </button>
-
-                                {/* Delete All Data Button */}
-                                <button
-                                    onClick={handleQuickDelete}
-                                    disabled={isSeeding || isDeleting}
-                                    className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-red-600/20 text-red-400 border border-red-500/30 hover:bg-red-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    title="Delete all user data (collections, ratings, watch history)"
-                                >
-                                    <TrashIcon className="w-3 h-3" />
-                                    <span className="text-xs">
-                                        {isDeleting ? 'Deleting...' : 'Delete Data'}
-                                    </span>
                                 </button>
 
                                 <div className="w-px h-6 bg-gray-700" />

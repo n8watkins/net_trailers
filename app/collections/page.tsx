@@ -226,12 +226,17 @@ const Collections = () => {
         [allLists, selectedListId]
     )
 
-    // Any collection with genres and canGenerateMore supports infinite scroll
+    // Any collection with genres supports infinite scroll if it can generate more content
+    // For tmdb-genre and ai-generated collections, we can always generate more from TMDB
     const supportsInfiniteScroll = useMemo(() => {
         if (!selectedList) return false
         const hasGenres = selectedList.genres && selectedList.genres.length > 0
-        const canGenerateMore = selectedList.canGenerateMore === true
-        return hasGenres && canGenerateMore
+        // Explicitly set canGenerateMore OR infer from collection type
+        const canGenerate =
+            selectedList.canGenerateMore === true ||
+            selectedList.collectionType === 'tmdb-genre' ||
+            selectedList.collectionType === 'ai-generated'
+        return hasGenres && canGenerate
     }, [selectedList])
 
     // Build API endpoint for infinite scroll
