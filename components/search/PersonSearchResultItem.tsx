@@ -80,7 +80,7 @@ export default function PersonSearchResultItem({
                     {person.name}
                 </h4>
                 {/* Department Badge */}
-                <span className="px-1.5 py-0.5 text-xs font-medium rounded bg-red-600 text-white inline-block mt-1">
+                <span className="px-2.5 py-0.5 text-xs font-medium rounded-full bg-red-900 border border-red-500 text-white inline-block mt-1">
                     {getDepartmentLabel(person.known_for_department)}
                 </span>
             </div>
