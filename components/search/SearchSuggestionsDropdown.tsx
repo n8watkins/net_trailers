@@ -62,7 +62,7 @@ export default function SearchSuggestionsDropdown({
         >
             {/* Results Count Header */}
             {totalResults > 0 && (
-                <div className="px-4 py-2 border-b border-gray-600/50 bg-blue-600">
+                <div className="px-4 py-2 border-b border-gray-600/50 bg-gradient-to-r from-black via-black to-red-950">
                     <div className="text-xs text-white font-bold">
                         {searchMode === 'people' ? (
                             <>
