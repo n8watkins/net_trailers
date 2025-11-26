@@ -55,6 +55,7 @@ export const useSessionData = () => {
     const guestContentPreferences = useGuestStore((state) => state.contentPreferences)
     const guestShownPreferenceContent = useGuestStore((state) => state.shownPreferenceContent)
     const guestVotedContent = useGuestStore((state) => state.votedContent)
+    const guestMyRatings = useGuestStore((state) => state.myRatings)
 
     // Select actions from guest store
     const guestAddToWatchlist = useGuestStore((state) => state.addToWatchlist)
@@ -87,6 +88,7 @@ export const useSessionData = () => {
     const authContentPreferences = useAuthStore((state) => state.contentPreferences)
     const authShownPreferenceContent = useAuthStore((state) => state.shownPreferenceContent)
     const authVotedContent = useAuthStore((state) => state.votedContent)
+    const authMyRatings = useAuthStore((state) => state.myRatings)
 
     // Select actions from auth store
     const authAddToWatchlist = useAuthStore((state) => state.addToWatchlist)
@@ -132,6 +134,7 @@ export const useSessionData = () => {
     const shownPreferenceContent =
         (isAuth ? authShownPreferenceContent : guestShownPreferenceContent) ?? []
     const votedContent = (isAuth ? authVotedContent : guestVotedContent) ?? []
+    const myRatings = (isAuth ? authMyRatings : guestMyRatings) ?? []
 
     const addToWatchlist = isAuth ? authAddToWatchlist : guestAddToWatchlist
     const removeFromWatchlist = isAuth ? authRemoveFromWatchlist : guestRemoveFromWatchlist
@@ -171,6 +174,7 @@ export const useSessionData = () => {
         contentPreferences,
         shownPreferenceContent,
         votedContent,
+        myRatings,
 
         // Actions (unified interface - NEW SCHEMA)
         addToWatchlist,

@@ -23,7 +23,7 @@ import { Recommendation, RECOMMENDATION_CONSTRAINTS } from '@/types/recommendati
 import { Content, getTitle } from '@/typings'
 import { withAuth } from '@/lib/auth-middleware'
 import { apiError } from '@/utils/debugLogger'
-import { VotedContent } from '@/types/shared'
+import { VotedContent, RatedContent } from '@/types/shared'
 
 async function handlePersonalizedRecommendations(
     request: NextRequest,
@@ -34,12 +34,33 @@ async function handlePersonalizedRecommendations(
         const body = await request.json()
         const limit = Math.min(body.limit || 20, RECOMMENDATION_CONSTRAINTS.MAX_LIMIT)
 
+        // Support both new myRatings format and legacy likedMovies/hiddenMovies
+        const myRatings = (body.myRatings || []) as RatedContent[]
+
+        // Extract liked/hidden from myRatings if available, otherwise use legacy
+        let likedMovies: Content[]
+        let hiddenMovies: Content[]
+
+        if (myRatings.length > 0) {
+            // New system: extract from myRatings
+            likedMovies = myRatings
+                .filter((r) => r.rating === 'like')
+                .map((r) => r.content)
+            hiddenMovies = myRatings
+                .filter((r) => r.rating === 'dislike')
+                .map((r) => r.content)
+        } else {
+            // Legacy system: use separate arrays
+            likedMovies = (body.likedMovies || []) as Content[]
+            hiddenMovies = (body.hiddenMovies || []) as Content[]
+        }
+
         const userData = {
             userId,
-            likedMovies: (body.likedMovies || []) as Content[],
+            likedMovies,
             defaultWatchlist: (body.watchlist || []) as Content[],
             collectionItems: (body.collectionItems || []) as Content[], // Items from all user collections
-            hiddenMovies: (body.hiddenMovies || []) as Content[],
+            hiddenMovies,
         }
 
         // Get user preferences from preference customizer
@@ -64,16 +85,31 @@ async function handlePersonalizedRecommendations(
         })
 
         // Enrich votedContent with genre IDs for the recommendation engine
-        const votedContent: UserVotedContent[] = rawVotedContent.map((vote) => {
-            const key = `${vote.contentId}-${vote.mediaType}`
-            return {
-                contentId: vote.contentId,
-                mediaType: vote.mediaType,
-                vote: vote.vote,
-                votedAt: vote.votedAt,
-                genreIds: contentGenreMap.get(key) || undefined,
-            }
-        })
+        // Also include ratings from myRatings for vote signals
+        let votedContent: UserVotedContent[]
+
+        if (myRatings.length > 0) {
+            // Convert myRatings to votedContent format
+            votedContent = myRatings.map((r) => ({
+                contentId: r.content.id,
+                mediaType: r.content.media_type as 'movie' | 'tv',
+                vote: r.rating,
+                votedAt: r.ratedAt,
+                genreIds: r.content.genre_ids || undefined,
+            }))
+        } else {
+            // Legacy: use rawVotedContent
+            votedContent = rawVotedContent.map((vote) => {
+                const key = `${vote.contentId}-${vote.mediaType}`
+                return {
+                    contentId: vote.contentId,
+                    mediaType: vote.mediaType,
+                    vote: vote.vote,
+                    votedAt: vote.votedAt,
+                    genreIds: contentGenreMap.get(key) || undefined,
+                }
+            })
+        }
 
         // Extract content IDs that user marked as "dislike" to exclude
         const dislikedContentIds = votedContent

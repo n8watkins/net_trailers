@@ -273,13 +273,16 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
                         Authorization: `Bearer ${idToken}`,
                     },
                     body: JSON.stringify({
+                        // New unified ratings system (preferred)
+                        myRatings: sessionData.myRatings?.slice(0, 20) || [],
+                        // Legacy arrays (for backward compatibility)
                         likedMovies: sessionData.likedMovies.slice(0, 10),
                         watchlist: sessionData.defaultWatchlist.slice(0, 10),
                         collectionItems: collectionItems.slice(0, 20), // Items from all user collections
                         hiddenMovies: sessionData.hiddenMovies.slice(0, 10),
                         genrePreferences: genrePreferences, // User genre preferences
                         contentPreferences: contentPreferences, // User content preferences
-                        votedContent: votedContent, // User voted content (title quiz)
+                        votedContent: votedContent, // User voted content (title quiz) - legacy
                         limit: 20,
                     }),
                 })
