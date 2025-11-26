@@ -45,20 +45,6 @@ export default function PersonSearchResultItem({
         }
     }
 
-    // Get department badge color
-    const getDepartmentBadgeColor = (department: string) => {
-        switch (department?.toLowerCase()) {
-            case 'acting':
-                return 'bg-purple-600 text-white'
-            case 'directing':
-                return 'bg-orange-600 text-white'
-            case 'writing':
-                return 'bg-teal-600 text-white'
-            default:
-                return 'bg-gray-600 text-white'
-        }
-    }
-
     return (
         <div
             key={`person-${person.id}-${index}`}
@@ -89,20 +75,14 @@ export default function PersonSearchResultItem({
 
             {/* Person Details */}
             <div className="flex-1 ml-3 min-w-0">
-                {/* Name and Department */}
-                <div className="flex items-center justify-between">
-                    <h4 className="text-white font-medium text-sm truncate group-hover:text-red-400 transition-colors">
-                        {person.name}
-                    </h4>
-                    {/* Department Badge */}
-                    <span
-                        className={`px-1.5 py-0.5 text-xs font-medium rounded flex-shrink-0 ml-2 ${getDepartmentBadgeColor(
-                            person.known_for_department
-                        )}`}
-                    >
-                        {getDepartmentLabel(person.known_for_department)}
-                    </span>
-                </div>
+                {/* Name */}
+                <h4 className="text-white font-medium text-sm truncate group-hover:text-red-400 transition-colors">
+                    {person.name}
+                </h4>
+                {/* Department Badge */}
+                <span className="px-1.5 py-0.5 text-xs font-medium rounded bg-red-600 text-white inline-block mt-1">
+                    {getDepartmentLabel(person.known_for_department)}
+                </span>
             </div>
         </div>
     )
