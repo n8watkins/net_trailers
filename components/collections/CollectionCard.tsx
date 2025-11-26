@@ -69,7 +69,7 @@ export const CollectionCard = memo(function CollectionCard({
     return (
         <>
             <div
-                className="bg-[#1a1a1a] border rounded-lg p-3 transition-all min-h-[72px]"
+                className="bg-[#1a1a1a] border rounded-lg px-3 py-2 transition-all"
                 style={{
                     borderColor: row.color ? `${row.color}50` : '#374151',
                     backgroundColor: row.color ? `${row.color}10` : '#1a1a1a',

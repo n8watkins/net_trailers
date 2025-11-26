@@ -533,9 +533,9 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
                     </div>
 
                     {/* Content */}
-                    <div className="p-4 overflow-y-auto max-h-[60vh]">
+                    <div className="p-4 overflow-y-auto max-h-[60vh] modal-scrollbar">
                         {/* Action buttons */}
-                        <div className="flex gap-2 mb-4">
+                        <div className="flex gap-2 mb-4 justify-end">
                             {!isGuest && (
                                 <button
                                     onClick={handleCreate}
@@ -565,7 +565,7 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
                                     items={localRows.map((r) => r.id)}
                                     strategy={verticalListSortingStrategy}
                                 >
-                                    <div className="space-y-2">
+                                    <div className="space-y-1">
                                         {localRows.map((row) => (
                                             <SortableCollectionCard
                                                 key={row.id}
