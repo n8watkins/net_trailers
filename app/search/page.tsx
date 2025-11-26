@@ -13,8 +13,17 @@ import NetflixLoader from '../../components/common/NetflixLoader'
 function SearchPageContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const { updateQuery, query, isLoading, isLoadingAll, hasSearched, results, isTruncated } =
-        useSearch()
+    const {
+        updateQuery,
+        query,
+        isLoading,
+        isLoadingAll,
+        hasSearched,
+        results,
+        isTruncated,
+        searchMode,
+        filteredPeopleResults,
+    } = useSearch()
     const [isInitialLoad, setIsInitialLoad] = useState(true)
     const urlUpdateTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
     const { modal } = useAppStore()
@@ -129,7 +138,10 @@ function SearchPageContent() {
     }, [query])
 
     // Show fancy loading animation on initial load or when loading with no results
-    const showFancyLoading = (isLoading || isLoadingAll) && (!hasSearched || results.length === 0)
+    // Check appropriate results based on search mode
+    const currentResults = searchMode === 'people' ? filteredPeopleResults : results
+    const showFancyLoading =
+        (isLoading || isLoadingAll) && (!hasSearched || currentResults.length === 0)
 
     if (showFancyLoading) {
         return (
