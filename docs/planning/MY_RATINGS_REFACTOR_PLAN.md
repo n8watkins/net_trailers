@@ -211,5 +211,12 @@ For existing users:
 - [x] Phase 3: Store updates (rateContent, removeRating, getLikedContent, getDislikedContent)
 - [x] Phase 4: Content filtering (filterByRatings, updated filterHiddenContent)
 - [x] Phase 5: UI components (My Ratings page with search, updated useLikedHidden hook)
-- [ ] Phase 6: API routes (recommendations still using legacy arrays)
-- [ ] Phase 7: Testing
+- [x] Phase 6: API routes (recommendations now accept myRatings, useSessionData updated)
+- [x] Phase 7: Testing (build passes)
+
+## Remaining Work (Optional)
+
+- Rename `/votes` route to `/ratings` (breaking URL change)
+- Remove `/liked` and `/hidden` pages (redirect to `/ratings?filter=liked` etc.)
+- Add migration script for existing users (convert likedMovies/hiddenMovies to myRatings)
+- Update profile page "Liked Content" section to use getLikedContent()
