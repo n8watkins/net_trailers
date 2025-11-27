@@ -17,14 +17,19 @@ Currently, the recommendation engine only tracks a global `preferredYearRange` (
 ### Existing Infrastructure
 
 1. **RecommendationProfile** (`types/recommendations.ts:201-213`)
-    - Has `preferredYearRange?: { min: number; max: number }`
-    - Currently calculated as simple min/max across ALL content
+    - Has `preferredYearRange?: { min: number; max: number }` field
+    - Currently calculated but **NEVER USED**:
+        - NOT returned by API (`app/api/recommendations/personalized/route.ts:198`)
+        - NOT consumed by UI (no component references it)
+        - Only exists in the type definition
     - NOT genre-specific
+    - **Will be removed** in this implementation
 
 2. **buildRecommendationProfile()** (`utils/recommendations/genreEngine.ts:187-243`)
-    - Lines 216-234: Calculates global year range
+    - Lines 216-234: Calculates global year range (but it's unused - see above)
     - Collects years from: likedMovies, watchlist, collectionItems
     - Uses `Math.min()` and `Math.max()` - doesn't detect patterns
+    - **Will be removed** in this implementation
 
 3. **discoverByPreferences()** (`utils/tmdb/recommendations.ts:123-170`)
     - ALREADY supports `yearRange?: { min?: number; max?: number }`
@@ -289,9 +294,9 @@ For each genre with collected years:
        min = 1990 - buffer
        max = 2010 + 10 + buffer
      - buffer depends on confidence:
-       high (8+ items): buffer = 0
-       medium (4-7): buffer = 5
-       low (1-3): no filtering
+       high (8+ items): buffer = 2  // Small buffer for edge cases
+       medium (4-7): buffer = 5      // Larger buffer for flexibility
+       low (1-3): no filtering       // Too few samples, skip year filter
 ```
 
 ### Step 3: Apply to Recommendations
@@ -361,6 +366,9 @@ function calculateEffectiveYearRange(
     - Add result to profile as `genreYearPreferences`
     - **Remove** `preferredYearRange` calculation entirely (lines 216-234)
     - Remove `preferredYearRange` from return object (line 240)
+    - **Verify callers**: Check that no caller destructures or uses `preferredYearRange`:
+        - `app/api/recommendations/personalized/route.ts` (lines 131, 289) ✓ Already doesn't use it
+        - No other callers found (grep confirms)
 
 2. Modify `getGenreBasedRecommendations()`:
     - Look up year preference for each genre being queried
@@ -431,8 +439,8 @@ export const YEAR_PREFERENCE_CONFIG = {
     DECADE_COVERAGE_THRESHOLD: 0.6, // Decades must cover 60% of content
 
     // Year range buffers
-    HIGH_CONFIDENCE_BUFFER: 0, // No buffer for high confidence
-    MEDIUM_CONFIDENCE_BUFFER: 5, // ±5 years for medium
+    HIGH_CONFIDENCE_BUFFER: 2, // Small buffer for edge cases (e.g., 1998-2002 → 1988-2012)
+    MEDIUM_CONFIDENCE_BUFFER: 5, // Larger buffer for flexibility
 
     // Fallback
     DEFAULT_YEAR_BUFFER: 10, // ±10 years if using weighted average fallback
@@ -739,10 +747,10 @@ This updated plan incorporates the **unified genre system** and **clean architec
     - High (8+): Clear pattern, strict filtering
     - Alternative: 1-5 / 6-12 / 13+ ?
 
-3. **Buffer Years**: Should medium confidence use ±5 years or ±10?
-    - ±5 recommended (balances precision with flexibility)
-    - ±10 may be too wide for medium confidence
-    - High confidence should use ±2 instead of 0 (accounts for edge cases)
+3. **Buffer Years**: ✅ **LOCKED IN**
+    - High confidence: ±2 years (accounts for edge cases like 1998-2002)
+    - Medium confidence: ±5 years (balances precision with flexibility)
+    - Rationale: Zero buffer for high confidence was too strict, ±2 provides minimal flexibility
 
 4. **UI**: Should we show year preferences in the insights modal?
     - **Yes** - increases transparency and builds user trust
