@@ -53,8 +53,9 @@ export default function UserLikedContentPage() {
 
                 if (!isMounted) return
 
-                // Get display name from profile or user document
+                // Get display name - profile.username is the primary field (displayName is deprecated)
                 const displayName =
+                    profileData?.username ||
                     profileData?.displayName ||
                     legacyProfile.displayName ||
                     userData.displayName ||

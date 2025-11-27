@@ -10,9 +10,17 @@ import { RatedContent } from '../../types/shared'
 import SubPageLayout from '../../components/layout/SubPageLayout'
 import ContentCard from '../../components/common/ContentCard'
 import ContentGridSpacer from '../../components/common/ContentGridSpacer'
-import { HandThumbDownIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/solid'
+import {
+    HandThumbDownIcon,
+    TrashIcon,
+    MagnifyingGlassIcon,
+    SwatchIcon,
+    FilmIcon,
+} from '@heroicons/react/24/solid'
 import { XMarkIcon, HandThumbUpIcon, StarIcon } from '@heroicons/react/24/outline'
 import NetflixLoader from '../../components/common/NetflixLoader'
+import GenrePreferenceModal from '../../components/recommendations/GenrePreferenceModal'
+import TitlePreferenceModal from '../../components/recommendations/TitlePreferenceModal'
 
 type RatingValue = 'like' | 'dislike'
 type FilterValue = RatingValue
@@ -43,6 +51,15 @@ function RatingsPageContent() {
     const authUpdatePreferences = useAuthStore((state) => state.updatePreferences)
     const guestUpdatePreferences = useGuestStore((state) => state.updatePreferences)
 
+    // Get genre and content preferences for quizzes
+    const authGenrePreferences = useAuthStore((state) => state.genrePreferences)
+    const guestGenrePreferences = useGuestStore((state) => state.genrePreferences)
+    const genrePreferences = isGuest ? guestGenrePreferences : authGenrePreferences
+
+    const authVotedContent = useAuthStore((state) => state.votedContent)
+    const guestVotedContent = useGuestStore((state) => state.votedContent)
+    const votedContent = isGuest ? guestVotedContent : authVotedContent
+
     // Get initial filter from URL params (default to 'like')
     const urlFilter = searchParams.get('filter')
     const initialFilter: FilterValue = urlFilter === 'disliked' ? 'dislike' : 'like'
@@ -52,6 +69,9 @@ function RatingsPageContent() {
     const [searchQuery, setSearchQuery] = useState('')
     const [showResetConfirm, setShowResetConfirm] = useState(false)
     const [isResetting, setIsResetting] = useState(false)
+    const [showGenreModal, setShowGenreModal] = useState(false)
+    const [showTitleModal, setShowTitleModal] = useState(false)
+    const [isLoadingRatings, setIsLoadingRatings] = useState(true)
 
     // Sync filter state with URL params
     useEffect(() => {
@@ -59,6 +79,13 @@ function RatingsPageContent() {
         const newFilter: FilterValue = currentFilter === 'disliked' ? 'dislike' : 'like'
         setFilter(newFilter)
     }, [searchParams])
+
+    // Manage loading state for ratings
+    useEffect(() => {
+        if (myRatings !== undefined) {
+            setIsLoadingRatings(false)
+        }
+    }, [myRatings])
 
     // Update URL when filter changes
     const handleFilterChange = (newFilter: FilterValue) => {
@@ -136,16 +163,35 @@ function RatingsPageContent() {
             </button>
         ) : undefined
 
+    const handleSaveGenrePreferences = async (preferences: any[]) => {
+        if (isGuest) {
+            guestUpdatePreferences({ genrePreferences: preferences })
+        } else {
+            await authUpdatePreferences({ genrePreferences: preferences })
+        }
+        showSuccess('Genre preferences saved')
+    }
+
+    const handleSaveTitlePreferences = async (preferences: any[]) => {
+        if (isGuest) {
+            guestUpdatePreferences({ votedContent: preferences })
+        } else {
+            await authUpdatePreferences({ votedContent: preferences })
+        }
+        showSuccess('Title preferences saved')
+    }
+
     const headerActions = (
         <div className="space-y-4">
-            {/* Filter buttons with counts */}
-            <div className="flex items-center gap-2">
-                <div className="flex gap-2 flex-wrap">
+            {/* Filter buttons with quiz buttons on the right */}
+            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+                {/* Filter buttons */}
+                <div className="flex gap-3 flex-wrap">
                     {(['like', 'dislike'] as FilterValue[]).map((f) => (
                         <button
                             key={f}
                             onClick={() => handleFilterChange(f)}
-                            className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                            className={`px-5 py-2.5 rounded-lg text-base font-medium transition-colors ${
                                 filter === f
                                     ? 'bg-purple-600 text-white'
                                     : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
@@ -156,17 +202,44 @@ function RatingsPageContent() {
                         </button>
                     ))}
                 </div>
+
+                {/* Quiz buttons */}
+                <div className="flex gap-2">
+                    {/* Genre Quiz */}
+                    <button
+                        onClick={() => setShowGenreModal(true)}
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-purple-600/20 border border-purple-500/50 hover:bg-purple-600/30 hover:border-purple-500 transition-all duration-200"
+                        title="Rate Genres"
+                    >
+                        <SwatchIcon className="w-5 h-5 text-purple-400" />
+                        <span className="hidden sm:inline text-sm font-medium text-purple-300">
+                            Rate Genres
+                        </span>
+                    </button>
+
+                    {/* Title Quiz */}
+                    <button
+                        onClick={() => setShowTitleModal(true)}
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-pink-600/20 border border-pink-500/50 hover:bg-pink-600/30 hover:border-pink-500 transition-all duration-200"
+                        title="Rate Titles"
+                    >
+                        <FilmIcon className="w-5 h-5 text-pink-400" />
+                        <span className="hidden sm:inline text-sm font-medium text-pink-300">
+                            Rate Titles
+                        </span>
+                    </button>
+                </div>
             </div>
 
             {/* Search */}
-            <div className="relative">
+            <div className="relative max-w-2xl">
                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                 <input
                     type="text"
                     placeholder="Search your ratings..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 bg-[#0a0a0a] border border-gray-700/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50"
+                    className="w-full pl-10 pr-4 py-2.5 bg-[#0a0a0a] border border-gray-700/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50"
                 />
                 {searchQuery && (
                     <button
@@ -190,7 +263,11 @@ function RatingsPageContent() {
             headerActions={headerActions}
         >
             {/* Content */}
-            {filteredRatings.length === 0 ? (
+            {isLoadingRatings ? (
+                <div className="flex items-center justify-center py-32">
+                    <NetflixLoader />
+                </div>
+            ) : filteredRatings.length === 0 ? (
                 <div className="text-center py-16 bg-[#0a0a0a] rounded-lg border border-gray-700/50">
                     <StarIcon className="w-12 h-12 text-gray-600 mx-auto mb-4" />
                     <p className="text-gray-400 mb-2">
@@ -248,6 +325,22 @@ function RatingsPageContent() {
                     </div>
                 </div>
             )}
+
+            {/* Genre Preference Modal */}
+            <GenrePreferenceModal
+                isOpen={showGenreModal}
+                onClose={() => setShowGenreModal(false)}
+                onSave={handleSaveGenrePreferences}
+                existingPreferences={genrePreferences || []}
+            />
+
+            {/* Title Preference Modal */}
+            <TitlePreferenceModal
+                isOpen={showTitleModal}
+                onClose={() => setShowTitleModal(false)}
+                onSave={handleSaveTitlePreferences}
+                existingVotes={votedContent || []}
+            />
         </SubPageLayout>
     )
 }
