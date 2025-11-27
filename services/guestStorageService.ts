@@ -94,6 +94,7 @@ export class GuestStorageService {
                 autoMute: parsedData.autoMute ?? true,
                 defaultVolume: parsedData.defaultVolume ?? 50,
                 childSafetyMode: parsedData.childSafetyMode ?? false,
+                myRatings: parsedData.myRatings || [],
             }
         } catch (error) {
             guestError(`❌ [GuestStorageService] Failed to load guest data for ${guestId}:`, error)
@@ -322,6 +323,7 @@ export class GuestStorageService {
             autoMute: true, // Default to muted for better UX
             defaultVolume: 50, // Default to 50%
             childSafetyMode: false, // Default to off
+            myRatings: [], // Unified ratings system
         }
     }
 
