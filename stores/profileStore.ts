@@ -15,7 +15,11 @@ import {
     DEFAULT_PROFILE_VISIBILITY,
     createDefaultProfile,
 } from '../types/profile'
-import { validateUsername, generateRandomUsername } from '../utils/usernameValidation'
+import {
+    validateUsername,
+    generateRandomUsername,
+    createUsernameFromName,
+} from '../utils/usernameValidation'
 import {
     getProfile,
     getProfileByUsername,
@@ -45,7 +49,12 @@ interface ProfileState {
     // Actions - Profile CRUD
     loadProfile: (userId: string | null) => Promise<void>
     loadUserProfileByUsername: (username: string) => Promise<void>
-    createProfile: (userId: string, email: string, googlePhotoUrl?: string) => Promise<UserProfile>
+    createProfile: (
+        userId: string,
+        email: string,
+        googlePhotoUrl?: string,
+        displayName?: string
+    ) => Promise<UserProfile>
     updateProfile: (userId: string | null, request: UpdateProfileRequest) => Promise<void>
     uploadAvatar: (userId: string | null, file: File) => Promise<string | null>
     deleteAvatar: (userId: string | null) => Promise<void>
@@ -139,26 +148,43 @@ export const useProfileStore = create<ProfileState>()(
             },
 
             // Create profile for new user
-            createProfile: async (userId: string, email: string, googlePhotoUrl?: string) => {
+            createProfile: async (
+                userId: string,
+                email: string,
+                googlePhotoUrl?: string,
+                displayName?: string
+            ) => {
                 set({ isLoading: true, error: null })
 
                 try {
-                    // Generate random username
-                    let username = generateRandomUsername()
+                    // Try to create username from display name or email first
+                    let username: string
                     let attempts = 0
                     const maxAttempts = 10
 
-                    // Ensure username is available
+                    // Start with display name-based username if provided
+                    const baseName = displayName || email
+                    username = createUsernameFromName(baseName)
+
+                    // Ensure username is available (append numbers if needed)
                     while (attempts < maxAttempts) {
                         const availability = await get().checkUsernameAvailability(username)
                         if (availability.available) break
 
-                        username = generateRandomUsername()
+                        // Try with number suffix
+                        const randomNum = Math.floor(Math.random() * 999) + 1
+                        const baseUsername = createUsernameFromName(baseName)
+                        username = `${baseUsername}${randomNum}`.slice(0, 20)
                         attempts++
                     }
 
+                    // If still not available, fall back to random username
                     if (attempts >= maxAttempts) {
-                        throw new Error('Could not generate unique username. Please try again.')
+                        username = generateRandomUsername()
+                        const availability = await get().checkUsernameAvailability(username)
+                        if (!availability.available) {
+                            throw new Error('Could not generate unique username. Please try again.')
+                        }
                     }
 
                     // Create default profile

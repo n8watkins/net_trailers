@@ -43,8 +43,8 @@ export interface UserProfile {
     email: string // Private (not shown publicly)
 
     // Identity
-    username: string // Unique, editable anytime
-    displayName?: string // Optional display name from auth
+    username: string // Unique display name, editable, used as URL slug (e.g., /users/john_doe)
+    displayName?: string // @deprecated - use username instead (kept for backward compatibility)
 
     // Avatar system
     avatarUrl: string // Current avatar URL

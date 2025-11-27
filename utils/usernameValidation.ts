@@ -393,6 +393,29 @@ export function sanitizeUsernameInput(input: string): string {
 }
 
 /**
+ * Create a username from a display name or email
+ * Converts "John Doe" -> "john_doe" or "john.doe@email.com" -> "john_doe"
+ */
+export function createUsernameFromName(name: string): string {
+    // Get the base name (handle email)
+    let baseName = name.includes('@') ? name.split('@')[0] : name
+
+    // Convert to lowercase, replace spaces and dots with underscores
+    baseName = baseName.toLowerCase().replace(/\s+/g, '_').replace(/\./g, '_')
+
+    // Sanitize to remove any invalid characters
+    const sanitized = sanitizeUsernameInput(baseName)
+
+    // Ensure minimum length
+    if (sanitized.length < 3) {
+        // If too short, generate a random username instead
+        return generateRandomUsername()
+    }
+
+    return sanitized
+}
+
+/**
  * Check if username is available in Firestore
  * (This will be implemented in the profile service)
  */

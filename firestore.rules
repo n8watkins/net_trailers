@@ -148,6 +148,58 @@ service cloud.firestore {
              && data.updatedAt is number;
     }
 
+    // Helper function to validate profile data structure (for creation)
+    function isValidProfileData(data) {
+      // Required core fields
+      return data.keys().hasAll(['id', 'userId', 'email', 'username', 'avatarUrl', 'avatarSource', 'createdAt', 'updatedAt'])
+             && data.id is string
+             && data.userId is string
+             && data.email is string
+             && data.username is string
+             && data.avatarUrl is string
+             && data.avatarSource is string
+             && data.createdAt is number
+             && data.updatedAt is number
+             // Optional fields with type validation
+             && (!data.keys().hasAny(['displayName']) || data.displayName is string)
+             && (!data.keys().hasAny(['googlePhotoUrl']) || data.googlePhotoUrl is string)
+             && (!data.keys().hasAny(['customAvatarUrl']) || data.customAvatarUrl is string)
+             && (!data.keys().hasAny(['description']) || data.description is string)
+             && (!data.keys().hasAny(['favoriteGenres']) || data.favoriteGenres is list)
+             && (!data.keys().hasAny(['rankingsCount']) || data.rankingsCount is number)
+             && (!data.keys().hasAny(['publicCollectionsCount']) || data.publicCollectionsCount is number)
+             && (!data.keys().hasAny(['totalLikes']) || data.totalLikes is number)
+             && (!data.keys().hasAny(['totalViews']) || data.totalViews is number)
+             && (!data.keys().hasAny(['isPublic']) || data.isPublic is bool)
+             && (!data.keys().hasAny(['visibility']) || data.visibility is map)
+             && (!data.keys().hasAny(['lastLoginAt']) || data.lastLoginAt is number);
+    }
+
+    // Helper function to validate profile update (allows partial updates)
+    function isValidProfileUpdate(data) {
+      // All fields must be valid types if present
+      return (!data.keys().hasAny(['id']) || data.id is string)
+             && (!data.keys().hasAny(['userId']) || data.userId is string)
+             && (!data.keys().hasAny(['email']) || data.email is string)
+             && (!data.keys().hasAny(['username']) || data.username is string)
+             && (!data.keys().hasAny(['displayName']) || data.displayName is string)
+             && (!data.keys().hasAny(['avatarUrl']) || data.avatarUrl is string)
+             && (!data.keys().hasAny(['avatarSource']) || data.avatarSource is string)
+             && (!data.keys().hasAny(['googlePhotoUrl']) || data.googlePhotoUrl is string)
+             && (!data.keys().hasAny(['customAvatarUrl']) || data.customAvatarUrl is string)
+             && (!data.keys().hasAny(['description']) || data.description is string)
+             && (!data.keys().hasAny(['favoriteGenres']) || data.favoriteGenres is list)
+             && (!data.keys().hasAny(['rankingsCount']) || data.rankingsCount is number)
+             && (!data.keys().hasAny(['publicCollectionsCount']) || data.publicCollectionsCount is number)
+             && (!data.keys().hasAny(['totalLikes']) || data.totalLikes is number)
+             && (!data.keys().hasAny(['totalViews']) || data.totalViews is number)
+             && (!data.keys().hasAny(['isPublic']) || data.isPublic is bool)
+             && (!data.keys().hasAny(['visibility']) || data.visibility is map)
+             && (!data.keys().hasAny(['createdAt']) || data.createdAt is number)
+             && (!data.keys().hasAny(['updatedAt']) || data.updatedAt is number)
+             && (!data.keys().hasAny(['lastLoginAt']) || data.lastLoginAt is number);
+    }
+
     // Rankings collection (public and private rankings)
     match /rankings/{rankingId} {
       // Allow read if authenticated (to view rankings in community and clone)
@@ -511,6 +563,40 @@ service cloud.firestore {
       allow read: if true;
       // Server-only writes (no client writes allowed)
       allow write: if false;
+    }
+
+    // Profiles collection (public profiles with visibility settings)
+    match /profiles/{userId} {
+      // Anyone authenticated can read profiles (for public profile pages)
+      allow read: if request.auth != null;
+
+      // Only the owner can create/update their own profile
+      allow create: if request.auth != null
+                    && request.auth.uid == userId
+                    && isValidProfileData(request.resource.data);
+
+      allow update: if request.auth != null
+                    && request.auth.uid == userId
+                    && isValidProfileUpdate(request.resource.data);
+
+      // Only the owner can delete their profile
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Usernames collection (maps usernames to user IDs)
+    match /usernames/{username} {
+      // Anyone authenticated can read (to check username availability)
+      allow read: if request.auth != null;
+
+      // Allow create/delete when the userId in the document matches auth
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid;
+
+      allow delete: if request.auth != null
+                    && resource.data.userId == request.auth.uid;
+
+      // No updates - usernames are immutable (delete + create for changes)
+      allow update: if false;
     }
 
     // Signup log collection

@@ -16,6 +16,9 @@ import {
     ArrowTopRightOnSquareIcon,
     UserCircleIcon,
     GlobeAltIcon,
+    AtSymbolIcon,
+    CheckCircleIcon,
+    ExclamationCircleIcon,
 } from '@heroicons/react/24/outline'
 import type { User } from 'firebase/auth'
 import type { ProfileVisibility } from '../../types/profile'
@@ -41,10 +44,7 @@ const VisibilityToggle: React.FC<VisibilityToggleProps> = ({
         <div className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0">
             <div className="flex items-center gap-2.5 flex-1">
                 <Icon className="h-4 w-4 text-[#888]" />
-                <label
-                    htmlFor={id}
-                    className="text-sm text-[#e5e5e5] cursor-pointer"
-                >
+                <label htmlFor={id} className="text-sm text-[#e5e5e5] cursor-pointer">
                     {label}
                 </label>
             </div>
@@ -73,6 +73,14 @@ interface ProfileSectionProps {
     setDisplayName: (name: string) => void
     isSavingProfile: boolean
     onSaveProfile: () => Promise<void>
+    // Username (profile URL slug)
+    username: string
+    setUsername: (name: string) => void
+    usernameError?: string
+    usernameAvailable?: boolean
+    isCheckingUsername?: boolean
+    isSavingUsername: boolean
+    onSaveUsername: () => Promise<void>
     // Privacy settings
     visibility?: ProfileVisibility
     isLoadingVisibility?: boolean
@@ -90,6 +98,13 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
     setDisplayName,
     isSavingProfile,
     onSaveProfile,
+    username,
+    setUsername,
+    usernameError,
+    usernameAvailable,
+    isCheckingUsername,
+    isSavingUsername,
+    onSaveUsername,
     visibility,
     isLoadingVisibility,
     isSavingVisibility,
@@ -114,7 +129,9 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
             {/* Page Header */}
             <div className="mb-6">
                 <h2 className="text-2xl font-bold text-white mb-1">Profile Settings</h2>
-                <p className="text-[#b3b3b3] text-sm">Manage your profile information and privacy preferences</p>
+                <p className="text-[#b3b3b3] text-sm">
+                    Manage your profile information and privacy preferences
+                </p>
                 {(profileUsername || profileUserId) && (
                     <Link
                         href={`/users/${profileUsername || profileUserId}`}
@@ -155,8 +172,12 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                                 </div>
                             )}
                             <div className="min-w-0">
-                                <h4 className="text-base font-semibold text-white truncate">{getUserName()}</h4>
-                                <p className="text-sm text-[#b3b3b3] truncate">{user?.email || 'No email'}</p>
+                                <h4 className="text-base font-semibold text-white truncate">
+                                    {getUserName()}
+                                </h4>
+                                <p className="text-sm text-[#b3b3b3] truncate">
+                                    {user?.email || 'No email'}
+                                </p>
                                 <p className="text-xs text-[#666] mt-0.5">
                                     Member since{' '}
                                     {new Date(
@@ -217,7 +238,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                             </div>
                         </div>
 
-                        {/* Save Button */}
+                        {/* Save Display Name Button */}
                         <button
                             onClick={onSaveProfile}
                             disabled={isSavingProfile || !hasChanges}
@@ -233,7 +254,91 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                                     Saving...
                                 </>
                             ) : (
-                                'Save Changes'
+                                'Save Display Name'
+                            )}
+                        </button>
+                    </div>
+
+                    {/* Username Section (Profile URL) */}
+                    <div className="bg-[#0a0a0a] rounded-lg border border-[#313131] p-5 space-y-4">
+                        <div className="flex items-center gap-2">
+                            <AtSymbolIcon className="h-4 w-4 text-[#888]" />
+                            <h4 className="text-sm font-medium text-white">Profile URL</h4>
+                        </div>
+                        <p className="text-xs text-[#888]">
+                            This is your unique username used in your profile URL. It must be unique
+                            across all users.
+                        </p>
+
+                        <div>
+                            <label className="block text-sm font-medium text-[#e5e5e5] mb-1.5">
+                                Username
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                                    placeholder="your_username"
+                                    className={`inputClass w-full pr-10 ${
+                                        usernameError
+                                            ? 'border-red-500 focus:border-red-500'
+                                            : usernameAvailable
+                                              ? 'border-green-500 focus:border-green-500'
+                                              : ''
+                                    }`}
+                                    disabled={isSavingUsername}
+                                />
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                    {isCheckingUsername ? (
+                                        <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                                    ) : usernameError ? (
+                                        <ExclamationCircleIcon className="w-5 h-5 text-red-500" />
+                                    ) : usernameAvailable ? (
+                                        <CheckCircleIcon className="w-5 h-5 text-green-500" />
+                                    ) : null}
+                                </div>
+                            </div>
+                            {usernameError && (
+                                <p className="text-xs text-red-400 mt-1.5">{usernameError}</p>
+                            )}
+                            {usernameAvailable &&
+                                !usernameError &&
+                                username !== profileUsername && (
+                                    <p className="text-xs text-green-400 mt-1.5">
+                                        Username is available!
+                                    </p>
+                                )}
+                            <p className="text-xs text-[#666] mt-1.5">
+                                Your profile will be at: nettrailers.com/users/
+                                {username || 'your_username'}
+                            </p>
+                        </div>
+
+                        <button
+                            onClick={onSaveUsername}
+                            disabled={
+                                isSavingUsername ||
+                                !usernameAvailable ||
+                                usernameError !== undefined ||
+                                username === profileUsername
+                            }
+                            className={`w-full py-2.5 px-4 rounded-md font-medium text-sm transition ${
+                                isSavingUsername ||
+                                !usernameAvailable ||
+                                usernameError !== undefined ||
+                                username === profileUsername
+                                    ? 'bg-gray-700 cursor-not-allowed opacity-50 text-gray-400'
+                                    : 'bg-red-600 hover:bg-red-700 text-white'
+                            } flex items-center justify-center gap-2`}
+                        >
+                            {isSavingUsername ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    Saving...
+                                </>
+                            ) : (
+                                'Update Username'
                             )}
                         </button>
                     </div>
@@ -255,7 +360,10 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                             {isLoadingVisibility ? (
                                 <div className="space-y-3 animate-pulse">
                                     {[...Array(8)].map((_, i) => (
-                                        <div key={i} className="flex items-center justify-between py-2">
+                                        <div
+                                            key={i}
+                                            className="flex items-center justify-between py-2"
+                                        >
                                             <div className="flex items-center gap-2.5 flex-1">
                                                 <div className="w-4 h-4 bg-[#313131] rounded"></div>
                                                 <div className="h-4 bg-[#313131] rounded w-24"></div>
@@ -282,7 +390,12 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                                                 id="enablePublicProfile"
                                                 type="checkbox"
                                                 checked={visibility.enablePublicProfile}
-                                                onChange={(e) => onVisibilityChange('enablePublicProfile', e.target.checked)}
+                                                onChange={(e) =>
+                                                    onVisibilityChange(
+                                                        'enablePublicProfile',
+                                                        e.target.checked
+                                                    )
+                                                }
                                                 disabled={isSavingVisibility}
                                                 className="sr-only peer"
                                             />
@@ -292,64 +405,110 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
                                         </label>
                                     </div>
 
-                                    {/* Sub-toggles */}
-                                    <div className={`divide-y divide-[#252525] ${!visibility.enablePublicProfile ? 'opacity-40 pointer-events-none' : ''}`}>
-                                        <VisibilityToggle
-                                            id="showLikedContent"
-                                            label="Liked Content"
-                                            icon={HeartIcon}
-                                            checked={visibility.enablePublicProfile && visibility.showLikedContent}
-                                            onChange={onVisibilityChange}
-                                            disabled={isSavingVisibility || !visibility.enablePublicProfile}
-                                        />
-                                        <VisibilityToggle
-                                            id="showWatchLater"
-                                            label="Watch Later"
-                                            icon={ClockIcon}
-                                            checked={visibility.enablePublicProfile && visibility.showWatchLater}
-                                            onChange={onVisibilityChange}
-                                            disabled={isSavingVisibility || !visibility.enablePublicProfile}
-                                        />
-                                        <VisibilityToggle
-                                            id="showRankings"
-                                            label="Rankings"
-                                            icon={StarIcon}
-                                            checked={visibility.enablePublicProfile && visibility.showRankings}
-                                            onChange={onVisibilityChange}
-                                            disabled={isSavingVisibility || !visibility.enablePublicProfile}
-                                        />
-                                        <VisibilityToggle
-                                            id="showCollections"
-                                            label="Collections"
-                                            icon={RectangleStackIcon}
-                                            checked={visibility.enablePublicProfile && visibility.showCollections}
-                                            onChange={onVisibilityChange}
-                                            disabled={isSavingVisibility || !visibility.enablePublicProfile}
-                                        />
-                                        <VisibilityToggle
-                                            id="showThreads"
-                                            label="Forum Threads"
-                                            icon={ChatBubbleLeftRightIcon}
-                                            checked={visibility.enablePublicProfile && visibility.showThreads}
-                                            onChange={onVisibilityChange}
-                                            disabled={isSavingVisibility || !visibility.enablePublicProfile}
-                                        />
-                                        <VisibilityToggle
-                                            id="showPollsCreated"
-                                            label="Polls Created"
-                                            icon={ChartBarIcon}
-                                            checked={visibility.enablePublicProfile && visibility.showPollsCreated}
-                                            onChange={onVisibilityChange}
-                                            disabled={isSavingVisibility || !visibility.enablePublicProfile}
-                                        />
-                                        <VisibilityToggle
-                                            id="showPollsVoted"
-                                            label="Polls Voted"
-                                            icon={HandThumbUpIcon}
-                                            checked={visibility.enablePublicProfile && visibility.showPollsVoted}
-                                            onChange={onVisibilityChange}
-                                            disabled={isSavingVisibility || !visibility.enablePublicProfile}
-                                        />
+                                    {/* Sub-toggles (indented) */}
+                                    <div
+                                        className={`pl-6 border-l-2 border-[#313131] ml-2 ${!visibility.enablePublicProfile ? 'opacity-40 pointer-events-none' : ''}`}
+                                    >
+                                        <div className="divide-y divide-[#252525]">
+                                            <VisibilityToggle
+                                                id="showLikedContent"
+                                                label="Liked Content"
+                                                icon={HeartIcon}
+                                                checked={
+                                                    visibility.enablePublicProfile &&
+                                                    visibility.showLikedContent
+                                                }
+                                                onChange={onVisibilityChange}
+                                                disabled={
+                                                    isSavingVisibility ||
+                                                    !visibility.enablePublicProfile
+                                                }
+                                            />
+                                            <VisibilityToggle
+                                                id="showWatchLater"
+                                                label="Watch Later"
+                                                icon={ClockIcon}
+                                                checked={
+                                                    visibility.enablePublicProfile &&
+                                                    visibility.showWatchLater
+                                                }
+                                                onChange={onVisibilityChange}
+                                                disabled={
+                                                    isSavingVisibility ||
+                                                    !visibility.enablePublicProfile
+                                                }
+                                            />
+                                            <VisibilityToggle
+                                                id="showRankings"
+                                                label="Rankings"
+                                                icon={StarIcon}
+                                                checked={
+                                                    visibility.enablePublicProfile &&
+                                                    visibility.showRankings
+                                                }
+                                                onChange={onVisibilityChange}
+                                                disabled={
+                                                    isSavingVisibility ||
+                                                    !visibility.enablePublicProfile
+                                                }
+                                            />
+                                            <VisibilityToggle
+                                                id="showCollections"
+                                                label="Collections"
+                                                icon={RectangleStackIcon}
+                                                checked={
+                                                    visibility.enablePublicProfile &&
+                                                    visibility.showCollections
+                                                }
+                                                onChange={onVisibilityChange}
+                                                disabled={
+                                                    isSavingVisibility ||
+                                                    !visibility.enablePublicProfile
+                                                }
+                                            />
+                                            <VisibilityToggle
+                                                id="showThreads"
+                                                label="Forum Threads"
+                                                icon={ChatBubbleLeftRightIcon}
+                                                checked={
+                                                    visibility.enablePublicProfile &&
+                                                    visibility.showThreads
+                                                }
+                                                onChange={onVisibilityChange}
+                                                disabled={
+                                                    isSavingVisibility ||
+                                                    !visibility.enablePublicProfile
+                                                }
+                                            />
+                                            <VisibilityToggle
+                                                id="showPollsCreated"
+                                                label="Polls Created"
+                                                icon={ChartBarIcon}
+                                                checked={
+                                                    visibility.enablePublicProfile &&
+                                                    visibility.showPollsCreated
+                                                }
+                                                onChange={onVisibilityChange}
+                                                disabled={
+                                                    isSavingVisibility ||
+                                                    !visibility.enablePublicProfile
+                                                }
+                                            />
+                                            <VisibilityToggle
+                                                id="showPollsVoted"
+                                                label="Polls Voted"
+                                                icon={HandThumbUpIcon}
+                                                checked={
+                                                    visibility.enablePublicProfile &&
+                                                    visibility.showPollsVoted
+                                                }
+                                                onChange={onVisibilityChange}
+                                                disabled={
+                                                    isSavingVisibility ||
+                                                    !visibility.enablePublicProfile
+                                                }
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             )}
