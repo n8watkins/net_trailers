@@ -96,3 +96,72 @@ in-memory rate limiting still provides some protection against casual abuse.
 After the rate limiter is implemented, consider scheduling a follow-up
 penetration test to validate that all mitigations hold up under adversarial
 conditions.
+
+---
+
+## Verification Commands
+
+Run these commands to verify the fixes are in place:
+
+```bash
+# 1. Verify no NEXT_PUBLIC_ADMIN_* in code files
+grep -r "NEXT_PUBLIC_ADMIN" --include="*.ts" --include="*.tsx" . | grep -v node_modules | grep -v ".next"
+# Expected: No output (empty)
+
+# 2. Verify admin pages use useAdminAuth hook
+grep -l "useAdminAuth" app/admin/*/page.tsx
+# Expected: accounts/page.tsx, activity/page.tsx, signups/page.tsx
+
+# 3. Verify CSRF protection in auth routes
+grep -l "applyCsrfProtection" app/api/auth/*/route.ts
+# Expected: record-signup, reset-password, send-password-reset, verify-email
+
+# 4. Verify CSRF bypass function exists
+grep "isServerToServerCall" lib/csrfProtection.ts
+# Expected: function definition and usage in applyCsrfProtection
+
+# 5. Verify README uses ADMIN_UID (not NEXT_PUBLIC_)
+grep "ADMIN_UID" README.md | head -2
+# Expected: ADMIN_UID=your_firebase_uid_here (server-side only)
+```
+
+## Files Modified (November 27, 2025)
+
+### Security Fixes
+
+- `hooks/useAdminAuth.ts` - **NEW** - Server-side admin verification hook
+- `lib/csrfProtection.ts` - Added `isServerToServerCall()` bypass for authenticated requests
+- `app/admin/accounts/page.tsx` - Replaced `NEXT_PUBLIC_ADMIN_UID` with `useAdminAuth`
+- `app/admin/signups/page.tsx` - Replaced `NEXT_PUBLIC_ADMIN_UID` with `useAdminAuth`
+- `app/admin/activity/page.tsx` - Replaced `NEXT_PUBLIC_ADMIN_UID` with `useAdminAuth`
+- `app/api/auth/record-signup/route.ts` - Added CSRF protection
+- `app/api/auth/verify-email/route.ts` - Added CSRF protection
+- `app/api/auth/reset-password/route.ts` - Added CSRF protection
+- `app/api/auth/send-password-reset/route.ts` - Added CSRF protection
+- `app/api/forum/send-reply-notification/route.ts` - Added CSRF protection
+
+### Documentation Updates
+
+- `.env.example` - Changed `NEXT_PUBLIC_ADMIN_UID` to `ADMIN_UID`
+- `README.md` - Updated to use server-only `ADMIN_UID`
+- `docs/PORTFOLIO-TODO.md` - Removed hardcoded secrets, updated variable names
+- `docs/PORTFOLIO-IMPLEMENTATION-PLAN.md` - Added deprecation notices
+
+### Test Updates
+
+- `__tests__/app/api/auth/verify-email/route.test.ts` - Added Origin header
+- `__tests__/app/api/auth/reset-password/route.test.ts` - Added Origin header
+- `__tests__/app/api/auth/send-password-reset/route.test.ts` - Added Origin header
+- `__tests__/app/api/smart-suggestions/route.test.ts` - Added Origin header
+
+## Note on `/api/admin/activity` POST
+
+The POST endpoint in `/api/admin/activity/route.ts` is **intentionally public** (no CSRF).
+It's used for client-side activity tracking (logging page views and logins). Adding CSRF
+would break legitimate tracking. It has rate limiting and input validation instead:
+
+- Only accepts `type: 'login' | 'view'`
+- Validates userId/guestId format
+- Validates email format
+- Sanitizes and truncates userAgent
+- Rate limited per IP

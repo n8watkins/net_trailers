@@ -1581,101 +1581,248 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
         const rankingByTitle = new Map(existingRankings.map((ranking) => [ranking.title, ranking]))
         console.log(`  📊 Found ${existingRankings.length} existing rankings`)
 
+        /**
+         * Sample rankings covering all 29 popular tags from popularTags.ts
+         * Each ranking uses one or more tags to ensure comprehensive coverage.
+         *
+         * Sample content indices reference:
+         * sampleMovies: 0:Fight Club, 1:Pulp Fiction, 2:Forrest Gump, 3:Dark Knight, 4:Shawshank
+         *               5:Godfather, 6:Schindler's, 7:Your Name, 8:Inception, 9:Spirited Away
+         *               10:LOTR Return, 11:Green Mile, 12:Cinema Paradiso, 13:GoodFellas
+         *               14:Avengers, 15:Infinity War, 16:Matrix, 17:LOTR Fellowship
+         *               18:Interstellar, 19:12 Angry Men, 20:Psycho, 21:Dilwale Dulhania
+         *               22:Seven Samurai, 23:Cuckoo's Nest, 24:Good Bad Ugly
+         * sampleTVShows: 0:Breaking Bad, 1:Game of Thrones, 2:Arcane, 3:Rick and Morty
+         *                4:Mandalorian, 5:WandaVision, 6:Better Call Saul, 7:Last of Us
+         *                8:Walking Dead, 9:Friends, 10:Family Guy, 11:Supernatural
+         *                12:The Boys, 13:Criminal Minds, 14:Stranger Things, 15:One Piece
+         *                16:Severance, 17:Rings of Power, 18:Peaky Blinders, 19:Chernobyl
+         */
         const sampleRankings: Array<{
             title: string
             description: string
             items: Content[]
             tags: string[]
         }> = [
+            // === Director & Creator Tags ===
             {
                 title: 'Christopher Nolan: A Masterclass',
                 description: 'Mind-bending films from the legendary director',
-                items: [
-                    sampleMovies[8], // Inception
-                    sampleMovies[3], // The Dark Knight
-                    sampleMovies[18], // Interstellar
-                ],
-                tags: ['christopher-nolan', 'sci-fi', 'mystery-thriller'],
+                items: [sampleMovies[8], sampleMovies[3], sampleMovies[18]],
+                tags: ['christopher-nolan'],
             },
             {
-                title: 'Best of Studio Ghibli & Anime',
-                description: 'The most beautiful animated films from Japan',
-                items: [
-                    sampleMovies[9], // Spirited Away
-                    sampleMovies[7], // Your Name
-                    sampleTVShows[2], // Arcane
-                    sampleTVShows[15], // One Piece
-                ],
-                tags: ['studio-ghibli', 'anime'],
+                title: 'Tarantino: Blood, Dialogue & Style',
+                description: 'The unique cinematic vision of Quentin Tarantino',
+                items: [sampleMovies[1], sampleMovies[0]],
+                tags: ['tarantino'],
+            },
+
+            // === Franchise Tags ===
+            {
+                title: 'Marvel Cinematic Universe Favorites',
+                description: "Earth's mightiest heroes in action",
+                items: [sampleMovies[14], sampleMovies[15], sampleTVShows[5]],
+                tags: ['mcu'],
+            },
+            {
+                title: 'DC: Dark Knights & Heroes',
+                description: 'The best of the DC Universe',
+                items: [sampleMovies[3], sampleTVShows[12]],
+                tags: ['dc'],
+            },
+            {
+                title: 'Star Wars: A Galaxy Far, Far Away',
+                description: 'Space opera adventures from a legendary franchise',
+                items: [sampleMovies[18], sampleMovies[16], sampleTVShows[4]],
+                tags: ['star-wars'],
+            },
+            {
+                title: 'Harry Potter & Magical Worlds',
+                description: 'Wizards, magic, and fantastical adventures',
+                items: [sampleMovies[9], sampleMovies[17], sampleMovies[10]],
+                tags: ['harry-potter', 'fantasy'],
             },
             {
                 title: 'Middle-earth: The Complete Journey',
                 description: 'From the Shire to Mordor - the ultimate fantasy epic',
-                items: [
-                    sampleMovies[17], // LOTR: Fellowship
-                    sampleMovies[10], // LOTR: Return of the King
-                    sampleTVShows[17], // Rings of Power
-                ],
-                tags: ['lotr', 'fantasy'],
+                items: [sampleMovies[17], sampleMovies[10], sampleTVShows[17]],
+                tags: ['lotr'],
             },
             {
-                title: 'True Crime & Criminal Empires',
-                description: 'From mobsters to meth empires - the best crime stories',
-                items: [
-                    sampleMovies[5], // The Godfather
-                    sampleMovies[13], // GoodFellas
-                    sampleMovies[1], // Pulp Fiction
-                    sampleTVShows[0], // Breaking Bad
-                    sampleTVShows[6], // Better Call Saul
-                    sampleTVShows[18], // Peaky Blinders
-                ],
-                tags: ['true-crime', 'heist-crime', 'tarantino'],
+                title: 'Fast & Furious: Action Overdrive',
+                description: 'High-octane action and thrilling adventures',
+                items: [sampleMovies[16], sampleMovies[8], sampleTVShows[12]],
+                tags: ['fast-furious', 'action'],
             },
             {
-                title: 'Oscar-Winning Classics',
-                description: 'Academy Award winners that defined cinema',
-                items: [
-                    sampleMovies[4], // The Shawshank Redemption
-                    sampleMovies[6], // Schindler's List
-                    sampleMovies[2], // Forrest Gump
-                    sampleMovies[10], // LOTR: Return of the King
-                    sampleMovies[23], // One Flew Over the Cuckoo's Nest
-                ],
-                tags: ['oscar-winners', 'classic-hollywood'],
+                title: 'James Bond: Spy Thrillers',
+                description: 'Espionage, intrigue, and international adventure',
+                items: [sampleMovies[0], sampleMovies[1], sampleMovies[3], sampleTVShows[6]],
+                tags: ['james-bond', 'mystery-thriller'],
+            },
+
+            // === Animation Tags ===
+            {
+                title: 'Studio Ghibli: Animated Poetry',
+                description: 'Hayao Miyazaki and the magic of Studio Ghibli',
+                items: [sampleMovies[9], sampleMovies[7]],
+                tags: ['studio-ghibli'],
             },
             {
-                title: 'Marvel Cinematic Universe Favorites',
-                description: "Earth's mightiest heroes in action",
-                items: [
-                    sampleMovies[14], // The Avengers
-                    sampleMovies[15], // Avengers: Infinity War
-                    sampleTVShows[5], // WandaVision
-                ],
-                tags: ['mcu', 'action'],
+                title: 'Anime Legends',
+                description: 'The best anime has to offer',
+                items: [sampleMovies[9], sampleMovies[7], sampleTVShows[2], sampleTVShows[15]],
+                tags: ['anime'],
             },
+            {
+                title: 'Pixar: Stories That Move You',
+                description: 'Heartfelt animated adventures from Pixar',
+                items: [sampleMovies[2], sampleMovies[7], sampleMovies[9]],
+                tags: ['pixar'],
+            },
+            {
+                title: 'Disney Animation Classics',
+                description: 'The magic of Disney animated films',
+                items: [sampleMovies[9], sampleMovies[7], sampleTVShows[2]],
+                tags: ['disney-renaissance'],
+            },
+
+            // === Genre Tags ===
             {
                 title: 'Horror Nights',
                 description: 'Terrifying tales that will keep you up at night',
                 items: [
-                    sampleMovies[20], // Psycho
-                    sampleTVShows[8], // The Walking Dead
-                    sampleTVShows[11], // Supernatural
-                    sampleTVShows[14], // Stranger Things
-                    sampleTVShows[7], // The Last of Us
+                    sampleMovies[20],
+                    sampleTVShows[8],
+                    sampleTVShows[11],
+                    sampleTVShows[14],
+                    sampleTVShows[7],
                 ],
-                tags: ['horror', 'mystery-thriller'],
+                tags: ['horror'],
             },
             {
                 title: 'Sci-Fi Mind Benders',
                 description: 'Science fiction that expands your mind',
                 items: [
-                    sampleMovies[16], // The Matrix
-                    sampleMovies[8], // Inception
-                    sampleMovies[18], // Interstellar
-                    sampleTVShows[3], // Rick and Morty
-                    sampleTVShows[14], // Stranger Things
+                    sampleMovies[16],
+                    sampleMovies[8],
+                    sampleMovies[18],
+                    sampleTVShows[3],
+                    sampleTVShows[14],
                 ],
-                tags: ['sci-fi', 'netflix-originals'],
+                tags: ['sci-fi'],
+            },
+            {
+                title: 'Comedy Gold',
+                description: 'The funniest films and shows',
+                items: [
+                    sampleMovies[2],
+                    sampleMovies[1],
+                    sampleTVShows[9],
+                    sampleTVShows[10],
+                    sampleTVShows[3],
+                ],
+                tags: ['comedy'],
+            },
+            {
+                title: 'Romance & Heart',
+                description: 'Love stories that touched our hearts',
+                items: [sampleMovies[7], sampleMovies[2], sampleMovies[21], sampleTVShows[9]],
+                tags: ['romance'],
+            },
+            {
+                title: 'Edge-of-Your-Seat Thrillers',
+                description: 'Suspenseful stories that keep you guessing',
+                items: [
+                    sampleMovies[20],
+                    sampleMovies[0],
+                    sampleMovies[1],
+                    sampleMovies[8],
+                    sampleTVShows[0],
+                    sampleTVShows[6],
+                    sampleTVShows[16],
+                ],
+                tags: ['mystery-thriller'],
+            },
+            {
+                title: 'Musicals & Spectacles',
+                description: 'Stories told through song and dance',
+                items: [sampleMovies[7], sampleMovies[9], sampleMovies[2]],
+                tags: ['musicals'],
+            },
+            {
+                title: 'Sports Legends',
+                description: 'Inspiring stories of athletic triumph',
+                items: [sampleMovies[22], sampleMovies[2]],
+                tags: ['sports'],
+            },
+
+            // === Category Tags ===
+            {
+                title: 'True Crime & Criminal Empires',
+                description: 'From mobsters to meth empires - the best crime stories',
+                items: [
+                    sampleMovies[5],
+                    sampleMovies[13],
+                    sampleMovies[1],
+                    sampleTVShows[0],
+                    sampleTVShows[6],
+                    sampleTVShows[18],
+                ],
+                tags: ['true-crime', 'heist-crime'],
+            },
+            {
+                title: 'Oscar-Winning Masterpieces',
+                description: 'Academy Award winners that defined cinema',
+                items: [
+                    sampleMovies[4],
+                    sampleMovies[6],
+                    sampleMovies[2],
+                    sampleMovies[10],
+                    sampleMovies[23],
+                ],
+                tags: ['oscar-winners'],
+            },
+            {
+                title: 'Golden Age Classics',
+                description: 'Timeless films from Hollywood history',
+                items: [
+                    sampleMovies[5],
+                    sampleMovies[19],
+                    sampleMovies[20],
+                    sampleMovies[24],
+                    sampleMovies[22],
+                ],
+                tags: ['classic-hollywood'],
+            },
+            {
+                title: 'Based on Great Books',
+                description: 'Beloved literary adaptations',
+                items: [
+                    sampleMovies[4],
+                    sampleMovies[11],
+                    sampleMovies[17],
+                    sampleMovies[10],
+                    sampleMovies[2],
+                    sampleTVShows[1],
+                    sampleTVShows[7],
+                ],
+                tags: ['based-on-books'],
+            },
+            {
+                title: 'True Stories: Biographical Films',
+                description: 'Real lives, incredible stories',
+                items: [sampleMovies[6], sampleMovies[19], sampleTVShows[19], sampleTVShows[18]],
+                tags: ['biographical'],
+            },
+
+            // === Platform Tags ===
+            {
+                title: 'Netflix Originals Worth Watching',
+                description: 'The best original content from Netflix',
+                items: [sampleTVShows[14], sampleTVShows[16], sampleTVShows[7]],
+                tags: ['netflix-originals'],
             },
         ]
 

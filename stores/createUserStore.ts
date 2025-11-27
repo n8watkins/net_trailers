@@ -91,6 +91,22 @@ function migrateToMyRatings(
 }
 
 /**
+ * Filter out skipped content that's older than 2 weeks (14 days).
+ * After 2 weeks, content returns to the available pool.
+ */
+function filterExpiredSkips(
+    skippedContent: { contentId: number; mediaType: 'movie' | 'tv'; skippedAt: number }[]
+): { contentId: number; mediaType: 'movie' | 'tv'; skippedAt: number }[] {
+    const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000 // 14 days in milliseconds
+    const now = Date.now()
+
+    return skippedContent.filter((item) => {
+        const age = now - item.skippedAt
+        return age < TWO_WEEKS_MS
+    })
+}
+
+/**
  * User store state (works for both auth and guest users)
  */
 export interface UserState {
@@ -134,6 +150,11 @@ export interface UserState {
         mediaType: 'movie' | 'tv'
         vote: 'like' | 'dislike'
         votedAt: number
+    }[]
+    skippedContent?: {
+        contentId: number
+        mediaType: 'movie' | 'tv'
+        skippedAt: number
     }[]
     myRatings: RatedContent[] // Unified ratings (replaces likedMovies, hiddenMovies, votedContent)
 }
@@ -225,6 +246,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
         contentPreferences: [], // Content preferences for recommendations
         shownPreferenceContent: [], // Track shown content to avoid repeats
         votedContent: [], // Track user votes on content (title quiz) - deprecated
+        skippedContent: [], // Track skipped content (excluded from quiz for 2 weeks)
         myRatings: [], // Unified ratings (replaces likedMovies, hiddenMovies, votedContent)
         ...(adapter.isAsync && { syncStatus: 'synced' as const }),
     })
@@ -870,6 +892,9 @@ export function createUserStore(options: CreateUserStoreOptions) {
                                 contentPreferences: firebaseData.contentPreferences ?? [],
                                 shownPreferenceContent: firebaseData.shownPreferenceContent ?? [],
                                 votedContent: firebaseData.votedContent ?? [],
+                                skippedContent: filterExpiredSkips(
+                                    firebaseData.skippedContent ?? []
+                                ),
                                 myRatings: migrateToMyRatings(
                                     firebaseData.myRatings,
                                     firebaseData.likedMovies,
@@ -977,6 +1002,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
                     contentPreferences: loadedData.contentPreferences ?? [],
                     shownPreferenceContent: loadedData.shownPreferenceContent ?? [],
                     votedContent: loadedData.votedContent ?? [],
+                    skippedContent: filterExpiredSkips(loadedData.skippedContent ?? []),
                     myRatings: migrateToMyRatings(
                         loadedData.myRatings,
                         loadedData.likedMovies,

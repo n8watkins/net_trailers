@@ -6,18 +6,12 @@ import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useToast } from '../../hooks/useToast'
-import { RatedContent } from '../../types/shared'
+import { GenrePreference, VotedContent } from '../../types/shared'
 import SubPageLayout from '../../components/layout/SubPageLayout'
 import ContentCard from '../../components/common/ContentCard'
 import ContentGridSpacer from '../../components/common/ContentGridSpacer'
-import {
-    HandThumbDownIcon,
-    TrashIcon,
-    MagnifyingGlassIcon,
-    SwatchIcon,
-    FilmIcon,
-} from '@heroicons/react/24/solid'
-import { XMarkIcon, HandThumbUpIcon, StarIcon } from '@heroicons/react/24/outline'
+import { TrashIcon, MagnifyingGlassIcon, SwatchIcon, FilmIcon } from '@heroicons/react/24/solid'
+import { XMarkIcon, StarIcon } from '@heroicons/react/24/outline'
 import NetflixLoader from '../../components/common/NetflixLoader'
 import GenrePreferenceModal from '../../components/recommendations/GenrePreferenceModal'
 import TitlePreferenceModal from '../../components/recommendations/TitlePreferenceModal'
@@ -72,6 +66,10 @@ function RatingsPageContent() {
     const authVotedContent = useAuthStore((state) => state.votedContent)
     const guestVotedContent = useGuestStore((state) => state.votedContent)
     const votedContent = isGuest ? guestVotedContent : authVotedContent
+
+    // Memoize stable empty arrays to prevent infinite loops in child components
+    const stableVotedContent = useMemo(() => votedContent || [], [votedContent])
+    const stableGenrePreferences = useMemo(() => genrePreferences || [], [genrePreferences])
 
     // Get initial filter from URL params (default to 'like')
     const urlFilter = searchParams.get('filter')
@@ -176,7 +174,7 @@ function RatingsPageContent() {
             </button>
         ) : undefined
 
-    const handleSaveGenrePreferences = async (preferences: any[]) => {
+    const handleSaveGenrePreferences = async (preferences: GenrePreference[]) => {
         if (isGuest) {
             guestUpdatePreferences({ genrePreferences: preferences })
         } else {
@@ -185,7 +183,7 @@ function RatingsPageContent() {
         showSuccess('Genre preferences saved')
     }
 
-    const handleSaveTitlePreferences = async (preferences: any[]) => {
+    const handleSaveTitlePreferences = async (preferences: VotedContent[]) => {
         if (isGuest) {
             guestUpdatePreferences({ votedContent: preferences })
         } else {
@@ -344,7 +342,7 @@ function RatingsPageContent() {
                 isOpen={showGenreModal}
                 onClose={() => setShowGenreModal(false)}
                 onSave={handleSaveGenrePreferences}
-                existingPreferences={genrePreferences || []}
+                existingPreferences={stableGenrePreferences}
             />
 
             {/* Title Preference Modal */}
@@ -352,7 +350,7 @@ function RatingsPageContent() {
                 isOpen={showTitleModal}
                 onClose={() => setShowTitleModal(false)}
                 onSave={handleSaveTitlePreferences}
-                existingVotes={votedContent || []}
+                existingVotes={stableVotedContent}
             />
         </SubPageLayout>
     )

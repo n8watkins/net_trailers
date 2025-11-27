@@ -37,6 +37,13 @@ export interface VotedContent {
     votedAt: number
 }
 
+// Track skipped content (excluded from quiz for 2 weeks)
+export interface SkippedContent {
+    contentId: number
+    mediaType: 'movie' | 'tv'
+    skippedAt: number // timestamp when skipped
+}
+
 // Unified rating for content (merges liked/hidden/voted)
 // Stores full content for display without additional API calls
 export interface RatedContent {
@@ -66,6 +73,7 @@ export interface UserPreferences {
     shownPreferenceContent?: ShownPreferenceContent[] // Track shown content to avoid repeats
     /** @deprecated Use myRatings instead */
     votedContent?: VotedContent[] // Track user votes on content (title quiz)
+    skippedContent?: SkippedContent[] // Track skipped content (excluded from quiz for 2 weeks)
     myRatings?: RatedContent[] // Unified ratings (replaces likedMovies, hiddenMovies, votedContent)
 }
 

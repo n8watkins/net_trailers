@@ -180,6 +180,8 @@ export default function TitlePreferenceModal({
     }, [isOpen, handleClose])
 
     // Fetch content on mount (or use prefetched content if available)
+    // Note: Dependencies are intentionally limited to isOpen to prevent infinite loops
+    // prefetchedContent, excludeIds, and priorityContent are accessed but don't trigger refetch
     useEffect(() => {
         if (!isOpen) return
 
@@ -218,7 +220,7 @@ export default function TitlePreferenceModal({
         }
 
         fetchContent()
-    }, [isOpen, excludeIds, priorityContent, prefetchedContent])
+    }, [isOpen])
 
     const currentContent = content[currentIndex]
     const contentKey = currentContent
@@ -663,9 +665,7 @@ export default function TitlePreferenceModal({
                                     }}
                                     disabled={!!animatingVote}
                                     className={`flex flex-col items-center gap-1 transition-all duration-200 active:scale-95 ${
-                                        currentVote === 'dislike'
-                                            ? 'scale-110'
-                                            : 'hover:scale-105'
+                                        currentVote === 'dislike' ? 'scale-110' : 'hover:scale-105'
                                     }`}
                                 >
                                     <div
