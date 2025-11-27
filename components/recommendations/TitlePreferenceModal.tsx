@@ -19,9 +19,10 @@ import {
     FilmIcon,
     TvIcon,
     SparklesIcon,
+    ForwardIcon,
 } from '@heroicons/react/24/solid'
 import { Content, BaseContent } from '../../typings'
-import { VotedContent } from '../../types/shared'
+import { VotedContent, SkippedContent } from '../../types/shared'
 
 type VoteValue = 'like' | 'dislike'
 

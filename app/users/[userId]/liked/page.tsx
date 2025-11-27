@@ -53,10 +53,10 @@ export default function UserLikedContentPage() {
 
                 if (!isMounted) return
 
-                // Get display name - profile.username is the primary field (displayName is deprecated)
+                // Get display name - prioritize displayName over username (username is the URL slug)
                 const displayName =
-                    profileData?.username ||
                     profileData?.displayName ||
+                    profileData?.username ||
                     legacyProfile.displayName ||
                     userData.displayName ||
                     'User'

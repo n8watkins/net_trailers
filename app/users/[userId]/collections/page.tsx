@@ -51,10 +51,10 @@ export default function UserCollectionsPage() {
 
                 if (!isMounted) return
 
-                // Get display name - profile.username is the primary field (displayName is deprecated)
+                // Get display name - prioritize displayName over username (username is the URL slug)
                 setUsername(
-                    profileData?.username ||
-                        profileData?.displayName ||
+                    profileData?.displayName ||
+                        profileData?.username ||
                         legacyProfile.displayName ||
                         userData.displayName ||
                         'User'

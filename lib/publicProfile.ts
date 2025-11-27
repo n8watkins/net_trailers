@@ -106,10 +106,10 @@ export async function buildPublicProfilePayload(
     const legacyProfile = legacyData.profile || {}
     const profileData = profileSnap.exists ? profileDataRaw : null
 
-    // Get display name - profile.username is the primary field (displayName is deprecated)
+    // Get display name - prioritize displayName over username (username is the URL slug)
     const derivedDisplayName =
-        profileData?.username ||
         profileData?.displayName ||
+        profileData?.username ||
         legacyProfile.displayName ||
         legacyData.displayName ||
         authRecord?.displayName ||
