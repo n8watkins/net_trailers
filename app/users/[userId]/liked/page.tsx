@@ -53,18 +53,14 @@ export default function UserLikedContentPage() {
 
                 if (!isMounted) return
 
-                // Try to get display name from multiple sources
-                const displayUsername =
+                // Get display name from profile or user document
+                const displayName =
                     profileData?.displayName ||
-                    profileData?.username ||
                     legacyProfile.displayName ||
-                    legacyProfile.username ||
                     userData.displayName ||
-                    userData.username ||
-                    userData.email?.split('@')[0] ||
                     'User'
 
-                setUsername(displayUsername)
+                setUsername(displayName)
 
                 const liked = Array.isArray(userData.likedMovies)
                     ? (userData.likedMovies as (Movie | TVShow)[])

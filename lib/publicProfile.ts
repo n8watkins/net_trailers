@@ -106,22 +106,13 @@ export async function buildPublicProfilePayload(
     const legacyProfile = legacyData.profile || {}
     const profileData = profileSnap.exists ? profileDataRaw : null
 
-    const fallbackEmailLocal = authRecord?.email?.split('@')[0]
-    const derivedUsername =
-        profileData?.username ||
-        legacyProfile.username ||
-        legacyData.username ||
+    // Use displayName consistently everywhere - this is the user's chosen display name
+    const derivedDisplayName =
+        profileData?.displayName ||
+        legacyProfile.displayName ||
         legacyData.displayName ||
         authRecord?.displayName ||
-        fallbackEmailLocal ||
-        authRecord?.uid ||
         'User'
-    const derivedDisplayName =
-        profileData?.displayName ??
-        legacyProfile.displayName ??
-        legacyData.displayName ??
-        authRecord?.displayName ??
-        derivedUsername
     const derivedAvatar =
         profileData?.avatarUrl ??
         legacyProfile.avatarUrl ??
@@ -131,7 +122,7 @@ export async function buildPublicProfilePayload(
         null
 
     const profilePayload: PublicProfilePayload['profile'] = {
-        username: derivedUsername,
+        username: derivedDisplayName, // Using displayName for both fields for consistency
         displayName: derivedDisplayName,
         avatarUrl: derivedAvatar,
         bio: profileData?.description ?? legacyProfile.bio ?? legacyData.bio ?? null,

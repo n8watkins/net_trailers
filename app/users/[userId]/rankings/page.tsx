@@ -52,15 +52,11 @@ export default function UserRankingsPage() {
 
                 if (!isMounted) return
 
-                // Try to get display name from multiple sources
+                // Get display name from profile or user document
                 setUsername(
                     profileData?.displayName ||
-                        profileData?.username ||
                         legacyProfile.displayName ||
-                        legacyProfile.username ||
                         userData.displayName ||
-                        userData.username ||
-                        userData.email?.split('@')[0] ||
                         'User'
                 )
 

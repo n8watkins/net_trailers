@@ -53,18 +53,14 @@ export default function UserWatchLaterPage() {
 
                 if (!isMounted) return
 
-                // Try to get display name from multiple sources
-                const displayUsername =
+                // Get display name from profile or user document
+                const displayName =
                     profileData?.displayName ||
-                    profileData?.username ||
                     legacyProfile.displayName ||
-                    legacyProfile.username ||
                     userData.displayName ||
-                    userData.username ||
-                    userData.email?.split('@')[0] ||
                     'User'
 
-                setUsername(displayUsername)
+                setUsername(displayName)
 
                 const watchLater = Array.isArray(userData.defaultWatchlist)
                     ? (userData.defaultWatchlist as (Movie | TVShow)[])
