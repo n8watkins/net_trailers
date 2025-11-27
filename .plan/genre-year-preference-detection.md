@@ -359,13 +359,8 @@ function calculateEffectiveYearRange(
 1. Modify `buildRecommendationProfile()`:
     - Call `calculateGenreYearPreferences()`
     - Add result to profile as `genreYearPreferences`
-    - Keep `preferredYearRange` populated initially (backwards compatibility)
-    - Audit all `preferredYearRange` consumers before eventual removal:
-        - `utils/recommendations/genreEngine.ts` - profile building
-        - `app/api/recommendations/personalized/route.ts` - API responses
-        - Any Firestore queries/indexes referencing this field
-        - Any UI components displaying year preferences
-        - Run: `grep -r "preferredYearRange" --include="*.ts" --include="*.tsx"`
+    - **Remove** `preferredYearRange` calculation entirely (lines 216-234)
+    - Remove `preferredYearRange` from return object (line 240)
 
 2. Modify `getGenreBasedRecommendations()`:
     - Look up year preference for each genre being queried
@@ -388,10 +383,9 @@ function calculateEffectiveYearRange(
     - Uses `genreId: string` (unified genre ID)
     - See interface definition above in "Data Structure Design"
 
-3. **Update `RecommendationProfile` interface**:
+3. **Update `RecommendationProfile` interface** (lines 201-213):
     - Add `genreYearPreferences?: GenreYearPreference[]`
-    - Keep `preferredYearRange` for now (backwards compatibility during transition)
-    - Plan to remove `preferredYearRange` in future version once fully migrated
+    - **Remove** `preferredYearRange?: { min: number; max: number }` (line 210)
 
 ### Phase 4: Testing & Tuning
 
@@ -573,43 +567,65 @@ export const YEAR_PREFERENCE_CONFIG = {
 
 - **No Firestore data migration required**: Genre-year preferences are calculated on-demand from existing user data (likes, watchlist, collections)
 - **Instant availability**: All users get personalized year filtering immediately upon first recommendation request
-- **No historical data loss**: Existing `preferredYearRange` field remains populated (backwards compatibility)
+- **No historical data loss**: `preferredYearRange` was never stored in Firestore, only calculated on-demand
 
-### Rollout Plan
+### Deployment Plan
 
-**Phase 1: Soft Launch (Dual Mode)**
+**Single Cutover** (no dual-mode needed):
 
-1. Deploy with both `preferredYearRange` (old) and `genreYearPreferences` (new) populated
-2. Recommendation engine uses `genreYearPreferences` but logs both approaches for comparison
-3. Monitor recommendation quality metrics for 1-2 weeks
-4. Validate that genre-specific filtering improves diversity without hurting relevance
+1. **Deploy changes**:
+    - Add `genreYearPreferences` calculation to `buildRecommendationProfile()`
+    - Remove `preferredYearRange` calculation (lines 216-234 in genreEngine.ts)
+    - Update `RecommendationProfile` type to remove `preferredYearRange`
+    - Apply year filters in `getGenreBasedRecommendations()` based on genre-year preferences
 
-**Phase 2: Full Cutover**
+2. **Monitor for 24-48 hours**:
+    - Track recommendation API response sizes (should remain stable)
+    - Monitor user engagement metrics (watchlist adds, modal opens)
+    - Check error logs for empty result sets
 
-1. Stop populating `preferredYearRange` in new profiles
-2. UI shows genre-year preferences instead of global range
-3. Remove `preferredYearRange` from type definitions (breaking change)
+3. **Validation**:
+    - Spot-check recommendations match user's preferred decades
+    - Verify diversity improved (recommendations from multiple decades)
 
-**Rollback Strategy**
+### Rollback Strategy
 
-- **No automated rollback**: If genre-year logic misbehaves, we must:
-    1. Hotfix the calculation algorithm (bugs in decade clustering, confidence levels, etc.)
-    2. OR temporarily return `null` for `effectiveYearRange` (disables year filtering)
-    3. Cannot simply "revert to old system" as we're removing the global range calculation
-- **Risk mitigation**: Extensive testing in Phase 4 (see Test Cases section) before rollout
-- **Monitoring**: Track API errors, empty result sets, user engagement with recommended content
+**If year filtering causes issues**:
+
+1. **Quick disable** (1-line code change):
+
+    ```typescript
+    // In getGenreBasedRecommendations(), comment out year filter application
+    // This disables filtering without reverting the entire feature
+    ```
+
+2. **Hotfix calculation bugs**:
+    - Decade clustering too aggressive? Adjust confidence thresholds
+    - Year ranges too narrow? Increase buffers
+    - No need to reintroduce `preferredYearRange` - just fix the algorithm
+
+3. **Full rollback** (worst case):
+    - Revert commit
+    - Redeploy previous version
+    - `preferredYearRange` was unused anyway, so no functionality lost
+
+**Note**: Since `preferredYearRange` was calculated but never used (not returned by API, not consumed by UI), there's no "old system" to fall back to. This is a new feature, not a replacement.
 
 ### Operational Risk Assessment
 
-**Medium Risk**:
+**Low-Medium Risk**:
 
-- **Impact**: If year filtering is too aggressive, users get fewer/no recommendations
-- **Detection**: Monitor recommendation API response sizes and user engagement metrics
+- **Impact**: If year filtering is too aggressive, users might get fewer recommendations (but still get some)
+- **Detection**:
+    - Monitor `/api/recommendations/personalized` response sizes
+    - Track recommendation diversity metrics
+    - User engagement with "Recommended For You" row
 - **Mitigation**:
     - Confidence thresholds prevent overly-narrow filters (low confidence = no filter)
     - Decade buffers (±5 years) provide flexibility
-    - Logging helps diagnose issues quickly
-- **Recovery**: Can disable year filtering by returning `null` for all `effectiveYearRange` values (1-line code change)
+    - Comprehensive test cases (Phase 4)
+    - Logging for debugging
+- **Recovery Time**: <5 minutes (quick disable) or ~15 minutes (full rollback)
 
 ---
 
@@ -700,7 +716,7 @@ When generating "Recommended For You" (which shows both movies + TV):
 
 ## Summary of Changes from Original Plan
 
-This updated plan incorporates the **unified genre system** throughout:
+This updated plan incorporates the **unified genre system** and **clean architecture**:
 
 1. ✅ Uses unified genre IDs (`string`) instead of TMDB genre IDs (`number`)
 2. ✅ Combines TV and movie preferences (unified recommendation row)
@@ -708,6 +724,8 @@ This updated plan incorporates the **unified genre system** throughout:
 4. ✅ Updated all type definitions to use `genreId: string`
 5. ✅ Added genre conversion step to algorithm
 6. ✅ Updated example walkthrough with genre translation
+7. ✅ **Clean break**: Removes `preferredYearRange` entirely (no backward compatibility)
+8. ✅ **Single cutover**: No dual-mode rollout (simpler deployment)
 
 ## Open Questions
 
