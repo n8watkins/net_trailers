@@ -373,49 +373,6 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
                         </div>
                     )}
                 </div>
-
-                {/* Related polls or additional info could go here */}
-                <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-                    <h2 className="text-xl font-bold text-white mb-4">Poll Information</h2>
-                    <div className="space-y-3 text-sm">
-                        <div className="flex justify-between py-2 border-b border-zinc-800">
-                            <span className="text-gray-400">Created by</span>
-                            <span className="text-white font-medium">{currentPoll.userName}</span>
-                        </div>
-                        <div className="flex justify-between py-2 border-b border-zinc-800">
-                            <span className="text-gray-400">Created</span>
-                            <span className="text-white">
-                                {formatDistanceToNow(toDate(currentPoll.createdAt), {
-                                    addSuffix: true,
-                                })}
-                            </span>
-                        </div>
-                        {currentPoll.expiresAt && (
-                            <div className="flex justify-between py-2 border-b border-zinc-800">
-                                <span className="text-gray-400">
-                                    {isExpired ? 'Expired' : 'Expires'}
-                                </span>
-                                <span className={isExpired ? 'text-red-400' : 'text-white'}>
-                                    {formatDistanceToNow(toDate(currentPoll.expiresAt), {
-                                        addSuffix: true,
-                                    })}
-                                </span>
-                            </div>
-                        )}
-                        <div className="flex justify-between py-2 border-b border-zinc-800">
-                            <span className="text-gray-400">Category</span>
-                            <span className="text-white flex items-center gap-1">
-                                {category?.icon} {category?.name}
-                            </span>
-                        </div>
-                        <div className="flex justify-between py-2">
-                            <span className="text-gray-400">Type</span>
-                            <span className="text-white">
-                                {currentPoll.isMultipleChoice ? 'Multiple Choice' : 'Single Choice'}
-                            </span>
-                        </div>
-                    </div>
-                </div>
             </div>
         </SubPageLayout>
     )
