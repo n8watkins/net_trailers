@@ -68,14 +68,12 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
     const visibility: ProfileVisibility = userData.visibility ??
         legacyProfile.visibility ?? { ...DEFAULT_PROFILE_VISIBILITY }
 
+    // Use displayName consistently - this is the user's chosen display name
+    const derivedDisplayName = legacyProfile.displayName || userData.displayName || 'User'
+
     const profile: PublicProfileIdentity = {
-        username:
-            legacyProfile.username ||
-            userData.username ||
-            userData.displayName ||
-            userData.email?.split('@')[0] ||
-            'User',
-        displayName: legacyProfile.displayName ?? userData.displayName ?? null,
+        username: derivedDisplayName, // Use displayName for both fields
+        displayName: derivedDisplayName,
         avatarUrl: legacyProfile.avatarUrl ?? userData.photoURL ?? userData.avatarUrl ?? null,
         bio: legacyProfile.bio ?? userData.bio ?? null,
         favoriteGenres: Array.isArray(legacyProfile.favoriteGenres)
@@ -393,14 +391,14 @@ export default function UserProfilePage() {
                         {profile.avatarUrl ? (
                             <img
                                 src={profile.avatarUrl}
-                                alt={profile.username}
+                                alt={profile.displayName}
                                 className="w-32 h-32 rounded-full ring-4 ring-blue-500/30 object-cover"
                                 referrerPolicy="no-referrer"
                             />
                         ) : (
                             <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center ring-4 ring-blue-500/30">
                                 <span className="text-4xl font-bold text-white">
-                                    {profile.username[0]?.toUpperCase()}
+                                    {profile.displayName[0]?.toUpperCase()}
                                 </span>
                             </div>
                         )}
@@ -409,7 +407,7 @@ export default function UserProfilePage() {
                     {/* Profile Info */}
                     <div className="flex-1 min-w-0">
                         <h1 className="text-3xl font-bold text-white mb-2">
-                            {profile.displayName || profile.username}
+                            {profile.displayName}
                         </h1>
                         {profile.bio && (
                             <p className="text-gray-400 mb-4 line-clamp-2">{profile.bio}</p>
