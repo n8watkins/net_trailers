@@ -77,12 +77,12 @@ export default function NotificationBell() {
             {/* Bell Icon */}
             {hasUnread ? (
                 <BellIconSolid
-                    className="h-8 w-8 text-red-500 transition-all drop-shadow-[0_0_8px_rgba(239,68,68,0.6)] group-hover:scale-110 group-hover:drop-shadow-[0_0_12px_rgba(239,68,68,0.8)] group-focus:drop-shadow-[0_0_12px_rgba(239,68,68,0.8)]"
+                    className="h-8 w-8 text-white transition-all group-hover:scale-110"
                     aria-hidden="true"
                 />
             ) : (
                 <BellIcon
-                    className="h-8 w-8 text-gray-300 transition-all group-hover:scale-110 group-hover:text-white group-hover:drop-shadow-[0_0_12px_rgba(239,68,68,0.6)] group-focus:drop-shadow-[0_0_12px_rgba(239,68,68,0.6)]"
+                    className="h-8 w-8 text-gray-300 transition-all group-hover:scale-110 group-hover:text-white"
                     aria-hidden="true"
                 />
             )}
@@ -93,7 +93,7 @@ export default function NotificationBell() {
                     className="absolute right-0 top-0 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white"
                     aria-hidden="true"
                 >
-                    {safeUnreadCount > 99 ? '99+' : safeUnreadCount}
+                    {safeUnreadCount > 9 ? '9+' : safeUnreadCount}
                 </span>
             )}
         </button>
