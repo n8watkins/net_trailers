@@ -225,7 +225,7 @@ async function handlePersonalizedRecommendationsGet(
         const { searchParams } = new URL(request.url)
         const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
         const limit = Math.min(
-            parseInt(searchParams.get('limit') || '20'),
+            parseInt(searchParams.get('limit') || '40'), // Increased default from 20 to 40
             RECOMMENDATION_CONSTRAINTS.MAX_LIMIT
         )
 

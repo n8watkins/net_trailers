@@ -283,8 +283,12 @@ export async function getGenreBasedRecommendations(
         const tmdbPagesToFetch = Math.ceil(limit / 20)
         const startTmdbPage = (page - 1) * tmdbPagesToFetch + 1
 
+        // Alternate sorting between vote_average and popularity for variety
+        const sortBy = page % 2 === 1 ? 'vote_average.desc' : 'popularity.desc'
+
         const fetchPromises = []
         for (let i = 0; i < tmdbPagesToFetch; i++) {
+            // Fetch both movies and TV shows for maximum content pool
             fetchPromises.push(
                 discoverByPreferences({
                     genreIds: selectedGenreIds,
@@ -292,6 +296,17 @@ export async function getGenreBasedRecommendations(
                     minRating: profile.preferredRating ? profile.preferredRating - 1 : 6.0,
                     minVoteCount: 200,
                     page: startTmdbPage + i,
+                    sortBy,
+                })
+            )
+            fetchPromises.push(
+                discoverByPreferences({
+                    genreIds: selectedGenreIds,
+                    mediaType: 'tv',
+                    minRating: profile.preferredRating ? profile.preferredRating - 1 : 6.0,
+                    minVoteCount: 200,
+                    page: startTmdbPage + i,
+                    sortBy,
                 })
             )
         }

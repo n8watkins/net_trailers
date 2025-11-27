@@ -291,7 +291,7 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
                         genrePreferences: genrePreferences, // User genre preferences
                         contentPreferences: contentPreferences, // User content preferences
                         votedContent: votedContent, // User voted content (title quiz) - legacy
-                        limit: 20,
+                        limit: 40, // Increased from 20 to ensure enough content for infinite scroll trigger
                     }),
                 })
 

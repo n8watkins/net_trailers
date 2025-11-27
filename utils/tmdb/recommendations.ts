@@ -127,6 +127,7 @@ export async function discoverByPreferences(params: {
     minVoteCount?: number
     yearRange?: { min?: number; max?: number }
     page?: number
+    sortBy?: string
 }): Promise<Content[]> {
     const {
         genreIds,
@@ -135,6 +136,7 @@ export async function discoverByPreferences(params: {
         minVoteCount = 100,
         yearRange,
         page = 1,
+        sortBy = 'vote_average.desc',
     } = params
 
     try {
@@ -142,7 +144,7 @@ export async function discoverByPreferences(params: {
             with_genres: genreIds.join(','),
             'vote_average.gte': minRating,
             'vote_count.gte': minVoteCount,
-            sort_by: 'vote_average.desc',
+            sort_by: sortBy,
             page,
         }
 
