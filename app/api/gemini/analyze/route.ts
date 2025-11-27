@@ -4,12 +4,19 @@ import { getRequestIdentity } from '@/lib/requestIdentity'
 import { sanitizeInput } from '@/utils/inputSanitization'
 import { apiError } from '@/utils/debugLogger'
 import { routeGeminiRequest, extractGeminiText } from '@/lib/geminiRouter'
+import { applyCsrfProtection } from '@/lib/csrfProtection'
 
 /**
  * Gemini API endpoint for semantic analysis of user input
  */
 export async function POST(request: NextRequest) {
     try {
+        // Apply CSRF protection
+        const csrfResponse = applyCsrfProtection(request)
+        if (csrfResponse) {
+            return csrfResponse
+        }
+
         const { rateLimitKey } = await getRequestIdentity(request)
         const { text, mediaType } = await request.json()
 

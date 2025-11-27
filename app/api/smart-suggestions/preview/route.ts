@@ -3,6 +3,7 @@ import { TMDBApiClient } from '@/utils/tmdbApi'
 import { MemoryRateLimiter } from '@/lib/rateLimiter'
 import { getRequestIdentity } from '@/lib/requestIdentity'
 import { apiWarn, apiError } from '@/utils/debugLogger'
+import { applyCsrfProtection } from '@/lib/csrfProtection'
 
 const previewLimiter = new MemoryRateLimiter(
     Number(process.env.SMART_PREVIEW_MAX_REQUESTS || 60),
@@ -14,6 +15,12 @@ const previewLimiter = new MemoryRateLimiter(
  */
 export async function POST(request: NextRequest) {
     try {
+        // Apply CSRF protection
+        const csrfResponse = applyCsrfProtection(request)
+        if (csrfResponse) {
+            return csrfResponse
+        }
+
         const { rateLimitKey } = await getRequestIdentity(request)
         const rateStatus = previewLimiter.consume(rateLimitKey)
         if (!rateStatus.allowed) {

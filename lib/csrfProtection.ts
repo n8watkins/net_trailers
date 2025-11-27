@@ -103,3 +103,22 @@ export function withCsrfProtection(
         return handler(request, ...args)
     }
 }
+
+/**
+ * Wrapper for auth middleware routes
+ * For routes that use withAuth(), apply CSRF protection to the inner handler
+ */
+export function withCsrfForAuthRoute(
+    handler: (request: NextRequest, userId: string, ...args: any[]) => Promise<NextResponse>
+) {
+    return async (request: NextRequest, userId: string, ...args: any[]): Promise<NextResponse> => {
+        // Apply CSRF protection
+        const csrfResponse = applyCsrfProtection(request)
+        if (csrfResponse) {
+            return csrfResponse
+        }
+
+        // Call original handler with userId
+        return handler(request, userId, ...args)
+    }
+}

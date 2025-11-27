@@ -7,9 +7,16 @@ import { getRequestIdentity } from '@/lib/requestIdentity'
 import { sanitizeInput } from '@/utils/inputSanitization'
 import { apiLog, apiError } from '@/utils/debugLogger'
 import { routeGeminiRequest, extractGeminiText } from '@/lib/geminiRouter'
+import { applyCsrfProtection } from '@/lib/csrfProtection'
 
 export async function POST(request: NextRequest) {
     try {
+        // Apply CSRF protection
+        const csrfResponse = applyCsrfProtection(request)
+        if (csrfResponse) {
+            return csrfResponse
+        }
+
         const { userId, rateLimitKey } = await getRequestIdentity(request)
         const body: SmartSearchAPIRequest = await request.json()
         const { query, mode, conversationHistory = [], existingMovies = [] } = body

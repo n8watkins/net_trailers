@@ -5,9 +5,16 @@ import {
     createUnauthorizedResponse,
     createForbiddenResponse,
 } from '@/utils/adminMiddleware'
+import { applyCsrfProtection } from '@/lib/csrfProtection'
 
 export async function POST(req: NextRequest) {
     try {
+        // Apply CSRF protection
+        const csrfResponse = applyCsrfProtection(req)
+        if (csrfResponse) {
+            return csrfResponse
+        }
+
         // Validate admin access via Firebase Auth
         const authResult = await validateAdminRequest(req)
         if (!authResult.authorized) {

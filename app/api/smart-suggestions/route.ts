@@ -6,9 +6,16 @@ import { TMDBApiClient } from '@/utils/tmdbApi'
 import { sanitizeInput } from '@/utils/inputSanitization'
 import { apiError, apiWarn } from '@/utils/debugLogger'
 import { routeGeminiRequest, extractGeminiText, FLASH_LITE_PRIORITY } from '@/lib/geminiRouter'
+import { applyCsrfProtection } from '@/lib/csrfProtection'
 
 export async function POST(request: NextRequest) {
     try {
+        // Apply CSRF protection
+        const csrfResponse = applyCsrfProtection(request)
+        if (csrfResponse) {
+            return csrfResponse
+        }
+
         const { rateLimitKey } = await getRequestIdentity(request)
         const body = await request.json()
         const { rawText, seed } = body
