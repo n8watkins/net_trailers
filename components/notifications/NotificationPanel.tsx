@@ -7,7 +7,7 @@
 
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import Link from 'next/link'
 import { CheckIcon, Cog6ToothIcon } from '@heroicons/react/24/outline'
 import { useNotificationStore } from '../../stores/notificationStore'
@@ -18,13 +18,25 @@ export default function NotificationPanel() {
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
     const {
-        notifications,
+        notifications: rawNotifications,
         unreadCount,
         isLoading,
         isPanelOpen,
         closePanel,
         markAllNotificationsAsRead,
     } = useNotificationStore()
+
+    // Deduplicate notifications by ID to prevent React key warnings
+    const notifications = useMemo(() => {
+        const seen = new Set<string>()
+        return rawNotifications.filter((notification) => {
+            if (seen.has(notification.id)) {
+                return false
+            }
+            seen.add(notification.id)
+            return true
+        })
+    }, [rawNotifications])
 
     const panelRef = useRef<HTMLDivElement>(null)
     const mobilePanelRef = useRef<HTMLDivElement>(null)
