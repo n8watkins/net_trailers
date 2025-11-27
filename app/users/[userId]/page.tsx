@@ -111,6 +111,8 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
         collections = publicCollections
             .filter((c) => {
                 if (c.isSystemCollection) return false
+                // Only show collections with showOnPublicProfile enabled (default true for backward compatibility)
+                if (c.showOnPublicProfile === false) return false
                 // TMDB genre-based collections don't store items, they fetch dynamically
                 if (c.collectionType === 'tmdb-genre') return true
                 // Manual and AI-generated collections must have items

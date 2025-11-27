@@ -58,6 +58,7 @@ export default function CollectionEditorModal({
     const [emoji, setEmoji] = useState('📺')
     const [color, setColor] = useState('#3b82f6')
     const [displayAsRow, setDisplayAsRow] = useState(true)
+    const [showOnPublicProfile, setShowOnPublicProfile] = useState(true)
     const [enableInfiniteContent, setEnableInfiniteContent] = useState(false)
     const [mediaType, setMediaType] = useState<'movie' | 'tv' | 'both'>('both')
     const [selectedGenres, setSelectedGenres] = useState<string[]>([])
@@ -99,6 +100,7 @@ export default function CollectionEditorModal({
             setEmoji(collection.emoji || '📺')
             setColor(collection.color || '#3b82f6')
             setDisplayAsRow(collection.displayAsRow ?? true)
+            setShowOnPublicProfile(collection.showOnPublicProfile ?? true)
             const collectionMediaType = collection.mediaType || 'both'
             setMediaType(collectionMediaType)
             // Set individual enabled states based on media type
@@ -260,14 +262,16 @@ export default function CollectionEditorModal({
                 // Only update displayAsRow (enable/disable)
                 updates = {
                     displayAsRow,
+                    showOnPublicProfile,
                 }
             } else if (canEditLimited) {
                 // For editable system collections (Action, Comedy, etc.)
-                // Update name, emoji, displayAsRow, genres, genreLogic
+                // Update name, emoji, displayAsRow, genres, genreLogic, showOnPublicProfile
                 updates = {
                     name: name.trim(),
                     emoji,
                     displayAsRow,
+                    showOnPublicProfile,
                     genres: selectedGenres,
                     genreLogic,
                 }
@@ -279,6 +283,7 @@ export default function CollectionEditorModal({
                     emoji,
                     color,
                     displayAsRow,
+                    showOnPublicProfile,
                     genres: selectedGenres,
                     genreLogic,
                     mediaType,
@@ -546,8 +551,8 @@ export default function CollectionEditorModal({
                                         </div>
                                     </div>
 
-                                    {/* Toggle Settings Row - Display on Page and Infinite Content side by side */}
-                                    <div className="grid grid-cols-2 gap-3">
+                                    {/* Toggle Settings Row - Display on Page, Show on Public Profile, and Infinite Content */}
+                                    <div className="grid grid-cols-3 gap-3">
                                         {/* Display on Page Toggle */}
                                         <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
                                             <div className="flex items-center justify-between">
@@ -567,6 +572,35 @@ export default function CollectionEditorModal({
                                                     <span
                                                         className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
                                                             displayAsRow
+                                                                ? 'translate-x-5'
+                                                                : 'translate-x-0.5'
+                                                        }`}
+                                                    />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Show on Public Profile Toggle */}
+                                        <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+                                            <div className="flex items-center justify-between">
+                                                <label className="text-sm font-medium text-white flex items-center gap-1.5">
+                                                    <span>👁️</span>
+                                                    Public Profile
+                                                </label>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setShowOnPublicProfile(!showOnPublicProfile)
+                                                    }
+                                                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                                                        showOnPublicProfile
+                                                            ? 'bg-blue-600'
+                                                            : 'bg-gray-600'
+                                                    }`}
+                                                >
+                                                    <span
+                                                        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                                                            showOnPublicProfile
                                                                 ? 'translate-x-5'
                                                                 : 'translate-x-0.5'
                                                         }`}

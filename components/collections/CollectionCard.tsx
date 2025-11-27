@@ -1,7 +1,14 @@
 'use client'
 
 import React, { useState, memo } from 'react'
-import { PencilIcon, TrashIcon, Bars3Icon, BellIcon } from '@heroicons/react/24/outline'
+import {
+    PencilIcon,
+    TrashIcon,
+    Bars3Icon,
+    BellIcon,
+    EyeIcon,
+    EyeSlashIcon,
+} from '@heroicons/react/24/outline'
 import { DisplayRow } from '../../types/collections'
 import { getUnifiedGenresByMediaType } from '../../constants/unifiedGenres'
 import { DeleteConfirmationModal } from '../modals/DeleteConfirmationModal'
@@ -27,6 +34,7 @@ interface CollectionCardProps {
     row: DisplayRow
     onEdit: (row: DisplayRow) => void
     onDelete: (row: DisplayRow) => void
+    onTogglePublicDisplay?: (row: DisplayRow) => void
     onMoveUp?: (row: DisplayRow) => void
     onMoveDown?: (row: DisplayRow) => void
     dragHandleProps?: any
@@ -44,6 +52,7 @@ export const CollectionCard = memo(function CollectionCard({
     row,
     onEdit,
     onDelete,
+    onTogglePublicDisplay,
     onMoveUp,
     onMoveDown,
     dragHandleProps,
@@ -91,7 +100,7 @@ export const CollectionCard = memo(function CollectionCard({
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 flex-wrap">
                             {row.emoji && <span className="text-xl">{row.emoji}</span>}
-                            <h3 className="text-lg font-semibold text-white truncate">
+                            <h3 className="text-base font-semibold text-white truncate">
                                 {row.name}
                             </h3>
                             {!row.isSystemCollection && row.autoUpdateEnabled && (
@@ -121,6 +130,29 @@ export const CollectionCard = memo(function CollectionCard({
 
                     {/* Actions */}
                     <div className="flex gap-2">
+                        {/* Public Display Toggle */}
+                        {onTogglePublicDisplay && (
+                            <button
+                                onClick={() => onTogglePublicDisplay(row)}
+                                className={`p-2 rounded-lg transition-colors shrink-0 ${
+                                    row.showOnPublicProfile !== false
+                                        ? 'bg-blue-900/30 hover:bg-blue-900/50 text-blue-400'
+                                        : 'bg-gray-800 hover:bg-gray-700 text-gray-400'
+                                }`}
+                                title={
+                                    row.showOnPublicProfile !== false
+                                        ? 'Visible on public profile'
+                                        : 'Hidden from public profile'
+                                }
+                            >
+                                {row.showOnPublicProfile !== false ? (
+                                    <EyeIcon className="w-5 h-5" />
+                                ) : (
+                                    <EyeSlashIcon className="w-5 h-5" />
+                                )}
+                            </button>
+                        )}
+
                         {/* Edit */}
                         <button
                             onClick={() => onEdit(row)}

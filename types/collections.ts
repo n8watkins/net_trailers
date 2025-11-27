@@ -91,6 +91,9 @@ export interface UserList {
     // Sharing settings
     shareSettings?: ShareSettings // Optional share settings for this collection
     sharedLinkId?: string // Active share link ID (if collection is currently shared)
+
+    // Public profile visibility
+    showOnPublicProfile?: boolean // Show on user's public profile (default: true)
 }
 
 // DEPRECATED - OLD SCHEMA
@@ -165,6 +168,9 @@ export interface UpdateListRequest {
 
     // Infinite content settings
     canGenerateMore?: boolean
+
+    // Public profile visibility
+    showOnPublicProfile?: boolean
 }
 
 export interface AddToListRequest {
@@ -277,6 +283,8 @@ export interface DisplayCollection extends BaseCollectionConfig {
     updateFrequency?: 'daily' | 'weekly' | 'never'
     lastCheckedAt?: number
     lastUpdateCount?: number
+    // Public profile visibility
+    showOnPublicProfile?: boolean
 }
 
 /**

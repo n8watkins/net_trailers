@@ -491,6 +491,7 @@ service cloud.firestore {
 
     // Helper function to check if only thread stats are being incremented
     function isOnlyIncrementingThreadStats(before, after) {
+      // Core identity and content fields must remain unchanged
       return after.id == before.id
              && after.userId == before.userId
              && after.userName == before.userName
@@ -498,7 +499,6 @@ service cloud.firestore {
              && after.content == before.content
              && after.category == before.category
              && after.createdAt == before.createdAt
-             && after.updatedAt == before.updatedAt
              && after.isPinned == before.isPinned
              && after.isLocked == before.isLocked
              // Only allow one stat to change at a time, by exactly 1 or -1
@@ -509,7 +509,7 @@ service cloud.firestore {
                  || (after.likes == before.likes + 1 && after.views == before.views && after.replyCount == before.replyCount)
                  // Likes decrement by 1
                  || (after.likes == before.likes - 1 && after.views == before.views && after.replyCount == before.replyCount)
-                 // Reply count increment by 1
+                 // Reply count increment by 1 (with lastReplyAt/lastReplyBy update allowed)
                  || (after.replyCount == before.replyCount + 1 && after.views == before.views && after.likes == before.likes)
                  // Reply count decrement by 1
                  || (after.replyCount == before.replyCount - 1 && after.views == before.views && after.likes == before.likes)

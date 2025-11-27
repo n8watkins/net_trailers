@@ -59,6 +59,7 @@ interface DisplayRow {
     updateFrequency?: 'daily' | 'weekly' | 'never'
     lastCheckedAt?: number
     lastUpdateCount?: number
+    showOnPublicProfile?: boolean
 }
 
 interface HomeRowEditorModalProps {
@@ -139,6 +140,7 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
             updateFrequency: col.updateFrequency,
             lastCheckedAt: col.lastCheckedAt,
             lastUpdateCount: col.lastUpdateCount,
+            showOnPublicProfile: col.showOnPublicProfile,
         }),
         []
     )
@@ -474,6 +476,29 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
         [userId, updateList, updateSystemRecommendation, showToast]
     )
 
+    // Toggle public profile display
+    const handleTogglePublicDisplay = useCallback(
+        async (row: DisplayRow) => {
+            if (!userId) return
+
+            // System recommendations cannot be toggled for public display
+            if (row.isSystemRecommendation) return
+
+            try {
+                const newValue = !(row.showOnPublicProfile ?? true)
+                await updateList(row.id, { showOnPublicProfile: newValue })
+                showToast(
+                    'success',
+                    newValue ? 'Collection visible on profile' : 'Collection hidden from profile'
+                )
+            } catch (error) {
+                console.error('Failed to toggle public display:', error)
+                showToast('error', 'Failed to update collection')
+            }
+        },
+        [userId, updateList, showToast]
+    )
+
     // Page title and icon
     const _pageTitle = pageType === 'home' ? 'Home' : pageType === 'movies' ? 'Movies' : 'TV Shows'
     const PageIcon =
@@ -573,6 +598,9 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
                                                 onEdit={() => handleEdit(row)}
                                                 onDelete={() => handleDelete(row)}
                                                 onToggle={() => handleToggle(row)}
+                                                onTogglePublicDisplay={() =>
+                                                    handleTogglePublicDisplay(row)
+                                                }
                                                 onMoveUp={() => handleMoveUp(row)}
                                                 onMoveDown={() => handleMoveDown(row)}
                                                 isFirst={

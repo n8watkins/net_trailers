@@ -11,6 +11,7 @@ interface SortableCollectionCardProps {
     onEdit: (row: DisplayRow) => void
     onDelete: (row: DisplayRow) => void
     onToggle?: (row: DisplayRow) => void
+    onTogglePublicDisplay?: (row: DisplayRow) => void
     onMoveUp?: (row: DisplayRow) => void
     onMoveDown?: (row: DisplayRow) => void
     isFirst?: boolean
@@ -28,6 +29,7 @@ export const SortableCollectionCard = memo(function SortableCollectionCard({
     onEdit,
     onDelete,
     onToggle,
+    onTogglePublicDisplay,
     onMoveUp,
     onMoveDown,
     isFirst,
@@ -70,6 +72,7 @@ export const SortableCollectionCard = memo(function SortableCollectionCard({
                 row={row}
                 onEdit={onEdit}
                 onDelete={onDelete}
+                onTogglePublicDisplay={onTogglePublicDisplay}
                 onMoveUp={onMoveUp}
                 onMoveDown={onMoveDown}
                 dragHandleProps={dragHandleProps}
