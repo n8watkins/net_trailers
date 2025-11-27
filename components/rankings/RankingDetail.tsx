@@ -256,20 +256,6 @@ export function RankingDetail({
                     </div>
                 </div>
 
-                {/* Tags */}
-                {ranking.tags && ranking.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-4">
-                        {ranking.tags.map((tag) => (
-                            <span
-                                key={tag}
-                                className="px-3 py-1 text-sm font-medium bg-zinc-800 text-gray-300 rounded-full"
-                            >
-                                {tag}
-                            </span>
-                        ))}
-                    </div>
-                )}
-
                 {/* Stats */}
                 <div className="flex items-center gap-6 pt-4 border-t border-zinc-800">
                     {/* Like button */}

@@ -99,7 +99,6 @@ export default function RankingDetailPage() {
                 description: currentRanking.description,
                 isPublic: currentRanking.isPublic,
                 itemCount: currentRanking.itemCount,
-                tags: currentRanking.tags,
             })
 
             if (!clonedRankingId) {

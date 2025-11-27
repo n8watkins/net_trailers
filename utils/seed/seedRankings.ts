@@ -2,8 +2,6 @@
  * Seed Rankings
  *
  * Creates sample rankings using actual franchise content from TMDB.
- * Each tag (MCU, DC, Star Wars, Harry Potter, LOTR, Pixar, Disney, Horror,
- * Sci-Fi, Anime, True Crime, Comedy, Romance, Action, Netflix) has 2+ rankings.
  */
 
 import { Movie, TVShow, Content } from '../../typings'
@@ -1462,14 +1460,12 @@ const RANKING_TEMPLATES = [
             MCU_MOVIES.ironMan,
         ],
         tvShows: [],
-        tags: ['mcu'],
     },
     {
         title: 'MCU TV Shows Ranked',
         description: 'Disney+ Marvel series from best to... still pretty good',
         movies: [],
         tvShows: [MCU_TV.loki, MCU_TV.wandaVision, MCU_TV.falconWS],
-        tags: ['mcu'],
     },
 
     // ========== DC (🦇) - 2 rankings ==========
@@ -1489,7 +1485,6 @@ const RANKING_TEMPLATES = [
             DC_MOVIES.manOfSteel,
         ],
         tvShows: [],
-        tags: ['dc'],
     },
     {
         title: 'Best Batman Films of All Time',
@@ -1501,7 +1496,6 @@ const RANKING_TEMPLATES = [
             DC_MOVIES.batmanBegins,
         ],
         tvShows: [],
-        tags: ['dc'],
     },
 
     // ========== Star Wars (⭐) - 2 rankings ==========
@@ -1518,7 +1512,6 @@ const RANKING_TEMPLATES = [
             STAR_WARS_MOVIES.lastJedi,
         ],
         tvShows: [],
-        tags: ['star-wars'],
     },
     {
         title: 'Star Wars TV: The Best of Disney+',
@@ -1531,7 +1524,6 @@ const RANKING_TEMPLATES = [
             STAR_WARS_TV.ahsoka,
             STAR_WARS_TV.obiWan,
         ],
-        tags: ['star-wars'],
     },
 
     // ========== Harry Potter (⚡) - 2 rankings ==========
@@ -1549,7 +1541,6 @@ const RANKING_TEMPLATES = [
             HARRY_POTTER_MOVIES.chamberOfSecrets,
         ],
         tvShows: [],
-        tags: ['harry-potter'],
     },
     {
         title: 'Wizarding World: Harry Potter + Fantastic Beasts',
@@ -1561,7 +1552,6 @@ const RANKING_TEMPLATES = [
             HARRY_POTTER_MOVIES.fantasticBeasts,
         ],
         tvShows: [],
-        tags: ['harry-potter'],
     },
 
     // ========== LOTR (🧙) - 2 rankings ==========
@@ -1570,7 +1560,6 @@ const RANKING_TEMPLATES = [
         description: "Peter Jackson's epic Middle-earth trilogy",
         movies: [LOTR_MOVIES.returnOfKing, LOTR_MOVIES.fellowship, LOTR_MOVIES.twoTowers],
         tvShows: [],
-        tags: ['lotr'],
     },
     {
         title: 'Complete Middle-earth: LOTR + Hobbit + Rings of Power',
@@ -1584,7 +1573,6 @@ const RANKING_TEMPLATES = [
             LOTR_MOVIES.battleFiveArmies,
         ],
         tvShows: [LOTR_TV.ringsOfPower],
-        tags: ['lotr'],
     },
 
     // ========== Pixar (🎨) - 2 rankings ==========
@@ -1604,7 +1592,6 @@ const RANKING_TEMPLATES = [
             PIXAR_MOVIES.insideOut2,
         ],
         tvShows: [],
-        tags: ['pixar'],
     },
     {
         title: 'Pixar Tearjerkers: Most Emotional Films',
@@ -1617,7 +1604,6 @@ const RANKING_TEMPLATES = [
             PIXAR_MOVIES.toyStory,
         ],
         tvShows: [],
-        tags: ['pixar'],
     },
 
     // ========== Disney Animation (👸) - 2 rankings ==========
@@ -1637,7 +1623,6 @@ const RANKING_TEMPLATES = [
             DISNEY_MOVIES.hercules,
         ],
         tvShows: [],
-        tags: ['disney-renaissance'],
     },
     {
         title: 'Disney Princess Movies Ranked',
@@ -1651,7 +1636,6 @@ const RANKING_TEMPLATES = [
             DISNEY_MOVIES.littleMermaid,
         ],
         tvShows: [],
-        tags: ['disney-renaissance'],
     },
 
     // ========== Horror (👻) - 2 rankings ==========
@@ -1671,7 +1655,6 @@ const RANKING_TEMPLATES = [
             HORROR_MOVIES.us,
         ],
         tvShows: [],
-        tags: ['horror'],
     },
     {
         title: 'Best Horror TV Series',
@@ -1683,7 +1666,6 @@ const RANKING_TEMPLATES = [
             HORROR_TV.strangerThings,
             HORROR_TV.walkingDead,
         ],
-        tags: ['horror'],
     },
 
     // ========== Sci-Fi (🚀) - 2 rankings ==========
@@ -1703,14 +1685,12 @@ const RANKING_TEMPLATES = [
             SCIFI_MOVIES.terminator2,
         ],
         tvShows: [],
-        tags: ['sci-fi'],
     },
     {
         title: 'Best Sci-Fi TV Shows',
         description: 'The future is now on the small screen',
         movies: [],
         tvShows: [SCIFI_TV.severance, SCIFI_TV.blackMirror, SCIFI_TV.expanse, SCIFI_TV.westworld],
-        tags: ['sci-fi'],
     },
 
     // ========== Anime (🎌) - 2 rankings ==========
@@ -1725,7 +1705,6 @@ const RANKING_TEMPLATES = [
             ANIME_MOVIES.graveFireflies,
         ],
         tvShows: [],
-        tags: ['anime'],
     },
     {
         title: 'Best Anime Series of All Time',
@@ -1739,7 +1718,6 @@ const RANKING_TEMPLATES = [
             ANIME_TV.jujutsuKaisen,
             ANIME_TV.onePiece,
         ],
-        tags: ['anime'],
     },
 
     // ========== True Crime (🔍) - 2 rankings ==========
@@ -1756,7 +1734,6 @@ const RANKING_TEMPLATES = [
             TRUE_CRIME_MOVIES.sicario,
         ],
         tvShows: [],
-        tags: ['true-crime'],
     },
     {
         title: 'Crime Drama TV: The Best Series',
@@ -1770,7 +1747,6 @@ const RANKING_TEMPLATES = [
             TRUE_CRIME_TV.mindhunter,
             TRUE_CRIME_TV.ozark,
         ],
-        tags: ['true-crime'],
     },
 
     // ========== Comedy (😂) - 2 rankings ==========
@@ -1787,7 +1763,6 @@ const RANKING_TEMPLATES = [
             COMEDY_MOVIES.dumbAndDumber,
         ],
         tvShows: [],
-        tags: ['comedy'],
     },
     {
         title: 'Best Comedy TV Shows',
@@ -1801,7 +1776,6 @@ const RANKING_TEMPLATES = [
             COMEDY_TV.brooklyn99,
             COMEDY_TV.whatWeDoShadows,
         ],
-        tags: ['comedy'],
     },
 
     // ========== Romance (💕) - 2 rankings ==========
@@ -1819,7 +1793,6 @@ const RANKING_TEMPLATES = [
             ROMANCE_MOVIES.loveActually,
         ],
         tvShows: [],
-        tags: ['romance'],
     },
     {
         title: 'Romantic TV Series Worth Watching',
@@ -1831,7 +1804,6 @@ const RANKING_TEMPLATES = [
             ROMANCE_TV.bridgerton,
             ROMANCE_TV.outlander,
         ],
-        tags: ['romance'],
     },
 
     // ========== Action (💥) - 2 rankings ==========
@@ -1850,7 +1822,6 @@ const RANKING_TEMPLATES = [
             ACTION_MOVIES.missionImpossible7,
         ],
         tvShows: [],
-        tags: ['action'],
     },
     {
         title: 'Best Action TV Series',
@@ -1862,7 +1833,6 @@ const RANKING_TEMPLATES = [
             ACTION_TV.houseOfDragon,
             ACTION_TV.reacher,
         ],
-        tags: ['action'],
     },
 
     // ========== Netflix (📺) - 2 rankings ==========
@@ -1877,7 +1847,6 @@ const RANKING_TEMPLATES = [
             NETFLIX_MOVIES.theGrayMan,
         ],
         tvShows: [],
-        tags: ['netflix-originals'],
     },
     {
         title: 'Netflix TV Shows Worth Binging',
@@ -1891,7 +1860,6 @@ const RANKING_TEMPLATES = [
             NETFLIX_TV.wednesday,
             NETFLIX_TV.theWitcher,
         ],
-        tags: ['netflix-originals'],
     },
 ]
 
@@ -1931,7 +1899,6 @@ export async function seedRankings(options: SeedRankingsOptions): Promise<void> 
                     title: template.title,
                     description: template.description,
                     itemCount: items.length,
-                    tags: template.tags,
                 })
 
             if (!rankingId) {

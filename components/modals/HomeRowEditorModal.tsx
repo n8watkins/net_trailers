@@ -484,8 +484,15 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
             // System recommendations cannot be toggled for public display
             if (row.isSystemRecommendation) return
 
+            const newValue = !(row.showOnPublicProfile ?? true)
+
+            // Update local state INSTANTLY for smooth UI
+            setLocalRows((prevRows) =>
+                prevRows.map((r) => (r.id === row.id ? { ...r, showOnPublicProfile: newValue } : r))
+            )
+
+            // Persist to store in background
             try {
-                const newValue = !(row.showOnPublicProfile ?? true)
                 await updateList(row.id, { showOnPublicProfile: newValue })
                 showToast(
                     'success',
@@ -494,6 +501,12 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
             } catch (error) {
                 console.error('Failed to toggle public display:', error)
                 showToast('error', 'Failed to update collection')
+                // Revert local state on error
+                setLocalRows((prevRows) =>
+                    prevRows.map((r) =>
+                        r.id === row.id ? { ...r, showOnPublicProfile: !newValue } : r
+                    )
+                )
             }
         },
         [userId, updateList, showToast]

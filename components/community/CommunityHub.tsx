@@ -9,13 +9,12 @@
 
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import SubPageLayout from '@/components/layout/SubPageLayout'
 import { useRankingStore } from '@/stores/rankingStore'
 import { useAuthStatus } from '@/hooks/useAuthStatus'
 import NetflixLoader from '@/components/common/NetflixLoader'
-import { POPULAR_TAGS } from '@/utils/popularTags'
 import { FORUM_CATEGORIES } from '@/utils/forumCategories'
 import { ThreadCard } from '@/components/forum/ThreadCard'
 import { PollCard } from '@/components/forum/PollCard'
@@ -28,11 +27,8 @@ import { auth } from '@/firebase'
 import {
     TrophyIcon,
     UsersIcon,
-    AdjustmentsHorizontalIcon,
-    FunnelIcon,
     XMarkIcon,
     FireIcon,
-    ClockIcon,
     HeartIcon,
     EyeIcon,
     ChatBubbleLeftRightIcon,
@@ -62,7 +58,6 @@ export default function CommunityHub({ activeTab }: CommunityHubProps) {
         setFilterByMediaType,
     } = useRankingStore()
 
-    const [filterByTag, setFilterByTag] = useState<string | null>(null)
     const [searchQuery, setSearchQuery] = useState('')
 
     const { threads, polls } = useForumStore()
@@ -98,46 +93,6 @@ export default function CommunityHub({ activeTab }: CommunityHubProps) {
                       (item) => item.content.media_type === filterByMediaType
                   )
               })
-
-    // Group rankings by tags
-    const rankingsByTag = useMemo(() => {
-        const grouped: Record<string, typeof communityRankings> = {}
-
-        // Group by tag
-        filteredByMediaType.forEach((ranking) => {
-            if (ranking.tags && ranking.tags.length > 0) {
-                ranking.tags.forEach((tag) => {
-                    if (!grouped[tag]) {
-                        grouped[tag] = []
-                    }
-                    grouped[tag].push(ranking)
-                })
-            } else {
-                // Rankings without tags go to "Other"
-                if (!grouped['Other']) {
-                    grouped['Other'] = []
-                }
-                grouped['Other'].push(ranking)
-            }
-        })
-
-        return grouped
-    }, [filteredByMediaType])
-
-    // Get tag rows to display
-    const tagRows = useMemo(() => {
-        // If specific tag selected, only show that tag
-        if (filterByTag) {
-            return rankingsByTag[filterByTag]
-                ? [{ tag: filterByTag, rankings: rankingsByTag[filterByTag] }]
-                : []
-        }
-
-        // Otherwise show all tags, sorted by ranking count
-        return Object.entries(rankingsByTag)
-            .map(([tag, rankings]) => ({ tag, rankings }))
-            .sort((a, b) => b.rankings.length - a.rankings.length)
-    }, [rankingsByTag, filterByTag])
 
     if (!isInitialized || isLoading) {
         return (
@@ -236,11 +191,7 @@ export default function CommunityHub({ activeTab }: CommunityHubProps) {
                     setSortBy={setSortBy}
                     filterByMediaType={filterByMediaType}
                     setFilterByMediaType={setFilterByMediaType}
-                    filterByTag={filterByTag}
-                    setFilterByTag={setFilterByTag}
                     filteredByMediaType={filteredByMediaType}
-                    rankingsByTag={rankingsByTag}
-                    tagRows={tagRows}
                     handleRankingClick={handleRankingClick}
                     searchQuery={searchQuery}
                     setSearchQuery={setSearchQuery}
@@ -269,11 +220,7 @@ function RankingsTab({
     setSortBy,
     filterByMediaType,
     setFilterByMediaType,
-    filterByTag,
-    setFilterByTag,
     filteredByMediaType,
-    rankingsByTag: _rankingsByTag,
-    tagRows: _tagRows,
     handleRankingClick,
     searchQuery,
     setSearchQuery,
@@ -281,10 +228,9 @@ function RankingsTab({
     hasMore,
 }: any) {
     const router = useRouter()
-    const [tagSearchQuery, setTagSearchQuery] = useState('')
 
     // Apply search filter
-    const searchFilteredRankings = searchQuery
+    const filteredRankings = searchQuery
         ? filteredByMediaType.filter(
               (ranking: any) =>
                   ranking.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -295,20 +241,6 @@ function RankingsTab({
                   )
           )
         : filteredByMediaType
-
-    // Filter rankings by selected tag
-    const finalFilteredRankings = filterByTag
-        ? searchFilteredRankings.filter(
-              (ranking: any) => ranking.tags && ranking.tags.includes(filterByTag)
-          )
-        : searchFilteredRankings
-
-    // Filter tags by search query
-    const filteredTags = POPULAR_TAGS.filter(
-        (tag) =>
-            tag.name.toLowerCase().includes(tagSearchQuery.toLowerCase()) ||
-            tag.description.toLowerCase().includes(tagSearchQuery.toLowerCase())
-    )
 
     return (
         <div className="space-y-6">
@@ -325,18 +257,9 @@ function RankingsTab({
                         <span>
                             Found:{' '}
                             <span className="text-white font-semibold">
-                                {searchFilteredRankings.length}
+                                {filteredRankings.length}
                             </span>{' '}
                             matches
-                        </span>
-                    )}
-                    {filterByTag && (
-                        <span>
-                            In tag:{' '}
-                            <span className="text-white font-semibold">
-                                {finalFilteredRankings.length}
-                            </span>{' '}
-                            rankings
                         </span>
                     )}
                 </div>
@@ -375,7 +298,7 @@ function RankingsTab({
                     </button>
                 </div>
 
-                {/* Search Rankings Input - Above the tag container */}
+                {/* Search Rankings Input */}
                 <div className="relative">
                     <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
@@ -385,72 +308,6 @@ function RankingsTab({
                         placeholder="Search rankings..."
                         className="w-full pl-12 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
                     />
-                </div>
-
-                {/* Tag Filter Container - Yellowish theme */}
-                <div className="bg-yellow-950/30 border-2 border-yellow-600/40 rounded-2xl p-6">
-                    <div className="flex items-center gap-4 mb-4">
-                        {/* Tag Search Input - Left side */}
-                        <div className="w-full sm:w-64 max-w-64">
-                            <div className="relative">
-                                <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                <input
-                                    type="text"
-                                    value={tagSearchQuery}
-                                    onChange={(e) => setTagSearchQuery(e.target.value)}
-                                    placeholder="Search tags..."
-                                    className="w-full pl-10 pr-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
-                                />
-                                {tagSearchQuery && (
-                                    <button
-                                        onClick={() => setTagSearchQuery('')}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-                                    >
-                                        <XMarkIcon className="w-4 h-4" />
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-
-                        <label className="text-sm font-medium text-yellow-400">Filter by Tag</label>
-                    </div>
-
-                    {/* Tag Pills */}
-                    <div className="flex flex-wrap gap-2">
-                        {filteredTags.slice(0, 15).map((tag) => (
-                            <button
-                                key={tag.id}
-                                onClick={() =>
-                                    setFilterByTag(filterByTag === tag.id ? null : tag.id)
-                                }
-                                className={`rounded-full px-3 py-1.5 text-sm font-medium transition-all duration-200 flex items-center gap-1.5 border-2 ${
-                                    filterByTag === tag.id
-                                        ? 'bg-yellow-500 text-black shadow-lg scale-105 border-yellow-500'
-                                        : 'bg-zinc-900 text-gray-300 hover:bg-zinc-800 border-zinc-700 hover:scale-105'
-                                }`}
-                                title={tag.description}
-                            >
-                                <span>{tag.emoji}</span>
-                                <span>{tag.name}</span>
-                            </button>
-                        ))}
-                        {filteredTags.length === 0 && tagSearchQuery && (
-                            <span className="text-sm text-gray-500 py-1">No tags found</span>
-                        )}
-                    </div>
-
-                    {/* Clear Filter Button */}
-                    {filterByTag && (
-                        <div className="mt-3 pt-3 border-t border-zinc-800">
-                            <button
-                                onClick={() => setFilterByTag(null)}
-                                className="text-xs text-yellow-500 hover:text-yellow-400 transition-colors flex items-center gap-1"
-                            >
-                                <XMarkIcon className="w-4 h-4" />
-                                Clear tag filter
-                            </button>
-                        </div>
-                    )}
                 </div>
             </div>
 
@@ -462,9 +319,9 @@ function RankingsTab({
             )}
 
             {/* Rankings Grid */}
-            {finalFilteredRankings.length > 0 ? (
+            {filteredRankings.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {finalFilteredRankings.map((ranking: any) => (
+                    {filteredRankings.map((ranking: any) => (
                         <div
                             key={ranking.id}
                             onClick={() => handleRankingClick(ranking.id)}
@@ -533,30 +390,6 @@ function RankingsTab({
                                             </span>
                                         </div>
 
-                                        {/* Tags */}
-                                        {ranking.tags && ranking.tags.length > 0 && (
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {ranking.tags.slice(0, 3).map((tagId: string) => {
-                                                    const tagInfo = POPULAR_TAGS.find(
-                                                        (t) => t.id === tagId
-                                                    )
-                                                    return (
-                                                        <span
-                                                            key={tagId}
-                                                            className="px-2 py-1 text-xs font-medium bg-zinc-800 text-gray-300 rounded-full"
-                                                        >
-                                                            {tagInfo?.name || tagId}
-                                                        </span>
-                                                    )
-                                                })}
-                                                {ranking.tags.length > 3 && (
-                                                    <span className="px-2 py-1 text-xs font-medium text-gray-500">
-                                                        +{ranking.tags.length - 3}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        )}
-
                                         {/* Stats & actions */}
                                         <div className="flex items-center justify-between pt-2 border-t border-zinc-800">
                                             <div className="flex items-center gap-4 text-sm text-gray-400">
@@ -586,20 +419,18 @@ function RankingsTab({
                         <TrophyIcon className="w-10 h-10 text-gray-600" />
                     </div>
                     <p className="text-gray-400 text-lg mb-2">
-                        {searchQuery || filterByTag
-                            ? 'No rankings match your filters'
-                            : 'No rankings found'}
+                        {searchQuery ? 'No rankings match your search' : 'No rankings found'}
                     </p>
                     <p className="text-gray-500 text-sm">
-                        {searchQuery || filterByTag
-                            ? 'Try adjusting your search or filters'
+                        {searchQuery
+                            ? 'Try a different search term'
                             : 'Be the first to create one!'}
                     </p>
                 </div>
             )}
 
             {/* Load More button */}
-            {hasMore && !searchQuery && !filterByTag && finalFilteredRankings.length > 0 && (
+            {hasMore && !searchQuery && filteredRankings.length > 0 && (
                 <div className="flex justify-center mt-8">
                     <button
                         onClick={onLoadMore}

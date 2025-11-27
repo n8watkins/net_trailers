@@ -64,21 +64,6 @@ export function validateRankingCreation(request: CreateRankingRequest): void {
             `Item count must be between ${RANKING_CONSTRAINTS.MIN_ITEM_COUNT} and ${RANKING_CONSTRAINTS.MAX_ITEM_COUNT}`
         )
     }
-
-    // Tags validation
-    if (request.tags && request.tags.length > RANKING_CONSTRAINTS.MAX_TAGS) {
-        throw new ValidationError(`Maximum ${RANKING_CONSTRAINTS.MAX_TAGS} tags allowed`)
-    }
-
-    if (request.tags) {
-        request.tags.forEach((tag) => {
-            if (tag.length > RANKING_CONSTRAINTS.MAX_TAG_LENGTH) {
-                throw new ValidationError(
-                    `Tag "${tag}" exceeds maximum length of ${RANKING_CONSTRAINTS.MAX_TAG_LENGTH} characters`
-                )
-            }
-        })
-    }
 }
 
 /**
@@ -113,21 +98,6 @@ export function validateRankingUpdate(request: UpdateRankingRequest): void {
                 `Description must be less than ${RANKING_CONSTRAINTS.MAX_DESCRIPTION_LENGTH} characters`
             )
         }
-    }
-
-    // Tags validation (if provided)
-    if (request.tags) {
-        if (request.tags.length > RANKING_CONSTRAINTS.MAX_TAGS) {
-            throw new ValidationError(`Maximum ${RANKING_CONSTRAINTS.MAX_TAGS} tags allowed`)
-        }
-
-        request.tags.forEach((tag) => {
-            if (tag.length > RANKING_CONSTRAINTS.MAX_TAG_LENGTH) {
-                throw new ValidationError(
-                    `Tag "${tag}" exceeds maximum length of ${RANKING_CONSTRAINTS.MAX_TAG_LENGTH} characters`
-                )
-            }
-        })
     }
 
     // Ranked items validation (if provided)

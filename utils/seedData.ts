@@ -1044,7 +1044,6 @@ export async function seedForumPolls({
                 totalVotes,
                 isMultipleChoice: pollData.isMultipleChoice,
                 allowAddOptions: false,
-                tags: [],
                 ...(pollData.description ? { description: pollData.description } : {}),
                 ...(userAvatar ? { userAvatar } : {}),
             }
@@ -1094,7 +1093,6 @@ export async function seedForumPolls({
                 totalVotes: 0,
                 isMultipleChoice: pollData.isMultipleChoice,
                 allowAddOptions: false,
-                tags: [],
                 ...(pollData.description ? { description: pollData.description } : {}),
                 ...(userAvatar ? { userAvatar } : {}),
             })
@@ -1599,20 +1597,17 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
             title: string
             description: string
             items: Content[]
-            tags: string[]
         }> = [
             // === Director & Creator Tags ===
             {
                 title: 'Christopher Nolan: A Masterclass',
                 description: 'Mind-bending films from the legendary director',
                 items: [sampleMovies[8], sampleMovies[3], sampleMovies[18]],
-                tags: ['christopher-nolan'],
             },
             {
                 title: 'Tarantino: Blood, Dialogue & Style',
                 description: 'The unique cinematic vision of Quentin Tarantino',
                 items: [sampleMovies[1], sampleMovies[0]],
-                tags: ['tarantino'],
             },
 
             // === Franchise Tags ===
@@ -1620,43 +1615,36 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                 title: 'Marvel Cinematic Universe Favorites',
                 description: "Earth's mightiest heroes in action",
                 items: [sampleMovies[14], sampleMovies[15], sampleTVShows[5]],
-                tags: ['mcu'],
             },
             {
                 title: 'DC: Dark Knights & Heroes',
                 description: 'The best of the DC Universe',
                 items: [sampleMovies[3], sampleTVShows[12]],
-                tags: ['dc'],
             },
             {
                 title: 'Star Wars: A Galaxy Far, Far Away',
                 description: 'Space opera adventures from a legendary franchise',
                 items: [sampleMovies[18], sampleMovies[16], sampleTVShows[4]],
-                tags: ['star-wars'],
             },
             {
                 title: 'Harry Potter & Magical Worlds',
                 description: 'Wizards, magic, and fantastical adventures',
                 items: [sampleMovies[9], sampleMovies[17], sampleMovies[10]],
-                tags: ['harry-potter', 'fantasy'],
             },
             {
                 title: 'Middle-earth: The Complete Journey',
                 description: 'From the Shire to Mordor - the ultimate fantasy epic',
                 items: [sampleMovies[17], sampleMovies[10], sampleTVShows[17]],
-                tags: ['lotr'],
             },
             {
                 title: 'Fast & Furious: Action Overdrive',
                 description: 'High-octane action and thrilling adventures',
                 items: [sampleMovies[16], sampleMovies[8], sampleTVShows[12]],
-                tags: ['fast-furious', 'action'],
             },
             {
                 title: 'James Bond: Spy Thrillers',
                 description: 'Espionage, intrigue, and international adventure',
                 items: [sampleMovies[0], sampleMovies[1], sampleMovies[3], sampleTVShows[6]],
-                tags: ['james-bond', 'mystery-thriller'],
             },
 
             // === Animation Tags ===
@@ -1664,25 +1652,21 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                 title: 'Studio Ghibli: Animated Poetry',
                 description: 'Hayao Miyazaki and the magic of Studio Ghibli',
                 items: [sampleMovies[9], sampleMovies[7]],
-                tags: ['studio-ghibli'],
             },
             {
                 title: 'Anime Legends',
                 description: 'The best anime has to offer',
                 items: [sampleMovies[9], sampleMovies[7], sampleTVShows[2], sampleTVShows[15]],
-                tags: ['anime'],
             },
             {
                 title: 'Pixar: Stories That Move You',
                 description: 'Heartfelt animated adventures from Pixar',
                 items: [sampleMovies[2], sampleMovies[7], sampleMovies[9]],
-                tags: ['pixar'],
             },
             {
                 title: 'Disney Animation Classics',
                 description: 'The magic of Disney animated films',
                 items: [sampleMovies[9], sampleMovies[7], sampleTVShows[2]],
-                tags: ['disney-renaissance'],
             },
 
             // === Genre Tags ===
@@ -1696,7 +1680,6 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                     sampleTVShows[14],
                     sampleTVShows[7],
                 ],
-                tags: ['horror'],
             },
             {
                 title: 'Sci-Fi Mind Benders',
@@ -1708,7 +1691,6 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                     sampleTVShows[3],
                     sampleTVShows[14],
                 ],
-                tags: ['sci-fi'],
             },
             {
                 title: 'Comedy Gold',
@@ -1720,13 +1702,11 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                     sampleTVShows[10],
                     sampleTVShows[3],
                 ],
-                tags: ['comedy'],
             },
             {
                 title: 'Romance & Heart',
                 description: 'Love stories that touched our hearts',
                 items: [sampleMovies[7], sampleMovies[2], sampleMovies[21], sampleTVShows[9]],
-                tags: ['romance'],
             },
             {
                 title: 'Edge-of-Your-Seat Thrillers',
@@ -1740,19 +1720,16 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                     sampleTVShows[6],
                     sampleTVShows[16],
                 ],
-                tags: ['mystery-thriller'],
             },
             {
                 title: 'Musicals & Spectacles',
                 description: 'Stories told through song and dance',
                 items: [sampleMovies[7], sampleMovies[9], sampleMovies[2]],
-                tags: ['musicals'],
             },
             {
                 title: 'Sports Legends',
                 description: 'Inspiring stories of athletic triumph',
                 items: [sampleMovies[22], sampleMovies[2]],
-                tags: ['sports'],
             },
 
             // === Category Tags ===
@@ -1767,7 +1744,6 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                     sampleTVShows[6],
                     sampleTVShows[18],
                 ],
-                tags: ['true-crime', 'heist-crime'],
             },
             {
                 title: 'Oscar-Winning Masterpieces',
@@ -1779,7 +1755,6 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                     sampleMovies[10],
                     sampleMovies[23],
                 ],
-                tags: ['oscar-winners'],
             },
             {
                 title: 'Golden Age Classics',
@@ -1791,7 +1766,6 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                     sampleMovies[24],
                     sampleMovies[22],
                 ],
-                tags: ['classic-hollywood'],
             },
             {
                 title: 'Based on Great Books',
@@ -1805,13 +1779,11 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                     sampleTVShows[1],
                     sampleTVShows[7],
                 ],
-                tags: ['based-on-books'],
             },
             {
                 title: 'True Stories: Biographical Films',
                 description: 'Real lives, incredible stories',
                 items: [sampleMovies[6], sampleMovies[19], sampleTVShows[19], sampleTVShows[18]],
-                tags: ['biographical'],
             },
 
             // === Platform Tags ===
@@ -1819,7 +1791,6 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                 title: 'Netflix Originals Worth Watching',
                 description: 'The best original content from Netflix',
                 items: [sampleTVShows[14], sampleTVShows[16], sampleTVShows[7]],
-                tags: ['netflix-originals'],
             },
         ]
 
@@ -1848,7 +1819,6 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
                             title: rankingData.title,
                             description: rankingData.description,
                             itemCount: rankingData.items.length,
-                            tags: rankingData.tags,
                         }
                     )
 

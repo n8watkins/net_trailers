@@ -2,9 +2,9 @@
  * RankingCreator Component
  *
  * 3-step wizard for creating rankings:
- * Step 1: Basic info (title, description, item count, public/private, tags)
- * Step 2: Search and add content items
- * Step 3: Order items with drag & drop and add notes
+ * Step 1: Pick content items
+ * Step 2: Order items with drag & drop and add notes
+ * Step 3: Name & share settings (title, description, public/private)
  */
 
 'use client'
@@ -67,8 +67,6 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
     const [description, setDescription] = useState('')
     const [itemCount, setItemCount] = useState(10)
     const [isPublic, setIsPublic] = useState(true)
-    const [tags, setTags] = useState<string[]>([])
-    const [tagInput, setTagInput] = useState('')
 
     // Step 2: Content selection
     const [selectedItems, setSelectedItems] = useState<Content[]>([])
@@ -82,7 +80,6 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
             setDescription(existingRanking.description || '')
             setItemCount(existingRanking.itemCount)
             setIsPublic(existingRanking.isPublic)
-            setTags(existingRanking.tags || [])
 
             // Set selected items and ranked items from existing ranking
             const contents = existingRanking.rankedItems.map((item) => item.content)
@@ -127,20 +124,6 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
 
     // Filter tags based on search query using enhanced searchTags function
     const filteredTags = tagSearchQuery ? searchTags(tagSearchQuery) : POPULAR_TAGS
-
-    const handleAddTag = () => {
-        const newTag = tagInput.trim().toLowerCase()
-        // Check for duplicates (case-insensitive)
-        const isDuplicate = tags.some((tag) => tag.toLowerCase() === newTag)
-        if (newTag && !isDuplicate && tags.length < RANKING_CONSTRAINTS.MAX_TAGS) {
-            setTags([...tags, newTag])
-            setTagInput('')
-        }
-    }
-
-    const handleRemoveTag = (tagToRemove: string) => {
-        setTags(tags.filter((tag) => tag !== tagToRemove))
-    }
 
     // Fetch content by tag
     const fetchTagContent = async (tagId: string) => {
@@ -298,7 +281,6 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                     title: title.trim(),
                     description: description.trim() || undefined,
                     isPublic,
-                    tags: tags.length > 0 ? tags : undefined,
                     rankedItems: rankedItems.map((item, index) => ({
                         position: index + 1,
                         content: item.content,
@@ -322,9 +304,6 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                 // Only add optional fields if they have values (Firestore doesn't accept undefined)
                 if (description.trim()) {
                     createRequest.description = description.trim()
-                }
-                if (tags.length > 0) {
-                    createRequest.tags = tags
                 }
 
                 const rankingId = await createRanking(userId, username, avatarUrl, createRequest)
@@ -1331,110 +1310,6 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                                             <span className="font-medium">Private</span>
                                         </button>
                                     </div>
-                                </div>
-
-                                {/* Tags */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                                        Tags (optional)
-                                    </label>
-                                    <div className="flex gap-2 mb-3">
-                                        <input
-                                            type="text"
-                                            value={tagInput}
-                                            onChange={(e) => setTagInput(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') {
-                                                    e.preventDefault()
-                                                    handleAddTag()
-                                                }
-                                            }}
-                                            placeholder="Add a tag..."
-                                            maxLength={RANKING_CONSTRAINTS.MAX_TAG_LENGTH}
-                                            className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500"
-                                        />
-                                        <button
-                                            onClick={handleAddTag}
-                                            disabled={
-                                                !tagInput.trim() ||
-                                                tags.length >= RANKING_CONSTRAINTS.MAX_TAGS
-                                            }
-                                            className="px-4 py-2 bg-yellow-500 text-black font-medium rounded-lg hover:bg-yellow-400 disabled:bg-zinc-800 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors"
-                                        >
-                                            <PlusIcon className="w-5 h-5" />
-                                        </button>
-                                    </div>
-                                    {tags.length > 0 && (
-                                        <div className="flex flex-wrap gap-2 mb-3">
-                                            {tags.map((tag) => (
-                                                <span
-                                                    key={tag}
-                                                    className="flex items-center gap-1 px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full border border-yellow-500/30"
-                                                >
-                                                    {tag}
-                                                    <button
-                                                        onClick={() => handleRemoveTag(tag)}
-                                                        className="hover:text-red-500 transition-colors"
-                                                    >
-                                                        <XMarkIcon className="w-4 h-4" />
-                                                    </button>
-                                                </span>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    {/* Suggested Tags from POPULAR_TAGS */}
-                                    {tags.length < RANKING_CONSTRAINTS.MAX_TAGS && (
-                                        <div className="mb-3">
-                                            <p className="text-xs text-gray-500 mb-2">
-                                                Suggested tags (click to add):
-                                            </p>
-                                            <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-2">
-                                                {POPULAR_TAGS.filter(
-                                                    (popularTag) =>
-                                                        !tags.some(
-                                                            (tag) =>
-                                                                tag.toLowerCase() ===
-                                                                popularTag.name.toLowerCase()
-                                                        )
-                                                )
-                                                    .slice(0, 15)
-                                                    .map((popularTag) => (
-                                                        <button
-                                                            key={popularTag.id}
-                                                            onClick={() => {
-                                                                const isDuplicate = tags.some(
-                                                                    (tag) =>
-                                                                        tag.toLowerCase() ===
-                                                                        popularTag.name.toLowerCase()
-                                                                )
-                                                                if (
-                                                                    tags.length <
-                                                                        RANKING_CONSTRAINTS.MAX_TAGS &&
-                                                                    !isDuplicate
-                                                                ) {
-                                                                    setTags([
-                                                                        ...tags,
-                                                                        popularTag.name.toLowerCase(),
-                                                                    ])
-                                                                }
-                                                            }}
-                                                            className="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-gray-300 hover:text-white rounded-full text-xs font-medium transition-colors"
-                                                            title={popularTag.description}
-                                                        >
-                                                            <span className="mr-1">
-                                                                {popularTag.emoji}
-                                                            </span>
-                                                            {popularTag.name}
-                                                        </button>
-                                                    ))}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <p className="text-sm text-gray-500">
-                                        {tags.length}/{RANKING_CONSTRAINTS.MAX_TAGS} tags
-                                    </p>
                                 </div>
                             </div>
                         )}

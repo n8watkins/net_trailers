@@ -11,7 +11,6 @@ import './load-env'
 import { db, auth } from '../firebase'
 import { collection, setDoc, doc } from 'firebase/firestore'
 import { signInWithEmailAndPassword } from 'firebase/auth'
-import { POPULAR_TAGS } from '../utils/popularTags'
 
 // Sample user data for seed rankings
 const SEED_USERS = [
@@ -43,20 +42,17 @@ const SEED_USERS = [
 ]
 
 // Sample rankings to create - EXPANDED for interesting community display
-// NOTE: Tag names MUST match exactly the 'name' field from POPULAR_TAGS in utils/popularTags.ts
 const SEED_RANKINGS = [
     // MCU (tag.name = 'MCU')
     {
         title: 'Top 10 MCU Movies',
         description: 'The best Marvel Cinematic Universe films ranked',
-        tags: ['MCU'],
         contentIds: [24428, 299534, 299536, 271110, 284054, 315635, 363088, 429617, 1771, 10138],
         itemCount: 10,
     },
     {
         title: 'MCU Villains Ranked',
         description: 'Best antagonists in the Marvel Cinematic Universe',
-        tags: ['MCU', 'Action'],
         contentIds: [
             299536, 284054, 299534, 271110, 497698, 453395, 616037, 640146, 505642, 447365,
         ],
@@ -67,14 +63,12 @@ const SEED_RANKINGS = [
     {
         title: 'DC Universe Ranked',
         description: 'Best superhero films from DC Comics',
-        tags: ['DC', 'Action'],
         contentIds: [155, 268896, 453405, 436270, 297761, 209112],
         itemCount: 6,
     },
     {
         title: 'Dark Knight Trilogy',
         description: "Christopher Nolan's Batman masterpiece",
-        tags: ['DC', 'Nolan'],
         contentIds: [155, 49026, 272],
         itemCount: 3,
     },
@@ -83,14 +77,12 @@ const SEED_RANKINGS = [
     {
         title: 'Star Wars Movies Ranked',
         description: 'All Star Wars films from best to worst',
-        tags: ['Star Wars'],
         contentIds: [1891, 11, 1892, 1895, 140607, 1893, 1894, 181808, 181812],
         itemCount: 9,
     },
     {
         title: 'Original Trilogy vs Prequels',
         description: 'Comparing the two Star Wars eras',
-        tags: ['Star Wars', 'Sci-Fi'],
         contentIds: [11, 1891, 1892, 1893, 1894, 1895],
         itemCount: 6,
     },
@@ -99,14 +91,12 @@ const SEED_RANKINGS = [
     {
         title: 'Harry Potter Ranked',
         description: 'All 8 magical films ordered by wizardry',
-        tags: ['Harry Potter'],
         contentIds: [674, 767, 673, 675, 671, 672, 12445, 12444],
         itemCount: 8,
     },
     {
         title: 'Best Harry Potter Moments',
         description: 'Films with the most memorable scenes',
-        tags: ['Harry Potter', 'Fantasy'],
         contentIds: [673, 674, 12445, 767, 675],
         itemCount: 5,
     },
@@ -115,14 +105,12 @@ const SEED_RANKINGS = [
     {
         title: 'Middle-earth Journey',
         description: 'LOTR and Hobbit trilogy ranked',
-        tags: ['LOTR'],
         contentIds: [122, 120, 121, 122917, 57158, 49051],
         itemCount: 6,
     },
     {
         title: 'Lord of the Rings Trilogy',
         description: "Peter Jackson's masterpiece ranked",
-        tags: ['LOTR', 'Fantasy'],
         contentIds: [122, 121, 120],
         itemCount: 3,
     },
@@ -131,14 +119,12 @@ const SEED_RANKINGS = [
     {
         title: 'Pixar Perfection',
         description: 'The animation studio that makes adults cry',
-        tags: ['Pixar'],
         contentIds: [862, 863, 585, 508442, 284053, 10681, 920, 568124],
         itemCount: 8,
     },
     {
         title: 'Best Pixar Emotional Moments',
         description: 'Films that hit right in the feels',
-        tags: ['Pixar'],
         contentIds: [508442, 14160, 585, 150540, 355338],
         itemCount: 5,
     },
@@ -147,14 +133,12 @@ const SEED_RANKINGS = [
     {
         title: 'Disney Renaissance Classics',
         description: 'The golden age of Disney animation',
-        tags: ['Disney Animation'],
         contentIds: [8587, 10020, 10530, 10144, 12124],
         itemCount: 5,
     },
     {
         title: 'Modern Disney Favorites',
         description: 'Best Disney animated films of the 2010s-2020s',
-        tags: ['Disney Animation'],
         contentIds: [109445, 150540, 568124, 329996, 38757],
         itemCount: 5,
     },
@@ -163,14 +147,12 @@ const SEED_RANKINGS = [
     {
         title: 'Horror Movies That Actually Scare',
         description: 'The most terrifying horror films',
-        tags: ['Horror'],
         contentIds: [346364, 419430, 530385, 447332, 760741, 646385, 694, 539],
         itemCount: 8,
     },
     {
         title: 'Modern Horror Classics',
         description: 'Best horror films of the 2010s-2020s',
-        tags: ['Horror', 'Thriller'],
         contentIds: [419430, 496243, 530385, 447332, 521777, 891699],
         itemCount: 6,
     },
@@ -179,14 +161,12 @@ const SEED_RANKINGS = [
     {
         title: 'Best Sci-Fi of All Time',
         description: 'Mind-bending science fiction masterpieces',
-        tags: ['Sci-Fi'],
         contentIds: [603, 157336, 335984, 329865, 27205, 440021, 693134],
         itemCount: 7,
     },
     {
         title: 'Space Exploration Epics',
         description: 'Journey through the cosmos',
-        tags: ['Sci-Fi'],
         contentIds: [157336, 329865, 19995, 76600, 693134],
         itemCount: 5,
     },
@@ -195,14 +175,12 @@ const SEED_RANKINGS = [
     {
         title: 'Best Anime Films',
         description: 'Essential anime movies everyone should see',
-        tags: ['Anime'],
         contentIds: [129, 372058, 508965, 584828, 4935, 128],
         itemCount: 6,
     },
     {
         title: 'Anime Films for Beginners',
         description: 'Perfect introduction to anime cinema',
-        tags: ['Anime', 'Ghibli'],
         contentIds: [129, 4935, 128, 372058],
         itemCount: 4,
     },
@@ -211,14 +189,12 @@ const SEED_RANKINGS = [
     {
         title: 'True Crime Thrillers',
         description: 'Based on real events that shocked the world',
-        tags: ['True Crime'],
         contentIds: [19404, 278, 106646, 13223, 14161, 205596],
         itemCount: 6,
     },
     {
         title: 'Crime Drama Essentials',
         description: 'The greatest crime dramas ever made',
-        tags: ['True Crime', 'Thriller'],
         contentIds: [238, 240, 769, 680, 278],
         itemCount: 5,
     },
@@ -227,14 +203,12 @@ const SEED_RANKINGS = [
     {
         title: 'Comedy Classics That Still Hit',
         description: 'Timeless comedies that never get old',
-        tags: ['Comedy'],
         contentIds: [293660, 383498, 13475, 102651, 107, 1091],
         itemCount: 6,
     },
     {
         title: 'Best Comedy Duos',
         description: 'Films with iconic comedic partnerships',
-        tags: ['Comedy', 'Action'],
         contentIds: [293660, 383498, 762430, 102651, 107],
         itemCount: 5,
     },
@@ -243,14 +217,12 @@ const SEED_RANKINGS = [
     {
         title: 'Modern Romance Favorites',
         description: 'Contemporary love stories that make you believe',
-        tags: ['Romance'],
         contentIds: [597, 11036, 194662, 381284],
         itemCount: 4,
     },
     {
         title: 'Romantic Comedies Ranked',
         description: 'Feel-good rom-coms for any mood',
-        tags: ['Romance', 'Comedy'],
         contentIds: [194662, 413594, 588228],
         itemCount: 3,
     },
@@ -259,14 +231,12 @@ const SEED_RANKINGS = [
     {
         title: 'Pure Action Adrenaline',
         description: 'Non-stop action from start to finish',
-        tags: ['Action'],
         contentIds: [245891, 324552, 458156, 603692, 361743, 269149],
         itemCount: 6,
     },
     {
         title: 'John Wick Series Ranked',
         description: 'The ultimate action franchise',
-        tags: ['Action'],
         contentIds: [603692, 458156, 324552, 245891],
         itemCount: 4,
     },
@@ -275,14 +245,12 @@ const SEED_RANKINGS = [
     {
         title: 'Best Netflix Original Films',
         description: 'Netflix movies worth your time',
-        tags: ['Netflix'],
         contentIds: [419430, 452832, 762430, 661374, 631842, 447362],
         itemCount: 6,
     },
     {
         title: 'Netflix Hidden Gems',
         description: 'Underrated Netflix originals you might have missed',
-        tags: ['Netflix'],
         contentIds: [661374, 447362, 568124, 631842],
         itemCount: 4,
     },
@@ -291,7 +259,6 @@ const SEED_RANKINGS = [
     {
         title: 'Christopher Nolan Masterpieces',
         description: 'Ranking the genius works of Christopher Nolan',
-        tags: ['Nolan'],
         contentIds: [27205, 155, 157336, 872585, 577922, 1124, 77],
         itemCount: 7,
     },
@@ -300,14 +267,12 @@ const SEED_RANKINGS = [
     {
         title: 'Studio Ghibli Must-Watch',
         description: 'Essential Studio Ghibli films everyone should see',
-        tags: ['Ghibli'],
         contentIds: [129, 810, 4935, 128, 10515, 38142, 12429, 10681],
         itemCount: 8,
     },
     {
         title: 'Ghibli for Beginners',
         description: 'Perfect introduction to Studio Ghibli magic',
-        tags: ['Ghibli', 'Anime'],
         contentIds: [129, 810, 4935, 128, 10515],
         itemCount: 5,
     },
@@ -316,7 +281,6 @@ const SEED_RANKINGS = [
     {
         title: 'Tarantino Universe Ranked',
         description: 'All Tarantino films from best to brilliant',
-        tags: ['Tarantino'],
         contentIds: [680, 24, 16869, 68718, 273248, 466272, 641],
         itemCount: 7,
     },
@@ -325,14 +289,12 @@ const SEED_RANKINGS = [
     {
         title: 'James Bond Rankings',
         description: 'All-time best 007 films ranked',
-        tags: ['007', 'Action'],
         contentIds: [646, 37724, 36557, 370172, 253405, 667, 708, 657, 253, 668],
         itemCount: 10,
     },
     {
         title: 'Daniel Craig Bond Era',
         description: 'Ranking the Craig 007 films',
-        tags: ['007'],
         contentIds: [370172, 646, 37724, 253405, 36557],
         itemCount: 5,
     },
@@ -341,7 +303,6 @@ const SEED_RANKINGS = [
     {
         title: 'Fantasy Adventures for the Whole Family',
         description: 'Epic fantasy films perfect for family viewing',
-        tags: ['Fantasy'],
         contentIds: [120, 122, 121, 671, 672, 673, 674, 10191],
         itemCount: 8,
     },
@@ -350,14 +311,12 @@ const SEED_RANKINGS = [
     {
         title: 'Mystery Thrillers',
         description: 'Keep you guessing until the end',
-        tags: ['Thriller'],
         contentIds: [550, 77, 489931, 745, 274, 155, 106646, 680],
         itemCount: 8,
     },
     {
         title: 'Psychological Thrillers',
         description: 'Mind-bending suspense',
-        tags: ['Thriller'],
         contentIds: [77, 745, 274, 550, 489931],
         itemCount: 5,
     },
@@ -366,7 +325,6 @@ const SEED_RANKINGS = [
     {
         title: 'Top Heist Movies',
         description: 'The greatest heist and crime films',
-        tags: ['Heist'],
         contentIds: [161, 163, 298, 680, 107, 370172, 207703],
         itemCount: 7,
     },
@@ -375,7 +333,6 @@ const SEED_RANKINGS = [
     {
         title: 'Oscar Winners of the 2020s',
         description: 'Best Picture winners this decade',
-        tags: ['Oscars'],
         contentIds: [872585, 792307, 505642, 381284],
         itemCount: 4,
     },
@@ -384,7 +341,6 @@ const SEED_RANKINGS = [
     {
         title: 'Classic Hollywood Gold',
         description: 'Timeless classics from the golden age of cinema',
-        tags: ['Classic Hollywood'],
         contentIds: [238, 240, 389, 429, 19404, 613, 311, 424],
         itemCount: 8,
     },
@@ -393,7 +349,6 @@ const SEED_RANKINGS = [
     {
         title: 'Sports Movies That Inspire',
         description: 'Motivational sports films that touch the heart',
-        tags: ['Sports'],
         contentIds: [1366, 173995, 480530, 522240, 37257, 391698],
         itemCount: 6,
     },
@@ -402,7 +357,6 @@ const SEED_RANKINGS = [
     {
         title: 'Modern Musical Masterpieces',
         description: 'Contemporary films that make you want to sing',
-        tags: ['Musicals'],
         contentIds: [313369, 360814, 109439, 508442, 284053],
         itemCount: 5,
     },
@@ -411,7 +365,6 @@ const SEED_RANKINGS = [
     {
         title: 'Fast & Furious Ranked',
         description: 'All F&F films by adrenaline level',
-        tags: ['Fast & Furious', 'Action'],
         contentIds: [51497, 337339, 168259, 384018, 385687, 9799],
         itemCount: 6,
     },
@@ -420,7 +373,6 @@ const SEED_RANKINGS = [
     {
         title: 'Best Book Adaptations',
         description: 'When the movie does the book justice',
-        tags: ['Based on Books'],
         contentIds: [120, 671, 278, 13, 440021],
         itemCount: 5,
     },
@@ -429,7 +381,6 @@ const SEED_RANKINGS = [
     {
         title: 'Biographical Films That Inspire',
         description: 'True stories that shaped history',
-        tags: ['Biographical'],
         contentIds: [872585, 424, 13223, 205596, 314365, 381284],
         itemCount: 6,
     },
@@ -522,7 +473,6 @@ async function createSeedRanking(
         views: Math.floor(Math.random() * 200),
         contentIds: validContent.map((c) => c.id),
         contentTitles: validContent.map((c) => c.title),
-        tags: rankingData.tags,
     }
 
     return ranking
@@ -567,18 +517,6 @@ async function seedRankings() {
         }
 
         console.log('\n🎉 Seed complete! Created', SEED_RANKINGS.length, 'rankings.')
-        console.log('\n📊 Tag distribution:')
-        const tagCounts: Record<string, number> = {}
-        SEED_RANKINGS.forEach((r) => {
-            r.tags.forEach((tag) => {
-                tagCounts[tag] = (tagCounts[tag] || 0) + 1
-            })
-        })
-        Object.entries(tagCounts)
-            .sort((a, b) => b[1] - a[1])
-            .forEach(([tag, count]) => {
-                console.log(`  - ${tag}: ${count} ranking${count > 1 ? 's' : ''}`)
-            })
     } catch (error) {
         console.error('❌ Error seeding rankings:', error)
         throw error

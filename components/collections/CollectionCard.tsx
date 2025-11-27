@@ -1,14 +1,7 @@
 'use client'
 
 import React, { useState, memo } from 'react'
-import {
-    PencilIcon,
-    TrashIcon,
-    Bars3Icon,
-    BellIcon,
-    EyeIcon,
-    EyeSlashIcon,
-} from '@heroicons/react/24/outline'
+import { PencilIcon, TrashIcon, Bars3Icon, BellIcon } from '@heroicons/react/24/outline'
 import { DisplayRow } from '../../types/collections'
 import { getUnifiedGenresByMediaType } from '../../constants/unifiedGenres'
 import { DeleteConfirmationModal } from '../modals/DeleteConfirmationModal'
@@ -129,27 +122,35 @@ export const CollectionCard = memo(function CollectionCard({
                     </div>
 
                     {/* Actions */}
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 items-center">
                         {/* Public Display Toggle */}
-                        {onTogglePublicDisplay && (
+                        {onTogglePublicDisplay && !row.isSystemRecommendation && (
                             <button
+                                type="button"
                                 onClick={() => onTogglePublicDisplay(row)}
-                                className={`p-2 rounded-lg transition-colors shrink-0 ${
+                                className={`relative inline-flex h-7 w-24 items-center rounded-full transition-all shrink-0 ${
                                     row.showOnPublicProfile !== false
-                                        ? 'bg-blue-900/30 hover:bg-blue-900/50 text-blue-400'
-                                        : 'bg-gray-800 hover:bg-gray-700 text-gray-400'
+                                        ? 'bg-blue-600'
+                                        : 'bg-gray-600'
                                 }`}
                                 title={
                                     row.showOnPublicProfile !== false
-                                        ? 'Visible on public profile'
-                                        : 'Hidden from public profile'
+                                        ? 'Visible on public profile - click to hide'
+                                        : 'Hidden from public profile - click to show'
                                 }
                             >
-                                {row.showOnPublicProfile !== false ? (
-                                    <EyeIcon className="w-5 h-5" />
-                                ) : (
-                                    <EyeSlashIcon className="w-5 h-5" />
-                                )}
+                                {/* Text inside toggle */}
+                                <span className="absolute inset-0 flex items-center justify-center text-[11px] font-semibold text-white pointer-events-none">
+                                    {row.showOnPublicProfile !== false ? 'Public' : 'Private'}
+                                </span>
+                                {/* Sliding circle */}
+                                <span
+                                    className={`inline-block h-5 w-5 transform rounded-full bg-white transition-all duration-200 relative z-10 shadow-md ${
+                                        row.showOnPublicProfile !== false
+                                            ? 'translate-x-[68px]'
+                                            : 'translate-x-1'
+                                    }`}
+                                />
                             </button>
                         )}
 

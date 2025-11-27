@@ -136,7 +136,6 @@ export async function createRanking(
         views: 0,
         contentIds: [],
         contentTitles: [],
-        tags: request.tags,
     }
 
     // Remove undefined values before saving to Firestore
@@ -327,9 +326,6 @@ export async function updateRanking(
         }
         if (updates.itemCount !== undefined) {
             sanitizedUpdates.itemCount = updates.itemCount
-        }
-        if (updates.tags !== undefined) {
-            sanitizedUpdates.tags = updates.tags
         }
 
         transaction.update(rankingRef, {

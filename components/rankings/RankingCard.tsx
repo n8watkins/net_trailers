@@ -153,25 +153,6 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
                         </div>
                     )}
 
-                    {/* Tags */}
-                    {ranking.tags && ranking.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5">
-                            {ranking.tags.slice(0, 3).map((tag) => (
-                                <span
-                                    key={tag}
-                                    className="px-2 py-1 text-xs font-medium bg-zinc-800 text-gray-300 rounded-full hover:bg-zinc-700 transition-colors"
-                                >
-                                    {tag}
-                                </span>
-                            ))}
-                            {ranking.tags.length > 3 && (
-                                <span className="px-2 py-1 text-xs font-medium text-gray-500">
-                                    +{ranking.tags.length - 3}
-                                </span>
-                            )}
-                        </div>
-                    )}
-
                     {/* Stats & actions */}
                     <div className="flex items-center justify-between pt-2 border-t border-zinc-800">
                         <div className="flex items-center gap-4 text-sm text-gray-400">

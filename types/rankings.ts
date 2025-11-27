@@ -49,7 +49,6 @@ export interface Ranking {
     // Search optimization (denormalized for faster queries)
     contentIds: number[] // All TMDB content IDs in this ranking
     contentTitles: string[] // All content titles (for search)
-    tags?: string[] // Optional user-added tags
 
     // Sharing
     shareSettings?: ShareSettings
@@ -115,7 +114,6 @@ export interface CreateRankingRequest {
     description?: string
     isPublic?: boolean // Defaults to true
     itemCount: number // 5, 10, 20, etc.
-    tags?: string[]
 }
 
 /**
@@ -128,7 +126,6 @@ export interface UpdateRankingRequest {
     isPublic?: boolean
     itemCount?: number
     rankedItems?: RankedItem[]
-    tags?: string[]
 }
 
 /**

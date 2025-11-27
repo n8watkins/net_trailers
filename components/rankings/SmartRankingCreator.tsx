@@ -240,7 +240,6 @@ export default function SmartRankingCreator({ onSwitchToTraditional }: SmartRank
     const [title, setTitle] = useState('')
     const [description, setDescription] = useState('')
     const [isPublic, setIsPublic] = useState(true)
-    const [tags, setTags] = useState<string[]>([])
 
     // Draft auto-save
     const [lastSearchQuery, setLastSearchQuery] = useState('')
