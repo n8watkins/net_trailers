@@ -16,6 +16,7 @@ import { useToast } from '../../hooks/useToast'
 import { Content, TrendingPerson } from '../../typings'
 import SearchFiltersDropdown from './SearchFiltersDropdown'
 import SearchSuggestionsDropdown from './SearchSuggestionsDropdown'
+import { getRoleFilterForDepartment } from '../../utils/personRole'
 
 interface SearchBarProps {
     placeholder?: string
@@ -292,7 +293,9 @@ export default function SearchBar({
         updateQuery(person.name) // Update search bar text with the person's name
         setShowSuggestions(false)
         inputRef.current?.blur()
-        router.push(`/person/${person.id}`)
+        const role = getRoleFilterForDepartment(person.known_for_department)
+        const url = role ? `/person/${person.id}?role=${role}` : `/person/${person.id}`
+        router.push(url)
     }
 
     const handleClearSearch = (e?: React.MouseEvent) => {
@@ -408,9 +411,12 @@ export default function SearchBar({
 
     // Quick results to show (first 4 results) - based on search mode
     const quickResults = hasSearched && results.length > 0 ? results.slice(0, 4) : []
-    const quickPeopleResults = hasSearched && filteredPeopleResults.length > 0 ? filteredPeopleResults.slice(0, 4) : []
-    const currentQuickResultsCount = searchMode === 'people' ? quickPeopleResults.length : quickResults.length
-    const currentTotalCount = searchMode === 'people' ? filteredPeopleResults.length : results.length
+    const quickPeopleResults =
+        hasSearched && filteredPeopleResults.length > 0 ? filteredPeopleResults.slice(0, 4) : []
+    const currentQuickResultsCount =
+        searchMode === 'people' ? quickPeopleResults.length : quickResults.length
+    const currentTotalCount =
+        searchMode === 'people' ? filteredPeopleResults.length : results.length
     const hasMoreResults = currentTotalCount > 4
 
     // Check if any filters are active
@@ -654,7 +660,10 @@ export default function SearchBar({
             {/* Search Results Dropdown */}
             <SearchSuggestionsDropdown
                 isVisible={
-                    showSuggestions && currentQuickResultsCount > 0 && !isOnSearchPage && !showFilters
+                    showSuggestions &&
+                    currentQuickResultsCount > 0 &&
+                    !isOnSearchPage &&
+                    !showFilters
                 }
                 suggestionsRef={suggestionsRef}
                 query={query}

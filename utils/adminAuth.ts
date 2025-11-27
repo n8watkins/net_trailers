@@ -2,10 +2,12 @@
  * Admin Authentication Utilities
  *
  * Server-side utilities for validating admin access without exposing tokens
+ * SECURITY: Admin credentials are now server-side only (no NEXT_PUBLIC_ prefix)
  */
 
-const ADMIN_UIDS = [process.env.NEXT_PUBLIC_ADMIN_UID || 'YOUR_FIREBASE_UID_HERE']
-const ADMIN_TOKEN = process.env.NEXT_PUBLIC_ADMIN_TOKEN || 'your-secret-admin-token'
+// Server-side only - never exposed to client
+const ADMIN_UIDS = [process.env.ADMIN_UID || 'YOUR_FIREBASE_UID_HERE']
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'your-secret-admin-token'
 
 /**
  * Check if a user ID is an admin

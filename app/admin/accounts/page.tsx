@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSessionStore } from '@/stores/sessionStore'
-import { ArrowLeft, Search, Filter, Download } from 'lucide-react'
+import { ArrowLeft, Search, Download } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import { auth } from '@/firebase'
 

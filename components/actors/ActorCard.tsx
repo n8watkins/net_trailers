@@ -4,14 +4,17 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { TrendingPerson } from '../../typings'
+import { PersonRoleFilter } from '../../utils/personRole'
 
 interface ActorCardProps {
     actor: TrendingPerson
     /** Optional genre filter to pass to person page */
     genreFilter?: string
+    /** Optional role filter (defaults to acting for legacy behavior) */
+    defaultRole?: PersonRoleFilter
 }
 
-export default function ActorCard({ actor, genreFilter }: ActorCardProps) {
+export default function ActorCard({ actor, genreFilter, defaultRole = 'acting' }: ActorCardProps) {
     const router = useRouter()
     const [imageLoaded, setImageLoaded] = useState(false)
     const [imageError, setImageError] = useState(false)
@@ -21,19 +24,27 @@ export default function ActorCard({ actor, genreFilter }: ActorCardProps) {
         ? `https://image.tmdb.org/t/p/w185${actor.profile_path}`
         : null
 
-    // Build URL with role and optional genre filter
-    const personUrl = genreFilter
-        ? `/person/${actor.id}?role=acting&genre=${genreFilter}`
-        : `/person/${actor.id}?role=acting`
+    // Build URL with optional role/genre filters
+    const buildPersonUrl = () => {
+        const params = new URLSearchParams()
+        if (defaultRole) {
+            params.set('role', defaultRole)
+        }
+        if (genreFilter) {
+            params.set('genre', genreFilter)
+        }
+        const queryString = params.toString()
+        return queryString ? `/person/${actor.id}?${queryString}` : `/person/${actor.id}`
+    }
 
     const handleClick = () => {
-        router.push(personUrl)
+        router.push(buildPersonUrl())
     }
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault()
-            router.push(personUrl)
+            router.push(buildPersonUrl())
         }
     }
 

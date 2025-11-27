@@ -147,7 +147,7 @@ export const useProfileStore = create<ProfileState>()(
                 }
             },
 
-            // Create profile for new user
+            // Create profile for new user (or load existing one)
             createProfile: async (
                 userId: string,
                 email: string,
@@ -157,6 +157,14 @@ export const useProfileStore = create<ProfileState>()(
                 set({ isLoading: true, error: null })
 
                 try {
+                    // First check if profile already exists
+                    const existingProfile = await getProfile(userId)
+                    if (existingProfile) {
+                        // Profile already exists, just load it into state
+                        set({ profile: existingProfile, isLoading: false })
+                        return existingProfile
+                    }
+
                     // Try to create username from display name or email first
                     let username: string
                     let attempts = 0

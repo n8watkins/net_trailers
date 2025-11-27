@@ -8,6 +8,7 @@ import useUserData from '../../hooks/useUserData'
 import { filterDislikedContent } from '../../utils/contentFilter'
 import ContentCard from '../common/ContentCard'
 import ActorCard from '../actors/ActorCard'
+import { getRoleFilterForDepartment } from '../../utils/personRole'
 
 interface SearchResultsProps {
     className?: string
@@ -43,7 +44,8 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
     const { hiddenMovies } = useUserData()
 
     // Filter out disliked content from search results (only for content mode)
-    const filteredResults = searchMode === 'content' ? filterDislikedContent(results, hiddenMovies) : []
+    const filteredResults =
+        searchMode === 'content' ? filterDislikedContent(results, hiddenMovies) : []
 
     // Keyboard navigation state (only for search page)
     const [selectedIndex, setSelectedIndex] = useState(-1)
@@ -78,9 +80,14 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
     const currentResultsLength = currentResults.length
 
     // Handle person click
-    const handlePersonClick = useCallback((person: TrendingPerson) => {
-        router.push(`/person/${person.id}`)
-    }, [router])
+    const handlePersonClick = useCallback(
+        (person: TrendingPerson) => {
+            const role = getRoleFilterForDepartment(person.known_for_department)
+            const url = role ? `/person/${person.id}?role=${role}` : `/person/${person.id}`
+            router.push(url)
+        },
+        [router]
+    )
 
     // Keyboard navigation handler
     const handleKeyDown = useCallback(
@@ -129,7 +136,16 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
                 setSelectedIndex(-1)
             }
         },
-        [isOnSearchPage, currentResultsLength, selectedIndex, modal.isOpen, triggerCardClick, searchMode, peopleResults, handlePersonClick]
+        [
+            isOnSearchPage,
+            currentResultsLength,
+            selectedIndex,
+            modal.isOpen,
+            triggerCardClick,
+            searchMode,
+            peopleResults,
+            handlePersonClick,
+        ]
     )
 
     // Set up keyboard event listeners
@@ -147,9 +163,10 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
 
     // Determine if we should show results based on mode
     const hasResults = searchMode === 'content' ? results.length > 0 : peopleResults.length > 0
-    const showEmptyState = searchMode === 'content'
-        ? (isEmpty || (hasSearched && filteredResults.length === 0 && results.length > 0))
-        : (hasSearched && peopleResults.length === 0 && !isLoading)
+    const showEmptyState =
+        searchMode === 'content'
+            ? isEmpty || (hasSearched && filteredResults.length === 0 && results.length > 0)
+            : hasSearched && peopleResults.length === 0 && !isLoading
 
     if (!hasSearched && !isLoading && !hasResults) {
         return null
@@ -300,7 +317,10 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
             {/* Results Grid - Conditional based on search mode */}
             {searchMode === 'people' ? (
                 /* People Results Grid */
-                <div className="flex flex-wrap gap-6 animate-fade-in justify-center sm:justify-start" ref={containerRef}>
+                <div
+                    className="flex flex-wrap gap-6 animate-fade-in justify-center sm:justify-start"
+                    ref={containerRef}
+                >
                     {peopleResults.map((person: TrendingPerson, index) => (
                         <div
                             key={`person-${person.id}-${index}`}
@@ -313,7 +333,12 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
                                     : ''
                             }`}
                         >
-                            <ActorCard actor={person} />
+                            <ActorCard
+                                actor={person}
+                                defaultRole={getRoleFilterForDepartment(
+                                    person.known_for_department
+                                )}
+                            />
                         </div>
                     ))}
                 </div>
@@ -339,18 +364,20 @@ export default function SearchResults({ className = '' }: SearchResultsProps) {
             )}
 
             {/* Loading More (content mode only) */}
-            {searchMode === 'content' && (isLoading || isLoadingAll) && filteredResults.length > 0 && (
-                <div className="flex justify-center py-8">
-                    <div className="flex items-center gap-2">
-                        <div className="animate-spin h-8 w-8 border-2 border-red-500 border-t-transparent rounded-full"></div>
-                        {isLoadingAll && (
-                            <span className="text-gray-400 text-sm">
-                                Loading all results for filtering...
-                            </span>
-                        )}
+            {searchMode === 'content' &&
+                (isLoading || isLoadingAll) &&
+                filteredResults.length > 0 && (
+                    <div className="flex justify-center py-8">
+                        <div className="flex items-center gap-2">
+                            <div className="animate-spin h-8 w-8 border-2 border-red-500 border-t-transparent rounded-full"></div>
+                            {isLoadingAll && (
+                                <span className="text-gray-400 text-sm">
+                                    Loading all results for filtering...
+                                </span>
+                            )}
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
 
             {/* Load More Button (content mode only) */}
             {searchMode === 'content' && hasMore && !isLoading && !isLoadingAll && (

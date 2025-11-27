@@ -34,7 +34,7 @@ export default function ContentMetadata({
 
     return (
         <div
-            className="text-white space-y-4 sm:space-y-6"
+            className="text-white space-y-2.5 sm:space-y-3.5"
             style={{ textShadow: '0 0 3px rgba(0, 0, 0, .8)' }}
         >
             {/* Title */}
@@ -96,10 +96,10 @@ export default function ContentMetadata({
                             href={getIMDbRating(content).url!}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-yellow-400 hover:text-yellow-300 underline text-xs sm:text-sm md:text-base flex items-center gap-1"
+                            className="bg-yellow-400 text-black hover:bg-yellow-500 px-2 py-0.5 rounded text-xs sm:text-sm md:text-base font-semibold transition-colors"
+                            style={{ textShadow: 'none' }}
                         >
-                            <span>IMDb</span>
-                            <ArrowTopRightOnSquareIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+                            IMDb
                         </a>
                     </>
                 )}

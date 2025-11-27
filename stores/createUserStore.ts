@@ -295,117 +295,44 @@ export function createUserStore(options: CreateUserStoreOptions) {
 
         addLikedMovie: async (content: Content) => {
             const state = get()
-            const isAlreadyLiked = state.likedMovies.some((m) => m.id === content.id)
-            if (isAlreadyLiked) {
+
+            // Avoid duplicate writes when already liked
+            const alreadyLiked =
+                state.myRatings.some(
+                    (rating) => rating.content.id === content.id && rating.rating === 'like'
+                ) || state.likedMovies.some((m) => m.id === content.id)
+            if (alreadyLiked) {
                 logger.log(`⚠️ [${trackingContext}] Movie already liked:`, getTitle(content))
                 return
             }
 
-            if (adapter.isAsync) set({ syncStatus: 'syncing' })
-
-            // Mutual exclusion: Remove from hidden if exists
-            const wasHidden = state.hiddenMovies.some((m) => m.id === content.id)
-            const newHiddenMovies = wasHidden
-                ? state.hiddenMovies.filter((m) => m.id !== content.id)
-                : state.hiddenMovies
-            const newLikedMovies = [...state.likedMovies, content]
-
-            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
-            const stateUpdates: Partial<UserStore> = {
-                likedMovies: newLikedMovies,
-                lastActive: newLastActive,
-            }
-            if (wasHidden) {
-                stateUpdates.hiddenMovies = newHiddenMovies
-            }
-            set(stateUpdates)
-
-            try {
-                await saveToStorage(get(), 'addLiked')
-                if (adapter.isAsync) set({ syncStatus: 'synced' })
-            } catch (_error) {
-                if (adapter.isAsync) set({ syncStatus: 'offline' })
-            }
-
+            await get().rateContent(content, 'like')
             logger.log(`👍 [${trackingContext}] Added to liked:`, getTitle(content))
         },
 
         removeLikedMovie: async (contentId: number) => {
-            const state = get()
-            if (adapter.isAsync) set({ syncStatus: 'syncing' })
-
-            const newLikedMovies = state.likedMovies.filter((m) => m.id !== contentId)
-            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
-            set({
-                likedMovies: newLikedMovies,
-                lastActive: newLastActive,
-            })
-
-            try {
-                await saveToStorage(get(), 'removeLiked')
-                if (adapter.isAsync) set({ syncStatus: 'synced' })
-            } catch (_error) {
-                if (adapter.isAsync) set({ syncStatus: 'offline' })
-            }
-
+            await get().removeRating(contentId)
             logger.log(`🗑️ [${trackingContext}] Removed from liked:`, contentId)
         },
 
         addHiddenMovie: async (content: Content) => {
             const state = get()
-            const isAlreadyHidden = state.hiddenMovies.some((m) => m.id === content.id)
-            if (isAlreadyHidden) {
+
+            const alreadyHidden =
+                state.myRatings.some(
+                    (rating) => rating.content.id === content.id && rating.rating === 'dislike'
+                ) || state.hiddenMovies.some((m) => m.id === content.id)
+            if (alreadyHidden) {
                 logger.log(`⚠️ [${trackingContext}] Movie already hidden:`, getTitle(content))
                 return
             }
 
-            if (adapter.isAsync) set({ syncStatus: 'syncing' })
-
-            // Mutual exclusion: Remove from liked if exists
-            const wasLiked = state.likedMovies.some((m) => m.id === content.id)
-            const newLikedMovies = wasLiked
-                ? state.likedMovies.filter((m) => m.id !== content.id)
-                : state.likedMovies
-            const newHiddenMovies = [...state.hiddenMovies, content]
-
-            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
-            const stateUpdates: Partial<UserStore> = {
-                hiddenMovies: newHiddenMovies,
-                lastActive: newLastActive,
-            }
-            if (wasLiked) {
-                stateUpdates.likedMovies = newLikedMovies
-            }
-            set(stateUpdates)
-
-            try {
-                await saveToStorage(get(), 'addHidden')
-                if (adapter.isAsync) set({ syncStatus: 'synced' })
-            } catch (_error) {
-                if (adapter.isAsync) set({ syncStatus: 'offline' })
-            }
-
+            await get().rateContent(content, 'dislike')
             logger.log(`🙈 [${trackingContext}] Added to hidden:`, getTitle(content))
         },
 
         removeHiddenMovie: async (contentId: number) => {
-            const state = get()
-            if (adapter.isAsync) set({ syncStatus: 'syncing' })
-
-            const newHiddenMovies = state.hiddenMovies.filter((m) => m.id !== contentId)
-            const newLastActive = typeof window !== 'undefined' ? Date.now() : 0
-            set({
-                hiddenMovies: newHiddenMovies,
-                lastActive: newLastActive,
-            })
-
-            try {
-                await saveToStorage(get(), 'removeHidden')
-                if (adapter.isAsync) set({ syncStatus: 'synced' })
-            } catch (_error) {
-                if (adapter.isAsync) set({ syncStatus: 'offline' })
-            }
-
+            await get().removeRating(contentId)
             logger.log(`🗑️ [${trackingContext}] Removed from hidden:`, contentId)
         },
 
@@ -415,9 +342,7 @@ export function createUserStore(options: CreateUserStoreOptions) {
             if (adapter.isAsync) set({ syncStatus: 'syncing' })
 
             // Remove existing rating if exists (for re-rating)
-            const existingIndex = state.myRatings.findIndex(
-                (r) => r.content.id === content.id
-            )
+            const existingIndex = state.myRatings.findIndex((r) => r.content.id === content.id)
 
             const newRating: RatedContent = {
                 content,
@@ -511,16 +436,12 @@ export function createUserStore(options: CreateUserStoreOptions) {
 
         getLikedContent: () => {
             const state = get()
-            return state.myRatings
-                .filter((r) => r.rating === 'like')
-                .map((r) => r.content)
+            return state.myRatings.filter((r) => r.rating === 'like').map((r) => r.content)
         },
 
         getDislikedContent: () => {
             const state = get()
-            return state.myRatings
-                .filter((r) => r.rating === 'dislike')
-                .map((r) => r.content)
+            return state.myRatings.filter((r) => r.rating === 'dislike').map((r) => r.content)
         },
 
         createList: async (request: CreateListRequest) => {

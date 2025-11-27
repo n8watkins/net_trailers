@@ -11,10 +11,13 @@ import { useParams } from 'next/navigation'
 import SubPageLayout from '../../../components/layout/SubPageLayout'
 import NetflixLoader from '../../../components/common/NetflixLoader'
 import { UserIcon } from '@heroicons/react/24/outline'
+import { EyeSlashIcon } from '@heroicons/react/24/solid'
 import { FirebaseError } from 'firebase/app'
 import { db } from '../../../firebase'
 import { collection, doc, getDoc, getDocs, query, where, limit } from 'firebase/firestore'
 import type { PublicProfilePayload } from '@/lib/publicProfile'
+import { DEFAULT_PROFILE_VISIBILITY } from '@/types/profile'
+import type { ProfileVisibility } from '@/types/profile'
 import type { Movie, TVShow } from '../../../typings'
 import type { UserList } from '../../../types/collections'
 import type { Ranking } from '../../../types/rankings'
@@ -61,6 +64,10 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
     const userData = userSnap.data() || {}
     const legacyProfile = userData.profile || {}
 
+    // Get visibility settings - default to all visible for backward compatibility
+    const visibility: ProfileVisibility = userData.visibility ??
+        legacyProfile.visibility ?? { ...DEFAULT_PROFILE_VISIBILITY }
+
     const profile: PublicProfileIdentity = {
         username:
             legacyProfile.username ||
@@ -90,14 +97,18 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
           )
         : []
 
-    const rankingsSnap = await getDocs(
-        query(collection(db, 'rankings'), where('userId', '==', userId))
-    )
-    const allRankings = rankingsSnap.docs.map((doc) => doc.data() as Ranking)
-    const publicRankings = sortByRecency(allRankings.filter((ranking) => ranking.isPublic)).slice(
-        0,
-        PROFILE_CONFIG.MAX_PUBLIC_RANKINGS
-    )
+    // Only fetch rankings if visibility allows
+    let publicRankings: Ranking[] = []
+    if (visibility.showRankings) {
+        const rankingsSnap = await getDocs(
+            query(collection(db, 'rankings'), where('userId', '==', userId))
+        )
+        const allRankings = rankingsSnap.docs.map((doc) => doc.data() as Ranking)
+        publicRankings = sortByRecency(allRankings.filter((ranking) => ranking.isPublic)).slice(
+            0,
+            PROFILE_CONFIG.MAX_PUBLIC_RANKINGS
+        )
+    }
 
     const threadsSnap = await getDocs(
         query(collection(db, 'threads'), where('userId', '==', userId))
@@ -215,14 +226,15 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
         profile,
         stats,
         rankings: publicRankings,
-        likedContent,
+        likedContent: visibility.showLikedContent ? likedContent : [],
         collections,
         forum: {
-            threads: threadSummaries,
-            pollsCreated: pollSummaries,
-            pollsVoted: votedPollSummaries,
+            threads: visibility.showThreads ? threadSummaries : [],
+            pollsCreated: visibility.showPollsCreated ? pollSummaries : [],
+            pollsVoted: visibility.showPollsVoted ? votedPollSummaries : [],
         },
-        watchLaterPreview,
+        watchLaterPreview: visibility.showWatchLater ? watchLaterPreview : [],
+        visibility,
     }
 }
 
@@ -270,18 +282,24 @@ export default function UserProfilePage() {
                 } catch (fallbackError) {
                     console.error('[PublicProfile] Fallback client load failed:', fallbackError)
                     if (isMounted) {
-                        let message = (fallbackError as Error).message || 'Failed to load profile'
+                        const errorMessage =
+                            (fallbackError as Error).message || 'Failed to load profile'
+
                         if (
                             fallbackError instanceof FirebaseError &&
                             fallbackError.code === 'permission-denied'
                         ) {
-                            message =
+                            setError(
                                 'Public profile data requires Firebase Admin credentials or viewing your own account.'
+                            )
+                            setProfileData(null)
                         } else if ((apiError as Error).message === 'User not found') {
-                            message = 'User not found'
+                            setError('User not found')
+                            setProfileData(null)
+                        } else {
+                            setError(errorMessage)
+                            setProfileData(null)
                         }
-                        setError(message)
-                        setProfileData(null)
                     }
                 }
             } finally {
@@ -395,33 +413,79 @@ export default function UserProfilePage() {
                 </div>
             </div>
 
-            {/* Bento Grid Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <LikedContentSection likedContent={likedContent} userId={userId} isPublic={true} />
-                <WatchLaterSection
-                    watchLaterPreview={watchLaterPreview}
-                    totalCount={watchLaterPreview.length}
-                    userId={userId}
-                    isPublic={true}
-                />
-            </div>
+            {/* Show private profile message if enablePublicProfile is false */}
+            {!profileData.visibility.enablePublicProfile ? (
+                <div className="bg-zinc-900/50 border border-zinc-700 rounded-xl p-8 text-center">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
+                        <EyeSlashIcon className="w-8 h-8 text-zinc-500" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-white mb-2">Private Profile</h3>
+                    <p className="text-gray-400 text-sm">
+                        This user has chosen to keep their profile content private.
+                    </p>
+                </div>
+            ) : (
+                <>
+                    {/* Bento Grid Layout - only show if at least one section is visible */}
+                    {(profileData.visibility.showLikedContent ||
+                        profileData.visibility.showWatchLater) && (
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                            {profileData.visibility.showLikedContent && (
+                                <LikedContentSection
+                                    likedContent={likedContent}
+                                    userId={userId}
+                                    isPublic={true}
+                                />
+                            )}
+                            {profileData.visibility.showWatchLater && (
+                                <WatchLaterSection
+                                    watchLaterPreview={watchLaterPreview}
+                                    totalCount={watchLaterPreview.length}
+                                    userId={userId}
+                                    isPublic={true}
+                                />
+                            )}
+                        </div>
+                    )}
 
-            {/* Rankings */}
-            <div className="mb-6">
-                <RankingsSection rankings={publicRankings} userId={userId} isPublic={true} />
-            </div>
+                    {/* Rankings */}
+                    {profileData.visibility.showRankings && (
+                        <div className="mb-6">
+                            <RankingsSection
+                                rankings={publicRankings}
+                                userId={userId}
+                                isPublic={true}
+                            />
+                        </div>
+                    )}
 
-            {/* Collections */}
-            <div className="mb-6">
-                <CollectionsSection collections={collections} userId={userId} isPublic={true} />
-            </div>
+                    {/* Collections */}
+                    {profileData.visibility.showCollections && (
+                        <div className="mb-6">
+                            <CollectionsSection
+                                collections={collections}
+                                userId={userId}
+                                isPublic={true}
+                            />
+                        </div>
+                    )}
 
-            {/* Forum Activity */}
-            <ForumActivitySection
-                threads={forumThreads}
-                pollsCreated={forumPollsCreated}
-                pollsVoted={forumPollsVoted}
-            />
+                    {/* Forum Activity - show if any forum section is enabled */}
+                    {(profileData.visibility.showThreads ||
+                        profileData.visibility.showPollsCreated ||
+                        profileData.visibility.showPollsVoted) && (
+                        <ForumActivitySection
+                            threads={profileData.visibility.showThreads ? forumThreads : []}
+                            pollsCreated={
+                                profileData.visibility.showPollsCreated ? forumPollsCreated : []
+                            }
+                            pollsVoted={
+                                profileData.visibility.showPollsVoted ? forumPollsVoted : []
+                            }
+                        />
+                    )}
+                </>
+            )}
         </SubPageLayout>
     )
 }

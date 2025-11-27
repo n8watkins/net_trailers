@@ -29,8 +29,22 @@ import { CreateShareRequest, CreateShareResponse } from '../../../../types/shari
 import { withAuth } from '../../../../lib/auth-middleware'
 import { getAdminDb } from '../../../../lib/firebase-admin'
 import { apiError } from '@/utils/debugLogger'
+import { applyRateLimit, strictLimiter } from '@/lib/apiRateLimiting'
+import { applyCsrfProtection } from '@/lib/csrfProtection'
 
 async function handleCreateShare(request: NextRequest, userId: string): Promise<NextResponse> {
+    // Apply CSRF protection
+    const csrfResponse = applyCsrfProtection(request)
+    if (csrfResponse) {
+        return csrfResponse
+    }
+
+    // Apply strict rate limiting for share creation
+    const rateLimitResponse = applyRateLimit(request, strictLimiter, 'share-create')
+    if (rateLimitResponse) {
+        return rateLimitResponse
+    }
+
     try {
         // Parse request body
         const body = (await request.json()) as CreateShareRequest

@@ -4,15 +4,22 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { TrendingPerson, Content, getTitle } from '../../typings'
+import { PersonRoleFilter } from '../../utils/personRole'
 import { useModalStore } from '../../stores/modalStore'
 
 interface DirectorCardProps {
     director: TrendingPerson
     /** Optional genre filter to pass to person page */
     genreFilter?: string
+    /** Optional role filter override */
+    defaultRole?: PersonRoleFilter
 }
 
-export default function DirectorCard({ director, genreFilter }: DirectorCardProps) {
+export default function DirectorCard({
+    director,
+    genreFilter,
+    defaultRole = 'directing',
+}: DirectorCardProps) {
     const router = useRouter()
     const openModal = useModalStore((state) => state.openModal)
     const [imageLoaded, setImageLoaded] = useState(false)
@@ -23,19 +30,26 @@ export default function DirectorCard({ director, genreFilter }: DirectorCardProp
         ? `https://image.tmdb.org/t/p/w185${director.profile_path}`
         : null
 
-    // Build URL with role and optional genre filter
-    const personUrl = genreFilter
-        ? `/person/${director.id}?role=directing&genre=${genreFilter}`
-        : `/person/${director.id}?role=directing`
+    const buildPersonUrl = () => {
+        const params = new URLSearchParams()
+        if (defaultRole) {
+            params.set('role', defaultRole)
+        }
+        if (genreFilter) {
+            params.set('genre', genreFilter)
+        }
+        const queryString = params.toString()
+        return queryString ? `/person/${director.id}?${queryString}` : `/person/${director.id}`
+    }
 
     const handleClick = () => {
-        router.push(personUrl)
+        router.push(buildPersonUrl())
     }
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault()
-            router.push(personUrl)
+            router.push(buildPersonUrl())
         }
     }
 
@@ -108,7 +122,7 @@ export default function DirectorCard({ director, genreFilter }: DirectorCardProp
             {knownForItems.length > 0 && (
                 <p className="mt-1 text-center text-sm text-gray-400 line-clamp-1 px-1">
                     {knownForItems.map((item, index) => (
-                        <span key={item.id}>
+                        <span key={`${director.id}-${item.id}-${index}`}>
                             {index > 0 && ', '}
                             <button
                                 onClick={(e) => handleTitleClick(e, item)}

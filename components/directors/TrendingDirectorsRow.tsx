@@ -166,7 +166,7 @@ export default function TrendingDirectorsRow({
             setIsLoadingMore(false)
             isLoadingRef.current = false
         }
-    }, [currentPage, directors, preloadImages])
+    }, [currentPage, directors, preloadImages, API_ENDPOINT])
 
     // Fetch initial directors and preload next page
     const fetchDirectors = useCallback(async () => {
@@ -366,7 +366,9 @@ export default function TrendingDirectorsRow({
                         <div key={director.id} className="flex-shrink-0">
                             <DirectorCard
                                 director={director}
-                                genreFilter={selectedGenres.length === 1 ? selectedGenres[0] : undefined}
+                                genreFilter={
+                                    selectedGenres.length === 1 ? selectedGenres[0] : undefined
+                                }
                             />
                         </div>
                     ))}

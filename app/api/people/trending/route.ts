@@ -7,7 +7,6 @@ const BASE_URL = 'https://api.themoviedb.org/3'
 // Cache this route for 1 hour
 export const revalidate = 3600
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface TrendingPerson {
     id: number
     name: string
@@ -45,14 +44,21 @@ export async function GET(request: NextRequest) {
 
         // Filter by genres (comma-separated TMDB genre IDs) - based on what they're known for
         const genresParam = searchParams.get('genres')
-        const genreIds = genresParam ? genresParam.split(',').map(id => parseInt(id, 10)).filter(id => !isNaN(id)) : []
+        const genreIds = genresParam
+            ? genresParam
+                  .split(',')
+                  .map((id) => parseInt(id, 10))
+                  .filter((id) => !isNaN(id))
+            : []
 
         // For directors, media_type, or genre filtering, we need to aggregate from multiple pages since matches are rarer
         // For actors without filters, single page is usually fine but we support pagination
         const pagesToFetch = department === 'Directing' || mediaType || genreIds.length > 0 ? 5 : 1
         const startPage = (pageNumber - 1) * pagesToFetch + 1
 
-        apiLog(`[Trending People] Fetching ${pagesToFetch} pages starting from ${startPage} for ${department || 'all'}`)
+        apiLog(
+            `[Trending People] Fetching ${pagesToFetch} pages starting from ${startPage} for ${department || 'all'}`
+        )
 
         // Fetch multiple pages in parallel for better aggregation
         const fetchPromises = []
@@ -60,7 +66,16 @@ export async function GET(request: NextRequest) {
             const page = startPage + i
             if (page <= 500) {
                 const url = `${BASE_URL}/trending/person/${validTimeWindow}?api_key=${API_KEY}&language=en-US&page=${page}`
-                fetchPromises.push(fetch(url).then((res) => res.json()))
+                fetchPromises.push(
+                    fetch(url).then((res) => {
+                        if (!res.ok) {
+                            throw new Error(
+                                `TMDB trending fetch failed (page ${page}): ${res.status}`
+                            )
+                        }
+                        return res.json()
+                    })
+                )
             }
         }
 
@@ -94,7 +109,8 @@ export async function GET(request: NextRequest) {
                     if (genreIds.length > 0 && person.known_for && person.known_for.length > 0) {
                         const hasMatchingGenre = person.known_for.some(
                             (item: { genre_ids?: number[] }) =>
-                                item.genre_ids && item.genre_ids.some(gid => genreIds.includes(gid))
+                                item.genre_ids &&
+                                item.genre_ids.some((gid) => genreIds.includes(gid))
                         )
                         if (!hasMatchingGenre) continue
                     }
@@ -116,7 +132,9 @@ export async function GET(request: NextRequest) {
         const hasMore = startPage + pagesToFetch <= totalPages
         const virtualTotalPages = Math.ceil(totalPages / pagesToFetch)
 
-        apiLog(`[Trending People] Found ${allPeople.length} ${department || 'people'}, hasMore: ${hasMore}`)
+        apiLog(
+            `[Trending People] Found ${allPeople.length} ${department || 'people'}, hasMore: ${hasMore}`
+        )
 
         return NextResponse.json(
             {

@@ -5,22 +5,12 @@ import { useRouter } from 'next/navigation'
 import { auth } from '@/firebase'
 import { useSessionStore } from '@/stores/sessionStore'
 import { getAccountStats } from '@/utils/accountLimits'
-import {
-    BarChart,
-    Users,
-    TrendingUp,
-    Settings,
-    PlayCircle,
-    RefreshCw,
-    Calendar,
-    CalendarDays,
-    Eye,
-} from 'lucide-react'
+import { Users, Settings, PlayCircle, RefreshCw, CalendarDays, Eye } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import type { AdminStats, TrendingStats, ActivityStats, ActiveUser } from '@/types/admin'
 
-// Admin UIDs - Add your Firebase UID here
-const ADMIN_UIDS = [process.env.NEXT_PUBLIC_ADMIN_UID || 'YOUR_FIREBASE_UID_HERE']
+// Admin check is done server-side via API routes
+// Client-side verification happens through API calls, not exposed UIDs
 
 export default function AdminDashboard() {
     const router = useRouter()
@@ -37,26 +27,50 @@ export default function AdminDashboard() {
     const [loading, setLoading] = useState(false)
     const [statsLoading, setStatsLoading] = useState(true)
     const [lastTrendingRun, setLastTrendingRun] = useState<Date | null>(null)
+    const [isAdminUser, setIsAdminUser] = useState<boolean | null>(null)
 
-    // Auth check - wait for session to initialize before redirecting
+    // Check admin status via server-side API
     useEffect(() => {
-        // Don't redirect while session is initializing
-        if (!isInitialized) return
+        const checkAdminStatus = async () => {
+            if (!isInitialized || !isAuth || !userId) {
+                setIsAdminUser(false)
+                router.push('/')
+                return
+            }
 
-        // Redirect if not authenticated or not admin
-        if (!isAuth || !userId || !ADMIN_UIDS.includes(userId)) {
-            console.log('Admin check failed:', {
-                isAuth,
-                userId,
-                isAdmin: userId && ADMIN_UIDS.includes(userId),
-            })
-            router.push('/')
+            try {
+                const user = auth.currentUser
+                if (!user) {
+                    setIsAdminUser(false)
+                    router.push('/')
+                    return
+                }
+
+                const idToken = await user.getIdToken()
+                const response = await fetch('/api/admin/check', {
+                    headers: { Authorization: `Bearer ${idToken}` },
+                })
+
+                const data = await response.json()
+                setIsAdminUser(data.isAdmin === true)
+
+                if (!data.isAdmin) {
+                    console.log('Admin check failed: User is not an admin')
+                    router.push('/')
+                }
+            } catch (error) {
+                console.error('Admin check error:', error)
+                setIsAdminUser(false)
+                router.push('/')
+            }
         }
+
+        checkAdminStatus()
     }, [isAuth, userId, isInitialized, router])
 
-    // Load stats - wait for Firebase Auth to be ready
+    // Load stats - wait for admin check to complete
     useEffect(() => {
-        if (!isAuth || !userId || !ADMIN_UIDS.includes(userId)) return
+        if (!isAuth || !userId || isAdminUser !== true) return
 
         // Wait for Firebase Auth to initialize
         const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -257,8 +271,8 @@ export default function AdminDashboard() {
         )
     }
 
-    // Show unauthorized if not admin
-    if (!isAuth || !userId || !ADMIN_UIDS.includes(userId)) {
+    // Show unauthorized if not admin (admin check done server-side)
+    if (!isAuth || !userId || isAdminUser === false) {
         return (
             <div className="min-h-screen bg-gray-900 flex items-center justify-center">
                 <div className="text-white text-xl">Unauthorized</div>

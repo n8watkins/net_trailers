@@ -80,6 +80,13 @@ const CollectionPage = ({ params }: CollectionPageProps) => {
         }
     }, [isLoading, selectedList, router])
 
+    // Save current collection to localStorage for persistence
+    useEffect(() => {
+        if (selectedList && typeof window !== 'undefined') {
+            localStorage.setItem('nettrailer_selected_collection', collectionId)
+        }
+    }, [collectionId, selectedList])
+
     // Any collection with genres supports infinite scroll if it can generate more content
     // For tmdb-genre and ai-generated collections, we can always generate more from TMDB
     const supportsInfiniteScroll = useMemo(() => {
@@ -331,6 +338,40 @@ const CollectionPage = ({ params }: CollectionPageProps) => {
         setShowEditor(false)
     }
 
+    // Helper functions for collection pills
+    const getListIcon = (list: UserList, isSelected: boolean = false) => {
+        // Return emoji if the list has one (custom lists)
+        if (list.emoji) {
+            return <span className="text-sm">{list.emoji}</span>
+        }
+
+        // Default icons for system lists
+        const iconClass = `w-4 h-4 text-white`
+        return <EyeIcon className={iconClass} />
+    }
+
+    const getListStyle = (list: UserList, isSelected: boolean) => {
+        // If selected, use a more solid/opaque version of the collection color
+        if (isSelected) {
+            return 'shadow-lg scale-105 border-2 text-white font-semibold'
+        }
+
+        // Default styling
+        return 'hover:scale-105 text-white border-2'
+    }
+
+    // Helper function to convert hex color to rgba with opacity
+    const hexToRgba = (hex: string, opacity: number): string => {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+        if (result) {
+            const r = parseInt(result[1], 16)
+            const g = parseInt(result[2], 16)
+            const b = parseInt(result[3], 16)
+            return `rgba(${r}, ${g}, ${b}, ${opacity})`
+        }
+        return `rgba(107, 114, 128, ${opacity})` // Fallback to gray
+    }
+
     if (isLoading) {
         return (
             <SubPageLayout
@@ -349,15 +390,52 @@ const CollectionPage = ({ params }: CollectionPageProps) => {
 
     const headerActions = (
         <div className="space-y-6">
-            {/* Back to Collections Link */}
-            <div>
-                <Link
-                    href="/collections"
-                    className="inline-flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition-colors"
-                >
-                    <ArrowLeftIcon className="w-4 h-4" />
-                    Back to Collections
-                </Link>
+            {/* Collection Filter Pills */}
+            <div className="bg-[#1a1a1a] border border-gray-800 rounded-2xl p-6">
+                <div className="flex flex-wrap gap-3">
+                    {/* Collection Pills - Watch Later (default collection) will be first */}
+                    {allLists
+                        .sort((a, b) => {
+                            // Put Watch Later (default collection) first, then other collections
+                            if (a.name === 'Watch Later') return -1
+                            if (b.name === 'Watch Later') return 1
+                            return 0
+                        })
+                        .map((list) => {
+                            const isSelected = collectionId === list.id
+                            const listColor = list.color || '#6b7280' // Default gray
+                            // Use clean route for default watchlist
+                            const href =
+                                list.id === 'default-watchlist'
+                                    ? '/watchlist'
+                                    : `/collections/${list.id}`
+
+                            return (
+                                <Link
+                                    key={list.id}
+                                    href={href}
+                                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${getListStyle(
+                                        list,
+                                        isSelected
+                                    )}`}
+                                    style={
+                                        isSelected
+                                            ? {
+                                                  borderColor: listColor,
+                                                  backgroundColor: hexToRgba(listColor, 0.85),
+                                              }
+                                            : {
+                                                  borderColor: listColor,
+                                                  backgroundColor: hexToRgba(listColor, 0.15),
+                                              }
+                                    }
+                                >
+                                    {getListIcon(list, isSelected)}
+                                    <span>{list.name}</span>
+                                </Link>
+                            )
+                        })}
+                </div>
             </div>
 
             {/* Collection Header */}

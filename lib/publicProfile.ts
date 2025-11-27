@@ -35,6 +35,7 @@ export interface PublicProfilePayload {
         pollsVoted: PollSummary[]
     }
     watchLaterPreview: (Movie | TVShow)[]
+    visibility: ProfileVisibility
 }
 
 const DEFAULT_HEADERS = {
@@ -90,7 +91,9 @@ export async function buildPublicProfilePayload(
 
     // Get visibility settings (default to all visible for backward compatibility)
     const profileDataRaw = profileSnap.exists ? profileSnap.data() || {} : {}
-    const visibility: ProfileVisibility = profileDataRaw.visibility ?? { ...DEFAULT_PROFILE_VISIBILITY }
+    const visibility: ProfileVisibility = profileDataRaw.visibility ?? {
+        ...DEFAULT_PROFILE_VISIBILITY,
+    }
 
     let authRecord: UserRecord | null = null
     try {
@@ -145,16 +148,18 @@ export async function buildPublicProfilePayload(
 
     // Apply visibility settings to content sections
     // Each section requires both the master toggle AND its individual toggle to be on
-    const likedContent = isPublicEnabled && visibility.showLikedContent && Array.isArray(legacyData.likedMovies)
-        ? (legacyData.likedMovies as (Movie | TVShow)[])
-        : []
+    const likedContent =
+        isPublicEnabled && visibility.showLikedContent && Array.isArray(legacyData.likedMovies)
+            ? (legacyData.likedMovies as (Movie | TVShow)[])
+            : []
 
     // Collections visibility controlled by toggle (but currently always empty per existing logic)
     const collections: UserList[] = isPublicEnabled && visibility.showCollections ? [] : []
 
-    const watchLaterPreview = isPublicEnabled && visibility.showWatchLater && Array.isArray(legacyData.defaultWatchlist)
-        ? (legacyData.defaultWatchlist as (Movie | TVShow)[]).slice(0, 12)
-        : []
+    const watchLaterPreview =
+        isPublicEnabled && visibility.showWatchLater && Array.isArray(legacyData.defaultWatchlist)
+            ? (legacyData.defaultWatchlist as (Movie | TVShow)[]).slice(0, 12)
+            : []
 
     // Only fetch rankings if visibility allows
     let publicRankings: Ranking[] = []
@@ -173,7 +178,8 @@ export async function buildPublicProfilePayload(
 
     // Only fetch forum data if respective visibility toggles allow
     const shouldFetchThreads = isPublicEnabled && visibility.showThreads
-    const shouldFetchPolls = isPublicEnabled && (visibility.showPollsCreated || visibility.showPollsVoted)
+    const shouldFetchPolls =
+        isPublicEnabled && (visibility.showPollsCreated || visibility.showPollsVoted)
 
     const [threadsSnap, pollsSnap] = await Promise.all([
         shouldFetchThreads
@@ -184,56 +190,58 @@ export async function buildPublicProfilePayload(
             : Promise.resolve({ docs: [] }),
     ])
 
-    const threadSummaries: ThreadSummary[] = isPublicEnabled && visibility.showThreads
-        ? threadsSnap.docs
-              .map((doc) => {
-                  const data = doc.data() || {}
-                  return {
-                      id: doc.id,
-                      title: data.title ?? 'Untitled thread',
-                      content: data.content ?? '',
-                      category: data.category ?? 'general',
-                      likes: data.likes ?? 0,
-                      views: data.views ?? 0,
-                      replyCount: data.replyCount ?? 0,
-                      createdAt: toMillis(data.createdAt as Timestamp | number | undefined),
-                      updatedAt: toMillis(data.updatedAt as Timestamp | number | undefined),
-                  }
-              })
-              .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
-              .slice(0, 10)
-        : []
+    const threadSummaries: ThreadSummary[] =
+        isPublicEnabled && visibility.showThreads
+            ? threadsSnap.docs
+                  .map((doc) => {
+                      const data = doc.data() || {}
+                      return {
+                          id: doc.id,
+                          title: data.title ?? 'Untitled thread',
+                          content: data.content ?? '',
+                          category: data.category ?? 'general',
+                          likes: data.likes ?? 0,
+                          views: data.views ?? 0,
+                          replyCount: data.replyCount ?? 0,
+                          createdAt: toMillis(data.createdAt as Timestamp | number | undefined),
+                          updatedAt: toMillis(data.updatedAt as Timestamp | number | undefined),
+                      }
+                  })
+                  .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
+                  .slice(0, 10)
+            : []
 
-    const pollSummaries: PollSummary[] = isPublicEnabled && visibility.showPollsCreated
-        ? pollsSnap.docs
-              .map((doc): PollSummary => {
-                  const data = doc.data() || {}
-                  return {
-                      id: doc.id,
-                      question: data.question ?? 'Untitled poll',
-                      category: data.category ?? 'general',
-                      totalVotes: data.totalVotes ?? 0,
-                      isMultipleChoice: Boolean(data.isMultipleChoice),
-                      allowAddOptions: Boolean(data.allowAddOptions),
-                      options: Array.isArray(data.options)
-                          ? data.options.map((option: unknown): PollOptionSummary => {
-                                const opt = option as Record<string, unknown>
-                                return {
-                                    id: (opt.id as string) ?? '',
-                                    text: (opt.text as string) ?? '',
-                                    votes: (opt.votes as number) ?? 0,
-                                    percentage: (opt.percentage as number) ?? 0,
-                                }
-                            })
-                          : [],
-                      createdAt: toMillis(data.createdAt as Timestamp | number | undefined),
-                      expiresAt: toMillis(data.expiresAt as Timestamp | number | undefined),
-                      votedAt: null,
-                  }
-              })
-              .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
-              .slice(0, 10)
-        : []
+    const pollSummaries: PollSummary[] =
+        isPublicEnabled && visibility.showPollsCreated
+            ? pollsSnap.docs
+                  .map((doc): PollSummary => {
+                      const data = doc.data() || {}
+                      return {
+                          id: doc.id,
+                          question: data.question ?? 'Untitled poll',
+                          category: data.category ?? 'general',
+                          totalVotes: data.totalVotes ?? 0,
+                          isMultipleChoice: Boolean(data.isMultipleChoice),
+                          allowAddOptions: Boolean(data.allowAddOptions),
+                          options: Array.isArray(data.options)
+                              ? data.options.map((option: unknown): PollOptionSummary => {
+                                    const opt = option as Record<string, unknown>
+                                    return {
+                                        id: (opt.id as string) ?? '',
+                                        text: (opt.text as string) ?? '',
+                                        votes: (opt.votes as number) ?? 0,
+                                        percentage: (opt.percentage as number) ?? 0,
+                                    }
+                                })
+                              : [],
+                          createdAt: toMillis(data.createdAt as Timestamp | number | undefined),
+                          expiresAt: toMillis(data.expiresAt as Timestamp | number | undefined),
+                          votedAt: null,
+                      }
+                  })
+                  .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
+                  .slice(0, 10)
+            : []
 
     // Fetch voted polls only if visibility allows
     let votedPollSummaries: PollSummary[] = []
@@ -330,5 +338,6 @@ export async function buildPublicProfilePayload(
             pollsVoted: orderedVotedPolls,
         },
         watchLaterPreview,
+        visibility,
     }
 }

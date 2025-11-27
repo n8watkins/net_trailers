@@ -164,7 +164,7 @@ export default function TrendingActorsRow({
             setIsLoadingMore(false)
             isLoadingRef.current = false
         }
-    }, [currentPage, actors, preloadImages])
+    }, [currentPage, actors, preloadImages, API_ENDPOINT])
 
     // Fetch initial actors and preload next page
     const fetchActors = useCallback(async () => {
@@ -364,7 +364,9 @@ export default function TrendingActorsRow({
                         <div key={actor.id} className="flex-shrink-0">
                             <ActorCard
                                 actor={actor}
-                                genreFilter={selectedGenres.length === 1 ? selectedGenres[0] : undefined}
+                                genreFilter={
+                                    selectedGenres.length === 1 ? selectedGenres[0] : undefined
+                                }
                             />
                         </div>
                     ))}

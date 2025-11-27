@@ -5,11 +5,18 @@ import {
     fetchUserIdForUsername,
     getPublicProfileCacheHeaders,
 } from '@/lib/publicProfile'
+import { applyRateLimit, publicProfileLimiter } from '@/lib/apiRateLimiting'
 
 export async function GET(
-    _request: NextRequest,
+    request: NextRequest,
     { params }: { params: Promise<{ username: string }> }
 ): Promise<NextResponse> {
+    // Apply rate limiting to prevent username enumeration
+    const rateLimitResponse = applyRateLimit(request, publicProfileLimiter, 'public-profile')
+    if (rateLimitResponse) {
+        return rateLimitResponse
+    }
+
     const { username: rawUsername } = await params
     const username = rawUsername?.trim()
 

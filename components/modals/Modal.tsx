@@ -633,7 +633,7 @@ function Modal() {
                     {/* Video Container - Responsive */}
                     <div
                         className={`relative w-full bg-black flex-shrink-0 ${
-                            fullScreen ? 'h-screen' : 'aspect-[16/10]'
+                            fullScreen ? 'h-screen' : 'aspect-[16/9]'
                         }`}
                     >
                         {/* Close Button - Hidden in fullscreen */}
@@ -890,7 +890,7 @@ function Modal() {
 
                     {/* Content Section - Below Video - Hidden in fullscreen */}
                     {!fullScreen && (
-                        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 flex-1 overflow-y-auto min-h-[450px] modal-scrollbar">
+                        <div className="pt-2 px-4 pb-4 sm:pt-2.5 sm:px-6 sm:pb-6 space-y-3 sm:space-y-4 flex-1 overflow-y-auto min-h-[450px] modal-scrollbar">
                             {/* Content Metadata - Show immediately with card data, enhanced data loads in background */}
                             <ContentMetadata
                                 content={(enhancedMovieData || currentMovie) as Content}

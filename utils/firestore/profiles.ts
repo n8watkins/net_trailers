@@ -14,9 +14,7 @@ import {
     doc,
     getDoc,
     getDocs,
-    setDoc,
     updateDoc,
-    deleteDoc,
     query,
     where,
     orderBy,
@@ -413,6 +411,7 @@ export async function searchProfiles(
 /**
  * Update profile visibility settings
  * Merges partial updates with existing visibility settings
+ * Throws NotFoundError if profile doesn't exist
  */
 export async function updateProfileVisibility(
     userId: string,
@@ -429,11 +428,11 @@ export async function updateProfileVisibility(
         }
 
         const currentProfile = profileDoc.data() as UserProfile
-        const currentVisibility = currentProfile.visibility ?? { ...DEFAULT_PROFILE_VISIBILITY }
 
-        // Merge updates with current visibility
+        // Merge with defaults first, then current visibility, then updates
         const newVisibility: ProfileVisibility = {
-            ...currentVisibility,
+            ...DEFAULT_PROFILE_VISIBILITY,
+            ...(currentProfile.visibility ?? {}),
             ...visibilityUpdates,
         }
 
@@ -451,7 +450,7 @@ export async function updateProfileVisibility(
 
 /**
  * Get profile visibility settings
- * Returns default visibility if not set
+ * Returns default visibility if not set, ensuring all fields are present
  */
 export async function getProfileVisibility(userId: string): Promise<ProfileVisibility> {
     try {
@@ -461,7 +460,11 @@ export async function getProfileVisibility(userId: string): Promise<ProfileVisib
             return { ...DEFAULT_PROFILE_VISIBILITY }
         }
 
-        return profile.visibility ?? { ...DEFAULT_PROFILE_VISIBILITY }
+        // Merge with defaults to ensure all fields are present
+        return {
+            ...DEFAULT_PROFILE_VISIBILITY,
+            ...(profile.visibility ?? {}),
+        }
     } catch (error) {
         console.error('Error getting profile visibility:', error)
         return { ...DEFAULT_PROFILE_VISIBILITY }
