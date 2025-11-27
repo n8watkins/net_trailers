@@ -26,52 +26,29 @@ export function collectionNameToSlug(name: string): string {
  * Special route mappings for specific collection IDs
  */
 export const COLLECTION_ROUTE_MAP: Record<string, string> = {
-    'default-watchlist': 'watchlist',
-}
-
-/**
- * Check if a collection is a system collection (except Watch Later)
- */
-export function isSystemCollectionExceptWatchlist(collection: {
-    id: string
-    isSystemCollection?: boolean
-}): boolean {
-    return collection.isSystemCollection === true && collection.id !== 'default-watchlist'
+    'default-watchlist': 'watch-later',
 }
 
 /**
  * Get the URL route for a collection
- * @param collection - Collection with id, name, and optional isSystemCollection flag
+ * @param collection - Collection with id and name
  * @returns URL route (without leading slash)
  */
-export function getCollectionRoute(collection: {
-    id: string
-    name: string
-    isSystemCollection?: boolean
-}): string {
+export function getCollectionRoute(collection: { id: string; name: string }): string {
     // Check for special route mappings first (e.g., Watch Later)
     if (COLLECTION_ROUTE_MAP[collection.id]) {
         return COLLECTION_ROUTE_MAP[collection.id]
     }
 
-    // System collections (except Watch Later) use their ID
-    if (isSystemCollectionExceptWatchlist(collection)) {
-        return collection.id
-    }
-
-    // User-created collections use slug-based routing
+    // All other collections (both system and user-created) use slug-based routing
     return collectionNameToSlug(collection.name)
 }
 
 /**
  * Get the full URL path for a collection
- * @param collection - Collection with id, name, and optional isSystemCollection flag
+ * @param collection - Collection with id and name
  * @returns Full URL path with leading slash
  */
-export function getCollectionPath(collection: {
-    id: string
-    name: string
-    isSystemCollection?: boolean
-}): string {
+export function getCollectionPath(collection: { id: string; name: string }): string {
     return `/${getCollectionRoute(collection)}`
 }
