@@ -147,9 +147,9 @@ Currently, the recommendation engine only tracks a global `preferredYearRange` (
 
 ### Confidence Levels
 
-- **High confidence (8+ items)**: Apply decade filter strictly
+- **High confidence (8+ items)**: Apply decade filter with ±2 year buffer
 - **Medium confidence (4-7 items)**: Apply decade filter with ±5 year buffer
-- **Low confidence (1-3 items)**: Skip year filtering for this genre (use global default)
+- **Low confidence (1-3 items)**: Skip year filtering for this genre (use full TMDB catalog - no restrictions)
 
 ---
 
