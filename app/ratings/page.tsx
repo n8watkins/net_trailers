@@ -21,7 +21,7 @@ import { getTitle } from '../../typings'
 import NetflixLoader from '../../components/common/NetflixLoader'
 
 type RatingValue = 'like' | 'dislike'
-type FilterValue = 'all' | RatingValue
+type FilterValue = RatingValue
 
 // Wrapper component to handle Suspense for useSearchParams
 export default function RatingsPage() {
@@ -58,10 +58,9 @@ function RatingsPageContent() {
     const authUpdatePreferences = useAuthStore((state) => state.updatePreferences)
     const guestUpdatePreferences = useGuestStore((state) => state.updatePreferences)
 
-    // Get initial filter from URL params
+    // Get initial filter from URL params (default to 'like')
     const urlFilter = searchParams.get('filter')
-    const initialFilter: FilterValue =
-        urlFilter === 'liked' ? 'like' : urlFilter === 'disliked' ? 'dislike' : 'all'
+    const initialFilter: FilterValue = urlFilter === 'disliked' ? 'dislike' : 'like'
 
     // State
     const [filter, setFilter] = useState<FilterValue>(initialFilter)
@@ -73,8 +72,7 @@ function RatingsPageContent() {
     // Sync filter state with URL params
     useEffect(() => {
         const currentFilter = searchParams.get('filter')
-        const newFilter: FilterValue =
-            currentFilter === 'liked' ? 'like' : currentFilter === 'disliked' ? 'dislike' : 'all'
+        const newFilter: FilterValue = currentFilter === 'disliked' ? 'dislike' : 'like'
         setFilter(newFilter)
     }, [searchParams])
 
@@ -82,10 +80,10 @@ function RatingsPageContent() {
     const handleFilterChange = (newFilter: FilterValue) => {
         setFilter(newFilter)
         const url = new URL(window.location.href)
-        if (newFilter === 'all') {
+        if (newFilter === 'like') {
             url.searchParams.delete('filter')
         } else {
-            url.searchParams.set('filter', newFilter === 'like' ? 'liked' : 'disliked')
+            url.searchParams.set('filter', 'disliked')
         }
         router.replace(url.pathname + url.search, { scroll: false })
     }
@@ -97,9 +95,7 @@ function RatingsPageContent() {
         let filtered = [...myRatings].sort((a, b) => b.ratedAt - a.ratedAt)
 
         // Apply rating filter
-        if (filter !== 'all') {
-            filtered = filtered.filter((r) => r.rating === filter)
-        }
+        filtered = filtered.filter((r) => r.rating === filter)
 
         // Apply search filter
         if (searchQuery.trim()) {
@@ -228,7 +224,7 @@ function RatingsPageContent() {
             {/* Filter */}
             <div className="flex items-center gap-2">
                 <div className="flex gap-2 flex-wrap">
-                    {(['all', 'like', 'dislike'] as FilterValue[]).map((f) => (
+                    {(['like', 'dislike'] as FilterValue[]).map((f) => (
                         <button
                             key={f}
                             onClick={() => handleFilterChange(f)}
@@ -238,11 +234,7 @@ function RatingsPageContent() {
                                     : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                             }`}
                         >
-                            {f === 'all'
-                                ? 'All'
-                                : f === 'like'
-                                  ? 'Liked'
-                                  : 'Disliked'}
+                            {f === 'like' ? 'Liked' : 'Disliked'}
                         </button>
                     ))}
                 </div>
@@ -266,14 +258,14 @@ function RatingsPageContent() {
                     <p className="text-gray-400 mb-2">
                         {searchQuery
                             ? 'No ratings match your search'
-                            : filter === 'all'
-                              ? 'No ratings yet'
-                              : `No ${filter === 'like' ? 'liked' : 'disliked'} titles`}
+                            : `No ${filter === 'like' ? 'liked' : 'disliked'} titles`}
                     </p>
                     <p className="text-gray-500 text-sm">
                         {searchQuery
                             ? 'Try a different search term'
-                            : 'Rate titles to improve your recommendations'}
+                            : filter === 'like'
+                              ? 'Like titles to add them here'
+                              : 'Disliked titles will appear here'}
                     </p>
                 </div>
             ) : (
@@ -282,9 +274,10 @@ function RatingsPageContent() {
                         const content = rating.content
                         const isEditing = editingRating === content.id
                         const title = getTitle(content)
-                        const year = content.media_type === 'movie'
-                            ? content.release_date?.slice(0, 4)
-                            : content.first_air_date?.slice(0, 4)
+                        const year =
+                            content.media_type === 'movie'
+                                ? content.release_date?.slice(0, 4)
+                                : content.first_air_date?.slice(0, 4)
 
                         return (
                             <div
@@ -313,9 +306,7 @@ function RatingsPageContent() {
 
                                 {/* Info */}
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="text-white font-medium truncate">
-                                        {title}
-                                    </h3>
+                                    <h3 className="text-white font-medium truncate">{title}</h3>
                                     <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
                                         <span className="uppercase text-[10px] px-1.5 py-0.5 bg-gray-800 rounded">
                                             {content.media_type === 'movie' ? 'Movie' : 'Series'}
