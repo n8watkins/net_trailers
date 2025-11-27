@@ -421,10 +421,10 @@ function RankingsTab({
                             <button
                                 key={tag.id}
                                 onClick={() =>
-                                    setFilterByTag(filterByTag === tag.name ? null : tag.name)
+                                    setFilterByTag(filterByTag === tag.id ? null : tag.id)
                                 }
                                 className={`rounded-full px-3 py-1.5 text-sm font-medium transition-all duration-200 flex items-center gap-1.5 border-2 ${
-                                    filterByTag === tag.name
+                                    filterByTag === tag.id
                                         ? 'bg-yellow-500 text-black shadow-lg scale-105 border-yellow-500'
                                         : 'bg-zinc-900 text-gray-300 hover:bg-zinc-800 border-zinc-700 hover:scale-105'
                                 }`}
@@ -536,14 +536,19 @@ function RankingsTab({
                                         {/* Tags */}
                                         {ranking.tags && ranking.tags.length > 0 && (
                                             <div className="flex flex-wrap gap-1.5">
-                                                {ranking.tags.slice(0, 3).map((tag: string) => (
-                                                    <span
-                                                        key={tag}
-                                                        className="px-2 py-1 text-xs font-medium bg-zinc-800 text-gray-300 rounded-full"
-                                                    >
-                                                        {tag}
-                                                    </span>
-                                                ))}
+                                                {ranking.tags.slice(0, 3).map((tagId: string) => {
+                                                    const tagInfo = POPULAR_TAGS.find(
+                                                        (t) => t.id === tagId
+                                                    )
+                                                    return (
+                                                        <span
+                                                            key={tagId}
+                                                            className="px-2 py-1 text-xs font-medium bg-zinc-800 text-gray-300 rounded-full"
+                                                        >
+                                                            {tagInfo?.name || tagId}
+                                                        </span>
+                                                    )
+                                                })}
                                                 {ranking.tags.length > 3 && (
                                                     <span className="px-2 py-1 text-xs font-medium text-gray-500">
                                                         +{ranking.tags.length - 3}
@@ -899,10 +904,7 @@ function PollsTab({
     const handleCreatePoll = async (
         question: string,
         options: string[],
-        category: ForumCategory,
-        description?: string,
-        isMultipleChoice?: boolean,
-        expiresInDays?: number
+        category: ForumCategory
     ) => {
         if (isGuest) {
             alert('Please sign in to create polls')
@@ -918,17 +920,7 @@ function PollsTab({
         const userName = currentUser.displayName || 'Anonymous'
         const userAvatar = currentUser.photoURL || undefined
 
-        await createPoll(
-            userId,
-            userName,
-            userAvatar,
-            question,
-            options,
-            category,
-            description,
-            isMultipleChoice,
-            expiresInDays
-        )
+        await createPoll(userId, userName, userAvatar, question, options, category)
         await loadPolls() // Reload polls
     }
 
