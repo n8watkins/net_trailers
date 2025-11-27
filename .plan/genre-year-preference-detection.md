@@ -148,6 +148,50 @@ Currently, the recommendation engine only tracks a global `preferredYearRange` (
 
 ---
 
+## Unified Genre System Integration
+
+The app uses a **unified genre system** (`constants/unifiedGenres.ts`) that provides seamless genre handling across movies and TV shows. This system is critical for year preference detection.
+
+### How It Works
+
+1. **User-Facing**: Users see consistent genre names (Action, Fantasy, Sci-Fi) regardless of media type
+2. **Storage**: Collections and preferences use unified genre IDs (`string[]` like `['action', 'fantasy']`)
+3. **TMDB API**: Genres are translated to TMDB IDs only when making API calls
+    - Example: 'fantasy' → 14 for movies, 10765 for TV shows
+
+### Translation Utilities
+
+**File**: `utils/genreMapping.ts`
+
+```typescript
+// Convert TMDB genre IDs from content to unified IDs
+convertLegacyGenresToUnified(tmdbIds: number[], mediaType: 'movie' | 'tv'): string[]
+
+// Translate unified IDs to TMDB IDs for API calls
+translateToTMDBGenres(unifiedIds: string[], mediaType: 'movie' | 'tv'): number[]
+
+// Get genre display name
+getGenreDisplayName(unifiedId: string): string | undefined
+```
+
+### Content Data Structure
+
+Content items from TMDB have:
+
+```typescript
+{
+  id: 123,
+  media_type: 'movie' | 'tv',
+  genre_ids: [28, 14], // TMDB genre IDs (must be converted)
+  release_date: '1999-03-31', // for movies
+  first_air_date: '1999-03-31' // for TV
+}
+```
+
+**Important**: We MUST convert `genre_ids` to unified IDs before building year preferences.
+
+---
+
 ## Data Structure Design
 
 ### GenreYearPreference Interface
@@ -157,7 +201,7 @@ Currently, the recommendation engine only tracks a global `preferredYearRange` (
  * Year preference for a specific genre
  */
 export interface GenreYearPreference {
-    genreId: number // TMDB genre ID
+    genreId: string // Unified genre ID ('action', 'drama', etc.)
     genreName: string // Genre name (e.g., "Action", "Drama")
 
     // Decade-based preferences
@@ -187,9 +231,6 @@ export interface RecommendationProfile {
     // NEW: Genre-specific year preferences
     genreYearPreferences?: GenreYearPreference[]
 
-    // DEPRECATED: Keep for backward compatibility, but don't use
-    preferredYearRange?: { min: number; max: number }
-
     preferredRating?: number // Existing
     updatedAt: number // Existing
 }
@@ -204,10 +245,18 @@ export interface RecommendationProfile {
 ```
 For each liked/rated content item:
   1. Extract year from release_date/first_air_date
-  2. For each genre_id in the content:
+     - If the date is missing or malformed, skip the item (do NOT count it toward sample size)
+
+  2. Convert TMDB genre_ids to unified genre IDs:
+     - Use convertLegacyGenresToUnified(content.genre_ids, content.media_type)
+     - Example: Movie with genre_ids [28, 14] → ['action', 'fantasy']
+
+  3. For each unified genre ID:
      - Add year to genre's year collection
      - Increment count
 ```
+
+**Note**: Content items have TMDB `genre_ids: number[]`. We must translate these to unified genre IDs using the utilities from `utils/genreMapping.ts` before processing.
 
 ### Step 2: Decade Detection Algorithm
 
@@ -258,6 +307,7 @@ When fetching recommendations for a genre:
   3. If confidence is 'medium' or 'high':
      - Use effectiveYearRange
      - Pass to discoverByPreferences({ yearRange: ... })
+     - Log the coverage percentage used to derive the range; if the resulting window would trim >70% of available TMDB results, fall back to no year filtering for that request
 ```
 
 ---
@@ -303,6 +353,7 @@ function calculateEffectiveYearRange(
 1. Modify `buildRecommendationProfile()`:
     - Call `calculateGenreYearPreferences()`
     - Add result to profile as `genreYearPreferences`
+    - Remove legacy `preferredYearRange` usage altogether (audit any other readers before deleting)
 
 2. Modify `getGenreBasedRecommendations()`:
     - Look up year preference for each genre being queried
@@ -317,8 +368,18 @@ function calculateEffectiveYearRange(
 
 **File: types/recommendations.ts**
 
-- Add `GenreYearPreference` interface
-- Update `RecommendationProfile` interface
+1. **Update existing `GenrePreference` interface** (lines 190-196):
+    - Change `genreId: number` to `genreId: string` (unified genre ID)
+    - This is a breaking change - update all consumers of this type
+
+2. **Add new `GenreYearPreference` interface**:
+    - Uses `genreId: string` (unified genre ID)
+    - See interface definition above in "Data Structure Design"
+
+3. **Update `RecommendationProfile` interface**:
+    - Add `genreYearPreferences?: GenreYearPreference[]`
+    - Keep `preferredYearRange` for now (backwards compatibility during transition)
+    - Plan to remove `preferredYearRange` in future version once fully migrated
 
 ### Phase 4: Testing & Tuning
 
@@ -402,13 +463,10 @@ export const YEAR_PREFERENCE_CONFIG = {
 **Scenario**: Equal distribution across all decades
 **Handling**: Skip year filtering for that genre (use full catalog)
 
-### Case 3: TV Shows vs Movies
+### Case 3: Media Type Combined Tracking
 
-**Scenario**: User prefers 1990s action MOVIES but 2020s action TV SHOWS
-**Handling**:
-
-- Option A: Track separately (media_type + genre + year)
-- Option B: Combine (simpler, recommended for v1)
+**Scenario**: User prefers 1990s action movies and 2020s action TV shows
+**Handling**: Combine both into a single "action" genre preference. Since the "Recommended For You" row shows both movies and TV shows together, tracking preferences separately by media type would create ambiguity about which year range to apply. The decade clustering algorithm will naturally find patterns across both media types (e.g., [1990, 2020] for action).
 
 ### Case 4: Recently Added Preference
 
@@ -455,20 +513,10 @@ export const YEAR_PREFERENCE_CONFIG = {
 
 ## Migration Strategy
 
-1. **Backward Compatibility**
-    - Keep existing `preferredYearRange` for old clients
-    - New system runs alongside
-    - Gradual rollout
-
-2. **Data Migration**
+1. **Data Migration**
     - No user data migration needed
     - Calculated fresh from existing liked content
     - Instant availability for all users
-
-3. **Rollback Plan**
-    - Feature flag: `ENABLE_GENRE_YEAR_FILTERING`
-    - Can disable without data loss
-    - Falls back to global year range
 
 ---
 
@@ -476,15 +524,19 @@ export const YEAR_PREFERENCE_CONFIG = {
 
 ### User Profile
 
-- 10 liked movies:
-    - 4x Action from 2015-2018
-    - 3x Action from 1998-2002
-    - 2x Drama from 2020-2022
-    - 1x Horror from 1985
+- 10 liked items (mix of movies and TV shows):
+    - 4x Action movies from 2015-2018 (TMDB: [28] → unified: 'action')
+    - 3x Action movies from 1998-2002 (TMDB: [28] → unified: 'action')
+    - 2x Drama TV shows from 2020-2022 (TMDB: [18] → unified: 'drama')
+    - 1x Horror movie from 1985 (TMDB: [27] → unified: 'horror')
 
 ### Calculation Steps
 
-**Action Genre (7 items):**
+**Step 1**: Convert TMDB genre IDs to unified IDs using `convertLegacyGenresToUnified()`
+
+**Step 2**: Group years by unified genre ID
+
+**Action Genre (7 items, unified ID: 'action'):**
 
 ```
 Years: [2015, 2016, 2017, 2018, 1998, 1999, 2002]
@@ -494,11 +546,11 @@ Decades:
 
 Preferred Decades: [1990, 2010] (both have 2+ items)
 Coverage: 7/7 = 100% ✓
-Confidence: high (7 items)
-Effective Range: { min: 1990, max: 2020 }
+Confidence: medium (7 items)
+Effective Range: { min: 1985, max: 2025 } (with ±5 year buffer)
 ```
 
-**Drama Genre (2 items):**
+**Drama Genre (2 items, unified ID: 'drama'):**
 
 ```
 Years: [2020, 2022]
@@ -511,7 +563,7 @@ Confidence: low (only 2 items)
 Effective Range: null (skip filtering due to low confidence)
 ```
 
-**Horror Genre (1 item):**
+**Horror Genre (1 item, unified ID: 'horror'):**
 
 ```
 Years: [1985]
@@ -521,9 +573,25 @@ Effective Range: null (skip filtering)
 
 ### Recommendation Behavior
 
-- **Action recommendations**: Only from 1990-2020
-- **Drama recommendations**: Full catalog (low confidence)
-- **Horror recommendations**: Full catalog (low confidence)
+When generating "Recommended For You" (which shows both movies + TV):
+
+1. **Action recommendations**:
+    - Unified genre: 'action'
+    - Translate to TMDB: Movies (28), TV (10759)
+    - Apply year filter: 1985-2025
+    - Result: Action content from 1985-2025
+
+2. **Drama recommendations**:
+    - Unified genre: 'drama'
+    - Translate to TMDB: Movies (18), TV (18)
+    - Skip year filtering (low confidence)
+    - Result: Full catalog
+
+3. **Horror recommendations**:
+    - Unified genre: 'horror'
+    - Translate to TMDB: Movies (27), TV (10765, 9648)
+    - Skip year filtering (low confidence)
+    - Result: Full catalog
 
 ---
 
@@ -537,10 +605,24 @@ Effective Range: null (skip filtering)
 
 ---
 
-## Questions for User
+## Summary of Changes from Original Plan
 
-1. **Decade Threshold**: Should we use 60% coverage or different percentage?
+This updated plan incorporates the **unified genre system** throughout:
+
+1. ✅ Uses unified genre IDs (`string`) instead of TMDB genre IDs (`number`)
+2. ✅ Combines TV and movie preferences (unified recommendation row)
+3. ✅ Translates genres only at TMDB API boundary
+4. ✅ Updated all type definitions to use `genreId: string`
+5. ✅ Added genre conversion step to algorithm
+6. ✅ Updated example walkthrough with genre translation
+
+## Open Questions
+
+1. **Decade Threshold**: Use 60% coverage or different percentage?
 2. **Confidence Levels**: Are 3/7 items good cutoffs for low/medium/high?
 3. **Buffer Years**: Should medium confidence use ±5 years or ±10?
-4. **Future**: Should we track TV vs Movie year preferences separately?
-5. **UI**: Should we show year preferences in the insights modal?
+4. **UI**: Should we show year preferences in the insights modal?
+5. **Profile Freshness**: How often should we rebuild the recommendation profile?
+    - On every new like/rating?
+    - Daily refresh?
+    - Manual refresh button?
