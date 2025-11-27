@@ -213,9 +213,19 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onI
                 currentPage: data.page,
             })
 
-            if (newContent.length === 0 || currentPage + 1 >= (data.total_pages || 1)) {
-                uiLog('🏁 [Infinite Row Loading] Reached end of content for:', title)
+            // Only stop if we've truly run out of content
+            // Don't stop on first empty page - might just be duplicates filtered out
+            if (currentPage + 1 >= (data.total_pages || 1)) {
+                uiLog('🏁 [Infinite Row Loading] Reached total_pages limit for:', title)
                 setHasMore(false)
+            } else if (newContent.length === 0) {
+                // Empty page but haven't hit total_pages limit
+                // This could be due to filtering - log but continue
+                debugLog('⚠️', `Page ${currentPage + 1} returned 0 items (might be filtered)`, {
+                    title,
+                    currentPage: currentPage + 1,
+                    totalPages: data.total_pages,
+                })
             }
 
             // Deduplicate by id and media_type to prevent duplicate items
@@ -237,13 +247,14 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onI
 
                 debugLog(
                     '⚠️',
-                    `Page ${currentPage + 1} all duplicates (${consecutiveDuplicatesRef.current}/3)`,
+                    `Page ${currentPage + 1} all duplicates (${consecutiveDuplicatesRef.current}/5)`,
                     { title, pageReturned: newContent.length }
                 )
 
-                // Stop after 3 consecutive duplicate pages OR if we've reached the end
+                // Stop after 5 consecutive duplicate pages OR if we've reached the end
+                // Increased from 3 to 5 to handle larger content pools with more filtering
                 if (
-                    consecutiveDuplicatesRef.current >= 3 ||
+                    consecutiveDuplicatesRef.current >= 5 ||
                     currentPage + 1 >= (data.total_pages || 1)
                 ) {
                     debugLog('🏁', 'Stopping: Multiple duplicate pages or reached end', {

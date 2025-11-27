@@ -304,13 +304,15 @@ async function handlePersonalizedRecommendationsGet(
         )
 
         // Return TMDB-compatible format for Row component
+        // Always return total_pages: 100 even if this page has few/no results
+        // This ensures infinite scroll continues trying to load more content
         return NextResponse.json({
             page,
             results: genreBased.map((content) => ({
                 ...content,
                 media_type: content.media_type || 'movie',
             })),
-            total_pages: 100, // Allow up to 100 pages (2000 recommendations)
+            total_pages: 100, // Allow up to 100 pages (ensures continued loading)
             total_results: genreBased.length,
         })
     } catch (error) {
