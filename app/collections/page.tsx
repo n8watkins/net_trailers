@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import SubPageLayout from '../../components/layout/SubPageLayout'
 import useUserData from '../../hooks/useUserData'
 import useAuth from '../../hooks/useAuth'
@@ -143,31 +144,33 @@ const Collections = () => {
         return getAllLists()
     }, [getAllLists, refreshKey]) // Recreate when refreshKey changes
 
-    // Validate and set default selection when lists are loaded
+    // Redirect to specific collection when lists are loaded
     useEffect(() => {
         if (allLists.length > 0) {
-            // Check if the current selection is valid
-            const isValidSelection = allLists.some((list) => list.id === selectedListId)
+            // Try to restore from localStorage first
+            const savedId = localStorage.getItem('nettrailer_selected_collection')
+            const savedListExists = savedId && allLists.some((list) => list.id === savedId)
 
-            if (!isValidSelection || selectedListId === 'all') {
-                // Try to restore from localStorage first
-                const savedId = localStorage.getItem('nettrailer_selected_collection')
-                const savedListExists = savedId && allLists.some((list) => list.id === savedId)
-
-                if (savedListExists) {
-                    setSelectedListId(savedId)
+            if (savedListExists) {
+                // Use clean route for default watchlist
+                const route =
+                    savedId === 'default-watchlist' ? '/watchlist' : `/collections/${savedId}`
+                router.push(route)
+            } else {
+                // Fall back to Watch Later or first list
+                const watchlistDefault = allLists.find((list) => list.name === 'Watch Later')
+                if (watchlistDefault) {
+                    const route =
+                        watchlistDefault.id === 'default-watchlist'
+                            ? '/watchlist'
+                            : `/collections/${watchlistDefault.id}`
+                    router.push(route)
                 } else {
-                    // Fall back to Watch Later or first list
-                    const watchlistDefault = allLists.find((list) => list.name === 'Watch Later')
-                    if (watchlistDefault) {
-                        setSelectedListId(watchlistDefault.id)
-                    } else {
-                        setSelectedListId(allLists[0].id)
-                    }
+                    router.push(`/collections/${allLists[0].id}`)
                 }
             }
         }
-    }, [allLists]) // Only depend on allLists to avoid infinite loop
+    }, [allLists, router]) // Only depend on allLists and router
 
     // Handle click outside to close dropdown
     useEffect(() => {
@@ -590,11 +593,16 @@ const Collections = () => {
                         .map((list) => {
                             const isSelected = selectedListId === list.id
                             const listColor = list.color || '#6b7280' // Default gray
+                            // Use clean route for default watchlist
+                            const href =
+                                list.id === 'default-watchlist'
+                                    ? '/watchlist'
+                                    : `/collections/${list.id}`
 
                             return (
-                                <button
+                                <Link
                                     key={list.id}
-                                    onClick={() => setSelectedListId(list.id)}
+                                    href={href}
                                     className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${getListStyle(
                                         list,
                                         isSelected
@@ -613,7 +621,7 @@ const Collections = () => {
                                 >
                                     {getListIcon(list, isSelected)}
                                     <span>{list.name}</span>
-                                </button>
+                                </Link>
                             )
                         })}
                 </div>
