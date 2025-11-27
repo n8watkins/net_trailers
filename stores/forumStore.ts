@@ -376,6 +376,17 @@ export const useForumStore = create<ForumState>((set, get) => ({
                 lastReplyBy: { userId, userName },
             })
 
+            // Update local state optimistically
+            set((state) => ({
+                currentThread:
+                    state.currentThread?.id === threadId
+                        ? { ...state.currentThread, replyCount: state.currentThread.replyCount + 1 }
+                        : state.currentThread,
+                threads: state.threads.map((t) =>
+                    t.id === threadId ? { ...t, replyCount: t.replyCount + 1 } : t
+                ),
+            }))
+
             // Send email notification
             // Determine recipient based on whether this is a reply to a reply or the thread
             let recipientUserId: string
@@ -542,6 +553,24 @@ export const useForumStore = create<ForumState>((set, get) => ({
             // Decrement reply count on thread
             const threadRef = doc(db, 'threads', threadId)
             await updateDoc(threadRef, { replyCount: increment(-1) })
+
+            // Update local state optimistically
+            const { currentThread, threads, threadReplies } = get()
+
+            set({
+                threads: threads.map((t) =>
+                    t.id === threadId ? { ...t, replyCount: Math.max(0, t.replyCount - 1) } : t
+                ),
+                threadReplies: threadReplies.filter((r) => r.id !== replyId),
+                ...(currentThread && currentThread.id === threadId
+                    ? {
+                          currentThread: {
+                              ...currentThread,
+                              replyCount: Math.max(0, currentThread.replyCount - 1),
+                          },
+                      }
+                    : {}),
+            })
         } catch (error) {
             throw new Error(error instanceof Error ? error.message : 'Failed to delete reply')
         }
