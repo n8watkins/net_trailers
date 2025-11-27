@@ -24,7 +24,6 @@ import { useSessionStore } from '@/stores/sessionStore'
 import { useSearch } from '@/hooks/useSearch'
 import { useToast } from '@/hooks/useToast'
 import { auth } from '@/firebase'
-import { POPULAR_TAGS, getTagById, searchTags } from '@/utils/popularTags'
 import {
     TrophyIcon,
     MagnifyingGlassIcon,
@@ -70,8 +69,6 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
 
     // Step 2: Content selection
     const [selectedItems, setSelectedItems] = useState<Content[]>([])
-    const [selectedTag, setSelectedTag] = useState<string | null>(null)
-    const [tagContent, setTagContent] = useState<Content[]>([])
 
     // Initialize form with existing ranking data (edit mode)
     useEffect(() => {
@@ -96,8 +93,6 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
             setCurrentStep(3)
         }
     }, [existingRanking])
-    const [isLoadingTag, setIsLoadingTag] = useState(false)
-    const [tagSearchQuery, setTagSearchQuery] = useState('')
 
     // Step 3: Ordering and notes
     const [rankedItems, setRankedItems] = useState<LocalRankedItem[]>([])
@@ -121,64 +116,6 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
     const isStep3Valid =
         title.trim().length >= RANKING_CONSTRAINTS.MIN_TITLE_LENGTH &&
         title.trim().length <= RANKING_CONSTRAINTS.MAX_TITLE_LENGTH
-
-    // Filter tags based on search query using enhanced searchTags function
-    const filteredTags = tagSearchQuery ? searchTags(tagSearchQuery) : POPULAR_TAGS
-
-    // Fetch content by tag
-    const fetchTagContent = async (tagId: string) => {
-        const tag = getTagById(tagId)
-        if (!tag) return
-
-        setIsLoadingTag(true)
-        setTagContent([])
-
-        try {
-            // Fetch movies by IDs
-            const moviePromises = tag.movieIds.map(async (id) => {
-                const response = await fetch(`/api/movies/details/${id}?media_type=movie`)
-                if (response.ok) {
-                    const data = await response.json()
-                    return { ...data, media_type: 'movie' as const }
-                }
-                return null
-            })
-
-            // Fetch TV shows by IDs
-            const tvPromises = tag.tvShowIds.map(async (id) => {
-                const response = await fetch(`/api/movies/details/${id}?media_type=tv`)
-                if (response.ok) {
-                    const data = await response.json()
-                    return { ...data, media_type: 'tv' as const }
-                }
-                return null
-            })
-
-            const results = await Promise.all([...moviePromises, ...tvPromises])
-            const validResults = results.filter((item): item is Content => item !== null)
-            setTagContent(validResults)
-        } catch (error) {
-            console.error('Error fetching tag content:', error)
-        } finally {
-            setIsLoadingTag(false)
-        }
-    }
-
-    // Handle tag selection
-    const handleSelectTag = (tagId: string) => {
-        if (selectedTag === tagId) {
-            // Deselect tag
-            setSelectedTag(null)
-            setTagContent([])
-        } else {
-            // Select new tag
-            setSelectedTag(tagId)
-            setStep1Page(1) // Reset pagination
-            fetchTagContent(tagId)
-            // Clear search when selecting a tag
-            updateQuery('')
-        }
-    }
 
     // Reset pagination when search query changes
     useEffect(() => {
@@ -476,227 +413,20 @@ export function RankingCreator({ existingRanking, onComplete, onCancel }: Rankin
                                 <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
                                     {/* Left: Search and Results */}
                                     <div className="space-y-6 min-h-[600px]">
-                                        {/* Popular Tags */}
-                                        <div>
-                                            <div className="flex items-center justify-between mb-3">
-                                                <h3 className="text-sm font-medium text-gray-400">
-                                                    Browse by Popular Tags
-                                                </h3>
-                                                <span className="text-xs text-gray-500">
-                                                    {filteredTags.length} tags
-                                                </span>
-                                            </div>
-                                            {/* Tag search input */}
-                                            <div className="relative mb-3">
-                                                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
-                                                <input
-                                                    type="text"
-                                                    value={tagSearchQuery}
-                                                    onChange={(e) =>
-                                                        setTagSearchQuery(e.target.value)
-                                                    }
-                                                    placeholder="Search tags..."
-                                                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 transition-colors"
-                                                />
-                                                {tagSearchQuery && (
-                                                    <button
-                                                        onClick={() => setTagSearchQuery('')}
-                                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
-                                                    >
-                                                        <XMarkIcon className="w-4 h-4" />
-                                                    </button>
-                                                )}
-                                            </div>
-                                            {/* Tags */}
-                                            {filteredTags.length > 0 ? (
-                                                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto pr-2">
-                                                    {filteredTags.map((tag) => (
-                                                        <button
-                                                            key={tag.id}
-                                                            onClick={() => handleSelectTag(tag.id)}
-                                                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                                                                selectedTag === tag.id
-                                                                    ? 'bg-yellow-500 text-black'
-                                                                    : 'bg-zinc-800 text-gray-300 hover:bg-zinc-700'
-                                                            }`}
-                                                            title={tag.description}
-                                                        >
-                                                            <span className="mr-1">
-                                                                {tag.emoji}
-                                                            </span>
-                                                            {tag.name}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <div className="text-center py-4 text-gray-500 text-sm">
-                                                    No tags found
-                                                </div>
-                                            )}
-                                        </div>
-
                                         {/* Search */}
                                         <div className="relative">
                                             <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
                                             <input
                                                 type="text"
                                                 value={query}
-                                                onChange={(e) => {
-                                                    updateQuery(e.target.value)
-                                                    // Clear tag when searching
-                                                    if (e.target.value.length >= 2) {
-                                                        setSelectedTag(null)
-                                                        setTagContent([])
-                                                    }
-                                                }}
+                                                onChange={(e) => updateQuery(e.target.value)}
                                                 placeholder="Search for movies and TV shows..."
                                                 className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-12 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500"
                                             />
                                         </div>
 
-                                        {/* Tag content */}
-                                        {selectedTag && !query ? (
-                                            <div>
-                                                <div className="flex items-center justify-between mb-3">
-                                                    <h3 className="text-lg font-bold text-white">
-                                                        {getTagById(selectedTag)?.name}
-                                                    </h3>
-                                                    {tagContent.length > 0 && (
-                                                        <span className="text-sm text-gray-400">
-                                                            {tagContent.length} items
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                {isLoadingTag ? (
-                                                    <div className="text-center py-8 text-gray-500">
-                                                        Loading...
-                                                    </div>
-                                                ) : tagContent.length === 0 ? (
-                                                    <div className="text-center py-8 text-gray-500">
-                                                        No content found
-                                                    </div>
-                                                ) : (
-                                                    <>
-                                                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
-                                                            {tagContent
-                                                                .slice(
-                                                                    (step1Page - 1) *
-                                                                        step1ItemsPerPage,
-                                                                    step1Page * step1ItemsPerPage
-                                                                )
-                                                                .map((content) => {
-                                                                    const isSelected =
-                                                                        selectedItems.find(
-                                                                            (item) =>
-                                                                                item.id ===
-                                                                                content.id
-                                                                        )
-                                                                    const canSelect =
-                                                                        selectedItems.length <
-                                                                        RANKING_CONSTRAINTS.MAX_ITEM_COUNT
-
-                                                                    return (
-                                                                        <div
-                                                                            key={content.id}
-                                                                            className="relative group cursor-pointer"
-                                                                            onClick={() =>
-                                                                                handleToggleItem(
-                                                                                    content
-                                                                                )
-                                                                            }
-                                                                        >
-                                                                            <div className="relative aspect-[2/3]">
-                                                                                <Image
-                                                                                    src={getPosterPath(
-                                                                                        content
-                                                                                    )}
-                                                                                    alt={getTitle(
-                                                                                        content
-                                                                                    )}
-                                                                                    fill
-                                                                                    sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, (max-width: 1280px) 16vw, 14vw"
-                                                                                    className={`object-cover rounded-lg transition-opacity ${
-                                                                                        isSelected
-                                                                                            ? 'opacity-50'
-                                                                                            : 'group-hover:opacity-75'
-                                                                                    }`}
-                                                                                />
-                                                                                {isSelected ? (
-                                                                                    <div className="absolute inset-0 flex items-center justify-center">
-                                                                                        <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                                                                                            <CheckIcon className="w-8 h-8 text-white" />
-                                                                                        </div>
-                                                                                    </div>
-                                                                                ) : (
-                                                                                    canSelect && (
-                                                                                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                                            <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center">
-                                                                                                <PlusIcon className="w-8 h-8 text-black" />
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    )
-                                                                                )}
-                                                                            </div>
-                                                                            <p className="mt-2 text-xs text-white text-center line-clamp-2">
-                                                                                {getTitle(content)}
-                                                                            </p>
-                                                                        </div>
-                                                                    )
-                                                                })}
-                                                        </div>
-                                                        {/* Pagination controls */}
-                                                        {tagContent.length > step1ItemsPerPage && (
-                                                            <div className="flex items-center justify-center gap-2 mt-6">
-                                                                <button
-                                                                    onClick={() =>
-                                                                        setStep1Page(
-                                                                            Math.max(
-                                                                                1,
-                                                                                step1Page - 1
-                                                                            )
-                                                                        )
-                                                                    }
-                                                                    disabled={step1Page === 1}
-                                                                    className="px-3 py-2 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                                                >
-                                                                    <ChevronLeftIcon className="w-5 h-5" />
-                                                                </button>
-                                                                <span className="text-sm text-gray-400 min-w-[100px] text-center">
-                                                                    Page {step1Page} of{' '}
-                                                                    {Math.ceil(
-                                                                        tagContent.length /
-                                                                            step1ItemsPerPage
-                                                                    )}
-                                                                </span>
-                                                                <button
-                                                                    onClick={() =>
-                                                                        setStep1Page(
-                                                                            Math.min(
-                                                                                Math.ceil(
-                                                                                    tagContent.length /
-                                                                                        step1ItemsPerPage
-                                                                                ),
-                                                                                step1Page + 1
-                                                                            )
-                                                                        )
-                                                                    }
-                                                                    disabled={
-                                                                        step1Page >=
-                                                                        Math.ceil(
-                                                                            tagContent.length /
-                                                                                step1ItemsPerPage
-                                                                        )
-                                                                    }
-                                                                    className="px-3 py-2 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                                                >
-                                                                    <ChevronRightIcon className="w-5 h-5" />
-                                                                </button>
-                                                            </div>
-                                                        )}
-                                                    </>
-                                                )}
-                                            </div>
-                                        ) : query.length >= 2 ? (
+                                        {/* Search Results */}
+                                        {query.length >= 2 ? (
                                             <div>
                                                 <div className="flex items-center justify-between mb-3">
                                                     <h3 className="text-lg font-bold text-white">
