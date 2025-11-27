@@ -152,7 +152,20 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onI
             const url = `${apiEndpoint}${separator}page=${currentPage + 1}`
             uiLog('📡 [Infinite Row Loading] Fetching:', url)
 
-            const response = await fetch(url)
+            // Add authentication header if this is a protected endpoint (recommendations)
+            const fetchOptions: RequestInit = {}
+            if (apiEndpoint.includes('/recommendations/personalized')) {
+                const { auth } = await import('../../firebase')
+                const currentUser = auth.currentUser
+                if (currentUser) {
+                    const idToken = await currentUser.getIdToken()
+                    fetchOptions.headers = {
+                        Authorization: `Bearer ${idToken}`,
+                    }
+                }
+            }
+
+            const response = await fetch(url, fetchOptions)
 
             if (!response.ok) {
                 // FIX: Differentiate between permanent and transient errors

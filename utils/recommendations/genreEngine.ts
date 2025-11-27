@@ -243,37 +243,64 @@ export function buildRecommendationProfile(
 }
 
 /**
- * Generate genre-based recommendations
+ * Generate genre-based recommendations with pagination support
  *
  * @param profile - User recommendation profile
  * @param limit - Number of recommendations
  * @param excludeIds - Content IDs to exclude
+ * @param page - Page number for pagination (1-indexed)
  * @returns Array of recommended content
  */
 export async function getGenreBasedRecommendations(
     profile: RecommendationProfile,
     limit: number = 20,
-    excludeIds: number[] = []
+    excludeIds: number[] = [],
+    page: number = 1
 ): Promise<Content[]> {
     if (profile.topGenres.length === 0) {
         return []
     }
 
     try {
-        // Get top 3 genres
-        const topGenreIds = profile.topGenres.slice(0, 3).map((g) => g.genreId)
+        // Use top 5 genres for more diversity
+        const topGenres = profile.topGenres.slice(0, 5)
 
-        // Fetch content matching top genres
-        const results = await discoverByPreferences({
-            genreIds: topGenreIds,
-            mediaType: 'movie',
-            minRating: profile.preferredRating ? profile.preferredRating - 1 : 6.0,
-            minVoteCount: 200,
-            page: 1,
-        })
+        // For page 1, use top 3 genres. For subsequent pages, rotate through all top 5 genres
+        // This provides variety as users scroll through recommendations
+        const genreRotation = page === 1 ? 3 : Math.min(5, topGenres.length)
+        const genreOffset = ((page - 1) * 2) % topGenres.length // Rotate starting genre
+        const selectedGenres = []
+
+        for (let i = 0; i < genreRotation; i++) {
+            const genreIndex = (genreOffset + i) % topGenres.length
+            selectedGenres.push(topGenres[genreIndex])
+        }
+
+        const selectedGenreIds = selectedGenres.map((g) => g.genreId)
+
+        // For pagination beyond page 1, fetch multiple TMDB pages to ensure we have enough content
+        // Each TMDB page has ~20 items, so we fetch enough to fill our limit
+        const tmdbPagesToFetch = Math.ceil(limit / 20)
+        const startTmdbPage = (page - 1) * tmdbPagesToFetch + 1
+
+        const fetchPromises = []
+        for (let i = 0; i < tmdbPagesToFetch; i++) {
+            fetchPromises.push(
+                discoverByPreferences({
+                    genreIds: selectedGenreIds,
+                    mediaType: 'movie',
+                    minRating: profile.preferredRating ? profile.preferredRating - 1 : 6.0,
+                    minVoteCount: 200,
+                    page: startTmdbPage + i,
+                })
+            )
+        }
+
+        const allResults = await Promise.all(fetchPromises)
+        const combined = allResults.flat()
 
         // Filter out excluded content
-        const filtered = results.filter((content) => !excludeIds.includes(content.id))
+        const filtered = combined.filter((content) => !excludeIds.includes(content.id))
 
         return filtered.slice(0, limit)
     } catch (error) {

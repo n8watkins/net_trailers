@@ -13,6 +13,8 @@ import { Recommendation } from '../../types/recommendations'
 import Row from '../content/Row'
 import { useSessionData } from '../../hooks/useSessionData'
 import { useSessionStore } from '../../stores/sessionStore'
+import { useAuthStore } from '../../stores/authStore'
+import { useGuestStore } from '../../stores/guestStore'
 import { auth } from '../../firebase'
 import RecommendationInsightsModal from './RecommendationInsightsModal'
 import GenrePreferenceModal, { PreviewContent } from './GenrePreferenceModal'
@@ -56,7 +58,12 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
     const genrePreferences = sessionData.genrePreferences || []
     const contentPreferences = sessionData.contentPreferences || []
     const votedContent = sessionData.votedContent || []
-    const skippedContent = sessionData.skippedContent || []
+
+    // Get skippedContent from appropriate store
+    const authSkippedContent = useAuthStore((state) => state.skippedContent)
+    const guestSkippedContent = useGuestStore((state) => state.skippedContent)
+    const skippedContent =
+        (sessionType === 'authenticated' ? authSkippedContent : guestSkippedContent) || []
 
     // Track preferences signature for re-fetching recommendations
     const prefsSignature = useMemo(
@@ -427,6 +434,7 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
             <Row
                 title="✨ Recommended For You"
                 content={content}
+                apiEndpoint="/api/recommendations/personalized"
                 onInfoClick={() => setShowInsightsModal(true)}
             />
             <RecommendationInsightsModal
