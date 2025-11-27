@@ -88,7 +88,7 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
         try {
             await voteOnPoll(userId, currentPoll.id, optionIds)
             setHasVoted(true)
-            await loadPollById(currentPoll.id) // Reload to show updated results
+            // No need to reload - store updates optimistically
         } catch (error) {
             console.error('Failed to vote:', error)
         } finally {

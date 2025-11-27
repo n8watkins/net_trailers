@@ -783,6 +783,25 @@ export const useForumStore = create<ForumState>((set, get) => ({
                 options: optionsWithPercentages,
                 totalVotes,
             })
+
+            // Update local state optimistically
+            const { currentPoll, polls } = get()
+
+            if (currentPoll && currentPoll.id === pollId) {
+                set({
+                    currentPoll: {
+                        ...currentPoll,
+                        options: optionsWithPercentages,
+                        totalVotes,
+                    },
+                })
+            }
+
+            set({
+                polls: polls.map((p) =>
+                    p.id === pollId ? { ...p, options: optionsWithPercentages, totalVotes } : p
+                ),
+            })
         } catch (error) {
             throw new Error(error instanceof Error ? error.message : 'Failed to vote on poll')
         }
