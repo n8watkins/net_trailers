@@ -302,13 +302,19 @@ When fetching recommendations for a genre:
 
   2. If confidence is 'low' or not found:
      - Skip year filtering
-     - Use full TMDB catalog
+     - Use full TMDB catalog (no restrictions)
 
   3. If confidence is 'medium' or 'high':
      - Use effectiveYearRange
      - Pass to discoverByPreferences({ yearRange: ... })
-     - Log the coverage percentage used to derive the range; if the resulting window would trim >70% of available TMDB results, fall back to no year filtering for that request
+     - Log applied year range for debugging and analytics
 ```
+
+**Note**: We initially considered checking if the year range would trim >70% of TMDB results and falling back to no filtering, but this is impractical because:
+
+- We don't know the total available TMDB results without fetching
+- The confidence levels already handle overly-narrow ranges (low confidence = no filter)
+- Users with genuinely narrow preferences (e.g., only likes 1990s action) should get 1990s action
 
 ---
 
@@ -353,7 +359,13 @@ function calculateEffectiveYearRange(
 1. Modify `buildRecommendationProfile()`:
     - Call `calculateGenreYearPreferences()`
     - Add result to profile as `genreYearPreferences`
-    - Remove legacy `preferredYearRange` usage altogether (audit any other readers before deleting)
+    - Keep `preferredYearRange` populated initially (backwards compatibility)
+    - Audit all `preferredYearRange` consumers before eventual removal:
+        - `utils/recommendations/genreEngine.ts` - profile building
+        - `app/api/recommendations/personalized/route.ts` - API responses
+        - Any Firestore queries/indexes referencing this field
+        - Any UI components displaying year preferences
+        - Run: `grep -r "preferredYearRange" --include="*.ts" --include="*.tsx"`
 
 2. Modify `getGenreBasedRecommendations()`:
     - Look up year preference for each genre being queried
@@ -477,20 +489,64 @@ export const YEAR_PREFERENCE_CONFIG = {
 
 ## Performance Considerations
 
-1. **Calculation Frequency**
-    - Calculate on profile build (already happens once per recommendation request)
-    - Cache in RecommendationProfile
-    - No additional API calls needed
+### Calculation Frequency & Caching
 
-2. **Computational Cost**
-    - O(n × g) where n = number of rated items, g = avg genres per item
-    - Typical: 50 items × 3 genres = 150 operations
-    - Negligible impact
+**Current State**:
 
-3. **API Impact**
-    - Year filtering applied to TMDB API calls
-    - May slightly reduce result counts but improves relevance
-    - Net neutral or positive (fewer irrelevant results to filter client-side)
+- Recommendation profiles are built on-demand per API request
+- No persistent caching in Firestore
+- Profile freshness = always up-to-date
+
+**With Genre-Year Preferences**:
+
+- Profile building becomes more compute-intensive (decade clustering, confidence calculation)
+- Still manageable: O(n × g) where n = rated items, g = avg genres per item
+- Typical: 50 items × 3 genres = 150 operations (~1-2ms)
+
+**Caching Strategy Options**:
+
+1. **No Caching (Current Approach)**
+    - ✅ Always fresh data
+    - ✅ Simple implementation
+    - ❌ Recalculates on every recommendation request
+    - **Best for**: Low recommendation request frequency
+
+2. **In-Memory Cache (6 hours)**
+    - ✅ Reduces repeated calculations
+    - ✅ Still relatively fresh
+    - ❌ Doesn't persist across server restarts
+    - **Best for**: Medium request frequency
+
+3. **Firestore Cache (24 hours)**
+    - ✅ Persists across requests and servers
+    - ✅ Significantly reduces load
+    - ❌ Stale data if user adds many new likes
+    - ❌ Requires cache invalidation logic
+    - **Best for**: High request frequency, mature user profiles
+
+**Recommended Approach**: Start with **Option 1 (No Caching)** since calculation cost is negligible (<2ms). If performance monitoring shows issues, upgrade to Option 2.
+
+**Cache Invalidation Triggers** (if caching is added later):
+
+- User adds/removes content from watchlist
+- User likes/unlikes content
+- User adds content to collections
+- Manual "Refresh Recommendations" button
+- 24-hour TTL (time-to-live)
+
+### Computational Cost
+
+- **Algorithm complexity**: O(n × g) where n = rated items, g = avg genres per item
+- **Typical user**: 50 items × 3 genres = 150 operations
+- **Heavy user**: 500 items × 3 genres = 1,500 operations (~10-15ms)
+- **Impact**: Negligible for most users, acceptable for power users
+
+### API Impact
+
+- Year filtering applied to TMDB API calls via `primary_release_date.gte/lte` parameters
+- May slightly reduce result counts but **improves relevance**
+- Net neutral or positive (fewer irrelevant results to filter client-side)
+- No additional TMDB API calls required
 
 ---
 
@@ -513,10 +569,47 @@ export const YEAR_PREFERENCE_CONFIG = {
 
 ## Migration Strategy
 
-1. **Data Migration**
-    - No user data migration needed
-    - Calculated fresh from existing liked content
-    - Instant availability for all users
+### Data Migration
+
+- **No Firestore data migration required**: Genre-year preferences are calculated on-demand from existing user data (likes, watchlist, collections)
+- **Instant availability**: All users get personalized year filtering immediately upon first recommendation request
+- **No historical data loss**: Existing `preferredYearRange` field remains populated (backwards compatibility)
+
+### Rollout Plan
+
+**Phase 1: Soft Launch (Dual Mode)**
+
+1. Deploy with both `preferredYearRange` (old) and `genreYearPreferences` (new) populated
+2. Recommendation engine uses `genreYearPreferences` but logs both approaches for comparison
+3. Monitor recommendation quality metrics for 1-2 weeks
+4. Validate that genre-specific filtering improves diversity without hurting relevance
+
+**Phase 2: Full Cutover**
+
+1. Stop populating `preferredYearRange` in new profiles
+2. UI shows genre-year preferences instead of global range
+3. Remove `preferredYearRange` from type definitions (breaking change)
+
+**Rollback Strategy**
+
+- **No automated rollback**: If genre-year logic misbehaves, we must:
+    1. Hotfix the calculation algorithm (bugs in decade clustering, confidence levels, etc.)
+    2. OR temporarily return `null` for `effectiveYearRange` (disables year filtering)
+    3. Cannot simply "revert to old system" as we're removing the global range calculation
+- **Risk mitigation**: Extensive testing in Phase 4 (see Test Cases section) before rollout
+- **Monitoring**: Track API errors, empty result sets, user engagement with recommended content
+
+### Operational Risk Assessment
+
+**Medium Risk**:
+
+- **Impact**: If year filtering is too aggressive, users get fewer/no recommendations
+- **Detection**: Monitor recommendation API response sizes and user engagement metrics
+- **Mitigation**:
+    - Confidence thresholds prevent overly-narrow filters (low confidence = no filter)
+    - Decade buffers (±5 years) provide flexibility
+    - Logging helps diagnose issues quickly
+- **Recovery**: Can disable year filtering by returning `null` for all `effectiveYearRange` values (1-line code change)
 
 ---
 
@@ -619,10 +712,28 @@ This updated plan incorporates the **unified genre system** throughout:
 ## Open Questions
 
 1. **Decade Threshold**: Use 60% coverage or different percentage?
+    - 60% seems reasonable for capturing primary preferences
+    - Could make configurable in future
+
 2. **Confidence Levels**: Are 3/7 items good cutoffs for low/medium/high?
+    - Low (1-3): Too few to establish pattern
+    - Medium (4-7): Emerging pattern but needs buffer
+    - High (8+): Clear pattern, strict filtering
+    - Alternative: 1-5 / 6-12 / 13+ ?
+
 3. **Buffer Years**: Should medium confidence use ±5 years or ±10?
+    - ±5 recommended (balances precision with flexibility)
+    - ±10 may be too wide for medium confidence
+    - High confidence should use ±2 instead of 0 (accounts for edge cases)
+
 4. **UI**: Should we show year preferences in the insights modal?
+    - **Yes** - increases transparency and builds user trust
+    - Show as timeline: "You prefer Action from the 1990s & 2010s"
+    - Consider adding visual decade bars
+
 5. **Profile Freshness**: How often should we rebuild the recommendation profile?
-    - On every new like/rating?
-    - Daily refresh?
-    - Manual refresh button?
+    - **See Performance Considerations section (lines 491-545) for detailed analysis**
+    - **Recommended**: No caching initially (always fresh, <2ms overhead)
+    - Calculation happens on-demand per recommendation request
+    - If performance issues arise, add in-memory cache (6 hours)
+    - Cache invalidation would trigger on: new likes, watchlist changes, manual refresh
