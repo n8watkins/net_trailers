@@ -336,20 +336,25 @@ export const useForumStore = create<ForumState>((set, get) => ({
             const repliesRef = collection(db, 'thread_replies')
             const now = Timestamp.now()
 
-            const replyData = {
+            const replyData: Record<string, unknown> = {
                 id: '', // Will be set by Firestore
                 threadId,
                 content,
                 userId,
                 userName,
-                ...(userAvatar ? { userAvatar } : {}),
                 createdAt: now,
-                updatedAt: undefined,
                 isEdited: false,
                 likes: 0,
-                parentReplyId: parentReplyId || undefined,
                 mentions: [],
                 images: images || [],
+            }
+
+            // Only add optional fields if they have values
+            if (userAvatar) {
+                replyData.userAvatar = userAvatar
+            }
+            if (parentReplyId) {
+                replyData.parentReplyId = parentReplyId
             }
 
             const docRef = await addDoc(repliesRef, replyData)
@@ -427,6 +432,17 @@ export const useForumStore = create<ForumState>((set, get) => ({
             // Increment like count on thread
             const threadRef = doc(db, 'threads', threadId)
             await updateDoc(threadRef, { likes: increment(1) })
+
+            // Update local state optimistically
+            set((state) => ({
+                currentThread:
+                    state.currentThread?.id === threadId
+                        ? { ...state.currentThread, likes: state.currentThread.likes + 1 }
+                        : state.currentThread,
+                threads: state.threads.map((t) =>
+                    t.id === threadId ? { ...t, likes: t.likes + 1 } : t
+                ),
+            }))
         } catch (error) {
             throw new Error(error instanceof Error ? error.message : 'Failed to like thread')
         }
@@ -440,6 +456,20 @@ export const useForumStore = create<ForumState>((set, get) => ({
             // Decrement like count on thread
             const threadRef = doc(db, 'threads', threadId)
             await updateDoc(threadRef, { likes: increment(-1) })
+
+            // Update local state optimistically
+            set((state) => ({
+                currentThread:
+                    state.currentThread?.id === threadId
+                        ? {
+                              ...state.currentThread,
+                              likes: Math.max(0, state.currentThread.likes - 1),
+                          }
+                        : state.currentThread,
+                threads: state.threads.map((t) =>
+                    t.id === threadId ? { ...t, likes: Math.max(0, t.likes - 1) } : t
+                ),
+            }))
         } catch (error) {
             throw new Error(error instanceof Error ? error.message : 'Failed to unlike thread')
         }

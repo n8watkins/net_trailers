@@ -123,7 +123,7 @@ export default function ThreadDetailPage({ params }: ThreadDetailPageProps) {
                 await likeThread(userId, currentThread.id)
             }
             setIsLiked(!isLiked)
-            await loadThreadById(currentThread.id)
+            // No need to reload - store updates optimistically
         } catch (error) {
             console.error('Failed to like thread:', error)
         }
