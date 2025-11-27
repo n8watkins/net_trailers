@@ -142,11 +142,71 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
         '/history',
         '/rankings',
         '/collections',
+        '/watchlist', // Special route for Watch Later collection
         '/ratings',
         '/notifications',
         '/settings',
     ]
-    const showSubNav = subNavPaths.some((path) => pathname.startsWith(path))
+    // Check if current path matches any sub-nav paths
+    // For collection routes, also check if it's a slug-based collection route
+    // The [slug] route handles collection slugs, but we need to exclude all other known routes
+    const isCollectionSlugRoute = (() => {
+        // All known routes that are NOT collection slugs (must be exhaustive)
+        const knownNonCollectionRoutes = [
+            // Main navigation
+            '/',
+            '/movies',
+            '/tv',
+            '/genres',
+            '/search',
+            '/community',
+            // User routes
+            '/users',
+            '/shares',
+            '/shared',
+            // Forum/community
+            '/threads',
+            '/polls',
+            // Features
+            '/surprise-me',
+            '/smartsearch',
+            '/recommendations',
+            // Static pages
+            '/privacy',
+            '/terms',
+            '/security',
+            '/changelog',
+            '/docs',
+            // Auth
+            '/auth',
+            // Admin
+            '/admin',
+            // User data pages
+            '/liked',
+            '/hidden',
+            '/watch-later',
+            // Other app routes
+            '/person',
+            '/unsubscribed',
+            '/test-profile',
+            // API routes (shouldn't appear in pathname but just in case)
+            '/api',
+        ]
+        // Check if path matches any known non-collection route
+        const isKnownRoute = knownNonCollectionRoutes.some(
+            (route) => pathname === route || pathname.startsWith(route + '/')
+        )
+        // Check if path matches sub-nav paths (these are handled separately)
+        const isSubNavPath = subNavPaths.some((path) => pathname.startsWith(path))
+        // Only consider it a collection slug if it's a single-segment path that isn't known
+        // Collection slugs are at root level like /watch-later, /my-favorites, etc.
+        const pathSegments = pathname.split('/').filter(Boolean)
+        const isSingleSegment = pathSegments.length === 1
+
+        return isSingleSegment && !isKnownRoute && !isSubNavPath
+    })()
+    const showSubNav =
+        subNavPaths.some((path) => pathname.startsWith(path)) || isCollectionSlugRoute
 
     const triggerTestToasts = () => {
         // Test all toast types with realistic messages
@@ -603,7 +663,8 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                         <li>
                                             <button
                                                 className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
-                                                    pathname === '/ratings' || pathname.startsWith('/ratings')
+                                                    pathname === '/ratings' ||
+                                                    pathname.startsWith('/ratings')
                                                         ? 'text-white font-semibold bg-red-600/20'
                                                         : 'hover:bg-white/10'
                                                 }`}
