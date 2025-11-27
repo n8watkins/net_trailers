@@ -282,8 +282,10 @@ import { useAuthStore } from '@/stores/authStore'
 import { getAccountStats } from '@/utils/accountLimits'
 import { BarChart, Users, TrendingUp, Settings, PlayCircle, RefreshCw } from 'lucide-react'
 
-// Admin UIDs (add your Firebase UID here)
-const ADMIN_UIDS = [process.env.NEXT_PUBLIC_ADMIN_UID || 'YOUR_FIREBASE_UID_HERE']
+// DEPRECATED: Admin UIDs are now server-side only via useAdminAuth hook
+// See hooks/useAdminAuth.ts for the current implementation
+// Old approach (DO NOT USE - exposes admin UID to client):
+// const ADMIN_UIDS = [process.env.NEXT_PUBLIC_ADMIN_UID || 'YOUR_FIREBASE_UID_HERE']
 
 export default function AdminDashboard() {
     const router = useRouter()
@@ -316,14 +318,18 @@ export default function AdminDashboard() {
         setLastTrendingRun(trendingData.lastRun ? new Date(trendingData.lastRun) : null)
     }
 
+    // DEPRECATED: Now uses Firebase ID token from useAdminAuth hook
+    // See app/admin/page.tsx for current implementation
     const runTrendingCheck = async (demoMode = false) => {
         setLoading(true)
         try {
+            // Current approach: get ID token from Firebase auth
+            const idToken = await auth.currentUser?.getIdToken()
             const response = await fetch(
                 `/api/cron/update-trending${demoMode ? '?demo=true' : ''}`,
                 {
                     headers: {
-                        Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
+                        Authorization: `Bearer ${idToken}`,
                     },
                 }
             )
@@ -347,10 +353,12 @@ export default function AdminDashboard() {
 
         setLoading(true)
         try {
+            // Current approach: use Firebase ID token
+            const idToken = await auth.currentUser?.getIdToken()
             const response = await fetch('/api/admin/reset-demo', {
                 method: 'POST',
                 headers: {
-                    Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_TOKEN}`,
+                    Authorization: `Bearer ${idToken}`,
                 },
             })
 
@@ -707,13 +715,21 @@ const TMDB_API_KEY = process.env.TMDB_API_KEY
 
 export async function GET(req: NextRequest) {
     try {
-        // Auth check - allow cron or admin
+        // SECURITY UPDATE (Nov 2025): Auth now uses CRON_SECRET or Firebase ID token
+        // See app/api/cron/update-trending/route.ts for current implementation
         const authHeader = req.headers.get('authorization')
-        const cronSecret = process.env.CRON_SECRET
-        const adminToken = process.env.NEXT_PUBLIC_ADMIN_TOKEN
+        const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : authHeader
 
-        const isCron = authHeader === `Bearer ${cronSecret}`
-        const isAdmin = authHeader === `Bearer ${adminToken}`
+        // Check cron secret (timing-safe comparison in production)
+        const isCron = token === process.env.CRON_SECRET
+
+        // Check admin via Firebase token validation (see validateAdminRequest)
+        let isAdmin = false
+        if (!isCron) {
+            // Validate Firebase ID token server-side
+            const authResult = await validateAdminRequest(req)
+            isAdmin = authResult.authorized
+        }
 
         if (!isCron && !isAdmin) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -907,9 +923,11 @@ export async function seedHistoricalTrending(userId: string) {
 ```bash
 # .env.local additions
 NEXT_PUBLIC_MAX_TOTAL_ACCOUNTS=50
-NEXT_PUBLIC_ADMIN_UID=your-firebase-uid-here  # Get from Firebase Console > Authentication
-NEXT_PUBLIC_ADMIN_TOKEN=generate-with-openssl-rand-hex-32
-CRON_SECRET=another-random-token
+
+# SECURITY UPDATE (Nov 2025): Admin credentials are now server-side only
+# DO NOT use NEXT_PUBLIC_ prefix for admin credentials
+ADMIN_UID=your-firebase-uid-here  # Get from Firebase Console > Authentication (server-side only)
+CRON_SECRET=generate-with-openssl-rand-hex-32
 
 # For Firebase Admin SDK (if not already set)
 FIREBASE_SERVICE_ACCOUNT_KEY='{"type":"service_account",...}'  # JSON string from Firebase Console
@@ -1120,14 +1138,16 @@ openssl rand -hex 32
 #### "Admin panel shows Unauthorized"
 
 ```typescript
-// Check NEXT_PUBLIC_ADMIN_UID matches your Firebase UID exactly
+// Check ADMIN_UID (server-side, NOT NEXT_PUBLIC_) matches your Firebase UID exactly
 // Firebase Console > Authentication > Users > Your User > Copy UID
+// The admin check now happens server-side via /api/admin/check
 ```
 
 #### "Trending check fails with 401"
 
 ```typescript
-// Verify CRON_SECRET and NEXT_PUBLIC_ADMIN_TOKEN are set
+// Verify CRON_SECRET is set for cron jobs
+// Admin requests now use Firebase ID token (not NEXT_PUBLIC_ADMIN_TOKEN)
 // Check authorization header format: "Bearer <token>"
 ```
 

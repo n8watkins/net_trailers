@@ -97,11 +97,10 @@ This document tracks remaining tasks to complete the portfolio admin panel and t
     - Go to: Vercel Dashboard → Project → Settings → Environment Variables
     - Add the following (copy from local .env.local):
         - `NEXT_PUBLIC_MAX_TOTAL_ACCOUNTS` = `50`
-        - `NEXT_PUBLIC_ADMIN_UID` = `BHhkBGx80DRfGaAzn7RVM4dqRgP2`
-        - `NEXT_PUBLIC_ADMIN_TOKEN` = `5b38eaf0345a878f1b42386e1b3e9006c4c53519eea6464f23ed290862f89595`
-        - `CRON_SECRET` = `b6d0d827470b7a046afec3735c03b7b25c536de36b0c566810af26d903fdfcfd`
+        - `ADMIN_UID` = your Firebase UID (server-side only, NOT NEXT*PUBLIC*)
+        - `CRON_SECRET` = generate with `openssl rand -hex 32`
     - **IMPORTANT:** These should be marked as "Production" environment
-    - Regenerate tokens for production (don't use the same ones as local)
+    - Generate fresh tokens for production (never commit real secrets to git)
 
 - [ ] **Generate Production Tokens**
 

@@ -48,6 +48,49 @@ function mergeSystemRecommendations(existing: SystemRecommendation[]): SystemRec
 }
 
 /**
+ * Migrate old likedMovies/hiddenMovies data to unified myRatings system.
+ * If myRatings already exists and has data, use it. Otherwise, migrate from legacy arrays.
+ */
+function migrateToMyRatings(
+    myRatings?: RatedContent[],
+    likedMovies?: Content[],
+    hiddenMovies?: Content[]
+): RatedContent[] {
+    // If myRatings already exists and has data, use it
+    if (myRatings && myRatings.length > 0) {
+        return myRatings
+    }
+
+    // Otherwise, migrate from legacy arrays
+    const migrated: RatedContent[] = []
+    const now = Date.now()
+
+    // Migrate liked movies
+    if (likedMovies && likedMovies.length > 0) {
+        for (const content of likedMovies) {
+            migrated.push({
+                content,
+                rating: 'like',
+                ratedAt: now,
+            })
+        }
+    }
+
+    // Migrate hidden movies
+    if (hiddenMovies && hiddenMovies.length > 0) {
+        for (const content of hiddenMovies) {
+            migrated.push({
+                content,
+                rating: 'dislike',
+                ratedAt: now,
+            })
+        }
+    }
+
+    return migrated
+}
+
+/**
  * User store state (works for both auth and guest users)
  */
 export interface UserState {
@@ -827,7 +870,11 @@ export function createUserStore(options: CreateUserStoreOptions) {
                                 contentPreferences: firebaseData.contentPreferences ?? [],
                                 shownPreferenceContent: firebaseData.shownPreferenceContent ?? [],
                                 votedContent: firebaseData.votedContent ?? [],
-                                myRatings: firebaseData.myRatings ?? [],
+                                myRatings: migrateToMyRatings(
+                                    firebaseData.myRatings,
+                                    firebaseData.likedMovies,
+                                    firebaseData.hiddenMovies
+                                ),
                                 syncStatus: 'synced',
                             })
 
@@ -930,7 +977,11 @@ export function createUserStore(options: CreateUserStoreOptions) {
                     contentPreferences: loadedData.contentPreferences ?? [],
                     shownPreferenceContent: loadedData.shownPreferenceContent ?? [],
                     votedContent: loadedData.votedContent ?? [],
-                    myRatings: loadedData.myRatings ?? [],
+                    myRatings: migrateToMyRatings(
+                        loadedData.myRatings,
+                        loadedData.likedMovies,
+                        loadedData.hiddenMovies
+                    ),
                 })
 
                 // Persist seeded defaults to localStorage so they survive refresh
