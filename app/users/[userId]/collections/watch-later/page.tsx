@@ -16,6 +16,7 @@ import ContentGridSpacer from '../../../../../components/common/ContentGridSpace
 import NetflixLoader from '../../../../../components/common/NetflixLoader'
 import { ClockIcon, UserIcon } from '@heroicons/react/24/outline'
 import type { Movie, TVShow } from '../../../../../typings'
+import type { PublicProfilePayload } from '@/lib/publicProfile'
 import Link from 'next/link'
 
 export default function UserWatchLaterPage() {
@@ -23,7 +24,7 @@ export default function UserWatchLaterPage() {
     const userId = params?.userId as string
 
     const [watchLaterContent, setWatchLaterContent] = useState<(Movie | TVShow)[]>([])
-    const [username, setUsername] = useState<string>('User')
+    const [displayName, setDisplayName] = useState<string>('User')
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
@@ -37,30 +38,42 @@ export default function UserWatchLaterPage() {
             setError(null)
 
             try {
-                // Fetch both user document and profile document
-                const [userDoc, profileDoc] = await Promise.all([
-                    getDoc(doc(db, 'users', userId)),
-                    getDoc(doc(db, 'profiles', userId)),
-                ])
+                // Try to get profile data from API first (includes auth displayName fallback)
+                let profileDisplayName = 'User'
+                try {
+                    const response = await fetch(`/api/public-profile/${userId}`)
+                    if (response.ok) {
+                        const payload = (await response.json()) as PublicProfilePayload
+                        profileDisplayName = payload.profile.displayName
+                    }
+                } catch (_apiError) {
+                    console.warn('[WatchLater] API failed, will use client-side data')
+                }
 
-                if (!userDoc.exists() && !profileDoc.exists()) {
+                // Fetch user document for watch later content
+                const userDoc = await getDoc(doc(db, 'users', userId))
+
+                if (!userDoc.exists()) {
                     throw new Error('User not found')
                 }
 
-                const userData = userDoc.exists() ? userDoc.data() : {}
-                const profileData = profileDoc.exists() ? profileDoc.data() : {}
-                const legacyProfile = userData?.profile || {}
+                const userData = userDoc.data()
 
                 if (!isMounted) return
 
-                // Get display name
-                const displayName =
-                    profileData?.displayName ||
-                    legacyProfile.displayName ||
-                    userData.displayName ||
-                    'User'
+                // Use API-derived displayName, or fallback to client-side lookup
+                if (profileDisplayName === 'User') {
+                    const profileDoc = await getDoc(doc(db, 'profiles', userId))
+                    const profileData = profileDoc.exists() ? profileDoc.data() : {}
+                    const legacyProfile = userData?.profile || {}
+                    profileDisplayName =
+                        profileData?.displayName ||
+                        legacyProfile.displayName ||
+                        userData.displayName ||
+                        'User'
+                }
 
-                setUsername(displayName)
+                setDisplayName(profileDisplayName)
 
                 const watchLater = Array.isArray(userData.defaultWatchlist)
                     ? (userData.defaultWatchlist as (Movie | TVShow)[])
@@ -118,7 +131,7 @@ export default function UserWatchLaterPage() {
 
     return (
         <SubPageLayout
-            title={`${username}'s Watch Later`}
+            title={`${displayName}'s Watch Later`}
             icon={<ClockIcon className="w-8 h-8" />}
             iconColor="text-indigo-400"
             description={`${watchLaterContent.length} ${watchLaterContent.length === 1 ? 'item' : 'items'}`}
@@ -130,7 +143,7 @@ export default function UserWatchLaterPage() {
                     className="inline-flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition-colors"
                 >
                     <UserIcon className="w-4 h-4" />
-                    Back to {username}'s Profile
+                    Back to {displayName}'s Profile
                 </Link>
             </div>
 
@@ -146,7 +159,7 @@ export default function UserWatchLaterPage() {
                     <ClockIcon className="w-20 h-20 text-gray-600 mx-auto mb-4" />
                     <h3 className="text-xl font-semibold text-white mb-2">No Watch Later Items</h3>
                     <p className="text-gray-400">
-                        {username} hasn't added anything to watch later yet
+                        {displayName} hasn't added anything to watch later yet
                     </p>
                 </div>
             )}

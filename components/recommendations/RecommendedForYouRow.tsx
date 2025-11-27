@@ -17,7 +17,7 @@ import { auth } from '../../firebase'
 import RecommendationInsightsModal from './RecommendationInsightsModal'
 import GenrePreferenceModal, { PreviewContent } from './GenrePreferenceModal'
 import TitlePreferenceModal, { ContentWithCredits } from './TitlePreferenceModal'
-import { GenrePreference, VotedContent } from '../../types/shared'
+import { GenrePreference, VotedContent, SkippedContent } from '../../types/shared'
 
 interface RecommendedForYouRowProps {
     onLoadComplete?: () => void
@@ -56,6 +56,7 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
     const genrePreferences = sessionData.genrePreferences || []
     const contentPreferences = sessionData.contentPreferences || []
     const votedContent = sessionData.votedContent || []
+    const skippedContent = sessionData.skippedContent || []
 
     // Track preferences signature for re-fetching recommendations
     const prefsSignature = useMemo(
@@ -88,19 +89,19 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
         return items
     }, [sessionData.userCreatedWatchlists])
 
-    const likedIdsSignature = useMemo(
+    const _likedIdsSignature = useMemo(
         () => sessionData.likedMovies.map((item) => item.id).join(','),
         [sessionData.likedMovies]
     )
-    const watchlistIdsSignature = useMemo(
+    const _watchlistIdsSignature = useMemo(
         () => sessionData.defaultWatchlist.map((item) => item.id).join(','),
         [sessionData.defaultWatchlist]
     )
-    const hiddenIdsSignature = useMemo(
+    const _hiddenIdsSignature = useMemo(
         () => sessionData.hiddenMovies.map((item) => item.id).join(','),
         [sessionData.hiddenMovies]
     )
-    const collectionIdsSignature = useMemo(
+    const _collectionIdsSignature = useMemo(
         () => collectionItems.map((item) => item.id).join(','),
         [collectionItems]
     )
@@ -326,7 +327,6 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
         // - Page reload
         // - Session changes
         // - Explicit preference changes (genre quiz, title quiz)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userId, sessionType, prefsSignature, showRecommendations])
 
     // Handle genre preference save
@@ -367,6 +367,17 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
             })
         },
         [sessionData, votedContent]
+    )
+
+    // Handle skip content
+    const handleSkipContent = useCallback(
+        async (skipped: SkippedContent) => {
+            const updatedSkippedContent = [...skippedContent, skipped]
+            await sessionData.updatePreferences({
+                skippedContent: updatedSkippedContent,
+            })
+        },
+        [sessionData, skippedContent]
     )
 
     // Open genre quiz from insights modal
@@ -439,6 +450,8 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
                 onClose={() => setShowTitleModal(false)}
                 onSave={handleTitleSave}
                 existingVotes={votedContent}
+                skippedContent={skippedContent}
+                onSkip={handleSkipContent}
                 watchlistContent={sessionData.defaultWatchlist}
                 likedContent={sessionData.likedMovies}
                 prefetchedContent={prefetchedTitleContent}

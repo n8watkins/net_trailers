@@ -14,6 +14,7 @@ import SubPageLayout from '../../../../components/layout/SubPageLayout'
 import NetflixLoader from '../../../../components/common/NetflixLoader'
 import { RectangleStackIcon, UserIcon } from '@heroicons/react/24/outline'
 import type { UserList } from '../../../../types/collections'
+import type { PublicProfilePayload } from '@/lib/publicProfile'
 import Link from 'next/link'
 
 export default function UserCollectionsPage() {
@@ -21,7 +22,7 @@ export default function UserCollectionsPage() {
     const userId = params?.userId as string
 
     const [collections, setCollections] = useState<UserList[]>([])
-    const [username, setUsername] = useState<string>('User')
+    const [displayName, setDisplayName] = useState<string>('User')
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
@@ -35,45 +36,46 @@ export default function UserCollectionsPage() {
             setError(null)
 
             try {
-                // Fetch both user document and profile document
-                const [userDoc, profileDoc] = await Promise.all([
-                    getDoc(doc(db, 'users', userId)),
-                    getDoc(doc(db, 'profiles', userId)),
-                ])
+                // Try to get profile data from API first (includes auth displayName fallback)
+                let profileDisplayName = 'User'
+                try {
+                    const response = await fetch(`/api/public-profile/${userId}`)
+                    if (response.ok) {
+                        const payload = (await response.json()) as PublicProfilePayload
+                        profileDisplayName = payload.profile.displayName
+                    }
+                } catch (apiError) {
+                    console.warn('[UserCollections] API failed, will use client-side data')
+                }
 
-                if (!userDoc.exists() && !profileDoc.exists()) {
+                // Fetch user document for collections
+                const userDoc = await getDoc(doc(db, 'users', userId))
+
+                if (!userDoc.exists()) {
                     throw new Error('User not found')
                 }
 
-                const userData = userDoc.exists() ? userDoc.data() : {}
-                const profileData = profileDoc.exists() ? profileDoc.data() : {}
-                const legacyProfile = userData?.profile || {}
+                const userData = userDoc.data()
 
                 if (!isMounted) return
 
-                // Get display name
-                setUsername(
-                    profileData?.displayName ||
+                // Use API-derived displayName, or fallback to client-side lookup
+                if (profileDisplayName === 'User') {
+                    const profileDoc = await getDoc(doc(db, 'profiles', userId))
+                    const profileData = profileDoc.exists() ? profileDoc.data() : {}
+                    const legacyProfile = userData?.profile || {}
+                    profileDisplayName =
+                        profileData?.displayName ||
                         legacyProfile.displayName ||
                         userData.displayName ||
                         'User'
-                )
+                }
+
+                setDisplayName(profileDisplayName)
 
                 // Public collections are stored in userCreatedWatchlists field (historical naming)
                 // Note: For authenticated users, collections are in customRows (Zustand store)
                 const publicCollections = (userData.userCreatedWatchlists as UserList[]) || []
-
-                console.log('[UserCollections] Total collections found:', publicCollections.length)
-                console.log(
-                    '[UserCollections] All collections:',
-                    publicCollections.map((c) => ({
-                        id: c.id,
-                        name: c.name,
-                        isSystem: c.isSystemCollection,
-                        type: c.collectionType,
-                        itemsCount: c.items?.length,
-                    }))
-                )
 
                 // Filter to only show non-system collections
                 const userCollections = publicCollections
@@ -86,7 +88,6 @@ export default function UserCollectionsPage() {
                     })
                     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 
-                console.log('[UserCollections] Filtered collections:', userCollections.length)
                 setCollections(userCollections)
             } catch (err) {
                 console.error('Error loading collections:', err)
