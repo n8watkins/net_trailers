@@ -16,7 +16,7 @@ import { UserList } from '../../types/collections'
 import CollectionEditorModal from '../../components/modals/CollectionEditorModal'
 import { useChildSafety } from '../../hooks/useChildSafety'
 import Link from 'next/link'
-import { collectionNameToSlug, COLLECTION_ROUTE_MAP } from '../../utils/slugify'
+import { collectionNameToSlug, COLLECTION_ROUTE_MAP, getCollectionPath } from '../../utils/slugify'
 
 interface CollectionPageProps {
     params: Promise<{
@@ -53,7 +53,7 @@ const CollectionPage = ({ params }: CollectionPageProps) => {
         return getAllLists()
     }, [getAllLists])
 
-    // Find the collection that matches the slug
+    // Find the collection that matches the slug/ID
     const selectedList = useMemo(() => {
         // First, check if the slug matches a special route mapping (e.g., 'watchlist' -> 'default-watchlist')
         const mappedId = Object.entries(COLLECTION_ROUTE_MAP).find(
@@ -64,7 +64,13 @@ const CollectionPage = ({ params }: CollectionPageProps) => {
             return allLists.find((list) => list.id === mappedId)
         }
 
-        // Otherwise, find collection by matching slug to collection name
+        // Check if the slug is a direct collection ID match (for system collections)
+        const directIdMatch = allLists.find((list) => list.id === slug)
+        if (directIdMatch) {
+            return directIdMatch
+        }
+
+        // Otherwise, find collection by matching slug to collection name (for user collections)
         return allLists.find((list) => collectionNameToSlug(list.name) === slug)
     }, [allLists, slug])
 
@@ -430,7 +436,7 @@ const CollectionPage = ({ params }: CollectionPageProps) => {
                                               }
                                     }
                                 >
-                                    {getListIcon(list, isSelected)}
+                                    {getListIcon(list)}
                                     <span>{list.name}</span>
                                 </Link>
                             )
