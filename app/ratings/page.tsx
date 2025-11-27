@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react'
-import Image from 'next/image'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
@@ -9,15 +8,10 @@ import { useSessionStore } from '../../stores/sessionStore'
 import { useToast } from '../../hooks/useToast'
 import { RatedContent } from '../../types/shared'
 import SubPageLayout from '../../components/layout/SubPageLayout'
-import {
-    HandThumbDownIcon,
-    FilmIcon,
-    TvIcon,
-    TrashIcon,
-    MagnifyingGlassIcon,
-} from '@heroicons/react/24/solid'
+import ContentCard from '../../components/common/ContentCard'
+import ContentGridSpacer from '../../components/common/ContentGridSpacer'
+import { HandThumbDownIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/solid'
 import { XMarkIcon, HandThumbUpIcon, StarIcon } from '@heroicons/react/24/outline'
-import { getTitle } from '../../typings'
 import NetflixLoader from '../../components/common/NetflixLoader'
 
 type RatingValue = 'like' | 'dislike'
@@ -46,15 +40,6 @@ function RatingsPageContent() {
     const guestMyRatings = useGuestStore((state) => state.myRatings)
     const myRatings = isGuest ? guestMyRatings : authMyRatings
 
-    // Get rating actions
-    const authRateContent = useAuthStore((state) => state.rateContent)
-    const guestRateContent = useGuestStore((state) => state.rateContent)
-    const rateContent = isGuest ? guestRateContent : authRateContent
-
-    const authRemoveRating = useAuthStore((state) => state.removeRating)
-    const guestRemoveRating = useGuestStore((state) => state.removeRating)
-    const removeRating = isGuest ? guestRemoveRating : authRemoveRating
-
     const authUpdatePreferences = useAuthStore((state) => state.updatePreferences)
     const guestUpdatePreferences = useGuestStore((state) => state.updatePreferences)
 
@@ -65,7 +50,6 @@ function RatingsPageContent() {
     // State
     const [filter, setFilter] = useState<FilterValue>(initialFilter)
     const [searchQuery, setSearchQuery] = useState('')
-    const [editingRating, setEditingRating] = useState<number | null>(null)
     const [showResetConfirm, setShowResetConfirm] = useState(false)
     const [isResetting, setIsResetting] = useState(false)
 
@@ -101,37 +85,16 @@ function RatingsPageContent() {
         if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase().trim()
             filtered = filtered.filter((r) => {
-                const title = getTitle(r.content).toLowerCase()
-                return title.includes(query)
+                const title =
+                    r.content.media_type === 'movie'
+                        ? r.content.title || r.content.original_title || ''
+                        : r.content.name || r.content.original_name || ''
+                return title.toLowerCase().includes(query)
             })
         }
 
         return filtered
     }, [myRatings, filter, searchQuery])
-
-    // Handle rating change
-    const handleRatingChange = async (rating: RatedContent, newRatingValue: RatingValue) => {
-        try {
-            await rateContent(rating.content, newRatingValue)
-            setEditingRating(null)
-            showSuccess(`Rating updated to "${newRatingValue === 'like' ? 'Liked' : 'Disliked'}"`)
-        } catch (error) {
-            console.error('Failed to update rating:', error)
-            showError('Failed to update rating')
-        }
-    }
-
-    // Handle rating removal
-    const handleRemoveRating = async (contentId: number) => {
-        try {
-            await removeRating(contentId)
-            setEditingRating(null)
-            showSuccess('Rating removed')
-        } catch (error) {
-            console.error('Failed to remove rating:', error)
-            showError('Failed to remove rating')
-        }
-    }
 
     // Handle reset all ratings
     const handleResetAllRatings = async () => {
@@ -149,16 +112,6 @@ function RatingsPageContent() {
             showError('Failed to reset ratings')
         } finally {
             setIsResetting(false)
-        }
-    }
-
-    // Get rating icon
-    const getRatingIcon = (rating: RatingValue, className: string = 'w-5 h-5') => {
-        switch (rating) {
-            case 'like':
-                return <HandThumbUpIcon className={`${className} text-green-500`} />
-            case 'dislike':
-                return <HandThumbDownIcon className={`${className} text-red-500`} />
         }
     }
 
@@ -269,111 +222,13 @@ function RatingsPageContent() {
                     </p>
                 </div>
             ) : (
-                <div className="space-y-3">
-                    {filteredRatings.map((rating) => {
-                        const content = rating.content
-                        const isEditing = editingRating === content.id
-                        const title = getTitle(content)
-                        const year =
-                            content.media_type === 'movie'
-                                ? content.release_date?.slice(0, 4)
-                                : content.first_air_date?.slice(0, 4)
-
-                        return (
-                            <div
-                                key={content.id}
-                                className="bg-[#0a0a0a] rounded-lg border border-gray-700/50 p-4 flex items-center gap-4"
-                            >
-                                {/* Poster */}
-                                <div className="relative w-16 h-24 rounded overflow-hidden bg-gray-800 shrink-0">
-                                    {content.poster_path ? (
-                                        <Image
-                                            src={`https://image.tmdb.org/t/p/w185${content.poster_path}`}
-                                            alt={title}
-                                            fill
-                                            className="object-cover"
-                                        />
-                                    ) : (
-                                        <div className="absolute inset-0 flex items-center justify-center">
-                                            {content.media_type === 'movie' ? (
-                                                <FilmIcon className="w-8 h-8 text-gray-600" />
-                                            ) : (
-                                                <TvIcon className="w-8 h-8 text-gray-600" />
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Info */}
-                                <div className="flex-1 min-w-0">
-                                    <h3 className="text-white font-medium truncate">{title}</h3>
-                                    <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                                        <span className="uppercase text-[10px] px-1.5 py-0.5 bg-gray-800 rounded">
-                                            {content.media_type === 'movie' ? 'Movie' : 'Series'}
-                                        </span>
-                                        {year && <span>{year}</span>}
-                                        {content.vote_average && content.vote_average > 0 && (
-                                            <span className="text-yellow-500">
-                                                {content.vote_average.toFixed(1)}/10
-                                            </span>
-                                        )}
-                                    </div>
-                                    <p className="text-xs text-gray-600 mt-1">
-                                        Rated {new Date(rating.ratedAt).toLocaleDateString()}
-                                    </p>
-                                </div>
-
-                                {/* Rating/Edit */}
-                                {isEditing ? (
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={() => handleRatingChange(rating, 'like')}
-                                            className={`p-2 rounded-full transition-colors ${
-                                                rating.rating === 'like'
-                                                    ? 'bg-green-600'
-                                                    : 'bg-gray-700 hover:bg-green-600/50'
-                                            }`}
-                                        >
-                                            <HandThumbUpIcon className="w-5 h-5 text-white" />
-                                        </button>
-                                        <button
-                                            onClick={() => handleRatingChange(rating, 'dislike')}
-                                            className={`p-2 rounded-full transition-colors ${
-                                                rating.rating === 'dislike'
-                                                    ? 'bg-red-600'
-                                                    : 'bg-gray-700 hover:bg-red-600/50'
-                                            }`}
-                                        >
-                                            <HandThumbDownIcon className="w-5 h-5 text-white" />
-                                        </button>
-                                        <button
-                                            onClick={() => handleRemoveRating(content.id)}
-                                            className="p-2 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors ml-1"
-                                            title="Remove rating"
-                                        >
-                                            <XMarkIcon className="w-5 h-5 text-gray-400" />
-                                        </button>
-                                        <button
-                                            onClick={() => setEditingRating(null)}
-                                            className="text-sm text-gray-500 hover:text-white ml-2"
-                                        >
-                                            Done
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <button
-                                        onClick={() => setEditingRating(content.id)}
-                                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors"
-                                    >
-                                        {getRatingIcon(rating.rating)}
-                                        <span className="text-sm text-gray-300 capitalize">
-                                            {rating.rating === 'dislike' ? 'Disliked' : 'Liked'}
-                                        </span>
-                                    </button>
-                                )}
-                            </div>
-                        )
-                    })}
+                <div className="flex flex-wrap justify-between gap-x-6 sm:gap-x-8 md:gap-x-10 lg:gap-x-12 gap-y-3 sm:gap-y-4 md:gap-y-5 [&>*]:flex-none">
+                    {filteredRatings.map((rating) => (
+                        <div key={rating.content.id} className="overflow-visible">
+                            <ContentCard content={rating.content} />
+                        </div>
+                    ))}
+                    <ContentGridSpacer />
                 </div>
             )}
 
