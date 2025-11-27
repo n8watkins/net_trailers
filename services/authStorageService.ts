@@ -141,6 +141,7 @@ export class AuthStorageService {
                         hiddenMovies: data.hiddenMovies || [],
                         defaultWatchlist: data.defaultWatchlist || [],
                         userCreatedWatchlists: data.userCreatedWatchlists || [],
+                        systemRecommendations: data.systemRecommendations || [],
                         lastActive: data.lastActive || Date.now(),
                         autoMute: data.autoMute ?? true,
                         defaultVolume: data.defaultVolume ?? 50,
@@ -148,7 +149,13 @@ export class AuthStorageService {
                         improveRecommendations: data.improveRecommendations ?? true,
                         showRecommendations: data.showRecommendations ?? true,
                         trackWatchHistory: data.trackWatchHistory ?? true,
+                        notifications: data.notifications,
                         genrePreferences: data.genrePreferences || [],
+                        contentPreferences: data.contentPreferences || [],
+                        shownPreferenceContent: data.shownPreferenceContent || [],
+                        votedContent: data.votedContent || [],
+                        skippedContent: data.skippedContent || [],
+                        myRatings: data.myRatings || [],
                     }
 
                     // Cache the loaded data
@@ -291,6 +298,7 @@ export class AuthStorageService {
                 hiddenMovies: preferences.hiddenMovies || [],
                 defaultWatchlist: preferences.defaultWatchlist || [],
                 userCreatedWatchlists: preferences.userCreatedWatchlists || [],
+                systemRecommendations: preferences.systemRecommendations || [],
                 lastActive: preferences.lastActive || Date.now(),
                 autoMute: preferences.autoMute ?? true,
                 defaultVolume: preferences.defaultVolume ?? 50,
@@ -298,7 +306,13 @@ export class AuthStorageService {
                 improveRecommendations: preferences.improveRecommendations ?? true,
                 showRecommendations: preferences.showRecommendations ?? true,
                 trackWatchHistory: preferences.trackWatchHistory ?? true,
+                notifications: preferences.notifications,
                 genrePreferences: preferences.genrePreferences || [],
+                contentPreferences: preferences.contentPreferences || [],
+                shownPreferenceContent: preferences.shownPreferenceContent || [],
+                votedContent: preferences.votedContent || [],
+                skippedContent: preferences.skippedContent || [],
+                myRatings: preferences.myRatings || [],
             }
             userDataCache.set(userId, { data: cachedData, timestamp: Date.now() })
             authLog('💾 [AuthStorageService] Updated cache with saved data for user:', userId)
