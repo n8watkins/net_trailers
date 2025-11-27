@@ -30,25 +30,48 @@ export const COLLECTION_ROUTE_MAP: Record<string, string> = {
 }
 
 /**
+ * Check if a collection is a system collection (except Watch Later)
+ */
+export function isSystemCollectionExceptWatchlist(collection: {
+    id: string
+    isSystemCollection?: boolean
+}): boolean {
+    return collection.isSystemCollection === true && collection.id !== 'default-watchlist'
+}
+
+/**
  * Get the URL route for a collection
- * @param collection - Collection with id and name
+ * @param collection - Collection with id, name, and optional isSystemCollection flag
  * @returns URL route (without leading slash)
  */
-export function getCollectionRoute(collection: { id: string; name: string }): string {
-    // Check for special route mappings first
+export function getCollectionRoute(collection: {
+    id: string
+    name: string
+    isSystemCollection?: boolean
+}): string {
+    // Check for special route mappings first (e.g., Watch Later)
     if (COLLECTION_ROUTE_MAP[collection.id]) {
         return COLLECTION_ROUTE_MAP[collection.id]
     }
 
-    // For all other collections, use slug-based routing
+    // System collections (except Watch Later) use their ID
+    if (isSystemCollectionExceptWatchlist(collection)) {
+        return collection.id
+    }
+
+    // User-created collections use slug-based routing
     return collectionNameToSlug(collection.name)
 }
 
 /**
  * Get the full URL path for a collection
- * @param collection - Collection with id and name
+ * @param collection - Collection with id, name, and optional isSystemCollection flag
  * @returns Full URL path with leading slash
  */
-export function getCollectionPath(collection: { id: string; name: string }): string {
+export function getCollectionPath(collection: {
+    id: string
+    name: string
+    isSystemCollection?: boolean
+}): string {
     return `/${getCollectionRoute(collection)}`
 }
