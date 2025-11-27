@@ -224,15 +224,17 @@ export const useProfileStore = create<ProfileState>()(
 
                 try {
                     // If updating username, validate it
-                    if (request.username) {
-                        const validation = validateUsername(request.username)
+                    if (request.displayName) {
+                        const validation = validateUsername(request.displayName)
                         if (!validation.isValid) {
                             set({ error: validation.error || 'Invalid username', isLoading: false })
                             return
                         }
 
                         // Check availability
-                        const availability = await get().checkUsernameAvailability(request.username)
+                        const availability = await get().checkUsernameAvailability(
+                            request.displayName
+                        )
                         if (!availability.available) {
                             set({
                                 error: 'Username is already taken',
@@ -323,7 +325,7 @@ export const useProfileStore = create<ProfileState>()(
                     // Determine fallback avatar
                     const fallbackAvatarUrl =
                         profile.googlePhotoUrl ||
-                        `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.username}`
+                        `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.displayName}`
                     const fallbackSource: 'google' | 'generated' = profile.googlePhotoUrl
                         ? 'google'
                         : 'generated'
@@ -380,7 +382,7 @@ export const useProfileStore = create<ProfileState>()(
                     return
                 }
 
-                if (currentProfile.username === trimmedUsername) {
+                if (currentProfile.displayName === trimmedUsername) {
                     // Nothing to do
                     return
                 }
@@ -398,8 +400,8 @@ export const useProfileStore = create<ProfileState>()(
                         return
                     }
 
-                    // Update canonical profile (handles username mapping atomically)
-                    await updateProfileInFirestore(userId, { username: trimmedUsername })
+                    // Update canonical profile (handles displayName mapping atomically)
+                    await updateProfileInFirestore(userId, { displayName: trimmedUsername })
 
                     // Update denormalized references
                     await Promise.all([

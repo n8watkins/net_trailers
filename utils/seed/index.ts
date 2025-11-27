@@ -132,7 +132,7 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
         const profile = useProfileStore.getState().profile
         await seedRankings({
             userId,
-            userName: profile?.username || 'User',
+            userName: profile?.displayName || 'User',
             userAvatar: profile?.avatarUrl,
         })
     } else {
@@ -141,7 +141,7 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
 
     // 8. Seed forum content
     const profile = useProfileStore.getState().profile
-    const userName = profile?.username || 'User'
+    const userName = profile?.displayName || 'User'
     const userAvatar = profile?.avatarUrl
 
     await seedForumThreads({

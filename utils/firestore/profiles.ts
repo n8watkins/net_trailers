@@ -67,11 +67,11 @@ export async function createProfile(profile: UserProfile): Promise<void> {
         }
 
         // 2. Check if username is available
-        const usernameRef = getUsernameDocRef(profile.username)
+        const usernameRef = getUsernameDocRef(profile.displayName)
         const usernameDoc = await transaction.get(usernameRef)
 
         if (usernameDoc.exists()) {
-            throw new AlreadyExistsError('Username', profile.username)
+            throw new AlreadyExistsError('Username', profile.displayName)
         }
 
         // 3. Create profile document
@@ -145,7 +145,7 @@ export async function updateProfile(userId: string, updates: UpdateProfileReques
     const profileRef = getProfileDocRef(userId)
 
     // If updating username, need transaction for atomicity
-    if (updates.username) {
+    if (updates.displayName) {
         await runTransaction(db, async (transaction) => {
             // Get current profile
             const profileDoc = await transaction.get(profileRef)
@@ -154,14 +154,14 @@ export async function updateProfile(userId: string, updates: UpdateProfileReques
             }
 
             const currentProfile = profileDoc.data() as UserProfile
-            const oldUsername = currentProfile.username
+            const oldUsername = currentProfile.displayName
 
             // Check if new username is available
-            const newUsernameRef = getUsernameDocRef(updates.username!)
+            const newUsernameRef = getUsernameDocRef(updates.displayName!)
             const newUsernameDoc = await transaction.get(newUsernameRef)
 
-            if (newUsernameDoc.exists() && updates.username !== oldUsername) {
-                throw new AlreadyExistsError('Username', updates.username)
+            if (newUsernameDoc.exists() && updates.displayName !== oldUsername) {
+                throw new AlreadyExistsError('Username', updates.displayName)
             }
 
             // Trim text fields
@@ -177,7 +177,7 @@ export async function updateProfile(userId: string, updates: UpdateProfileReques
             })
 
             // Update username mapping if changed
-            if (updates.username !== oldUsername) {
+            if (updates.displayName !== oldUsername) {
                 // Delete old username mapping
                 const oldUsernameRef = getUsernameDocRef(oldUsername)
                 transaction.delete(oldUsernameRef)
@@ -396,7 +396,7 @@ export async function searchProfiles(
         snapshot.forEach((doc) => {
             const profile = doc.data() as UserProfile
             // Client-side filtering for partial match
-            if (profile.username.toLowerCase().includes(searchQuery.toLowerCase())) {
+            if (profile.displayName.toLowerCase().includes(searchQuery.toLowerCase())) {
                 profiles.push(profile)
             }
         })

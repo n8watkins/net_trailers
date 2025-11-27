@@ -51,7 +51,7 @@ export default function ProfilePage() {
     const isInitialized = useSessionStore((state) => state.isInitialized)
     const { rankings, loadUserRankings } = useRankingStore()
     const { threads, polls, loadThreads, loadPolls } = useForumStore()
-    const profileUsername = useProfileStore((state) => state.profile?.username)
+    const profileUsername = useProfileStore((state) => state.profile?.displayName)
 
     // Show loading state while data is being fetched
     const isLoading = !isInitialized || authLoading

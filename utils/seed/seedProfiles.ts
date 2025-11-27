@@ -175,12 +175,12 @@ export async function seedDemoProfiles(options: SeedDemoProfilesOptions = {}): P
                 { merge: true }
             )
 
-            console.log(`  ✅ Completed profile: ${profile.username}`)
+            console.log(`  ✅ Completed profile: ${profile.displayName}`)
 
             // Small delay between profiles
             await new Promise((resolve) => setTimeout(resolve, 500))
         } catch (error) {
-            console.error(`  ❌ Failed to create profile ${profileData.username}:`, error)
+            console.error(`  ❌ Failed to create profile ${profileData.displayName}:`, error)
         }
     }
 

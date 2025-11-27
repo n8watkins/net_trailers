@@ -1567,7 +1567,7 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
         const profile = useProfileStore.getState().profile
         const userProfile = {
             id: userId,
-            name: profile?.username || 'User',
+            name: profile?.displayName || 'User',
             avatar: profile?.avatarUrl ?? null,
         }
 
@@ -1905,7 +1905,7 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
     // ===================================
     const { useProfileStore } = await import('../stores/profileStore')
     const profile = useProfileStore.getState().profile
-    const userName = profile?.username || 'User'
+    const userName = profile?.displayName || 'User'
     const userAvatar = profile?.avatarUrl ?? undefined
 
     let threadIds: string[] = []

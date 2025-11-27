@@ -37,7 +37,7 @@ const ProfilePage: React.FC = () => {
     const [isSavingProfile, setIsSavingProfile] = useState(false)
 
     // Username state
-    const [username, setUsername] = useState(profile?.username || '')
+    const [username, setUsername] = useState(profile?.displayName || '')
     const [usernameError, setUsernameError] = useState<string | undefined>()
     const [usernameAvailable, setUsernameAvailable] = useState<boolean | undefined>()
     const [isCheckingUsername, setIsCheckingUsername] = useState(false)
@@ -83,12 +83,12 @@ const ProfilePage: React.FC = () => {
 
     // Sync username from profile store
     useEffect(() => {
-        if (profile?.username) {
-            setUsername(profile.username)
+        if (profile?.displayName) {
+            setUsername(profile.displayName)
             setUsernameAvailable(true) // Current username is always valid
             setUsernameError(undefined)
         }
-    }, [profile?.username])
+    }, [profile?.displayName])
 
     // Validate and check username availability with debounce
     const handleUsernameChange = useCallback(
@@ -103,7 +103,7 @@ const ProfilePage: React.FC = () => {
             }
 
             // If same as current username, mark as available
-            if (newUsername === profile?.username) {
+            if (newUsername === profile?.displayName) {
                 setUsernameAvailable(true)
                 return
             }
@@ -137,13 +137,13 @@ const ProfilePage: React.FC = () => {
                 }
             }, 500)
         },
-        [profile?.username, checkUsernameAvailability]
+        [profile?.displayName, checkUsernameAvailability]
     )
 
     // Handle username save
     const handleSaveUsername = async () => {
         if (isSavingUsername || !userId || !usernameAvailable || usernameError) return
-        if (username === profile?.username) {
+        if (username === profile?.displayName) {
             showError('No changes to save')
             return
         }
@@ -347,7 +347,7 @@ const ProfilePage: React.FC = () => {
             isLoadingVisibility={isLoadingVisibility || !isInitialized}
             isSavingVisibility={isSavingVisibility}
             onVisibilityChange={handleVisibilityChange}
-            profileUsername={profile?.username}
+            profileUsername={profile?.displayName}
             profileUserId={userId ?? undefined}
         />
     )
