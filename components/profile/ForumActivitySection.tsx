@@ -18,6 +18,7 @@ interface ForumActivitySectionProps {
     pollsCreated: PollSummary[]
     pollsVoted: PollSummary[]
     isLoadingVotedPolls?: boolean
+    userId?: string // For public profile pages - links to /users/[userId]/threads and /users/[userId]/polls
 }
 
 export function ForumActivitySection({
@@ -25,6 +26,7 @@ export function ForumActivitySection({
     pollsCreated,
     pollsVoted,
     isLoadingVotedPolls = false,
+    userId,
 }: ForumActivitySectionProps) {
     const [activePollTab, setActivePollTab] = useState<'created' | 'voted'>('created')
     const activePolls = activePollTab === 'created' ? pollsCreated : pollsVoted
@@ -48,7 +50,7 @@ export function ForumActivitySection({
                         </div>
                         {threads.length > 0 && (
                             <Link
-                                href="/community/forums"
+                                href={userId ? `/users/${userId}/threads` : '/community/forums'}
                                 className="text-sm text-green-400 hover:text-green-300 underline"
                             >
                                 View all {threads.length}
@@ -97,7 +99,7 @@ export function ForumActivitySection({
                         </div>
                         {(pollsCreated.length > 0 || pollsVoted.length > 0) && (
                             <Link
-                                href="/polls"
+                                href={userId ? `/users/${userId}/polls` : '/community/polls'}
                                 className="text-sm text-blue-400 hover:text-blue-300 underline"
                             >
                                 View all {pollsCreated.length + pollsVoted.length}

@@ -527,6 +527,7 @@ export default function UserProfilePage() {
                             pollsVoted={
                                 profileData.visibility.showPollsVoted ? forumPollsVoted : []
                             }
+                            userId={userId}
                         />
                     )}
                 </>
