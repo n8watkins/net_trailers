@@ -1191,27 +1191,27 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
     // Shuffle content
     const shuffled = [...allContent].sort(() => Math.random() - 0.5)
 
-    // Seed liked content
+    // Seed liked content (using rateContent to populate myRatings)
     const likedContent = shuffled.slice(0, likedCount)
-    console.log(`  ✅ Adding ${likedCount} liked items`)
+    console.log(`  ✅ Adding ${likedCount} liked items to myRatings`)
 
     for (const item of likedContent) {
         if (isGuest) {
-            await useGuestStore.getState().addLikedMovie(item)
+            await useGuestStore.getState().rateContent(item, 'like')
         } else {
-            await useAuthStore.getState().addLikedMovie(item)
+            await useAuthStore.getState().rateContent(item, 'like')
         }
     }
 
-    // Seed hidden content
+    // Seed hidden/disliked content (using rateContent to populate myRatings)
     const hiddenContent = shuffled.slice(likedCount, likedCount + hiddenCount)
-    console.log(`  👁️ Adding ${hiddenCount} hidden items`)
+    console.log(`  👁️ Adding ${hiddenCount} disliked items to myRatings`)
 
     for (const item of hiddenContent) {
         if (isGuest) {
-            await useGuestStore.getState().addHiddenMovie(item)
+            await useGuestStore.getState().rateContent(item, 'dislike')
         } else {
-            await useAuthStore.getState().addHiddenMovie(item)
+            await useAuthStore.getState().rateContent(item, 'dislike')
         }
     }
 
