@@ -138,19 +138,23 @@ function RatingsPageContent() {
 
     const headerActions = (
         <div className="space-y-4">
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-3">
-                <div className="bg-[#0a0a0a] rounded-lg border border-gray-700/50 p-3 text-center">
-                    <p className="text-2xl font-bold text-white">{ratingStats.total}</p>
-                    <p className="text-xs text-gray-500">Total</p>
-                </div>
-                <div className="bg-[#0a0a0a] rounded-lg border border-gray-700/50 p-3 text-center">
-                    <p className="text-2xl font-bold text-green-500">{ratingStats.liked}</p>
-                    <p className="text-xs text-gray-500">Liked</p>
-                </div>
-                <div className="bg-[#0a0a0a] rounded-lg border border-gray-700/50 p-3 text-center">
-                    <p className="text-2xl font-bold text-red-500">{ratingStats.disliked}</p>
-                    <p className="text-xs text-gray-500">Disliked</p>
+            {/* Filter buttons with counts */}
+            <div className="flex items-center gap-2">
+                <div className="flex gap-2 flex-wrap">
+                    {(['like', 'dislike'] as FilterValue[]).map((f) => (
+                        <button
+                            key={f}
+                            onClick={() => handleFilterChange(f)}
+                            className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                                filter === f
+                                    ? 'bg-purple-600 text-white'
+                                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                            }`}
+                        >
+                            {f === 'like' ? 'Liked' : 'Disliked'} (
+                            {f === 'like' ? ratingStats.liked : ratingStats.disliked})
+                        </button>
+                    ))}
                 </div>
             </div>
 
@@ -172,25 +176,6 @@ function RatingsPageContent() {
                         <XMarkIcon className="w-5 h-5" />
                     </button>
                 )}
-            </div>
-
-            {/* Filter */}
-            <div className="flex items-center gap-2">
-                <div className="flex gap-2 flex-wrap">
-                    {(['like', 'dislike'] as FilterValue[]).map((f) => (
-                        <button
-                            key={f}
-                            onClick={() => handleFilterChange(f)}
-                            className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
-                                filter === f
-                                    ? 'bg-purple-600 text-white'
-                                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                            }`}
-                        >
-                            {f === 'like' ? 'Liked' : 'Disliked'}
-                        </button>
-                    ))}
-                </div>
             </div>
         </div>
     )

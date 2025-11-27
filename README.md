@@ -341,9 +341,10 @@ _Experience all features or continue as guest to explore the platform_
     # Cron Job Security (Required for auto-updating collections)
     CRON_SECRET=your_random_secret_string
 
-    # Admin Portal (Required for admin access)
+    # Admin Portal (Required for admin access - SERVER-SIDE ONLY)
     # Get your Firebase UID from: Firebase Console > Authentication > Users > Copy UID
-    NEXT_PUBLIC_ADMIN_UID=your_firebase_uid_here
+    # NOTE: This is intentionally NOT prefixed with NEXT_PUBLIC_ to keep it server-side only
+    ADMIN_UID=your_firebase_uid_here
 
     # Firebase Admin SDK (Required for admin API endpoints)
     # Get from: Firebase Console > Project Settings > Service Accounts > Generate new private key
@@ -389,7 +390,7 @@ _Experience all features or continue as guest to explore the platform_
     - Go to Firebase Console > Authentication > Users
     - Create your admin account (via Email/Password or Google)
     - Copy your User UID from the user list
-    - Add to `.env.local` as `NEXT_PUBLIC_ADMIN_UID`
+    - Add to `.env.local` as `ADMIN_UID` (server-side only, not exposed to client)
 
     b. **Generate Firebase Admin SDK credentials**:
     - Go to Firebase Console > Project Settings > Service Accounts
