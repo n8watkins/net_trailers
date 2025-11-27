@@ -417,12 +417,20 @@ service cloud.firestore {
                     && request.resource.data.userId == request.auth.uid
                     && isValidPollData(request.resource.data);
 
-      // Allow update if authenticated user is the owner OR if only incrementing totalVotes
+      // Allow update if:
+      // 1. Owner can edit within 5 minutes of creation (full edit)
+      // 2. Owner can toggle isHidden at any time
+      // 3. Anyone authenticated can update vote counts
       allow update: if request.auth != null && (
-                      // Owner can update anything
+                      // Owner can fully edit within 5-minute window
                       (request.auth.uid == resource.data.userId
                        && request.resource.data.userId == resource.data.userId
+                       && resource.data.createdAt.toMillis() > request.time.toMillis() - 300000
                        && isValidPollData(request.resource.data))
+                      ||
+                      // Owner can toggle isHidden at any time
+                      (request.auth.uid == resource.data.userId
+                       && isOnlyTogglingPollHidden(resource.data, request.resource.data))
                       ||
                       // Anyone authenticated can update vote counts
                       (isOnlyUpdatingPollVotes(resource.data, request.resource.data))
@@ -530,6 +538,22 @@ service cloud.firestore {
              && after.options.size() == before.options.size()
              // Allow totalVotes to increment
              && (after.totalVotes >= before.totalVotes);
+    }
+
+    // Helper function to check if only isHidden is being toggled
+    function isOnlyTogglingPollHidden(before, after) {
+      return after.id == before.id
+             && after.userId == before.userId
+             && after.userName == before.userName
+             && after.question == before.question
+             && after.category == before.category
+             && after.createdAt == before.createdAt
+             && after.isMultipleChoice == before.isMultipleChoice
+             && after.allowAddOptions == before.allowAddOptions
+             && after.options == before.options
+             && after.totalVotes == before.totalVotes
+             // Only isHidden can change
+             && after.isHidden is bool;
     }
 
     // Content reports collection

@@ -71,17 +71,18 @@ export interface ThreadReply {
 export interface Poll {
     id: string
     question: string
-    description?: string
+    description?: string // Legacy - no longer used in new polls
     category: ForumCategory
     userId: string
     userName: string
     userAvatar?: string
     createdAt: Timestamp
-    expiresAt?: Timestamp
+    expiresAt?: Timestamp // Legacy - no longer used in new polls
     options: PollOption[]
     totalVotes: number
-    isMultipleChoice: boolean
-    allowAddOptions: boolean
+    isMultipleChoice: boolean // Legacy - always false for new polls
+    allowAddOptions: boolean // Legacy - always false
+    isHidden?: boolean // Owner can hide poll from public view
     tags?: string[]
 }
 

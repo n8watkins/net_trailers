@@ -229,10 +229,7 @@ export async function seedForumPolls(options: SeedForumOptions): Promise<string[
                     userAvatar,
                     template.question,
                     template.options,
-                    template.category,
-                    template.description,
-                    template.isMultipleChoice,
-                    undefined
+                    template.category
                 )
             createdIds.push(pollId)
             console.log(`    ✅ Created poll: ${template.question}`)

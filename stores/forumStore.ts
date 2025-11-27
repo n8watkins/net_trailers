@@ -98,11 +98,16 @@ interface ForumState {
         userAvatar: string | undefined,
         question: string,
         options: string[],
-        category: ForumCategory,
-        description?: string,
-        isMultipleChoice?: boolean,
-        expiresInDays?: number
+        category: ForumCategory
     ) => Promise<string>
+    updatePoll: (
+        userId: string,
+        pollId: string,
+        updates: { question?: string; options?: string[]; category?: ForumCategory }
+    ) => Promise<void>
+    hidePoll: (userId: string, pollId: string) => Promise<void>
+    unhidePoll: (userId: string, pollId: string) => Promise<void>
+    canEditPoll: (poll: Poll) => boolean
     voteOnPoll: (userId: string, pollId: string, optionIds: string[]) => Promise<void>
     deletePoll: (userId: string, pollId: string) => Promise<void>
     getUserVote: (userId: string, pollId: string) => Promise<string[] | null>
@@ -685,28 +690,10 @@ export const useForumStore = create<ForumState>((set, get) => ({
         }
     },
 
-    createPoll: async (
-        userId,
-        userName,
-        userAvatar,
-        question,
-        options,
-        category,
-        description,
-        isMultipleChoice = false,
-        expiresInDays
-    ) => {
+    createPoll: async (userId, userName, userAvatar, question, options, category) => {
         try {
             const pollsRef = collection(db, 'polls')
             const now = Timestamp.now()
-
-            // Calculate expiration date if provided
-            let expiresAt: Timestamp | undefined
-            if (typeof expiresInDays === 'number' && expiresInDays > 0) {
-                const expireDate = new Date()
-                expireDate.setDate(expireDate.getDate() + expiresInDays)
-                expiresAt = Timestamp.fromDate(expireDate)
-            }
 
             // Create poll options with initial vote counts
             const pollOptions = options.map((optionText, index) => ({
@@ -725,12 +712,11 @@ export const useForumStore = create<ForumState>((set, get) => ({
                 createdAt: now,
                 options: pollOptions,
                 totalVotes: 0,
-                isMultipleChoice,
+                isMultipleChoice: false,
                 allowAddOptions: false,
+                isHidden: false,
                 tags: [],
-                ...(description ? { description } : {}),
                 ...(userAvatar ? { userAvatar } : {}),
-                ...(expiresAt ? { expiresAt } : {}),
             }
 
             const docRef = await addDoc(pollsRef, pollData)
@@ -841,6 +827,143 @@ export const useForumStore = create<ForumState>((set, get) => ({
         } catch (error) {
             console.error('Failed to get user vote:', error)
             return null
+        }
+    },
+
+    // Check if poll can be edited (within 5 minutes of creation)
+    canEditPoll: (poll: Poll) => {
+        const now = Date.now()
+        const createdAt =
+            poll.createdAt instanceof Timestamp
+                ? poll.createdAt.toMillis()
+                : typeof poll.createdAt === 'number'
+                  ? poll.createdAt
+                  : new Date(poll.createdAt).getTime()
+        const fiveMinutes = 5 * 60 * 1000 // 5 minutes in milliseconds
+        return now - createdAt < fiveMinutes
+    },
+
+    // Update poll (only within 5 minutes of creation, resets all votes)
+    updatePoll: async (userId, pollId, updates) => {
+        try {
+            const pollRef = doc(db, 'polls', pollId)
+            const pollSnap = await getDoc(pollRef)
+
+            if (!pollSnap.exists()) {
+                throw new Error('Poll not found')
+            }
+
+            const pollData = pollSnap.data() as Poll
+            if (pollData.userId !== userId) {
+                throw new Error('Unauthorized')
+            }
+
+            // Check if within 5-minute edit window
+            const now = Date.now()
+            const createdAt =
+                pollData.createdAt instanceof Timestamp
+                    ? pollData.createdAt.toMillis()
+                    : typeof pollData.createdAt === 'number'
+                      ? pollData.createdAt
+                      : new Date(pollData.createdAt).getTime()
+            const fiveMinutes = 5 * 60 * 1000
+            if (now - createdAt >= fiveMinutes) {
+                throw new Error('Edit window has expired (5 minutes)')
+            }
+
+            // Prepare update data
+            const updateData: Record<string, unknown> = {}
+
+            if (updates.question) {
+                updateData.question = updates.question
+            }
+
+            if (updates.category) {
+                updateData.category = updates.category
+            }
+
+            if (updates.options) {
+                // Reset options with zero votes
+                updateData.options = updates.options.map((optionText, index) => ({
+                    id: `option-${index}`,
+                    text: optionText,
+                    votes: 0,
+                    percentage: 0,
+                }))
+                updateData.totalVotes = 0
+            }
+
+            await updateDoc(pollRef, updateData)
+
+            // Delete all existing votes for this poll (reset votes)
+            const votesRef = collection(db, 'poll_votes')
+            const q = query(votesRef, where('pollId', '==', pollId))
+            const snapshot = await getDocs(q)
+            const deletePromises = snapshot.docs.map((voteDoc) => deleteDoc(voteDoc.ref))
+            await Promise.all(deletePromises)
+
+            // Update local state
+            set((state) => ({
+                currentPoll:
+                    state.currentPoll?.id === pollId
+                        ? ({ ...state.currentPoll, ...updateData } as Poll)
+                        : state.currentPoll,
+                polls: state.polls.map((p) =>
+                    p.id === pollId ? ({ ...p, ...updateData } as Poll) : p
+                ),
+            }))
+        } catch (error) {
+            throw new Error(error instanceof Error ? error.message : 'Failed to update poll')
+        }
+    },
+
+    // Hide poll (owner only)
+    hidePoll: async (userId, pollId) => {
+        try {
+            const pollRef = doc(db, 'polls', pollId)
+            const pollSnap = await getDoc(pollRef)
+
+            if (!pollSnap.exists() || pollSnap.data().userId !== userId) {
+                throw new Error('Unauthorized or poll not found')
+            }
+
+            await updateDoc(pollRef, { isHidden: true })
+
+            // Update local state
+            set((state) => ({
+                currentPoll:
+                    state.currentPoll?.id === pollId
+                        ? { ...state.currentPoll, isHidden: true }
+                        : state.currentPoll,
+                polls: state.polls.map((p) => (p.id === pollId ? { ...p, isHidden: true } : p)),
+            }))
+        } catch (error) {
+            throw new Error(error instanceof Error ? error.message : 'Failed to hide poll')
+        }
+    },
+
+    // Unhide poll (owner only)
+    unhidePoll: async (userId, pollId) => {
+        try {
+            const pollRef = doc(db, 'polls', pollId)
+            const pollSnap = await getDoc(pollRef)
+
+            if (!pollSnap.exists() || pollSnap.data().userId !== userId) {
+                throw new Error('Unauthorized or poll not found')
+            }
+
+            await updateDoc(pollRef, { isHidden: false })
+
+            // Update local state
+            set((state) => ({
+                currentPoll:
+                    state.currentPoll?.id === pollId
+                        ? { ...state.currentPoll, isHidden: false }
+                        : state.currentPoll,
+                polls: state.polls.map((p) => (p.id === pollId ? { ...p, isHidden: false } : p)),
+            }))
+        } catch (error) {
+            throw new Error(error instanceof Error ? error.message : 'Failed to unhide poll')
         }
     },
 

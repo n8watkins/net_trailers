@@ -24,6 +24,9 @@ import {
     CheckCircleIcon,
     ClockIcon,
     XCircleIcon,
+    PencilIcon,
+    EyeIcon,
+    EyeSlashIcon,
 } from '@heroicons/react/24/outline'
 
 // Helper to convert Firebase Timestamp to Date
@@ -50,12 +53,26 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
     const getUserId = useSessionStore((state) => state.getUserId)
     const userId = getUserId()
 
-    const { currentPoll, isLoadingPolls, loadPollById, voteOnPoll, deletePoll, getUserVote } =
-        useForumStore()
+    const {
+        currentPoll,
+        isLoadingPolls,
+        loadPollById,
+        voteOnPoll,
+        deletePoll,
+        getUserVote,
+        updatePoll,
+        hidePoll,
+        unhidePoll,
+        canEditPoll,
+    } = useForumStore()
 
     const [selectedOptions, setSelectedOptions] = useState<string[]>([])
     const [hasVoted, setHasVoted] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isEditMode, setIsEditMode] = useState(false)
+    const [editQuestion, setEditQuestion] = useState('')
+    const [editOptions, setEditOptions] = useState<string[]>([])
+    const [editTimeLeft, setEditTimeLeft] = useState<number>(0)
 
     // Load poll
     useEffect(() => {
@@ -80,6 +97,114 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
         }
         checkUserVote()
     }, [currentPoll, userId, getUserVote])
+
+    // Track edit time remaining (5 minutes from creation)
+    useEffect(() => {
+        if (!currentPoll) return
+
+        const calculateTimeLeft = () => {
+            const createdAt =
+                currentPoll.createdAt instanceof Timestamp
+                    ? currentPoll.createdAt.toMillis()
+                    : typeof currentPoll.createdAt === 'number'
+                      ? currentPoll.createdAt
+                      : new Date(currentPoll.createdAt).getTime()
+            const fiveMinutes = 5 * 60 * 1000
+            const timeLeft = createdAt + fiveMinutes - Date.now()
+            return Math.max(0, timeLeft)
+        }
+
+        setEditTimeLeft(calculateTimeLeft())
+
+        const interval = setInterval(() => {
+            const timeLeft = calculateTimeLeft()
+            setEditTimeLeft(timeLeft)
+            if (timeLeft === 0) {
+                clearInterval(interval)
+                setIsEditMode(false) // Exit edit mode if time expires
+            }
+        }, 1000)
+
+        return () => clearInterval(interval)
+    }, [currentPoll])
+
+    // Initialize edit form when entering edit mode
+    const handleStartEdit = () => {
+        if (!currentPoll || !canEditPoll(currentPoll)) return
+        setEditQuestion(currentPoll.question)
+        setEditOptions(currentPoll.options.map((opt) => opt.text))
+        setIsEditMode(true)
+    }
+
+    const handleCancelEdit = () => {
+        setIsEditMode(false)
+        setEditQuestion('')
+        setEditOptions([])
+    }
+
+    const handleSaveEdit = async () => {
+        if (!currentPoll || !userId) return
+        const validOptions = editOptions.filter((opt) => opt.trim().length > 0)
+        if (!editQuestion.trim() || validOptions.length < 2) return
+
+        setIsSubmitting(true)
+        try {
+            await updatePoll(userId, currentPoll.id, {
+                question: editQuestion,
+                options: validOptions,
+            })
+            setIsEditMode(false)
+            setHasVoted(false) // Reset vote state since votes are cleared
+            setSelectedOptions([])
+        } catch (error) {
+            console.error('Failed to update poll:', error)
+            alert(error instanceof Error ? error.message : 'Failed to update poll')
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    const handleToggleHidden = async () => {
+        if (!currentPoll || !userId || currentPoll.userId !== userId) return
+
+        setIsSubmitting(true)
+        try {
+            if (currentPoll.isHidden) {
+                await unhidePoll(userId, currentPoll.id)
+            } else {
+                await hidePoll(userId, currentPoll.id)
+            }
+        } catch (error) {
+            console.error('Failed to toggle poll visibility:', error)
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    const addEditOption = () => {
+        if (editOptions.length < 10) {
+            setEditOptions([...editOptions, ''])
+        }
+    }
+
+    const removeEditOption = (index: number) => {
+        if (editOptions.length > 2) {
+            setEditOptions(editOptions.filter((_, i) => i !== index))
+        }
+    }
+
+    const updateEditOption = (index: number, value: string) => {
+        const newOptions = [...editOptions]
+        newOptions[index] = value
+        setEditOptions(newOptions)
+    }
+
+    const formatTimeLeft = (ms: number) => {
+        const totalSeconds = Math.floor(ms / 1000)
+        const minutes = Math.floor(totalSeconds / 60)
+        const seconds = totalSeconds % 60
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`
+    }
 
     const submitVote = async (optionIds: string[]) => {
         if (!currentPoll || optionIds.length === 0 || isGuest || hasVoted || !userId) return
@@ -135,6 +260,7 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
     const isOwner = currentPoll.userId === userId
     const isExpired = currentPoll.expiresAt ? toDate(currentPoll.expiresAt) < new Date() : false
     const showResults = hasVoted || isExpired
+    const canEdit = isOwner && canEditPoll(currentPoll)
 
     return (
         <SubPageLayout
@@ -199,13 +325,55 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
                                 </div>
 
                                 {isOwner && (
-                                    <button
-                                        onClick={handleDelete}
-                                        className="px-3 py-2 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg transition-colors flex items-center gap-2"
-                                    >
-                                        <TrashIcon className="w-5 h-5" />
-                                        <span className="text-sm">Delete</span>
-                                    </button>
+                                    <div className="flex items-center gap-2">
+                                        {/* Edit button - only within 5 minutes */}
+                                        {canEdit && !isEditMode && (
+                                            <button
+                                                onClick={handleStartEdit}
+                                                disabled={isSubmitting}
+                                                className="px-3 py-2 text-blue-400 hover:text-blue-300 hover:bg-blue-900/20 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+                                                title={`Edit available for ${formatTimeLeft(editTimeLeft)}`}
+                                            >
+                                                <PencilIcon className="w-5 h-5" />
+                                                <span className="text-sm">
+                                                    Edit ({formatTimeLeft(editTimeLeft)})
+                                                </span>
+                                            </button>
+                                        )}
+
+                                        {/* Hide/Unhide button */}
+                                        <button
+                                            onClick={handleToggleHidden}
+                                            disabled={isSubmitting}
+                                            className={`px-3 py-2 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 ${
+                                                currentPoll.isHidden
+                                                    ? 'text-green-400 hover:text-green-300 hover:bg-green-900/20'
+                                                    : 'text-yellow-400 hover:text-yellow-300 hover:bg-yellow-900/20'
+                                            }`}
+                                        >
+                                            {currentPoll.isHidden ? (
+                                                <>
+                                                    <EyeIcon className="w-5 h-5" />
+                                                    <span className="text-sm">Show</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <EyeSlashIcon className="w-5 h-5" />
+                                                    <span className="text-sm">Hide</span>
+                                                </>
+                                            )}
+                                        </button>
+
+                                        {/* Delete button */}
+                                        <button
+                                            onClick={handleDelete}
+                                            disabled={isSubmitting}
+                                            className="px-3 py-2 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+                                        >
+                                            <TrashIcon className="w-5 h-5" />
+                                            <span className="text-sm">Delete</span>
+                                        </button>
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -246,7 +414,108 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
                                 You voted
                             </span>
                         )}
+                        {currentPoll.isHidden && (
+                            <span className="px-3 py-1 bg-orange-500/10 border border-orange-500/30 rounded-full text-sm text-orange-400 flex items-center gap-1">
+                                <EyeSlashIcon className="w-4 h-4" />
+                                Hidden from public
+                            </span>
+                        )}
                     </div>
+
+                    {/* Edit Mode UI */}
+                    {isEditMode && (
+                        <div className="mb-6 p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-semibold text-blue-400">
+                                    Editing Poll
+                                </h3>
+                                <span className="text-sm text-blue-300">
+                                    Time remaining: {formatTimeLeft(editTimeLeft)}
+                                </span>
+                            </div>
+                            <p className="text-sm text-blue-300 mb-4">
+                                Note: Saving changes will reset all votes.
+                            </p>
+
+                            {/* Edit Question */}
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-white mb-2">
+                                    Question
+                                </label>
+                                <input
+                                    type="text"
+                                    value={editQuestion}
+                                    onChange={(e) => setEditQuestion(e.target.value)}
+                                    placeholder="Poll question"
+                                    className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    maxLength={200}
+                                />
+                            </div>
+
+                            {/* Edit Options */}
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-white mb-2">
+                                    Options (min 2, max 10)
+                                </label>
+                                <div className="space-y-2">
+                                    {editOptions.map((option, index) => (
+                                        <div key={index} className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={option}
+                                                onChange={(e) =>
+                                                    updateEditOption(index, e.target.value)
+                                                }
+                                                placeholder={`Option ${index + 1}`}
+                                                className="flex-1 px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                maxLength={100}
+                                            />
+                                            {editOptions.length > 2 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeEditOption(index)}
+                                                    className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors"
+                                                >
+                                                    <TrashIcon className="w-5 h-5" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                    {editOptions.length < 10 && (
+                                        <button
+                                            type="button"
+                                            onClick={addEditOption}
+                                            className="w-full px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-gray-400 rounded-lg transition-colors text-sm"
+                                        >
+                                            + Add Option
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Edit Actions */}
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={handleCancelEdit}
+                                    disabled={isSubmitting}
+                                    className="flex-1 px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded-lg transition-colors disabled:opacity-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleSaveEdit}
+                                    disabled={
+                                        isSubmitting ||
+                                        !editQuestion.trim() ||
+                                        editOptions.filter((o) => o.trim()).length < 2
+                                    }
+                                    className="flex-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isSubmitting ? 'Saving...' : 'Save & Reset Votes'}
+                                </button>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Voting options */}
                     <div className="space-y-3 mb-6">

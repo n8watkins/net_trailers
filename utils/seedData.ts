@@ -1075,10 +1075,7 @@ export async function seedForumPolls({
                     userAvatar,
                     pollData.question,
                     pollData.options,
-                    pollData.category,
-                    pollData.description,
-                    pollData.isMultipleChoice,
-                    undefined
+                    pollData.category
                 )
             createdPollIds.push(pollId)
             appendedPolls.push({
