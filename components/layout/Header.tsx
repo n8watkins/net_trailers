@@ -87,7 +87,7 @@ const subNavItems: NavItem[] = [
     },
     {
         label: 'Collections',
-        href: '/watch-later',
+        href: '/collections/watch-later',
         icon: RectangleStackIcon,
         iconSolid: RectangleStackIconSolid,
     },
@@ -142,8 +142,6 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
         '/history',
         '/rankings',
         '/collections',
-        '/watch-later', // Watch Later collection (slug-based route)
-        '/watchlist', // Legacy route for Watch Later collection
         '/ratings',
         '/notifications',
         '/settings',
@@ -185,7 +183,6 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
             // User data pages
             '/liked',
             '/hidden',
-            '/watch-later',
             // Other app routes
             '/person',
             '/unsubscribed',
@@ -200,7 +197,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
         // Check if path matches sub-nav paths (these are handled separately)
         const isSubNavPath = subNavPaths.some((path) => pathname.startsWith(path))
         // Only consider it a collection slug if it's a single-segment path that isn't known
-        // Collection slugs are at root level like /watch-later, /my-favorites, etc.
+        // Collection slugs are nested under /collections like /collections/watchlater, /collections/my-favorites, etc.
         const pathSegments = pathname.split('/').filter(Boolean)
         const isSingleSegment = pathSegments.length === 1
 
@@ -555,11 +552,10 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                             <div className="flex gap-2 sm:gap-8 justify-center sm:justify-start">
                                 {subNavItems.map((item) => {
                                     // Check if current path starts with the item's href (handles nested routes like /settings/preferences)
-                                    // Special case for Collections: match /watch-later OR any /collections path
+                                    // Special case for Collections: match any /collections path
                                     const isActive =
                                         item.label === 'Collections'
-                                            ? pathname.startsWith('/watch-later') ||
-                                              pathname.startsWith('/collections')
+                                            ? pathname.startsWith('/collections')
                                             : pathname.startsWith(item.href)
                                     const Icon = isActive ? item.iconSolid : item.icon
 
@@ -653,13 +649,12 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                         <li>
                                             <button
                                                 className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
-                                                    pathname.startsWith('/collections') ||
-                                                    pathname.startsWith('/watch-later')
+                                                    pathname.startsWith('/collections')
                                                         ? 'text-white font-semibold bg-red-600/20'
                                                         : 'hover:bg-white/10'
                                                 }`}
                                                 onClick={() => {
-                                                    router.push('/watch-later')
+                                                    router.push('/collections/watch-later')
                                                     setShowMobileMenu(false)
                                                 }}
                                             >

@@ -52,10 +52,9 @@ export default function UserRankingsPage() {
 
                 if (!isMounted) return
 
-                // Get display name - prioritize displayName over username (username is the URL slug)
+                // Get display name
                 setUsername(
                     profileData?.displayName ||
-                        profileData?.username ||
                         legacyProfile.displayName ||
                         userData.displayName ||
                         'User'

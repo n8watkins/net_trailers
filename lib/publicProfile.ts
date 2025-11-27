@@ -10,8 +10,7 @@ import type { Timestamp, Firestore } from 'firebase-admin/firestore'
 
 export interface PublicProfilePayload {
     profile: {
-        username: string
-        displayName?: string | null
+        displayName: string
         avatarUrl?: string | null
         bio?: string | null
         favoriteGenres?: string[]
@@ -106,10 +105,9 @@ export async function buildPublicProfilePayload(
     const legacyProfile = legacyData.profile || {}
     const profileData = profileSnap.exists ? profileDataRaw : null
 
-    // Get display name - prioritize displayName over username (username is the URL slug)
+    // Get display name
     const derivedDisplayName =
         profileData?.displayName ||
-        profileData?.username ||
         legacyProfile.displayName ||
         legacyData.displayName ||
         authRecord?.displayName ||
@@ -123,7 +121,6 @@ export async function buildPublicProfilePayload(
         null
 
     const profilePayload: PublicProfilePayload['profile'] = {
-        username: derivedDisplayName,
         displayName: derivedDisplayName,
         avatarUrl: derivedAvatar,
         bio: profileData?.description ?? legacyProfile.bio ?? legacyData.bio ?? null,

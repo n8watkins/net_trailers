@@ -20,7 +20,7 @@ export function CollectionsSection({
     userId,
     isPublic = false,
 }: CollectionsSectionProps) {
-    const collectionsUrl = isPublic ? `/users/${userId}/collections` : '/watch-later'
+    const collectionsUrl = isPublic ? `/users/${userId}/collections` : '/collections/watch-later'
     const collectionDetailUrl = (id: string) =>
         isPublic ? `/users/${userId}/collections/${id}` : `/collections/${id}`
 

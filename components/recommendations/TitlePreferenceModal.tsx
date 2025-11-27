@@ -74,7 +74,9 @@ interface TitlePreferenceModalProps {
     isOpen: boolean
     onClose: () => void
     onSave: (votes: VotedContent[]) => Promise<void>
+    onSkip?: (skipped: SkippedContent) => Promise<void>
     existingVotes?: VotedContent[]
+    skippedContent?: SkippedContent[]
     watchlistContent?: Content[]
     likedContent?: Content[]
     /** Pre-fetched content to use instead of fetching (for instant loading) */
@@ -85,7 +87,9 @@ export default function TitlePreferenceModal({
     isOpen,
     onClose,
     onSave,
+    onSkip,
     existingVotes = [],
+    skippedContent = [],
     watchlistContent = [],
     likedContent = [],
     prefetchedContent = null,
@@ -115,25 +119,27 @@ export default function TitlePreferenceModal({
     const SWIPE_THRESHOLD = 100 // pixels needed to trigger action
     const SWIPE_VELOCITY_THRESHOLD = 0.5 // pixels per ms for quick swipes
 
-    // Build list of IDs to exclude (already voted or liked)
+    // Build list of IDs to exclude (already voted, liked, or skipped)
     const excludeIds = useMemo(() => {
         const ids = new Set<number>()
         existingVotes.forEach((v) => ids.add(v.contentId))
         likedContent.forEach((c) => ids.add(c.id))
+        skippedContent.forEach((s) => ids.add(s.contentId))
         return Array.from(ids)
-    }, [existingVotes, likedContent])
+    }, [existingVotes, likedContent, skippedContent])
 
-    // Build priority content from watchlist (items not yet voted on)
+    // Build priority content from watchlist (items not yet voted on or skipped)
     const priorityContent = useMemo(() => {
         const votedIds = new Set(existingVotes.map((v) => v.contentId))
         const likedIds = new Set(likedContent.map((c) => c.id))
+        const skippedIds = new Set(skippedContent.map((s) => s.contentId))
         return watchlistContent
-            .filter((c) => !votedIds.has(c.id) && !likedIds.has(c.id))
+            .filter((c) => !votedIds.has(c.id) && !likedIds.has(c.id) && !skippedIds.has(c.id))
             .map((c) => ({
                 id: c.id,
                 mediaType: (c.media_type || 'movie') as 'movie' | 'tv',
             }))
-    }, [watchlistContent, existingVotes, likedContent])
+    }, [watchlistContent, existingVotes, likedContent, skippedContent])
 
     // Mount portal after client-side render
     useEffect(() => {
@@ -278,6 +284,29 @@ export default function TitlePreferenceModal({
         },
         [currentContent, contentKey, currentIndex, content.length, votes, onSave, onClose]
     )
+
+    const handleSkip = useCallback(async () => {
+        if (!currentContent || !onSkip) return
+
+        // Save skip immediately
+        await onSkip({
+            contentId: currentContent.id,
+            mediaType: currentContent.media_type,
+            skippedAt: Date.now(),
+        })
+
+        // Reset swipe state
+        setSwipeOffset({ x: 0, y: 0 })
+        setIsDragging(false)
+
+        // Move to next item
+        if (currentIndex < content.length - 1) {
+            setCurrentIndex((prev) => prev + 1)
+        } else {
+            // Last item - close modal
+            onClose()
+        }
+    }, [currentContent, currentIndex, content.length, onSkip, onClose])
 
     // Touch/swipe handlers for mobile
     const handleTouchStart = useCallback(
@@ -688,6 +717,25 @@ export default function TitlePreferenceModal({
                                         Dislike
                                     </span>
                                 </button>
+
+                                {/* Skip button - only show if onSkip handler provided */}
+                                {onSkip && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleSkip()
+                                        }}
+                                        disabled={!!animatingVote}
+                                        className="flex flex-col items-center gap-1 transition-all duration-200 active:scale-95 hover:scale-105"
+                                    >
+                                        <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-[70px] md:h-[70px] rounded-full flex items-center justify-center border-2 bg-transparent border-gray-500 hover:border-gray-400 hover:bg-gray-500/10 transition-all">
+                                            <ForwardIcon className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-gray-300" />
+                                        </div>
+                                        <span className="text-[10px] sm:text-xs text-gray-400 font-medium">
+                                            Skip
+                                        </span>
+                                    </button>
+                                )}
 
                                 <button
                                     onClick={(e) => {

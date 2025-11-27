@@ -53,10 +53,9 @@ export default function UserLikedContentPage() {
 
                 if (!isMounted) return
 
-                // Get display name - prioritize displayName over username (username is the URL slug)
+                // Get display name
                 const displayName =
                     profileData?.displayName ||
-                    profileData?.username ||
                     legacyProfile.displayName ||
                     userData.displayName ||
                     'User'

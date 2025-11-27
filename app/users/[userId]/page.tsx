@@ -74,16 +74,11 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
         userData.visibility ??
         legacyProfile.visibility ?? { ...DEFAULT_PROFILE_VISIBILITY }
 
-    // Get display name - prioritize displayName over username (username is the URL slug)
+    // Get display name
     const derivedDisplayName =
-        profileData.displayName ||
-        profileData.username ||
-        legacyProfile.displayName ||
-        userData.displayName ||
-        'User'
+        profileData.displayName || legacyProfile.displayName || userData.displayName || 'User'
 
     const profile: PublicProfileIdentity = {
-        username: derivedDisplayName,
         displayName: derivedDisplayName,
         avatarUrl:
             profileData.avatarUrl ??

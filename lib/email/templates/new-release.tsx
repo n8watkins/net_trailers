@@ -22,7 +22,7 @@ export const NewReleaseEmail = ({ userName, releases }: NewReleaseEmailProps) =>
             subtitle="Watchlist Update"
             ctaButton={{
                 text: 'View Watchlist',
-                url: `${appUrl}/watchlist`,
+                url: `${appUrl}/collections/watch-later`,
             }}
         >
             <p style={{ marginBottom: '20px' }}>

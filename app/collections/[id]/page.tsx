@@ -407,7 +407,7 @@ const CollectionPage = ({ params }: CollectionPageProps) => {
                             // Use clean route for default watchlist
                             const href =
                                 list.id === 'default-watchlist'
-                                    ? '/watchlist'
+                                    ? '/collections/watch-later'
                                     : `/collections/${list.id}`
 
                             return (

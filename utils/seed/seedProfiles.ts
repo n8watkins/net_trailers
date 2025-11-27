@@ -12,7 +12,6 @@ import { seedRankings } from './seedRankings'
 import { seedForumThreads, seedForumPolls } from './seedForum'
 
 export interface DemoProfile {
-    username: string
     displayName: string
     description: string
     favoriteGenres: string[]
@@ -20,32 +19,27 @@ export interface DemoProfile {
 
 export const DEMO_PROFILES: DemoProfile[] = [
     {
-        username: 'MovieBuff42',
         displayName: 'Alex Chen',
         description: 'Film enthusiast with a passion for indie cinema and classic noir',
         favoriteGenres: ['Drama', 'Thriller', 'Mystery'],
     },
     {
-        username: 'SciFiNerd',
         displayName: 'Jordan Smith',
         description:
             'Sci-fi fanatic! Love anything with time travel, space exploration, or dystopian futures',
         favoriteGenres: ['Sci-Fi', 'Fantasy', 'Adventure'],
     },
     {
-        username: 'HorrorFan88',
         displayName: 'Sam Rivera',
         description: 'Horror connoisseur. From slashers to psychological thrillers',
         favoriteGenres: ['Horror', 'Thriller', 'Mystery'],
     },
     {
-        username: 'CinemaLover',
         displayName: 'Taylor Kim',
         description: 'Classic film aficionado. Golden age Hollywood is my jam',
         favoriteGenres: ['Drama', 'Romance', 'Comedy'],
     },
     {
-        username: 'AnimeFan99',
         displayName: 'Riley Park',
         description: 'Anime and animation lover. Studio Ghibli forever',
         favoriteGenres: ['Animation', 'Fantasy', 'Adventure'],

@@ -61,7 +61,7 @@ export function WatchLaterSection({
     isPublic = false,
     limit = 6,
 }: WatchLaterSectionProps) {
-    const viewAllUrl = isPublic ? `/users/${userId}/watch-later` : '/collections'
+    const viewAllUrl = isPublic ? `/users/${userId}/collections/watch-later` : '/collections'
 
     if (watchLaterPreview.length === 0 && isPublic) {
         return null // Don't show empty section on public profiles

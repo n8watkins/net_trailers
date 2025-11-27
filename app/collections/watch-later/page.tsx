@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import SubPageLayout from '../../components/layout/SubPageLayout'
-import useUserData from '../../hooks/useUserData'
-import useAuth from '../../hooks/useAuth'
+import SubPageLayout from '../../../components/layout/SubPageLayout'
+import useUserData from '../../../hooks/useUserData'
+import useAuth from '../../../hooks/useAuth'
 import {
     EyeIcon,
     MagnifyingGlassIcon,
@@ -12,16 +12,16 @@ import {
     PencilIcon,
     RectangleStackIcon,
 } from '@heroicons/react/24/solid'
-import { Content } from '../../typings'
-import { getTitle } from '../../typings'
-import ContentCard from '../../components/common/ContentCard'
-import ContentGridSpacer from '../../components/common/ContentGridSpacer'
-import EmptyState from '../../components/common/EmptyState'
-import NetflixLoader from '../../components/common/NetflixLoader'
-import SearchBar from '../../components/common/SearchBar'
-import { UserList } from '../../types/collections'
-import CollectionEditorModal from '../../components/modals/CollectionEditorModal'
-import { useChildSafety } from '../../hooks/useChildSafety'
+import { Content } from '../../../typings'
+import { getTitle } from '../../../typings'
+import ContentCard from '../../../components/common/ContentCard'
+import ContentGridSpacer from '../../../components/common/ContentGridSpacer'
+import EmptyState from '../../../components/common/EmptyState'
+import NetflixLoader from '../../../components/common/NetflixLoader'
+import SearchBar from '../../../components/common/SearchBar'
+import { UserList } from '../../../types/collections'
+import CollectionEditorModal from '../../../components/modals/CollectionEditorModal'
+import { useChildSafety } from '../../../hooks/useChildSafety'
 import Link from 'next/link'
 
 const CollectionPage = () => {
@@ -401,7 +401,7 @@ const CollectionPage = () => {
                             // Use clean route for default watchlist
                             const href =
                                 list.id === 'default-watchlist'
-                                    ? '/watchlist'
+                                    ? '/collections/watch-later'
                                     : `/collections/${list.id}`
 
                             return (

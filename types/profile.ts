@@ -6,7 +6,7 @@ export type AvatarSource = 'google' | 'custom' | 'generated'
 /**
  * Profile visibility settings
  * Controls which sections are visible on the public profile
- * Profile identity (username, avatar, bio, genres) is always visible
+ * Profile identity (displayName, avatar, bio, genres) is always visible
  */
 export interface ProfileVisibility {
     enablePublicProfile: boolean // Master toggle - when off, all sections hidden
@@ -43,8 +43,7 @@ export interface UserProfile {
     email: string // Private (not shown publicly)
 
     // Identity
-    username: string // Unique display name, editable, used as URL slug (e.g., /users/john_doe)
-    displayName?: string // @deprecated - use username instead (kept for backward compatibility)
+    displayName: string // User's display name shown in UI
 
     // Avatar system
     avatarUrl: string // Current avatar URL
@@ -76,7 +75,7 @@ export interface UserProfile {
  * Request to update profile
  */
 export interface UpdateProfileRequest {
-    username?: string
+    displayName?: string
     description?: string
     favoriteGenres?: string[]
     isPublic?: boolean // @deprecated - use visibility instead
@@ -249,15 +248,16 @@ export async function validateAvatarDimensions(file: File): Promise<{
 export function createDefaultProfile(
     userId: string,
     email: string,
-    username: string,
+    displayName: string,
     googlePhotoUrl?: string
 ): UserProfile {
     return {
         id: userId,
         userId,
         email,
-        username,
-        avatarUrl: googlePhotoUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`,
+        displayName,
+        avatarUrl:
+            googlePhotoUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${displayName}`,
         avatarSource: googlePhotoUrl ? 'google' : 'generated',
         googlePhotoUrl: googlePhotoUrl,
         description: '',

@@ -6,7 +6,7 @@ import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useToast } from '../../hooks/useToast'
-import { GenrePreference, VotedContent } from '../../types/shared'
+import { GenrePreference, VotedContent, SkippedContent } from '../../types/shared'
 import SubPageLayout from '../../components/layout/SubPageLayout'
 import ContentCard from '../../components/common/ContentCard'
 import ContentGridSpacer from '../../components/common/ContentGridSpacer'
@@ -67,9 +67,14 @@ function RatingsPageContent() {
     const guestVotedContent = useGuestStore((state) => state.votedContent)
     const votedContent = isGuest ? guestVotedContent : authVotedContent
 
+    const authSkippedContent = useAuthStore((state) => state.skippedContent)
+    const guestSkippedContent = useGuestStore((state) => state.skippedContent)
+    const skippedContent = isGuest ? guestSkippedContent : authSkippedContent
+
     // Memoize stable empty arrays to prevent infinite loops in child components
     const stableVotedContent = useMemo(() => votedContent || [], [votedContent])
     const stableGenrePreferences = useMemo(() => genrePreferences || [], [genrePreferences])
+    const stableSkippedContent = useMemo(() => skippedContent || [], [skippedContent])
 
     // Get initial filter from URL params (default to 'like')
     const urlFilter = searchParams.get('filter')
@@ -190,6 +195,15 @@ function RatingsPageContent() {
             await authUpdatePreferences({ votedContent: preferences })
         }
         showSuccess('Title preferences saved')
+    }
+
+    const handleSkipContent = async (skipped: SkippedContent) => {
+        const updatedSkippedContent = [...(skippedContent || []), skipped]
+        if (isGuest) {
+            guestUpdatePreferences({ skippedContent: updatedSkippedContent })
+        } else {
+            await authUpdatePreferences({ skippedContent: updatedSkippedContent })
+        }
     }
 
     const headerActions = (
@@ -351,6 +365,8 @@ function RatingsPageContent() {
                 onClose={() => setShowTitleModal(false)}
                 onSave={handleSaveTitlePreferences}
                 existingVotes={stableVotedContent}
+                skippedContent={stableSkippedContent}
+                onSkip={handleSkipContent}
             />
         </SubPageLayout>
     )

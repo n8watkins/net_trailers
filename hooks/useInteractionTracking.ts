@@ -198,8 +198,8 @@ export function useInteractionSource(): InteractionSource {
     if (pathname === '/') return 'home'
     if (pathname.startsWith('/search')) return 'search'
     if (pathname.startsWith('/rows')) return 'collection'
+    if (pathname.startsWith('/collections/watch-later')) return 'watchlist'
     if (pathname.startsWith('/collections')) return 'collection'
-    if (pathname.startsWith('/watchlist')) return 'watchlist'
     if (pathname.startsWith('/rankings')) return 'modal'
     if (pathname.startsWith('/community')) return 'modal'
 
