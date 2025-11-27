@@ -369,26 +369,22 @@ export default function DebugControls() {
 
     // Clear NetTrailer localStorage and reload
     const handleClearLocalStorage = () => {
-        if (confirm('Clear all NetTrailer localStorage data and reload?')) {
-            Object.keys(localStorage)
-                .filter((key) => key.startsWith('nettrailer'))
-                .forEach((key) => localStorage.removeItem(key))
-            location.reload()
-        }
+        Object.keys(localStorage)
+            .filter((key) => key.startsWith('nettrailer'))
+            .forEach((key) => localStorage.removeItem(key))
+        location.reload()
     }
 
     // Clear user data (same as settings page "Clear All Data")
     const handleClearUserData = async () => {
-        if (confirm('Clear all user data (collections, ratings, watch history, etc.)?')) {
-            setIsClearing(true)
-            try {
-                await clearAccountData()
-                console.log('[DebugControls] ✅ User data cleared')
-            } catch (error) {
-                console.error('[DebugControls] Failed to clear user data:', error)
-            } finally {
-                setIsClearing(false)
-            }
+        setIsClearing(true)
+        try {
+            await clearAccountData()
+            console.log('[DebugControls] ✅ User data cleared')
+        } catch (error) {
+            console.error('[DebugControls] Failed to clear user data:', error)
+        } finally {
+            setIsClearing(false)
         }
     }
 
