@@ -142,7 +142,7 @@ export default function UserCollectionsPage() {
 
     return (
         <SubPageLayout
-            title={`${username}'s Collections`}
+            title={`${displayName}'s Collections`}
             icon={<RectangleStackIcon className="w-8 h-8" />}
             iconColor="text-purple-400"
             description={`${collections.length} ${collections.length === 1 ? 'collection' : 'collections'}`}
@@ -154,7 +154,7 @@ export default function UserCollectionsPage() {
                     className="inline-flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition-colors"
                 >
                     <UserIcon className="w-4 h-4" />
-                    Back to {username}'s Profile
+                    Back to {displayName}'s Profile
                 </Link>
             </div>
 
@@ -228,7 +228,9 @@ export default function UserCollectionsPage() {
                 <div className="text-center py-16 bg-zinc-900 rounded-lg border border-zinc-800">
                     <RectangleStackIcon className="w-20 h-20 text-gray-600 mx-auto mb-4" />
                     <h3 className="text-xl font-semibold text-white mb-2">No Collections</h3>
-                    <p className="text-gray-400">{username} hasn't created any collections yet</p>
+                    <p className="text-gray-400">
+                        {displayName} hasn't created any collections yet
+                    </p>
                 </div>
             )}
         </SubPageLayout>

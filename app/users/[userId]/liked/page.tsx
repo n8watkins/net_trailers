@@ -16,6 +16,7 @@ import ContentGridSpacer from '../../../../components/common/ContentGridSpacer'
 import NetflixLoader from '../../../../components/common/NetflixLoader'
 import { HeartIcon, UserIcon } from '@heroicons/react/24/outline'
 import type { Movie, TVShow } from '../../../../typings'
+import type { PublicProfilePayload } from '@/lib/publicProfile'
 import Link from 'next/link'
 
 export default function UserLikedContentPage() {
@@ -23,7 +24,7 @@ export default function UserLikedContentPage() {
     const userId = params?.userId as string
 
     const [likedContent, setLikedContent] = useState<(Movie | TVShow)[]>([])
-    const [username, setUsername] = useState<string>('User')
+    const [displayName, setDisplayName] = useState<string>('User')
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
@@ -37,30 +38,42 @@ export default function UserLikedContentPage() {
             setError(null)
 
             try {
-                // Fetch both user document and profile document
-                const [userDoc, profileDoc] = await Promise.all([
-                    getDoc(doc(db, 'users', userId)),
-                    getDoc(doc(db, 'profiles', userId)),
-                ])
+                // Try to get profile data from API first (includes auth displayName fallback)
+                let profileDisplayName = 'User'
+                try {
+                    const response = await fetch(`/api/public-profile/${userId}`)
+                    if (response.ok) {
+                        const payload = (await response.json()) as PublicProfilePayload
+                        profileDisplayName = payload.profile.displayName
+                    }
+                } catch (apiError) {
+                    console.warn('[UserLiked] API failed, will use client-side data')
+                }
 
-                if (!userDoc.exists() && !profileDoc.exists()) {
+                // Fetch user document for liked content
+                const userDoc = await getDoc(doc(db, 'users', userId))
+
+                if (!userDoc.exists()) {
                     throw new Error('User not found')
                 }
 
-                const userData = userDoc.exists() ? userDoc.data() : {}
-                const profileData = profileDoc.exists() ? profileDoc.data() : {}
-                const legacyProfile = userData?.profile || {}
+                const userData = userDoc.data()
 
                 if (!isMounted) return
 
-                // Get display name
-                const displayName =
-                    profileData?.displayName ||
-                    legacyProfile.displayName ||
-                    userData.displayName ||
-                    'User'
+                // Use API-derived displayName, or fallback to client-side lookup
+                if (profileDisplayName === 'User') {
+                    const profileDoc = await getDoc(doc(db, 'profiles', userId))
+                    const profileData = profileDoc.exists() ? profileDoc.data() : {}
+                    const legacyProfile = userData?.profile || {}
+                    profileDisplayName =
+                        profileData?.displayName ||
+                        legacyProfile.displayName ||
+                        userData.displayName ||
+                        'User'
+                }
 
-                setUsername(displayName)
+                setDisplayName(profileDisplayName)
 
                 const liked = Array.isArray(userData.likedMovies)
                     ? (userData.likedMovies as (Movie | TVShow)[])
@@ -118,7 +131,7 @@ export default function UserLikedContentPage() {
 
     return (
         <SubPageLayout
-            title={`${username}'s Liked Content`}
+            title={`${displayName}'s Liked Content`}
             icon={<HeartIcon className="w-8 h-8" />}
             iconColor="text-red-400"
             description={`${likedContent.length} liked ${likedContent.length === 1 ? 'item' : 'items'}`}
@@ -130,7 +143,7 @@ export default function UserLikedContentPage() {
                     className="inline-flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition-colors"
                 >
                     <UserIcon className="w-4 h-4" />
-                    Back to {username}'s Profile
+                    Back to {displayName}'s Profile
                 </Link>
             </div>
 
@@ -145,7 +158,7 @@ export default function UserLikedContentPage() {
                 <div className="text-center py-16 bg-zinc-900 rounded-lg border border-zinc-800">
                     <HeartIcon className="w-20 h-20 text-gray-600 mx-auto mb-4" />
                     <h3 className="text-xl font-semibold text-white mb-2">No Liked Content</h3>
-                    <p className="text-gray-400">{username} hasn't liked any content yet</p>
+                    <p className="text-gray-400">{displayName} hasn't liked any content yet</p>
                 </div>
             )}
         </SubPageLayout>

@@ -315,16 +315,16 @@ export default function TrendingActorsRow({
     const title = emoji ? `${emoji} ${displayName}` : displayName
 
     return (
-        <div className="-mt-4 sm:-mt-6 md:-mt-8">
+        <div className="mt-6 sm:mt-8 md:mt-10">
             {/* Section Title */}
             <div className="flex items-center gap-3 px-4 sm:px-6 md:px-8 lg:px-16 pt-0 group/header">
                 <h2 className="text-white text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold transition duration-200 hover:text-gray-300">
                     {title}
                 </h2>
-                {/* Edit button - appears on hover */}
+                {/* Edit button - visible by default */}
                 <button
                     onClick={handleEdit}
-                    className="opacity-0 group-hover/header:opacity-100 transition-opacity duration-200 p-1.5 rounded-md hover:bg-gray-700/50 text-gray-400 hover:text-gray-200"
+                    className="opacity-40 hover:opacity-100 transition-opacity duration-200 p-1.5 rounded-md hover:bg-gray-700/50 text-gray-400 hover:text-gray-200"
                     title="Edit this row"
                 >
                     <PencilIcon className="w-5 h-5" />

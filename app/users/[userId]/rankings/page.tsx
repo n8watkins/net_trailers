@@ -15,6 +15,7 @@ import { RankingGrid } from '../../../../components/rankings/RankingGrid'
 import NetflixLoader from '../../../../components/common/NetflixLoader'
 import { TrophyIcon, UserIcon } from '@heroicons/react/24/outline'
 import type { Ranking } from '../../../../types/rankings'
+import type { PublicProfilePayload } from '@/lib/publicProfile'
 import Link from 'next/link'
 
 export default function UserRankingsPage() {
@@ -22,7 +23,7 @@ export default function UserRankingsPage() {
     const userId = params?.userId as string
 
     const [rankings, setRankings] = useState<Ranking[]>([])
-    const [username, setUsername] = useState<string>('User')
+    const [displayName, setDisplayName] = useState<string>('User')
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
@@ -36,29 +37,43 @@ export default function UserRankingsPage() {
             setError(null)
 
             try {
-                // Fetch both user document and profile document
-                const [userDoc, profileDoc] = await Promise.all([
-                    getDoc(doc(db, 'users', userId)),
-                    getDoc(doc(db, 'profiles', userId)),
-                ])
-
-                if (!userDoc.exists() && !profileDoc.exists()) {
-                    throw new Error('User not found')
+                // Try to get profile data from API first (includes auth displayName fallback)
+                let profileDisplayName = 'User'
+                try {
+                    const response = await fetch(`/api/public-profile/${userId}`)
+                    if (response.ok) {
+                        const payload = (await response.json()) as PublicProfilePayload
+                        profileDisplayName = payload.profile.displayName
+                    }
+                } catch (apiError) {
+                    console.warn('[UserRankings] API failed, will use client-side data')
                 }
 
-                const userData = userDoc.exists() ? userDoc.data() : {}
-                const profileData = profileDoc.exists() ? profileDoc.data() : {}
-                const legacyProfile = userData?.profile || {}
+                // Fallback to client-side lookup if API failed
+                if (profileDisplayName === 'User') {
+                    const [userDoc, profileDoc] = await Promise.all([
+                        getDoc(doc(db, 'users', userId)),
+                        getDoc(doc(db, 'profiles', userId)),
+                    ])
 
-                if (!isMounted) return
+                    if (!userDoc.exists() && !profileDoc.exists()) {
+                        throw new Error('User not found')
+                    }
 
-                // Get display name
-                setUsername(
-                    profileData?.displayName ||
+                    const userData = userDoc.exists() ? userDoc.data() : {}
+                    const profileData = profileDoc.exists() ? profileDoc.data() : {}
+                    const legacyProfile = userData?.profile || {}
+
+                    profileDisplayName =
+                        profileData?.displayName ||
                         legacyProfile.displayName ||
                         userData.displayName ||
                         'User'
-                )
+                }
+
+                if (!isMounted) return
+
+                setDisplayName(profileDisplayName)
 
                 // Load rankings
                 const rankingsSnap = await getDocs(
@@ -132,7 +147,7 @@ export default function UserRankingsPage() {
 
     return (
         <SubPageLayout
-            title={`${username}'s Rankings`}
+            title={`${displayName}'s Rankings`}
             icon={<TrophyIcon className="w-8 h-8" />}
             iconColor="text-yellow-400"
             description={`${rankings.length} public ${rankings.length === 1 ? 'ranking' : 'rankings'}`}
@@ -144,14 +159,14 @@ export default function UserRankingsPage() {
                     className="inline-flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition-colors"
                 >
                     <UserIcon className="w-4 h-4" />
-                    Back to {username}'s Profile
+                    Back to {displayName}'s Profile
                 </Link>
             </div>
 
             <RankingGrid
                 rankings={rankings}
                 showAuthor={false}
-                emptyMessage={`${username} hasn't created any public rankings yet`}
+                emptyMessage={`${displayName} hasn't created any public rankings yet`}
             />
         </SubPageLayout>
     )
