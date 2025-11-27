@@ -88,8 +88,26 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
     const likedContent = Array.isArray(userData.likedMovies)
         ? (userData.likedMovies as (Movie | TVShow)[])
         : []
-    // Collections are private - not shown on public profiles
-    const collections: UserList[] = []
+    // Fetch collections if visibility allows
+    let collections: UserList[] = []
+    if (visibility.showCollections) {
+        // Public collections are stored in userCreatedWatchlists field (historical naming)
+        // Note: For authenticated users, collections are in customRows (Zustand store)
+        const publicCollections = (userData.userCreatedWatchlists as UserList[]) || []
+        // Filter to only show non-system collections
+        // For manual/ai-generated: require items array to have content
+        // For tmdb-genre: show even without items (content is fetched dynamically)
+        collections = publicCollections
+            .filter((c) => {
+                if (c.isSystemCollection) return false
+                // TMDB genre-based collections don't store items, they fetch dynamically
+                if (c.collectionType === 'tmdb-genre') return true
+                // Manual and AI-generated collections must have items
+                return c.items && c.items.length > 0
+            })
+            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+            .slice(0, 10) // Limit to 10 collections for the profile
+    }
     const watchLaterPreview = Array.isArray(userData.defaultWatchlist)
         ? (userData.defaultWatchlist as (Movie | TVShow)[]).slice(
               0,
@@ -428,25 +446,41 @@ export default function UserProfilePage() {
                 <>
                     {/* Bento Grid Layout - only show if at least one section is visible */}
                     {(profileData.visibility.showLikedContent ||
-                        profileData.visibility.showWatchLater) && (
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                            {profileData.visibility.showLikedContent && (
-                                <LikedContentSection
-                                    likedContent={likedContent}
-                                    userId={userId}
-                                    isPublic={true}
-                                />
-                            )}
-                            {profileData.visibility.showWatchLater && (
-                                <WatchLaterSection
-                                    watchLaterPreview={watchLaterPreview}
-                                    totalCount={watchLaterPreview.length}
-                                    userId={userId}
-                                    isPublic={true}
-                                />
-                            )}
-                        </div>
-                    )}
+                        profileData.visibility.showWatchLater) &&
+                        (() => {
+                            // Determine if both sections are visible
+                            const showBothSections =
+                                profileData.visibility.showLikedContent &&
+                                profileData.visibility.showWatchLater
+                            // Show more items when section has full width
+                            const itemLimit = showBothSections ? 6 : 12
+
+                            return (
+                                <div
+                                    className={`grid grid-cols-1 gap-6 mb-6 ${
+                                        showBothSections ? 'lg:grid-cols-2' : ''
+                                    }`}
+                                >
+                                    {profileData.visibility.showLikedContent && (
+                                        <LikedContentSection
+                                            likedContent={likedContent}
+                                            userId={userId}
+                                            isPublic={true}
+                                            limit={itemLimit}
+                                        />
+                                    )}
+                                    {profileData.visibility.showWatchLater && (
+                                        <WatchLaterSection
+                                            watchLaterPreview={watchLaterPreview}
+                                            totalCount={watchLaterPreview.length}
+                                            userId={userId}
+                                            isPublic={true}
+                                            limit={itemLimit}
+                                        />
+                                    )}
+                                </div>
+                            )
+                        })()}
 
                     {/* Rankings */}
                     {profileData.visibility.showRankings && (

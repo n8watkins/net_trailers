@@ -140,6 +140,7 @@ export default function SearchBar({
     const suggestionsRef = useRef<HTMLDivElement>(null)
     const resultRefs = useRef<(HTMLDivElement | null)[]>([])
     const seeAllButtonRef = useRef<HTMLButtonElement>(null)
+    const filterButtonRef = useRef<HTMLButtonElement>(null)
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
     // Scroll selected element into view
@@ -605,7 +606,13 @@ export default function SearchBar({
 
                         {/* Filter Button */}
                         <button
-                            onClick={() => setShowFilters(!showFilters)}
+                            ref={filterButtonRef}
+                            onClick={() => {
+                                // If filters are already open, don't toggle (only allow opening or keep open)
+                                if (!showFilters) {
+                                    setShowFilters(true)
+                                }
+                            }}
                             className={`px-3 py-2 transition-colors ${
                                 showFilters || hasActiveFilters
                                     ? 'text-red-400 hover:text-red-300'
@@ -655,7 +662,11 @@ export default function SearchBar({
             </div>
 
             {/* Search Filters Dropdown */}
-            <SearchFiltersDropdown isOpen={showFilters} onClose={() => setShowFilters(false)} />
+            <SearchFiltersDropdown
+                isOpen={showFilters}
+                onClose={() => setShowFilters(false)}
+                filterButtonRef={filterButtonRef}
+            />
 
             {/* Search Results Dropdown */}
             <SearchSuggestionsDropdown

@@ -51,12 +51,14 @@ interface LikedContentSectionProps {
     likedContent: (Movie | TVShow)[]
     userId?: string // For public profiles
     isPublic?: boolean
+    limit?: number // Number of items to display (default: 6)
 }
 
 export function LikedContentSection({
     likedContent,
     userId,
     isPublic = false,
+    limit = 6,
 }: LikedContentSectionProps) {
     const viewAllUrl = isPublic ? `/users/${userId}/liked` : '/ratings?filter=liked'
 
@@ -78,7 +80,7 @@ export function LikedContentSection({
                 </div>
                 {likedContent.length > 0 ? (
                     <div className="flex gap-3 flex-wrap">
-                        {likedContent.slice(0, 6).map((content) => (
+                        {likedContent.slice(0, limit).map((content) => (
                             <ProfileImageCard key={content.id} content={content} />
                         ))}
                     </div>

@@ -12,6 +12,7 @@ import { apiError, apiLog, apiWarn } from '@/utils/debugLogger'
 import crypto from 'crypto'
 import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin'
 import type { UserRecord } from 'firebase-admin/auth'
+import { applyCsrfProtection } from '@/lib/csrfProtection'
 
 // Rate limiting: Max 3 password reset emails per email address per hour
 const rateLimitCache = new Map<string, { count: number; resetAt: number }>()
@@ -36,6 +37,10 @@ function enforceRateLimit(email: string) {
 }
 
 export async function POST(request: NextRequest) {
+    // Apply CSRF protection
+    const csrfResponse = applyCsrfProtection(request)
+    if (csrfResponse) return csrfResponse
+
     try {
         const body = await request.json()
         const rawEmail = typeof body?.email === 'string' ? body.email.trim() : ''

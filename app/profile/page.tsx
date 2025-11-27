@@ -219,7 +219,15 @@ export default function ProfilePage() {
 
     const likedContent = userData.likedMovies || []
     const watchLaterPreview = (userData.defaultWatchlist || []).slice(0, 6)
-    const collections = userData.userCreatedWatchlists || []
+    // Filter collections: exclude system collections and empty manual/ai-generated collections
+    // TMDB genre-based collections are always shown (content is fetched dynamically)
+    const collections = (userData.userCreatedWatchlists || []).filter((c: any) => {
+        if (c.isSystemCollection) return false
+        // TMDB genre-based collections don't store items, they fetch dynamically
+        if (c.collectionType === 'tmdb-genre') return true
+        // Manual and AI-generated collections must have items
+        return c.items && c.items.length > 0
+    })
 
     // Show loading screen while data is being fetched
     if (isLoading) {

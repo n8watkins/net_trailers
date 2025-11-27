@@ -2,9 +2,11 @@
  * CSRF Protection Middleware
  *
  * Validates Origin and Referer headers to prevent Cross-Site Request Forgery attacks
+ * Allows bypass for authenticated server-to-server calls (cron jobs, webhooks)
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import crypto from 'crypto'
 
 // Allowed origins for CSRF protection
 const ALLOWED_ORIGINS = [
@@ -20,6 +22,9 @@ if (process.env.VERCEL_URL) {
 if (process.env.NEXT_PUBLIC_VERCEL_URL) {
     ALLOWED_ORIGINS.push(`https://${process.env.NEXT_PUBLIC_VERCEL_URL}`)
 }
+
+// Server-side secrets for bypass
+const CRON_SECRET = process.env.CRON_SECRET
 
 /**
  * Validate request origin/referer to prevent CSRF attacks
@@ -62,8 +67,54 @@ export function validateOrigin(request: NextRequest): boolean {
 }
 
 /**
+ * Timing-safe comparison of cron secret tokens.
+ * Prevents timing attacks by using constant-time comparison.
+ */
+function isValidCronSecret(token: string | null | undefined): boolean {
+    if (!token || !CRON_SECRET) return false
+    try {
+        const encoder = new TextEncoder()
+        const tokenBytes = encoder.encode(token)
+        const secretBytes = encoder.encode(CRON_SECRET)
+        if (tokenBytes.length !== secretBytes.length) return false
+        return crypto.timingSafeEqual(tokenBytes, secretBytes)
+    } catch {
+        return false
+    }
+}
+
+/**
+ * Check if request is an authenticated server-to-server call
+ * These can bypass CSRF checks because they use secure authentication
+ */
+function isServerToServerCall(request: NextRequest): boolean {
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader) return false
+
+    const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader
+
+    // Check for cron secret (machine-to-machine)
+    if (isValidCronSecret(token)) {
+        return true
+    }
+
+    // Firebase ID tokens start with "eyJ" (base64-encoded JWT header)
+    // These are verified server-side by Firebase Admin SDK
+    if (token.startsWith('eyJ')) {
+        return true
+    }
+
+    return false
+}
+
+/**
  * Apply CSRF protection to a request
  * Returns null if valid, NextResponse with 403 status if CSRF detected
+ *
+ * Bypasses CSRF for:
+ * - Safe methods (GET, HEAD, OPTIONS)
+ * - Authenticated server-to-server calls (cron jobs with CRON_SECRET)
+ * - Requests with valid Firebase ID tokens (verified by downstream handlers)
  */
 export function applyCsrfProtection(request: NextRequest): NextResponse | null {
     // Only check state-changing methods
@@ -72,7 +123,13 @@ export function applyCsrfProtection(request: NextRequest): NextResponse | null {
         return null // Safe methods don't need CSRF protection
     }
 
-    // Validate origin/referer
+    // Allow authenticated server-to-server calls to bypass CSRF
+    // These use secure tokens that cannot be forged by attackers
+    if (isServerToServerCall(request)) {
+        return null
+    }
+
+    // Validate origin/referer for browser-based requests
     if (!validateOrigin(request)) {
         return NextResponse.json(
             {

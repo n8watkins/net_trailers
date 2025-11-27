@@ -20,7 +20,7 @@ export function CollectionsSection({
     userId,
     isPublic = false,
 }: CollectionsSectionProps) {
-    const collectionsUrl = isPublic ? `/users/${userId}/collections` : '/collections'
+    const collectionsUrl = isPublic ? `/users/${userId}/collections` : '/watch-later'
     const collectionDetailUrl = (id: string) =>
         isPublic ? `/users/${userId}/collections/${id}` : `/collections/${id}`
 
@@ -58,26 +58,35 @@ export function CollectionsSection({
                                 </h3>
                             </div>
                             <div className="flex gap-2 mb-3">
-                                {collection.items?.slice(0, 3).map((item) => (
-                                    <div
-                                        key={item.id}
-                                        className="flex-1 aspect-[2/3] relative overflow-hidden rounded"
-                                    >
-                                        {item.poster_path && (
-                                            <img
-                                                src={`https://image.tmdb.org/t/p/w185${item.poster_path}`}
-                                                alt={`Collection item`}
-                                                className="w-full h-full object-cover"
-                                            />
-                                        )}
+                                {collection.items && collection.items.length > 0 ? (
+                                    collection.items.slice(0, 3).map((item) => (
+                                        <div
+                                            key={item.id}
+                                            className="flex-1 aspect-[2/3] relative overflow-hidden rounded"
+                                        >
+                                            {item.poster_path && (
+                                                <img
+                                                    src={`https://image.tmdb.org/t/p/w185${item.poster_path}`}
+                                                    alt={`Collection item`}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            )}
+                                        </div>
+                                    ))
+                                ) : (
+                                    // Placeholder for TMDB collections without stored items
+                                    <div className="flex-1 aspect-[2/3] relative overflow-hidden rounded bg-purple-900/30 flex items-center justify-center">
+                                        <RectangleStackIcon className="w-8 h-8 text-purple-700" />
                                     </div>
-                                ))}
+                                )}
                             </div>
                             <div className="flex items-center text-xs text-gray-400">
                                 <span className="flex items-center gap-1.5">
                                     <RectangleStackIcon className="w-3 h-3" />
                                     <span className="font-medium">
-                                        {collection.items?.length || 0} items
+                                        {collection.collectionType === 'tmdb-genre'
+                                            ? 'Dynamic collection'
+                                            : `${collection.items?.length || 0} items`}
                                     </span>
                                 </span>
                             </div>

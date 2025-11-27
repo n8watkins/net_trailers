@@ -153,8 +153,25 @@ export async function buildPublicProfilePayload(
             ? (legacyData.likedMovies as (Movie | TVShow)[])
             : []
 
-    // Collections visibility controlled by toggle (but currently always empty per existing logic)
-    const collections: UserList[] = isPublicEnabled && visibility.showCollections ? [] : []
+    // Fetch collections from userCreatedWatchlists if visibility allows
+    let collections: UserList[] = []
+    if (isPublicEnabled && visibility.showCollections) {
+        // Collections are stored in userCreatedWatchlists array (not customRows)
+        const allCollections = (legacyData.userCreatedWatchlists as UserList[]) || []
+        // Filter to only show non-system collections
+        // For manual/ai-generated: require items array to have content
+        // For tmdb-genre: show even without items (content is fetched dynamically)
+        collections = allCollections
+            .filter((c) => {
+                if (c.isSystemCollection) return false
+                // TMDB genre-based collections don't store items, they fetch dynamically
+                if (c.collectionType === 'tmdb-genre') return true
+                // Manual and AI-generated collections must have items
+                return c.items && c.items.length > 0
+            })
+            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+            .slice(0, 10) // Limit to 10 collections for the profile
+    }
 
     const watchLaterPreview =
         isPublicEnabled && visibility.showWatchLater && Array.isArray(legacyData.defaultWatchlist)

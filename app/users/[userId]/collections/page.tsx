@@ -11,8 +11,6 @@ import { useParams } from 'next/navigation'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '../../../../firebase'
 import SubPageLayout from '../../../../components/layout/SubPageLayout'
-import ContentCard from '../../../../components/common/ContentCard'
-import ContentGridSpacer from '../../../../components/common/ContentGridSpacer'
 import NetflixLoader from '../../../../components/common/NetflixLoader'
 import { RectangleStackIcon, UserIcon } from '@heroicons/react/24/outline'
 import type { UserList } from '../../../../types/collections'
@@ -37,31 +35,63 @@ export default function UserCollectionsPage() {
             setError(null)
 
             try {
-                const userDoc = await getDoc(doc(db, 'users', userId))
+                // Fetch both user document and profile document
+                const [userDoc, profileDoc] = await Promise.all([
+                    getDoc(doc(db, 'users', userId)),
+                    getDoc(doc(db, 'profiles', userId)),
+                ])
 
-                if (!userDoc.exists()) {
+                if (!userDoc.exists() && !profileDoc.exists()) {
                     throw new Error('User not found')
                 }
 
-                const userData = userDoc.data()
+                const userData = userDoc.exists() ? userDoc.data() : {}
+                const profileData = profileDoc.exists() ? profileDoc.data() : {}
                 const legacyProfile = userData?.profile || {}
 
                 if (!isMounted) return
 
+                // Try to get display name from multiple sources
                 setUsername(
-                    legacyProfile.username ||
-                        userData.username ||
+                    profileData?.displayName ||
+                        profileData?.username ||
+                        legacyProfile.displayName ||
+                        legacyProfile.username ||
                         userData.displayName ||
+                        userData.username ||
                         userData.email?.split('@')[0] ||
                         'User'
                 )
 
-                const allCollections = Array.isArray(userData.userCreatedWatchlists)
-                    ? (userData.userCreatedWatchlists as UserList[])
-                    : []
+                // Public collections are stored in userCreatedWatchlists field (historical naming)
+                // Note: For authenticated users, collections are in customRows (Zustand store)
+                const publicCollections = (userData.userCreatedWatchlists as UserList[]) || []
 
-                // Collections are private - not shown on public profiles
-                setCollections([])
+                console.log('[UserCollections] Total collections found:', publicCollections.length)
+                console.log(
+                    '[UserCollections] All collections:',
+                    publicCollections.map((c) => ({
+                        id: c.id,
+                        name: c.name,
+                        isSystem: c.isSystemCollection,
+                        type: c.collectionType,
+                        itemsCount: c.items?.length,
+                    }))
+                )
+
+                // Filter to only show non-system collections
+                const userCollections = publicCollections
+                    .filter((c) => {
+                        if (c.isSystemCollection) return false
+                        // TMDB genre-based collections don't store items, they fetch dynamically
+                        if (c.collectionType === 'tmdb-genre') return true
+                        // Manual and AI-generated collections must have items
+                        return c.items && c.items.length > 0
+                    })
+                    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+
+                console.log('[UserCollections] Filtered collections:', userCollections.length)
+                setCollections(userCollections)
             } catch (err) {
                 console.error('Error loading collections:', err)
                 if (isMounted) {
@@ -118,7 +148,7 @@ export default function UserCollectionsPage() {
             title={`${username}'s Collections`}
             icon={<RectangleStackIcon className="w-8 h-8" />}
             iconColor="text-purple-400"
-            description={`${collections.length} public ${collections.length === 1 ? 'collection' : 'collections'}`}
+            description={`${collections.length} ${collections.length === 1 ? 'collection' : 'collections'}`}
         >
             {/* Back to Profile Link */}
             <div className="mb-6">
@@ -132,50 +162,76 @@ export default function UserCollectionsPage() {
             </div>
 
             {collections.length > 0 ? (
-                <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {collections.map((collection) => (
-                        <div
+                        <Link
                             key={collection.id}
-                            className="bg-zinc-900 rounded-lg p-6 border border-zinc-800 hover:border-purple-700/50 transition-colors"
+                            href={`/users/${userId}/collections/${collection.id}`}
+                            className="group bg-gradient-to-br from-purple-900/30 to-violet-900/20 border border-purple-800/40 hover:border-purple-700/60 rounded-xl p-6 transition-all cursor-pointer"
                         >
-                            <div className="flex items-start gap-3 mb-4">
+                            <div className="flex items-center gap-3 mb-4">
                                 {collection.emoji && (
                                     <span className="text-3xl flex-shrink-0">
                                         {collection.emoji}
                                     </span>
                                 )}
-                                <div className="flex-1">
-                                    <h3 className="text-xl font-semibold text-white mb-1">
-                                        {collection.name}
-                                    </h3>
-                                    <p className="text-gray-500 text-sm">
-                                        {collection.items?.length || 0} items
-                                    </p>
-                                </div>
+                                <h3 className="text-lg font-bold text-white group-hover:text-purple-400 transition-colors line-clamp-2 flex-1 min-w-0">
+                                    {collection.name}
+                                </h3>
                             </div>
 
-                            {collection.description && (
-                                <p className="text-gray-400 mb-4">{collection.description}</p>
-                            )}
-
-                            {collection.items && collection.items.length > 0 && (
-                                <div className="flex flex-wrap justify-between gap-x-6 sm:gap-x-8 md:gap-x-10 lg:gap-x-12 gap-y-3 sm:gap-y-4 md:gap-y-5 [&>*]:flex-none">
-                                    {collection.items.map((item) => (
-                                        <ContentCard key={item.id} content={item} />
+                            {/* Preview Images */}
+                            {collection.items && collection.items.length > 0 ? (
+                                <div className="flex gap-2 mb-4">
+                                    {collection.items.slice(0, 3).map((item) => (
+                                        <div
+                                            key={item.id}
+                                            className="flex-1 aspect-[2/3] relative overflow-hidden rounded"
+                                        >
+                                            {item.poster_path && (
+                                                <img
+                                                    src={`https://image.tmdb.org/t/p/w185${item.poster_path}`}
+                                                    alt=""
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            )}
+                                        </div>
                                     ))}
-                                    <ContentGridSpacer />
+                                </div>
+                            ) : (
+                                <div className="flex gap-2 mb-4">
+                                    <div className="flex-1 aspect-[2/3] relative overflow-hidden rounded bg-purple-900/30 flex items-center justify-center">
+                                        <RectangleStackIcon className="w-12 h-12 text-purple-700" />
+                                    </div>
                                 </div>
                             )}
-                        </div>
+
+                            {/* Collection Info */}
+                            <div className="flex items-center justify-between text-sm text-gray-400">
+                                <span className="flex items-center gap-1.5">
+                                    <RectangleStackIcon className="w-4 h-4" />
+                                    <span className="font-medium">
+                                        {collection.collectionType === 'tmdb-genre'
+                                            ? 'Dynamic collection'
+                                            : `${collection.items?.length || 0} items`}
+                                    </span>
+                                </span>
+                                <span className="px-2 py-1 rounded-full bg-purple-900/50 text-xs">
+                                    {collection.collectionType === 'manual'
+                                        ? 'Manual'
+                                        : collection.collectionType === 'tmdb-genre'
+                                          ? 'Auto-updating'
+                                          : 'AI-generated'}
+                                </span>
+                            </div>
+                        </Link>
                     ))}
                 </div>
             ) : (
                 <div className="text-center py-16 bg-zinc-900 rounded-lg border border-zinc-800">
                     <RectangleStackIcon className="w-20 h-20 text-gray-600 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-white mb-2">No Public Collections</h3>
-                    <p className="text-gray-400">
-                        {username} hasn't created any public collections yet
-                    </p>
+                    <h3 className="text-xl font-semibold text-white mb-2">No Collections</h3>
+                    <p className="text-gray-400">{username} hasn't created any collections yet</p>
                 </div>
             )}
         </SubPageLayout>

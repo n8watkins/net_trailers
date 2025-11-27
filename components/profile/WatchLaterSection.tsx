@@ -51,6 +51,7 @@ interface WatchLaterSectionProps {
     totalCount: number
     userId?: string // For public profiles
     isPublic?: boolean
+    limit?: number // Number of items to display (default: 6)
 }
 
 export function WatchLaterSection({
@@ -58,6 +59,7 @@ export function WatchLaterSection({
     totalCount,
     userId,
     isPublic = false,
+    limit = 6,
 }: WatchLaterSectionProps) {
     const viewAllUrl = isPublic ? `/users/${userId}/watch-later` : '/collections'
 
@@ -79,7 +81,7 @@ export function WatchLaterSection({
             </div>
             {watchLaterPreview.length > 0 ? (
                 <div className="flex gap-3 flex-wrap">
-                    {watchLaterPreview.slice(0, 6).map((content) => (
+                    {watchLaterPreview.slice(0, limit).map((content) => (
                         <ProfileImageCard key={content.id} content={content} />
                     ))}
                 </div>

@@ -5,7 +5,63 @@ All notable changes to NetTrailer will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-11-23 - Security, Privacy & Mobile Responsiveness
+## [Unreleased] - 2025-11-26 - Security Hardening & UX Improvements
+
+### Security (November 2025)
+
+- **CRITICAL: Comprehensive CSRF Protection** (Nov 26)
+    - Added CSRF protection to 8 state-changing API routes
+    - Origin/Referer header validation on all POST/PUT/DELETE/PATCH requests
+    - Protected routes: `/api/admin/*`, `/api/gemini/*`, `/api/recommendations/*`, `/api/shares/*`
+    - Defense-in-depth security architecture
+    - Prevents cross-site request forgery attacks
+
+- **CRITICAL: Admin Credential Protection** (Nov 26)
+    - Removed `NEXT_PUBLIC_` prefix from admin credentials (eliminated client-side exposure)
+    - Created `/api/admin/check` endpoint for server-side admin verification
+    - Rate limiting on admin routes (10 requests/min)
+    - Added rate limiters: Public profile (20/min), Share creation (10/min)
+
+- **CRITICAL: Timing Attack Prevention** (Nov 21)
+    - Fixed timing attack vulnerability in cron job authentication
+    - Implemented `crypto.timingSafeEqual()` for constant-time secret comparison
+    - Prevents secret discovery through timing analysis attacks
+
+- **Race Condition Fixes** (Nov 26)
+    - Fixed race condition in ranking creation that caused data loss
+    - Improved state management to prevent concurrent operation conflicts
+    - Enhanced data consistency across user interactions
+    - Fixed race condition when seeding rankings
+
+### User Experience
+
+- **Username System** (Nov 26)
+    - Users can now edit their username in profile settings
+    - Unique URL slugs for public profiles (`/users/[username]`)
+    - Automatic slug generation from usernames
+    - Username validation and uniqueness checking
+
+- **Navigation Improvements** (Nov 26)
+    - Slug-based routing for all collections (cleaner URLs)
+    - Clean `/watchlist` route for Watch Later collection
+    - System collections use ID-based URLs for consistency
+    - Fixed `isCollectionSlugRoute` to not flag unrelated pages
+
+- **My Ratings Page** (Nov 26)
+    - Defaults to showing Liked content on first visit
+    - Consolidated navigation to use "My Ratings" terminology
+    - Grid layout restored for better visual presentation
+    - Collection pills UI restored to `/collections` page
+
+- **Notifications** (Nov 26)
+    - Notification badge now shows "9+" for 10+ unread notifications
+    - Fixed duplicate notifications that caused React key warnings
+    - Improved notification deduplication logic
+
+- **Debug Console** (Nov 26)
+    - Added "Clear User Data" button for easy data reset
+    - Removed confirmation dialogs from data buttons for faster debugging
+    - Improved developer experience for testing
 
 ### Mobile Responsiveness (Phase 5)
 
@@ -711,14 +767,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Statistics
 
-- **Total Commits**: 931+
+- **Total Commits**: 1,224+
 - **Features Completed**: 13 major feature sets
-- **API Routes**: 35+
+- **API Routes**: 49+
 - **Components**: 100+
 - **Zustand Stores**: 18
 - **Lines of Code**: ~50,000+
 - **Documentation Pages**: 55+
-- **Development Time**: ~3 months
+- **Development Time**: ~4 months
+- **Security Fixes**: 5 critical security enhancements (Nov 2025)
 
 ---
 

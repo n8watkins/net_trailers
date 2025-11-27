@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSessionStore } from '@/stores/sessionStore'
 import { ArrowLeft, Calendar, TrendingUp } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
+import { useAdminAuth } from '@/hooks/useAdminAuth'
 import { auth } from '@/firebase'
 
 interface UserInfo {
@@ -19,36 +19,28 @@ interface UserInfo {
     providerData: Array<{ providerId: string; uid: string }>
 }
 
-// Admin UIDs
-const ADMIN_UIDS = [process.env.NEXT_PUBLIC_ADMIN_UID || 'YOUR_FIREBASE_UID_HERE']
-
 export default function SignupsPage() {
     const router = useRouter()
-    const getUserId = useSessionStore((state) => state.getUserId)
-    const sessionType = useSessionStore((state) => state.sessionType)
-    const isInitialized = useSessionStore((state) => state.isInitialized)
-    const userId = getUserId()
-    const isAuth = sessionType === 'authenticated'
+    const { isAdmin, isLoading: isAdminLoading } = useAdminAuth()
     const { showError } = useToast()
 
     const [users, setUsers] = useState<UserInfo[]>([])
     const [loading, setLoading] = useState(true)
     const [timeframe, setTimeframe] = useState<'week' | 'month'>('month')
 
-    // Auth check
+    // Auth check - redirect non-admins
     useEffect(() => {
-        if (!isInitialized) return
-        if (!isAuth || !userId || !ADMIN_UIDS.includes(userId)) {
+        if (!isAdminLoading && !isAdmin) {
             router.push('/')
         }
-    }, [isAuth, userId, isInitialized, router])
+    }, [isAdmin, isAdminLoading, router])
 
-    // Load users
+    // Load users when admin is verified
     useEffect(() => {
-        if (isAuth && userId && ADMIN_UIDS.includes(userId)) {
+        if (isAdmin) {
             loadUsers()
         }
-    }, [isAuth, userId])
+    }, [isAdmin])
 
     const loadUsers = async () => {
         setLoading(true)
@@ -127,7 +119,7 @@ export default function SignupsPage() {
         (a, b) => new Date(b).getTime() - new Date(a).getTime()
     )
 
-    if (!isInitialized || loading) {
+    if (isAdminLoading || loading) {
         return (
             <div className="min-h-screen bg-gray-900 flex items-center justify-center">
                 <div className="text-white text-xl">Loading...</div>
@@ -135,7 +127,7 @@ export default function SignupsPage() {
         )
     }
 
-    if (!isAuth || !userId || !ADMIN_UIDS.includes(userId)) {
+    if (!isAdmin) {
         return null
     }
 

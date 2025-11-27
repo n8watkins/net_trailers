@@ -37,30 +37,32 @@ export default function UserLikedContentPage() {
             setError(null)
 
             try {
-                const userDoc = await getDoc(doc(db, 'users', userId))
+                // Fetch both user document and profile document
+                const [userDoc, profileDoc] = await Promise.all([
+                    getDoc(doc(db, 'users', userId)),
+                    getDoc(doc(db, 'profiles', userId)),
+                ])
 
-                if (!userDoc.exists()) {
+                if (!userDoc.exists() && !profileDoc.exists()) {
                     throw new Error('User not found')
                 }
 
-                const userData = userDoc.data()
+                const userData = userDoc.exists() ? userDoc.data() : {}
+                const profileData = profileDoc.exists() ? profileDoc.data() : {}
                 const legacyProfile = userData?.profile || {}
 
                 if (!isMounted) return
 
+                // Try to get display name from multiple sources
                 const displayUsername =
+                    profileData?.displayName ||
+                    profileData?.username ||
+                    legacyProfile.displayName ||
                     legacyProfile.username ||
-                    userData.username ||
                     userData.displayName ||
+                    userData.username ||
                     userData.email?.split('@')[0] ||
                     'User'
-
-                console.log('[UserLiked] Username:', displayUsername, 'from:', {
-                    profileUsername: legacyProfile.username,
-                    username: userData.username,
-                    displayName: userData.displayName,
-                    email: userData.email,
-                })
 
                 setUsername(displayUsername)
 

@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminAuth } from '@/lib/firebase-admin'
 import { Resend } from 'resend'
+import { applyCsrfProtection } from '@/lib/csrfProtection'
 
 interface NotificationRequest {
     recipientUserId: string // Firebase UID to get email from
@@ -19,13 +20,11 @@ interface NotificationRequest {
 }
 
 export async function POST(request: NextRequest) {
-    try {
-        // Only allow requests from same origin
-        const origin = request.headers.get('origin')
-        if (origin && !origin.includes(request.headers.get('host') || '')) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+    // Apply CSRF protection (replaces manual origin check)
+    const csrfResponse = applyCsrfProtection(request)
+    if (csrfResponse) return csrfResponse
 
+    try {
         const body: NotificationRequest = await request.json()
         const {
             recipientUserId,

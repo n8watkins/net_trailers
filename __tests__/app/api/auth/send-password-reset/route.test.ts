@@ -58,7 +58,10 @@ function createRequest(body: unknown) {
     const url = new URL('http://localhost:3000/api/auth/send-password-reset')
     return new NextRequest(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            Origin: 'http://localhost:3000', // Required for CSRF protection
+        },
         body: JSON.stringify(body),
     })
 }

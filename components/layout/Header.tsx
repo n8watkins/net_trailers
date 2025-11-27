@@ -87,7 +87,7 @@ const subNavItems: NavItem[] = [
     },
     {
         label: 'Collections',
-        href: '/collections',
+        href: '/watch-later',
         icon: RectangleStackIcon,
         iconSolid: RectangleStackIconSolid,
     },
@@ -142,10 +142,12 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
         '/history',
         '/rankings',
         '/collections',
-        '/watchlist', // Special route for Watch Later collection
+        '/watch-later', // Watch Later collection (slug-based route)
+        '/watchlist', // Legacy route for Watch Later collection
         '/ratings',
         '/notifications',
         '/settings',
+        '/users', // Public profile pages
     ]
     // Check if current path matches any sub-nav paths
     // For collection routes, also check if it's a slug-based collection route
@@ -161,7 +163,6 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
             '/search',
             '/community',
             // User routes
-            '/users',
             '/shares',
             '/shared',
             // Forum/community
@@ -554,7 +555,12 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                             <div className="flex gap-2 sm:gap-8 justify-center sm:justify-start">
                                 {subNavItems.map((item) => {
                                     // Check if current path starts with the item's href (handles nested routes like /settings/preferences)
-                                    const isActive = pathname.startsWith(item.href)
+                                    // Special case for Collections: match /watch-later OR any /collections path
+                                    const isActive =
+                                        item.label === 'Collections'
+                                            ? pathname.startsWith('/watch-later') ||
+                                              pathname.startsWith('/collections')
+                                            : pathname.startsWith(item.href)
                                     const Icon = isActive ? item.iconSolid : item.icon
 
                                     return (
@@ -647,12 +653,13 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                         <li>
                                             <button
                                                 className={`w-full text-left headerLink flex items-center space-x-3 text-base py-3 px-3 rounded-lg transition-colors select-none ${
-                                                    pathname === '/collections'
+                                                    pathname.startsWith('/collections') ||
+                                                    pathname.startsWith('/watch-later')
                                                         ? 'text-white font-semibold bg-red-600/20'
                                                         : 'hover:bg-white/10'
                                                 }`}
                                                 onClick={() => {
-                                                    router.push('/collections')
+                                                    router.push('/watch-later')
                                                     setShowMobileMenu(false)
                                                 }}
                                             >

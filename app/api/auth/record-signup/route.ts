@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin'
 import { FieldValue } from 'firebase-admin/firestore'
+import { applyCsrfProtection } from '@/lib/csrfProtection'
 
 /**
  * Get the start of the current week (Monday at 00:00:00)
@@ -31,6 +32,10 @@ function getMonthStart(timestamp: number): number {
 }
 
 export async function POST(request: NextRequest) {
+    // Apply CSRF protection
+    const csrfResponse = applyCsrfProtection(request)
+    if (csrfResponse) return csrfResponse
+
     try {
         const body = await request.json()
         const { userId, email } = body

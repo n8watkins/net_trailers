@@ -2,9 +2,9 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useSessionStore } from '@/stores/sessionStore'
 import { ArrowLeft, LogIn, Eye, TrendingUp, Users } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
+import { useAdminAuth } from '@/hooks/useAdminAuth'
 import { auth } from '@/firebase'
 
 interface Activity {
@@ -26,18 +26,11 @@ interface ActivityStats {
     avgPerDay: number
 }
 
-// Admin UIDs
-const ADMIN_UIDS = [process.env.NEXT_PUBLIC_ADMIN_UID || 'YOUR_FIREBASE_UID_HERE']
-
 function ActivityPageContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const filterUserId = searchParams.get('userId')
-    const getUserId = useSessionStore((state) => state.getUserId)
-    const sessionType = useSessionStore((state) => state.sessionType)
-    const isInitialized = useSessionStore((state) => state.isInitialized)
-    const userId = getUserId()
-    const isAuth = sessionType === 'authenticated'
+    const { isAdmin, isLoading: isAdminLoading } = useAdminAuth()
     const { showError } = useToast()
 
     const [activities, setActivities] = useState<Activity[]>([])
@@ -54,20 +47,19 @@ function ActivityPageContent() {
     const [timeframe, setTimeframe] = useState<'week' | 'month'>('month')
     const [filteredUserEmail, setFilteredUserEmail] = useState<string | null>(null)
 
-    // Auth check
+    // Auth check - redirect non-admins
     useEffect(() => {
-        if (!isInitialized) return
-        if (!isAuth || !userId || !ADMIN_UIDS.includes(userId)) {
+        if (!isAdminLoading && !isAdmin) {
             router.push('/')
         }
-    }, [isAuth, userId, isInitialized, router])
+    }, [isAdmin, isAdminLoading, router])
 
-    // Load activity
+    // Load activity when admin is verified
     useEffect(() => {
-        if (isAuth && userId && ADMIN_UIDS.includes(userId)) {
+        if (isAdmin) {
             loadActivity()
         }
-    }, [isAuth, userId, activeTab, timeframe, filterUserId])
+    }, [isAdmin, activeTab, timeframe, filterUserId])
 
     const loadActivity = async () => {
         setLoading(true)
@@ -128,7 +120,7 @@ function ActivityPageContent() {
         (a, b) => new Date(b).getTime() - new Date(a).getTime()
     )
 
-    if (!isInitialized || loading) {
+    if (isAdminLoading || loading) {
         return (
             <div className="min-h-screen bg-gray-900 flex items-center justify-center">
                 <div className="text-white text-xl">Loading...</div>
@@ -136,7 +128,7 @@ function ActivityPageContent() {
         )
     }
 
-    if (!isAuth || !userId || !ADMIN_UIDS.includes(userId)) {
+    if (!isAdmin) {
         return null
     }
 

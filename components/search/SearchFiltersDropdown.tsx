@@ -1,15 +1,25 @@
 import React, { useRef, useEffect } from 'react'
 import { XMarkIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
-import { FilmIcon, UserGroupIcon, VideoCameraIcon, PencilSquareIcon } from '@heroicons/react/24/solid'
+import {
+    FilmIcon,
+    UserGroupIcon,
+    VideoCameraIcon,
+    PencilSquareIcon,
+} from '@heroicons/react/24/solid'
 import { useSearchStore } from '../../stores/searchStore'
 import type { SearchFilters, DepartmentFilter } from '../../stores/searchStore'
 
 interface SearchFiltersDropdownProps {
     isOpen: boolean
     onClose: () => void
+    filterButtonRef?: React.RefObject<HTMLButtonElement | null>
 }
 
-export default function SearchFiltersDropdown({ isOpen, onClose }: SearchFiltersDropdownProps) {
+export default function SearchFiltersDropdown({
+    isOpen,
+    onClose,
+    filterButtonRef,
+}: SearchFiltersDropdownProps) {
     const filters = useSearchStore((state) => state.filters)
     const searchMode = useSearchStore((state) => state.searchMode)
     const peopleFilters = useSearchStore((state) => state.peopleFilters)
@@ -20,7 +30,13 @@ export default function SearchFiltersDropdown({ isOpen, onClose }: SearchFilters
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+            const target = event.target as Node
+            // Don't close if clicking inside the dropdown or on the filter button
+            if (
+                dropdownRef.current &&
+                !dropdownRef.current.contains(target) &&
+                !(filterButtonRef?.current && filterButtonRef.current.contains(target))
+            ) {
                 onClose()
             }
         }
@@ -29,7 +45,7 @@ export default function SearchFiltersDropdown({ isOpen, onClose }: SearchFilters
             document.addEventListener('mousedown', handleClickOutside)
             return () => document.removeEventListener('mousedown', handleClickOutside)
         }
-    }, [isOpen, onClose])
+    }, [isOpen, onClose, filterButtonRef])
 
     // Immediately apply filter changes
     const updateFilter = (key: keyof SearchFilters, value: string) => {
@@ -118,7 +134,11 @@ export default function SearchFiltersDropdown({ isOpen, onClose }: SearchFilters
                                                     : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
                                             }`}
                                         >
-                                            {type === 'all' ? 'All' : type === 'movie' ? 'Movies' : 'TV'}
+                                            {type === 'all'
+                                                ? 'All'
+                                                : type === 'movie'
+                                                  ? 'Movies'
+                                                  : 'TV'}
                                         </button>
                                     ))}
                                 </div>

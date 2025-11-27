@@ -3,6 +3,7 @@ import { FieldValue } from 'firebase-admin/firestore'
 import type { DocumentReference, DocumentData } from 'firebase-admin/firestore'
 import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin'
 import { apiError, apiLog } from '@/utils/debugLogger'
+import { applyCsrfProtection } from '@/lib/csrfProtection'
 
 interface VerificationRecord {
     userId: string
@@ -39,6 +40,10 @@ async function findUserByVerificationToken(token: string): Promise<VerificationR
 }
 
 export async function POST(request: NextRequest) {
+    // Apply CSRF protection
+    const csrfResponse = applyCsrfProtection(request)
+    if (csrfResponse) return csrfResponse
+
     try {
         const body = await request.json()
         const { token } = body || {}

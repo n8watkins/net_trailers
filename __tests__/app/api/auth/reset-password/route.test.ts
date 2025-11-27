@@ -64,6 +64,7 @@ function createRequest(method: 'GET' | 'POST', body?: unknown, token = 'valid-to
             method === 'POST'
                 ? {
                       'Content-Type': 'application/json',
+                      Origin: 'http://localhost:3000', // Required for CSRF protection
                   }
                 : undefined,
     })

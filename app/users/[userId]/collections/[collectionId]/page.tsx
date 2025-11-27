@@ -44,34 +44,48 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
             setError(null)
 
             try {
-                const userDoc = await getDoc(doc(db, 'users', userId))
+                // Fetch both user document and profile document
+                const [userDoc, profileDoc] = await Promise.all([
+                    getDoc(doc(db, 'users', userId)),
+                    getDoc(doc(db, 'profiles', userId)),
+                ])
 
-                if (!userDoc.exists()) {
+                if (!userDoc.exists() && !profileDoc.exists()) {
                     throw new Error('User not found')
                 }
 
-                const userData = userDoc.data()
+                const userData = userDoc.exists() ? userDoc.data() : {}
+                const profileData = profileDoc.exists() ? profileDoc.data() : {}
                 const legacyProfile = userData?.profile || {}
 
                 if (!isMounted) return
 
+                // Try to get display name from multiple sources
                 setUsername(
-                    legacyProfile.username ||
-                        userData.username ||
+                    profileData?.displayName ||
+                        profileData?.username ||
+                        legacyProfile.displayName ||
+                        legacyProfile.username ||
                         userData.displayName ||
+                        userData.username ||
                         userData.email?.split('@')[0] ||
                         'User'
                 )
 
-                const allCollections = Array.isArray(userData.userCreatedWatchlists)
-                    ? (userData.userCreatedWatchlists as UserList[])
-                    : []
+                // Public collections are stored in userCreatedWatchlists field (historical naming)
+                // Note: For authenticated users, collections are in customRows (Zustand store)
+                const publicCollections = (userData.userCreatedWatchlists as UserList[]) || []
 
-                // Collections are private - not accessible via public profile
-                const foundCollection = null
+                // Find the collection by ID
+                const foundCollection = publicCollections.find((c) => c.id === collectionId)
 
                 if (!foundCollection) {
-                    throw new Error('Collection not found or not public')
+                    throw new Error('Collection not found')
+                }
+
+                // Skip if it's a system collection
+                if (foundCollection.isSystemCollection) {
+                    throw new Error('System collections are not accessible')
                 }
 
                 setCollection(foundCollection)
@@ -133,14 +147,22 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
             iconColor="text-purple-400"
             description={`${collection.items?.length || 0} items`}
         >
-            {/* Back to Profile Link */}
-            <div className="mb-6">
+            {/* Breadcrumb Navigation */}
+            <div className="mb-6 flex items-center gap-3 text-sm">
                 <Link
                     href={`/users/${userId}`}
-                    className="inline-flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                    className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors"
                 >
-                    <ArrowLeftIcon className="w-4 h-4" />
-                    Back to {username}&apos;s Profile
+                    <UserIcon className="w-4 h-4" />
+                    {username}&apos;s Profile
+                </Link>
+                <span className="text-gray-600">/</span>
+                <Link
+                    href={`/users/${userId}/collections`}
+                    className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors"
+                >
+                    <RectangleStackIcon className="w-4 h-4" />
+                    Collections
                 </Link>
             </div>
 

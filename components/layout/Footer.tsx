@@ -77,7 +77,7 @@ function Footer({
                                 </li>
                                 <li>
                                     <Link
-                                        href="/collections"
+                                        href="/watch-later"
                                         className="text-gray-300 hover:text-white transition-colors duration-200 flex items-center space-x-2"
                                     >
                                         <RectangleStackIcon className="h-4 w-4" />
