@@ -110,7 +110,7 @@ export async function createRanking(
     username: string,
     userAvatar: string | undefined,
     request: CreateRankingRequest
-): Promise<string> {
+): Promise<Ranking> {
     // Validate inputs
     validateUserId(userId)
     validateRankingCreation(request)
@@ -140,12 +140,12 @@ export async function createRanking(
     }
 
     // Remove undefined values before saving to Firestore
-    const cleanedRanking = removeUndefined(ranking)
+    const cleanedRanking = removeUndefined(ranking) as Ranking
 
     const rankingRef = getRankingDocRef(rankingId)
     await setDoc(rankingRef, cleanedRanking)
 
-    return rankingId
+    return cleanedRanking
 }
 
 /**

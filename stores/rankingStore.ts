@@ -216,18 +216,21 @@ export const useRankingStore = create<RankingState>()(
                 set({ isLoading: true, error: null })
 
                 try {
-                    const rankingId = await createRankingInFirestore(
+                    const newRanking = await createRankingInFirestore(
                         userId,
                         username,
                         userAvatar,
                         request
                     )
 
-                    // Reload user rankings
-                    await get().loadUserRankings(userId)
+                    // Add the new ranking to local state directly (don't reload from Firestore)
+                    // This avoids race conditions when updateRanking is called immediately after
+                    set((state) => ({
+                        rankings: [newRanking, ...state.rankings],
+                        isLoading: false,
+                    }))
 
-                    set({ isLoading: false })
-                    return rankingId
+                    return newRanking.id
                 } catch (error) {
                     console.error('Error creating ranking:', error)
                     set({
