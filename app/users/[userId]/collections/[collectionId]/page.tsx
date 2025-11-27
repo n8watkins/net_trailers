@@ -60,9 +60,10 @@ export default function CollectionDetailPage({ params }: CollectionDetailPagePro
 
                 if (!isMounted) return
 
-                // Get display name from profile or user document
+                // Get display name - profile.username is the primary field (displayName is deprecated)
                 setUsername(
-                    profileData?.displayName ||
+                    profileData?.username ||
+                        profileData?.displayName ||
                         legacyProfile.displayName ||
                         userData.displayName ||
                         'User'

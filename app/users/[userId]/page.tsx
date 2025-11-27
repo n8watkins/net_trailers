@@ -55,32 +55,50 @@ const sortByRecency = <T extends { updatedAt?: number | null; createdAt?: number
 }
 
 async function loadProfileFromClient(userId: string): Promise<PublicProfilePayload> {
-    const userSnap = await getDoc(doc(db, 'users', userId))
+    // Fetch both user document and profile document
+    const [userSnap, profileSnap] = await Promise.all([
+        getDoc(doc(db, 'users', userId)),
+        getDoc(doc(db, 'profiles', userId)),
+    ])
 
-    if (!userSnap.exists()) {
+    if (!userSnap.exists() && !profileSnap.exists()) {
         throw new Error('User not found')
     }
 
-    const userData = userSnap.data() || {}
+    const userData = userSnap.exists() ? userSnap.data() || {} : {}
+    const profileData = profileSnap.exists() ? profileSnap.data() || {} : {}
     const legacyProfile = userData.profile || {}
 
     // Get visibility settings - default to all visible for backward compatibility
-    const visibility: ProfileVisibility = userData.visibility ??
+    const visibility: ProfileVisibility = profileData.visibility ??
+        userData.visibility ??
         legacyProfile.visibility ?? { ...DEFAULT_PROFILE_VISIBILITY }
 
-    // Use displayName consistently - this is the user's chosen display name
-    const derivedDisplayName = legacyProfile.displayName || userData.displayName || 'User'
+    // Get display name - profile.username is the primary field (displayName is deprecated)
+    const derivedDisplayName =
+        profileData.username ||
+        profileData.displayName ||
+        legacyProfile.displayName ||
+        userData.displayName ||
+        'User'
 
     const profile: PublicProfileIdentity = {
-        username: derivedDisplayName, // Use displayName for both fields
+        username: derivedDisplayName,
         displayName: derivedDisplayName,
-        avatarUrl: legacyProfile.avatarUrl ?? userData.photoURL ?? userData.avatarUrl ?? null,
-        bio: legacyProfile.bio ?? userData.bio ?? null,
-        favoriteGenres: Array.isArray(legacyProfile.favoriteGenres)
-            ? legacyProfile.favoriteGenres
-            : Array.isArray(userData.favoriteGenres)
-              ? userData.favoriteGenres
-              : undefined,
+        avatarUrl:
+            profileData.avatarUrl ??
+            legacyProfile.avatarUrl ??
+            userData.photoURL ??
+            userData.avatarUrl ??
+            null,
+        bio: profileData.description ?? legacyProfile.bio ?? userData.bio ?? null,
+        favoriteGenres: Array.isArray(profileData.favoriteGenres)
+            ? profileData.favoriteGenres
+            : Array.isArray(legacyProfile.favoriteGenres)
+              ? legacyProfile.favoriteGenres
+              : Array.isArray(userData.favoriteGenres)
+                ? userData.favoriteGenres
+                : undefined,
     }
 
     const likedContent = Array.isArray(userData.likedMovies)

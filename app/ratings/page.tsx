@@ -28,7 +28,20 @@ type FilterValue = RatingValue
 // Wrapper component to handle Suspense for useSearchParams
 export default function RatingsPage() {
     return (
-        <Suspense fallback={<NetflixLoader message="Loading ratings..." />}>
+        <Suspense
+            fallback={
+                <SubPageLayout
+                    title="My Ratings"
+                    icon={<StarIcon />}
+                    iconColor="text-purple-400"
+                    description="View and manage your content ratings. These ratings help personalize your recommendations."
+                >
+                    <div className="flex items-center justify-center py-32">
+                        <NetflixLoader />
+                    </div>
+                </SubPageLayout>
+            }
+        >
             <RatingsPageContent />
         </Suspense>
     )

@@ -106,8 +106,9 @@ export async function buildPublicProfilePayload(
     const legacyProfile = legacyData.profile || {}
     const profileData = profileSnap.exists ? profileDataRaw : null
 
-    // Use displayName consistently everywhere - this is the user's chosen display name
+    // Get display name - profile.username is the primary field (displayName is deprecated)
     const derivedDisplayName =
+        profileData?.username ||
         profileData?.displayName ||
         legacyProfile.displayName ||
         legacyData.displayName ||
@@ -122,7 +123,7 @@ export async function buildPublicProfilePayload(
         null
 
     const profilePayload: PublicProfilePayload['profile'] = {
-        username: derivedDisplayName, // Using displayName for both fields for consistency
+        username: derivedDisplayName,
         displayName: derivedDisplayName,
         avatarUrl: derivedAvatar,
         bio: profileData?.description ?? legacyProfile.bio ?? legacyData.bio ?? null,
