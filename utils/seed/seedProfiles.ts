@@ -58,10 +58,11 @@ export interface SeedDemoProfilesOptions {
 /**
  * Generate a demo user ID with demo_ prefix
  */
-function generateDemoUserId(username: string): string {
+function generateDemoUserId(displayName: string): string {
     const timestamp = Date.now()
     const random = Math.random().toString(36).substring(2, 9)
-    return `demo_${username.toLowerCase()}_${timestamp}_${random}`
+    const slug = displayName.toLowerCase().replace(/\s+/g, '_')
+    return `demo_${slug}_${timestamp}_${random}`
 }
 
 /**
@@ -74,10 +75,9 @@ async function createDemoProfile(profileData: DemoProfile, userId: string): Prom
     const profile: UserProfile = {
         id: userId,
         userId,
-        email: `${profileData.username.toLowerCase()}@demo.nettrailers.com`,
-        username: profileData.username,
+        email: `${profileData.displayName.toLowerCase().replace(/\s+/g, '_')}@demo.nettrailers.com`,
         displayName: profileData.displayName,
-        avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${profileData.username}`,
+        avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${profileData.displayName}`,
         avatarSource: 'generated',
         description: profileData.description,
         favoriteGenres: profileData.favoriteGenres,
@@ -93,7 +93,7 @@ async function createDemoProfile(profileData: DemoProfile, userId: string): Prom
     // Save to Firestore profiles collection
     await setDoc(doc(db, 'profiles', userId), profile)
 
-    console.log(`  ✅ Created demo profile: ${profile.username} (${userId})`)
+    console.log(`  ✅ Created demo profile: ${profile.displayName} (${userId})`)
 
     return profile
 }
@@ -122,26 +122,26 @@ export async function seedDemoProfiles(options: SeedDemoProfilesOptions = {}): P
 
     for (const profileData of profilesToCreate) {
         try {
-            const userId = generateDemoUserId(profileData.username)
+            const userId = generateDemoUserId(profileData.displayName)
             const profile = await createDemoProfile(profileData, userId)
             createdUserIds.push(userId)
 
             // Create rankings for this profile
             if (withRankings && rankingsPerProfile > 0) {
-                console.log(`  📊 Creating rankings for ${profile.username}...`)
+                console.log(`  📊 Creating rankings for ${profile.displayName}...`)
                 await seedRankings({
                     userId,
-                    userName: profile.displayName || profile.username,
+                    userName: profile.displayName,
                     userAvatar: profile.avatarUrl,
                 })
             }
 
             // Create forum threads
             if (withForumPosts && threadsPerProfile > 0) {
-                console.log(`  🧵 Creating threads for ${profile.username}...`)
+                console.log(`  🧵 Creating threads for ${profile.displayName}...`)
                 await seedForumThreads({
                     userId,
-                    userName: profile.displayName || profile.username,
+                    userName: profile.displayName,
                     userAvatar: profile.avatarUrl,
                     threadCount: threadsPerProfile,
                     pollCount: 0,
@@ -151,10 +151,10 @@ export async function seedDemoProfiles(options: SeedDemoProfilesOptions = {}): P
 
             // Create forum polls
             if (withForumPosts && pollsPerProfile > 0) {
-                console.log(`  📊 Creating polls for ${profile.username}...`)
+                console.log(`  📊 Creating polls for ${profile.displayName}...`)
                 await seedForumPolls({
                     userId,
-                    userName: profile.displayName || profile.username,
+                    userName: profile.displayName,
                     userAvatar: profile.avatarUrl,
                     threadCount: 0,
                     pollCount: pollsPerProfile,
