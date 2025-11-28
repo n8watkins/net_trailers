@@ -30,7 +30,7 @@ import { WatchLaterSection } from '../../components/profile/WatchLaterSection'
 import { RankingsSection } from '../../components/profile/RankingsSection'
 import { CollectionsSection } from '../../components/profile/CollectionsSection'
 import { ForumActivitySection } from '../../components/profile/ForumActivitySection'
-import type { PollSummary } from '../../types/forum'
+import type { PollSummary, ThreadSummary } from '../../types/forum'
 import {
     Timestamp,
     collection,
@@ -82,6 +82,8 @@ export default function ProfilePage() {
     const currentUserId = getUserId()
     const [votedPolls, setVotedPolls] = useState<PollSummary[]>([])
     const [isLoadingVotedPolls, setIsLoadingVotedPolls] = useState(false)
+    const [votedThreads, setVotedThreads] = useState<ThreadSummary[]>([])
+    const [isLoadingVotedThreads, setIsLoadingVotedThreads] = useState(false)
 
     useEffect(() => {
         if (!currentUserId || isGuest) {
@@ -163,6 +165,82 @@ export default function ProfilePage() {
         }
 
         fetchVotedPolls()
+
+        return () => {
+            isMounted = false
+        }
+    }, [currentUserId, isGuest])
+
+    // Fetch voted (liked) threads
+    useEffect(() => {
+        if (!currentUserId || isGuest) {
+            setVotedThreads([])
+            setIsLoadingVotedThreads(false)
+            return
+        }
+
+        let isMounted = true
+        const fetchVotedThreads = async () => {
+            setIsLoadingVotedThreads(true)
+            try {
+                const likesQuery = query(
+                    collection(db, 'thread_likes'),
+                    where('userId', '==', currentUserId),
+                    limit(25)
+                )
+                const likesSnap = await getDocs(likesQuery)
+
+                const threadsFromLikes = await Promise.all(
+                    likesSnap.docs.map(async (likeDoc) => {
+                        const likeData = likeDoc.data() || {}
+                        const threadId = likeData.threadId as string | undefined
+                        if (!threadId) return null
+
+                        const threadDoc = await getDoc(doc(db, 'threads', threadId))
+                        if (!threadDoc.exists()) return null
+                        const threadData = threadDoc.data() || {}
+
+                        // Don't include user's own threads in voted tab
+                        if (threadData.userId === currentUserId) return null
+
+                        return {
+                            id: threadDoc.id,
+                            title: threadData.title ?? 'Untitled thread',
+                            content: threadData.content ?? '',
+                            category: threadData.category ?? 'general',
+                            likes: threadData.likes ?? 0,
+                            views: threadData.views ?? 0,
+                            replyCount: threadData.replyCount ?? 0,
+                            createdAt: timestampToNumber(
+                                threadData.createdAt as Timestamp | number | null | undefined
+                            ),
+                            updatedAt: timestampToNumber(
+                                threadData.updatedAt as Timestamp | number | null | undefined
+                            ),
+                        } as ThreadSummary
+                    })
+                )
+
+                if (!isMounted) return
+
+                const filtered = threadsFromLikes
+                    .filter((thread): thread is ThreadSummary => Boolean(thread))
+                    .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
+
+                setVotedThreads(filtered)
+            } catch (error) {
+                console.error('Failed to load voted threads:', error)
+                if (isMounted) {
+                    setVotedThreads([])
+                }
+            } finally {
+                if (isMounted) {
+                    setIsLoadingVotedThreads(false)
+                }
+            }
+        }
+
+        fetchVotedThreads()
 
         return () => {
             isMounted = false
@@ -387,9 +465,11 @@ export default function ProfilePage() {
                         {!isGuest && (
                             <ForumActivitySection
                                 threads={userThreads}
+                                threadsVoted={votedThreads}
                                 pollsCreated={userPolls}
                                 pollsVoted={votedPolls}
                                 isLoadingVotedPolls={isLoadingVotedPolls}
+                                isLoadingVotedThreads={isLoadingVotedThreads}
                             />
                         )}
                     </div>
