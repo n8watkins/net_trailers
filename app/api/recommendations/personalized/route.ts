@@ -277,18 +277,31 @@ async function handlePersonalizedRecommendationsGet(
             hiddenMovies = (userData.hiddenMovies || []) as Content[]
         }
 
+        // CRITICAL: Also fetch watchlist and collection items to exclude from recommendations
+        // Without this, pagination will return content the user already has, causing duplicate pages
+        const watchlist = (userData.defaultWatchlist || []) as Content[]
+
+        // Extract all items from user's collections
+        const collectionItems: Content[] = []
+        const userCreatedWatchlists = userData.userCreatedWatchlists || []
+        for (const collection of userCreatedWatchlists) {
+            if (collection.items && Array.isArray(collection.items)) {
+                collectionItems.push(...collection.items)
+            }
+        }
+
         const userDataForRec = {
             userId,
             likedMovies: likedMovies.slice(0, 10),
-            defaultWatchlist: [],
-            collectionItems: [],
+            defaultWatchlist: watchlist.slice(0, 10), // Include watchlist for exclusion
+            collectionItems: collectionItems.slice(0, 20), // Include collection items for exclusion
             hiddenMovies: hiddenMovies.slice(0, 10),
         }
 
         // Build recommendation profile
         const profile = buildRecommendationProfile(userDataForRec, genrePreferences)
 
-        // Get content IDs to exclude
+        // Get content IDs to exclude (now includes watchlist + collections)
         const seenIds = getSeenContentIds(userDataForRec)
         const excludeIds = [...new Set(seenIds)]
 
