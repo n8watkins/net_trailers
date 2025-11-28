@@ -161,7 +161,8 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
             // Allow editing for trending and top-rated, but not recommended-for-you
             canEdit: rec.id === 'trending' || rec.id === 'top-rated',
             emoji: rec.emoji,
-            displayAsRow: true,
+            displayAsRow: rec.enabled, // System recs use 'enabled' property for display state
+            showOnPublicProfile: rec.showOnPublicProfile,
         }),
         []
     )
@@ -173,22 +174,22 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
 
         // Only show system recommendations on home page
         if (pageType === 'home') {
-            // Home shows collections with mediaType: 'both' and displayAsRow: true
+            // Home shows all collections with mediaType: 'both', regardless of display state
             filteredCollections = userCollections
-                .filter((c) => c.displayAsRow !== false && (c.mediaType === 'both' || !c.mediaType))
+                .filter((c) => c.mediaType === 'both' || !c.mediaType)
                 .map(userListToDisplayRow)
 
             // Add system recommendations (Trending, Top Rated, Recommended For You)
             filteredSystemRecs = systemRecommendations.map(systemRecToDisplayRow)
         } else if (pageType === 'movies') {
-            // Movies page shows movie collections
+            // Movies page shows all movie collections, regardless of display state
             filteredCollections = userCollections
-                .filter((c) => c.displayAsRow !== false && c.mediaType === 'movie')
+                .filter((c) => c.mediaType === 'movie')
                 .map(userListToDisplayRow)
         } else {
-            // TV page shows TV collections
+            // TV page shows all TV collections, regardless of display state
             filteredCollections = userCollections
-                .filter((c) => c.displayAsRow !== false && c.mediaType === 'tv')
+                .filter((c) => c.mediaType === 'tv')
                 .map(userListToDisplayRow)
         }
 
@@ -330,19 +331,23 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
         (row: DisplayRow) => {
             // Check if this is a system recommendation
             if (row.isSystemRecommendation) {
-                // Look up the full system recommendation from the store
+                // Look up the full system recommendation from the store and merge with local row data
                 const fullRec = systemRecommendations.find((r) => r.id === row.id)
                 if (fullRec) {
-                    // Open the dedicated SystemRecommendationEditorModal
+                    // System recommendations don't have displayAsRow, so just pass the full rec
                     setEditorSystemRec(fullRec)
                 }
                 return
             }
 
-            // Look up the full collection from the store
+            // Look up the full collection from the store and merge with local row data
             const fullCollection = userCollections.find((c) => c.id === row.id)
             if (fullCollection) {
-                setEditorCollection(fullCollection)
+                // Merge local row data (displayAsRow) with store data
+                setEditorCollection({
+                    ...fullCollection,
+                    displayAsRow: row.displayAsRow,
+                })
             }
         },
         [userCollections, systemRecommendations]
@@ -365,26 +370,50 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
     const handleResetDefaultRows = async () => {
         if (!userId) return
 
+        // Update local state INSTANTLY for snappy UI
+        setLocalRows((prevRows) =>
+            prevRows.map((r) => ({
+                ...r,
+                displayAsRow: true,
+            }))
+        )
+
+        showToast('success', 'All collections enabled and reset to defaults')
+
         try {
-            // Get default collections and reset them
+            // Get default collections and reset them in background
             const defaultCollections = createDefaultCollectionsForUser()
 
-            for (const defaultCol of defaultCollections) {
+            // Reset default collections to show and enable them
+            const collectionPromises = defaultCollections.map(async (defaultCol) => {
                 const existing = userCollections.find((c) => c.id === defaultCol.id)
                 if (existing) {
-                    // Reset to default properties
-                    await updateList(defaultCol.id, {
+                    // Reset to default properties and enable display
+                    return updateList(defaultCol.id, {
                         name: defaultCol.name,
                         enabled: defaultCol.enabled,
                         order: defaultCol.order,
                         genres: defaultCol.genres,
                         genreLogic: defaultCol.genreLogic,
                         mediaType: defaultCol.mediaType,
+                        displayAsRow: true, // Enable display on page
+                        showOnPublicProfile: true,
                     })
                 }
-            }
-            showToast('success', 'Default collections restored successfully')
+            })
+
+            // Reset all system recommendations to show and enable them
+            const sysRecPromises = systemRecommendations.map((sysRec) =>
+                updateSystemRecommendation(sysRec.id, {
+                    enabled: true, // Enable display on page
+                    showOnPublicProfile: true,
+                })
+            )
+
+            // Run all updates in parallel
+            await Promise.all([...collectionPromises, ...sysRecPromises])
         } catch (error) {
+            console.error('Failed to reset defaults:', error)
             showToast('error', (error as Error).message)
         }
     }
@@ -476,40 +505,45 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
         [userId, updateList, updateSystemRecommendation, showToast]
     )
 
-    // Toggle public profile display
+    // Toggle display on page
     const handleTogglePublicDisplay = useCallback(
         async (row: DisplayRow) => {
             if (!userId) return
 
-            // System recommendations cannot be toggled for public display
-            if (row.isSystemRecommendation) return
-
-            const newValue = !(row.showOnPublicProfile ?? true)
+            const newValue = !(row.displayAsRow ?? true)
 
             // Update local state INSTANTLY for smooth UI
             setLocalRows((prevRows) =>
-                prevRows.map((r) => (r.id === row.id ? { ...r, showOnPublicProfile: newValue } : r))
+                prevRows.map((r) => (r.id === row.id ? { ...r, displayAsRow: newValue } : r))
             )
 
             // Persist to store in background
             try {
-                await updateList(row.id, { showOnPublicProfile: newValue })
-                showToast(
-                    'success',
-                    newValue ? 'Collection visible on profile' : 'Collection hidden from profile'
-                )
+                if (row.isSystemRecommendation) {
+                    // Update system recommendation
+                    await updateSystemRecommendation(row.id, { enabled: newValue })
+                    showToast(
+                        'success',
+                        newValue ? 'Collection will display on page' : 'Collection hidden from page'
+                    )
+                } else {
+                    // Update user collection
+                    await updateList(row.id, { displayAsRow: newValue })
+                    showToast(
+                        'success',
+                        newValue ? 'Collection will display on page' : 'Collection hidden from page'
+                    )
+                }
             } catch (error) {
-                console.error('Failed to toggle public display:', error)
+                console.error('Failed to toggle display:', error)
                 showToast('error', 'Failed to update collection')
                 // Revert local state on error
                 setLocalRows((prevRows) =>
-                    prevRows.map((r) =>
-                        r.id === row.id ? { ...r, showOnPublicProfile: !newValue } : r
-                    )
+                    prevRows.map((r) => (r.id === row.id ? { ...r, displayAsRow: !newValue } : r))
                 )
             }
         },
-        [userId, updateList, showToast]
+        [userId, updateList, updateSystemRecommendation, showToast]
     )
 
     // Page title and icon
