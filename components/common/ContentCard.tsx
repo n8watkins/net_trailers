@@ -246,7 +246,7 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
             className={`relative cursor-pointer transition-all duration-300 ease-out group
                        ${getCardSizeClasses()}
                        hover:z-40 ${className}
-                       ${size === 'compact' ? 'min-h-[250px] sm:min-h-[280px] md:min-h-[310px] lg:min-h-[340px]' : size === 'small' ? 'min-h-[280px] sm:min-h-[310px] md:min-h-[340px] lg:min-h-[370px]' : 'min-h-[340px] sm:min-h-[370px] md:min-h-[400px] lg:min-h-[430px] xl:min-h-[490px]'}`}
+                       ${size === 'compact' ? 'min-h-[230px] sm:min-h-[260px] md:min-h-[285px] lg:min-h-[310px]' : size === 'small' ? 'min-h-[260px] sm:min-h-[285px] md:min-h-[310px] lg:min-h-[340px]' : 'min-h-[260px] sm:min-h-[285px] md:min-h-[310px] lg:min-h-[340px] xl:min-h-[370px]'}`}
             onClick={handleImageClick}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
@@ -571,11 +571,11 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
             {content && imageLoaded && (
                 <div
                     className={`transition-all duration-300 ease-out
-                              text-left relative z-30 bg-transparent p-2 min-h-[80px] mt-4 ${
+                              text-left relative z-30 bg-transparent px-1 py-1.5 min-h-[55px] mt-2 ${
                                   isCardHovered ? 'translate-y-2' : 'translate-y-0'
                               }`}
                 >
-                    <h3 className="text-white font-bold leading-tight mb-1 text-base text-left line-clamp-3">
+                    <h3 className="text-white font-bold leading-tight mb-0.5 text-base text-left line-clamp-2">
                         {content ? getTitle(content) : 'No Title'}
                     </h3>
                     <p className="text-gray-400 font-medium leading-tight text-sm text-left">
