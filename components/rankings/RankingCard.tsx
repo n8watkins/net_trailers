@@ -17,13 +17,7 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Ranking } from '@/types/rankings'
 import { getTitle, getPosterPath } from '@/typings'
-import {
-    HeartIcon,
-    ChatBubbleLeftIcon,
-    EyeIcon,
-    TrophyIcon,
-    FireIcon,
-} from '@heroicons/react/24/outline'
+import { HeartIcon, ChatBubbleLeftIcon, EyeIcon, FireIcon } from '@heroicons/react/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid'
 import { useRankingStore } from '@/stores/rankingStore'
 import { useSessionStore } from '@/stores/sessionStore'
@@ -133,15 +127,10 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
 
                 {/* Content section - Compact */}
                 <div className="relative z-20 p-3 space-y-2">
-                    {/* Trophy icon + title */}
-                    <div className="flex items-start gap-2">
-                        <div className="relative flex-shrink-0 mt-0.5">
-                            <TrophyIcon className="relative w-5 h-5 text-yellow-500/80 group-hover:text-yellow-400 transition-colors duration-200" />
-                        </div>
-                        <h3 className="text-base font-bold text-white group-hover:text-yellow-100 transition-colors duration-200 line-clamp-1 leading-tight">
-                            {ranking.title}
-                        </h3>
-                    </div>
+                    {/* Title */}
+                    <h3 className="text-base font-bold text-white group-hover:text-yellow-100 transition-colors duration-200 line-clamp-1 leading-tight">
+                        {ranking.title}
+                    </h3>
 
                     {/* Author + timestamp row */}
                     {showAuthor && (
