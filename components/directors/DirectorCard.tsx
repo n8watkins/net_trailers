@@ -70,11 +70,11 @@ export default function DirectorCard({
             onKeyDown={handleKeyDown}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            className="flex flex-col items-center cursor-pointer group transition-all duration-300 w-[100px] sm:w-[120px] md:w-[140px] lg:w-[160px]"
+            className="flex flex-col items-center cursor-pointer group transition-all duration-300 w-[120px] sm:w-[150px] md:w-[180px] lg:w-[200px]"
         >
             {/* Circular Image Container */}
             <div
-                className={`relative w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] md:w-[140px] md:h-[140px] lg:w-[160px] lg:h-[160px] rounded-full overflow-hidden transition-all duration-300 ${
+                className={`relative w-[120px] h-[120px] sm:w-[150px] sm:h-[150px] md:w-[180px] md:h-[180px] lg:w-[200px] lg:h-[200px] rounded-full overflow-hidden transition-all duration-300 ${
                     isHovered
                         ? 'scale-105 shadow-[0_0_20px_rgba(220,38,38,0.5)] ring-2 ring-red-500'
                         : 'shadow-lg'
@@ -95,7 +95,7 @@ export default function DirectorCard({
                         fill
                         style={{ objectFit: 'cover' }}
                         className={`transition-all duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-                        sizes="(max-width: 640px) 100px, (max-width: 768px) 120px, (max-width: 1024px) 140px, 160px"
+                        sizes="(max-width: 640px) 120px, (max-width: 768px) 150px, (max-width: 1024px) 180px, 200px"
                         onLoad={() => setImageLoaded(true)}
                         onError={() => setImageError(true)}
                     />
@@ -114,7 +114,7 @@ export default function DirectorCard({
             </div>
 
             {/* Director Name */}
-            <h3 className="mt-3 text-center font-semibold text-sm sm:text-base text-white line-clamp-2">
+            <h3 className="mt-3 text-center font-semibold text-base sm:text-lg text-white line-clamp-2">
                 {director.name}
             </h3>
 
