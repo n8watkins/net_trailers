@@ -107,7 +107,7 @@ export default function ThreadsContent() {
         })
 
     return (
-        <div className="relative -mt-16 -mx-6 sm:-mx-8 lg:-mx-12">
+        <div className="relative -mt-20 -mx-6 sm:-mx-8 lg:-mx-12">
             {/* Atmospheric Background */}
             <div className="fixed inset-0 pointer-events-none">
                 <div className="absolute inset-0 bg-black" />
@@ -204,18 +204,18 @@ export default function ThreadsContent() {
                         </div>
 
                         {/* Category Pills - Integrated in Hero */}
-                        <div className="flex flex-wrap gap-2 items-center justify-center mb-5 overflow-x-auto pb-2 max-w-full">
+                        <div className="flex flex-wrap gap-2 items-center justify-center mb-5 overflow-visible pb-2 px-4 max-w-full min-h-[44px]">
                             <button
                                 onClick={() => setSelectedCategory('all')}
                                 className={`group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border whitespace-nowrap ${
                                     selectedCategory === 'all'
-                                        ? 'bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-500 text-white border-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.5)] scale-105'
-                                        : 'bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)]'
+                                        ? 'bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-500 text-white border-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.3)] scale-105'
+                                        : 'bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105 hover:shadow-[0_0_8px_rgba(255,255,255,0.08)]'
                                 }`}
                             >
                                 <span className="relative z-10">All</span>
                                 {selectedCategory === 'all' && (
-                                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 blur-xl opacity-30 animate-pulse" />
+                                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 blur-md opacity-15 animate-pulse" />
                                 )}
                             </button>
                             {FORUM_CATEGORIES.map((cat) => (
@@ -224,8 +224,8 @@ export default function ThreadsContent() {
                                     onClick={() => setSelectedCategory(cat.id)}
                                     className={`group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 whitespace-nowrap ${
                                         selectedCategory === cat.id
-                                            ? 'bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-500 text-white border-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.5)] scale-105'
-                                            : 'bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)]'
+                                            ? 'bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-500 text-white border-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.3)] scale-105'
+                                            : 'bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105 hover:shadow-[0_0_8px_rgba(255,255,255,0.08)]'
                                     }`}
                                 >
                                     <span className="text-base">{cat.icon}</span>
@@ -233,7 +233,7 @@ export default function ThreadsContent() {
                                         {cat.name}
                                     </span>
                                     {selectedCategory === cat.id && (
-                                        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 blur-xl opacity-30 animate-pulse" />
+                                        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 blur-md opacity-15 animate-pulse" />
                                     )}
                                 </button>
                             ))}
@@ -319,8 +319,17 @@ export default function ThreadsContent() {
                     {/* Thread Grid - 1-2 Column Layout */}
                     {!isLoadingThreads && filteredThreads.length > 0 && (
                         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {filteredThreads.map((thread) => (
-                                <ThreadCard key={thread.id} thread={thread} />
+                            {filteredThreads.map((thread, index) => (
+                                <div
+                                    key={thread.id}
+                                    className="animate-fadeInUp"
+                                    style={{
+                                        animationDelay: `${Math.min(index * 50, 500)}ms`,
+                                        animationFillMode: 'both',
+                                    }}
+                                >
+                                    <ThreadCard thread={thread} />
+                                </div>
                             ))}
                         </div>
                     )}
@@ -356,11 +365,11 @@ export default function ThreadsContent() {
                     >
                         <div className="relative">
                             {/* Glowing background */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full blur-2xl opacity-60 group-hover:opacity-80 transition-opacity" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full blur-lg opacity-30 group-hover:opacity-40 transition-opacity" />
 
                             {/* Button */}
-                            <div className="relative flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 rounded-full text-white font-bold shadow-[0_0_40px_rgba(59,130,246,0.6)] group-hover:shadow-[0_0_60px_rgba(59,130,246,0.8)] group-hover:scale-110 transition-all duration-300">
-                                <ChatBubbleLeftRightIcon className="w-6 h-6" />
+                            <div className="relative flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 rounded-full text-white font-bold text-sm shadow-[0_0_20px_rgba(59,130,246,0.3)] group-hover:shadow-[0_0_30px_rgba(59,130,246,0.4)] group-hover:scale-105 transition-all duration-300">
+                                <ChatBubbleLeftRightIcon className="w-5 h-5" />
                                 <span className="hidden sm:inline">New Thread</span>
                             </div>
                         </div>
@@ -375,7 +384,7 @@ export default function ThreadsContent() {
                 onCreate={handleCreateThread}
             />
 
-            {/* Add keyframe animation for bobbing */}
+            {/* Add keyframe animation for bobbing and fade-in */}
             <style jsx>{`
                 @keyframes bob {
                     0%,
@@ -383,8 +392,23 @@ export default function ThreadsContent() {
                         transform: translateY(0);
                     }
                     50% {
-                        transform: translateY(-10px);
+                        transform: translateY(-4px);
                     }
+                }
+
+                @keyframes fadeInUp {
+                    from {
+                        opacity: 0;
+                        transform: translateY(20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+
+                :global(.animate-fadeInUp) {
+                    animation: fadeInUp 0.5s ease-out;
                 }
             `}</style>
         </div>

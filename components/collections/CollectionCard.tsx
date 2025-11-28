@@ -1,10 +1,9 @@
 'use client'
 
-import React, { useState, memo } from 'react'
-import { PencilIcon, TrashIcon, Bars3Icon, BellIcon } from '@heroicons/react/24/outline'
+import React, { memo } from 'react'
+import { PencilIcon, Bars3Icon, BellIcon } from '@heroicons/react/24/outline'
 import { DisplayRow } from '../../types/collections'
 import { getUnifiedGenresByMediaType } from '../../constants/unifiedGenres'
-import { DeleteConfirmationModal } from '../modals/DeleteConfirmationModal'
 
 /**
  * Format timestamp to relative time (e.g., "2 hours ago")
@@ -50,7 +49,8 @@ export const CollectionCard = memo(function CollectionCard({
     onMoveDown,
     dragHandleProps,
 }: CollectionCardProps) {
-    const [showDeleteModal, setShowDeleteModal] = useState(false)
+    // Calculate toggle state for display on page
+    const isDisplayed = row.displayAsRow !== false // undefined or true = displayed, false = hidden
 
     // Get unified genres and map to names
     const allGenres = getUnifiedGenresByMediaType(row.mediaType || 'both')
@@ -123,34 +123,34 @@ export const CollectionCard = memo(function CollectionCard({
 
                     {/* Actions */}
                     <div className="flex gap-2 items-center">
-                        {/* Public Display Toggle */}
-                        {onTogglePublicDisplay && !row.isSystemRecommendation && (
+                        {/* Display Toggle */}
+                        {onTogglePublicDisplay && (
                             <button
                                 type="button"
                                 onClick={() => onTogglePublicDisplay(row)}
-                                className={`relative inline-flex h-7 w-24 items-center rounded-full transition-all shrink-0 ${
-                                    row.showOnPublicProfile !== false
-                                        ? 'bg-blue-600'
-                                        : 'bg-gray-600'
+                                className={`relative inline-flex h-6 items-center rounded-full transition-all shrink-0 ${
+                                    isDisplayed ? 'bg-green-600 pl-2 pr-1' : 'bg-gray-700 pl-1 pr-2'
                                 }`}
                                 title={
-                                    row.showOnPublicProfile !== false
-                                        ? 'Visible on public profile - click to hide'
-                                        : 'Hidden from public profile - click to show'
+                                    isDisplayed
+                                        ? 'Displayed on page - click to hide'
+                                        : 'Hidden from page - click to show'
                                 }
                             >
-                                {/* Text inside toggle */}
-                                <span className="absolute inset-0 flex items-center justify-center text-[11px] font-semibold text-white pointer-events-none">
-                                    {row.showOnPublicProfile !== false ? 'Public' : 'Private'}
-                                </span>
                                 {/* Sliding circle */}
                                 <span
-                                    className={`inline-block h-5 w-5 transform rounded-full bg-white transition-all duration-200 relative z-10 shadow-md ${
-                                        row.showOnPublicProfile !== false
-                                            ? 'translate-x-[68px]'
-                                            : 'translate-x-1'
+                                    className={`inline-block h-4 w-4 rounded-full bg-white transition-all duration-200 relative z-10 shadow-md shrink-0 ${
+                                        isDisplayed ? 'order-2 ml-1' : 'order-1 mr-1'
                                     }`}
                                 />
+                                {/* Text inside toggle - positioned opposite to circle */}
+                                <span
+                                    className={`text-[10px] font-semibold text-white pointer-events-none ${
+                                        isDisplayed ? 'order-1' : 'order-2'
+                                    }`}
+                                >
+                                    {isDisplayed ? 'Show' : 'Hide'}
+                                </span>
                             </button>
                         )}
 
@@ -162,30 +162,9 @@ export const CollectionCard = memo(function CollectionCard({
                         >
                             <PencilIcon className="w-5 h-5 text-gray-300" />
                         </button>
-
-                        {/* Delete - Only show for non-system recommendations */}
-                        {!row.isSystemRecommendation && (
-                            <button
-                                onClick={() => setShowDeleteModal(true)}
-                                className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors shrink-0"
-                                title="Delete collection"
-                            >
-                                <TrashIcon className="w-5 h-5 text-gray-300" />
-                            </button>
-                        )}
                     </div>
                 </div>
             </div>
-
-            {/* Delete Confirmation Modal */}
-            <DeleteConfirmationModal
-                isOpen={showDeleteModal}
-                onClose={() => setShowDeleteModal(false)}
-                onConfirm={() => onDelete(row)}
-                itemName={row.name}
-                emoji={row.emoji}
-                isSystemItem={row.isSystemCollection}
-            />
         </>
     )
 })

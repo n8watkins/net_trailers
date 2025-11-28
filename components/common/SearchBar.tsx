@@ -5,7 +5,7 @@
 
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { MagnifyingGlassIcon, MicrophoneIcon } from '@heroicons/react/24/outline'
 import { useVoiceInput } from '../../hooks/useVoiceInput'
 import { useToast } from '../../hooks/useToast'
@@ -18,7 +18,7 @@ interface SearchBarProps {
     /** Placeholder text */
     placeholder?: string
     /** Focus ring color theme */
-    focusColor?: 'purple' | 'green' | 'blue' | 'gray' | 'yellow'
+    focusColor?: 'purple' | 'green' | 'blue' | 'gray' | 'yellow' | 'pink'
     /** Enable voice input */
     voiceInput?: boolean
     /** Optional DOM id for the underlying input */
@@ -37,6 +37,7 @@ export default function SearchBar({
     voiceSourceId,
 }: SearchBarProps) {
     const { showError } = useToast()
+    const [isMounted, setIsMounted] = useState(false)
 
     const { isListening, isSupported, transcript, startListening, stopListening } = useVoiceInput({
         onResult: (transcript) => {
@@ -48,6 +49,11 @@ export default function SearchBar({
         sourceId: voiceSourceId,
     })
 
+    // Track client-side mount to avoid hydration mismatch
+    useEffect(() => {
+        setIsMounted(true)
+    }, [])
+
     useEffect(() => {
         if (!voiceInput) return
         if (isListening && transcript) {
@@ -55,12 +61,16 @@ export default function SearchBar({
         }
     }, [voiceInput, isListening, transcript, onChange])
 
+    // Only show voice button after mount to avoid hydration mismatch
+    const showVoiceButton = isMounted && voiceInput && isSupported
+
     const focusColorClasses = {
         purple: 'focus:ring-purple-500',
         green: 'focus:ring-green-500',
         blue: 'focus:ring-blue-500',
         gray: 'focus:ring-gray-400',
         yellow: 'focus:ring-yellow-500',
+        pink: 'focus:ring-pink-500',
     }
 
     const handleVoiceClick = async () => {
@@ -80,11 +90,11 @@ export default function SearchBar({
                 type="text"
                 placeholder={placeholder}
                 id={inputId}
-                className={`w-full pl-10 ${voiceInput && isSupported ? 'pr-12' : 'pr-4'} py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 ${focusColorClasses[focusColor]} focus:border-transparent transition-all duration-200`}
+                className={`w-full pl-10 pr-12 py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 ${focusColorClasses[focusColor]} focus:border-transparent transition-all duration-200`}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
             />
-            {voiceInput && isSupported && (
+            {showVoiceButton && (
                 <button
                     type="button"
                     onClick={handleVoiceClick}

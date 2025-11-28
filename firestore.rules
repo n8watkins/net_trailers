@@ -449,10 +449,13 @@ service cloud.firestore {
       allow create: if request.auth != null
                     && request.resource.data.userId == request.auth.uid;
 
+      // Allow update if authenticated user owns the vote (to change their vote)
+      allow update: if request.auth != null
+                    && request.auth.uid == resource.data.userId
+                    && request.resource.data.userId == request.auth.uid;
+
       // Allow delete if authenticated user owns the vote
       allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
-
-      // Don't allow updates - votes are immutable once cast
     }
 
     // Helper function to validate thread data structure
@@ -536,8 +539,8 @@ service cloud.firestore {
              && after.allowAddOptions == before.allowAddOptions
              // Allow options array to change (vote counts)
              && after.options.size() == before.options.size()
-             // Allow totalVotes to increment
-             && (after.totalVotes >= before.totalVotes);
+             // Allow totalVotes to increment (new vote) or stay same (changed vote)
+             && (after.totalVotes >= before.totalVotes || after.totalVotes == before.totalVotes);
     }
 
     // Helper function to check if only isHidden is being toggled

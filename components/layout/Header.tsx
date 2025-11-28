@@ -549,7 +549,7 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                             className="mx-auto max-w-7xl px-2 sm:px-4 py-2 sm:py-4"
                             aria-label="User navigation"
                         >
-                            <div className="flex gap-2 sm:gap-8 justify-center sm:justify-start">
+                            <div className="flex gap-2 sm:gap-8 justify-center">
                                 {subNavItems.map((item) => {
                                     // Check if current path starts with the item's href (handles nested routes like /settings/preferences)
                                     // Special case for Collections: match any /collections path

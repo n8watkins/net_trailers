@@ -9,6 +9,21 @@ interface Props {
     progress?: number // Actual loading progress (0-100), overrides fake counter if provided
 }
 
+const LOADING_MESSAGES = [
+    '🎬 Finding favorites...',
+    '🍿 Popping corn...',
+    '🎭 Auditioning films...',
+    '📽️ Rolling carpet...',
+    '🌟 Polishing Oscars...',
+    '🎪 Setting up...',
+    '🎨 Creating magic...',
+    '🚀 Almost there...',
+    '🎉 Ready to binge...',
+    '✨ Movies await!',
+]
+
+const getRandomMessage = () => LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)]
+
 const NetflixLoader: React.FC<Props> = ({
     message = 'Loading your movies...',
     inline = false,
@@ -16,7 +31,7 @@ const NetflixLoader: React.FC<Props> = ({
     progress,
 }) => {
     const [loadingCounter, setLoadingCounter] = useState(0)
-    const [loadingMessage, setLoadingMessage] = useState('🎬 Finding your favorite movies...')
+    const [loadingMessage, setLoadingMessage] = useState(getRandomMessage)
 
     // Use actual progress if provided, otherwise use fake counter
     const displayProgress = progress !== undefined ? progress : loadingCounter
@@ -51,7 +66,7 @@ const NetflixLoader: React.FC<Props> = ({
         if (progress !== undefined) return
 
         setLoadingCounter(0)
-        setLoadingMessage('🎬 Finding your favorite movies...')
+        setLoadingMessage(getRandomMessage())
 
         // Counter animation - much slower for Gemini requests (5 seconds), faster for regular loads
         const increment = slowCounter ? 1 : 2 // Slower increment for Gemini
@@ -67,24 +82,9 @@ const NetflixLoader: React.FC<Props> = ({
             })
         }, interval)
 
-        // Message rotation - independent of counter with longer delay
-        const messages = [
-            '🎬 Finding favorites...',
-            '🍿 Popping corn...',
-            '🎭 Auditioning films...',
-            '📽️ Rolling carpet...',
-            '🌟 Polishing Oscars...',
-            '🎪 Setting up...',
-            '🎨 Creating magic...',
-            '🚀 Almost there...',
-            '🎉 Ready to binge...',
-            '✨ Movies await!',
-        ]
-
-        let messageIndex = 0
+        // Message rotation - picks a random message each time
         const messageInterval = setInterval(() => {
-            messageIndex = (messageIndex + 1) % messages.length
-            setLoadingMessage(messages[messageIndex])
+            setLoadingMessage(getRandomMessage())
         }, 1100) // 1.1 seconds - readable but not too slow
 
         return () => {

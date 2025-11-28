@@ -730,8 +730,14 @@ export const useForumStore = create<ForumState>((set, get) => ({
 
     voteOnPoll: async (userId, pollId, optionIds) => {
         try {
-            // Record the vote
+            // Check if user already voted
             const voteRef = doc(db, 'poll_votes', `${userId}_${pollId}`)
+            const existingVoteSnap = await getDoc(voteRef)
+            const previousOptionIds: string[] = existingVoteSnap.exists()
+                ? existingVoteSnap.data().optionIds
+                : []
+
+            // Record the new vote
             await setDoc(voteRef, {
                 pollId,
                 userId,
@@ -748,18 +754,26 @@ export const useForumStore = create<ForumState>((set, get) => ({
             }
 
             const pollData = pollSnap.data()
+            const isNewVoter = previousOptionIds.length === 0
+
+            // Update option votes: decrement previous selections, increment new selections
             const updatedOptions = pollData.options.map((option: any) => {
-                if (optionIds.includes(option.id)) {
-                    return {
-                        ...option,
-                        votes: option.votes + 1,
-                    }
+                let votes = option.votes
+                // Decrement if previously selected but not now
+                if (previousOptionIds.includes(option.id) && !optionIds.includes(option.id)) {
+                    votes = Math.max(0, votes - 1)
                 }
-                return option
+                // Increment if newly selected but wasn't before
+                if (optionIds.includes(option.id) && !previousOptionIds.includes(option.id)) {
+                    votes = votes + 1
+                }
+                return { ...option, votes }
             })
 
+            // Only increment totalVotes if this is a new voter
+            const totalVotes = isNewVoter ? pollData.totalVotes + 1 : pollData.totalVotes
+
             // Recalculate percentages
-            const totalVotes = pollData.totalVotes + 1
             const optionsWithPercentages = updatedOptions.map((option: any) => ({
                 ...option,
                 percentage: totalVotes > 0 ? Math.round((option.votes / totalVotes) * 100) : 0,

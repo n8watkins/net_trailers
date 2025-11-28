@@ -96,7 +96,7 @@ export default function RankingsContent() {
     const hasMore = communityRankings.length >= rankingsLimit
 
     return (
-        <div className="relative -mt-24 -mx-6 sm:-mx-8 lg:-mx-12">
+        <div className="relative -mt-20 -mx-6 sm:-mx-8 lg:-mx-12">
             {/* Atmospheric Background */}
             <div className="fixed inset-0 pointer-events-none">
                 <div className="absolute inset-0 bg-black" />
@@ -193,7 +193,7 @@ export default function RankingsContent() {
                         </div>
 
                         {/* Category Pills - Integrated in Hero */}
-                        <div className="flex flex-wrap gap-2 items-center justify-center mb-5">
+                        <div className="flex flex-wrap gap-2 items-center justify-center mb-5 overflow-visible pb-2 px-4 min-h-[44px]">
                             {[
                                 { value: 'all', label: 'All', icon: null },
                                 { value: 'movie', label: 'Movies', icon: FilmIcon },
@@ -212,8 +212,8 @@ export default function RankingsContent() {
                                         }
                                         className={`group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 ${
                                             isSelected
-                                                ? 'bg-yellow-500/90 text-black border-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.5)] scale-105'
-                                                : 'bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)]'
+                                                ? 'bg-yellow-500/90 text-black border-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.3)] scale-105'
+                                                : 'bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105 hover:shadow-[0_0_8px_rgba(255,255,255,0.08)]'
                                         }`}
                                     >
                                         {Icon && (
@@ -223,7 +223,7 @@ export default function RankingsContent() {
                                         )}
                                         <span className="relative z-10">{option.label}</span>
                                         {isSelected && (
-                                            <div className="absolute inset-0 rounded-full bg-yellow-500 blur-xl opacity-30 animate-pulse" />
+                                            <div className="absolute inset-0 rounded-full bg-yellow-500 blur-md opacity-15 animate-pulse" />
                                         )}
                                     </button>
                                 )
@@ -387,11 +387,11 @@ export default function RankingsContent() {
                     >
                         <div className="relative">
                             {/* Glowing background */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-amber-500 rounded-full blur-2xl opacity-60 group-hover:opacity-80 transition-opacity" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-amber-500 rounded-full blur-lg opacity-30 group-hover:opacity-40 transition-opacity" />
 
                             {/* Button */}
-                            <div className="relative flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-yellow-500 via-amber-500 to-yellow-600 rounded-full text-black font-bold shadow-[0_0_40px_rgba(234,179,8,0.6)] group-hover:shadow-[0_0_60px_rgba(234,179,8,0.8)] group-hover:scale-110 transition-all duration-300">
-                                <TrophyIcon className="w-6 h-6" />
+                            <div className="relative flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-yellow-500 via-amber-500 to-yellow-600 rounded-full text-black font-bold text-sm shadow-[0_0_20px_rgba(234,179,8,0.3)] group-hover:shadow-[0_0_30px_rgba(234,179,8,0.4)] group-hover:scale-105 transition-all duration-300">
+                                <TrophyIcon className="w-5 h-5" />
                                 <span className="hidden sm:inline">New Ranking</span>
                             </div>
                         </div>
@@ -407,7 +407,7 @@ export default function RankingsContent() {
                         transform: translateY(0);
                     }
                     50% {
-                        transform: translateY(-10px);
+                        transform: translateY(-4px);
                     }
                 }
 

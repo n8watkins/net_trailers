@@ -1,5 +1,5 @@
-import CommunityHub from '@/components/community/CommunityHub'
-
+// Content is rendered by the layout with client-side tab switching
+// This page file exists only for routing purposes
 export default function CommunityRankingsPage() {
-    return <CommunityHub activeTab="rankings" />
+    return null
 }

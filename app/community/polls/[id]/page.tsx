@@ -207,7 +207,7 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
     }
 
     const submitVote = async (optionIds: string[]) => {
-        if (!currentPoll || optionIds.length === 0 || isGuest || hasVoted || !userId) return
+        if (!currentPoll || optionIds.length === 0 || isGuest || !userId) return
 
         setIsSubmitting(true)
         try {
@@ -222,13 +222,14 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
     }
 
     const handleOptionToggle = async (optionId: string) => {
-        if (hasVoted || isExpired || isGuest || !currentPoll || isSubmitting) return
+        if (isExpired || isGuest || !currentPoll || isSubmitting) return
 
         if (currentPoll.isMultipleChoice) {
             setSelectedOptions((prev) =>
                 prev.includes(optionId) ? prev.filter((id) => id !== optionId) : [...prev, optionId]
             )
         } else {
+            // Single choice - allow changing vote
             const choice = [optionId]
             setSelectedOptions(choice)
             await submitVote(choice)
@@ -540,7 +541,7 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
                                             ? 'border-pink-500 bg-pink-500/10'
                                             : 'border-zinc-700 hover:border-zinc-600 bg-zinc-800/50'
                                     } ${
-                                        showResults || isGuest || isSubmitting
+                                        isExpired || isGuest || isSubmitting
                                             ? 'cursor-default'
                                             : 'cursor-pointer'
                                     }`}
@@ -558,17 +559,17 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
                                     <div className="relative p-4">
                                         <div className="flex items-center justify-between min-h-[28px]">
                                             <div className="flex items-center gap-3">
-                                                {/* Selection indicator - always reserve space, hide when showing results */}
+                                                {/* Selection indicator - always reserve space, hide when expired */}
                                                 <div
                                                     className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors shrink-0 ${
-                                                        showResults
+                                                        isExpired
                                                             ? 'opacity-0'
                                                             : isSelected
                                                               ? 'border-pink-500 bg-pink-500'
                                                               : 'border-zinc-600'
                                                     }`}
                                                 >
-                                                    {isSelected && !showResults && (
+                                                    {isSelected && !isExpired && (
                                                         <CheckCircleIcon className="w-4 h-4 text-white" />
                                                     )}
                                                 </div>

@@ -1,5 +1,5 @@
-import CommunityHub from '@/components/community/CommunityHub'
-
-export default function CommunityThreadsPage() {
-    return <CommunityHub activeTab="threads" />
+// Content is rendered by the layout with client-side tab switching
+// This page file exists only for routing purposes
+export default function CommunityRankingsPage() {
+    return null
 }

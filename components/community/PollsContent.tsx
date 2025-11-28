@@ -264,18 +264,18 @@ export default function PollsContent() {
                         </div>
 
                         {/* Category Pills - Integrated in Hero */}
-                        <div className="flex flex-wrap gap-2 items-center justify-center mb-5">
+                        <div className="flex flex-wrap gap-2 items-center justify-center mb-5 overflow-visible pb-2 px-4 min-h-[44px]">
                             <button
                                 onClick={() => setSelectedCategory('all')}
                                 className={`group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border ${
                                     selectedCategory === 'all'
-                                        ? 'bg-pink-500/90 text-white border-pink-400 shadow-[0_0_20px_rgba(236,72,153,0.5)] scale-105'
-                                        : 'bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)]'
+                                        ? 'bg-pink-500/90 text-white border-pink-400 shadow-[0_0_10px_rgba(236,72,153,0.3)] scale-105'
+                                        : 'bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105 hover:shadow-[0_0_8px_rgba(255,255,255,0.08)]'
                                 }`}
                             >
                                 <span className="relative z-10">All</span>
                                 {selectedCategory === 'all' && (
-                                    <div className="absolute inset-0 rounded-full bg-pink-500 blur-xl opacity-30 animate-pulse" />
+                                    <div className="absolute inset-0 rounded-full bg-pink-500 blur-md opacity-15 animate-pulse" />
                                 )}
                             </button>
                             {FORUM_CATEGORIES.map((cat) => (
@@ -284,8 +284,8 @@ export default function PollsContent() {
                                     onClick={() => setSelectedCategory(cat.id)}
                                     className={`group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 ${
                                         selectedCategory === cat.id
-                                            ? 'bg-pink-500/90 text-white border-pink-400 shadow-[0_0_20px_rgba(236,72,153,0.5)] scale-105'
-                                            : 'bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.1)]'
+                                            ? 'bg-pink-500/90 text-white border-pink-400 shadow-[0_0_10px_rgba(236,72,153,0.3)] scale-105'
+                                            : 'bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105 hover:shadow-[0_0_8px_rgba(255,255,255,0.08)]'
                                     }`}
                                 >
                                     <span className="text-base">{cat.icon}</span>
@@ -293,7 +293,7 @@ export default function PollsContent() {
                                         {cat.name}
                                     </span>
                                     {selectedCategory === cat.id && (
-                                        <div className="absolute inset-0 rounded-full bg-pink-500 blur-xl opacity-30 animate-pulse" />
+                                        <div className="absolute inset-0 rounded-full bg-pink-500 blur-md opacity-15 animate-pulse" />
                                     )}
                                 </button>
                             ))}
@@ -379,13 +379,21 @@ export default function PollsContent() {
                     {/* Poll Grid - 2 Column Layout */}
                     {!isLoadingPolls && filteredPolls.length > 0 && (
                         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {filteredPolls.map((poll) => (
-                                <PollCard
+                            {filteredPolls.map((poll, index) => (
+                                <div
                                     key={poll.id}
-                                    poll={poll}
-                                    userVote={userVotes[poll.id] || []}
-                                    onVote={isGuest ? undefined : handleVote}
-                                />
+                                    className="animate-fadeInUp"
+                                    style={{
+                                        animationDelay: `${Math.min(index * 50, 500)}ms`,
+                                        animationFillMode: 'both',
+                                    }}
+                                >
+                                    <PollCard
+                                        poll={poll}
+                                        userVote={userVotes[poll.id] || []}
+                                        onVote={isGuest ? undefined : handleVote}
+                                    />
+                                </div>
                             ))}
                         </div>
                     )}
@@ -419,11 +427,11 @@ export default function PollsContent() {
                     >
                         <div className="relative">
                             {/* Glowing background */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-red-500 rounded-full blur-2xl opacity-60 group-hover:opacity-80 transition-opacity" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-red-500 rounded-full blur-lg opacity-30 group-hover:opacity-40 transition-opacity" />
 
                             {/* Button */}
-                            <div className="relative flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-pink-500 via-red-500 to-pink-600 rounded-full text-white font-bold shadow-[0_0_40px_rgba(236,72,153,0.6)] group-hover:shadow-[0_0_60px_rgba(236,72,153,0.8)] group-hover:scale-110 transition-all duration-300">
-                                <ChartBarIcon className="w-6 h-6" />
+                            <div className="relative flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-pink-500 via-red-500 to-pink-600 rounded-full text-white font-bold text-sm shadow-[0_0_20px_rgba(236,72,153,0.3)] group-hover:shadow-[0_0_30px_rgba(236,72,153,0.4)] group-hover:scale-105 transition-all duration-300">
+                                <ChartBarIcon className="w-5 h-5" />
                                 <span className="hidden sm:inline">New Poll</span>
                             </div>
                         </div>
@@ -438,7 +446,7 @@ export default function PollsContent() {
                 onCreate={handleCreatePoll}
             />
 
-            {/* Add keyframe animation for bobbing */}
+            {/* Add keyframe animation for bobbing and fade-in */}
             <style jsx>{`
                 @keyframes bob {
                     0%,
@@ -446,8 +454,23 @@ export default function PollsContent() {
                         transform: translateY(0);
                     }
                     50% {
-                        transform: translateY(-10px);
+                        transform: translateY(-4px);
                     }
+                }
+
+                @keyframes fadeInUp {
+                    from {
+                        opacity: 0;
+                        transform: translateY(20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+
+                :global(.animate-fadeInUp) {
+                    animation: fadeInUp 0.5s ease-out;
                 }
             `}</style>
         </div>
