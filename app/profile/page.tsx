@@ -1,18 +1,24 @@
 /**
- * Profile Page
+ * Profile Page - Cinematic Edition
  *
- * User profile with viewing statistics and activity
+ * Premium Netflix-style user profile with:
+ * - Cinematic hero header with atmospheric gradients
+ * - Glassmorphic panels and cards
+ * - Neon accent glows (blue for profile theme)
+ * - Soft rim lighting on avatars and images
+ * - Hover animations and micro-transitions
  */
 
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
-import SubPageLayout from '../../components/layout/SubPageLayout'
-import { UserIcon, EyeIcon } from '@heroicons/react/24/outline'
+import Image from 'next/image'
+import { UserIcon, EyeIcon, PencilIcon, SparklesIcon } from '@heroicons/react/24/outline'
 import useAuth from '../../hooks/useAuth'
 import useUserData from '../../hooks/useUserData'
 import NetflixLoader from '../../components/common/NetflixLoader'
+import Header from '../../components/layout/Header'
 import { GuestModeNotification } from '../../components/auth/GuestModeNotification'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import { useRankingStore } from '../../stores/rankingStore'
@@ -108,10 +114,6 @@ export default function ProfilePage() {
                             return null
                         }
                         const pollData = pollDoc.data() || {}
-
-                        if (pollData.userId === currentUserId) {
-                            return null
-                        }
 
                         return {
                             id: pollDoc.id,
@@ -232,108 +234,182 @@ export default function ProfilePage() {
     // Show loading screen while data is being fetched
     if (isLoading) {
         return (
-            <SubPageLayout title="Profile" icon={<UserIcon />} iconColor="text-blue-400">
-                <NetflixLoader inline message="Loading your profile data..." />
-            </SubPageLayout>
+            <div className="min-h-screen bg-black">
+                <div className="flex items-center justify-center min-h-screen">
+                    <NetflixLoader inline message="Loading your profile data..." />
+                </div>
+            </div>
         )
     }
 
     return (
-        <SubPageLayout>
-            {/* Guest Mode Notification */}
-            {isInitialized && isGuest && (
-                <div className="mb-6">
-                    <GuestModeNotification align="left" />
-                </div>
-            )}
+        <div className="relative min-h-screen bg-black overflow-x-clip">
+            {/* Navigation Header */}
+            <Header />
 
-            {/* Profile Header */}
-            <div className="bg-gradient-to-br from-zinc-900 to-zinc-800 border border-zinc-700 rounded-xl p-4 sm:p-6 md:p-8 mb-8">
-                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
-                    {/* Avatar */}
-                    <div className="flex-shrink-0">
-                        {user?.photoURL ? (
-                            <img
-                                src={user.photoURL}
-                                alt={userName}
-                                className="w-32 h-32 rounded-full ring-4 ring-blue-500/30 object-cover"
-                                referrerPolicy="no-referrer"
-                                onError={(e) => {
-                                    // Fallback to initials if image fails to load
-                                    e.currentTarget.style.display = 'none'
-                                    const fallbackDiv = e.currentTarget
-                                        .nextElementSibling as HTMLElement
-                                    if (fallbackDiv) fallbackDiv.style.display = 'flex'
-                                }}
-                            />
-                        ) : null}
-                        <div
-                            className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center ring-4 ring-blue-500/30"
-                            style={{ display: user?.photoURL ? 'none' : 'flex' }}
-                        >
-                            <span className="text-4xl font-bold text-white">{userInitials}</span>
+            {/* Atmospheric Background - Fixed */}
+            <div className="fixed inset-0 pointer-events-none">
+                <div className="absolute inset-0 bg-black" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-blue-900/20 via-transparent to-transparent opacity-50" />
+                <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black opacity-60" />
+            </div>
+
+            {/* Content Container - with padding for fixed header and sub-nav */}
+            <div className="relative z-10 pt-28 sm:pt-36 md:pt-44">
+                {/* Cinematic Hero Header */}
+                <div className="relative overflow-hidden">
+                    {/* Animated Background Gradients */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900/80 to-black" />
+                    <div
+                        className="absolute inset-0 bg-gradient-to-t from-blue-900/20 via-indigo-900/10 to-black/50 animate-pulse"
+                        style={{ animationDuration: '4s' }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-radial from-blue-500/10 via-blue-900/5 to-transparent" />
+
+                    {/* Soft edge vignetting */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/80" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60" />
+
+                    {/* Hero Content */}
+                    <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-12">
+                        {/* Guest Mode Notification */}
+                        {isInitialized && isGuest && (
+                            <div className="mb-8 w-full max-w-2xl">
+                                <GuestModeNotification align="center" />
+                            </div>
+                        )}
+
+                        {/* Avatar with atmospheric glow */}
+                        <div className="relative mb-6 group cursor-pointer transition-transform duration-300 hover:-translate-y-1">
+                            {/* Ambient glow behind avatar */}
+                            <div className="absolute -inset-4 bg-gradient-to-br from-blue-500/30 via-indigo-500/20 to-purple-500/30 rounded-full blur-2xl opacity-60 group-hover:opacity-100 transition-opacity duration-300" />
+
+                            {/* Avatar container with rim light */}
+                            <div className="relative">
+                                {/* Rim light effect */}
+                                <div className="absolute -inset-1 bg-gradient-to-br from-blue-400/40 via-indigo-500/30 to-purple-400/40 rounded-full blur-sm opacity-80 group-hover:opacity-100 transition-opacity" />
+
+                                {user?.photoURL ? (
+                                    <img
+                                        src={user.photoURL}
+                                        alt={userName}
+                                        className="relative w-32 h-32 sm:w-36 sm:h-36 rounded-full object-cover ring-2 ring-blue-500/50 group-hover:ring-blue-400/70 transition-all duration-300 shadow-[0_0_30px_rgba(59,130,246,0.3)]"
+                                        referrerPolicy="no-referrer"
+                                        onError={(e) => {
+                                            e.currentTarget.style.display = 'none'
+                                            const fallbackDiv = e.currentTarget
+                                                .nextElementSibling as HTMLElement
+                                            if (fallbackDiv) fallbackDiv.style.display = 'flex'
+                                        }}
+                                    />
+                                ) : null}
+                                <div
+                                    className="relative w-32 h-32 sm:w-36 sm:h-36 rounded-full bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 flex items-center justify-center ring-2 ring-blue-500/50 group-hover:ring-blue-400/70 transition-all duration-300 shadow-[0_0_30px_rgba(59,130,246,0.3)]"
+                                    style={{ display: user?.photoURL ? 'none' : 'flex' }}
+                                >
+                                    <span className="text-4xl sm:text-5xl font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+                                        {userInitials}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
 
-                    {/* Profile Info */}
-                    <div className="flex-1 min-w-0 text-center sm:text-left">
-                        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-                            {userName}
+                        {/* Username with glow */}
+                        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white mb-2 text-center tracking-tight">
+                            <span className="bg-gradient-to-r from-blue-200 via-white to-blue-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
+                                {userName}
+                            </span>
                         </h1>
-                        {user?.email && <p className="text-gray-400 mb-3">{user.email}</p>}
 
-                        {/* Action Buttons */}
-                        <div className="flex items-center justify-center sm:justify-start gap-3 flex-wrap">
+                        {/* Email with subtle glow */}
+                        {user?.email && (
+                            <p className="text-gray-400 text-base sm:text-lg mb-6 text-center">
+                                {user.email}
+                            </p>
+                        )}
+
+                        {/* Action Buttons - Glassmorphic pills */}
+                        <div className="flex items-center justify-center gap-4 flex-wrap">
                             <Link
                                 href="/settings/profile"
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800/50 hover:bg-gray-700/50 text-white rounded-lg transition-colors text-sm font-medium"
+                                className="group relative px-6 py-3 rounded-full font-bold text-sm transition-all duration-300"
                             >
-                                Edit Profile
+                                {/* Button glow */}
+                                <div className="absolute inset-0 bg-gradient-to-r from-zinc-700/50 to-zinc-600/50 rounded-full opacity-0 group-hover:opacity-100 blur-lg transition-opacity" />
+
+                                <div className="relative flex items-center gap-2 px-4 py-2 bg-zinc-900/60 backdrop-blur-lg text-white rounded-full border border-zinc-700/50 group-hover:border-zinc-600 group-hover:bg-zinc-800/60 transition-all shadow-lg">
+                                    <PencilIcon className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+                                    <span>Edit Profile</span>
+                                </div>
                             </Link>
 
                             {/* View Public Profile Button - Auth only */}
                             {!isGuest && currentUserId && (
                                 <Link
                                     href={`/users/${profileUsername || currentUserId}`}
-                                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-400 rounded-lg transition-colors text-sm font-medium"
+                                    className="group relative px-6 py-3 rounded-full font-bold text-sm transition-all duration-300"
                                 >
-                                    <EyeIcon className="w-4 h-4" />
-                                    View Public Profile
+                                    {/* Button glow */}
+                                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/30 to-indigo-500/30 rounded-full opacity-0 group-hover:opacity-100 blur-lg transition-opacity" />
+
+                                    <div className="relative flex items-center gap-2 px-4 py-2 bg-blue-500/10 backdrop-blur-lg text-blue-400 rounded-full border border-blue-500/30 group-hover:border-blue-400/50 group-hover:bg-blue-500/20 group-hover:text-blue-300 transition-all shadow-lg shadow-blue-500/10">
+                                        <EyeIcon className="w-4 h-4" />
+                                        <span>View Public Profile</span>
+                                    </div>
                                 </Link>
                             )}
                         </div>
                     </div>
                 </div>
+
+                {/* Main Content Area - constrained width like SubPageLayout */}
+                <div className="px-4 sm:px-6 lg:px-8 py-8">
+                    <div className="max-w-[1800px] mx-auto space-y-8">
+                        {/* Bento Grid Layout - Liked & Watch Later */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <LikedContentSection likedContent={likedContent} />
+                            <WatchLaterSection
+                                watchLaterPreview={watchLaterPreview}
+                                totalCount={userData.defaultWatchlist.length}
+                            />
+                        </div>
+
+                        {/* Rankings & Collections - Side by Side */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <RankingsSection rankings={rankings} />
+                            <CollectionsSection collections={collections} />
+                        </div>
+
+                        {/* Community Activity */}
+                        {!isGuest && (
+                            <ForumActivitySection
+                                threads={userThreads}
+                                pollsCreated={userPolls}
+                                pollsVoted={votedPolls}
+                                isLoadingVotedPolls={isLoadingVotedPolls}
+                            />
+                        )}
+                    </div>
+                </div>
             </div>
 
-            {/* Bento Grid Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <LikedContentSection likedContent={likedContent} />
-                <WatchLaterSection
-                    watchLaterPreview={watchLaterPreview}
-                    totalCount={userData.defaultWatchlist.length}
-                />
-            </div>
+            {/* Keyframe animations */}
+            <style jsx>{`
+                @keyframes fadeInUp {
+                    from {
+                        opacity: 0;
+                        transform: translateY(20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
 
-            {/* Rankings */}
-            <div className="mb-6">
-                <RankingsSection rankings={rankings} />
-            </div>
-
-            {/* Collections */}
-            <div className="mb-6">
-                <CollectionsSection collections={collections} />
-            </div>
-
-            {/* Community Activity */}
-            {!isGuest && (
-                <ForumActivitySection
-                    threads={userThreads}
-                    pollsCreated={userPolls}
-                    pollsVoted={votedPolls}
-                    isLoadingVotedPolls={isLoadingVotedPolls}
-                />
-            )}
-        </SubPageLayout>
+                :global(.animate-fadeInUp) {
+                    animation: fadeInUp 0.5s ease-out;
+                }
+            `}</style>
+        </div>
     )
 }
