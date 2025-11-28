@@ -6,6 +6,7 @@ import { usePageViewTracking } from '../../hooks/useActivityTracking'
 import KeyboardShortcutsModal from '../modals/KeyboardShortcutsModal'
 import TutorialModal from '../modals/TutorialModal'
 import WelcomeScreen from '../onboarding/WelcomeScreen'
+import InteractiveTour from '../onboarding/InteractiveTour'
 import Footer from './Footer'
 import AboutModal from '../modals/AboutModal'
 import ScrollToTopButton from '../common/ScrollToTopButton'
@@ -42,10 +43,12 @@ function ClientLayout({ children }: ClientLayoutProps) {
     const [showAboutModal, setShowAboutModal] = useState(false)
     const [showTutorial, setShowTutorial] = useState(false)
     const [showWelcome, setShowWelcome] = useState(false)
+    const [isTourActive, setIsTourActive] = useState(false)
     const { modal } = useModalStore()
     const isModalOpen = modal.isOpen
     const searchInputRef = useRef<HTMLInputElement>(null)
-    const { markWelcomeScreenSeen } = useOnboardingStore()
+    const { markWelcomeScreenSeen, completeTour, skipTour, setCurrentTourStep } =
+        useOnboardingStore()
     const { showSuccess } = useToast()
 
     // Enable onboarding persistence
@@ -84,9 +87,9 @@ function ClientLayout({ children }: ClientLayoutProps) {
     }, [markWelcomeScreenSeen])
 
     const handleStartTour = useCallback(() => {
-        // TODO: This will be implemented in Step 3
-        showSuccess('Coming Soon', 'Interactive tour will be available in the next update!')
-    }, [showSuccess])
+        setCurrentTourStep(0) // Reset to first step
+        setIsTourActive(true)
+    }, [setCurrentTourStep])
 
     const handleBrowseFeatures = useCallback(() => {
         setShowTutorial(true)
@@ -97,6 +100,17 @@ function ClientLayout({ children }: ClientLayoutProps) {
         // In the future, this could link to a video
         setShowTutorial(true)
     }, [])
+
+    const handleCompleteTour = useCallback(() => {
+        completeTour()
+        setIsTourActive(false)
+        showSuccess('Tour Complete!', "You're all set to explore Net Trailers!")
+    }, [completeTour, showSuccess])
+
+    const handleSkipTour = useCallback(() => {
+        skipTour()
+        setIsTourActive(false)
+    }, [skipTour])
 
     const handleFocusSearch = useCallback(() => {
         // Focus the search bar in the navbar (works on all pages)
@@ -190,6 +204,11 @@ function ClientLayout({ children }: ClientLayoutProps) {
             <KeyboardShortcutsModal
                 isOpen={showKeyboardShortcuts}
                 onClose={() => setShowKeyboardShortcuts(false)}
+            />
+            <InteractiveTour
+                isActive={isTourActive}
+                onComplete={handleCompleteTour}
+                onSkip={handleSkipTour}
             />
             <ScrollToTopButton />
             <CustomScrollbar />
