@@ -35,15 +35,6 @@ export const TOUR_STEPS: TourStep[] = [
         spotlightPadding: 12,
     },
     {
-        id: 'smart-search',
-        title: '🤖 AI-Powered Smart Search',
-        description:
-            'Use natural language to find content. Try "rainy day movies" or "mind-bending thrillers". Click the sparkle icon in the search bar.',
-        targetSelector: '[data-tour="smart-search-button"]',
-        position: 'bottom',
-        spotlightPadding: 8,
-    },
-    {
         id: 'content-cards',
         title: '🎬 Discover Content',
         description:

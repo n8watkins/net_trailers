@@ -243,6 +243,7 @@ function ContentCard({ content, className = '', size = 'normal' }: Props) {
         <div
             role="button"
             tabIndex={0}
+            data-tour="content-card"
             className={`relative cursor-pointer transition-all duration-300 ease-out group
                        ${getCardSizeClasses()}
                        hover:z-40 ${className}

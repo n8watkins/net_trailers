@@ -559,11 +559,22 @@ function Header({ onOpenAboutModal, onOpenTutorial, onOpenKeyboardShortcuts }: H
                                             : pathname.startsWith(item.href)
                                     const Icon = isActive ? item.iconSolid : item.icon
 
+                                    // Add data-tour attributes for interactive tour
+                                    const dataTourAttr =
+                                        item.label === 'Collections'
+                                            ? 'collections-link'
+                                            : item.label === 'Rankings'
+                                              ? 'community-link'
+                                              : item.label === 'Settings'
+                                                ? 'settings-link'
+                                                : undefined
+
                                     return (
                                         <Link
                                             key={item.href}
                                             href={item.href}
                                             title={item.label}
+                                            data-tour={dataTourAttr}
                                             className={`group relative flex items-center justify-center gap-2 whitespace-nowrap border-b-2 px-2 sm:px-1 py-2 sm:py-3 text-sm font-medium transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 ${
                                                 isActive
                                                     ? 'border-red-600 text-red-600'
