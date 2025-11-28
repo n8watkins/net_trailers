@@ -71,20 +71,20 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
             onClick={handleCardClick}
             className="group relative cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1"
         >
-            {/* Ambient glow behind card - subtle */}
-            <div className="absolute -inset-1 bg-gradient-to-br from-yellow-500/8 via-zinc-500/5 to-amber-500/8 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            {/* Ambient glow behind card - subtle yellow */}
+            <div className="absolute -inset-1 bg-gradient-to-br from-yellow-500/10 via-amber-500/8 to-yellow-500/10 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
             {/* Main card container */}
-            <div className="relative bg-zinc-900/70 backdrop-blur-lg rounded-xl overflow-hidden border border-zinc-800/50 group-hover:border-zinc-600/60 transition-all duration-300 shadow-lg group-hover:shadow-[0_0_20px_rgba(0,0,0,0.3)]">
+            <div className="relative bg-zinc-900/70 group-hover:bg-yellow-950/30 backdrop-blur-lg rounded-xl overflow-hidden border border-zinc-800/50 group-hover:border-yellow-500/25 transition-all duration-300 shadow-lg group-hover:shadow-[0_0_20px_rgba(234,179,8,0.1)]">
                 {/* Header with top 3 posters - Larger images */}
                 {topItems.length > 0 && (
                     <div className="relative h-48 overflow-hidden">
                         {/* Background gradient */}
                         <div className="absolute inset-0 bg-gradient-to-br from-zinc-800/60 via-zinc-900/80 to-black" />
 
-                        {/* Ambient glow behind posters - subtle */}
+                        {/* Ambient glow behind posters - subtle yellow */}
                         <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-full h-24 bg-gradient-to-r from-zinc-600/10 via-zinc-500/15 to-zinc-600/10 blur-2xl opacity-40 group-hover:opacity-60 transition-opacity duration-300" />
+                            <div className="w-full h-24 bg-gradient-to-r from-yellow-500/8 via-amber-500/12 to-yellow-500/8 blur-2xl opacity-40 group-hover:opacity-70 transition-opacity duration-300" />
                         </div>
 
                         {/* Posters container - Larger posters */}
@@ -98,8 +98,8 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
                                         transform: `translateY(${index === 1 ? '-3px' : '0'})`,
                                     }}
                                 >
-                                    {/* Poster glow rim - subtle */}
-                                    <div className="absolute -inset-0.5 bg-gradient-to-br from-zinc-400/15 via-zinc-500/10 to-zinc-400/15 rounded-md blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                    {/* Poster glow rim - subtle yellow */}
+                                    <div className="absolute -inset-0.5 bg-gradient-to-br from-yellow-400/15 via-amber-500/10 to-yellow-400/15 rounded-md blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                                     <Image
                                         src={getPosterPath(item.content)}
@@ -136,9 +136,9 @@ export function RankingCard({ ranking, showAuthor = true, onLike }: RankingCardP
                     {/* Trophy icon + title */}
                     <div className="flex items-start gap-2">
                         <div className="relative flex-shrink-0 mt-0.5">
-                            <TrophyIcon className="relative w-5 h-5 text-yellow-500/80" />
+                            <TrophyIcon className="relative w-5 h-5 text-yellow-500/80 group-hover:text-yellow-400 transition-colors duration-200" />
                         </div>
-                        <h3 className="text-base font-bold text-white group-hover:text-gray-100 transition-colors duration-200 line-clamp-1 leading-tight">
+                        <h3 className="text-base font-bold text-white group-hover:text-yellow-100 transition-colors duration-200 line-clamp-1 leading-tight">
                             {ranking.title}
                         </h3>
                     </div>
