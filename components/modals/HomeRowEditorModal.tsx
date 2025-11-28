@@ -17,7 +17,7 @@ import { useModalStore } from '../../stores/modalStore'
 import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
 import { UserList } from '../../types/collections'
-import { SystemRecommendation } from '../../types/recommendations'
+import { SystemRecommendation, DEFAULT_SYSTEM_RECOMMENDATIONS } from '../../types/recommendations'
 import CollectionEditorModal from './CollectionEditorModal'
 import SystemRecommendationEditorModal from './SystemRecommendationEditorModal'
 import { createDefaultCollectionsForUser } from '../../constants/systemCollections'
@@ -384,24 +384,47 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
     const handleResetDefaultRows = async () => {
         if (!userId) return
 
-        // Update local state INSTANTLY for snappy UI - only for system recommendations
+        // Update local state INSTANTLY for snappy UI - reset all system recommendation properties to defaults
         setLocalRows((prevRows) =>
-            prevRows.map((r) => ({
-                ...r,
-                displayAsRow: r.isSystemRecommendation ? true : r.displayAsRow,
-            }))
+            prevRows.map((r) => {
+                if (r.isSystemRecommendation) {
+                    // Find the default configuration for this system recommendation
+                    const defaultRec = DEFAULT_SYSTEM_RECOMMENDATIONS.find((d) => d.id === r.id)
+                    if (defaultRec) {
+                        return {
+                            ...r,
+                            name: defaultRec.name,
+                            mediaType: defaultRec.mediaType,
+                            genres: defaultRec.genres,
+                            emoji: defaultRec.emoji,
+                            enabled: defaultRec.enabled,
+                            displayAsRow: defaultRec.enabled,
+                        }
+                    }
+                }
+                return r
+            })
         )
 
         showToast('success', 'System recommendations reset to defaults')
 
         try {
-            // Reset all system recommendations to show and enable them
-            const sysRecPromises = systemRecommendations.map((sysRec) =>
-                updateSystemRecommendation(sysRec.id, {
-                    enabled: true, // Enable display on page
-                    showOnPublicProfile: true,
-                })
-            )
+            // Reset all system recommendations to their default configuration
+            const sysRecPromises = DEFAULT_SYSTEM_RECOMMENDATIONS.map((defaultRec) => {
+                // Only update if the system recommendation exists in the store
+                const existingRec = systemRecommendations.find((r) => r.id === defaultRec.id)
+                if (existingRec) {
+                    return updateSystemRecommendation(defaultRec.id, {
+                        name: defaultRec.name,
+                        mediaType: defaultRec.mediaType,
+                        genres: defaultRec.genres,
+                        emoji: defaultRec.emoji,
+                        enabled: defaultRec.enabled,
+                        order: defaultRec.order,
+                    })
+                }
+                return Promise.resolve()
+            })
 
             // Run all updates in parallel
             await Promise.all(sysRecPromises)
