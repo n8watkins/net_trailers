@@ -26,6 +26,7 @@ import { withAuth } from '@/lib/auth-middleware'
 import { apiError } from '@/utils/debugLogger'
 import { VotedContent, RatedContent } from '@/types/shared'
 import { getAdminDb } from '@/lib/firebase-admin'
+import { InteractionSummary } from '@/utils/recommendations/interactionAggregator'
 
 async function handlePersonalizedRecommendations(
     request: NextRequest,
@@ -36,6 +37,9 @@ async function handlePersonalizedRecommendations(
         const body = await request.json()
         const limit = Math.min(body.limit || 20, RECOMMENDATION_CONSTRAINTS.MAX_LIMIT)
         const page = Math.max(1, parseInt(body.page as string) || 1) // Default to page 1
+
+        // V2: Check for interaction summary (Phase 1 - Deep History)
+        const interactionSummary = body.interactionSummary as InteractionSummary | undefined
 
         // Support both new myRatings format and legacy likedMovies/hiddenMovies
         const myRatings = (body.myRatings || []) as RatedContent[]
@@ -115,9 +119,17 @@ async function handlePersonalizedRecommendations(
             .filter((v) => v.vote === 'dislike')
             .map((v) => v.contentId)
 
+        // V2: Add negative signals from interaction summary
+        const negativeContentIds = interactionSummary?.negativeSignals.hiddenContent || []
+
         // Check if user has enough data (preferences and votes also count)
+        // V2: Interaction summary also counts as preference data
         const hasPreferenceData =
-            genrePreferences.length > 0 || contentPreferences.length > 0 || votedContent.length > 0
+            genrePreferences.length > 0 ||
+            contentPreferences.length > 0 ||
+            votedContent.length > 0 ||
+            (interactionSummary && interactionSummary.totalInteractions > 0)
+
         if (!hasEnoughDataForRecommendations(userData) && !hasPreferenceData) {
             return NextResponse.json({
                 success: true,
@@ -136,9 +148,9 @@ async function handlePersonalizedRecommendations(
             votedContent
         )
 
-        // Get content IDs to exclude (already seen + "not for me" votes)
+        // Get content IDs to exclude (already seen + "not for me" votes + negative signals)
         const seenIds = getSeenContentIds(userData)
-        const excludeIds = [...new Set([...seenIds, ...dislikedContentIds])]
+        const excludeIds = [...new Set([...seenIds, ...dislikedContentIds, ...negativeContentIds])]
 
         // Generate recommendations from multiple sources
         // For page 1, use 60/40 split between genre and similar
@@ -146,14 +158,27 @@ async function handlePersonalizedRecommendations(
         const genreWeight = page === 1 ? 0.6 : 0.8
         const similarWeight = page === 1 ? 0.4 : 0.2
 
+        // V2: Use top content from interaction summary for better similar content
+        let similarContentIds: number[] = []
+        if (interactionSummary && interactionSummary.topContent.length > 0) {
+            // Use top 5 most-interacted content for similarity
+            similarContentIds = interactionSummary.topContent
+                .filter((item) => item.mediaType === 'movie') // getBatchSimilarContent expects movies
+                .slice(0, 5)
+                .map((item) => item.contentId)
+        } else if (userData.likedMovies.length > 0) {
+            // Fallback to first 3 liked movies (V1 behavior)
+            similarContentIds = userData.likedMovies.slice(0, 3).map((c) => c.id)
+        }
+
         const [genreBased, tmdbSimilar] = await Promise.all([
             // Genre-based recommendations with pagination
             getGenreBasedRecommendations(profile, Math.ceil(limit * genreWeight), excludeIds, page),
 
-            // TMDB similar content - only for page 1 and if user has liked movies
-            page === 1 && userData.likedMovies.length > 0
+            // TMDB similar content - only for page 1 and if we have content to base it on
+            page === 1 && similarContentIds.length > 0
                 ? getBatchSimilarContent(
-                      userData.likedMovies.slice(0, 3).map((c) => c.id),
+                      similarContentIds,
                       'movie',
                       Math.ceil(limit * similarWeight)
                   ).then((results) => results.filter((c) => !excludeIds.includes(c.id)))
@@ -190,13 +215,19 @@ async function handlePersonalizedRecommendations(
             }
         })
 
-        // Return response
+        // Return response with V2 metadata if interaction summary was used
         return NextResponse.json({
             success: true,
             recommendations,
             profile: {
                 topGenres: profile.topGenres.slice(0, 3),
                 preferredRating: profile.preferredRating,
+                // V2: Include interaction summary metadata
+                ...(interactionSummary && {
+                    v2Enabled: true,
+                    totalInteractions: interactionSummary.totalInteractions,
+                    summaryAge: Date.now() - interactionSummary.lastCalculated,
+                }),
             },
             totalCount: recommendations.length,
             generatedAt: Date.now(),

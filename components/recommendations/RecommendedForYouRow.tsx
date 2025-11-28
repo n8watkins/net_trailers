@@ -20,6 +20,12 @@ import RecommendationInsightsModal from './RecommendationInsightsModal'
 import GenrePreferenceModal, { PreviewContent } from './GenrePreferenceModal'
 import TitlePreferenceModal, { ContentWithCredits } from './TitlePreferenceModal'
 import { GenrePreference, VotedContent, SkippedContent } from '../../types/shared'
+import { getRecentInteractions } from '../../utils/firestore/interactions'
+import {
+    aggregateUserInteractions,
+    shouldRefreshSummary,
+} from '../../utils/recommendations/interactionAggregator'
+import type { InteractionSummary } from '../../utils/recommendations/interactionAggregator'
 
 interface RecommendedForYouRowProps {
     onLoadComplete?: () => void
@@ -309,6 +315,32 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
 
                 const idToken = await currentUser.getIdToken()
 
+                // V2: Generate interaction summary for deep history analysis
+                let interactionSummary: InteractionSummary | undefined
+                try {
+                    // Fetch user's full interaction history
+                    const interactions = await getRecentInteractions(userId, 1000) // Get up to 1000 interactions
+
+                    if (interactions.length > 0) {
+                        // Generate comprehensive summary
+                        interactionSummary = aggregateUserInteractions(
+                            userId,
+                            interactions,
+                            sessionData.myRatings || []
+                        )
+
+                        console.log(
+                            `[V2] Generated interaction summary: ${interactions.length} interactions → ${interactionSummary.topContent.length} top content items`
+                        )
+                    }
+                } catch (error) {
+                    console.warn(
+                        'Failed to generate interaction summary, falling back to V1:',
+                        error
+                    )
+                    // Continue without summary - API will use V1 logic
+                }
+
                 // Use POST with body instead of GET with URL params to avoid 431 header size error
                 const response = await fetch(`/api/recommendations/personalized`, {
                     method: 'POST',
@@ -317,6 +349,8 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
                         Authorization: `Bearer ${idToken}`,
                     },
                     body: JSON.stringify({
+                        // V2: Interaction summary (Phase 1 - Deep History)
+                        ...(interactionSummary && { interactionSummary }),
                         // New unified ratings system (preferred)
                         myRatings: sessionData.myRatings?.slice(0, 20) || [],
                         // Legacy arrays (for backward compatibility)
