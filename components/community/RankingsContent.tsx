@@ -238,28 +238,6 @@ export default function RankingsContent() {
 
                 {/* Main Content Area */}
                 <div className="px-6 sm:px-8 lg:px-12 py-8 space-y-6">
-                    {/* Stats Bar */}
-                    <div className="flex items-center justify-between text-sm text-gray-400">
-                        <div className="flex items-center gap-4">
-                            <span>
-                                Total:{' '}
-                                <span className="text-white font-semibold">
-                                    {communityRankings.length}
-                                </span>{' '}
-                                rankings
-                            </span>
-                            {searchQuery && (
-                                <span>
-                                    Found:{' '}
-                                    <span className="text-white font-semibold">
-                                        {filteredRankings.length}
-                                    </span>{' '}
-                                    matches
-                                </span>
-                            )}
-                        </div>
-                    </div>
-
                     {/* Error State */}
                     {error && (
                         <div className="bg-red-900/20 border border-red-800 rounded-lg p-4">

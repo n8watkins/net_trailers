@@ -145,7 +145,7 @@ export default function PollsContent() {
         })
 
     return (
-        <div className="relative -mt-16 -mx-6 sm:-mx-8 lg:-mx-12">
+        <div className="relative -mt-20 -mx-6 sm:-mx-8 lg:-mx-12">
             {/* Atmospheric Background */}
             <div className="fixed inset-0 pointer-events-none">
                 <div className="absolute inset-0 bg-black" />
@@ -158,22 +158,28 @@ export default function PollsContent() {
                 {/* Cinematic Hero Header */}
                 <div className="relative overflow-hidden pt-4">
                     {/* Animated Background Gradients */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900 to-black" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900/80 to-black" />
                     <div
-                        className="absolute inset-0 bg-gradient-to-t from-pink-900/10 via-red-900/5 to-transparent animate-pulse"
+                        className="absolute inset-0 bg-gradient-to-t from-pink-900/20 via-red-900/10 to-black/50 animate-pulse"
                         style={{ animationDuration: '4s' }}
                     />
-                    <div className="absolute inset-0 bg-gradient-radial from-pink-500/5 via-transparent to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-radial from-pink-500/10 via-pink-900/5 to-transparent" />
 
-                    {/* Vignette Effect */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-black/50" />
+                    {/* Soft edge vignetting for subtle blending */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/80" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60" />
 
                     {/* Hero Content */}
                     <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-6">
+                        {/* Chart Bar Icon with glow */}
+                        <div className="relative mb-4">
+                            <div className="absolute inset-0 bg-pink-500/30 blur-2xl scale-150" />
+                            <ChartBarIcon className="relative w-16 h-16 text-pink-400 drop-shadow-[0_0_20px_rgba(236,72,153,0.5)]" />
+                        </div>
+
                         {/* Title */}
                         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-2 text-center tracking-tight">
-                            <span className="bg-gradient-to-r from-white via-pink-100 to-white bg-clip-text text-transparent">
+                            <span className="bg-gradient-to-r from-pink-200 via-pink-100 to-pink-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
                                 Community Polls
                             </span>
                         </h1>
@@ -225,6 +231,10 @@ export default function PollsContent() {
                                                 />
                                                 <span>{tab.label}</span>
                                             </div>
+                                            {/* Active glow ring */}
+                                            {isActive && (
+                                                <div className="absolute inset-0 rounded-lg ring-2 ring-pink-500/50 shadow-[0_0_20px_rgba(236,72,153,0.3)]" />
+                                            )}
                                         </button>
                                     )
                                 })}
