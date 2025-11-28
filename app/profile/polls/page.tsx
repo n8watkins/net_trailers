@@ -149,6 +149,34 @@ export default function UserPollsPage() {
         }
     }, [userId, isGuest])
 
+    const userPolls = useMemo(
+        () =>
+            polls
+                .filter((poll) => poll.userId === userId)
+                .map((poll) => ({
+                    id: poll.id,
+                    question: poll.question,
+                    category: poll.category,
+                    totalVotes: poll.totalVotes,
+                    isMultipleChoice: poll.isMultipleChoice,
+                    allowAddOptions: poll.allowAddOptions,
+                    options: poll.options.map((opt) => ({
+                        id: opt.id,
+                        text: opt.text,
+                        votes: opt.votes,
+                        percentage: opt.percentage,
+                    })),
+                    createdAt: timestampToNumber(poll.createdAt),
+                    expiresAt: timestampToNumber(poll.expiresAt),
+                    votedAt: null,
+                }))
+                .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0)),
+        [polls, userId]
+    )
+
+    const activePolls = activePollTab === 'created' ? userPolls : votedPolls
+    const isLoadingActivePolls = activePollTab === 'voted' && isLoadingVotedPolls
+
     // Fetch user votes for all polls
     useEffect(() => {
         if (!userId) {
@@ -186,35 +214,7 @@ export default function UserPollsPage() {
         return () => {
             isMounted = false
         }
-    }, [userId, activePollTab, polls, votedPolls, getUserVote])
-
-    const userPolls = useMemo(
-        () =>
-            polls
-                .filter((poll) => poll.userId === userId)
-                .map((poll) => ({
-                    id: poll.id,
-                    question: poll.question,
-                    category: poll.category,
-                    totalVotes: poll.totalVotes,
-                    isMultipleChoice: poll.isMultipleChoice,
-                    allowAddOptions: poll.allowAddOptions,
-                    options: poll.options.map((opt) => ({
-                        id: opt.id,
-                        text: opt.text,
-                        votes: opt.votes,
-                        percentage: opt.percentage,
-                    })),
-                    createdAt: timestampToNumber(poll.createdAt),
-                    expiresAt: timestampToNumber(poll.expiresAt),
-                    votedAt: null,
-                }))
-                .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0)),
-        [polls, userId]
-    )
-
-    const activePolls = activePollTab === 'created' ? userPolls : votedPolls
-    const isLoadingActivePolls = activePollTab === 'voted' && isLoadingVotedPolls
+    }, [userId, activePollTab, userPolls, votedPolls, getUserVote])
 
     const handleCreatePoll = async (
         question: string,
