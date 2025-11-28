@@ -6,21 +6,19 @@ import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useToast } from '../../hooks/useToast'
-import { GenrePreference, VotedContent, SkippedContent } from '../../types/shared'
+import { VotedContent, SkippedContent } from '../../types/shared'
 import SubPageLayout from '../../components/layout/SubPageLayout'
 import ContentCard from '../../components/common/ContentCard'
 import ContentGridSpacer from '../../components/common/ContentGridSpacer'
 import {
     TrashIcon,
     MagnifyingGlassIcon,
-    SwatchIcon,
     FilmIcon,
     HandThumbUpIcon,
     HandThumbDownIcon,
 } from '@heroicons/react/24/solid'
 import { XMarkIcon, StarIcon } from '@heroicons/react/24/outline'
 import NetflixLoader from '../../components/common/NetflixLoader'
-import GenrePreferenceModal from '../../components/recommendations/GenrePreferenceModal'
 import TitlePreferenceModal from '../../components/recommendations/TitlePreferenceModal'
 
 type RatingValue = 'like' | 'dislike'
@@ -66,11 +64,7 @@ function RatingsPageContent() {
     const authUpdatePreferences = useAuthStore((state) => state.updatePreferences)
     const guestUpdatePreferences = useGuestStore((state) => state.updatePreferences)
 
-    // Get genre and content preferences for quizzes
-    const authGenrePreferences = useAuthStore((state) => state.genrePreferences)
-    const guestGenrePreferences = useGuestStore((state) => state.genrePreferences)
-    const genrePreferences = isGuest ? guestGenrePreferences : authGenrePreferences
-
+    // Get content preferences for title quiz
     const authVotedContent = useAuthStore((state) => state.votedContent)
     const guestVotedContent = useGuestStore((state) => state.votedContent)
     const votedContent = isGuest ? guestVotedContent : authVotedContent
@@ -81,7 +75,6 @@ function RatingsPageContent() {
 
     // Memoize stable empty arrays to prevent infinite loops in child components
     const stableVotedContent = useMemo(() => votedContent || [], [votedContent])
-    const stableGenrePreferences = useMemo(() => genrePreferences || [], [genrePreferences])
     const stableSkippedContent = useMemo(() => skippedContent || [], [skippedContent])
 
     // Get initial filter from URL params (default to 'like')
@@ -93,7 +86,6 @@ function RatingsPageContent() {
     const [searchQuery, setSearchQuery] = useState('')
     const [showResetConfirm, setShowResetConfirm] = useState(false)
     const [isResetting, setIsResetting] = useState(false)
-    const [showGenreModal, setShowGenreModal] = useState(false)
     const [showTitleModal, setShowTitleModal] = useState(false)
     const [isLoadingRatings, setIsLoadingRatings] = useState(true)
 
@@ -176,15 +168,6 @@ function RatingsPageContent() {
         }
     }, [myRatings])
 
-    const handleSaveGenrePreferences = async (preferences: GenrePreference[]) => {
-        if (isGuest) {
-            guestUpdatePreferences({ genrePreferences: preferences })
-        } else {
-            await authUpdatePreferences({ genrePreferences: preferences })
-        }
-        showSuccess('Genre preferences saved')
-    }
-
     const handleSaveTitlePreferences = async (preferences: VotedContent[]) => {
         if (isGuest) {
             guestUpdatePreferences({ votedContent: preferences })
@@ -249,72 +232,77 @@ function RatingsPageContent() {
                             your recommendations.
                         </p>
 
-                        {/* Category Pills - Liked/Disliked */}
-                        <div className="flex flex-wrap gap-2 items-center justify-center mb-5 overflow-visible pb-2 px-4 min-h-[44px]">
-                            {[
-                                {
-                                    value: 'like',
-                                    label: 'Liked',
-                                    icon: HandThumbUpIcon,
-                                    count: ratingStats.liked,
-                                },
-                                {
-                                    value: 'dislike',
-                                    label: 'Disliked',
-                                    icon: HandThumbDownIcon,
-                                    count: ratingStats.disliked,
-                                },
-                            ].map((option) => {
-                                const Icon = option.icon
-                                const isSelected = filter === option.value
+                        {/* Filter Row - Pills on left, Actions on right */}
+                        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between w-full max-w-3xl mb-5 px-4">
+                            {/* Category Pills - Liked/Disliked */}
+                            <div className="flex gap-2 items-center">
+                                {[
+                                    {
+                                        value: 'like',
+                                        label: 'Liked',
+                                        icon: HandThumbUpIcon,
+                                        count: ratingStats.liked,
+                                    },
+                                    {
+                                        value: 'dislike',
+                                        label: 'Disliked',
+                                        icon: HandThumbDownIcon,
+                                        count: ratingStats.disliked,
+                                    },
+                                ].map((option) => {
+                                    const Icon = option.icon
+                                    const isSelected = filter === option.value
 
-                                return (
+                                    return (
+                                        <button
+                                            key={option.value}
+                                            onClick={() =>
+                                                handleFilterChange(option.value as FilterValue)
+                                            }
+                                            className={`group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 ${
+                                                isSelected
+                                                    ? 'bg-purple-500/90 text-white border-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.3)] scale-105'
+                                                    : 'bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105 hover:shadow-[0_0_8px_rgba(255,255,255,0.08)]'
+                                            }`}
+                                        >
+                                            <Icon
+                                                className={`w-4 h-4 ${isSelected ? 'text-white' : ''}`}
+                                            />
+                                            <span className="relative z-10">
+                                                {option.label} ({option.count})
+                                            </span>
+                                            {isSelected && (
+                                                <div className="absolute inset-0 rounded-full bg-purple-500 blur-md opacity-15 animate-pulse" />
+                                            )}
+                                        </button>
+                                    )
+                                })}
+                            </div>
+
+                            {/* Action Buttons - Rate Titles & Reset */}
+                            <div className="flex gap-2 items-center">
+                                {/* Rate Titles */}
+                                <button
+                                    onClick={() => setShowTitleModal(true)}
+                                    className="group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-pink-600/30 hover:border-pink-500 hover:scale-105 hover:shadow-[0_0_10px_rgba(236,72,153,0.2)]"
+                                    title="Rate Titles"
+                                >
+                                    <FilmIcon className="w-4 h-4 text-pink-400" />
+                                    <span>Rate Titles</span>
+                                </button>
+
+                                {/* Reset All */}
+                                {ratingStats.total > 0 && (
                                     <button
-                                        key={option.value}
-                                        onClick={() =>
-                                            handleFilterChange(option.value as FilterValue)
-                                        }
-                                        className={`group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 ${
-                                            isSelected
-                                                ? 'bg-purple-500/90 text-white border-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.3)] scale-105'
-                                                : 'bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105 hover:shadow-[0_0_8px_rgba(255,255,255,0.08)]'
-                                        }`}
+                                        onClick={() => setShowResetConfirm(true)}
+                                        className="group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-red-600/30 hover:border-red-500 hover:scale-105 hover:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
+                                        title="Reset All Ratings"
                                     >
-                                        <Icon
-                                            className={`w-4 h-4 ${isSelected ? 'text-white' : ''}`}
-                                        />
-                                        <span className="relative z-10">
-                                            {option.label} ({option.count})
-                                        </span>
-                                        {isSelected && (
-                                            <div className="absolute inset-0 rounded-full bg-purple-500 blur-md opacity-15 animate-pulse" />
-                                        )}
+                                        <TrashIcon className="w-4 h-4 text-red-400" />
+                                        <span>Reset</span>
                                     </button>
-                                )
-                            })}
-                        </div>
-
-                        {/* Quiz Buttons */}
-                        <div className="flex gap-3 mb-5">
-                            {/* Genre Quiz */}
-                            <button
-                                onClick={() => setShowGenreModal(true)}
-                                className="group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-purple-600/30 hover:border-purple-500 hover:scale-105 hover:shadow-[0_0_10px_rgba(168,85,247,0.2)]"
-                                title="Rate Genres"
-                            >
-                                <SwatchIcon className="w-4 h-4 text-purple-400" />
-                                <span>Rate Genres</span>
-                            </button>
-
-                            {/* Title Quiz */}
-                            <button
-                                onClick={() => setShowTitleModal(true)}
-                                className="group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-pink-600/30 hover:border-pink-500 hover:scale-105 hover:shadow-[0_0_10px_rgba(236,72,153,0.2)]"
-                                title="Rate Titles"
-                            >
-                                <FilmIcon className="w-4 h-4 text-pink-400" />
-                                <span>Rate Titles</span>
-                            </button>
+                                )}
+                            </div>
                         </div>
 
                         {/* Enhanced Search Bar */}
@@ -396,42 +384,10 @@ function RatingsPageContent() {
                         </div>
                     )}
                 </div>
-
-                {/* Floating Reset Button */}
-                {ratingStats.total > 0 && (
-                    <button
-                        onClick={() => setShowResetConfirm(true)}
-                        className="fixed bottom-8 right-20 z-50 group"
-                        style={{
-                            animation: 'bob 5s ease-in-out infinite',
-                        }}
-                    >
-                        <div className="relative">
-                            {/* Glowing background */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-rose-500 rounded-full blur-lg opacity-30 group-hover:opacity-40 transition-opacity" />
-
-                            {/* Button */}
-                            <div className="relative flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-red-600 via-rose-500 to-red-600 rounded-full text-white font-bold text-sm shadow-[0_0_20px_rgba(239,68,68,0.3)] group-hover:shadow-[0_0_30px_rgba(239,68,68,0.4)] group-hover:scale-105 transition-all duration-300">
-                                <TrashIcon className="w-5 h-5" />
-                                <span className="hidden sm:inline">Reset All</span>
-                            </div>
-                        </div>
-                    </button>
-                )}
             </div>
 
-            {/* Add keyframe animation for bobbing and fade-in */}
+            {/* Add keyframe animation for fade-in */}
             <style jsx>{`
-                @keyframes bob {
-                    0%,
-                    100% {
-                        transform: translateY(0);
-                    }
-                    50% {
-                        transform: translateY(-4px);
-                    }
-                }
-
                 @keyframes fadeInUp {
                     from {
                         opacity: 0;
@@ -479,14 +435,6 @@ function RatingsPageContent() {
                     </div>
                 </div>
             )}
-
-            {/* Genre Preference Modal */}
-            <GenrePreferenceModal
-                isOpen={showGenreModal}
-                onClose={() => setShowGenreModal(false)}
-                onSave={handleSaveGenrePreferences}
-                existingPreferences={stableGenrePreferences}
-            />
 
             {/* Title Preference Modal */}
             <TitlePreferenceModal
