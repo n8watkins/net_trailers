@@ -149,8 +149,7 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onI
         setIsLoading(true)
         try {
             const separator = apiEndpoint.includes('?') ? '&' : '?'
-            const url = `${apiEndpoint}${separator}page=${currentPage + 1}`
-            uiLog('📡 [Infinite Row Loading] Fetching:', url)
+            let url = `${apiEndpoint}${separator}page=${currentPage + 1}`
 
             // Add authentication header if this is a protected endpoint (recommendations)
             const fetchOptions: RequestInit = {}
@@ -163,7 +162,17 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onI
                         Authorization: `Bearer ${idToken}`,
                     }
                 }
+
+                // Pass already-shown IDs to avoid duplicates
+                // The API will use these to exclude content we've already rendered
+                const excludeIds = allContent.map((item) => item.id)
+                if (excludeIds.length > 0) {
+                    // Encode as comma-separated list to keep URL manageable
+                    url += `&exclude=${excludeIds.join(',')}`
+                }
             }
+
+            uiLog('📡 [Infinite Row Loading] Fetching:', url)
 
             const response = await fetch(url, fetchOptions)
 
@@ -251,10 +260,17 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onI
                     { title, pageReturned: newContent.length }
                 )
 
-                // Stop after 5 consecutive duplicate pages OR if we've reached the end
-                // Increased from 3 to 5 to handle larger content pools with more filtering
+                // Special case: Recommendations endpoint passes exclude IDs, so duplicates
+                // mean the API needs to dig deeper or is exhausted. Be more lenient.
+                const isRecommendationsEndpoint = apiEndpoint.includes(
+                    '/recommendations/personalized'
+                )
+                const duplicateThreshold = isRecommendationsEndpoint ? 10 : 5
+
+                // Stop after consecutive duplicate pages OR if we've reached the end
+                // Recommendations endpoint gets 10 tries instead of 5 since it has fallback content
                 if (
-                    consecutiveDuplicatesRef.current >= 5 ||
+                    consecutiveDuplicatesRef.current >= duplicateThreshold ||
                     currentPage + 1 >= (data.total_pages || 1)
                 ) {
                     debugLog('🏁', 'Stopping: Multiple duplicate pages or reached end', {
@@ -262,6 +278,7 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onI
                         consecutiveDuplicates: consecutiveDuplicatesRef.current,
                         currentPage: currentPage + 1,
                         totalPages: data.total_pages,
+                        duplicateThreshold,
                     })
                     setHasMore(false)
                     return

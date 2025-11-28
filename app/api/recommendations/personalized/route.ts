@@ -230,6 +230,15 @@ async function handlePersonalizedRecommendationsGet(
             RECOMMENDATION_CONSTRAINTS.MAX_LIMIT
         )
 
+        // Get already-shown IDs from client to avoid duplicates
+        const excludeParam = searchParams.get('exclude')
+        const clientExcludeIds = excludeParam
+            ? excludeParam
+                  .split(',')
+                  .map((id) => parseInt(id.trim()))
+                  .filter((id) => !isNaN(id))
+            : []
+
         // For GET requests (pagination), we need to fetch user data from Firestore
         // This is acceptable because pagination is infrequent (only when scrolling to end)
         const db = getAdminDb()
@@ -297,20 +306,60 @@ async function handlePersonalizedRecommendationsGet(
         // Build recommendation profile
         const profile = buildRecommendationProfile(userDataForRec, genrePreferences)
 
-        // Get content IDs to exclude (now includes watchlist + collections)
+        // Get content IDs to exclude (now includes watchlist + collections + client-shown)
         const seenIds = getSeenContentIds(userDataForRec)
-        const excludeIds = [...new Set(seenIds)]
+        const excludeIds = [...new Set([...seenIds, ...clientExcludeIds])]
 
         // For page > 1, focus on genre-based recommendations (80% weight)
         const genreWeight = page === 1 ? 0.6 : 0.8
+        const similarWeight = page === 1 ? 0.4 : 0.2
 
         // Generate recommendations (primarily genre-based for pagination)
-        const genreBased = await getGenreBasedRecommendations(
+        let genreBased = await getGenreBasedRecommendations(
             profile,
             Math.ceil(limit * genreWeight),
             excludeIds,
             page
         )
+
+        // Fallback strategy: If genre-based is exhausted (empty or very few results),
+        // mix in TMDB similar content and trending to keep the infinite scroll going
+        const needsFallback = genreBased.length < limit / 2
+
+        if (needsFallback) {
+            // Try TMDB similar content if user has liked movies
+            const fallbackContent: Content[] = []
+
+            if (userDataForRec.likedMovies.length > 0) {
+                const similarContent = await getBatchSimilarContent(
+                    userDataForRec.likedMovies.slice(0, 3).map((c) => c.id),
+                    'movie',
+                    Math.ceil(limit * similarWeight)
+                )
+                fallbackContent.push(...similarContent.filter((c) => !excludeIds.includes(c.id)))
+            }
+
+            // If still not enough, fetch trending content as last resort
+            if (genreBased.length + fallbackContent.length < limit / 2) {
+                try {
+                    const trendingResponse = await fetch(
+                        `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/movies/trending`
+                    )
+                    if (trendingResponse.ok) {
+                        const trendingData = await trendingResponse.json()
+                        const trending = (trendingData.results || []).filter(
+                            (c: Content) => !excludeIds.includes(c.id)
+                        )
+                        fallbackContent.push(...trending.slice(0, limit - genreBased.length))
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch trending fallback:', error)
+                }
+            }
+
+            // Merge genre-based with fallback content
+            genreBased = [...genreBased, ...fallbackContent.slice(0, limit - genreBased.length)]
+        }
 
         // Return TMDB-compatible format for Row component
         // Always return total_pages: 100 even if this page has few/no results
