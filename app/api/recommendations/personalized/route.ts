@@ -122,7 +122,7 @@ async function handlePersonalizedRecommendations(
                 success: true,
                 recommendations: [],
                 message:
-                    'Not enough user data for personalized recommendations. Add items to your watchlist or like some content to get started.',
+                    'Add at least one item to your watchlist or like some content to see personalized recommendations.',
                 requiresData: true,
             })
         }

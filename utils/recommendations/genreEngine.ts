@@ -472,7 +472,7 @@ export function getSeenContentIds(userData: {
  * Check if user has enough data for personalized recommendations
  *
  * @param userData - User's content collections
- * @param minItems - Minimum items required (default: 3)
+ * @param minItems - Minimum items required (default: 1)
  * @returns True if user has enough data
  */
 export function hasEnoughDataForRecommendations(
@@ -481,7 +481,7 @@ export function hasEnoughDataForRecommendations(
         defaultWatchlist: Content[]
         collectionItems?: Content[]
     },
-    minItems: number = 3
+    minItems: number = 1
 ): boolean {
     const collectionItemsCount = userData.collectionItems?.length || 0
     const totalItems =

@@ -408,23 +408,36 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
 
     // Don't render if feature is disabled
     if (!showRecommendations) {
+        console.log('[Recommended For You] Hidden: Feature disabled in settings')
         return null
     }
 
     // Don't render for guest users (recommendations require Firestore for interaction tracking)
     if (!userId || sessionType !== 'authenticated') {
+        console.log('[Recommended For You] Hidden: Guest user or not authenticated')
         return null
     }
 
     // Don't render while loading
     if (isLoading) {
+        console.log('[Recommended For You] Hidden: Still loading recommendations')
         return null
     }
 
     // Don't render if error or no recommendations
-    if (error || recommendations.length === 0) {
+    if (error) {
+        console.error('[Recommended For You] Hidden: Error occurred:', error)
         return null
     }
+
+    if (recommendations.length === 0) {
+        console.log(
+            '[Recommended For You] Hidden: No recommendations generated (need at least 1 item in watchlist/liked or set preferences)'
+        )
+        return null
+    }
+
+    console.log('[Recommended For You] Displaying', recommendations.length, 'recommendations')
 
     // Convert recommendations to Content array
     const content: Content[] = recommendations.map((rec) => rec.content)
