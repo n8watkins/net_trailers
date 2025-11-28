@@ -158,15 +158,47 @@ export function ForumActivitySection({
                     {/* Panel container */}
                     <div className="relative bg-gradient-to-br from-pink-950/20 via-zinc-900/80 to-rose-950/20 backdrop-blur-lg rounded-xl overflow-hidden border border-pink-500/10 group-hover/panel:border-pink-500/20 transition-all duration-300 shadow-lg">
                         <div className="p-5 sm:p-6">
-                            {/* Header */}
-                            <div className="flex items-center justify-between mb-4">
+                            {/* Header with Tab Switcher */}
+                            <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                                 <div className="flex items-center gap-3">
                                     <div className="relative">
                                         <div className="absolute inset-0 bg-pink-500/30 blur-lg opacity-60" />
                                         <ChartBarSolidIcon className="relative w-5 h-5 text-pink-400 drop-shadow-[0_0_6px_rgba(236,72,153,0.5)]" />
                                     </div>
                                     <h3 className="text-lg font-bold text-white">Polls</h3>
+
+                                    {/* Tab Switcher - Inline with title */}
+                                    <div className="inline-flex rounded-full bg-zinc-900/60 backdrop-blur p-1 border border-zinc-800/50 ml-2">
+                                        {[
+                                            {
+                                                id: 'created',
+                                                label: 'Created',
+                                                count: pollsCreated.length,
+                                            },
+                                            {
+                                                id: 'voted',
+                                                label: 'Voted',
+                                                count: pollsVoted.length,
+                                            },
+                                        ].map((tab) => (
+                                            <button
+                                                key={tab.id}
+                                                onClick={() =>
+                                                    setActivePollTab(tab.id as 'created' | 'voted')
+                                                }
+                                                className={`relative px-3 py-1.5 text-xs font-bold rounded-full transition-all duration-200 ${
+                                                    activePollTab === tab.id
+                                                        ? 'bg-pink-500 text-white shadow-[0_0_12px_rgba(236,72,153,0.4)]'
+                                                        : 'text-gray-400 hover:text-white'
+                                                }`}
+                                            >
+                                                {tab.label}{' '}
+                                                <span className="opacity-70">({tab.count})</span>
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
+
                                 {(pollsCreated.length > 0 || pollsVoted.length > 0) && (
                                     <Link
                                         href={userId ? `/users/${userId}/polls` : '/profile/polls'}
@@ -180,38 +212,6 @@ export function ForumActivitySection({
                                         </span>
                                     </Link>
                                 )}
-                            </div>
-
-                            {/* Tab Switcher */}
-                            <div className="flex items-center justify-between mb-4 gap-3">
-                                <div className="inline-flex rounded-full bg-zinc-900/60 backdrop-blur p-1 border border-zinc-800/50">
-                                    {[
-                                        {
-                                            id: 'created',
-                                            label: 'Created',
-                                            count: pollsCreated.length,
-                                        },
-                                        { id: 'voted', label: 'Voted', count: pollsVoted.length },
-                                    ].map((tab) => (
-                                        <button
-                                            key={tab.id}
-                                            onClick={() =>
-                                                setActivePollTab(tab.id as 'created' | 'voted')
-                                            }
-                                            className={`relative px-3 py-1.5 text-xs font-bold rounded-full transition-all duration-200 ${
-                                                activePollTab === tab.id
-                                                    ? 'bg-pink-500 text-white shadow-[0_0_12px_rgba(236,72,153,0.4)]'
-                                                    : 'text-gray-400 hover:text-white'
-                                            }`}
-                                        >
-                                            {tab.label}{' '}
-                                            <span className="opacity-70">({tab.count})</span>
-                                        </button>
-                                    ))}
-                                </div>
-                                <span className="text-[10px] text-gray-500 hidden sm:inline">
-                                    {activePollTab === 'created' ? 'Published' : 'Participated'}
-                                </span>
                             </div>
 
                             {/* Polls List */}
