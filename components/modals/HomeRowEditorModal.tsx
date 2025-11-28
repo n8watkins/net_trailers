@@ -164,7 +164,6 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
             canEdit: rec.id === 'trending' || rec.id === 'top-rated',
             emoji: rec.emoji,
             displayAsRow: rec.enabled, // System recs use 'enabled' property for display state
-            showOnPublicProfile: rec.showOnPublicProfile,
         }),
         []
     )
@@ -360,7 +359,7 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
                 // Merge local row data (displayAsRow) with store data
                 setEditorCollection({
                     ...fullCollection,
-                    displayAsRow: row.displayAsRow,
+                    displayAsRow: row.displayAsRow ?? true,
                 })
             }
         },

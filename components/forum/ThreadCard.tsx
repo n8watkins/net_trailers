@@ -10,7 +10,7 @@
 import { useState, useEffect, memo, useCallback } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { Thread } from '@/types/forum'
+import { Thread, ThreadSummary } from '@/types/forum'
 import { getCategoryInfo } from '@/utils/forumCategories'
 import { ChatBubbleLeftIcon, EyeIcon, HeartIcon, ClockIcon } from '@heroicons/react/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid'
@@ -21,7 +21,8 @@ import { useForumStore } from '@/stores/forumStore'
 import { db } from '@/firebase'
 
 // Helper to convert Firebase Timestamp to Date
-const toDate = (timestamp: Timestamp | Date | number): Date => {
+const toDate = (timestamp: Timestamp | Date | number | null | undefined): Date => {
+    if (!timestamp) return new Date()
     if (timestamp instanceof Timestamp) {
         return timestamp.toDate()
     }
@@ -32,7 +33,7 @@ const toDate = (timestamp: Timestamp | Date | number): Date => {
 }
 
 interface ThreadCardProps {
-    thread: Thread
+    thread: Thread | ThreadSummary
     onClick?: () => void
 }
 

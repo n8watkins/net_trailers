@@ -235,6 +235,9 @@ export async function buildPublicProfilePayload(
                           id: doc.id,
                           question: data.question ?? 'Untitled poll',
                           category: data.category ?? 'general',
+                          userId: data.userId ?? '',
+                          userName: data.userName ?? 'Anonymous',
+                          userAvatar: data.userAvatar,
                           totalVotes: data.totalVotes ?? 0,
                           isMultipleChoice: Boolean(data.isMultipleChoice),
                           allowAddOptions: Boolean(data.allowAddOptions),
@@ -290,6 +293,9 @@ export async function buildPublicProfilePayload(
                         id: pollDoc.id,
                         question: pollData.question ?? 'Untitled poll',
                         category: pollData.category ?? 'general',
+                        userId: pollData.userId ?? '',
+                        userName: pollData.userName ?? 'Anonymous',
+                        userAvatar: pollData.userAvatar,
                         totalVotes: pollData.totalVotes ?? 0,
                         isMultipleChoice: Boolean(pollData.isMultipleChoice),
                         allowAddOptions: Boolean(pollData.allowAddOptions),
@@ -374,6 +380,7 @@ export async function buildPublicProfilePayload(
                         lastReplyBy: threadData.lastReplyBy,
                         tags: threadData.tags,
                         isPinned: threadData.isPinned ?? false,
+                        isLocked: threadData.isLocked ?? false,
                     }
                     return summary
                 })

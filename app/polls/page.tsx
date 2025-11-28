@@ -62,7 +62,7 @@ export default function MyPollsPage() {
                             key={poll.id}
                             poll={poll}
                             userVote={userVotes[poll.id] || []}
-                            onVote={(optionIds) => handleVote(poll.id, optionIds)}
+                            onVote={(pollId, optionIds) => handleVote(pollId, optionIds)}
                         />
                     ))}
                 </div>

@@ -16,7 +16,7 @@ const SAVE_DEBOUNCE_DELAY = 500
  */
 export const useOnboardingPersistence = () => {
     const store = useOnboardingStore()
-    const saveTimeoutRef = useRef<NodeJS.Timeout>()
+    const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
     // Load initial state on mount
     useEffect(() => {
@@ -24,7 +24,7 @@ export const useOnboardingPersistence = () => {
         if (savedState) {
             store.loadOnboardingState(savedState)
         }
-    }, []) // Only run on mount - intentionally empty deps array
+    }, [store]) // Only run on mount - intentionally empty deps array
 
     // Debounced auto-save on state changes
     useEffect(() => {

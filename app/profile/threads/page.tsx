@@ -119,6 +119,7 @@ export default function UserThreadsPage() {
                             lastReplyBy: threadData.lastReplyBy,
                             tags: threadData.tags,
                             isPinned: threadData.isPinned ?? false,
+                            isLocked: threadData.isLocked ?? false,
                         } as ThreadSummary
                     })
                 )
@@ -170,6 +171,7 @@ export default function UserThreadsPage() {
                     lastReplyBy: thread.lastReplyBy,
                     tags: thread.tags,
                     isPinned: thread.isPinned,
+                    isLocked: thread.isLocked,
                 }))
                 .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0)),
         [threads, userId]

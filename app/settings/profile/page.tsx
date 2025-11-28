@@ -220,6 +220,7 @@ const ProfilePage: React.FC = () => {
                             showRankings: 'Rankings',
                             showCollections: 'Collections',
                             showThreads: 'Forum Threads',
+                            showThreadsVoted: 'Threads Voted',
                             showPollsCreated: 'Polls Created',
                             showPollsVoted: 'Polls Voted',
                         }

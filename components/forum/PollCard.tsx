@@ -11,14 +11,15 @@
 import { memo, useCallback } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { Poll } from '@/types/forum'
+import { Poll, PollSummary } from '@/types/forum'
 import { getCategoryInfo } from '@/utils/forumCategories'
 import { ChartBarIcon, ClockIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
 import { formatDistanceToNow } from 'date-fns'
 import { Timestamp } from 'firebase/firestore'
 
 // Helper to convert Firebase Timestamp to Date
-const toDate = (timestamp: Timestamp | Date | number): Date => {
+const toDate = (timestamp: Timestamp | Date | number | null): Date => {
+    if (!timestamp) return new Date()
     if (timestamp instanceof Timestamp) {
         return timestamp.toDate()
     }
@@ -29,7 +30,7 @@ const toDate = (timestamp: Timestamp | Date | number): Date => {
 }
 
 interface PollCardProps {
-    poll: Poll
+    poll: Poll | PollSummary
     userVote?: string[] // IDs of options user has voted for
     onVote?: (pollId: string, optionIds: string[]) => void
 }
@@ -159,7 +160,7 @@ function PollCardComponent({ poll, userVote = [], onVote }: PollCardProps) {
             )}
 
             {/* Description */}
-            {poll.description && (
+            {'description' in poll && poll.description && (
                 <p className="text-gray-400 text-sm mb-4 line-clamp-2 leading-relaxed">
                     {poll.description}
                 </p>
@@ -258,9 +259,9 @@ function PollCardComponent({ poll, userVote = [], onVote }: PollCardProps) {
             </div>
 
             {/* Tags */}
-            {poll.tags && poll.tags.length > 0 && (
+            {'tags' in poll && poll.tags && poll.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-zinc-800/50">
-                    {poll.tags.map((tag) => (
+                    {poll.tags.map((tag: string) => (
                         <span
                             key={tag}
                             className="px-2.5 py-1 bg-zinc-800/60 backdrop-blur-sm text-gray-400 text-[10px] font-medium rounded-full hover:bg-zinc-700/60 hover:text-gray-300 transition-colors border border-zinc-700/50"

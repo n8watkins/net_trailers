@@ -113,6 +113,8 @@ export interface ThreadSummary {
     likes: number
     views: number
     replyCount: number
+    isPinned?: boolean
+    isLocked?: boolean
     createdAt: number | null
     updatedAt: number | null
     lastReplyAt?: number | null
@@ -121,7 +123,6 @@ export interface ThreadSummary {
         userName: string
     }
     tags?: string[]
-    isPinned?: boolean
 }
 
 // Poll summary for profile pages (without Firestore Timestamp dependencies)
