@@ -7,6 +7,7 @@ import {
     TvIcon,
     FilmIcon,
     RectangleStackIcon,
+    AcademicCapIcon,
 } from '@heroicons/react/24/outline'
 import { getFirstVisitStatus } from '../../utils/firstVisitTracker'
 
@@ -15,6 +16,7 @@ interface FooterProps {
     onOpenAboutModal: () => void
     onCloseAboutModal: () => void
     onOpenKeyboardShortcuts?: () => void
+    onOpenTutorial?: () => void
 }
 
 const movieGenres = [
@@ -40,6 +42,7 @@ function Footer({
     onOpenAboutModal,
     onCloseAboutModal: _onCloseAboutModal,
     onOpenKeyboardShortcuts,
+    onOpenTutorial,
 }: FooterProps) {
     useEffect(() => {
         const { shouldShowModal } = getFirstVisitStatus()
@@ -266,6 +269,20 @@ function Footer({
                                         Changelog
                                     </Link>
                                 </p>
+                                {/* Help & Tutorial */}
+                                {onOpenTutorial && (
+                                    <p className="text-gray-300 text-sm">
+                                        <button
+                                            onClick={onOpenTutorial}
+                                            className="group hover:text-white transition-all duration-200 flex items-center gap-2 p-1 rounded-lg hover:bg-gray-700/20"
+                                        >
+                                            <AcademicCapIcon className="w-4 h-4 group-hover:text-red-400 transition-colors duration-200" />
+                                            <span className="underline group-hover:no-underline">
+                                                Help & Tutorial
+                                            </span>
+                                        </button>
+                                    </p>
+                                )}
                                 {/* Hide keyboard shortcuts link on mobile/tablet since shortcuts are disabled */}
                                 {onOpenKeyboardShortcuts && (
                                     <p className="hidden lg:block text-gray-300 text-sm">

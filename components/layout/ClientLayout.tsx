@@ -176,6 +176,7 @@ function ClientLayout({ children }: ClientLayoutProps) {
                 onOpenAboutModal={handleOpenAboutModal}
                 onCloseAboutModal={handleCloseAboutModal}
                 onOpenKeyboardShortcuts={handleOpenShortcuts}
+                onOpenTutorial={handleOpenTutorial}
             />
             <WelcomeScreen
                 isOpen={showWelcome}
