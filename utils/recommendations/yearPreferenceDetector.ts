@@ -39,12 +39,20 @@ export const YEAR_PREFERENCE_CONFIG = {
  */
 function extractYear(content: Content): number | undefined {
     try {
-        if (content.media_type === 'movie' && content.release_date) {
-            return new Date(content.release_date).getFullYear()
-        } else if (content.media_type === 'tv' && content.first_air_date) {
-            return new Date(content.first_air_date).getFullYear()
+        const dateString =
+            content.media_type === 'movie' ? content.release_date : content.first_air_date
+
+        if (!dateString) return undefined
+
+        const year = new Date(dateString).getFullYear()
+
+        // Validate year is reasonable (1900-2050 range)
+        // Reject NaN, negative years, and unrealistic values
+        if (isNaN(year) || year < 1900 || year > 2050) {
+            return undefined
         }
-        return undefined
+
+        return year
     } catch {
         return undefined
     }
@@ -99,13 +107,24 @@ export function calculateGenreYearPreferences(userData: {
         const sampleSize = years.length
 
         // Skip if no data
-        if (sampleSize === 0) continue
+        if (sampleSize === 0) {
+            console.debug(`[YearPreferences] Skipping genre ${genreId}: no valid years`)
+            continue
+        }
 
         // Calculate statistics
         const sortedYears = [...years].sort((a, b) => a - b)
         const yearMin = sortedYears[0]
         const yearMax = sortedYears[sortedYears.length - 1]
-        const yearMedian = sortedYears[Math.floor(sortedYears.length / 2)]
+        // Correct median calculation for both odd and even-length arrays
+        const yearMedian =
+            sortedYears.length % 2 === 1
+                ? sortedYears[Math.floor(sortedYears.length / 2)] // Odd: middle value
+                : Math.round(
+                      (sortedYears[sortedYears.length / 2 - 1] +
+                          sortedYears[sortedYears.length / 2]) /
+                          2
+                  ) // Even: average of two middle values
 
         // Determine confidence level
         let confidence: 'low' | 'medium' | 'high'

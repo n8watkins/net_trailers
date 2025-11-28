@@ -272,7 +272,13 @@ export async function getGenreBasedRecommendations(
         if (profile.genreYearPreferences && profile.genreYearPreferences.length > 0) {
             for (const selectedGenre of selectedGenres) {
                 // Convert TMDB genre ID to unified genre IDs to match year preferences
-                const unifiedIds = convertLegacyGenresToUnified([selectedGenre.genreId], 'movie')
+                // Try both movie and TV conversions since the same TMDB ID might map to different unified genres
+                const movieUnifiedIds = convertLegacyGenresToUnified(
+                    [selectedGenre.genreId],
+                    'movie'
+                )
+                const tvUnifiedIds = convertLegacyGenresToUnified([selectedGenre.genreId], 'tv')
+                const unifiedIds = [...new Set([...movieUnifiedIds, ...tvUnifiedIds])] // Deduplicate
 
                 // Look for year preference for this genre
                 for (const unifiedId of unifiedIds) {
