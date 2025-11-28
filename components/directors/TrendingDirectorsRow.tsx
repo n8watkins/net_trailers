@@ -147,16 +147,20 @@ export default function TrendingDirectorsRow({
                 setHasMore(false)
                 hasMoreRef.current = false
             } else {
-                // Deduplicate
-                const existingIds = new Set(directors.map((d) => d.id))
-                const uniqueDirectors = newDirectors.filter(
-                    (d: TrendingPerson) => !existingIds.has(d.id)
-                )
+                // Deduplicate using current state to avoid stale closures
+                setDirectors((prev) => {
+                    const existingIds = new Set(prev.map((d) => d.id))
+                    const uniqueDirectors = newDirectors.filter(
+                        (d: TrendingPerson) => !existingIds.has(d.id)
+                    )
 
-                // Preload images before adding to state
-                preloadImages(uniqueDirectors)
+                    // Preload images for unique directors
+                    if (uniqueDirectors.length > 0) {
+                        preloadImages(uniqueDirectors)
+                    }
 
-                setDirectors((prev) => [...prev, ...uniqueDirectors])
+                    return [...prev, ...uniqueDirectors]
+                })
                 setCurrentPage((prev) => prev + 1)
             }
         } catch (err) {
@@ -166,7 +170,7 @@ export default function TrendingDirectorsRow({
             setIsLoadingMore(false)
             isLoadingRef.current = false
         }
-    }, [currentPage, directors, preloadImages, API_ENDPOINT])
+    }, [currentPage, preloadImages, API_ENDPOINT])
 
     // Fetch initial directors and preload next page
     const fetchDirectors = useCallback(async () => {

@@ -147,14 +147,20 @@ export default function TrendingActorsRow({
                 setHasMore(false)
                 hasMoreRef.current = false
             } else {
-                // Deduplicate
-                const existingIds = new Set(actors.map((a) => a.id))
-                const uniqueActors = newActors.filter((a: TrendingPerson) => !existingIds.has(a.id))
+                // Deduplicate using current state to avoid stale closures
+                setActors((prev) => {
+                    const existingIds = new Set(prev.map((a) => a.id))
+                    const uniqueActors = newActors.filter(
+                        (a: TrendingPerson) => !existingIds.has(a.id)
+                    )
 
-                // Preload images before adding to state
-                preloadImages(uniqueActors)
+                    // Preload images for unique actors
+                    if (uniqueActors.length > 0) {
+                        preloadImages(uniqueActors)
+                    }
 
-                setActors((prev) => [...prev, ...uniqueActors])
+                    return [...prev, ...uniqueActors]
+                })
                 setCurrentPage((prev) => prev + 1)
             }
         } catch (err) {
@@ -164,7 +170,7 @@ export default function TrendingActorsRow({
             setIsLoadingMore(false)
             isLoadingRef.current = false
         }
-    }, [currentPage, actors, preloadImages, API_ENDPOINT])
+    }, [currentPage, preloadImages, API_ENDPOINT])
 
     // Fetch initial actors and preload next page
     const fetchActors = useCallback(async () => {
