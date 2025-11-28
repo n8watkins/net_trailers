@@ -23,13 +23,17 @@ interface ClientLayoutProps {
     children: React.ReactNode
 }
 
+// Modal display delays (in milliseconds)
+const MODAL_DISPLAY_DELAY = 500 // Delay before showing welcome/about modal
+
 /**
  * ClientLayout provides the shell around all pages in the App Router.
  * It manages:
  * - Footer
- * - Global modals (About, Tutorial, Keyboard Shortcuts)
+ * - Global modals (About, Tutorial, Keyboard Shortcuts, Welcome Screen)
  * - Scroll to top button
  * - Global keyboard shortcuts
+ * - Onboarding persistence
  *
  * This component runs on the client and wraps all page content.
  */
@@ -120,26 +124,20 @@ function ClientLayout({ children }: ClientLayoutProps) {
         }
     }, [])
 
-    // Auto-show Welcome screen on first visit
+    // Auto-show Welcome screen on first visit OR About modal every 24 hours
+    // Combined to avoid duplicate localStorage reads
     useEffect(() => {
-        // Small delay to ensure page has loaded
         const timer = setTimeout(() => {
-            if (shouldShowWelcomeScreen()) {
+            const shouldShowWelcome = shouldShowWelcomeScreen()
+
+            if (shouldShowWelcome) {
+                // Show welcome screen on first visit
                 setShowWelcome(true)
-            }
-        }, 500) // 0.5 second delay after page load
-
-        return () => clearTimeout(timer)
-    }, [])
-
-    // Auto-show About modal every 24 hours (only if welcome screen not shown)
-    useEffect(() => {
-        // Small delay to ensure page has loaded
-        const timer = setTimeout(() => {
-            if (!shouldShowWelcomeScreen() && shouldShowAboutModal()) {
+            } else if (shouldShowAboutModal()) {
+                // Show about modal if welcome already seen
                 setShowAboutModal(true)
             }
-        }, 1000) // 1 second delay after page load
+        }, MODAL_DISPLAY_DELAY)
 
         return () => clearTimeout(timer)
     }, [])

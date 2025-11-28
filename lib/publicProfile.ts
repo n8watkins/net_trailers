@@ -208,11 +208,18 @@ export async function buildPublicProfilePayload(
                           title: data.title ?? 'Untitled thread',
                           content: data.content ?? '',
                           category: data.category ?? 'general',
+                          userId: data.userId ?? '',
+                          userName: data.userName ?? 'Anonymous',
+                          userAvatar: data.userAvatar,
                           likes: data.likes ?? 0,
                           views: data.views ?? 0,
                           replyCount: data.replyCount ?? 0,
                           createdAt: toMillis(data.createdAt as Timestamp | number | undefined),
                           updatedAt: toMillis(data.updatedAt as Timestamp | number | undefined),
+                          lastReplyAt: toMillis(data.lastReplyAt as Timestamp | number | undefined),
+                          lastReplyBy: data.lastReplyBy,
+                          tags: data.tags,
+                          isPinned: data.isPinned ?? false,
                       }
                   })
                   .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0))
@@ -353,11 +360,20 @@ export async function buildPublicProfilePayload(
                         title: threadData.title ?? 'Untitled thread',
                         content: threadData.content ?? '',
                         category: threadData.category ?? 'general',
+                        userId: threadData.userId ?? '',
+                        userName: threadData.userName ?? 'Anonymous',
+                        userAvatar: threadData.userAvatar,
                         likes: threadData.likes ?? 0,
                         views: threadData.views ?? 0,
                         replyCount: threadData.replyCount ?? 0,
                         createdAt: toMillis(threadData.createdAt as Timestamp | number | undefined),
                         updatedAt: toMillis(threadData.updatedAt as Timestamp | number | undefined),
+                        lastReplyAt: toMillis(
+                            threadData.lastReplyAt as Timestamp | number | undefined
+                        ),
+                        lastReplyBy: threadData.lastReplyBy,
+                        tags: threadData.tags,
+                        isPinned: threadData.isPinned ?? false,
                     }
                     return summary
                 })

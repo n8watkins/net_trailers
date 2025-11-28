@@ -8,17 +8,17 @@ import useAuth from '../../../hooks/useAuth'
 import {
     EyeIcon,
     MagnifyingGlassIcon,
-    ArrowLeftIcon,
     PencilIcon,
-    RectangleStackIcon,
+    Cog6ToothIcon,
+    ChevronDownIcon,
+    TrashIcon,
 } from '@heroicons/react/24/solid'
+import { XMarkIcon, RectangleStackIcon } from '@heroicons/react/24/outline'
 import { Content } from '../../../typings'
 import { getTitle } from '../../../typings'
 import ContentCard from '../../../components/common/ContentCard'
 import ContentGridSpacer from '../../../components/common/ContentGridSpacer'
-import EmptyState from '../../../components/common/EmptyState'
 import NetflixLoader from '../../../components/common/NetflixLoader'
-import SearchBar from '../../../components/common/SearchBar'
 import { UserList } from '../../../types/collections'
 import CollectionEditorModal from '../../../components/modals/CollectionEditorModal'
 import { useChildSafety } from '../../../hooks/useChildSafety'
@@ -48,6 +48,32 @@ const CollectionPage = () => {
     const [searchQuery, setSearchQuery] = useState('')
     const [showEditor, setShowEditor] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
+    const [showManageDropdown, setShowManageDropdown] = useState(false)
+    const manageDropdownRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        document.title = 'Watch Later - NetTrailers'
+    }, [])
+
+    // Handle click outside to close dropdown
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                manageDropdownRef.current &&
+                !manageDropdownRef.current.contains(event.target as Node)
+            ) {
+                setShowManageDropdown(false)
+            }
+        }
+
+        if (showManageDropdown) {
+            document.addEventListener('mousedown', handleClickOutside)
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [showManageDropdown])
 
     // Get all available lists
     const allLists = useMemo(() => {
@@ -333,25 +359,15 @@ const CollectionPage = () => {
     }
 
     // Helper functions for collection pills
-    const getListIcon = (list: UserList, isSelected: boolean = false) => {
+    const getListIcon = (list: UserList) => {
         // Return emoji if the list has one (custom lists)
         if (list.emoji) {
             return <span className="text-sm">{list.emoji}</span>
         }
 
         // Default icons for system lists
-        const iconClass = `w-4 h-4 text-white`
+        const iconClass = `w-4 h-4`
         return <EyeIcon className={iconClass} />
-    }
-
-    const getListStyle = (list: UserList, isSelected: boolean) => {
-        // If selected, use a more solid/opaque version of the collection color
-        if (isSelected) {
-            return 'shadow-lg scale-105 border-2 text-white font-semibold'
-        }
-
-        // Default styling
-        return 'hover:scale-105 text-white border-2'
     }
 
     // Helper function to convert hex color to rgba with opacity
@@ -366,186 +382,343 @@ const CollectionPage = () => {
         return `rgba(107, 114, 128, ${opacity})` // Fallback to gray
     }
 
-    if (isLoading) {
-        return (
-            <SubPageLayout
-                title="Loading..."
-                icon={<RectangleStackIcon />}
-                iconColor="text-blue-400"
-            >
-                <NetflixLoader message="Loading collection..." inline />
-            </SubPageLayout>
-        )
-    }
-
-    if (!selectedList) {
+    if (!selectedList && !isLoading) {
         return null // Will redirect
     }
 
-    const headerActions = (
-        <div className="space-y-6">
-            {/* Collection Filter Pills */}
-            <div className="bg-[#1a1a1a] border border-gray-800 rounded-2xl p-6">
-                <div className="flex flex-wrap gap-3">
-                    {/* Collection Pills - Watch Later (default collection) will be first */}
-                    {allLists
-                        .sort((a, b) => {
-                            // Put Watch Later (default collection) first, then other collections
-                            if (a.name === 'Watch Later') return -1
-                            if (b.name === 'Watch Later') return 1
-                            return 0
-                        })
-                        .map((list) => {
-                            const isSelected = collectionId === list.id
-                            const listColor = list.color || '#6b7280' // Default gray
-                            // Use clean route for default watchlist
-                            const href =
-                                list.id === 'default-watchlist'
-                                    ? '/collections/watch-later'
-                                    : `/collections/${list.id}`
-
-                            return (
-                                <Link
-                                    key={list.id}
-                                    href={href}
-                                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${getListStyle(
-                                        list,
-                                        isSelected
-                                    )}`}
-                                    style={
-                                        isSelected
-                                            ? {
-                                                  borderColor: listColor,
-                                                  backgroundColor: hexToRgba(listColor, 0.85),
-                                              }
-                                            : {
-                                                  borderColor: listColor,
-                                                  backgroundColor: hexToRgba(listColor, 0.15),
-                                              }
-                                    }
-                                >
-                                    {getListIcon(list, isSelected)}
-                                    <span>{list.name}</span>
-                                </Link>
-                            )
-                        })}
-                </div>
-            </div>
-
-            {/* Collection Header */}
-            <div>
-                <div className="flex flex-col sm:flex-row items-start sm:items-end gap-2 sm:gap-4 mb-6">
-                    {/* Collection Icon + Title Row */}
-                    <div className="flex items-center gap-3 sm:gap-4">
-                        {/* Collection Icon */}
-                        <div className="flex items-center justify-center">
-                            {selectedList.emoji ? (
-                                <span className="text-4xl sm:text-5xl">{selectedList.emoji}</span>
-                            ) : (
-                                <EyeIcon className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
-                            )}
-                        </div>
-                        {/* Collection Title */}
-                        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">
-                            {selectedList.name}
-                        </h2>
-                    </div>
-                    {/* Item Count - only show when there are items */}
-                    {selectedList.items.length > 0 && (
-                        <span className="text-lg sm:text-xl text-gray-400 font-medium sm:pb-0.5">
-                            {selectedList.items.length} items
-                        </span>
-                    )}
-                    {/* Edit Button - Only show for editable collections */}
-                    {selectedList.id !== 'default-watchlist' && selectedList.canEdit !== false && (
-                        <button
-                            onClick={handleEditCollection}
-                            className="flex items-center justify-center w-9 h-9 mb-0.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white transition-colors"
-                            title={`Edit ${selectedList.name}`}
-                        >
-                            <PencilIcon className="w-5 h-5" />
-                        </button>
-                    )}
-                </div>
-
-                {/* Search Bar */}
-                <div className="mb-8">
-                    <SearchBar
-                        value={searchQuery}
-                        onChange={setSearchQuery}
-                        placeholder="Search in this collection..."
-                        focusColor="blue"
-                        voiceInput
-                    />
-                </div>
-            </div>
-        </div>
-    )
-
     return (
         <>
-            <SubPageLayout
-                title={selectedList.name}
-                icon={<RectangleStackIcon />}
-                iconColor="text-blue-400"
-                description={selectedList.description || `${selectedList.items.length} items`}
-                headerActions={headerActions}
-            >
-                {/* Content Grid */}
-                {allDisplayContent.length === 0 ? (
-                    <EmptyState
-                        emoji="🍿"
-                        title="No items in this collection"
-                        description="Start adding movies and TV shows to your collection!"
-                    />
-                ) : (
-                    <div className="space-y-12">
-                        <div className="flex flex-wrap justify-between gap-x-6 sm:gap-x-8 md:gap-x-10 lg:gap-x-12 gap-y-3 sm:gap-y-4 md:gap-y-5 [&>*]:flex-none">
-                            {allDisplayContent.map(
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                (item: any, index: number) => (
-                                    <div key={`${item.contentId}-${item.listId}-${index}`}>
-                                        <ContentCard content={item.content} />
+            <SubPageLayout hideHeader>
+                <div className="relative -mt-20 -mx-6 sm:-mx-8 lg:-mx-12">
+                    {/* Atmospheric Background */}
+                    <div className="fixed inset-0 pointer-events-none">
+                        <div className="absolute inset-0 bg-black" />
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-blue-900/20 via-transparent to-transparent opacity-50" />
+                        <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black opacity-60" />
+                    </div>
+
+                    {/* Content Container */}
+                    <div className="relative z-10">
+                        {/* Cinematic Hero Header */}
+                        <div className="relative overflow-hidden pt-4">
+                            {/* Animated Background Gradients */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900/80 to-black" />
+                            <div
+                                className="absolute inset-0 bg-gradient-to-t from-blue-900/20 via-cyan-900/10 to-black/50 animate-pulse"
+                                style={{ animationDuration: '4s' }}
+                            />
+                            <div className="absolute inset-0 bg-gradient-radial from-blue-500/10 via-blue-900/5 to-transparent" />
+
+                            {/* Soft edge vignetting for subtle blending */}
+                            <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/80" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60" />
+
+                            {/* Hero Content */}
+                            <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-6">
+                                {/* Icon with glow */}
+                                <div className="relative mb-4">
+                                    <div className="absolute inset-0 bg-blue-500/30 blur-2xl scale-150" />
+                                    {selectedList?.emoji ? (
+                                        <span className="relative text-6xl drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]">
+                                            {selectedList.emoji}
+                                        </span>
+                                    ) : (
+                                        <EyeIcon className="relative w-16 h-16 text-blue-400 drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]" />
+                                    )}
+                                </div>
+
+                                {/* Title */}
+                                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-2 text-center tracking-tight">
+                                    <span className="bg-gradient-to-r from-blue-200 via-cyan-100 to-blue-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
+                                        {selectedList?.name || 'Watch Later'}
+                                    </span>
+                                </h1>
+
+                                {/* Subtitle with item count */}
+                                <p className="text-base sm:text-lg text-gray-300 mb-6 text-center max-w-2xl">
+                                    {selectedList?.description || 'Save content to watch later'}
+                                    {!isLoading &&
+                                        selectedList &&
+                                        selectedList.items.length > 0 && (
+                                            <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                                                {selectedList.items.length} items
+                                            </span>
+                                        )}
+                                </p>
+
+                                {/* Collection Pills Row */}
+                                <div className="flex flex-wrap gap-2 items-center justify-center mb-5 overflow-visible pb-2 px-4 max-w-4xl">
+                                    {allLists
+                                        .sort((a, b) => {
+                                            if (a.name === 'Watch Later') return -1
+                                            if (b.name === 'Watch Later') return 1
+                                            return 0
+                                        })
+                                        .map((list) => {
+                                            const isSelected = collectionId === list.id
+                                            const listColor = list.color || '#3b82f6'
+                                            const href =
+                                                list.id === 'default-watchlist'
+                                                    ? '/collections/watch-later'
+                                                    : `/collections/${list.id}`
+
+                                            return (
+                                                <Link
+                                                    key={list.id}
+                                                    href={href}
+                                                    className={`group relative rounded-full px-4 py-2 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 ${
+                                                        isSelected
+                                                            ? 'scale-105 shadow-[0_0_10px_rgba(59,130,246,0.3)]'
+                                                            : 'hover:scale-105 hover:shadow-[0_0_8px_rgba(255,255,255,0.08)]'
+                                                    }`}
+                                                    style={
+                                                        isSelected
+                                                            ? {
+                                                                  borderColor: listColor,
+                                                                  backgroundColor: hexToRgba(
+                                                                      listColor,
+                                                                      0.85
+                                                                  ),
+                                                                  color: 'white',
+                                                              }
+                                                            : {
+                                                                  borderColor: hexToRgba(
+                                                                      listColor,
+                                                                      0.5
+                                                                  ),
+                                                                  backgroundColor: hexToRgba(
+                                                                      listColor,
+                                                                      0.15
+                                                                  ),
+                                                                  color: 'rgb(209, 213, 219)',
+                                                              }
+                                                    }
+                                                >
+                                                    {getListIcon(list)}
+                                                    <span>{list.name}</span>
+                                                    {isSelected && (
+                                                        <div
+                                                            className="absolute inset-0 rounded-full blur-md opacity-15 animate-pulse"
+                                                            style={{
+                                                                backgroundColor: listColor,
+                                                            }}
+                                                        />
+                                                    )}
+                                                </Link>
+                                            )
+                                        })}
+                                </div>
+
+                                {/* Action Row - Edit & Manage */}
+                                <div className="flex gap-2 items-center mb-5">
+                                    {/* Edit Button - Only show for editable collections */}
+                                    {selectedList &&
+                                        selectedList.id !== 'default-watchlist' &&
+                                        selectedList.canEdit !== false && (
+                                            <button
+                                                onClick={handleEditCollection}
+                                                className="group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105 hover:shadow-[0_0_8px_rgba(255,255,255,0.08)]"
+                                            >
+                                                <PencilIcon className="w-4 h-4 text-gray-400" />
+                                                <span>Edit</span>
+                                            </button>
+                                        )}
+
+                                    {/* Manage dropdown */}
+                                    <div className="relative" ref={manageDropdownRef}>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setShowManageDropdown(!showManageDropdown)
+                                            }
+                                            className="group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105 hover:shadow-[0_0_8px_rgba(255,255,255,0.08)]"
+                                        >
+                                            <Cog6ToothIcon className="w-4 h-4 text-gray-400" />
+                                            <span>Manage</span>
+                                            <ChevronDownIcon
+                                                className={`w-4 h-4 transition-transform ${
+                                                    showManageDropdown ? 'rotate-180' : ''
+                                                }`}
+                                            />
+                                        </button>
+
+                                        {/* Dropdown Menu */}
+                                        {showManageDropdown && (
+                                            <div className="absolute top-full mt-2 right-0 bg-zinc-900/95 backdrop-blur-lg border border-zinc-700/50 rounded-xl shadow-2xl z-50 min-w-[200px] overflow-hidden">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        router.push('/settings/collections')
+                                                        setShowManageDropdown(false)
+                                                    }}
+                                                    className="w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-zinc-800/80 transition-colors"
+                                                >
+                                                    <Cog6ToothIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                                                    <span>Settings</span>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        router.push('/settings/account')
+                                                        setShowManageDropdown(false)
+                                                    }}
+                                                    className="w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-zinc-800/80 transition-colors"
+                                                >
+                                                    <TrashIcon className="w-5 h-5 text-red-400 flex-shrink-0" />
+                                                    <span>Clear Data</span>
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
-                                )
-                            )}
-                            <ContentGridSpacer />
+                                </div>
+
+                                {/* Enhanced Search Bar */}
+                                <div className="w-full max-w-3xl relative">
+                                    <div className="relative group">
+                                        <MagnifyingGlassIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 z-10 transition-colors group-focus-within:text-blue-400" />
+                                        <input
+                                            type="text"
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            placeholder="Search in this collection..."
+                                            className="w-full pl-14 pr-14 py-4 bg-zinc-900/40 backdrop-blur-lg border border-zinc-800/50 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:shadow-[0_0_25px_rgba(59,130,246,0.3)] transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700"
+                                        />
+                                        {searchQuery && (
+                                            <button
+                                                onClick={() => setSearchQuery('')}
+                                                className="absolute right-5 top-1/2 -translate-y-1/2 z-10 text-gray-400 hover:text-white transition-colors"
+                                            >
+                                                <XMarkIcon className="w-6 h-6" />
+                                            </button>
+                                        )}
+
+                                        {/* Glowing border effect on focus */}
+                                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-500 opacity-0 group-focus-within:opacity-20 blur-xl transition-opacity duration-300 -z-10" />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        {/* Infinite scroll elements */}
-                        {supportsInfiniteScroll && !searchQuery.trim() && (
-                            <>
-                                {/* Hidden sentinel element for Intersection Observer */}
-                                {hasMore && (
-                                    <div ref={sentinelRef} className="h-32" aria-hidden="true" />
-                                )}
+                        {/* Main Content Area */}
+                        <div className="px-6 sm:px-8 lg:px-12 py-8 space-y-6">
+                            {/* Loading state */}
+                            {isLoading && (
+                                <div className="py-16">
+                                    <NetflixLoader inline={true} message="Loading collection..." />
+                                </div>
+                            )}
 
-                                {/* Load More Results button when maxPages reached */}
-                                {!hasMore && additionalContent.length > 0 && (
-                                    <div className="flex justify-center pt-8">
-                                        <button
-                                            onClick={() => {
-                                                setMaxPages((prev) => prev + 10)
-                                                setHasMore(true)
-                                            }}
-                                            className="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200 text-lg"
-                                        >
-                                            Load More Results
-                                        </button>
+                            {/* Empty state */}
+                            {!isLoading && allDisplayContent.length === 0 && (
+                                <div className="flex flex-col items-center justify-center py-20 text-center">
+                                    <div className="relative mb-6">
+                                        <div className="absolute inset-0 bg-blue-500/20 blur-2xl scale-150" />
+                                        <div className="relative w-24 h-24 rounded-full bg-zinc-900/60 backdrop-blur-lg flex items-center justify-center border-2 border-zinc-800/50">
+                                            {selectedList?.emoji ? (
+                                                <span className="text-5xl">
+                                                    {selectedList.emoji}
+                                                </span>
+                                            ) : (
+                                                <RectangleStackIcon className="w-12 h-12 text-blue-500" />
+                                            )}
+                                        </div>
                                     </div>
-                                )}
-                            </>
-                        )}
+                                    <h3 className="text-2xl font-bold text-white mb-3">
+                                        {searchQuery
+                                            ? 'No items match your search'
+                                            : 'No items in this collection'}
+                                    </h3>
+                                    <p className="text-gray-400 mb-8 max-w-md text-lg">
+                                        {searchQuery
+                                            ? 'Try a different search term'
+                                            : 'Start adding movies and TV shows to your collection!'}
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Content Grid */}
+                            {!isLoading && allDisplayContent.length > 0 && (
+                                <div className="space-y-12">
+                                    <div className="flex flex-wrap justify-between gap-x-6 sm:gap-x-8 md:gap-x-10 lg:gap-x-12 gap-y-3 sm:gap-y-4 md:gap-y-5 [&>*]:flex-none">
+                                        {allDisplayContent.map(
+                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                            (item: any, index: number) => (
+                                                <div
+                                                    key={`${item.contentId}-${item.listId}-${index}`}
+                                                    className="animate-fadeInUp"
+                                                    style={{
+                                                        animationDelay: `${Math.min(index * 50, 500)}ms`,
+                                                        animationFillMode: 'both',
+                                                    }}
+                                                >
+                                                    <ContentCard content={item.content} />
+                                                </div>
+                                            )
+                                        )}
+                                        <ContentGridSpacer />
+                                    </div>
+
+                                    {/* Infinite scroll elements */}
+                                    {supportsInfiniteScroll && !searchQuery.trim() && (
+                                        <>
+                                            {/* Hidden sentinel element for Intersection Observer */}
+                                            {hasMore && (
+                                                <div
+                                                    ref={sentinelRef}
+                                                    className="h-32"
+                                                    aria-hidden="true"
+                                                />
+                                            )}
+
+                                            {/* Load More Results button when maxPages reached */}
+                                            {!hasMore && additionalContent.length > 0 && (
+                                                <div className="flex justify-center pt-8">
+                                                    <button
+                                                        onClick={() => {
+                                                            setMaxPages((prev) => prev + 10)
+                                                            setHasMore(true)
+                                                        }}
+                                                        className="group relative px-8 py-4 font-bold rounded-xl transition-all duration-300 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white shadow-[0_0_30px_rgba(59,130,246,0.4)] hover:shadow-[0_0_40px_rgba(59,130,246,0.6)] scale-100 hover:scale-105"
+                                                    >
+                                                        Load More Results
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
-                )}
+
+                    {/* Add keyframe animation for fade-in */}
+                    <style jsx>{`
+                        @keyframes fadeInUp {
+                            from {
+                                opacity: 0;
+                                transform: translateY(20px);
+                            }
+                            to {
+                                opacity: 1;
+                                transform: translateY(0);
+                            }
+                        }
+
+                        :global(.animate-fadeInUp) {
+                            animation: fadeInUp 0.5s ease-out;
+                        }
+                    `}</style>
+                </div>
             </SubPageLayout>
 
             {/* Collection Editor Modal */}
-            <CollectionEditorModal
-                collection={selectedList}
-                isOpen={showEditor}
-                onClose={handleCloseEditor}
-            />
+            {selectedList && (
+                <CollectionEditorModal
+                    collection={selectedList}
+                    isOpen={showEditor}
+                    onClose={handleCloseEditor}
+                />
+            )}
         </>
     )
 }

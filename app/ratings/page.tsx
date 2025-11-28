@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
+import { useRef } from 'react'
 import { useAuthStore } from '../../stores/authStore'
 import { useGuestStore } from '../../stores/guestStore'
 import { useSessionStore } from '../../stores/sessionStore'
@@ -16,6 +17,8 @@ import {
     FilmIcon,
     HandThumbUpIcon,
     HandThumbDownIcon,
+    Cog6ToothIcon,
+    ChevronDownIcon,
 } from '@heroicons/react/24/solid'
 import { XMarkIcon, StarIcon } from '@heroicons/react/24/outline'
 import NetflixLoader from '../../components/common/NetflixLoader'
@@ -88,6 +91,8 @@ function RatingsPageContent() {
     const [isResetting, setIsResetting] = useState(false)
     const [showTitleModal, setShowTitleModal] = useState(false)
     const [isLoadingRatings, setIsLoadingRatings] = useState(true)
+    const [showManageDropdown, setShowManageDropdown] = useState(false)
+    const manageDropdownRef = useRef<HTMLDivElement>(null)
 
     // Sync filter state with URL params
     useEffect(() => {
@@ -102,6 +107,26 @@ function RatingsPageContent() {
             setIsLoadingRatings(false)
         }
     }, [myRatings])
+
+    // Handle click outside to close dropdown
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                manageDropdownRef.current &&
+                !manageDropdownRef.current.contains(event.target as Node)
+            ) {
+                setShowManageDropdown(false)
+            }
+        }
+
+        if (showManageDropdown) {
+            document.addEventListener('mousedown', handleClickOutside)
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [showManageDropdown])
 
     // Update URL when filter changes
     const handleFilterChange = (newFilter: FilterValue) => {
@@ -279,7 +304,7 @@ function RatingsPageContent() {
                                 })}
                             </div>
 
-                            {/* Action Buttons - Rate Titles & Reset */}
+                            {/* Action Buttons - Rate Titles & Manage */}
                             <div className="flex gap-2 items-center">
                                 {/* Rate Titles */}
                                 <button
@@ -291,17 +316,52 @@ function RatingsPageContent() {
                                     <span>Rate Titles</span>
                                 </button>
 
-                                {/* Reset All */}
-                                {ratingStats.total > 0 && (
+                                {/* Manage dropdown */}
+                                <div className="relative" ref={manageDropdownRef}>
                                     <button
-                                        onClick={() => setShowResetConfirm(true)}
-                                        className="group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-red-600/30 hover:border-red-500 hover:scale-105 hover:shadow-[0_0_10px_rgba(239,68,68,0.2)]"
-                                        title="Reset All Ratings"
+                                        type="button"
+                                        onClick={() => setShowManageDropdown(!showManageDropdown)}
+                                        className="group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border flex items-center gap-2 bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105 hover:shadow-[0_0_8px_rgba(255,255,255,0.08)]"
                                     >
-                                        <TrashIcon className="w-4 h-4 text-red-400" />
-                                        <span>Reset</span>
+                                        <Cog6ToothIcon className="w-4 h-4 text-gray-400" />
+                                        <span>Manage</span>
+                                        <ChevronDownIcon
+                                            className={`w-4 h-4 transition-transform ${
+                                                showManageDropdown ? 'rotate-180' : ''
+                                            }`}
+                                        />
                                     </button>
-                                )}
+
+                                    {/* Dropdown Menu */}
+                                    {showManageDropdown && (
+                                        <div className="absolute top-full mt-2 right-0 bg-zinc-900/95 backdrop-blur-lg border border-zinc-700/50 rounded-xl shadow-2xl z-50 min-w-[200px] overflow-hidden">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    router.push('/settings/recommendations')
+                                                    setShowManageDropdown(false)
+                                                }}
+                                                className="w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-zinc-800/80 transition-colors"
+                                            >
+                                                <Cog6ToothIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                                                <span>Settings</span>
+                                            </button>
+                                            {ratingStats.total > 0 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setShowResetConfirm(true)
+                                                        setShowManageDropdown(false)
+                                                    }}
+                                                    className="w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-zinc-800/80 transition-colors"
+                                                >
+                                                    <TrashIcon className="w-5 h-5 text-red-400 flex-shrink-0" />
+                                                    <span>Reset All Ratings</span>
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
 

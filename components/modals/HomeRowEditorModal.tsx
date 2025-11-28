@@ -588,84 +588,123 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
 
     return (
         <>
-            {/* Modal wrapper with click-outside detection */}
+            {/* Modal wrapper with atmospheric background */}
             <div
-                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70"
+                className="fixed inset-0 z-50 flex items-center justify-center p-4"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="row-editor-modal-title"
                 onMouseDown={handleMouseDown}
                 onMouseUp={handleMouseUp}
             >
+                {/* Atmospheric backdrop */}
+                <div className="fixed inset-0 pointer-events-none">
+                    <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" />
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-purple-900/20 via-transparent to-transparent opacity-50" />
+                </div>
+
                 <div
                     ref={modalContainerRef}
-                    className="bg-[#141414] rounded-lg w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-xl"
+                    className="relative bg-gradient-to-br from-zinc-900/95 via-black/95 to-zinc-900/95 backdrop-blur-xl rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl border border-zinc-800/50"
                 >
-                    {/* Header */}
-                    <div className="flex items-center justify-between p-4 border-b border-gray-700">
-                        <div className="flex items-center gap-3">
-                            <PageIcon className="w-6 h-6 text-red-600" />
-                            <h2
-                                id="row-editor-modal-title"
-                                className="text-xl font-bold text-white"
-                            >
-                                Edit Displayed Collections
-                            </h2>
-                        </div>
-                        {/* Action buttons */}
-                        <div className="flex gap-2">
-                            {!isGuest && (
-                                <button
-                                    onClick={handleCreate}
-                                    className="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm"
+                    {/* Cinematic Header */}
+                    <div className="relative overflow-hidden">
+                        {/* Animated Background Gradients */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900/80 to-black" />
+                        <div
+                            className="absolute inset-0 bg-gradient-to-t from-purple-900/20 via-violet-900/10 to-black/50 animate-pulse"
+                            style={{ animationDuration: '4s' }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-radial from-purple-500/10 via-purple-900/5 to-transparent" />
+
+                        {/* Header Content */}
+                        <div className="relative z-10 flex items-center justify-between p-6 border-b border-zinc-800/50">
+                            <div className="flex items-center gap-3">
+                                <div className="relative">
+                                    <div className="absolute inset-0 bg-purple-500/30 blur-xl scale-150" />
+                                    <PageIcon className="relative w-7 h-7 text-purple-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)]" />
+                                </div>
+                                <h2
+                                    id="row-editor-modal-title"
+                                    className="text-2xl font-black text-white"
                                 >
-                                    <PlusIcon className="w-4 h-4" />
-                                    Create Collection
+                                    <span className="bg-gradient-to-r from-purple-200 via-violet-100 to-purple-200 bg-clip-text text-transparent">
+                                        Edit Displayed Collections
+                                    </span>
+                                </h2>
+                            </div>
+                            {/* Action buttons */}
+                            <div className="flex gap-2">
+                                {!isGuest && (
+                                    <button
+                                        onClick={handleCreate}
+                                        className="group relative flex items-center gap-2 px-4 py-2.5 bg-purple-600/90 hover:bg-purple-500 text-white rounded-xl transition-all duration-300 text-sm font-bold shadow-[0_0_10px_rgba(168,85,247,0.3)] hover:shadow-[0_0_15px_rgba(168,85,247,0.5)] hover:scale-105"
+                                    >
+                                        <PlusIcon className="w-4 h-4" />
+                                        Create Collection
+                                        <div className="absolute inset-0 rounded-xl bg-purple-500 blur-md opacity-15 animate-pulse group-hover:opacity-25" />
+                                    </button>
+                                )}
+                                <button
+                                    onClick={handleResetDefaultRows}
+                                    className="flex items-center gap-2 px-4 py-2.5 bg-zinc-800/60 hover:bg-zinc-700/80 text-white rounded-xl transition-all duration-300 text-sm font-bold border border-zinc-700/50 hover:border-zinc-600 hover:scale-105"
+                                >
+                                    <ArrowPathIcon className="w-4 h-4" />
+                                    Reset Defaults
                                 </button>
-                            )}
-                            <button
-                                onClick={handleResetDefaultRows}
-                                className="flex items-center gap-2 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm"
-                            >
-                                <ArrowPathIcon className="w-4 h-4" />
-                                Reset Defaults
-                            </button>
+                                <button
+                                    onClick={onClose}
+                                    className="flex items-center justify-center w-10 h-10 bg-zinc-800/60 hover:bg-zinc-700/80 text-white rounded-xl transition-all duration-300 border border-zinc-700/50 hover:border-zinc-600 hover:scale-105"
+                                    aria-label="Close modal"
+                                >
+                                    <XMarkIcon className="w-5 h-5" />
+                                </button>
+                            </div>
                         </div>
                     </div>
 
                     {/* Content */}
-                    <div className="p-4 overflow-y-auto max-h-[60vh] modal-scrollbar">
+                    <div className="p-6 overflow-y-auto max-h-[60vh] modal-scrollbar">
                         {/* Filter buttons */}
-                        <div className="flex gap-2 mb-4">
+                        <div className="flex gap-2 mb-6">
                             <button
                                 onClick={() => setDisplayFilter('all')}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                className={`group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border ${
                                     displayFilter === 'all'
-                                        ? 'bg-red-600 text-white'
-                                        : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                                        ? 'bg-purple-500/90 text-white border-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.3)] scale-105'
+                                        : 'bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105'
                                 }`}
                             >
                                 All
+                                {displayFilter === 'all' && (
+                                    <div className="absolute inset-0 rounded-full bg-purple-500 blur-md opacity-15 animate-pulse" />
+                                )}
                             </button>
                             <button
                                 onClick={() => setDisplayFilter('shown')}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                className={`group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border ${
                                     displayFilter === 'shown'
-                                        ? 'bg-green-600 text-white'
-                                        : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                                        ? 'bg-green-500/90 text-white border-green-400 shadow-[0_0_10px_rgba(34,197,94,0.3)] scale-105'
+                                        : 'bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105'
                                 }`}
                             >
                                 Shown
+                                {displayFilter === 'shown' && (
+                                    <div className="absolute inset-0 rounded-full bg-green-500 blur-md opacity-15 animate-pulse" />
+                                )}
                             </button>
                             <button
                                 onClick={() => setDisplayFilter('hidden')}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                className={`group relative rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 backdrop-blur-md border ${
                                     displayFilter === 'hidden'
-                                        ? 'bg-gray-600 text-white'
-                                        : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                                        ? 'bg-zinc-600/90 text-white border-zinc-500 shadow-[0_0_10px_rgba(113,113,122,0.3)] scale-105'
+                                        : 'bg-zinc-900/40 text-gray-300 border-zinc-700/50 hover:bg-zinc-800/60 hover:border-zinc-600 hover:scale-105'
                                 }`}
                             >
                                 Hidden
+                                {displayFilter === 'hidden' && (
+                                    <div className="absolute inset-0 rounded-full bg-zinc-600 blur-md opacity-15 animate-pulse" />
+                                )}
                             </button>
                         </div>
 
@@ -680,7 +719,7 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
                                     items={filteredLocalRows.map((r) => r.id)}
                                     strategy={verticalListSortingStrategy}
                                 >
-                                    <div className="space-y-1">
+                                    <div className="space-y-2">
                                         {filteredLocalRows.map((row) => (
                                             <SortableCollectionCard
                                                 key={row.id}
@@ -710,11 +749,19 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
                                 </SortableContext>
                             </DndContext>
                         ) : (
-                            <div className="text-center py-8 text-gray-400">
-                                <p>No collections for this page yet.</p>
+                            <div className="flex flex-col items-center justify-center py-12 text-center">
+                                <div className="relative mb-4">
+                                    <div className="absolute inset-0 bg-purple-500/20 blur-2xl scale-150" />
+                                    <div className="relative w-20 h-20 rounded-full bg-zinc-900/60 backdrop-blur-lg flex items-center justify-center border-2 border-zinc-800/50">
+                                        <PageIcon className="w-10 h-10 text-purple-500" />
+                                    </div>
+                                </div>
+                                <p className="text-lg font-semibold text-white mb-1">
+                                    No collections for this page yet
+                                </p>
                                 {!isGuest && (
-                                    <p className="text-sm mt-2">
-                                        Create a new collection or reset to defaults.
+                                    <p className="text-sm text-gray-400">
+                                        Create a new collection or reset to defaults
                                     </p>
                                 )}
                             </div>

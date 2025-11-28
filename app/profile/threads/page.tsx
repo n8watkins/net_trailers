@@ -101,6 +101,9 @@ export default function UserThreadsPage() {
                             title: threadData.title ?? 'Untitled thread',
                             content: threadData.content ?? '',
                             category: threadData.category ?? 'general',
+                            userId: threadData.userId ?? '',
+                            userName: threadData.userName ?? 'Anonymous',
+                            userAvatar: threadData.userAvatar,
                             likes: threadData.likes ?? 0,
                             views: threadData.views ?? 0,
                             replyCount: threadData.replyCount ?? 0,
@@ -110,6 +113,12 @@ export default function UserThreadsPage() {
                             updatedAt: timestampToNumber(
                                 threadData.updatedAt as Timestamp | number | null | undefined
                             ),
+                            lastReplyAt: timestampToNumber(
+                                threadData.lastReplyAt as Timestamp | number | null | undefined
+                            ),
+                            lastReplyBy: threadData.lastReplyBy,
+                            tags: threadData.tags,
+                            isPinned: threadData.isPinned ?? false,
                         } as ThreadSummary
                     })
                 )
@@ -149,11 +158,18 @@ export default function UserThreadsPage() {
                     title: thread.title,
                     content: thread.content,
                     category: thread.category,
+                    userId: thread.userId,
+                    userName: thread.userName,
+                    userAvatar: thread.userAvatar,
                     likes: thread.likes,
                     views: thread.views,
                     replyCount: thread.replyCount,
                     createdAt: timestampToNumber(thread.createdAt),
                     updatedAt: timestampToNumber(thread.updatedAt),
+                    lastReplyAt: thread.lastReplyAt ? timestampToNumber(thread.lastReplyAt) : null,
+                    lastReplyBy: thread.lastReplyBy,
+                    tags: thread.tags,
+                    isPinned: thread.isPinned,
                 }))
                 .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0)),
         [threads, userId]
@@ -246,46 +262,63 @@ export default function UserThreadsPage() {
                         </p>
 
                         {/* Tab Switcher */}
-                        <div className="inline-flex rounded-full bg-zinc-900/60 backdrop-blur p-1.5 border border-zinc-800/50 mb-4">
-                            {[
-                                {
-                                    id: 'created',
-                                    label: 'Created',
-                                    count: userThreads.length,
-                                },
-                                {
-                                    id: 'voted',
-                                    label: 'Liked',
-                                    count: votedThreads.length,
-                                },
-                            ].map((tab) => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() =>
-                                        setActiveThreadTab(tab.id as 'created' | 'voted')
-                                    }
-                                    className={`relative px-6 py-3 text-sm font-bold rounded-full transition-all duration-200 ${
-                                        activeThreadTab === tab.id
-                                            ? 'bg-blue-500 text-white shadow-[0_0_12px_rgba(59,130,246,0.4)]'
-                                            : 'text-gray-400 hover:text-white'
-                                    }`}
-                                >
-                                    {tab.label} <span className="opacity-70">({tab.count})</span>
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Create Thread Button */}
-                        <button
-                            onClick={() => setIsCreateModalOpen(true)}
-                            className="group relative px-6 py-3 rounded-full font-bold text-sm transition-all duration-300"
-                        >
-                            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/30 to-cyan-500/30 rounded-full opacity-0 group-hover:opacity-100 blur-lg transition-opacity" />
-                            <div className="relative flex items-center gap-2 px-4 py-2 bg-blue-500/20 backdrop-blur-lg text-blue-400 rounded-full border border-blue-500/30 group-hover:border-blue-400/50 group-hover:bg-blue-500/30 group-hover:text-blue-300 transition-all shadow-lg shadow-blue-500/10">
-                                <PlusIcon className="w-4 h-4" />
-                                <span>Create Thread</span>
+                        <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
+                            {/* My/Liked Toggle */}
+                            <div className="inline-flex rounded-full bg-zinc-900/60 backdrop-blur p-1.5 border border-zinc-800/50">
+                                {[
+                                    {
+                                        id: 'created',
+                                        label: 'My Threads',
+                                        count: userThreads.length,
+                                    },
+                                    {
+                                        id: 'voted',
+                                        label: 'Liked',
+                                        count: votedThreads.length,
+                                    },
+                                ].map((tab) => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() =>
+                                            setActiveThreadTab(tab.id as 'created' | 'voted')
+                                        }
+                                        className={`relative px-4 sm:px-6 py-3 text-sm font-bold rounded-full transition-all duration-200 ${
+                                            activeThreadTab === tab.id
+                                                ? 'bg-blue-500 text-white shadow-[0_0_12px_rgba(59,130,246,0.4)]'
+                                                : 'text-gray-400 hover:text-white'
+                                        }`}
+                                    >
+                                        {tab.label}{' '}
+                                        <span className="opacity-70">({tab.count})</span>
+                                    </button>
+                                ))}
                             </div>
-                        </button>
+
+                            {/* Browse Community Link */}
+                            <Link
+                                href="/community/threads"
+                                className="group relative h-[52px] flex items-center px-4 sm:px-6 text-sm font-bold rounded-full transition-all duration-200 border bg-zinc-900/60 backdrop-blur text-gray-400 hover:text-white border-zinc-800/50 hover:border-cyan-500/50 hover:bg-cyan-500/10"
+                            >
+                                <span className="flex items-center gap-2">
+                                    <ChatBubbleLeftRightIcon className="w-4 h-4" />
+                                    Browse Community
+                                </span>
+                                {/* External link arrow - positioned outside top-right */}
+                                <svg
+                                    className="absolute -top-1.5 -right-1.5 w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity bg-cyan-500 rounded-full p-0.5 text-white"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2.5}
+                                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                                    />
+                                </svg>
+                            </Link>
+                        </div>
                     </div>
                 </div>
 
@@ -358,6 +391,28 @@ export default function UserThreadsPage() {
                 </div>
             </div>
 
+            {/* Floating Create Thread Button */}
+            {!isGuest && (
+                <button
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="fixed bottom-8 right-8 sm:right-20 z-50 group"
+                    style={{
+                        animation: 'bob 5s ease-in-out infinite',
+                    }}
+                >
+                    <div className="relative">
+                        {/* Glowing background */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full blur-lg opacity-30 group-hover:opacity-40 transition-opacity" />
+
+                        {/* Button */}
+                        <div className="relative flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 rounded-full text-white font-bold text-sm shadow-[0_0_20px_rgba(59,130,246,0.3)] group-hover:shadow-[0_0_30px_rgba(59,130,246,0.4)] group-hover:scale-105 transition-all duration-300">
+                            <ChatBubbleLeftRightIcon className="w-5 h-5" />
+                            <span className="hidden sm:inline">New Thread</span>
+                        </div>
+                    </div>
+                </button>
+            )}
+
             {/* Create Thread Modal */}
             <CreateThreadModal
                 isOpen={isCreateModalOpen}
@@ -375,6 +430,16 @@ export default function UserThreadsPage() {
                     to {
                         opacity: 1;
                         transform: translateY(0);
+                    }
+                }
+
+                @keyframes bob {
+                    0%,
+                    100% {
+                        transform: translateY(0);
+                    }
+                    50% {
+                        transform: translateY(-8px);
                     }
                 }
 

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import {
     RocketLaunchIcon,
     BookOpenIcon,
@@ -21,13 +21,48 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     onBrowseFeatures,
     onWatchDemo,
 }) => {
+    const modalRef = useRef<HTMLDivElement>(null)
+    const firstButtonRef = useRef<HTMLButtonElement>(null)
+
+    // Handle Escape key to close modal
+    useEffect(() => {
+        if (!isOpen) return
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose()
+            }
+        }
+
+        document.addEventListener('keydown', handleKeyDown)
+        return () => document.removeEventListener('keydown', handleKeyDown)
+    }, [isOpen, onClose])
+
+    // Focus first button when modal opens
+    useEffect(() => {
+        if (isOpen && firstButtonRef.current) {
+            firstButtonRef.current.focus()
+        }
+    }, [isOpen])
+
     if (!isOpen) return null
 
     return (
-        <div className="fixed inset-0 z-modal flex items-center justify-center p-4">
+        <div
+            className="fixed inset-0 z-modal flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="welcome-title"
+            aria-describedby="welcome-description"
+            ref={modalRef}
+        >
             {/* Enhanced Background overlay with atmospheric effect */}
             <div className="fixed inset-0">
-                <div className="absolute inset-0 bg-black/95 backdrop-blur-md" onClick={onClose} />
+                <div
+                    className="absolute inset-0 bg-black/95 backdrop-blur-md"
+                    onClick={onClose}
+                    aria-label="Close welcome screen"
+                />
                 <div className="absolute inset-0 bg-gradient-radial from-orange-900/30 via-transparent to-transparent opacity-60 pointer-events-none" />
                 <div className="absolute inset-0 bg-gradient-radial from-red-900/20 via-transparent to-transparent opacity-40 pointer-events-none" />
             </div>
@@ -48,15 +83,20 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                         {/* Glowing welcome icon */}
                         <div className="relative">
                             <div className="absolute inset-0 bg-orange-500/40 blur-2xl scale-150" />
-                            <div className="relative text-6xl">🎬</div>
+                            <div className="relative text-6xl" role="img" aria-label="Movie camera">
+                                🎬
+                            </div>
                         </div>
                     </div>
-                    <h1 className="font-black text-4xl text-white text-center mb-2">
+                    <h1
+                        id="welcome-title"
+                        className="font-black text-4xl text-white text-center mb-2"
+                    >
                         <span className="bg-gradient-to-r from-orange-200 via-red-100 to-orange-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
                             Welcome to Net Trailers!
                         </span>
                     </h1>
-                    <p className="text-center text-gray-300 text-lg">
+                    <p id="welcome-description" className="text-center text-gray-300 text-lg">
                         Choose your path to get started
                     </p>
                 </div>
@@ -65,11 +105,13 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     {/* Quick Start Option */}
                     <button
+                        ref={firstButtonRef}
                         onClick={() => {
-                            onClose()
                             onStartTour()
+                            onClose()
                         }}
                         className="group relative bg-zinc-800/60 backdrop-blur-lg border-2 border-orange-500/30 rounded-xl p-6 transition-all duration-300 hover:scale-105 hover:border-orange-500/60 hover:shadow-xl hover:shadow-orange-500/20"
+                        aria-label="Quick Start: 60-second interactive tour (Recommended)"
                     >
                         {/* Hover glow effect */}
                         <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-20 bg-orange-500 blur-xl transition-opacity duration-300 -z-10" />
@@ -99,10 +141,11 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                     {/* Browse Features Option */}
                     <button
                         onClick={() => {
-                            onClose()
                             onBrowseFeatures()
+                            onClose()
                         }}
                         className="group relative bg-zinc-800/60 backdrop-blur-lg border-2 border-zinc-700/50 rounded-xl p-6 transition-all duration-300 hover:scale-105 hover:border-blue-500/60 hover:shadow-xl hover:shadow-blue-500/20"
+                        aria-label="Browse Features: Explore at your own pace"
                     >
                         {/* Hover glow effect */}
                         <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-20 bg-blue-500 blur-xl transition-opacity duration-300 -z-10" />
@@ -132,10 +175,11 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                     {/* Watch Demo Option */}
                     <button
                         onClick={() => {
-                            onClose()
                             onWatchDemo()
+                            onClose()
                         }}
                         className="group relative bg-zinc-800/60 backdrop-blur-lg border-2 border-zinc-700/50 rounded-xl p-6 transition-all duration-300 hover:scale-105 hover:border-purple-500/60 hover:shadow-xl hover:shadow-purple-500/20"
+                        aria-label="Watch Demo: 2-minute video walkthrough"
                     >
                         {/* Hover glow effect */}
                         <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-20 bg-purple-500 blur-xl transition-opacity duration-300 -z-10" />

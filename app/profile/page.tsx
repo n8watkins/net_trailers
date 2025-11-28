@@ -208,6 +208,9 @@ export default function ProfilePage() {
                             title: threadData.title ?? 'Untitled thread',
                             content: threadData.content ?? '',
                             category: threadData.category ?? 'general',
+                            userId: threadData.userId ?? '',
+                            userName: threadData.userName ?? 'Anonymous',
+                            userAvatar: threadData.userAvatar,
                             likes: threadData.likes ?? 0,
                             views: threadData.views ?? 0,
                             replyCount: threadData.replyCount ?? 0,
@@ -217,6 +220,12 @@ export default function ProfilePage() {
                             updatedAt: timestampToNumber(
                                 threadData.updatedAt as Timestamp | number | null | undefined
                             ),
+                            lastReplyAt: timestampToNumber(
+                                threadData.lastReplyAt as Timestamp | number | null | undefined
+                            ),
+                            lastReplyBy: threadData.lastReplyBy,
+                            tags: threadData.tags,
+                            isPinned: threadData.isPinned ?? false,
                         } as ThreadSummary
                     })
                 )
@@ -257,11 +266,18 @@ export default function ProfilePage() {
                     title: thread.title,
                     content: thread.content,
                     category: thread.category,
+                    userId: thread.userId,
+                    userName: thread.userName,
+                    userAvatar: thread.userAvatar,
                     likes: thread.likes,
                     views: thread.views,
                     replyCount: thread.replyCount,
                     createdAt: timestampToNumber(thread.createdAt),
                     updatedAt: timestampToNumber(thread.updatedAt),
+                    lastReplyAt: thread.lastReplyAt ? timestampToNumber(thread.lastReplyAt) : null,
+                    lastReplyBy: thread.lastReplyBy,
+                    tags: thread.tags,
+                    isPinned: thread.isPinned,
                 })),
         [threads, currentUserId]
     )

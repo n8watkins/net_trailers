@@ -323,44 +323,63 @@ export default function UserPollsPage() {
                         </p>
 
                         {/* Tab Switcher */}
-                        <div className="inline-flex rounded-full bg-zinc-900/60 backdrop-blur p-1.5 border border-zinc-800/50 mb-4">
-                            {[
-                                {
-                                    id: 'created',
-                                    label: 'Created',
-                                    count: userPolls.length,
-                                },
-                                {
-                                    id: 'voted',
-                                    label: 'Voted',
-                                    count: votedPolls.length,
-                                },
-                            ].map((tab) => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActivePollTab(tab.id as 'created' | 'voted')}
-                                    className={`relative px-6 py-3 text-sm font-bold rounded-full transition-all duration-200 ${
-                                        activePollTab === tab.id
-                                            ? 'bg-pink-500 text-white shadow-[0_0_12px_rgba(236,72,153,0.4)]'
-                                            : 'text-gray-400 hover:text-white'
-                                    }`}
-                                >
-                                    {tab.label} <span className="opacity-70">({tab.count})</span>
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Create Poll Button */}
-                        <button
-                            onClick={() => setIsCreateModalOpen(true)}
-                            className="group relative px-6 py-3 rounded-full font-bold text-sm transition-all duration-300"
-                        >
-                            <div className="absolute inset-0 bg-gradient-to-r from-pink-500/30 to-red-500/30 rounded-full opacity-0 group-hover:opacity-100 blur-lg transition-opacity" />
-                            <div className="relative flex items-center gap-2 px-4 py-2 bg-pink-500/20 backdrop-blur-lg text-pink-400 rounded-full border border-pink-500/30 group-hover:border-pink-400/50 group-hover:bg-pink-500/30 group-hover:text-pink-300 transition-all shadow-lg shadow-pink-500/10">
-                                <PlusIcon className="w-4 h-4" />
-                                <span>Create Poll</span>
+                        <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
+                            {/* My/Voted Toggle */}
+                            <div className="inline-flex rounded-full bg-zinc-900/60 backdrop-blur p-1.5 border border-zinc-800/50">
+                                {[
+                                    {
+                                        id: 'created',
+                                        label: 'My Polls',
+                                        count: userPolls.length,
+                                    },
+                                    {
+                                        id: 'voted',
+                                        label: 'Voted',
+                                        count: votedPolls.length,
+                                    },
+                                ].map((tab) => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() =>
+                                            setActivePollTab(tab.id as 'created' | 'voted')
+                                        }
+                                        className={`relative px-4 sm:px-6 py-3 text-sm font-bold rounded-full transition-all duration-200 ${
+                                            activePollTab === tab.id
+                                                ? 'bg-pink-500 text-white shadow-[0_0_12px_rgba(236,72,153,0.4)]'
+                                                : 'text-gray-400 hover:text-white'
+                                        }`}
+                                    >
+                                        {tab.label}{' '}
+                                        <span className="opacity-70">({tab.count})</span>
+                                    </button>
+                                ))}
                             </div>
-                        </button>
+
+                            {/* Browse Community Link */}
+                            <Link
+                                href="/community/polls"
+                                className="group relative h-[52px] flex items-center px-4 sm:px-6 text-sm font-bold rounded-full transition-all duration-200 border bg-zinc-900/60 backdrop-blur text-gray-400 hover:text-white border-zinc-800/50 hover:border-pink-500/50 hover:bg-pink-500/10"
+                            >
+                                <span className="flex items-center gap-2">
+                                    <ChartBarIcon className="w-4 h-4" />
+                                    Browse Community
+                                </span>
+                                {/* External link arrow - positioned outside top-right */}
+                                <svg
+                                    className="absolute -top-1.5 -right-1.5 w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity bg-pink-500 rounded-full p-0.5 text-white"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2.5}
+                                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                                    />
+                                </svg>
+                            </Link>
+                        </div>
                     </div>
                 </div>
 
@@ -437,6 +456,28 @@ export default function UserPollsPage() {
                 </div>
             </div>
 
+            {/* Floating Create Poll Button */}
+            {!isGuest && (
+                <button
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="fixed bottom-8 right-8 sm:right-20 z-50 group"
+                    style={{
+                        animation: 'bob 5s ease-in-out infinite',
+                    }}
+                >
+                    <div className="relative">
+                        {/* Glowing background */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-red-500 rounded-full blur-lg opacity-30 group-hover:opacity-40 transition-opacity" />
+
+                        {/* Button */}
+                        <div className="relative flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-pink-500 via-red-500 to-pink-600 rounded-full text-white font-bold text-sm shadow-[0_0_20px_rgba(236,72,153,0.3)] group-hover:shadow-[0_0_30px_rgba(236,72,153,0.4)] group-hover:scale-105 transition-all duration-300">
+                            <ChartBarIcon className="w-5 h-5" />
+                            <span className="hidden sm:inline">New Poll</span>
+                        </div>
+                    </div>
+                </button>
+            )}
+
             {/* Create Poll Modal */}
             <CreatePollModal
                 isOpen={isCreateModalOpen}
@@ -454,6 +495,16 @@ export default function UserPollsPage() {
                     to {
                         opacity: 1;
                         transform: translateY(0);
+                    }
+                }
+
+                @keyframes bob {
+                    0%,
+                    100% {
+                        transform: translateY(0);
+                    }
+                    50% {
+                        transform: translateY(-8px);
                     }
                 }
 

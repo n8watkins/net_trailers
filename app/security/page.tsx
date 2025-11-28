@@ -1,4 +1,5 @@
-import type { Metadata } from 'next'
+'use client'
+
 import type { ComponentType } from 'react'
 import Link from 'next/link'
 import {
@@ -11,13 +12,7 @@ import {
     CheckCircleIcon,
     DocumentTextIcon,
 } from '@heroicons/react/24/outline'
-
-export const metadata: Metadata = {
-    title: 'Security - NetTrailer',
-    description:
-        'Learn about the security measures implemented in NetTrailer to protect your data and ensure a safe experience.',
-    keywords: ['security', 'privacy', 'data protection', 'authentication', 'encryption'],
-}
+import SubPageLayout from '@/components/layout/SubPageLayout'
 
 interface SecurityFeature {
     icon: ComponentType<{ className?: string }>
@@ -152,260 +147,306 @@ const securityStatuses: SecurityStatus[] = [
 
 export default function SecurityPage() {
     return (
-        <div className="relative min-h-screen bg-gradient-to-b from-gray-900/10 to-[#0a0a0a]">
-            <main className="relative pl-4 pb-24 lg:space-y-24 lg:pl-16 mt-20">
-                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    {/* Header */}
-                    <div className="text-center mb-12">
-                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500/10 mb-4">
-                            <ShieldCheckIcon className="w-8 h-8 text-green-500" />
-                        </div>
-                        <h1 className="text-4xl font-bold text-white mb-4">Security</h1>
-                        <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-                            NetTrailer is built with security as a core principle. Learn about the
-                            measures we&apos;ve implemented to protect your data and ensure a safe
-                            experience.
-                        </p>
-                    </div>
+        <SubPageLayout hideHeader>
+            <div className="relative -mt-20 -mx-6 sm:-mx-8 lg:-mx-12">
+                {/* Atmospheric Background */}
+                <div className="fixed inset-0 pointer-events-none">
+                    <div className="absolute inset-0 bg-black" />
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-green-900/20 via-transparent to-transparent opacity-50" />
+                    <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black opacity-60" />
+                </div>
 
-                    {/* Security Status Overview */}
-                    <div className="bg-gray-800/30 rounded-xl p-6 mb-12 border border-gray-700/50">
-                        <div className="flex items-center gap-3 mb-6">
-                            <CheckCircleIcon className="w-6 h-6 text-green-500" />
-                            <h2 className="text-xl font-semibold text-white">
-                                Security Status: Production Ready
-                            </h2>
-                        </div>
-                        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            {securityStatuses.map((status) => (
-                                <div
-                                    key={status.category}
-                                    className="bg-gray-800/50 rounded-lg p-4"
-                                >
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <div
-                                            className={`w-2 h-2 rounded-full ${
-                                                status.status === 'implemented'
-                                                    ? 'bg-green-500'
-                                                    : 'bg-blue-500'
-                                            }`}
-                                        />
-                                        <h3 className="font-medium text-white">
-                                            {status.category}
-                                        </h3>
-                                    </div>
-                                    <ul className="space-y-1">
-                                        {status.items.map((item) => (
-                                            <li
-                                                key={item}
-                                                className="text-sm text-gray-400 flex items-start gap-2"
-                                            >
-                                                <CheckCircleIcon className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                                                {item}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                {/* Content Container */}
+                <div className="relative z-10">
+                    {/* Cinematic Hero Header */}
+                    <div className="relative overflow-hidden pt-4">
+                        {/* Animated Background Gradients */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900/80 to-black" />
+                        <div
+                            className="absolute inset-0 bg-gradient-to-t from-green-900/20 via-emerald-900/10 to-black/50 animate-pulse"
+                            style={{ animationDuration: '4s' }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-radial from-green-500/10 via-green-900/5 to-transparent" />
 
-                    {/* Security Features Grid */}
-                    <div className="mb-12">
-                        <h2 className="text-2xl font-bold text-white mb-6">Security Measures</h2>
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {securityFeatures.map((feature) => (
-                                <div
-                                    key={feature.title}
-                                    className="bg-gray-800/30 rounded-xl p-6 border border-gray-700/50 hover:border-gray-600/50 transition-colors"
-                                >
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="p-2 bg-red-500/10 rounded-lg">
-                                            <feature.icon className="w-6 h-6 text-red-500" />
-                                        </div>
-                                        <h3 className="font-semibold text-white">
-                                            {feature.title}
-                                        </h3>
-                                    </div>
-                                    <p className="text-gray-400 text-sm mb-4">
-                                        {feature.description}
-                                    </p>
-                                    <ul className="space-y-2">
-                                        {feature.details.map((detail) => (
-                                            <li
-                                                key={detail}
-                                                className="text-sm text-gray-500 flex items-start gap-2"
-                                            >
-                                                <span className="text-green-500 mt-1">&#8226;</span>
-                                                {detail}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                        {/* Soft edge vignetting for subtle blending */}
+                        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/80" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60" />
 
-                    {/* Technical Details */}
-                    <div className="bg-gray-800/30 rounded-xl p-6 mb-12 border border-gray-700/50">
-                        <h2 className="text-xl font-semibold text-white mb-6">
-                            Technical Implementation
-                        </h2>
-                        <div className="grid md:grid-cols-2 gap-8">
-                            <div>
-                                <h3 className="text-lg font-medium text-white mb-4">
-                                    Security Headers
-                                </h3>
-                                <div className="bg-gray-900/50 rounded-lg p-4 font-mono text-xs text-gray-400 overflow-x-auto">
-                                    <div className="space-y-1">
-                                        <p>
-                                            <span className="text-green-400">
-                                                Content-Security-Policy:
-                                            </span>{' '}
-                                            default-src &apos;self&apos;; ...
-                                        </p>
-                                        <p>
-                                            <span className="text-green-400">X-Frame-Options:</span>{' '}
-                                            DENY
-                                        </p>
-                                        <p>
-                                            <span className="text-green-400">
-                                                X-Content-Type-Options:
-                                            </span>{' '}
-                                            nosniff
-                                        </p>
-                                        <p>
-                                            <span className="text-green-400">
-                                                Strict-Transport-Security:
-                                            </span>{' '}
-                                            max-age=31536000
-                                        </p>
-                                        <p>
-                                            <span className="text-green-400">Referrer-Policy:</span>{' '}
-                                            strict-origin-when-cross-origin
-                                        </p>
-                                        <p>
-                                            <span className="text-green-400">
-                                                Permissions-Policy:
-                                            </span>{' '}
-                                            camera=(), geolocation=()
-                                        </p>
-                                    </div>
-                                </div>
+                        {/* Hero Content */}
+                        <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-6">
+                            {/* Icon with glow */}
+                            <div className="relative mb-4">
+                                <div className="absolute inset-0 bg-green-500/30 blur-2xl scale-150" />
+                                <ShieldCheckIcon className="relative w-16 h-16 text-green-400 drop-shadow-[0_0_20px_rgba(34,197,94,0.5)]" />
                             </div>
-                            <div>
-                                <h3 className="text-lg font-medium text-white mb-4">
-                                    Encryption & Hashing
-                                </h3>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between items-center py-2 border-b border-gray-700/50">
-                                        <span className="text-gray-400">PIN Protection</span>
-                                        <span className="text-green-400 text-sm">
-                                            bcrypt (10 rounds)
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between items-center py-2 border-b border-gray-700/50">
-                                        <span className="text-gray-400">Token Comparison</span>
-                                        <span className="text-green-400 text-sm">
-                                            crypto.timingSafeEqual
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between items-center py-2 border-b border-gray-700/50">
-                                        <span className="text-gray-400">Transport</span>
-                                        <span className="text-green-400 text-sm">
-                                            HTTPS/TLS 1.3
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between items-center py-2 border-b border-gray-700/50">
-                                        <span className="text-gray-400">Password Reset Tokens</span>
-                                        <span className="text-green-400 text-sm">
-                                            crypto.randomBytes(32)
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
+
+                            {/* Title */}
+                            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-2 text-center tracking-tight">
+                                <span className="bg-gradient-to-r from-green-200 via-emerald-100 to-green-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
+                                    Security
+                                </span>
+                            </h1>
+
+                            {/* Subtitle */}
+                            <p className="text-base sm:text-lg text-gray-300 mb-6 text-center max-w-2xl">
+                                NetTrailer is built with security as a core principle. Learn about
+                                the measures we&apos;ve implemented to protect your data and ensure
+                                a safe experience.
+                            </p>
                         </div>
                     </div>
 
-                    {/* Documentation Link */}
-                    <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 rounded-xl p-6 border border-red-500/20">
-                        <div className="flex items-start gap-4">
-                            <div className="p-3 bg-red-500/20 rounded-lg">
-                                <DocumentTextIcon className="w-6 h-6 text-red-400" />
+                    {/* Main Content Area */}
+                    <div className="px-6 sm:px-8 lg:px-12 py-8 space-y-8">
+                        {/* Security Status Overview */}
+                        <div className="bg-zinc-900/40 backdrop-blur-lg rounded-2xl p-6 border border-zinc-800/50">
+                            <div className="flex items-center gap-3 mb-6">
+                                <CheckCircleIcon className="w-6 h-6 text-green-400" />
+                                <h2 className="text-xl font-semibold text-white">
+                                    Security Status: Production Ready
+                                </h2>
                             </div>
-                            <div className="flex-1">
-                                <h3 className="text-lg font-semibold text-white mb-2">
-                                    Full Security Documentation
-                                </h3>
-                                <p className="text-gray-400 text-sm mb-4">
-                                    For detailed technical information about our security
-                                    implementation, including code references and configuration
-                                    details, view our full security documentation.
-                                </p>
-                                <a
-                                    href="https://github.com/n8watkins/net_trailers/blob/main/SECURITY.md"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-2 text-red-400 hover:text-red-300 text-sm font-medium"
-                                >
-                                    View SECURITY.md on GitHub
-                                    <svg
-                                        className="w-4 h-4"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
+                            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                {securityStatuses.map((status) => (
+                                    <div
+                                        key={status.category}
+                                        className="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700/30"
                                     >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                                        />
-                                    </svg>
-                                </a>
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <div
+                                                className={`w-2 h-2 rounded-full ${
+                                                    status.status === 'implemented'
+                                                        ? 'bg-green-500'
+                                                        : 'bg-blue-500'
+                                                }`}
+                                            />
+                                            <h3 className="font-medium text-white">
+                                                {status.category}
+                                            </h3>
+                                        </div>
+                                        <ul className="space-y-1">
+                                            {status.items.map((item) => (
+                                                <li
+                                                    key={item}
+                                                    className="text-sm text-gray-400 flex items-start gap-2"
+                                                >
+                                                    <CheckCircleIcon className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                                                    {item}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                ))}
                             </div>
                         </div>
-                    </div>
 
-                    {/* Portfolio Note */}
-                    <div className="mt-8 bg-gray-800/30 rounded-xl p-6 border border-gray-700/50">
-                        <h2 className="text-xl font-semibold text-white mb-4">
-                            About This Project
-                        </h2>
-                        <p className="text-gray-400">
-                            NetTrailer is a portfolio project demonstrating modern web security
-                            practices in a Next.js application. The security measures documented
-                            here represent real implementations used throughout the codebase,
-                            showcasing production-grade security patterns for authentication, data
-                            protection, and API security.
-                        </p>
-                    </div>
+                        {/* Security Features Grid */}
+                        <div>
+                            <h2 className="text-2xl font-bold text-white mb-6">
+                                Security Measures
+                            </h2>
+                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {securityFeatures.map((feature) => (
+                                    <div
+                                        key={feature.title}
+                                        className="bg-zinc-900/40 backdrop-blur-lg rounded-2xl p-6 border border-zinc-800/50 hover:border-zinc-700/50 transition-all duration-300 hover:shadow-[0_0_15px_rgba(34,197,94,0.1)]"
+                                    >
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className="p-2 bg-green-500/10 rounded-lg">
+                                                <feature.icon className="w-6 h-6 text-green-400" />
+                                            </div>
+                                            <h3 className="font-semibold text-white">
+                                                {feature.title}
+                                            </h3>
+                                        </div>
+                                        <p className="text-gray-400 text-sm mb-4">
+                                            {feature.description}
+                                        </p>
+                                        <ul className="space-y-2">
+                                            {feature.details.map((detail) => (
+                                                <li
+                                                    key={detail}
+                                                    className="text-sm text-gray-500 flex items-start gap-2"
+                                                >
+                                                    <span className="text-green-400 mt-1">
+                                                        &#8226;
+                                                    </span>
+                                                    {detail}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
 
-                    {/* Related Links */}
-                    <div className="mt-8 flex flex-wrap gap-4 justify-center">
-                        <Link
-                            href="/privacy"
-                            className="text-gray-400 hover:text-white transition-colors"
-                        >
-                            Privacy Policy
-                        </Link>
-                        <span className="text-gray-600">|</span>
-                        <Link
-                            href="/terms"
-                            className="text-gray-400 hover:text-white transition-colors"
-                        >
-                            Terms of Service
-                        </Link>
-                        <span className="text-gray-600">|</span>
-                        <Link
-                            href="/changelog"
-                            className="text-gray-400 hover:text-white transition-colors"
-                        >
-                            Changelog
-                        </Link>
+                        {/* Technical Details */}
+                        <div className="bg-zinc-900/40 backdrop-blur-lg rounded-2xl p-6 border border-zinc-800/50">
+                            <h2 className="text-xl font-semibold text-white mb-6">
+                                Technical Implementation
+                            </h2>
+                            <div className="grid md:grid-cols-2 gap-8">
+                                <div>
+                                    <h3 className="text-lg font-medium text-white mb-4">
+                                        Security Headers
+                                    </h3>
+                                    <div className="bg-black/50 rounded-lg p-4 font-mono text-xs text-gray-400 overflow-x-auto border border-zinc-800/30">
+                                        <div className="space-y-1">
+                                            <p>
+                                                <span className="text-green-400">
+                                                    Content-Security-Policy:
+                                                </span>{' '}
+                                                default-src &apos;self&apos;; ...
+                                            </p>
+                                            <p>
+                                                <span className="text-green-400">
+                                                    X-Frame-Options:
+                                                </span>{' '}
+                                                DENY
+                                            </p>
+                                            <p>
+                                                <span className="text-green-400">
+                                                    X-Content-Type-Options:
+                                                </span>{' '}
+                                                nosniff
+                                            </p>
+                                            <p>
+                                                <span className="text-green-400">
+                                                    Strict-Transport-Security:
+                                                </span>{' '}
+                                                max-age=31536000
+                                            </p>
+                                            <p>
+                                                <span className="text-green-400">
+                                                    Referrer-Policy:
+                                                </span>{' '}
+                                                strict-origin-when-cross-origin
+                                            </p>
+                                            <p>
+                                                <span className="text-green-400">
+                                                    Permissions-Policy:
+                                                </span>{' '}
+                                                camera=(), geolocation=()
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-medium text-white mb-4">
+                                        Encryption & Hashing
+                                    </h3>
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center py-2 border-b border-zinc-700/50">
+                                            <span className="text-gray-400">PIN Protection</span>
+                                            <span className="text-green-400 text-sm">
+                                                bcrypt (10 rounds)
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-center py-2 border-b border-zinc-700/50">
+                                            <span className="text-gray-400">Token Comparison</span>
+                                            <span className="text-green-400 text-sm">
+                                                crypto.timingSafeEqual
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-center py-2 border-b border-zinc-700/50">
+                                            <span className="text-gray-400">Transport</span>
+                                            <span className="text-green-400 text-sm">
+                                                HTTPS/TLS 1.3
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-center py-2 border-b border-zinc-700/50">
+                                            <span className="text-gray-400">
+                                                Password Reset Tokens
+                                            </span>
+                                            <span className="text-green-400 text-sm">
+                                                crypto.randomBytes(32)
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Documentation Link */}
+                        <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-2xl p-6 border border-green-500/20">
+                            <div className="flex items-start gap-4">
+                                <div className="p-3 bg-green-500/20 rounded-lg">
+                                    <DocumentTextIcon className="w-6 h-6 text-green-400" />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-lg font-semibold text-white mb-2">
+                                        Full Security Documentation
+                                    </h3>
+                                    <p className="text-gray-400 text-sm mb-4">
+                                        For detailed technical information about our security
+                                        implementation, including code references and configuration
+                                        details, view our full security documentation.
+                                    </p>
+                                    <a
+                                        href="https://github.com/n8watkins/net_trailers/blob/main/SECURITY.md"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 text-green-400 hover:text-green-300 text-sm font-medium transition-colors"
+                                    >
+                                        View SECURITY.md on GitHub
+                                        <svg
+                                            className="w-4 h-4"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                                            />
+                                        </svg>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Portfolio Note */}
+                        <div className="bg-zinc-900/40 backdrop-blur-lg rounded-2xl p-6 border border-zinc-800/50">
+                            <h2 className="text-xl font-semibold text-white mb-4">
+                                About This Project
+                            </h2>
+                            <p className="text-gray-400">
+                                NetTrailer is a portfolio project demonstrating modern web security
+                                practices in a Next.js application. The security measures documented
+                                here represent real implementations used throughout the codebase,
+                                showcasing production-grade security patterns for authentication,
+                                data protection, and API security.
+                            </p>
+                        </div>
+
+                        {/* Related Links */}
+                        <div className="flex flex-wrap gap-4 justify-center">
+                            <Link
+                                href="/privacy"
+                                className="text-gray-400 hover:text-white transition-colors"
+                            >
+                                Privacy Policy
+                            </Link>
+                            <span className="text-gray-600">|</span>
+                            <Link
+                                href="/terms"
+                                className="text-gray-400 hover:text-white transition-colors"
+                            >
+                                Terms of Service
+                            </Link>
+                            <span className="text-gray-600">|</span>
+                            <Link
+                                href="/changelog"
+                                className="text-gray-400 hover:text-white transition-colors"
+                            >
+                                Changelog
+                            </Link>
+                        </div>
                     </div>
                 </div>
-            </main>
-        </div>
+            </div>
+        </SubPageLayout>
     )
 }

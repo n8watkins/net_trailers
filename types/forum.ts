@@ -107,11 +107,21 @@ export interface ThreadSummary {
     title: string
     content: string
     category: ForumCategory
+    userId: string
+    userName: string
+    userAvatar?: string
     likes: number
     views: number
     replyCount: number
     createdAt: number | null
     updatedAt: number | null
+    lastReplyAt?: number | null
+    lastReplyBy?: {
+        userId: string
+        userName: string
+    }
+    tags?: string[]
+    isPinned?: boolean
 }
 
 // Poll summary for profile pages (without Firestore Timestamp dependencies)
