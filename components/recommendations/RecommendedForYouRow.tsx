@@ -259,8 +259,11 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
             return
         }
 
-        // For authenticated users, check if data has finished syncing
-        if (isInitialized && syncStatus === 'synced') {
+        // For authenticated users, track actual hydration state
+        // Reset to false when syncing starts, set to true only after sync completes
+        if (syncStatus === 'syncing') {
+            setHasHydrated(false)
+        } else if (isInitialized && syncStatus === 'synced') {
             setHasHydrated(true)
         }
     }, [sessionType, isInitialized, syncStatus])
@@ -277,6 +280,13 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
             // Only show recommendations for authenticated users (requires Firestore)
             if (!userId || sessionType !== 'authenticated') {
                 setIsLoading(false)
+                return
+            }
+
+            // Guard: Don't fetch until hydration is complete
+            // This prevents fetching with empty arrays before Firebase data loads
+            if (sessionType === 'authenticated' && !hasHydrated) {
+                // Keep isLoading true until hydration completes
                 return
             }
 
@@ -346,12 +356,14 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
         }
 
         fetchRecommendations()
-        // Note: We use hasHydrated flag to trigger initial fetch after Firebase sync
-        // completes, and track myRatings.length to refetch when ratings data loads.
+        // Note: We use hasHydrated flag to trigger fetch after Firebase sync completes.
+        // hasHydrated resets to false when syncStatus becomes 'syncing', preventing
+        // premature fetches with empty data on page refresh. It's set to true only
+        // after syncStatus becomes 'synced', ensuring Firebase has populated sessionData.
         // This ensures recommendations load with complete user data while avoiding
         // jarring re-renders from individual likes/watchlist changes during usage.
         // Recommendations refresh on:
-        // - Initial Firebase hydration completion (hasHydrated becomes true)
+        // - Initial Firebase hydration completion (hasHydrated false -> true)
         // - myRatings data becomes available (length changes from undefined/0 to N)
         // - Session changes (userId, sessionType)
         // - Explicit preference changes (genre quiz, title quiz via prefsSignature)
