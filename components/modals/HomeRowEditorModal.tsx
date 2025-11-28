@@ -9,6 +9,7 @@ import {
     TvIcon,
     Squares2X2Icon,
     ArrowPathIcon,
+    ArrowDownTrayIcon,
 } from '@heroicons/react/24/solid'
 import { SortableCollectionCard } from '../collections/SortableCollectionCard'
 import { useSessionStore } from '../../stores/sessionStore'
@@ -650,6 +651,21 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
                                         Create a new collection or reset to defaults.
                                     </p>
                                 )}
+                            </div>
+                        )}
+
+                        {/* Import Collections Button */}
+                        {!isGuest && (
+                            <div className="mt-4 pt-4 border-t border-gray-700">
+                                <button
+                                    onClick={() => {
+                                        showToast('info', 'Import feature coming soon')
+                                    }}
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                                >
+                                    <ArrowDownTrayIcon className="w-5 h-5" />
+                                    Import Collections
+                                </button>
                             </div>
                         )}
                     </div>
