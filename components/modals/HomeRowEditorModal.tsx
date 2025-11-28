@@ -76,6 +76,8 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
     const [editorSystemRec, setEditorSystemRec] = useState<SystemRecommendation | null>(null)
     // Local state for instant drag-and-drop visual updates
     const [localRows, setLocalRows] = useState<DisplayRow[]>([])
+    // Filter state for showing all/shown/hidden collections
+    const [displayFilter, setDisplayFilter] = useState<'all' | 'shown' | 'hidden'>('all')
     // Track mousedown location for click-outside detection
     const mouseDownTargetRef = useRef<EventTarget | null>(null)
     const modalContainerRef = useRef<HTMLDivElement>(null)
@@ -234,6 +236,18 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
     useEffect(() => {
         setLocalRows(displayRows)
     }, [displayRowsKey, displayRows])
+
+    // Filter localRows based on displayFilter
+    const filteredLocalRows = useMemo(() => {
+        if (displayFilter === 'all') {
+            return localRows
+        } else if (displayFilter === 'shown') {
+            return localRows.filter((row) => row.displayAsRow !== false)
+        } else {
+            // hidden
+            return localRows.filter((row) => row.displayAsRow === false)
+        }
+    }, [localRows, displayFilter])
 
     // Handle body scroll lock
     useEffect(() => {
@@ -598,19 +612,53 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
 
                     {/* Content */}
                     <div className="p-4 overflow-y-auto max-h-[60vh] modal-scrollbar">
+                        {/* Filter buttons */}
+                        <div className="flex gap-2 mb-4">
+                            <button
+                                onClick={() => setDisplayFilter('all')}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                    displayFilter === 'all'
+                                        ? 'bg-red-600 text-white'
+                                        : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                                }`}
+                            >
+                                All
+                            </button>
+                            <button
+                                onClick={() => setDisplayFilter('shown')}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                    displayFilter === 'shown'
+                                        ? 'bg-green-600 text-white'
+                                        : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                                }`}
+                            >
+                                Shown
+                            </button>
+                            <button
+                                onClick={() => setDisplayFilter('hidden')}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                    displayFilter === 'hidden'
+                                        ? 'bg-gray-600 text-white'
+                                        : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                                }`}
+                            >
+                                Hidden
+                            </button>
+                        </div>
+
                         {/* Collections list with drag and drop */}
-                        {localRows.length > 0 ? (
+                        {filteredLocalRows.length > 0 ? (
                             <DndContext
                                 sensors={sensors}
                                 collisionDetection={closestCenter}
                                 onDragEnd={handleDragEnd}
                             >
                                 <SortableContext
-                                    items={localRows.map((r) => r.id)}
+                                    items={filteredLocalRows.map((r) => r.id)}
                                     strategy={verticalListSortingStrategy}
                                 >
                                     <div className="space-y-1">
-                                        {localRows.map((row) => (
+                                        {filteredLocalRows.map((row) => (
                                             <SortableCollectionCard
                                                 key={row.id}
                                                 row={row}
@@ -623,12 +671,15 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
                                                 onMoveUp={() => handleMoveUp(row)}
                                                 onMoveDown={() => handleMoveDown(row)}
                                                 isFirst={
-                                                    localRows.findIndex((r) => r.id === row.id) ===
-                                                    0
+                                                    filteredLocalRows.findIndex(
+                                                        (r) => r.id === row.id
+                                                    ) === 0
                                                 }
                                                 isLast={
-                                                    localRows.findIndex((r) => r.id === row.id) ===
-                                                    localRows.length - 1
+                                                    filteredLocalRows.findIndex(
+                                                        (r) => r.id === row.id
+                                                    ) ===
+                                                    filteredLocalRows.length - 1
                                                 }
                                             />
                                         ))}
