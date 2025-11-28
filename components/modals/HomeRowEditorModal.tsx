@@ -576,25 +576,15 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
                                 Edit Displayed Collections
                             </h2>
                         </div>
-                        <button
-                            onClick={onClose}
-                            className="p-2 hover:bg-gray-700 rounded-full transition-colors"
-                        >
-                            <XMarkIcon className="w-6 h-6 text-gray-400" />
-                        </button>
-                    </div>
-
-                    {/* Content */}
-                    <div className="p-4 overflow-y-auto max-h-[60vh] modal-scrollbar">
                         {/* Action buttons */}
-                        <div className="flex gap-2 mb-4 justify-end">
+                        <div className="flex gap-2">
                             {!isGuest && (
                                 <button
                                     onClick={handleCreate}
                                     className="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm"
                                 >
                                     <PlusIcon className="w-4 h-4" />
-                                    New Collection
+                                    Create Collection
                                 </button>
                             )}
                             <button
@@ -605,7 +595,10 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
                                 Reset Defaults
                             </button>
                         </div>
+                    </div>
 
+                    {/* Content */}
+                    <div className="p-4 overflow-y-auto max-h-[60vh] modal-scrollbar">
                         {/* Collections list with drag and drop */}
                         {localRows.length > 0 ? (
                             <DndContext
