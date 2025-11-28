@@ -254,23 +254,47 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onI
             if (filtered.length === 0) {
                 consecutiveDuplicatesRef.current += 1
 
-                debugLog(
-                    '⚠️',
-                    `Page ${currentPage + 1} all duplicates (${consecutiveDuplicatesRef.current}/5)`,
-                    { title, pageReturned: newContent.length }
-                )
-
-                // Special case: Recommendations endpoint passes exclude IDs, so duplicates
-                // mean the API needs to dig deeper or is exhausted. Be more lenient.
                 const isRecommendationsEndpoint = apiEndpoint.includes(
                     '/recommendations/personalized'
                 )
-                const duplicateThreshold = isRecommendationsEndpoint ? 10 : 5
 
-                // Stop after consecutive duplicate pages OR if we've reached the end
-                // Recommendations endpoint gets 10 tries instead of 5 since it has fallback content
+                debugLog(
+                    '⚠️',
+                    `Page ${currentPage + 1} all duplicates (${consecutiveDuplicatesRef.current}${isRecommendationsEndpoint ? '' : '/5'})`,
+                    { title, pageReturned: newContent.length }
+                )
+
+                // Special case: Recommendations endpoint never stops on duplicates alone
+                // It passes exclude IDs to the API, which has fallback content (trending)
+                // So we keep trying indefinitely - only stop if we hit total_pages limit
+                if (isRecommendationsEndpoint) {
+                    // Check if we've hit the actual page limit
+                    if (currentPage + 1 >= (data.total_pages || 1)) {
+                        debugLog('🏁', 'Stopping: Reached total_pages limit', {
+                            title,
+                            currentPage: currentPage + 1,
+                            totalPages: data.total_pages,
+                        })
+                        setHasMore(false)
+                        return
+                    }
+
+                    // Otherwise keep trying - the API will eventually return trending/fallback
+                    debugLog(
+                        '♾️',
+                        `Recommendations: Keep trying despite duplicates (${consecutiveDuplicatesRef.current} so far)`,
+                        {
+                            title,
+                            nextPage: currentPage + 2,
+                        }
+                    )
+                    setCurrentPage((prev) => prev + 1)
+                    return
+                }
+
+                // For other endpoints, use the standard 5-duplicate threshold
                 if (
-                    consecutiveDuplicatesRef.current >= duplicateThreshold ||
+                    consecutiveDuplicatesRef.current >= 5 ||
                     currentPage + 1 >= (data.total_pages || 1)
                 ) {
                     debugLog('🏁', 'Stopping: Multiple duplicate pages or reached end', {
@@ -278,7 +302,6 @@ function Row({ title, content, apiEndpoint, pageType: _pageType, collection, onI
                         consecutiveDuplicates: consecutiveDuplicatesRef.current,
                         currentPage: currentPage + 1,
                         totalPages: data.total_pages,
-                        duplicateThreshold,
                     })
                     setHasMore(false)
                     return

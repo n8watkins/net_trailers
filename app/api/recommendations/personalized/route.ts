@@ -340,10 +340,21 @@ async function handlePersonalizedRecommendationsGet(
             }
 
             // If still not enough, fetch trending content as last resort
+            // Use page number to vary the content and avoid returning same trending items
             if (genreBased.length + fallbackContent.length < limit / 2) {
                 try {
+                    // Alternate between movie and TV trending to increase variety
+                    const useTvTrending = page % 2 === 0
+                    const trendingEndpoint = useTvTrending
+                        ? '/api/tv/trending'
+                        : '/api/movies/trending'
+
+                    // Use page number as offset to get different trending content each time
+                    // TMDB trending endpoint supports time_window and page params
+                    const trendingPage = Math.ceil(page / 2) // Converts page 1,2->1, 3,4->2, etc.
+
                     const trendingResponse = await fetch(
-                        `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/movies/trending`
+                        `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}${trendingEndpoint}?page=${trendingPage}`
                     )
                     if (trendingResponse.ok) {
                         const trendingData = await trendingResponse.json()
