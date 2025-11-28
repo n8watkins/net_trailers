@@ -234,6 +234,13 @@ export function buildRecommendationProfile(
 /**
  * Generate genre-based recommendations with pagination support
  *
+ * Progressive filter relaxation ensures endless content generation:
+ * - Pages 1-10: Strict filters (rating 6.0+, votes 200+, year ranges)
+ * - Pages 11-20: Relaxed filters (rating 5.5+, votes 100+, year ranges)
+ * - Pages 21-30: Loose filters (rating 5.0+, votes 50+, year ranges)
+ * - Pages 31-40: Minimal filters (rating 4.5+, votes 20+, no year ranges)
+ * - Pages 41+: Trending/popular fallback (no filters, just user's genres)
+ *
  * @param profile - User recommendation profile
  * @param limit - Number of recommendations
  * @param excludeIds - Content IDs to exclude
@@ -251,12 +258,50 @@ export async function getGenreBasedRecommendations(
     }
 
     try {
-        // Use top 5 genres for more diversity
-        const topGenres = profile.topGenres.slice(0, 5)
+        // Progressive filter relaxation based on page number
+        let minRating: number
+        let minVoteCount: number
+        let useYearRange: boolean
+        let genreCount: number
 
-        // For page 1, use top 3 genres. For subsequent pages, rotate through all top 5 genres
+        if (page <= 10) {
+            // Strict filters for first 10 pages
+            minRating = profile.preferredRating ? profile.preferredRating - 1 : 6.0
+            minVoteCount = 200
+            useYearRange = true
+            genreCount = 3
+        } else if (page <= 20) {
+            // Relaxed filters for pages 11-20
+            minRating = profile.preferredRating ? Math.max(5.5, profile.preferredRating - 1.5) : 5.5
+            minVoteCount = 100
+            useYearRange = true
+            genreCount = 5
+        } else if (page <= 30) {
+            // Loose filters for pages 21-30
+            minRating = 5.0
+            minVoteCount = 50
+            useYearRange = true
+            genreCount = Math.min(7, profile.topGenres.length)
+        } else if (page <= 40) {
+            // Minimal filters for pages 31-40
+            minRating = 4.5
+            minVoteCount = 20
+            useYearRange = false
+            genreCount = Math.min(10, profile.topGenres.length)
+        } else {
+            // Fallback: trending/popular content in user's genres (pages 41+)
+            minRating = 4.0
+            minVoteCount = 10
+            useYearRange = false
+            genreCount = profile.topGenres.length // Use all genres
+        }
+
+        // Use more genres as we paginate for increased variety
+        const topGenres = profile.topGenres.slice(0, Math.max(genreCount, 3))
+
+        // For page 1, use top 3 genres. For subsequent pages, rotate through more genres
         // This provides variety as users scroll through recommendations
-        const genreRotation = page === 1 ? 3 : Math.min(5, topGenres.length)
+        const genreRotation = page === 1 ? 3 : Math.min(genreCount, topGenres.length)
         const genreOffset = ((page - 1) * 2) % topGenres.length // Rotate starting genre
         const selectedGenres = []
 
@@ -269,7 +314,11 @@ export async function getGenreBasedRecommendations(
 
         // Look up year preferences for selected genres (convert TMDB IDs to unified IDs first)
         const yearRanges: Array<{ min: number; max: number }> = []
-        if (profile.genreYearPreferences && profile.genreYearPreferences.length > 0) {
+        if (
+            useYearRange &&
+            profile.genreYearPreferences &&
+            profile.genreYearPreferences.length > 0
+        ) {
             for (const selectedGenre of selectedGenres) {
                 // Convert TMDB genre ID to unified genre IDs to match year preferences
                 // Try both movie and TV conversions since the same TMDB ID might map to different unified genres
@@ -297,28 +346,34 @@ export async function getGenreBasedRecommendations(
 
         // Merge year ranges from selected genres (use union: min of mins, max of maxes)
         const yearRange =
-            yearRanges.length > 0
+            useYearRange && yearRanges.length > 0
                 ? {
                       min: Math.min(...yearRanges.map((r) => r.min)),
                       max: Math.max(...yearRanges.map((r) => r.max)),
                   }
                 : undefined
 
-        // Log year filtering for debugging
-        if (yearRange) {
-            console.log(
-                `[Recommendations] Applying year filter ${yearRange.min}-${yearRange.max} for genres:`,
-                selectedGenres.map((g) => g.genreName).join(', ')
-            )
-        }
+        // Log filtering strategy for debugging
+        console.log(`[Recommendations Page ${page}] Filters:`, {
+            minRating,
+            minVoteCount,
+            yearRange: yearRange ? `${yearRange.min}-${yearRange.max}` : 'none',
+            genres: selectedGenres.map((g) => g.genreName).join(', '),
+        })
 
         // For pagination beyond page 1, fetch multiple TMDB pages to ensure we have enough content
         // Each TMDB page has ~20 items, so we fetch enough to fill our limit
         const tmdbPagesToFetch = Math.ceil(limit / 20)
         const startTmdbPage = (page - 1) * tmdbPagesToFetch + 1
 
-        // Alternate sorting between vote_average and popularity for variety
-        const sortBy = page % 2 === 1 ? 'vote_average.desc' : 'popularity.desc'
+        // Rotate through multiple sorting strategies for maximum variety
+        const sortStrategies = [
+            'vote_average.desc',
+            'popularity.desc',
+            'release_date.desc',
+            'vote_count.desc',
+        ]
+        const sortBy = sortStrategies[page % sortStrategies.length]
 
         const fetchPromises = []
         for (let i = 0; i < tmdbPagesToFetch; i++) {
@@ -327,8 +382,8 @@ export async function getGenreBasedRecommendations(
                 discoverByPreferences({
                     genreIds: selectedGenreIds,
                     mediaType: 'movie',
-                    minRating: profile.preferredRating ? profile.preferredRating - 1 : 6.0,
-                    minVoteCount: 200,
+                    minRating,
+                    minVoteCount,
                     yearRange,
                     page: startTmdbPage + i,
                     sortBy,
@@ -338,8 +393,8 @@ export async function getGenreBasedRecommendations(
                 discoverByPreferences({
                     genreIds: selectedGenreIds,
                     mediaType: 'tv',
-                    minRating: profile.preferredRating ? profile.preferredRating - 1 : 6.0,
-                    minVoteCount: 200,
+                    minRating,
+                    minVoteCount,
                     yearRange,
                     page: startTmdbPage + i,
                     sortBy,
