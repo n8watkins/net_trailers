@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useForumStore } from '@/stores/forumStore'
 import { useSessionStore } from '@/stores/sessionStore'
 import { useAuthStatus } from '@/hooks/useAuthStatus'
+import { useVoiceInput } from '@/hooks/useVoiceInput'
+import { useToast } from '@/hooks/useToast'
 import NetflixLoader from '@/components/common/NetflixLoader'
 import SearchBar from '@/components/common/SearchBar'
 import { FORUM_CATEGORIES } from '@/utils/forumCategories'
@@ -15,7 +17,7 @@ import { auth } from '@/firebase'
 import {
     ChartBarIcon,
     MagnifyingGlassIcon,
-    FunnelIcon,
+    MicrophoneIcon,
     TrophyIcon,
     ChatBubbleLeftRightIcon,
 } from '@heroicons/react/24/outline'
@@ -26,11 +28,31 @@ export default function PollsContent() {
         useForumStore()
     const getUserId = useSessionStore((state) => state.getUserId)
     const { isGuest } = useAuthStatus()
+    const { showError } = useToast()
     const [selectedCategory, setSelectedCategory] = useState<ForumCategory | 'all'>('all')
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [userVotes, setUserVotes] = useState<Record<string, string[]>>({})
     const [searchQuery, setSearchQuery] = useState('')
     const userId = getUserId()
+
+    // Voice input
+    const { isListening, isSupported, startListening, stopListening } = useVoiceInput({
+        onResult: (transcript) => {
+            setSearchQuery(transcript)
+        },
+        onError: (error) => {
+            showError(error)
+        },
+        sourceId: 'polls-search',
+    })
+
+    const handleVoiceClick = async () => {
+        if (isListening) {
+            stopListening()
+        } else {
+            await startListening()
+        }
+    }
 
     // Load polls on mount
     useEffect(() => {
@@ -288,7 +310,30 @@ export default function PollsContent() {
                                     placeholder="Search polls..."
                                     className="w-full pl-14 pr-14 py-4 bg-zinc-900/40 backdrop-blur-lg border border-zinc-800/50 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-pink-500 focus:shadow-[0_0_25px_rgba(236,72,153,0.3)] transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700"
                                 />
-                                <FunnelIcon className="absolute right-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 z-10 transition-colors hover:text-pink-400 cursor-pointer" />
+                                {isSupported && (
+                                    <button
+                                        type="button"
+                                        onClick={handleVoiceClick}
+                                        className="absolute right-5 top-1/2 -translate-y-1/2 z-10 transition-all duration-200"
+                                        title={isListening ? 'Stop listening' : 'Start voice input'}
+                                    >
+                                        <div className="relative">
+                                            {isListening && (
+                                                <>
+                                                    <span className="absolute inset-0 rounded-full bg-red-500/40 animate-ping" />
+                                                    <span className="absolute inset-0 rounded-full bg-red-500/30 animate-pulse" />
+                                                </>
+                                            )}
+                                            <MicrophoneIcon
+                                                className={`w-6 h-6 relative z-10 transition-all ${
+                                                    isListening
+                                                        ? 'text-red-500 scale-110 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]'
+                                                        : 'text-gray-400 hover:text-pink-400'
+                                                }`}
+                                            />
+                                        </div>
+                                    </button>
+                                )}
 
                                 {/* Glowing border effect on focus */}
                                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-pink-500 to-red-500 opacity-0 group-focus-within:opacity-20 blur-xl transition-opacity duration-300 -z-10" />

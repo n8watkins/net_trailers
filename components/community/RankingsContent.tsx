@@ -4,12 +4,14 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useRankingStore } from '@/stores/rankingStore'
 import { useAuthStatus } from '@/hooks/useAuthStatus'
+import { useVoiceInput } from '@/hooks/useVoiceInput'
+import { useToast } from '@/hooks/useToast'
 import NetflixLoader from '@/components/common/NetflixLoader'
 import { RankingCard } from '@/components/rankings/RankingCard'
 import {
     TrophyIcon,
     MagnifyingGlassIcon,
-    FunnelIcon,
+    MicrophoneIcon,
     ChatBubbleLeftRightIcon,
     ChartBarIcon,
     FilmIcon,
@@ -29,8 +31,28 @@ export default function RankingsContent() {
         setFilterByMediaType,
     } = useRankingStore()
     const { isGuest, isInitialized } = useAuthStatus()
+    const { showError } = useToast()
     const [searchQuery, setSearchQuery] = useState('')
     const [rankingsLimit, setRankingsLimit] = useState(20)
+
+    // Voice input
+    const { isListening, isSupported, startListening, stopListening } = useVoiceInput({
+        onResult: (transcript) => {
+            setSearchQuery(transcript)
+        },
+        onError: (error) => {
+            showError(error)
+        },
+        sourceId: 'rankings-search',
+    })
+
+    const handleVoiceClick = async () => {
+        if (isListening) {
+            stopListening()
+        } else {
+            await startListening()
+        }
+    }
 
     // Load community rankings on mount and when sort changes
     useEffect(() => {
@@ -87,24 +109,16 @@ export default function RankingsContent() {
                 {/* Cinematic Hero Header */}
                 <div className="relative overflow-hidden pt-4">
                     {/* Animated Background Gradients */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900 to-black" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900/80 to-black" />
                     <div
-                        className="absolute inset-0 bg-gradient-to-t from-yellow-900/10 via-amber-900/5 to-transparent animate-pulse"
+                        className="absolute inset-0 bg-gradient-to-t from-yellow-900/20 via-amber-900/10 to-black/50 animate-pulse"
                         style={{ animationDuration: '4s' }}
                     />
-                    <div className="absolute inset-0 bg-gradient-radial from-yellow-500/5 via-transparent to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-radial from-yellow-500/10 via-yellow-900/5 to-transparent" />
 
-                    {/* Film grain texture */}
-                    <div
-                        className="absolute inset-0 opacity-[0.02] pointer-events-none"
-                        style={{
-                            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-                        }}
-                    />
-
-                    {/* Vignette Effect */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/80" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-black/50" />
+                    {/* Soft edge vignetting for subtle blending */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/80" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60" />
 
                     {/* Hero Content */}
                     <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-6">
@@ -227,7 +241,30 @@ export default function RankingsContent() {
                                     placeholder="Search rankings..."
                                     className="w-full pl-14 pr-14 py-4 bg-zinc-900/40 backdrop-blur-lg border border-zinc-800/50 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-yellow-500 focus:shadow-[0_0_25px_rgba(234,179,8,0.3)] transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700"
                                 />
-                                <FunnelIcon className="absolute right-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 z-10 transition-colors hover:text-yellow-400 cursor-pointer" />
+                                {isSupported && (
+                                    <button
+                                        type="button"
+                                        onClick={handleVoiceClick}
+                                        className="absolute right-5 top-1/2 -translate-y-1/2 z-10 transition-all duration-200"
+                                        title={isListening ? 'Stop listening' : 'Start voice input'}
+                                    >
+                                        <div className="relative">
+                                            {isListening && (
+                                                <>
+                                                    <span className="absolute inset-0 rounded-full bg-red-500/40 animate-ping" />
+                                                    <span className="absolute inset-0 rounded-full bg-red-500/30 animate-pulse" />
+                                                </>
+                                            )}
+                                            <MicrophoneIcon
+                                                className={`w-6 h-6 relative z-10 transition-all ${
+                                                    isListening
+                                                        ? 'text-red-500 scale-110 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]'
+                                                        : 'text-gray-400 hover:text-yellow-400'
+                                                }`}
+                                            />
+                                        </div>
+                                    </button>
+                                )}
 
                                 {/* Glowing border effect on focus */}
                                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-yellow-500 to-amber-500 opacity-0 group-focus-within:opacity-20 blur-xl transition-opacity duration-300 -z-10" />
