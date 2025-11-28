@@ -366,42 +366,21 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
         router.push('/collections')
     }
 
-    // Reset default collections
+    // Reset system recommendations only
     const handleResetDefaultRows = async () => {
         if (!userId) return
 
-        // Update local state INSTANTLY for snappy UI
+        // Update local state INSTANTLY for snappy UI - only for system recommendations
         setLocalRows((prevRows) =>
             prevRows.map((r) => ({
                 ...r,
-                displayAsRow: true,
+                displayAsRow: r.isSystemRecommendation ? true : r.displayAsRow,
             }))
         )
 
-        showToast('success', 'All collections enabled and reset to defaults')
+        showToast('success', 'System recommendations reset to defaults')
 
         try {
-            // Get default collections and reset them in background
-            const defaultCollections = createDefaultCollectionsForUser()
-
-            // Reset default collections to show and enable them
-            const collectionPromises = defaultCollections.map(async (defaultCol) => {
-                const existing = userCollections.find((c) => c.id === defaultCol.id)
-                if (existing) {
-                    // Reset to default properties and enable display
-                    return updateList(defaultCol.id, {
-                        name: defaultCol.name,
-                        enabled: defaultCol.enabled,
-                        order: defaultCol.order,
-                        genres: defaultCol.genres,
-                        genreLogic: defaultCol.genreLogic,
-                        mediaType: defaultCol.mediaType,
-                        displayAsRow: true, // Enable display on page
-                        showOnPublicProfile: true,
-                    })
-                }
-            })
-
             // Reset all system recommendations to show and enable them
             const sysRecPromises = systemRecommendations.map((sysRec) =>
                 updateSystemRecommendation(sysRec.id, {
@@ -411,7 +390,7 @@ export function HomeRowEditorModal({ isOpen, onClose, pageType }: HomeRowEditorM
             )
 
             // Run all updates in parallel
-            await Promise.all([...collectionPromises, ...sysRecPromises])
+            await Promise.all(sysRecPromises)
         } catch (error) {
             console.error('Failed to reset defaults:', error)
             showToast('error', (error as Error).message)
