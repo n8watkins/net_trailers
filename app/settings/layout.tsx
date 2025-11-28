@@ -14,10 +14,11 @@ import {
     BellIcon,
     RectangleStackIcon,
     SparklesIcon,
+    MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline'
+import { XMarkIcon } from '@heroicons/react/24/outline'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import SubPageLayout from '../../components/layout/SubPageLayout'
-import SearchBar from '../../components/common/SearchBar'
 import NetflixLoader from '../../components/common/NetflixLoader'
 import { useSessionStore } from '../../stores/sessionStore'
 
@@ -241,21 +242,23 @@ const SettingsLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
         return true
     })
 
-    const getPriorityColor = (priority: string) => {
+    const getPriorityColor = (priority: string, isActive: boolean) => {
+        if (isActive) return 'border-l-gray-400'
+
         switch (priority) {
             case 'danger':
                 return 'border-l-red-600'
             case 'high':
                 return 'border-l-orange-500'
             case 'medium':
-                return 'border-l-blue-500'
+                return 'border-l-gray-500'
             default:
-                return 'border-l-[#454545]'
+                return 'border-l-zinc-700'
         }
     }
 
     const getIconColor = (priority: string, isActive: boolean) => {
-        if (isActive) return 'text-white'
+        if (isActive) return 'text-gray-400'
 
         switch (priority) {
             case 'danger':
@@ -263,83 +266,146 @@ const SettingsLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =
             case 'high':
                 return 'text-orange-500'
             case 'medium':
-                return 'text-blue-500'
+                return 'text-gray-500'
             default:
-                return 'text-[#b3b3b3]'
+                return 'text-gray-600'
         }
     }
 
     return (
-        <SubPageLayout
-            title="Settings"
-            icon={<Cog6ToothIcon />}
-            iconColor="text-gray-400"
-            description="Manage your account preferences and data"
-        >
-            {/* Unified Settings Container */}
-            {isLoading ? (
-                <NetflixLoader message="Loading settings..." inline />
-            ) : (
-                <div className="bg-[#141414] rounded-lg border border-[#313131] overflow-hidden">
-                    <div className="flex flex-col lg:flex-row">
-                        {/* Sidebar */}
-                        <div className="lg:w-96 flex-shrink-0 border-b lg:border-b-0 lg:border-r border-[#313131]">
-                            <nav className="p-6">
-                                {/* Search Bar */}
-                                <div className="mb-4">
-                                    <SearchBar
+        <SubPageLayout hideHeader>
+            <div className="relative -mt-20 -mx-6 sm:-mx-8 lg:-mx-12">
+                {/* Atmospheric Background */}
+                <div className="fixed inset-0 pointer-events-none">
+                    <div className="absolute inset-0 bg-black" />
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-gray-900/20 via-transparent to-transparent opacity-50" />
+                    <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black opacity-60" />
+                </div>
+
+                {/* Content Container */}
+                <div className="relative z-10">
+                    {/* Cinematic Hero Header */}
+                    <div className="relative overflow-hidden pt-4">
+                        {/* Animated Background Gradients */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900/80 to-black" />
+                        <div
+                            className="absolute inset-0 bg-gradient-to-t from-gray-900/20 via-slate-900/10 to-black/50 animate-pulse"
+                            style={{ animationDuration: '4s' }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-radial from-gray-500/10 via-gray-900/5 to-transparent" />
+
+                        {/* Soft edge vignetting for subtle blending */}
+                        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/80" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/60" />
+
+                        {/* Hero Content */}
+                        <div className="relative z-10 flex flex-col items-center justify-start px-6 pt-8 pb-6">
+                            {/* Icon with glow */}
+                            <div className="relative mb-4">
+                                <div className="absolute inset-0 bg-gray-500/30 blur-2xl scale-150" />
+                                <Cog6ToothIcon className="relative w-16 h-16 text-gray-400 drop-shadow-[0_0_20px_rgba(156,163,175,0.5)]" />
+                            </div>
+
+                            {/* Title */}
+                            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-2 text-center tracking-tight">
+                                <span className="bg-gradient-to-r from-gray-200 via-slate-100 to-gray-200 bg-clip-text text-transparent drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
+                                    Settings
+                                </span>
+                            </h1>
+
+                            {/* Subtitle */}
+                            <p className="text-base sm:text-lg text-gray-300 mb-6 text-center max-w-2xl">
+                                Manage your account preferences and data
+                            </p>
+
+                            {/* Enhanced Search Bar */}
+                            <div className="w-full max-w-2xl relative mb-4">
+                                <div className="relative group">
+                                    <MagnifyingGlassIcon className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 z-10 transition-colors group-focus-within:text-gray-300" />
+                                    <input
+                                        type="text"
                                         value={searchQuery}
-                                        onChange={setSearchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
                                         placeholder="Search settings..."
-                                        focusColor="gray"
-                                        voiceInput
+                                        className="w-full pl-14 pr-14 py-4 bg-zinc-900/40 backdrop-blur-lg border border-zinc-800/50 rounded-2xl text-white text-lg placeholder-gray-500 focus:outline-none focus:border-gray-500 focus:shadow-[0_0_25px_rgba(156,163,175,0.3)] transition-all duration-300 hover:bg-zinc-900/60 hover:border-zinc-700"
                                     />
+                                    {searchQuery && (
+                                        <button
+                                            onClick={() => setSearchQuery('')}
+                                            className="absolute right-5 top-1/2 -translate-y-1/2 z-10 text-gray-400 hover:text-white transition-colors"
+                                        >
+                                            <XMarkIcon className="w-6 h-6" />
+                                        </button>
+                                    )}
+
+                                    {/* Glowing border effect on focus */}
+                                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-gray-500 to-slate-500 opacity-0 group-focus-within:opacity-20 blur-xl transition-opacity duration-300 -z-10" />
                                 </div>
-
-                                <ul className="space-y-2">
-                                    {sidebarItems.map((item) => {
-                                        const isActive = pathname === item.path
-                                        const Icon = item.icon
-
-                                        return (
-                                            <li key={item.id}>
-                                                <Link
-                                                    href={item.path}
-                                                    className={`w-full flex items-center p-4 rounded-lg border-l-4 transition-all duration-200 ${
-                                                        isActive
-                                                            ? 'bg-[#313131] border-l-red-600 shadow-lg'
-                                                            : `hover:bg-[#1a1a1a] ${getPriorityColor(item.priority)} bg-[#0a0a0a]`
-                                                    }`}
-                                                >
-                                                    <Icon
-                                                        className={`w-6 h-6 mr-4 ${getIconColor(item.priority, isActive)}`}
-                                                    />
-                                                    <div className="flex-1">
-                                                        <h3
-                                                            className={`font-medium ${isActive ? 'text-white' : 'text-[#e5e5e5]'}`}
-                                                        >
-                                                            {item.title}
-                                                        </h3>
-                                                        <p className="text-[#b3b3b3] text-sm mt-1">
-                                                            {item.description}
-                                                        </p>
-                                                    </div>
-                                                    <ChevronRightIcon
-                                                        className={`w-5 h-5 ${isActive ? 'text-white' : 'text-[#b3b3b3]'}`}
-                                                    />
-                                                </Link>
-                                            </li>
-                                        )
-                                    })}
-                                </ul>
-                            </nav>
+                            </div>
                         </div>
+                    </div>
 
-                        {/* Main Content */}
-                        <div className="flex-1">{children}</div>
+                    {/* Main Content Area */}
+                    <div className="px-6 sm:px-8 lg:px-12 py-8">
+                        {/* Loading state */}
+                        {isLoading ? (
+                            <div className="py-16">
+                                <NetflixLoader inline={true} message="Loading settings..." />
+                            </div>
+                        ) : (
+                            /* Unified Settings Container */
+                            <div className="bg-zinc-900/60 backdrop-blur-lg rounded-xl border border-zinc-800/50 overflow-hidden">
+                                <div className="flex flex-col lg:flex-row">
+                                    {/* Sidebar */}
+                                    <div className="lg:w-96 flex-shrink-0 border-b lg:border-b-0 lg:border-r border-zinc-800/50">
+                                        <nav className="p-6">
+                                            <ul className="space-y-2">
+                                                {sidebarItems.map((item) => {
+                                                    const isActive = pathname === item.path
+                                                    const Icon = item.icon
+
+                                                    return (
+                                                        <li key={item.id}>
+                                                            <Link
+                                                                href={item.path}
+                                                                className={`w-full flex items-center p-4 rounded-lg border-l-4 transition-all duration-200 ${
+                                                                    isActive
+                                                                        ? 'bg-zinc-800/80 border-l-gray-400 shadow-lg'
+                                                                        : `hover:bg-zinc-800/40 ${getPriorityColor(item.priority, false)} bg-zinc-900/40`
+                                                                }`}
+                                                            >
+                                                                <Icon
+                                                                    className={`w-6 h-6 mr-4 ${getIconColor(item.priority, isActive)}`}
+                                                                />
+                                                                <div className="flex-1">
+                                                                    <h3
+                                                                        className={`font-medium ${isActive ? 'text-white' : 'text-gray-300'}`}
+                                                                    >
+                                                                        {item.title}
+                                                                    </h3>
+                                                                    <p className="text-gray-500 text-sm mt-1">
+                                                                        {item.description}
+                                                                    </p>
+                                                                </div>
+                                                                <ChevronRightIcon
+                                                                    className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-500'}`}
+                                                                />
+                                                            </Link>
+                                                        </li>
+                                                    )
+                                                })}
+                                            </ul>
+                                        </nav>
+                                    </div>
+
+                                    {/* Main Content */}
+                                    <div className="flex-1">{children}</div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
-            )}
+            </div>
         </SubPageLayout>
     )
 }
