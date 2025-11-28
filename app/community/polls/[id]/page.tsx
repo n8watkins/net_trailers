@@ -556,22 +556,22 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
                                     )}
 
                                     <div className="relative p-4">
-                                        <div className="flex items-center justify-between">
+                                        <div className="flex items-center justify-between min-h-[28px]">
                                             <div className="flex items-center gap-3">
-                                                {/* Selection indicator */}
-                                                {!showResults && (
-                                                    <div
-                                                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                                            isSelected
-                                                                ? 'border-pink-500 bg-pink-500'
-                                                                : 'border-zinc-600'
-                                                        }`}
-                                                    >
-                                                        {isSelected && (
-                                                            <CheckCircleIcon className="w-4 h-4 text-white" />
-                                                        )}
-                                                    </div>
-                                                )}
+                                                {/* Selection indicator - always reserve space, hide when showing results */}
+                                                <div
+                                                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors shrink-0 ${
+                                                        showResults
+                                                            ? 'opacity-0'
+                                                            : isSelected
+                                                              ? 'border-pink-500 bg-pink-500'
+                                                              : 'border-zinc-600'
+                                                    }`}
+                                                >
+                                                    {isSelected && !showResults && (
+                                                        <CheckCircleIcon className="w-4 h-4 text-white" />
+                                                    )}
+                                                </div>
 
                                                 <span
                                                     className={`font-medium ${
@@ -582,18 +582,20 @@ export default function PollDetailPage({ params }: PollDetailPageProps) {
                                                 </span>
                                             </div>
 
-                                            {/* Vote counts */}
-                                            {showResults && (
-                                                <div className="flex items-center gap-3">
-                                                    <span className="text-sm text-gray-400">
-                                                        {option.votes}{' '}
-                                                        {option.votes === 1 ? 'vote' : 'votes'}
-                                                    </span>
-                                                    <span className="text-lg font-bold text-white min-w-[3rem] text-right">
-                                                        {percentage}%
-                                                    </span>
-                                                </div>
-                                            )}
+                                            {/* Vote counts - always reserve space, hide when not showing results */}
+                                            <div
+                                                className={`flex items-center gap-3 shrink-0 transition-opacity ${
+                                                    showResults ? 'opacity-100' : 'opacity-0'
+                                                }`}
+                                            >
+                                                <span className="text-sm text-gray-400">
+                                                    {option.votes}{' '}
+                                                    {option.votes === 1 ? 'vote' : 'votes'}
+                                                </span>
+                                                <span className="text-lg font-bold text-white min-w-[3rem] text-right">
+                                                    {percentage}%
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
