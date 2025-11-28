@@ -144,9 +144,8 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
     },
 
     loadOnboardingState: (state: Partial<OnboardingStoreState>) => {
-        set({
-            ...state,
-            lastUpdated: Date.now(),
-        })
+        // Don't override lastUpdated when loading - use the saved value
+        // This prevents infinite loop with auto-save effect
+        set(state)
     },
 }))
