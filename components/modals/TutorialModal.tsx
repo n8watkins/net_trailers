@@ -1,11 +1,18 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
     XMarkIcon,
     AcademicCapIcon,
     EyeSlashIcon,
     ShieldCheckIcon,
+    MagnifyingGlassIcon,
+    SparklesIcon,
+    ChatBubbleLeftRightIcon,
+    BellIcon,
+    ShareIcon,
+    TrophyIcon,
+    MicrophoneIcon,
 } from '@heroicons/react/24/outline'
-import { HandThumbUpIcon } from '@heroicons/react/24/solid'
+import { HandThumbUpIcon, RectangleStackIcon } from '@heroicons/react/24/solid'
 import { useAuthStatus } from '../../hooks/useAuthStatus'
 import { useModalStore } from '../../stores/modalStore'
 
@@ -17,6 +24,7 @@ interface TutorialModalProps {
 const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
     const { isGuest } = useAuthStatus()
     const { openAuthModal } = useModalStore()
+    const [activeTab, setActiveTab] = useState<'basics' | 'advanced' | 'community'>('basics')
 
     const handleSignUp = () => {
         onClose()
@@ -34,7 +42,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
             </div>
 
             {/* Modal panel with cinematic styling */}
-            <div className="relative w-full max-w-3xl px-8 pt-6 pb-6 overflow-hidden text-left transition-all transform bg-zinc-900/95 backdrop-blur-xl border border-orange-500/40 rounded-2xl shadow-2xl shadow-orange-500/20 max-h-[90vh] overflow-y-auto">
+            <div className="relative w-full max-w-4xl px-8 pt-6 pb-6 overflow-hidden text-left transition-all transform bg-zinc-900/95 backdrop-blur-xl border border-orange-500/40 rounded-2xl shadow-2xl shadow-orange-500/20 max-h-[90vh] overflow-y-auto">
                 {/* Animated background gradients */}
                 <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900/80 to-black -z-10" />
                 <div
@@ -67,13 +75,50 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
                         </h3>
                     </div>
                     <p className="text-center text-gray-400 text-sm">
-                        Your guide to discovering amazing content
+                        Your complete guide to discovering amazing content
                     </p>
                 </div>
+
+                {!isGuest && (
+                    /* Tabs for authenticated users */
+                    <div className="flex gap-2 mb-6 justify-center">
+                        <button
+                            onClick={() => setActiveTab('basics')}
+                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                                activeTab === 'basics'
+                                    ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30'
+                                    : 'bg-zinc-800/60 text-gray-300 hover:bg-zinc-800'
+                            }`}
+                        >
+                            Basics
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('advanced')}
+                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                                activeTab === 'advanced'
+                                    ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30'
+                                    : 'bg-zinc-800/60 text-gray-300 hover:bg-zinc-800'
+                            }`}
+                        >
+                            Advanced
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('community')}
+                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                                activeTab === 'community'
+                                    ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30'
+                                    : 'bg-zinc-800/60 text-gray-300 hover:bg-zinc-800'
+                            }`}
+                        >
+                            Community
+                        </button>
+                    </div>
+                )}
 
                 {/* Content */}
                 <div className="text-base space-y-5">
                     {isGuest ? (
+                        /* Guest Mode Content */
                         <>
                             <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-xl p-4 border border-orange-500/20">
                                 <p className="text-orange-400 font-bold text-lg mb-1">
@@ -84,77 +129,32 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
                                 </p>
                             </div>
 
-                            <div className="space-y-3 text-gray-100">
-                                <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white/5 transition-colors">
-                                    <span className="text-orange-500 font-bold text-xl flex-shrink-0">
-                                        •
-                                    </span>
-                                    <div>
-                                        <p className="font-semibold text-base flex items-center gap-2">
-                                            Like content{' '}
-                                            <HandThumbUpIcon className="w-5 h-5 text-white" />
-                                        </p>
-                                        <p className="text-sm text-gray-400 mt-1">
-                                            Like content with the thumbs up button to keep track of
-                                            your favorites
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white/5 transition-colors">
-                                    <span className="text-orange-500 font-bold text-xl flex-shrink-0">
-                                        •
-                                    </span>
-                                    <div>
-                                        <p className="font-semibold text-base flex items-center gap-2">
-                                            Hide unwanted content{' '}
-                                            <EyeSlashIcon className="w-5 h-5 text-gray-400" />
-                                        </p>
-                                        <p className="text-sm text-gray-400 mt-1">
-                                            Hide content using the eye button. Hidden content
-                                            won&apos;t appear in recommendations!
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white/5 transition-colors">
-                                    <span className="text-orange-500 font-bold text-xl flex-shrink-0">
-                                        •
-                                    </span>
-                                    <div>
-                                        <p className="font-semibold text-base">
-                                            Build your personal watchlist
-                                        </p>
-                                        <p className="text-sm text-gray-400 mt-1">
-                                            Add movies and TV shows to watch later - saved locally
-                                            on your device
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white/5 transition-colors">
-                                    <span className="text-orange-500 font-bold text-xl flex-shrink-0">
-                                        •
-                                    </span>
-                                    <div>
-                                        <p className="font-semibold text-base">
-                                            Browse unlimited content
-                                        </p>
-                                        <p className="text-sm text-gray-400 mt-1">
-                                            Explore movies, TV shows, and trailers
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white/5 transition-colors">
-                                    <span className="text-orange-500 font-bold text-xl flex-shrink-0">
-                                        •
-                                    </span>
-                                    <div>
-                                        <p className="font-semibold text-base">
-                                            Search with filters
-                                        </p>
-                                        <p className="text-sm text-gray-400 mt-1">
-                                            Use the search bar and apply genre, year, rating filters
-                                        </p>
-                                    </div>
-                                </div>
+                            <div className="space-y-2">
+                                <FeatureItem
+                                    icon={<HandThumbUpIcon className="w-5 h-5 text-white" />}
+                                    title="Like & Dislike Content"
+                                    description="Rate content to help build your personalized recommendations"
+                                />
+                                <FeatureItem
+                                    icon={<EyeSlashIcon className="w-5 h-5 text-gray-400" />}
+                                    title="Hide Unwanted Content"
+                                    description="Hide content you're not interested in - won't appear in recommendations"
+                                />
+                                <FeatureItem
+                                    icon={<RectangleStackIcon className="w-5 h-5 text-blue-400" />}
+                                    title="Build Your Watchlist"
+                                    description="Add movies and TV shows to watch later - saved locally on your device"
+                                />
+                                <FeatureItem
+                                    icon={<MagnifyingGlassIcon className="w-5 h-5 text-gray-400" />}
+                                    title="Search with Filters"
+                                    description="Use the search bar and apply genre, year, rating filters"
+                                />
+                                <FeatureItem
+                                    icon={<SparklesIcon className="w-5 h-5 text-purple-400" />}
+                                    title="Browse Personalized Content"
+                                    description="Explore trending, top-rated, and AI-recommended content"
+                                />
                             </div>
 
                             {/* Guest Mode Limitations */}
@@ -165,11 +165,17 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
                                 <ul className="text-gray-200 text-sm space-y-2">
                                     <li className="flex items-start gap-2">
                                         <span className="text-orange-400 font-bold">✗</span>
-                                        <span>Cannot create custom lists</span>
+                                        <span>Cannot create or share custom collections</span>
                                     </li>
                                     <li className="flex items-start gap-2">
                                         <span className="text-orange-400 font-bold">✗</span>
-                                        <span>Cannot export data to CSV</span>
+                                        <span>
+                                            Cannot create rankings or participate in community
+                                        </span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <span className="text-orange-400 font-bold">✗</span>
+                                        <span>Cannot use AI-powered smart search</span>
                                     </li>
                                     <li className="flex items-start gap-2">
                                         <span className="text-orange-400 font-bold">✗</span>
@@ -213,112 +219,214 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
                             </div>
                         </>
                     ) : (
+                        /* Authenticated User Content with Tabs */
                         <>
-                            <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-xl p-4 border border-orange-500/20">
-                                <p className="text-orange-400 font-bold text-lg mb-1">
-                                    🎯 Welcome to Net Trailers!
-                                </p>
-                                <p className="text-gray-400 text-sm">
-                                    Here&apos;s how to get the most out of your experience:
-                                </p>
-                            </div>
+                            {activeTab === 'basics' && (
+                                <>
+                                    <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 rounded-xl p-4 border border-orange-500/20">
+                                        <p className="text-orange-400 font-bold text-lg mb-1">
+                                            🎯 Essential Features
+                                        </p>
+                                        <p className="text-gray-400 text-sm">
+                                            Master these core features to get started:
+                                        </p>
+                                    </div>
 
-                            <div className="space-y-3 text-gray-100">
-                                <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white/5 transition-colors">
-                                    <span className="text-orange-500 font-bold text-xl flex-shrink-0">
-                                        •
-                                    </span>
-                                    <div>
-                                        <p className="font-semibold text-base flex items-center gap-2">
-                                            Like Content{' '}
-                                            <HandThumbUpIcon className="w-5 h-5 text-white" />
+                                    <div className="space-y-2">
+                                        <FeatureItem
+                                            icon={
+                                                <HandThumbUpIcon className="w-5 h-5 text-white" />
+                                            }
+                                            title="Like & Dislike Content"
+                                            description="Build your taste profile - liked content influences recommendations"
+                                        />
+                                        <FeatureItem
+                                            icon={
+                                                <EyeSlashIcon className="w-5 h-5 text-gray-400" />
+                                            }
+                                            title="Hide Content"
+                                            description="Hide unwanted content - filtered from all recommendations"
+                                        />
+                                        <FeatureItem
+                                            icon={
+                                                <RectangleStackIcon className="w-5 h-5 text-blue-400" />
+                                            }
+                                            title="Create Collections"
+                                            description="Organize content with custom collections - manual, AI-generated, or auto-updating"
+                                        />
+                                        <FeatureItem
+                                            icon={
+                                                <MagnifyingGlassIcon className="w-5 h-5 text-gray-400" />
+                                            }
+                                            title="Advanced Search"
+                                            description="Filter by genre, year, rating, cast, director, and more"
+                                        />
+                                        <FeatureItem
+                                            icon={
+                                                <SparklesIcon className="w-5 h-5 text-purple-400" />
+                                            }
+                                            title="Personalized Recommendations"
+                                            description="'For You' row updates based on your viewing habits and ratings"
+                                        />
+                                        <FeatureItem
+                                            icon={
+                                                <ShieldCheckIcon className="w-5 h-5 text-red-500" />
+                                            }
+                                            title="Child Safety Mode"
+                                            description="Filter adult content with PIN protection for family-safe browsing"
+                                        />
+                                    </div>
+                                </>
+                            )}
+
+                            {activeTab === 'advanced' && (
+                                <>
+                                    <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-xl p-4 border border-purple-500/20">
+                                        <p className="text-purple-400 font-bold text-lg mb-1">
+                                            ⚡ Power User Features
                                         </p>
-                                        <p className="text-sm text-gray-400 mt-1">
-                                            Like content with the thumbs up button to keep track of
-                                            your favorites
+                                        <p className="text-gray-400 text-sm">
+                                            Advanced tools for content discovery:
                                         </p>
                                     </div>
-                                </div>
-                                <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white/5 transition-colors">
-                                    <span className="text-orange-500 font-bold text-xl flex-shrink-0">
-                                        •
-                                    </span>
-                                    <div>
-                                        <p className="font-semibold text-base flex items-center gap-2">
-                                            Hide Content{' '}
-                                            <EyeSlashIcon className="w-5 h-5 text-gray-400" />
+
+                                    <div className="space-y-2">
+                                        <FeatureItem
+                                            icon={
+                                                <SparklesIcon className="w-5 h-5 text-blue-400" />
+                                            }
+                                            title="AI Smart Search"
+                                            description="Natural language queries - try 'rainy day movies' or 'mind-bending thrillers'"
+                                        />
+                                        <FeatureItem
+                                            icon={
+                                                <MicrophoneIcon className="w-5 h-5 text-green-400" />
+                                            }
+                                            title="Voice Search"
+                                            description="Use voice input for hands-free search and AI queries"
+                                        />
+                                        <FeatureItem
+                                            icon={
+                                                <RectangleStackIcon className="w-5 h-5 text-cyan-400" />
+                                            }
+                                            title="Auto-Updating Collections"
+                                            description="Collections that refresh daily with new matching content"
+                                        />
+                                        <FeatureItem
+                                            icon={<ShareIcon className="w-5 h-5 text-yellow-400" />}
+                                            title="Share Collections"
+                                            description="Generate shareable links to showcase your curated collections"
+                                        />
+                                        <FeatureItem
+                                            icon={<BellIcon className="w-5 h-5 text-red-400" />}
+                                            title="Notifications"
+                                            description="Get notified when collections update or watchlist items release"
+                                        />
+                                        <FeatureItem
+                                            icon={
+                                                <svg
+                                                    className="w-5 h-5 text-gray-400"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M13 10V3L4 14h7v7l9-11h-7z"
+                                                    />
+                                                </svg>
+                                            }
+                                            title="Keyboard Shortcuts"
+                                            description="Press '?' to view all shortcuts for faster navigation"
+                                        />
+                                    </div>
+                                </>
+                            )}
+
+                            {activeTab === 'community' && (
+                                <>
+                                    <div className="bg-gradient-to-r from-yellow-500/10 to-amber-500/10 rounded-xl p-4 border border-yellow-500/20">
+                                        <p className="text-yellow-400 font-bold text-lg mb-1">
+                                            👥 Community Features
                                         </p>
-                                        <p className="text-sm text-gray-400 mt-1">
-                                            Hide unwanted content which is filtered from
-                                            recommendations and stored in your Hidden list!
+                                        <p className="text-gray-400 text-sm">
+                                            Connect with other movie and TV enthusiasts:
                                         </p>
                                     </div>
-                                </div>
-                                <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white/5 transition-colors">
-                                    <span className="text-orange-500 font-bold text-xl flex-shrink-0">
-                                        •
-                                    </span>
-                                    <div>
-                                        <p className="font-semibold text-base">
-                                            Create Custom Lists
-                                        </p>
-                                        <p className="text-sm text-gray-400 mt-1">
-                                            Organize content with custom lists - watchlist for
-                                            later, themed collections, and more!
-                                        </p>
+
+                                    <div className="space-y-2">
+                                        <FeatureItem
+                                            icon={
+                                                <TrophyIcon className="w-5 h-5 text-yellow-400" />
+                                            }
+                                            title="Create Rankings"
+                                            description="Build and share top 10 lists - get likes and comments from the community"
+                                        />
+                                        <FeatureItem
+                                            icon={
+                                                <ChatBubbleLeftRightIcon className="w-5 h-5 text-blue-400" />
+                                            }
+                                            title="Discussion Forums"
+                                            description="Start threads, join conversations about movies and TV shows"
+                                        />
+                                        <FeatureItem
+                                            icon={
+                                                <svg
+                                                    className="w-5 h-5 text-purple-400"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                                                    />
+                                                </svg>
+                                            }
+                                            title="Community Polls"
+                                            description="Create and vote on polls - single or multiple choice with results"
+                                        />
+                                        <FeatureItem
+                                            icon={
+                                                <svg
+                                                    className="w-5 h-5 text-green-400"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                                    />
+                                                </svg>
+                                            }
+                                            title="Public Profiles"
+                                            description="View other users' rankings, collections, and forum activity"
+                                        />
+                                        <FeatureItem
+                                            icon={
+                                                <HandThumbUpIcon className="w-5 h-5 text-red-400" />
+                                            }
+                                            title="Like & Comment"
+                                            description="Engage with rankings and forum posts - build community connections"
+                                        />
                                     </div>
-                                </div>
-                                <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white/5 transition-colors">
-                                    <span className="text-orange-500 font-bold text-xl flex-shrink-0">
-                                        •
-                                    </span>
-                                    <div>
-                                        <p className="font-semibold text-base">
-                                            Sync Across Devices
-                                        </p>
-                                        <p className="text-sm text-gray-400 mt-1">
-                                            Your watchlist, likes, and custom lists sync
-                                            automatically across all devices
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white/5 transition-colors">
-                                    <span className="text-orange-500 font-bold text-xl flex-shrink-0">
-                                        •
-                                    </span>
-                                    <div>
-                                        <p className="font-semibold text-base">
-                                            Keyboard Shortcuts
-                                        </p>
-                                        <p className="text-sm text-gray-400 mt-1">
-                                            Press &lsquo;?&rsquo; to view all keyboard shortcuts for
-                                            faster navigation
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white/5 transition-colors">
-                                    <span className="text-orange-500 font-bold text-xl flex-shrink-0">
-                                        •
-                                    </span>
-                                    <div>
-                                        <p className="font-semibold text-base flex items-center gap-2">
-                                            Child Safety Mode{' '}
-                                            <ShieldCheckIcon className="w-5 h-5 text-red-500" />
-                                        </p>
-                                        <p className="text-sm text-gray-400 mt-1">
-                                            Enable Child Safety Mode to filter out adult content and
-                                            create a safe browsing experience for children
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
+                                </>
+                            )}
 
                             <div className="mt-5 p-4 bg-zinc-800/60 backdrop-blur-sm rounded-xl border border-orange-500/30">
                                 <p className="text-gray-300 text-sm">
                                     <span className="font-semibold text-orange-400">
                                         Portfolio project showcasing:
                                     </span>{' '}
-                                    Next.js + TypeScript + Firebase + Real-time sync
+                                    Next.js + TypeScript + Firebase + Real-time sync + AI
+                                    Integration
                                 </p>
                             </div>
                         </>
@@ -328,5 +436,20 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
         </div>
     )
 }
+
+// Helper component for feature items
+const FeatureItem: React.FC<{
+    icon: React.ReactNode
+    title: string
+    description: string
+}> = ({ icon, title, description }) => (
+    <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-white/5 transition-colors">
+        <span className="flex-shrink-0 mt-0.5">{icon}</span>
+        <div>
+            <p className="font-semibold text-base text-white flex items-center gap-2">{title}</p>
+            <p className="text-sm text-gray-400 mt-1">{description}</p>
+        </div>
+    </div>
+)
 
 export default TutorialModal
