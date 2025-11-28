@@ -9,6 +9,8 @@ import { GenrePreference, RecommendationProfile } from '../../types/recommendati
 import { MOVIE_GENRES, TV_GENRES } from '../../constants/genres'
 import { UNIFIED_GENRES } from '../../constants/unifiedGenres'
 import { discoverByPreferences, getTopRatedByGenre } from '../tmdb/recommendations'
+import { calculateGenreYearPreferences } from './yearPreferenceDetector'
+import { convertLegacyGenresToUnified } from '../genreMapping'
 
 // Genre preference type (matches the type in PreferenceCustomizerModal)
 export interface UserGenrePreference {
@@ -213,31 +215,18 @@ export function buildRecommendationProfile(
             ? likedRatings.reduce((sum, r) => sum + r, 0) / likedRatings.length
             : undefined
 
-    // Calculate preferred year range (include collection items)
-    const collectionItems = userData.collectionItems || []
-    const allYears = [...userData.likedMovies, ...userData.defaultWatchlist, ...collectionItems]
-        .map((c) => {
-            if (c.media_type === 'movie') {
-                return c.release_date ? new Date(c.release_date).getFullYear() : undefined
-            } else {
-                return c.first_air_date ? new Date(c.first_air_date).getFullYear() : undefined
-            }
-        })
-        .filter((y): y is number => y !== undefined)
-
-    const preferredYearRange =
-        allYears.length > 0
-            ? {
-                  min: Math.min(...allYears),
-                  max: Math.max(...allYears),
-              }
-            : undefined
+    // Calculate genre-specific year preferences using decade-based clustering
+    const genreYearPreferences = calculateGenreYearPreferences({
+        likedMovies: userData.likedMovies,
+        defaultWatchlist: userData.defaultWatchlist,
+        collectionItems: userData.collectionItems,
+    })
 
     return {
         userId: userData.userId,
         topGenres: topGenres.slice(0, 5), // Top 5 genres
+        genreYearPreferences,
         preferredRating,
-        preferredYearRange,
         updatedAt: Date.now(),
     }
 }
@@ -278,6 +267,45 @@ export async function getGenreBasedRecommendations(
 
         const selectedGenreIds = selectedGenres.map((g) => g.genreId)
 
+        // Look up year preferences for selected genres (convert TMDB IDs to unified IDs first)
+        const yearRanges: Array<{ min: number; max: number }> = []
+        if (profile.genreYearPreferences && profile.genreYearPreferences.length > 0) {
+            for (const selectedGenre of selectedGenres) {
+                // Convert TMDB genre ID to unified genre IDs to match year preferences
+                const unifiedIds = convertLegacyGenresToUnified([selectedGenre.genreId], 'movie')
+
+                // Look for year preference for this genre
+                for (const unifiedId of unifiedIds) {
+                    const yearPref = profile.genreYearPreferences.find(
+                        (pref) => pref.genreId === unifiedId
+                    )
+
+                    // Add year range if found and has medium/high confidence
+                    if (yearPref?.effectiveYearRange) {
+                        yearRanges.push(yearPref.effectiveYearRange)
+                        break // Only use first matching preference
+                    }
+                }
+            }
+        }
+
+        // Merge year ranges from selected genres (use union: min of mins, max of maxes)
+        const yearRange =
+            yearRanges.length > 0
+                ? {
+                      min: Math.min(...yearRanges.map((r) => r.min)),
+                      max: Math.max(...yearRanges.map((r) => r.max)),
+                  }
+                : undefined
+
+        // Log year filtering for debugging
+        if (yearRange) {
+            console.log(
+                `[Recommendations] Applying year filter ${yearRange.min}-${yearRange.max} for genres:`,
+                selectedGenres.map((g) => g.genreName).join(', ')
+            )
+        }
+
         // For pagination beyond page 1, fetch multiple TMDB pages to ensure we have enough content
         // Each TMDB page has ~20 items, so we fetch enough to fill our limit
         const tmdbPagesToFetch = Math.ceil(limit / 20)
@@ -295,6 +323,7 @@ export async function getGenreBasedRecommendations(
                     mediaType: 'movie',
                     minRating: profile.preferredRating ? profile.preferredRating - 1 : 6.0,
                     minVoteCount: 200,
+                    yearRange,
                     page: startTmdbPage + i,
                     sortBy,
                 })
@@ -305,6 +334,7 @@ export async function getGenreBasedRecommendations(
                     mediaType: 'tv',
                     minRating: profile.preferredRating ? profile.preferredRating - 1 : 6.0,
                     minVoteCount: 200,
+                    yearRange,
                     page: startTmdbPage + i,
                     sortBy,
                 })

@@ -188,11 +188,36 @@ export interface RecommendationResponse {
  * Genre preference score
  */
 export interface GenrePreference {
-    genreId: number
+    genreId: number // TMDB genre ID (used for legacy compatibility)
     genreName: string
     score: number
     /** Number of items contributing to score */
     count: number
+}
+
+/**
+ * Year preference for a specific genre
+ * Uses unified genre IDs for consistency with collection system
+ */
+export interface GenreYearPreference {
+    /** Unified genre ID (e.g., 'action', 'drama') */
+    genreId: string
+    /** Genre display name (e.g., "Action", "Drama") */
+    genreName: string
+    /** Preferred decades (e.g., [1990, 2010]) */
+    preferredDecades: number[]
+    /** Number of items contributing to this preference */
+    sampleSize: number
+    /** Median year from user's content */
+    yearMedian: number
+    /** Earliest year from user's content */
+    yearMin: number
+    /** Latest year from user's content */
+    yearMax: number
+    /** Confidence level based on sample size */
+    confidence: 'low' | 'medium' | 'high'
+    /** Effective year range for filtering (undefined for low confidence) */
+    effectiveYearRange?: { min: number; max: number }
 }
 
 /**
@@ -202,12 +227,12 @@ export interface RecommendationProfile {
     userId: string
     /** Top genres by preference score */
     topGenres: GenrePreference[]
+    /** Genre-specific year preferences (decade-based clustering) */
+    genreYearPreferences?: GenreYearPreference[]
     /** Favorite directors/actors (future) */
     favoriteCreators?: string[]
     /** Average rating preference */
     preferredRating?: number
-    /** Preferred year range */
-    preferredYearRange?: { min: number; max: number }
     /** Last updated */
     updatedAt: number
 }
