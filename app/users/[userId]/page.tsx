@@ -242,6 +242,48 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
         .sort((a, b) => (b.votedAt ?? 0) - (a.votedAt ?? 0))
         .slice(0, PROFILE_CONFIG.MAX_POLL_SUMMARIES)
 
+    // Fetch voted (liked) threads
+    const threadLikesSnap = await getDocs(
+        query(collection(db, 'thread_likes'), where('userId', '==', userId), limit(25))
+    )
+    const votedThreadSummaries = (
+        await Promise.all(
+            threadLikesSnap.docs.map(async (likeDoc) => {
+                const likeData = likeDoc.data() || {}
+                const threadId = likeData.threadId as string | undefined
+                if (!threadId) {
+                    return null
+                }
+                const threadDoc = await getDoc(doc(db, 'threads', threadId))
+                if (!threadDoc.exists()) {
+                    return null
+                }
+                const threadData = threadDoc.data() || {}
+                // Don't include user's own threads in voted tab
+                if (threadData.userId === userId) {
+                    return null
+                }
+
+                const summary: ThreadSummary = {
+                    id: threadDoc.id,
+                    title: threadData.title ?? 'Untitled thread',
+                    content: threadData.content ?? '',
+                    category: threadData.category ?? 'general',
+                    likes: threadData.likes ?? 0,
+                    views: threadData.views ?? 0,
+                    replyCount: threadData.replyCount ?? 0,
+                    createdAt: toMillisClient(threadData.createdAt),
+                    updatedAt: toMillisClient(threadData.updatedAt),
+                }
+
+                return summary
+            })
+        )
+    )
+        .filter((thread): thread is ThreadSummary => Boolean(thread))
+        .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
+        .slice(0, PROFILE_CONFIG.MAX_THREAD_SUMMARIES)
+
     const stats: PublicProfilePayload['stats'] = {
         totalRankings: publicRankings.length,
         totalLikes: publicRankings.reduce((sum, ranking) => sum + (ranking.likes || 0), 0),
@@ -261,6 +303,7 @@ async function loadProfileFromClient(userId: string): Promise<PublicProfilePaylo
         collections,
         forum: {
             threads: visibility.showThreads ? threadSummaries : [],
+            threadsVoted: visibility.showThreadsVoted ? votedThreadSummaries : [],
             pollsCreated: visibility.showPollsCreated ? pollSummaries : [],
             pollsVoted: visibility.showPollsVoted ? votedPollSummaries : [],
         },
@@ -350,6 +393,7 @@ export default function UserProfilePage() {
     const likedContent = profileData?.likedContent ?? []
     const collections = profileData?.collections ?? []
     const forumThreads = profileData?.forum?.threads ?? []
+    const forumThreadsVoted = profileData?.forum?.threadsVoted ?? []
     const forumPollsCreated = profileData?.forum?.pollsCreated ?? []
     const forumPollsVoted = profileData?.forum?.pollsVoted ?? []
     const watchLaterPreview = profileData?.watchLaterPreview ?? []
@@ -519,10 +563,14 @@ export default function UserProfilePage() {
 
                     {/* Forum Activity - show if any forum section is enabled */}
                     {(profileData.visibility.showThreads ||
+                        profileData.visibility.showThreadsVoted ||
                         profileData.visibility.showPollsCreated ||
                         profileData.visibility.showPollsVoted) && (
                         <ForumActivitySection
                             threads={profileData.visibility.showThreads ? forumThreads : []}
+                            threadsVoted={
+                                profileData.visibility.showThreadsVoted ? forumThreadsVoted : []
+                            }
                             pollsCreated={
                                 profileData.visibility.showPollsCreated ? forumPollsCreated : []
                             }

@@ -30,6 +30,7 @@ export interface PublicProfilePayload {
     collections: UserList[]
     forum: {
         threads: ThreadSummary[]
+        threadsVoted: ThreadSummary[]
         pollsCreated: PollSummary[]
         pollsVoted: PollSummary[]
     }
@@ -184,6 +185,7 @@ export async function buildPublicProfilePayload(
 
     // Only fetch forum data if respective visibility toggles allow
     const shouldFetchThreads = isPublicEnabled && visibility.showThreads
+    const shouldFetchVotedThreads = isPublicEnabled && visibility.showThreadsVoted
     const shouldFetchPolls =
         isPublicEnabled && (visibility.showPollsCreated || visibility.showPollsVoted)
 
@@ -317,6 +319,55 @@ export async function buildPublicProfilePayload(
         .sort((a, b) => (b.votedAt ?? 0) - (a.votedAt ?? 0))
         .slice(0, 10)
 
+    // Fetch voted (liked) threads only if visibility allows
+    let votedThreadSummaries: ThreadSummary[] = []
+    if (shouldFetchVotedThreads) {
+        const threadLikesSnap = await db
+            .collection('thread_likes')
+            .where('userId', '==', userId)
+            .limit(25)
+            .get()
+
+        votedThreadSummaries = (
+            await Promise.all(
+                threadLikesSnap.docs.map(async (likeDoc) => {
+                    const likeData = likeDoc.data() || {}
+                    const threadId = likeData.threadId as string | undefined
+                    if (!threadId) {
+                        return null
+                    }
+
+                    const threadDoc = await db.collection('threads').doc(threadId).get()
+                    if (!threadDoc.exists) {
+                        return null
+                    }
+
+                    const threadData = threadDoc.data() || {}
+                    // Don't include user's own threads in voted tab
+                    if (threadData.userId === userId) {
+                        return null
+                    }
+
+                    const summary: ThreadSummary = {
+                        id: threadDoc.id,
+                        title: threadData.title ?? 'Untitled thread',
+                        content: threadData.content ?? '',
+                        category: threadData.category ?? 'general',
+                        likes: threadData.likes ?? 0,
+                        views: threadData.views ?? 0,
+                        replyCount: threadData.replyCount ?? 0,
+                        createdAt: toMillis(threadData.createdAt as Timestamp | number | undefined),
+                        updatedAt: toMillis(threadData.updatedAt as Timestamp | number | undefined),
+                    }
+                    return summary
+                })
+            )
+        )
+            .filter((thread): thread is ThreadSummary => thread !== null)
+            .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
+            .slice(0, 10)
+    }
+
     const stats: PublicProfilePayload['stats'] = {
         totalRankings: profileData?.rankingsCount ?? publicRankings.length,
         totalLikes:
@@ -340,6 +391,7 @@ export async function buildPublicProfilePayload(
         collections,
         forum: {
             threads: threadSummaries,
+            threadsVoted: votedThreadSummaries,
             pollsCreated: pollSummaries,
             pollsVoted: orderedVotedPolls,
         },

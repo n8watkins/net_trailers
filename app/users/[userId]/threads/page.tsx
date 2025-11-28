@@ -12,13 +12,7 @@ import { collection, getDocs, query, where, orderBy } from 'firebase/firestore'
 import { db } from '../../../../firebase'
 import SubPageLayout from '../../../../components/layout/SubPageLayout'
 import NetflixLoader from '../../../../components/common/NetflixLoader'
-import {
-    ChatBubbleLeftRightIcon,
-    UserIcon,
-    HeartIcon,
-    EyeIcon,
-    ChatBubbleLeftIcon,
-} from '@heroicons/react/24/outline'
+import { ChatBubbleLeftRightIcon, UserIcon, HeartIcon, EyeIcon } from '@heroicons/react/24/outline'
 import type { Thread } from '../../../../types/forum'
 import type { PublicProfilePayload } from '@/lib/publicProfile'
 import type { Timestamp } from 'firebase/firestore'
@@ -107,7 +101,7 @@ export default function UserThreadsPage() {
         const colors: Record<string, string> = {
             general: 'bg-gray-600',
             movies: 'bg-blue-600',
-            tv: 'bg-purple-600',
+            'tv-shows': 'bg-purple-600',
             recommendations: 'bg-green-600',
             rankings: 'bg-yellow-600',
             announcements: 'bg-red-600',
@@ -191,16 +185,19 @@ export default function UserThreadsPage() {
                                     </p>
                                     <div className="flex items-center gap-4 text-sm text-gray-500">
                                         <span className="flex items-center gap-1">
-                                            <HeartIcon className="w-4 h-4" />
-                                            {thread.likes || 0}
+                                            <ChatBubbleLeftRightIcon className="w-4 h-4" />
+                                            {thread.replyCount || 0}{' '}
+                                            {thread.replyCount === 1 ? 'reply' : 'replies'}
                                         </span>
                                         <span className="flex items-center gap-1">
-                                            <ChatBubbleLeftIcon className="w-4 h-4" />
-                                            {thread.replyCount || 0}
+                                            <HeartIcon className="w-4 h-4" />
+                                            {thread.likes || 0}{' '}
+                                            {thread.likes === 1 ? 'like' : 'likes'}
                                         </span>
                                         <span className="flex items-center gap-1">
                                             <EyeIcon className="w-4 h-4" />
-                                            {thread.views || 0}
+                                            {thread.views || 0}{' '}
+                                            {thread.views === 1 ? 'view' : 'views'}
                                         </span>
                                     </div>
                                 </div>

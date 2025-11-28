@@ -28,21 +28,28 @@ import type { ThreadSummary, PollSummary } from '../../types/forum'
 
 interface ForumActivitySectionProps {
     threads: ThreadSummary[]
+    threadsVoted: ThreadSummary[]
     pollsCreated: PollSummary[]
     pollsVoted: PollSummary[]
     isLoadingVotedPolls?: boolean
+    isLoadingVotedThreads?: boolean
     userId?: string // For public profile pages - links to /users/[userId]/threads and /users/[userId]/polls
 }
 
 export function ForumActivitySection({
     threads,
+    threadsVoted,
     pollsCreated,
     pollsVoted,
     isLoadingVotedPolls = false,
+    isLoadingVotedThreads = false,
     userId,
 }: ForumActivitySectionProps) {
+    const [activeThreadTab, setActiveThreadTab] = useState<'created' | 'voted'>('created')
     const [activePollTab, setActivePollTab] = useState<'created' | 'voted'>('created')
+    const activeThreads = activeThreadTab === 'created' ? threads : threadsVoted
     const activePolls = activePollTab === 'created' ? pollsCreated : pollsVoted
+    const isLoadingActiveThreads = activeThreadTab === 'voted' && isLoadingVotedThreads
     const isLoadingActivePolls = activePollTab === 'voted' && isLoadingVotedPolls
 
     return (
@@ -66,26 +73,58 @@ export function ForumActivitySection({
                     {/* Panel container */}
                     <div className="relative bg-gradient-to-br from-blue-950/20 via-zinc-900/80 to-cyan-950/20 backdrop-blur-lg rounded-xl overflow-hidden border border-blue-500/10 group-hover/panel:border-blue-500/20 transition-all duration-300 shadow-lg">
                         <div className="p-5 sm:p-6">
-                            {/* Header */}
-                            <div className="flex items-center justify-between mb-5">
+                            {/* Header with Tab Switcher */}
+                            <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                                 <div className="flex items-center gap-3">
                                     <div className="relative">
                                         <div className="absolute inset-0 bg-blue-500/30 blur-lg opacity-60" />
                                         <ChatBubbleSolidIcon className="relative w-5 h-5 text-blue-400 drop-shadow-[0_0_6px_rgba(59,130,246,0.5)]" />
                                     </div>
                                     <h3 className="text-lg font-bold text-white">Threads</h3>
+
+                                    {/* Tab Switcher - Inline with title */}
+                                    <div className="inline-flex rounded-full bg-zinc-900/60 backdrop-blur p-1 border border-zinc-800/50 ml-2">
+                                        {[
+                                            {
+                                                id: 'created',
+                                                label: 'Created',
+                                                count: threads.length,
+                                            },
+                                            {
+                                                id: 'voted',
+                                                label: 'Liked',
+                                                count: threadsVoted.length,
+                                            },
+                                        ].map((tab) => (
+                                            <button
+                                                key={tab.id}
+                                                onClick={() =>
+                                                    setActiveThreadTab(
+                                                        tab.id as 'created' | 'voted'
+                                                    )
+                                                }
+                                                className={`relative px-3 py-1.5 text-xs font-bold rounded-full transition-all duration-200 ${
+                                                    activeThreadTab === tab.id
+                                                        ? 'bg-blue-500 text-white shadow-[0_0_12px_rgba(59,130,246,0.4)]'
+                                                        : 'text-gray-400 hover:text-white'
+                                                }`}
+                                            >
+                                                {tab.label}{' '}
+                                                <span className="opacity-70">({tab.count})</span>
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
-                                {threads.length > 0 && (
+
+                                {(threads.length > 0 || threadsVoted.length > 0) && (
                                     <Link
                                         href={
-                                            userId
-                                                ? `/users/${userId}/threads`
-                                                : '/community/threads'
+                                            userId ? `/users/${userId}/threads` : '/profile/threads'
                                         }
                                         className="group/link flex items-center gap-2 text-xs text-blue-400 hover:text-blue-300 transition-colors"
                                     >
                                         <span className="group-hover/link:underline">
-                                            View all {threads.length}
+                                            View all {threads.length + threadsVoted.length}
                                         </span>
                                         <span className="text-blue-500/50 group-hover/link:translate-x-0.5 transition-transform">
                                             &rarr;
@@ -95,9 +134,9 @@ export function ForumActivitySection({
                             </div>
 
                             {/* Threads List */}
-                            {threads.length > 0 ? (
+                            {activeThreads.length > 0 ? (
                                 <div className="space-y-2">
-                                    {threads.slice(0, 3).map((thread, index) => (
+                                    {activeThreads.slice(0, 3).map((thread, index) => (
                                         <Link
                                             key={thread.id}
                                             href={`/community/thread/${thread.id}`}
@@ -143,7 +182,13 @@ export function ForumActivitySection({
                                             <ChatBubbleLeftRightIcon className="w-7 h-7 text-blue-900" />
                                         </div>
                                     </div>
-                                    <p className="text-gray-500 text-sm">No threads yet</p>
+                                    <p className="text-gray-500 text-sm">
+                                        {isLoadingActiveThreads
+                                            ? 'Loading...'
+                                            : activeThreadTab === 'created'
+                                              ? 'No threads yet'
+                                              : 'No threads liked yet'}
+                                    </p>
                                 </div>
                             )}
                         </div>

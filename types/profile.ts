@@ -15,6 +15,7 @@ export interface ProfileVisibility {
     showRankings: boolean // Show public rankings
     showCollections: boolean // Show shared collections
     showThreads: boolean // Show forum threads created
+    showThreadsVoted: boolean // Show forum threads liked/voted on
     showPollsCreated: boolean // Show polls created
     showPollsVoted: boolean // Show polls voted on
 }
@@ -29,6 +30,7 @@ export const DEFAULT_PROFILE_VISIBILITY: ProfileVisibility = {
     showRankings: true,
     showCollections: true,
     showThreads: true,
+    showThreadsVoted: true,
     showPollsCreated: true,
     showPollsVoted: true,
 }
