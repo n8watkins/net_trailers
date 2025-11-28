@@ -99,6 +99,7 @@ module.exports = {
             backgroundImage: {
                 moreInfo:
                     'linear-gradient(to bottom,rgba(20,20,20,0) 0,rgba(20,20,20,0) 50%,rgba(20,20,20, 10%) 70%,rgba(20,20,20, 100%) 80%,rgba(20,20,20,100%))',
+                'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
             },
             dropShadow: {
                 '3xl': '0 35px 35px rgba(0, 0, 0, 0.25)',

@@ -3,10 +3,12 @@
  *
  * Displays a poll with voting options
  * Clean, professional design
+ * Memoized to prevent unnecessary re-renders when other polls change
  */
 
 'use client'
 
+import { memo, useCallback } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Poll } from '@/types/forum'
@@ -29,10 +31,10 @@ const toDate = (timestamp: Timestamp | Date | number): Date => {
 interface PollCardProps {
     poll: Poll
     userVote?: string[] // IDs of options user has voted for
-    onVote?: (optionIds: string[]) => void
+    onVote?: (pollId: string, optionIds: string[]) => void
 }
 
-export function PollCard({ poll, userVote = [], onVote }: PollCardProps) {
+function PollCardComponent({ poll, userVote = [], onVote }: PollCardProps) {
     const router = useRouter()
     const category = getCategoryInfo(poll.category)
     const hasVoted = userVote.length > 0
@@ -43,29 +45,76 @@ export function PollCard({ poll, userVote = [], onVote }: PollCardProps) {
     }
 
     const handleVote = (optionId: string, e: React.MouseEvent) => {
-        e.stopPropagation() // Prevent card click
-        if (hasVoted || isExpired || !onVote) return
+        e.preventDefault() // Prevent default button behavior
+        e.stopPropagation() // Prevent card click navigation
+        if (isExpired || !onVote) return
 
         if (poll.isMultipleChoice) {
             // Toggle option in multiple choice
             if (userVote.includes(optionId)) {
-                onVote(userVote.filter((id) => id !== optionId))
+                onVote(
+                    poll.id,
+                    userVote.filter((id) => id !== optionId)
+                )
             } else {
-                onVote([...userVote, optionId])
+                onVote(poll.id, [...userVote, optionId])
             }
         } else {
-            // Single choice
-            onVote([optionId])
+            // Single choice - allow changing vote
+            onVote(poll.id, [optionId])
+        }
+    }
+
+    // Category color mapping
+    const getCategoryColor = () => {
+        switch (poll.category) {
+            case 'movies':
+                return 'border-l-blue-500'
+            case 'tv-shows':
+                return 'border-l-purple-500'
+            case 'recommendations':
+                return 'border-l-yellow-500'
+            case 'rankings':
+                return 'border-l-orange-500'
+            case 'announcements':
+                return 'border-l-red-500'
+            default:
+                return 'border-l-gray-400'
+        }
+    }
+
+    const getCategoryGlow = () => {
+        switch (poll.category) {
+            case 'movies':
+                return 'shadow-[0_0_30px_rgba(59,130,246,0.15)]'
+            case 'tv-shows':
+                return 'shadow-[0_0_30px_rgba(168,85,247,0.15)]'
+            case 'recommendations':
+                return 'shadow-[0_0_30px_rgba(234,179,8,0.15)]'
+            case 'rankings':
+                return 'shadow-[0_0_30px_rgba(249,115,22,0.15)]'
+            case 'announcements':
+                return 'shadow-[0_0_30px_rgba(239,68,68,0.15)]'
+            default:
+                return 'shadow-[0_0_30px_rgba(156,163,175,0.15)]'
         }
     }
 
     return (
         <div
             onClick={handleCardClick}
-            className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 sm:p-4 hover:border-zinc-700 transition-colors cursor-pointer"
+            className={`group relative bg-zinc-900/60 backdrop-blur-xl border-l-4 border-y border-r border-zinc-800/50 rounded-2xl p-4 sm:p-5 cursor-pointer transition-all duration-300 hover:bg-zinc-900/80 hover:border-zinc-700/80 hover:scale-[1.02] ${getCategoryColor()} ${getCategoryGlow()} hover:shadow-[0_0_50px_rgba(0,0,0,0.5)]`}
         >
+            {/* Glowing rim effect on hover */}
+            <div
+                className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                style={{
+                    background: 'linear-gradient(90deg, rgba(236,72,153,0.1) 0%, transparent 50%)',
+                }}
+            />
+
             {/* Header */}
-            <div className="flex items-start gap-3 mb-4">
+            <div className="relative z-10 flex items-start gap-3 mb-3">
                 {/* Author avatar */}
                 {poll.userAvatar ? (
                     <Image
@@ -73,90 +122,112 @@ export function PollCard({ poll, userVote = [], onVote }: PollCardProps) {
                         alt={poll.userName}
                         width={40}
                         height={40}
-                        className="rounded-full"
+                        className="rounded-full ring-2 ring-zinc-800/50"
                     />
                 ) : (
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-red-500 flex items-center justify-center text-sm font-bold">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-500 to-red-500 flex items-center justify-center text-sm font-bold shadow-lg">
                         {poll.userName[0]?.toUpperCase() || '?'}
                     </div>
                 )}
 
                 {/* Title and meta */}
                 <div className="flex-1 min-w-0">
-                    <h3 className="text-base sm:text-lg font-semibold text-white mb-1">
+                    <h3 className="text-base sm:text-lg font-bold text-white leading-tight mb-1 group-hover:text-pink-300 transition-colors">
                         {poll.question}
                     </h3>
-                    <div className="flex items-center gap-2 text-sm text-gray-400">
-                        <span>{poll.userName}</span>
+                    <div className="flex items-center gap-2 text-xs text-gray-400">
+                        <span className="font-medium">{poll.userName}</span>
                         <span>•</span>
                         <span className="flex items-center gap-1">
-                            <ClockIcon className="w-4 h-4" />
+                            <ClockIcon className="w-3.5 h-3.5" />
                             {formatDistanceToNow(toDate(poll.createdAt), { addSuffix: true })}
                         </span>
-                        {category && (
-                            <>
-                                <span>•</span>
-                                <span className="flex items-center gap-1">
-                                    <span>{category.icon}</span>
-                                    <span className={category.color}>{category.name}</span>
-                                </span>
-                            </>
-                        )}
                     </div>
                 </div>
             </div>
 
-            {/* Description */}
-            {poll.description && <p className="text-gray-400 text-sm mb-4">{poll.description}</p>}
+            {/* Category Badge - Below question */}
+            {category && (
+                <div className="mb-4 inline-flex">
+                    <div className="px-3 py-1.5 bg-zinc-800/60 backdrop-blur-sm rounded-full border border-zinc-700/50 flex items-center gap-1.5">
+                        <span className="text-sm">{category.icon}</span>
+                        <span className={`text-xs font-semibold ${category.color}`}>
+                            {category.name}
+                        </span>
+                    </div>
+                </div>
+            )}
 
-            {/* Poll options */}
-            <div className="space-y-2 mb-4">
+            {/* Description */}
+            {poll.description && (
+                <p className="text-gray-400 text-sm mb-4 line-clamp-2 leading-relaxed">
+                    {poll.description}
+                </p>
+            )}
+
+            {/* Poll options with gradient bars */}
+            <div className="space-y-3 mb-4">
                 {poll.options.map((option) => {
                     const isSelected = userVote.includes(option.id)
                     const showResults = hasVoted || isExpired
 
                     return (
                         <button
+                            type="button"
                             key={option.id}
                             onClick={(e) => handleVote(option.id, e)}
-                            disabled={hasVoted || isExpired}
-                            className={`w-full text-left p-3 rounded-lg border transition-colors ${
-                                isSelected
-                                    ? 'border-blue-500 bg-blue-500/10'
-                                    : 'border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50'
-                            } ${hasVoted || isExpired ? 'cursor-default' : 'cursor-pointer'}`}
+                            disabled={isExpired}
+                            className={`relative w-full rounded-lg overflow-hidden transition-all duration-500 ${
+                                isExpired ? 'cursor-default' : 'cursor-pointer'
+                            } group/option`}
                         >
-                            <div className="flex items-center justify-between mb-1">
+                            {/* Background gradient bar */}
+                            {showResults && (
+                                <div
+                                    className={`absolute inset-0 transition-all duration-500 ${
+                                        isSelected
+                                            ? 'bg-gradient-to-r from-pink-500 to-red-500'
+                                            : 'bg-gradient-to-r from-zinc-700 to-zinc-800'
+                                    }`}
+                                    style={{ width: `${option.percentage}%` }}
+                                />
+                            )}
+
+                            {/* Option content */}
+                            <div
+                                className={`relative z-10 flex items-center justify-between px-4 py-3 border rounded-lg transition-all duration-300 ${
+                                    isSelected
+                                        ? 'border-pink-500 bg-pink-500/10'
+                                        : 'border-zinc-700/50 bg-zinc-800/30 hover:bg-zinc-800/50 hover:border-zinc-600 group-hover/option:scale-[1.02]'
+                                }`}
+                            >
                                 <div className="flex items-center gap-2">
                                     {isSelected && (
-                                        <CheckCircleIcon className="w-5 h-5 text-blue-500" />
+                                        <CheckCircleIcon className="w-5 h-5 text-pink-400" />
                                     )}
                                     <span
-                                        className={`font-medium ${isSelected ? 'text-blue-400' : 'text-white'}`}
+                                        className={`text-sm sm:text-base font-semibold ${
+                                            isSelected ? 'text-white' : 'text-gray-200'
+                                        }`}
                                     >
                                         {option.text}
                                     </span>
                                 </div>
                                 {showResults && (
                                     <div className="flex items-center gap-2">
-                                        <span className="text-sm text-gray-400">
+                                        <span className="text-xs text-gray-400">
                                             {option.votes} votes
                                         </span>
-                                        <span className="text-sm font-semibold text-white">
+                                        <span className="text-base font-bold text-white">
                                             {option.percentage}%
                                         </span>
                                     </div>
                                 )}
                             </div>
 
-                            {/* Progress bar */}
-                            {showResults && (
-                                <div className="w-full bg-zinc-800 rounded-full h-2 overflow-hidden">
-                                    <div
-                                        className={`h-full ${isSelected ? 'bg-blue-500' : 'bg-zinc-600'} transition-all duration-300`}
-                                        style={{ width: `${option.percentage}%` }}
-                                    />
-                                </div>
+                            {/* Ambient glow under selected option */}
+                            {isSelected && showResults && (
+                                <div className="absolute -bottom-2 left-0 right-0 h-8 bg-pink-500/20 blur-xl" />
                             )}
                         </button>
                     )
@@ -164,23 +235,23 @@ export function PollCard({ poll, userVote = [], onVote }: PollCardProps) {
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between pt-3 border-t border-zinc-800 text-sm">
+            <div className="flex items-center justify-between pt-3 border-t border-zinc-800/50 text-xs">
                 <div className="flex items-center gap-3 text-gray-400">
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1.5">
                         <ChartBarIcon className="w-4 h-4" />
-                        <span>{poll.totalVotes} votes</span>
+                        <span className="font-medium">{poll.totalVotes} votes</span>
                     </div>
                     {poll.isMultipleChoice && (
-                        <span className="text-xs bg-zinc-800 px-2 py-0.5 rounded">
-                            Multiple choice
+                        <span className="bg-zinc-800/60 px-2 py-1 rounded-full text-[10px] font-semibold border border-zinc-700/50">
+                            Multiple Choice
                         </span>
                     )}
                 </div>
 
                 {isExpired ? (
-                    <span className="text-xs text-red-400">Expired</span>
+                    <span className="text-red-400 font-semibold">Expired</span>
                 ) : poll.expiresAt ? (
-                    <span className="text-xs text-gray-500">
+                    <span className="text-gray-500">
                         Expires {formatDistanceToNow(toDate(poll.expiresAt), { addSuffix: true })}
                     </span>
                 ) : null}
@@ -188,11 +259,11 @@ export function PollCard({ poll, userVote = [], onVote }: PollCardProps) {
 
             {/* Tags */}
             {poll.tags && poll.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-zinc-800">
+                <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-zinc-800/50">
                     {poll.tags.map((tag) => (
                         <span
                             key={tag}
-                            className="px-2 py-0.5 bg-zinc-800 text-gray-400 text-xs rounded hover:bg-zinc-700 transition-colors"
+                            className="px-2.5 py-1 bg-zinc-800/60 backdrop-blur-sm text-gray-400 text-[10px] font-medium rounded-full hover:bg-zinc-700/60 hover:text-gray-300 transition-colors border border-zinc-700/50"
                         >
                             {tag}
                         </span>
@@ -202,3 +273,31 @@ export function PollCard({ poll, userVote = [], onVote }: PollCardProps) {
         </div>
     )
 }
+
+// Custom comparison to only re-render when this poll's data changes
+function arePropsEqual(prevProps: PollCardProps, nextProps: PollCardProps): boolean {
+    // Check if poll ID changed
+    if (prevProps.poll.id !== nextProps.poll.id) return false
+
+    // Check if poll data changed (totalVotes, options)
+    if (prevProps.poll.totalVotes !== nextProps.poll.totalVotes) return false
+
+    // Check options votes/percentages
+    if (prevProps.poll.options.length !== nextProps.poll.options.length) return false
+    for (let i = 0; i < prevProps.poll.options.length; i++) {
+        if (prevProps.poll.options[i].votes !== nextProps.poll.options[i].votes) return false
+        if (prevProps.poll.options[i].percentage !== nextProps.poll.options[i].percentage)
+            return false
+    }
+
+    // Check if user vote changed (safely handle non-array values)
+    const prevVote = Array.isArray(prevProps.userVote) ? prevProps.userVote : []
+    const nextVote = Array.isArray(nextProps.userVote) ? nextProps.userVote : []
+    if (prevVote.length !== nextVote.length) return false
+    if (prevVote.join(',') !== nextVote.join(',')) return false
+
+    // Props are equal, no re-render needed
+    return true
+}
+
+export const PollCard = memo(PollCardComponent, arePropsEqual)
