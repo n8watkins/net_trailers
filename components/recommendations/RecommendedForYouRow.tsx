@@ -32,7 +32,7 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
     const [showInsightsModal, setShowInsightsModal] = useState(false)
     const [showGenreModal, setShowGenreModal] = useState(false)
     const [showTitleModal, setShowTitleModal] = useState(false)
-    const [hasHydrated, setHasHydrated] = useState(false)
+    const [initialHydrationComplete, setInitialHydrationComplete] = useState(false)
 
     // Prefetched content for title quiz
     const [prefetchedTitleContent, setPrefetchedTitleContent] = useState<
@@ -251,22 +251,27 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
         return map
     }, [sessionData.likedMovies, sessionData.defaultWatchlist, collectionItems])
 
-    // Track when Firebase hydration completes for authenticated users
+    // Track initial Firebase hydration (not routine mutations)
     useEffect(() => {
         // For guest users, mark as hydrated immediately
         if (sessionType !== 'authenticated') {
-            setHasHydrated(true)
+            setInitialHydrationComplete(true)
             return
         }
 
-        // For authenticated users, track actual hydration state
-        // Reset to false when syncing starts, set to true only after sync completes
-        if (syncStatus === 'syncing') {
-            setHasHydrated(false)
-        } else if (isInitialized && syncStatus === 'synced') {
-            setHasHydrated(true)
+        // For authenticated users, only track initial hydration completion
+        // Once complete, this flag stays true even during routine mutations
+        if (
+            !initialHydrationComplete &&
+            isInitialized &&
+            (syncStatus === 'synced' || syncStatus === 'offline')
+        ) {
+            // Mark hydrated when:
+            // - 'synced': Initial sync completed successfully
+            // - 'offline': Initial sync failed, but we should still try to show recommendations
+            setInitialHydrationComplete(true)
         }
-    }, [sessionType, isInitialized, syncStatus])
+    }, [sessionType, isInitialized, syncStatus, initialHydrationComplete])
 
     // Fetch personalized recommendations
     useEffect(() => {
@@ -283,10 +288,11 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
                 return
             }
 
-            // Guard: Don't fetch until hydration is complete
+            // Guard: Don't fetch until initial hydration is complete
             // This prevents fetching with empty arrays before Firebase data loads
-            if (sessionType === 'authenticated' && !hasHydrated) {
-                // Keep isLoading true until hydration completes
+            // Only blocks the initial fetch - routine mutations don't trigger this guard
+            if (sessionType === 'authenticated' && !initialHydrationComplete) {
+                // Keep isLoading true until initial hydration completes
                 return
             }
 
@@ -356,21 +362,21 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
         }
 
         fetchRecommendations()
-        // Note: We use hasHydrated flag to trigger fetch after Firebase sync completes.
-        // hasHydrated resets to false when syncStatus becomes 'syncing', preventing
-        // premature fetches with empty data on page refresh. It's set to true only
-        // after syncStatus becomes 'synced', ensuring Firebase has populated sessionData.
-        // This ensures recommendations load with complete user data while avoiding
-        // jarring re-renders from individual likes/watchlist changes during usage.
+        // Note: We use initialHydrationComplete flag to trigger fetch after initial
+        // Firebase sync completes. Unlike routine mutations (addToWatchlist, rateContent)
+        // that flip syncStatus 'syncing' -> 'synced', this flag only changes once:
+        // from false (before first sync) to true (after initial sync or offline).
+        // Once true, it stays true even during routine mutations, preventing jarring
+        // re-renders from likes/watchlist changes.
         // Recommendations refresh on:
-        // - Initial Firebase hydration completion (hasHydrated false -> true)
+        // - Initial Firebase hydration completion (initialHydrationComplete false -> true)
         // - myRatings data becomes available (length changes from undefined/0 to N)
         // - Session changes (userId, sessionType)
         // - Explicit preference changes (genre quiz, title quiz via prefsSignature)
     }, [
         userId,
         sessionType,
-        hasHydrated,
+        initialHydrationComplete,
         prefsSignature,
         showRecommendations,
         sessionData.myRatings?.length,
