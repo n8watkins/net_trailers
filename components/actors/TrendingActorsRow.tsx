@@ -281,7 +281,7 @@ export default function TrendingActorsRow({
         setIsMoved(true)
         if (rowRef.current) {
             const { scrollLeft, clientWidth } = rowRef.current
-            const scrollDistance = clientWidth * 0.8
+            const scrollDistance = clientWidth * 0.5
             const scrollTo =
                 direction === 'left' ? scrollLeft - scrollDistance : scrollLeft + scrollDistance
 

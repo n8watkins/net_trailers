@@ -21,7 +21,7 @@ export default function ActorCard({ actor, genreFilter, defaultRole = 'acting' }
     const [isHovered, setIsHovered] = useState(false)
 
     const profileImage = actor.profile_path
-        ? `https://image.tmdb.org/t/p/w185${actor.profile_path}`
+        ? `https://image.tmdb.org/t/p/w300${actor.profile_path}`
         : null
 
     // Build URL with optional role/genre filters

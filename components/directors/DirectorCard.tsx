@@ -27,7 +27,7 @@ export default function DirectorCard({
     const [isHovered, setIsHovered] = useState(false)
 
     const profileImage = director.profile_path
-        ? `https://image.tmdb.org/t/p/w185${director.profile_path}`
+        ? `https://image.tmdb.org/t/p/w300${director.profile_path}`
         : null
 
     const buildPersonUrl = () => {
