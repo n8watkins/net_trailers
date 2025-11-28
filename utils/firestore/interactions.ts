@@ -31,6 +31,7 @@ import {
     InteractionSource,
 } from '@/types/interactions'
 import { Content } from '@/typings'
+import type { InteractionSummary } from '../recommendations/interactionAggregator'
 
 /**
  * Get Firestore reference to interactions collection
@@ -543,5 +544,61 @@ export function createInteractionFromContent(
         interactionType,
         genreIds: content.genre_ids || [],
         ...filteredOptions,
+    }
+}
+
+// ============================================================================
+// V2 Recommendation Summary (Phase 1b - Firestore Caching)
+// ============================================================================
+
+/**
+ * Get Firestore reference to V2 recommendation summary document
+ * Stored separately from V1 summary to avoid conflicts
+ */
+function getV2SummaryRef(userId: string) {
+    return doc(db, 'users', userId, 'recommendationSummaryV2', 'summary')
+}
+
+/**
+ * Get cached V2 interaction summary
+ * Returns null if not found or on error
+ *
+ * @param userId - User ID
+ * @returns Promise<InteractionSummary | null>
+ */
+export async function getV2InteractionSummary(userId: string): Promise<InteractionSummary | null> {
+    try {
+        const docSnap = await getDoc(getV2SummaryRef(userId))
+
+        if (docSnap.exists()) {
+            return docSnap.data() as InteractionSummary
+        }
+
+        return null
+    } catch (error) {
+        console.error('[V2] Failed to get cached interaction summary:', error)
+        return null
+    }
+}
+
+/**
+ * Save V2 interaction summary to Firestore cache
+ *
+ * @param userId - User ID
+ * @param summary - Interaction summary to cache
+ * @returns Promise<void>
+ */
+export async function saveV2InteractionSummary(
+    userId: string,
+    summary: InteractionSummary
+): Promise<void> {
+    try {
+        await setDoc(getV2SummaryRef(userId), summary)
+        console.log(
+            `[V2] Cached interaction summary: ${summary.totalInteractions} interactions, ${summary.topContent.length} top items`
+        )
+    } catch (error) {
+        console.error('[V2] Failed to save interaction summary:', error)
+        throw error
     }
 }

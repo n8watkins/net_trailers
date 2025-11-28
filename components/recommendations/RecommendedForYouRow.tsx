@@ -20,7 +20,11 @@ import RecommendationInsightsModal from './RecommendationInsightsModal'
 import GenrePreferenceModal, { PreviewContent } from './GenrePreferenceModal'
 import TitlePreferenceModal, { ContentWithCredits } from './TitlePreferenceModal'
 import { GenrePreference, VotedContent, SkippedContent } from '../../types/shared'
-import { getRecentInteractions } from '../../utils/firestore/interactions'
+import {
+    getRecentInteractions,
+    getV2InteractionSummary,
+    saveV2InteractionSummary,
+} from '../../utils/firestore/interactions'
 import {
     aggregateUserInteractions,
     shouldRefreshSummary,
@@ -315,14 +319,26 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
 
                 const idToken = await currentUser.getIdToken()
 
-                // V2: Generate interaction summary for deep history analysis
+                // V2: Generate or fetch cached interaction summary (Phase 1b - Caching)
                 let interactionSummary: InteractionSummary | undefined
                 try {
-                    // Fetch user's full interaction history
-                    const interactions = await getRecentInteractions(userId, 1000) // Get up to 1000 interactions
+                    // Try to load cached summary first
+                    const cachedSummary = await getV2InteractionSummary(userId)
 
-                    if (interactions.length > 0) {
-                        // Generate comprehensive summary
+                    // Fetch current interaction count to check if refresh needed
+                    const interactions = await getRecentInteractions(userId, 1000)
+                    const needsRefresh = shouldRefreshSummary(cachedSummary, interactions.length)
+
+                    if (cachedSummary && !needsRefresh) {
+                        // Use cached summary (fresh within 24h and <10 new interactions)
+                        interactionSummary = cachedSummary
+                        const age = Date.now() - cachedSummary.lastCalculated
+                        const ageMinutes = Math.floor(age / 60000)
+                        console.log(
+                            `[V2] Using cached summary (${ageMinutes}m old, ${cachedSummary.totalInteractions} interactions)`
+                        )
+                    } else if (interactions.length > 0) {
+                        // Generate new summary and cache it
                         interactionSummary = aggregateUserInteractions(
                             userId,
                             interactions,
@@ -330,7 +346,12 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
                         )
 
                         console.log(
-                            `[V2] Generated interaction summary: ${interactions.length} interactions → ${interactionSummary.topContent.length} top content items`
+                            `[V2] Generated NEW summary: ${interactions.length} interactions → ${interactionSummary.topContent.length} top items`
+                        )
+
+                        // Save to cache (don't await - fire and forget)
+                        saveV2InteractionSummary(userId, interactionSummary).catch((err) =>
+                            console.warn('[V2] Failed to cache summary:', err)
                         )
                     }
                 } catch (error) {
