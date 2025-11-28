@@ -7,6 +7,7 @@ import { useGuestStore } from '../../stores/guestStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useToast } from '../../hooks/useToast'
 import { GenrePreference, VotedContent, SkippedContent } from '../../types/shared'
+import SubPageLayout from '../../components/layout/SubPageLayout'
 import ContentCard from '../../components/common/ContentCard'
 import ContentGridSpacer from '../../components/common/ContentGridSpacer'
 import {
@@ -28,21 +29,23 @@ type FilterValue = RatingValue
 // Wrapper component to handle Suspense for useSearchParams
 export default function RatingsPage() {
     return (
-        <Suspense
-            fallback={
-                <div className="relative -mt-20 -mx-6 sm:-mx-8 lg:-mx-12 min-h-screen">
-                    <div className="fixed inset-0 pointer-events-none">
-                        <div className="absolute inset-0 bg-black" />
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-purple-900/20 via-transparent to-transparent opacity-50" />
+        <SubPageLayout hideHeader>
+            <Suspense
+                fallback={
+                    <div className="relative -mt-20 -mx-6 sm:-mx-8 lg:-mx-12 min-h-screen">
+                        <div className="fixed inset-0 pointer-events-none">
+                            <div className="absolute inset-0 bg-black" />
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-gradient-radial from-purple-900/20 via-transparent to-transparent opacity-50" />
+                        </div>
+                        <div className="relative z-10 flex items-center justify-center py-32">
+                            <NetflixLoader />
+                        </div>
                     </div>
-                    <div className="relative z-10 flex items-center justify-center py-32">
-                        <NetflixLoader />
-                    </div>
-                </div>
-            }
-        >
-            <RatingsPageContent />
-        </Suspense>
+                }
+            >
+                <RatingsPageContent />
+            </Suspense>
+        </SubPageLayout>
     )
 }
 
