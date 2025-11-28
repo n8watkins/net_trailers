@@ -13,6 +13,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { useProfileActions } from '../../hooks/useProfileActions'
 import useUserData from '../../hooks/useUserData'
+import { useDebugOperationsStore } from '../../stores/debugOperationsStore'
 
 interface DebugSettings {
     showFirebaseTracker: boolean
@@ -143,9 +144,11 @@ export default function DebugControls() {
     // Profile actions for seed
     const { isSeeding, handleSeedData } = useProfileActions()
 
+    // Debug operations store for mutual exclusion
+    const { isClearing, setClearing, canStartClearing } = useDebugOperationsStore()
+
     // User data for clearing user data
     const { clearAccountData } = useUserData()
-    const [isClearing, setIsClearing] = useState(false)
 
     // Visibility state - load from localStorage, hidden by default
     const [isVisible, setIsVisible] = useState(false)
@@ -377,14 +380,20 @@ export default function DebugControls() {
 
     // Clear user data (same as settings page "Clear All Data")
     const handleClearUserData = async () => {
-        setIsClearing(true)
+        // Check if we can start clearing (mutual exclusion with seeding)
+        if (!canStartClearing()) {
+            console.warn('[DebugControls] Cannot clear data - operation already in progress')
+            return
+        }
+
+        setClearing(true)
         try {
             await clearAccountData()
             console.log('[DebugControls] ✅ User data cleared')
         } catch (error) {
             console.error('[DebugControls] Failed to clear user data:', error)
         } finally {
-            setIsClearing(false)
+            setClearing(false)
         }
     }
 
@@ -621,9 +630,13 @@ export default function DebugControls() {
                                 {/* Seed Data Button */}
                                 <button
                                     onClick={handleSeedData}
-                                    disabled={isSeeding}
+                                    disabled={isSeeding || isClearing}
                                     className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-purple-600/20 text-purple-400 border border-purple-500/30 hover:bg-purple-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    title="Seed test data (15 liked, 8 hidden, 12 watch later, 20 watch history, 8 collections)"
+                                    title={
+                                        isClearing
+                                            ? 'Cannot seed while clearing data'
+                                            : 'Seed test data (15 liked, 8 hidden, 12 watch later, 20 watch history, 8 collections)'
+                                    }
                                 >
                                     <SparklesIcon className="w-3 h-3" />
                                     <span className="text-xs">
@@ -634,9 +647,13 @@ export default function DebugControls() {
                                 {/* Clear User Data Button */}
                                 <button
                                     onClick={handleClearUserData}
-                                    disabled={isClearing}
+                                    disabled={isClearing || isSeeding}
                                     className="flex items-center space-x-1 px-2 py-1 rounded transition-colors bg-red-600/20 text-red-400 border border-red-500/30 hover:bg-red-600/40 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    title="Clear all user data (collections, ratings, watch history, etc.)"
+                                    title={
+                                        isSeeding
+                                            ? 'Cannot clear while seeding data'
+                                            : 'Clear all user data (collections, ratings, watch history, etc.)'
+                                    }
                                 >
                                     <TrashIcon className="w-3 h-3" />
                                     <span className="text-xs">

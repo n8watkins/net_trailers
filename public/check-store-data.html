@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Store Data Checker</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        pre {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .warning {
+            background: #ff9800;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            background: #4CAF50;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .error {
+            background: #f44336;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>NetTrailer Store Data Checker</h1>
+    <p>Open your browser console (F12) and paste this code:</p>
+
+    <button onclick="copyToClipboard()">Copy Script to Clipboard</button>
+    <button onclick="window.location.href='http://localhost:3000'">Go to App</button>
+
+    <pre id="script">// Check NetTrailer Store Data
+(async function() {
+    console.log('=== NetTrailer Store Data Check ===');
+
+    // Check session type
+    const sessionType = localStorage.getItem('nettrailer_session_type');
+    const userId = localStorage.getItem('nettrailer_userId');
+    const guestId = localStorage.getItem('nettrailer_guest_id');
+
+    console.log('📊 Session Info:');
+    console.log('  Session Type:', sessionType);
+    console.log('  User ID:', userId);
+    console.log('  Guest ID:', guestId);
+
+    // Check guest data if in guest mode
+    if (sessionType === 'guest' && guestId) {
+        const guestDataKey = `nettrailer_guest_data_${guestId}`;
+        const guestData = localStorage.getItem(guestDataKey);
+
+        if (guestData) {
+            const parsed = JSON.parse(guestData);
+            console.log('\n📦 Guest Data (localStorage):');
+            console.log('  Liked Movies:', parsed.likedMovies?.length || 0);
+            console.log('  Watchlist:', parsed.defaultWatchlist?.length || 0);
+            console.log('  Hidden Movies:', parsed.hiddenMovies?.length || 0);
+            console.log('  Collections:', parsed.userCreatedWatchlists?.length || 0);
+            console.log('  Genre Preferences:', parsed.genrePreferences?.length || 0);
+            console.log('  Content Preferences:', parsed.contentPreferences?.length || 0);
+
+            if (parsed.likedMovies?.length > 0) {
+                console.log('\n  Sample Liked Movies:');
+                parsed.likedMovies.slice(0, 3).forEach(m => {
+                    console.log(`    - ${m.title || m.name} (ID: ${m.id})`);
+                });
+            }
+        } else {
+            console.warn('⚠️ No guest data found in localStorage!');
+        }
+    }
+
+    // Check authenticated data if logged in
+    if (sessionType === 'authenticated' && userId) {
+        console.log('\n🔥 Firebase Data:');
+        console.log('  Note: Check Firestore console at https://console.firebase.google.com');
+        console.log('  Path: /users/' + userId);
+    }
+
+    // Check Zustand stores (if available in window)
+    console.log('\n🏪 Zustand Store State:');
+    console.log('  Note: Stores are not exposed to window by default');
+    console.log('  You need to check them in React DevTools');
+
+    console.log('\n=== End of Check ===');
+})();</pre>
+
+    <h2>Instructions:</h2>
+    <ol>
+        <li>Click "Copy Script to Clipboard" above</li>
+        <li>Go to your NetTrailer app (http://localhost:3000)</li>
+        <li>Open browser console (F12)</li>
+        <li>Paste the script and press Enter</li>
+        <li>Check the output to see if your seeded data is present</li>
+    </ol>
+
+    <div class="warning">
+        <strong>⚠️ Common Issues:</strong>
+        <ul>
+            <li><strong>Guest Mode:</strong> Data stored in localStorage, cleared on logout</li>
+            <li><strong>Authenticated Mode:</strong> Data stored in Firebase, should persist across sessions</li>
+            <li><strong>No Data:</strong> Seed may have failed or data wasn't saved properly</li>
+        </ul>
+    </div>
+
+    <script>
+        function copyToClipboard() {
+            const script = document.getElementById('script').textContent;
+            navigator.clipboard.writeText(script).then(() => {
+                alert('Script copied to clipboard! Now go to your app and paste it in the console (F12)');
+            });
+        }
+    </script>
+</body>
+</html>

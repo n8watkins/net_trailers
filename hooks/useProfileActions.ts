@@ -4,14 +4,20 @@
  * Handles seeding of profile data
  */
 
-import { useState } from 'react'
 import { seedUserData } from '../utils/seed'
 import { useSessionStore } from '../stores/sessionStore'
+import { useDebugOperationsStore } from '../stores/debugOperationsStore'
 
 export function useProfileActions() {
-    const [isSeeding, setIsSeeding] = useState(false)
+    const { isSeeding, setSeeding, canStartSeeding } = useDebugOperationsStore()
 
     const handleSeedData = async () => {
+        // Check if we can start seeding (mutual exclusion with clearing)
+        if (!canStartSeeding()) {
+            console.warn('[useProfileActions] Cannot seed data - operation already in progress')
+            return
+        }
+
         const getUserId = useSessionStore.getState().getUserId
         const userId = getUserId()
 
@@ -20,7 +26,7 @@ export function useProfileActions() {
             return
         }
 
-        setIsSeeding(true)
+        setSeeding(true)
         try {
             await seedUserData(userId, {
                 likedCount: 15,
@@ -32,10 +38,10 @@ export function useProfileActions() {
                 threadCount: 5, // Seed forum threads
                 pollCount: 4, // Seed forum polls
             })
-            setIsSeeding(false)
+            setSeeding(false)
         } catch (error) {
             console.error('[useProfileActions] Failed to seed data:', error)
-            setIsSeeding(false)
+            setSeeding(false)
         }
     }
 

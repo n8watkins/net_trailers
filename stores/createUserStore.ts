@@ -255,10 +255,9 @@ export function createUserStore(options: CreateUserStoreOptions) {
     const saveToStorage = async (state: UserState, context: string) => {
         const id = state[idField]
         if (!id) {
-            if (adapter.isAsync) {
-                return
-            }
-            logger.warn(`⚠️ [${trackingContext}] No ${idField}, cannot save to storage`)
+            logger.warn(
+                `⚠️ [${trackingContext}] No ${idField}, cannot save to storage (context: ${context})`
+            )
             return
         }
 

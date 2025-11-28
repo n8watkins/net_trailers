@@ -48,8 +48,13 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
 
     const getUserId = useSessionStore((state) => state.getUserId)
     const sessionType = useSessionStore((state) => state.sessionType)
+    const isInitialized = useSessionStore((state) => state.isInitialized)
     const userId = getUserId()
     const sessionData = useSessionData()
+
+    // Check if data is still syncing from Firebase
+    const syncStatus = useAuthStore((state) => state.syncStatus)
+    const isDataSyncing = sessionType === 'authenticated' && syncStatus === 'syncing'
 
     // Check if recommendations are enabled in user preferences
     const showRecommendations = sessionData.showRecommendations ?? true
@@ -405,6 +410,18 @@ export default function RecommendedForYouRow({ onLoadComplete }: RecommendedForY
             onLoadComplete()
         }
     }, [isLoading, onLoadComplete])
+
+    // Don't render if session not initialized
+    if (!isInitialized) {
+        console.log('[Recommended For You] Hidden: Session not initialized')
+        return null
+    }
+
+    // Don't render if data is still syncing from Firebase
+    if (isDataSyncing) {
+        console.log('[Recommended For You] Hidden: Data still syncing from Firebase')
+        return null
+    }
 
     // Don't render if feature is disabled
     if (!showRecommendations) {

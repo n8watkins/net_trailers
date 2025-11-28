@@ -71,11 +71,15 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
         const guestState = useGuestStore.getState()
         if (!guestState.guestId || guestState.guestId !== userId) {
             useGuestStore.setState({ guestId: userId })
+            console.log('  📝 Set guestId in guestStore:', userId)
         }
     } else {
         const authState = useAuthStore.getState()
         if (!authState.userId || authState.userId !== userId) {
             useAuthStore.setState({ userId })
+            console.log('  📝 Set userId in authStore:', userId)
+        } else {
+            console.log('  ✓ userId already set in authStore:', userId)
         }
     }
 
@@ -162,14 +166,27 @@ export async function seedUserData(userId: string, options: SeedDataOptions = {}
         isGuest,
     })
 
-    // 9. Sync auth store if authenticated
+    // 9. Verify data was seeded (no sync needed - individual methods already saved to Firebase)
     if (!isGuest) {
-        try {
-            await useAuthStore.getState().syncWithFirebase?.(userId)
-            console.log('  💾 Auth store synced to Firestore')
-        } catch (error) {
-            console.error('  ❌ Failed to sync auth data:', error)
-        }
+        const state = useAuthStore.getState()
+        console.log('  📊 Final state after seeding:', {
+            userId: state.userId,
+            likedCount: state.likedMovies.length,
+            watchlistCount: state.defaultWatchlist.length,
+            hiddenCount: state.hiddenMovies.length,
+            collectionsCount: state.userCreatedWatchlists.length,
+        })
+        console.log('  💾 Data saved to Firebase (via individual store methods during seeding)')
+    } else {
+        const state = useGuestStore.getState()
+        console.log('  📊 Final state after seeding:', {
+            guestId: state.guestId,
+            likedCount: state.likedMovies.length,
+            watchlistCount: state.defaultWatchlist.length,
+            hiddenCount: state.hiddenMovies.length,
+            collectionsCount: state.userCreatedWatchlists.length,
+        })
+        console.log('  💾 Data saved to localStorage (via individual store methods during seeding)')
     }
 
     // Wait for saves to complete

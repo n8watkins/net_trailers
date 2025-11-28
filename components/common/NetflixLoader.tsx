@@ -31,7 +31,8 @@ const NetflixLoader: React.FC<Props> = ({
     progress,
 }) => {
     const [loadingCounter, setLoadingCounter] = useState(0)
-    const [loadingMessage, setLoadingMessage] = useState(getRandomMessage)
+    const [loadingMessage, setLoadingMessage] = useState('')
+    const [isClient, setIsClient] = useState(false)
 
     // Use actual progress if provided, otherwise use fake counter
     const displayProgress = progress !== undefined ? progress : loadingCounter
@@ -60,13 +61,18 @@ const NetflixLoader: React.FC<Props> = ({
         }
     }, [inline])
 
+    // Set client flag and initial random message after hydration
+    useEffect(() => {
+        setIsClient(true)
+        setLoadingMessage(getRandomMessage())
+    }, [])
+
     // Counter animation for loading (only if progress prop not provided)
     useEffect(() => {
         // Skip fake counter if actual progress is being provided
         if (progress !== undefined) return
 
         setLoadingCounter(0)
-        setLoadingMessage(getRandomMessage())
 
         // Counter animation - much slower for Gemini requests (5 seconds), faster for regular loads
         const increment = slowCounter ? 1 : 2 // Slower increment for Gemini
@@ -116,7 +122,7 @@ const NetflixLoader: React.FC<Props> = ({
             <div className="text-center max-w-[90vw] sm:max-w-md px-4 sm:px-6">
                 {bouncingDots}
                 <p className="text-white text-xl mb-2 min-h-[3rem] flex items-center justify-center">
-                    {loadingMessage}
+                    {isClient ? loadingMessage : '🎬 Loading...'}
                 </p>
                 <p className="text-gray-400 text-sm">{message}</p>
             </div>

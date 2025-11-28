@@ -119,6 +119,9 @@ export interface PollSummary {
     id: string
     question: string
     category: ForumCategory
+    userId: string
+    userName: string
+    userAvatar?: string
     totalVotes: number
     isMultipleChoice: boolean
     allowAddOptions: boolean
